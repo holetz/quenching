@@ -1,0 +1,18 @@
+[project]
+name = "claude-quenching-docs"
+version = "0.1.0"
+description = "Documentation-site toolchain (MkDocs Material) for the claude-quenching Claude Code plugin."
+requires-python = ">=3.9"
+
+# This repository is NOT a Python package — the distributed artifact is the
+# Claude Code plugin under plugins/claude-quenching/. This pyproject only pins
+# the toolchain used to build the docs/ site, managed with `uv`.
+
+[dependency-groups]
+docs = [
+    "mkdocs-material>=9.5",
+]
+
+[tool.uv]
+package = false
+default-groups = ["docs"]

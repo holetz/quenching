@@ -1,0 +1,18 @@
+# Python (the bundled lifecycle hooks under
+# plugins/claude-quenching/skills/quenching-management/assets/hooks are .py)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# MkDocs build output (the site is published, not committed)
+/site/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
