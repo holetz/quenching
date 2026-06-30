@@ -29,4 +29,4 @@ the report then **modulates emphasis** by the repo's profile (see
 
 The full, self-contained catalog — each dimension with purpose · what "good"
 looks like · detection · smells · remediation · payload — lives in the skill's
-[`references/dimensions-template.md`](https://github.com/israelholetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/dimensions-template.md).
+[`references/dimensions-template.md`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/dimensions-template.md).

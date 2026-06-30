@@ -2,54 +2,23 @@
 
 > **Portable, self-contained knowledge-management method + installer for the Claude Code surface of *any* repository.**
 
-This repository is **two things at once**:
+`claude-quenching` is a Claude Code plugin that packages a single skill, **`quenching-management`**. Point it at a repository and it:
 
-1. A **Claude Code plugin marketplace** ([`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json)) hosting the single plugin **`claude-quenching`**.
-2. The **development workspace** for that plugin — its evolution log, maintainer agents, and documentation source.
+1. **derives the repo's current shape** (read-only) — language, taxonomy, where each knowledge layer lives;
+2. confronts it with a template of **15 dimensions** (CLAUDE.md, docs, vision, backlog, ADRs, skills, sub-agents, hooks, commands, memory, catalog, boundaries, conventions, guardrails, MCP);
+3. delivers a **prioritized gap report** (Present / Partial / Drifted / Absent, with `file:line` evidence);
+4. and — **with confirmation, item by item** — **installs the artifacts it carries** into the target's `.claude/` and `docs/`.
 
-The distributed plugin lives entirely under [`plugins/claude-quenching/`](plugins/claude-quenching/); everything else in this repo (`evolution/`, `.claude/agents/`, `docs/`) is **maintainer tooling that is never shipped to users**.
+## Why it's different
 
-## What the plugin does
+- **Self-contained** — everything it needs to audit and install ships inside the skill. No external dependency; runs on a repo from scratch.
+- **Portable** — it doesn't impose a foreign structure: naming, language and paths adapt to the repo (where the repo has a *convention*, the repo wins), while the knowledge *structure* converges to the method's standard.
+- **Installer, not delegator** — it installs a single versioned source and flags pre-existing equivalents as **deprecable**; never duplicates silently, never removes without an OK.
+- **Diagnosis-first** — the report always comes first; installation is an explicit second step.
 
-Point it at a repository and it reads what already exists (`CLAUDE.md`, `docs/`, skills, subagents, hooks, commands, memory, catalog, MCP), confronts it with a template of **15 dimensions**, hands back a **prioritized gap report**, and — **with confirmation, item by item** — **installs the artifacts it carries** into the target's `.claude/` and `docs/`.
+## Install
 
-- **Self-contained** — everything the method needs to audit and install lives inside the skill, under [`assets/`](plugins/claude-quenching/skills/quenching-management/assets/). It depends on no external skill and runs on a repo from scratch.
-- **Portable** — it first derives the target repo's shape (language, prefix taxonomy, where each layer lives) and adapts the artifacts to it.
-- **Installer, not delegator** — where the repo already has an artifact doing the same job, it installs the package's single source and flags the pre-existing one as **deprecable**; it never duplicates silently and never removes without an explicit OK.
-- **Diagnosis-first** — the report always comes first; installation is a separate, explicit, confirmed step.
-
-## Documentation
-
-The full, navigable method documentation (overview, architecture, the 15 dimensions, the 8-step workflow, and how the method evolves) is published as a **MkDocs Material** site, built from [`docs/`](docs/). The toolchain is managed with [`uv`](https://docs.astral.sh/uv/) and pinned in [`pyproject.toml`](pyproject.toml)/`uv.lock`:
-
-```bash
-make docs-serve     # sync + serve with live reload at http://127.0.0.1:8000
-make docs-build     # strict static build into ./site
-make docs-deploy    # publish to GitHub Pages (gh-pages branch)
-make docs-update    # upgrade the pinned docs dependencies
-```
-
-`make help` lists every script. Each target runs through `uv` (e.g. `uv run mkdocs serve`), so no global Python install is touched. While this repository is **private**, GitHub Pages publishing is gated; the site always builds and serves locally.
-
-## Quick start (local)
-
-Load the plugin straight from this repo:
-
-```bash
-claude --plugin-dir ./plugins/claude-quenching
-```
-
-Then trigger it by describing the task (*"audit this repo's knowledge base"*, *"prepare this repo for Claude Code"*) or invoke the skill by name:
-
-```
-/claude-quenching:quenching-management
-```
-
-Run `/help` to confirm **only** `quenching-management` is listed as an active skill (the bundled payloads under `assets/` are not auto-discovered). After edits, reload with `/reload-plugins`.
-
-## Install from the marketplace
-
-This repo doubles as its own marketplace. Once you have access to it on GitHub:
+This repository doubles as its own marketplace. Once you have access to it on GitHub:
 
 ```
 /plugin marketplace add israelholetz/claude-quenching
@@ -58,26 +27,33 @@ This repo doubles as its own marketplace. Once you have access to it on GitHub:
 
 Refresh later with `/plugin marketplace update claude-quenching`.
 
-## Repository layout
+> While the repository is **private**, only accounts with read access (and an authenticated `gh`/git locally) can add the marketplace.
 
-| Path | Shipped? | What it is |
-| --- | --- | --- |
-| [`plugins/claude-quenching/`](plugins/claude-quenching/) | ✅ **yes** | The distributed plugin: manifest + the `quenching-management` skill (`SKILL.md` + `references/` + `assets/` payloads) |
-| [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) | — | Marketplace catalog (`source: "./plugins/claude-quenching"`) |
-| [`evolution/`](evolution/) | ❌ no | The method's R&D log — evolution rounds + research notes ([spine](evolution/README.md)) |
-| [`.claude/agents/`](.claude/agents/) | ❌ no | The maintainer meta-agents (`quenching-evolutionist`, `quenching-reviewer`) that evolve the method in *this* repo |
-| [`docs/`](docs/) | ❌ no | Source of the MkDocs documentation site |
+To run it straight from a clone instead, load it as a local plugin directory:
 
-Because the marketplace `source` points only at `plugins/claude-quenching/`, the `evolution/`, `.claude/agents/` and `docs/` siblings are **versioned in the repo but never delivered to a user**.
+```bash
+claude --plugin-dir ./plugins/claude-quenching
+```
 
-## For maintainers
+## Use
 
-The method is **alive** — it is improved over time by two meta-agents, with a traceable log:
+Trigger the method by describing the task — *"audit this repo's knowledge base"*, *"prepare this repo for Claude Code"*, *"see what's missing from the knowledge base"* — or invoke the skill by name:
 
-- **[`quenching-evolutionist`](.claude/agents/quenching-evolutionist.md)** advances the frontier (one new round at a time).
-- **[`quenching-reviewer`](.claude/agents/quenching-reviewer.md)** critiques and refines what already exists.
+```
+/claude-quenching:quenching-management
+```
 
-The full evolution doctrine, the round/research log, and how to run the eval fixtures are in [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [`evolution/`](evolution/) spine. **Do not edit the method by hand outside this flow** — it would break the log that keeps the method from re-attacking solved problems.
+Run `/help` to confirm that **only** `quenching-management` is listed as an active skill. The method audits first and hands back the gap report; installation is a separate, explicit step that only touches your `.claude/`/`docs/` after your OK, item by item.
+
+## Documentation
+
+The full method documentation — architecture, the 15 dimensions, the 8-step workflow, the repository layout, and how to install & use the plugin — is published as a **MkDocs Material** site:
+
+**<https://holetz.github.io/claude-quenching/>**
+
+## Contributing
+
+The method is **alive** — it is advanced over time through a traceable evolution log and two maintainer agents. See [`CONTRIBUTING.md`](CONTRIBUTING.md) before proposing a change.
 
 ## Authors
 

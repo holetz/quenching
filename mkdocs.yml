@@ -3,7 +3,7 @@ site_description: >-
   Portable, self-contained knowledge-management method + installer for the
   Claude Code surface of any repository.
 site_author: Israel Holetz
-repo_url: https://github.com/israelholetz/claude-quenching
+repo_url: https://github.com/holetz/claude-quenching
 repo_name: israelholetz/claude-quenching
 edit_uri: edit/main/docs/
 
@@ -50,11 +50,10 @@ plugins:
 nav:
   - Home: index.md
   - Method:
-      - Overview: method/overview.md
       - Architecture: method/architecture.md
       - The 15 dimensions: method/dimensions.md
       - The 8-step workflow: method/workflow.md
+      - Repository layout: method/layout.md
   - Plugin:
       - Install & use: plugin/install.md
       - Bundled artifacts: plugin/artifacts.md
-  - Evolving the method: evolving/index.md

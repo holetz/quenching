@@ -13,7 +13,7 @@
 ## Why it's different
 
 - **Self-contained** — everything it needs to audit and install ships inside the skill. No external dependency; runs on a repo from scratch.
-- **Portable** — it adapts artifacts to the repo's own conventions; where the repo already has a convention, the repo wins.
+- **Portable** — it doesn't impose a foreign structure: naming, language and paths adapt to the repo (where the repo has a *convention*, the repo wins), but the knowledge *structure* converges to the method's standard — and the `docs/` home names follow a canonical taxonomy (the repo converges to it, with your OK).
 - **Installer, not delegator** — it installs a single versioned source and flags pre-existing equivalents as **deprecable**; never duplicates silently, never removes without an OK.
 - **Diagnosis-first** — the report always comes first; installation is an explicit second step.
 
@@ -33,10 +33,10 @@ Then describe the task (*"audit this repo's knowledge base"*, *"prepare this rep
 
 | You want… | Read |
 | --- | --- |
-| The full picture of what it is and the scenarios | [Method → Overview](method/overview.md) |
 | How the parts fit together as a system | [Method → Architecture](method/architecture.md) |
 | The coverage checklist | [Method → The 15 dimensions](method/dimensions.md) |
-| What the agent actually runs | [Method → The 8-step workflow](method/workflow.md) |
+| What the agent runs, and the three scenarios | [Method → The 8-step workflow](method/workflow.md) |
+| How the repository is organized | [Method → Repository layout](method/layout.md) |
 | Install and use the plugin | [Plugin → Install & use](plugin/install.md) |
 | What ships in the package | [Plugin → Bundled artifacts](plugin/artifacts.md) |
-| How the method itself evolves | [Evolving the method](evolving/index.md) |
+| Contribute to the method (maintainers) | [CONTRIBUTING.md](https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md) |

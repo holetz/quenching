@@ -1,7 +1,7 @@
 # Bundled artifacts
 
 Everything the method can install lives inside the skill, under
-[`assets/`](https://github.com/israelholetz/claude-quenching/tree/main/plugins/claude-quenching/skills/quenching-management/assets).
+[`assets/`](https://github.com/holetz/claude-quenching/tree/main/plugins/claude-quenching/skills/quenching-management/assets).
 These payloads are **inert** in the plugin (not auto-discovered) and are
 **copied and adapted** into a target repo's `.claude/`/`docs/` during
 installation — that is what makes the method a *self-contained installer*
@@ -34,5 +34,5 @@ construction**: their target-specific inputs are derived in Step 1, and an empty
 input makes the hook inert.
 
 The full payload manifest and the gap → payload mapping are in the skill's
-[`assets/README.md`](https://github.com/israelholetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md)
-and [`references/installation.md`](https://github.com/israelholetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/installation.md).
+[`assets/README.md`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md)
+and [`references/installation.md`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/installation.md).
