@@ -1,0 +1,60 @@
+site_name: claude-quenching
+site_description: >-
+  Portable, self-contained knowledge-management method + installer for the
+  Claude Code surface of any repository.
+site_author: Israel Holetz
+repo_url: https://github.com/israelholetz/claude-quenching
+repo_name: israelholetz/claude-quenching
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Method:
+      - Overview: method/overview.md
+      - Architecture: method/architecture.md
+      - The 15 dimensions: method/dimensions.md
+      - The 8-step workflow: method/workflow.md
+  - Plugin:
+      - Install & use: plugin/install.md
+      - Bundled artifacts: plugin/artifacts.md
+  - Evolving the method: evolving/index.md

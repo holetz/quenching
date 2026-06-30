@@ -1,0 +1,93 @@
+{
+  "$comment": "Hook wiring snippet to paste into the target repo's .claude/settings.json. Merge with existing blocks; do not overwrite the whole file.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "$comment": "GENERATED artifact protection (dim 14 enforcement × dim 8): runs BEFORE Write/Edit and BLOCKS when the destination matches a generated-artifact pattern of the target (protectedGlobs). 'Can block? Yes': PreToolUse runs before the tool and cancels it. Modern form = hookSpecificOutput.permissionDecision:'deny' + permissionDecisionReason (exit 0); wins even under bypassPermissions. Legacy form = exit 2 + stderr (denyMode:'exit2'); NEVER mix the two (the docs: JSON is ignored when exit 2). The reason is ACTIONABLE: it names the SOURCE-OF-TRUTH to edit instead of the generated artifact ('X defines Y' rule). protectedGlobs/sourceHint are DERIVED from the target (hooks-config.json), NEVER paths from this repo; empty list = hook inert. Complements PostToolUse propose-docs-home (which PROPOSES after): this one BLOCKS before.",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/protect-generated.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/validate-claude-md.py",
+            "timeout": 10
+          },
+          {
+            "$comment": "docs/ coverage (Step 8, triggered by EVENT): when Write/Edit touches a file under docs/, checks the touched file against the canonical taxonomy (the SAME block-2b criteria: VARIANT/TWO-HOMES/NO-HOME/NO-SIDECAR/NO-LABEL) and only PROPOSES the fix via additionalContext. NEVER blocks (PostToolUse does not undo the edit; 'Can block? No'). exit 0 always; stdout does NOT become context in this event, so the proposal goes via JSON additionalContext. Internal latency ceiling.",
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/propose-docs-home.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "matcher": "session_start|nested_traversal|path_glob_match|include|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/validate-claude-md.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "$comment": "Compact-survival (Step 8): RE-INJECTS the stable layer (conventions/FQNs/guardrails/boundaries) that /compact would erase. Reads from a target-derived source (conventionsFile, or head of the root CLAUDE.md), NEVER a fixed list. Matcher covers compact/clear/resume; NOT startup (use the native CLAUDE.md). stdout becomes context; exit 0 always.",
+        "matcher": "compact|clear|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/reinject-conventions.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "$comment": "Automatic freshness (Step 8): only PROPOSES knowledge deltas (additionalContext), NEVER blocks. exit 0 always; stop_hook_active guard; internal latency ceiling.",
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/propose-knowledge-delta.py",
+            "timeout": 5
+          },
+          {
+            "$comment": "Pre-completion validation (THIN hook THAT CALLS the script): at end of turn, runs the target-DERIVED validator (runValidation.validateScript/validateCmd in hooks-config.json) on ALTERED files (git status --porcelain, filtered by includeGlobs). The hook does NOT contain the logic: it lives in a scripts/checks|ci of the target. Default empty = INERT. Example for a Python repo (FORM only, never hardcoded): the scripts/checks/<validate> runs ruff check --fix + ruff format + pyright. Default PROPOSES the result via additionalContext (exit 0; ruff --fix mutates CODE files, not the base — so it informs, does not block); blockOnFail:true mode (off by default) uses decision:block for 'mandatory/never skip'. stop_hook_active guard; latency ceiling.",
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/run-validation.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "$comment": "Audit-trail (3rd lifecycle hook): RECORDS who/when/what changed on the surface itself (settings/skills) in a target log, append-only, metadata only (never the content — it may contain secrets). Matcher covers the 5 sources; OBSERVES, never blocks (exit 0 always, unlike exit 2 which would veto the change). stdout does NOT become context in this event; so it writes to a file. Destination is derived from the target (auditLog).",
+        "matcher": "user_settings|project_settings|local_settings|policy_settings|skills",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/audit-config-change.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
