@@ -11,6 +11,13 @@ confirmation**). The gap → payload map and deprecation doctrine are in
 > levels below), so Claude Code **does not** discover them as live skills/agents
 > — they are **templates/payloads**, copied out when the method is applied.
 
+> **Worker agents only.** The `agents/` payloads here are the method's **workers**
+> (`quenching-auditor`, `quenching-writer`). The agents that develop the **method
+> itself** (`quenching-evolutionist` / `quenching-reviewer`) are **maintainer
+> tooling**: they are **never** shipped or installed, live at the development
+> repo's root `.claude/agents/`, and are documented in that repo's
+> [`CONTRIBUTING.md`](../../../../../CONTRIBUTING.md) — not here.
+
 ## Inventory
 
 | Path | Type | Installs in | Addresses dimension |
@@ -26,8 +33,6 @@ confirmation**). The gap → payload map and deprecation doctrine are in
 | `commands/quenching-reaudit/` | command-skill | `.claude/skills/<prefix>-reauditar/` | 9 (command born as skill) + core (Step 8, trigger 3) + 7 (fork in clean context) |
 | `agents/quenching-auditor.md` | sub-agent | `.claude/agents/` | 7 + audit fan-out |
 | `agents/quenching-writer.md` | sub-agent | `.claude/agents/` | 2 + AUTHORING fan-out (one worker per `standards/` topic, parallel; mines repo for `current` anchored at `file:line` + researches references; unimplemented gap becomes PROPOSAL, never current) |
-| `agents/quenching-evolutionist.md` | sub-agent | `.claude/agents/` | evolution of the method itself (advances the frontier) |
-| `agents/quenching-reviewer.md` | sub-agent | `.claude/agents/` | review/critique of the method itself (refines what's done) |
 | `hooks/validate-claude-md.py` | hook | `.claude/hooks/` + `settings.json` | 1, 8 (CLAUDE.md ceiling) |
 | `hooks/propose-knowledge-delta.py` | hook (Stop) | `.claude/hooks/` + `settings.json` | 8 (automatic freshness) + core (Step 8) — only PROPOSES (`additionalContext`), never blocks |
 | `hooks/reinject-conventions.py` | hook (SessionStart) | `.claude/hooks/` + `settings.json` | 8 (compact-survival) + core (Step 8) — RE-INJECTS the stable layer that `/compact` would erase; reads from target-derived source (`conventionsFile`/CLAUDE.md root head), never a fixed list; matcher `compact\|clear\|resume`, stdout becomes context |
