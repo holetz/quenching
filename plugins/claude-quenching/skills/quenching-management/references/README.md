@@ -18,7 +18,7 @@ for the step you're on.
 
 | File | What it is | When to open |
 | --- | --- | --- |
-| [dimensions-template.md](dimensions-template.md) | **The heart.** The 15 dimensions, each self-contained: purpose · how "good" looks · detection · smells · remediation · payload. The catalog of what is audited and what is healthy. | Steps 2-3 (inventory and score each dimension). Start here to understand the method. |
+| [dimensions-template.md](dimensions-template.md) | **The heart.** The **index** of the 15 dimensions + the transversal doctrine (ADAPTABLE preamble, canonical-`docs/`-names exception, 6-field explanation, scoring). Each dimension is one file under [dimensions/](dimensions/README.md), self-contained: purpose · how "good" looks · detection · smells · remediation · payload. Open only the dimension you are scoring. | Steps 2-3 (inventory and score each dimension). Start here to understand the method. |
 | [docs-taxonomy.md](docs-taxonomy.md) | The **canonical `docs/` tree** (single source): the homes (`standards/`, `decisions/`, `vision/`, `backlog/`, `guides/`, `reference/`, `catalog/`, `communications/`, `presentations/`), their boundaries and the variant→canonical mapping. | Whenever the task touches `docs/` (dims 2/3/5/11). Dimensions and detection **link** here instead of repeating the tree. |
 | [scripts-taxonomy.md](scripts-taxonomy.md) | The **canonical `scripts/` organization** (single source): purpose subfolders (`ci`/`<gen>`/`checks`/`maintenance`/`dev`), README-map, execution convention, and the boundaries `repo scripts/` × `.claude/hooks/*` × skill-internal `scripts/` × `src/`. | Whenever the task touches the executable logic invoked by the surface (dim 8, crosses 1/9). Dim 8 and detection **link** here. |
 | [detection-and-smells.md](detection-and-smells.md) | The detection **cookbook**: the rule of 4 states + Step 0 (derive the repo's paths) + read-only bash per dimension. Only commands + how to read the result; *doctrine* lives in the dimensions. | Steps 1-2 (derive the repo's shape and run the greps). |
@@ -40,10 +40,11 @@ SKILL.md (the roadmap, 8 steps)
 
 ## Conventions of this folder
 
-- **`dimensions-template.md` is the home of DOCTRINE** (the *why* and decision
-  criteria); **`detection-and-smells.md` is the home of BASH** (the *how to
-  detect*). Detection blocks `1b/2b/6b/7b/8b/9b/14b` point to the corresponding
-  dimension instead of repeating the explanation.
+- **`dimensions-template.md` + [dimensions/](dimensions/README.md) are the home of
+  DOCTRINE** (the *why* and decision criteria — the template is the index, each
+  dimension its own file); **`detection-and-smells.md` is the home of BASH** (the *how
+  to detect*). Detection blocks `1b/2b/6b/7b/8b/9b/14b` point to the corresponding
+  dimension file instead of repeating the explanation.
 - **`docs-taxonomy.md` is the single source of the `docs/` tree** — other files
   link there, don't copy.
 - Everything here is **consulted reference**, not the spec that fires: the
