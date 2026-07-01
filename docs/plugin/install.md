@@ -1,4 +1,8 @@
-# Install & use
+# Install & run
+
+The first hands-on chapter of the Technical guide: get the plugin loaded, then see
+what happens when you point it at a repo. For the full step-by-step, continue to the
+[8-step workflow](workflow.md).
 
 ## Local (development)
 
@@ -49,5 +53,5 @@ The method **audits first** and **installs second, with confirmation**:
    source and flags yours as **deprecable** (it never removes anything without an
    explicit OK).
 
-See the [8-step workflow](../method/workflow.md) for the full sequence and
+See the [8-step workflow](workflow.md) for the full sequence and
 [Bundled artifacts](artifacts.md) for what can be installed.
