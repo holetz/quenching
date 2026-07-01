@@ -16,7 +16,7 @@ non-obvious.>
 
 ## Architecture reference (current/active)
 
-Current/active standards/contracts in <normative layer>; index in <index>. Retrieve
+Current/active standards/contracts in <standards layer>; index in <index>. Retrieve
 the canonical doc when you need the detail.
 
 ## Common commands

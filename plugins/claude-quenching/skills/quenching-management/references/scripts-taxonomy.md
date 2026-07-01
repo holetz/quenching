@@ -6,7 +6,7 @@
 
 > **This is the CANONICAL specification of `scripts/`** — the home of **deterministic
 > executable logic** at the repo level (build/deploy, generators, checks,
-> maintenance, dev tooling). Dimension 8 ([dimensions-template.md](dimensions-template.md))
+> maintenance, dev tooling). Dimension 8 ([dimensions/dim-08-hooks.md](dimensions/dim-08-hooks.md))
 > and detection ([detection-and-smells.md](detection-and-smells.md)) **point here** —
 > they do not repeat the tree. It is the sibling of [docs-taxonomy.md](docs-taxonomy.md): that one
 > governs **knowledge** (`docs/`), this one governs the **executables** (`scripts/`) that the

@@ -48,7 +48,7 @@ For **each line**, ask: *"If I remove this line, would Claude make a mistake?"*
    Above the repo ceiling ⇒ prune/split.
 2. **Prune** line-by-line by the criterion above; convert what is hook/skill/link.
 3. **Check for fossils:** every directive that cites a standard — check the current
-   normative reference whether the standard **is still the current one**; fossil =
+   standards layer whether the standard **is still the current one**; fossil =
    update/repoint.
 4. **Chain:** knowledge about a subfolder goes into a sub-CLAUDE.md for that scope,
    pointed to from the root; each link must resolve.

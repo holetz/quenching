@@ -19,8 +19,8 @@ and installation plan at the end. Cite **`file:line`** in every piece of evidenc
 | # | Dimension | State | Evidence (file:line) | Payload to fill |
 | --- | --- | --- | --- | --- |
 | 1 | Map (CLAUDE.md) | Drifted | CLAUDE.md:22 → link to absent file | quenching-map + hook |
-| 2 | Normative reference | Present | <index>:1 | quenching-docs |
-| 3 | Direction (VISION) | Partial | <vision>:40 (milestone crept in) | — (propose) |
+| 2 | Standards | Present | <index>:1 | quenching-docs |
+| 3 | Vision | Partial | <vision>:40 (milestone crept in) | — (propose) |
 | … | … | … | … | … |
 | 12 | Boundaries | Drifted | rule X in CLAUDE.md:30 **and** <index>:12 | — (propose) |
 
@@ -66,7 +66,7 @@ States: **Present · Partial · Drifted · Absent**.
 
 ## Items without payload (human decision)
 
-Dimensions 3 (VISION), 10 (memory), 12 (boundaries): the method **proposes**,
+Dimensions 3 (vision), 10 (memory), 12 (boundaries): the method **proposes**,
 does not install.
 
 - **<dimension>:** <suggested diff/text, ready for the user to apply (or for

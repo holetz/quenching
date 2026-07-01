@@ -74,7 +74,7 @@ Generally leave empty: the extract is sufficient.>
 #     earlier than the source = stale sidecar (re-extract) — same fossil anchor as
 #     dim 2.
 #
-# BOUNDARY (dim 12): the sidecar is NOT the normative layer. If the content of the
+# BOUNDARY (dim 12): the sidecar is NOT the standards layer. If the content of the
 # material BECAME a current contract, it is distilled into `standards/`
 # (audience: both / authority: current) and the sidecar is no longer the truth —
 # it becomes just a historical pointer. A sidecar with `authority: current` is the

@@ -7,7 +7,8 @@
 **Detection cookbook**: read-only commands per dimension (run from the root of the
 target repo). **Step 0** derives the real paths; each transversal block contains the
 bash + how to read the result + a pointer to the **complete doctrine** in the
-corresponding dimension of [dimensions-template.md](dimensions-template.md).
+corresponding dimension file under [dimensions/](dimensions/README.md) (indexed by
+[dimensions-template.md](dimensions-template.md)).
 
 `docs/` has a **prescriptive canonical taxonomy** ([docs-taxonomy.md](docs-taxonomy.md)):
 Step 0 derives **against the canonical names first** (`standards/`/`decisions/`/
@@ -35,9 +36,9 @@ ARCH_DIR=$(for d in docs/standards docs/arquitetura docs/architecture docs/adr \
   architecture standards; do [ -d "$d" ] && { echo "$d"; break; }; done)
 # Current layer index: CANONICAL INDEX.md first (INDICE.md is a variant)
 ARCH_INDEX=$(ls "$ARCH_DIR"/INDEX.md "$ARCH_DIR"/INDICE.md "$ARCH_DIR"/README.md 2>/dev/null | head -1)
-# Vision: CANONICAL docs/vision/ folder first; single VISION.md/ROADMAP.md = variant (segment it)
+# Vision: CANONICAL docs/vision/ folder first; single VISION.md = variant (segment it)
 VISION=$(for d in docs/vision; do [ -d "$d" ] && { echo "$d"; break; }; done)
-[ -z "$VISION" ] && VISION=$(ls docs/VISION.md VISION.md docs/vision.md ROADMAP.md docs/ROADMAP.md 2>/dev/null | head -1)
+[ -z "$VISION" ] && VISION=$(ls docs/VISION.md VISION.md docs/vision.md 2>/dev/null | head -1)
 # Backlog tree (canonical docs/backlog/)
 BACKLOG=$(for d in docs/backlog backlog docs/todo; do [ -d "$d" ] && { echo "$d"; break; }; done)
 # Open decisions: CANONICAL docs/decisions/ first; docs/adr/ = variant (migrate)
@@ -69,7 +70,7 @@ find . -name CLAUDE.md -not -path './.git/*' | while read -r f; do
 grep -rEno '\]\(([^)]+\.md)\)' --include=CLAUDE.md . | head -50
 #   resolve each link against the real file
 
-# 2. Normative reference: index × real files
+# 2. Standards: index × real files
 [ -n "$ARCH_INDEX" ] && sed -n 's/.*(\([^)]*\.md\)).*/\1/p' "$ARCH_INDEX"   # docs cited in the index
 [ -n "$ARCH_DIR" ] && find "$ARCH_DIR" -name '*.md' | sort                  # docs that exist
 #   difference between the two lists ⇒ Drifted (index lies)
@@ -108,10 +109,10 @@ ls .claude/hooks/ 2>/dev/null
 # 9. Commands: orphans (command with no corresponding skill)
 ls .claude/commands/*.md 2>/dev/null
 
-# 11. Catalog/domain (if present): $CATALOG already derived in Step 0 (canonical docs/catalog/)
+# 11. Catalog (if present): $CATALOG already derived in Step 0 (canonical docs/catalog/)
 [ -n "$CATALOG" ] && grep -rL 'AUTO-GERADO\|AUTO-GENERATED' "$CATALOG"/**/*.md 2>/dev/null   # expected: few
 
-# 13. Conventions: code/naming docs in the normative layer
+# 13. Conventions: code/naming docs in the standards layer
 [ -n "$ARCH_DIR" ] && ls "$ARCH_DIR"/codigo/ "$ARCH_DIR"/code/ "$ARCH_DIR"/nomenclatura/ "$ARCH_DIR"/naming/ 2>/dev/null
 
 # 14. Guardrails: guardrails skill present and cited (not copied) in CLAUDE.md
@@ -153,7 +154,7 @@ grep -rnoE '20[0-9]{2}-[01][0-9]-[0-3][0-9]' "$MEM"/*.md | head
 ```
 
 Smells (2) duplicates-the-repo and (6) wrong-type/scope **have no grep**: they are
-comparative reading. Complete doctrine: **dim 10** in [dimensions-template.md](dimensions-template.md).
+comparative reading. Complete doctrine: **dim 10** in [dimensions/dim-10-memory.md](dimensions/dim-10-memory.md).
 
 ### 1b. Pruning criterion / context budget
 
@@ -174,7 +175,7 @@ grep -rnoE '@[A-Za-z0-9_./~-]+\.md' $(find . -name CLAUDE.md -not -path './.git/
 **Fossil / context rot (no grep):** for each directive in CLAUDE.md that references a
 standard, check in `$ARCH_DIR` whether the standard **is still current**; a directive
 describing a replaced standard is a fossil loaded in every session ⇒ Drifted. Complete
-doctrine: **dim 1** in [dimensions-template.md](dimensions-template.md).
+doctrine: **dim 1** in [dimensions/dim-01-claude-md.md](dimensions/dim-01-claude-md.md).
 
 ### 2b. `docs/` coverage against the canonical taxonomy
 
@@ -251,7 +252,7 @@ a **migration** candidate (with OK), never renamed without confirmation. **The
 `communications/` greps above are PENDING measurement vs. fixtures** (no Bash in this
 context) — tracked in the project's evolution log (maintainers only). Complete doctrine (convergence,
 audience+provenance label, sidecar/extract, directed communication): **dim 2** in
-[dimensions-template.md](dimensions-template.md).
+[dimensions/dim-02-standards.md](dimensions/dim-02-standards.md).
 
 ### 6b. Trigger collision + toolset bloat
 
@@ -277,7 +278,7 @@ ls -d .claude/skills/*/ 2>/dev/null | sed 's#.*/skills/##; s#/$##' | sort
 **Collision × bloat (reading):** apply the **toolset test** — distinct scopes, only
 the keyword collides ⇒ **collision** (fix = exclusion clause); scopes cover the same
 work ⇒ **bloat** (fix = consolidate). Complete doctrine: **dim 6** in
-[dimensions-template.md](dimensions-template.md).
+[dimensions/dim-06-skills.md](dimensions/dim-06-skills.md).
 
 ### 7b. Sub-agent least-privilege + home selection
 
@@ -307,7 +308,7 @@ for f in .claude/agents/*.md; do
 consumed, it became a read proxy ⇒ Drifted/Partial. **Home selection (no grep):**
 skill (operator directs each step) × sub-agent (output would flood the parent) ×
 command (manual shortcut) × hook (deterministic enforcement). Complete doctrine: **dim
-7** in [dimensions-template.md](dimensions-template.md).
+7** in [dimensions/dim-07-subagents.md](dimensions/dim-07-subagents.md).
 
 ### 8b. Lifecycle hooks + exit semantics
 
@@ -362,7 +363,7 @@ loose-at-root), the hook calling the script (not inline logic), the invoked
 `scripts/<…>` existing, and the README map in sync with the disk. **The wiring and
 `scripts/` greps are PENDING measurement vs. fixtures** — no Bash in this context; see
 the spine's review queue. Complete doctrine (exit semantics, 3 lifecycle hooks,
-wiring/scope/precedence): **dim 8** in [dimensions-template.md](dimensions-template.md); the
+wiring/scope/precedence): **dim 8** in [dimensions/dim-08-hooks.md](dimensions/dim-08-hooks.md); the
 `scripts/` organization: [scripts-taxonomy.md](scripts-taxonomy.md).
 
 ### 9b. Legacy command × skill + name collision
@@ -387,7 +388,7 @@ for n in code-review verify; do
 
 Migrate command → skill for auto-trigger / >50 lines / multi-repo; keep a command only as
 the manual shortcut for a side-effect action. Complete doctrine: **dim 9** in
-[dimensions-template.md](dimensions-template.md).
+[dimensions/dim-09-commands.md](dimensions/dim-09-commands.md).
 
 ### 12. Boundary doctrine
 
@@ -402,7 +403,7 @@ grep -rniE 'define [a-z]+|fonte (única|da verdade)|single source|nunca edit|ger
 #   2+ occurrences with divergent wording ⇒ choose the canonical home, link from the others
 ```
 
-Complete doctrine: **dim 12** in [dimensions-template.md](dimensions-template.md).
+Complete doctrine: **dim 12** in [dimensions/dim-12-boundaries.md](dimensions/dim-12-boundaries.md).
 
 ### 14b. Actionable error + poka-yoke in executables
 
@@ -428,7 +429,7 @@ grep -rnniE 'relative ?path|caminho relativo|os\.path\.relpath|\./[a-z]' .claude
 The failure message must state **what is missing + how to fix it** (not `KeyError`/silent
 stack trace); a blocking `exit 2` (8b) needs explanatory stderr; where a parameter
 accepts a relative path, prefer absolute/enum (poka-yoke). Complete doctrine: **dim 14**
-in [dimensions-template.md](dimensions-template.md).
+in [dimensions/dim-14-guardrails.md](dimensions/dim-14-guardrails.md).
 
 ## Installation reminder
 

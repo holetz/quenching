@@ -50,7 +50,7 @@ for** is the same waste as omitting one it does show.
 - **Emphasis:** **dim 8** (Stop hook + Step 8 trigger (2) — *"revisit after
   major model releases… instructions that worked around an older model's
   limitation may become overhead"*: re-modulate emphasis at each release);
-  **dim 14** (don't touch model pins/code = guardrail). Dims 3 (direction)
+  **dim 14** (don't touch model pins/code = guardrail). Dims 3 (vision)
   and 10 (memory) tend to be **dense** in a model repo (model decisions
   accumulate), but this weighs only toward **proposing the home** for that
   content (Step 6) — the profile **does not** prescribe *what* the VISION/memory
@@ -60,7 +60,7 @@ for** is the same waste as omitting one it does show.
 - **Signals:** bronze/silver/gold layers (or raw/staging/mart); jobs/DAGs;
   **generated** artifacts (catalog, schemas, manifests) co-located with the
   source.
-- **Emphasis:** **dim 11** (catalog/domain); **dim 14** (PreToolUse that
+- **Emphasis:** **dim 11** (catalog); **dim 14** (PreToolUse that
   PROTECTS the GENERATED artifact — the "X defines Y" rule: the source is the
   truth, the generated is disposable); **dim 1** (map "source × generated"
   per layer).

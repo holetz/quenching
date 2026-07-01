@@ -91,8 +91,8 @@ triggers come up"*. The **layers** (each unlocks the next):
 1. **Foundation — map + boundaries (dim 1, 12; then 2).** CLAUDE.md is what Claude
    sees in every session (*"persistent context loaded every conversation"*) and
    the boundary doctrine is what prevents duplication in the other artifacts.
-   Install **first** the lean map/CLAUDE.md + boundary doctrine + normative
-   reference (`standards/`) — *trigger from the docs: "Claude gets a convention
+   Install **first** the lean map/CLAUDE.md + boundary doctrine + standards
+   layer (`standards/`) — *trigger from the docs: "Claude gets a convention
    or command wrong twice → add it to CLAUDE.md"*. **Prerequisite for almost
    everything:** skills, hooks, and sub-agents will hang from this skeleton.
 2. **On-demand knowledge — skills (dim 6, 7).** When there is a playbook/reference
@@ -126,7 +126,7 @@ triggers come up"*. The **layers** (each unlocks the next):
 
 1. **Read the inputs (read-only).** If a fresh scorecard is in context, use it.
    Otherwise, derive the minimum: the CLAUDE.md(s), the layers (`standards/`/
-   direction/backlog/decisions/catalog), the `.claude/` inventory, and the
+   vision/backlog/decisions/catalog), the `.claude/` inventory, and the
    **profile signals** (Step 1 of the method +
    [`repo-profiles.md`](../../../references/repo-profiles.md)). The adaptive
    globs/greps live in `references/detection-and-smells.md` of the parent skill.
@@ -162,7 +162,7 @@ triggers come up"*. The **layers** (each unlocks the next):
 
 6. **Do NOT decide content or install.** Each wave is a **proposal**: the actual
    installation follows Steps 5-7 of the method, item by item with OK. Dimensions
-   3/10/12 (direction/memory/boundaries) enter the roadmap only as *"propose the
+   3/10/12 (vision/memory/boundaries) enter the roadmap only as *"propose the
    home"* (Step 6) — never *what to write*.
 
 ## Return format (sequenced roadmap, short — the fork condenses)

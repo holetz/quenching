@@ -21,6 +21,6 @@ updated: <YYYY-MM-DD>
 ## Consequences
 <what changes; what remains open.>
 
-> When **implementing**: distill the content into the current/active normative
-> reference, **remove** this folder from the tree and record in the "Distilled" ledger.
+> When **implementing**: distill the content into the current/active standards
+> layer, **remove** this folder from the tree and record in the "Distilled" ledger.
 > An implemented ADR does not stay in the tree (history lives in git).

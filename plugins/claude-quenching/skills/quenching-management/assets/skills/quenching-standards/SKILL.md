@@ -24,7 +24,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 ## What this skill is (and is not) — anti-bloat boundary
 
 - **`quenching-docs`** = authoring **ONE** doc (any home: standards,
-  backlog, ADR, direction, domain), with index synchronization for that home.
+  backlog, ADR, vision, domain), with index synchronization for that home.
 - **`quenching-standards`** = **ORCHESTRATES** the build/refresh of the
   `standards/` layer **ENTIRELY**, in **parallel** (one worker per topic), and
   **synchronizes the index** by regenerating it from disk.

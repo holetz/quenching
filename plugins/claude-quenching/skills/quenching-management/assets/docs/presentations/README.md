@@ -10,7 +10,7 @@ updated: 2026-06-29
 # `presentations/` — human deliverables
 
 Our **visual deliverables**: slides, source diagrams, and reports. Binaries that
-belong in `docs/` but **not** in the normative layer.
+belong in `docs/` but **not** in the standards layer.
 
 **The LLM never opens the binary** — it reads the **sidecar `.md`** alongside it
 (summary + key points + `binary:` pointing to the source). The `quenching-docs` skill
