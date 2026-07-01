@@ -4,8 +4,8 @@ description: >-
   PORTABLE, SELF-CONTAINED method + installer for knowledge management on the
   Claude Code surface of ANY repository. Derives the target repo's shape,
   confronts it with an adaptable template of dimensions (map/CLAUDE.md,
-  normative reference, direction, backlog, ADR/decisions, skills, sub-agents,
-  hooks, commands, memory, catalog/domain, boundary doctrine, conventions,
+  standards, vision, backlog, ADR, skills, sub-agents,
+  hooks, commands, memory, catalog, boundary doctrine, conventions,
   guardrails, MCP), produces a prioritized gap report and, WITH CONFIRMATION,
   INSTALLS the own artifacts it carries (skills, sub-agents, hooks, doc
   skeletons, frontmatter templates — in `assets/`) into the target's
@@ -72,10 +72,10 @@ the template adapts to them, not the other way around. **Do not assume paths**;
 discover:
 
 - Locate the `CLAUDE.md`(s) (root and sub) and read the root one: what
-  boundary doctrine (map × current × direction × decision) is already
+  boundary doctrine (map × current × vision × adr) is already
   crystallized?
-- Discover where (if they exist) the **knowledge layers** live: normative/
-  architecture reference, direction/VISION, backlog, ADR, catalog/domain. Use
+- Discover where (if they exist) the **knowledge layers** live: standards,
+  vision, backlog, ADR, catalog. Use
   the adaptive globs from [references/detection-and-smells.md](references/detection-and-smells.md)
   — they **derive** the real path, do not assume `docs/arquitetura/` etc.
 - Inventory what already exists in `.claude/` (skills, agents, hooks, commands)
@@ -95,8 +95,9 @@ dimensions/triggers/payloads yield **more** for **this** repo.
 Run the adaptive globs/greps from
 [references/detection-and-smells.md](references/detection-and-smells.md) (via `Bash`
 read-only, `Glob`/`Grep`) and collect evidence per dimension. The 15 dimensions
-and what each covers — with the **package artifact** that addresses it — are in
-[references/dimensions-template.md](references/dimensions-template.md).
+and what each covers — with the **package artifact** that addresses it — are indexed in
+[references/dimensions-template.md](references/dimensions-template.md) (one file per
+dimension under `references/dimensions/`; open only the one you are scoring).
 
 > **Optional fan-out (clean context):** for large repos, delegate the scan
 > to the read-only sub-agent the package carries
@@ -221,7 +222,7 @@ OK, **item-by-item**:
 ### 6. Items without payload → only propose
 
 Three dimensions have no installable artifact, because they are **human content
-decisions**: **3 (direction/VISION)**, **10 (memory)** and **12 (boundary
+decisions**: **3 (vision)**, **10 (memory)** and **12 (boundary
 doctrine)**. For them the method **only proposes** the text/diff (and, for
 boundaries, which is the canonical home and what becomes just a link) and leaves
 the application to the user. Never writes memory; never decides the direction
@@ -334,9 +335,9 @@ choice of authorship) and the boundary *workflow (predefined code path) × agent
 - [references/README.md](references/README.md) — **folder index**: what each
   file is, when to open it and how they chain (start here to navigate).
 - [references/dimensions-template.md](references/dimensions-template.md) — the
-  adaptable template: the 15 dimensions, each with purpose / "good" / detection /
-  smells / remediation / **package artifact** (and the absorbed transversal
-  doctrine).
+  adaptable template: the **index** of the 15 dimensions (one file each under
+  `references/dimensions/`, with purpose / "good" / detection / smells / remediation /
+  **package artifact**) plus the transversal doctrine.
 - [references/docs-taxonomy.md](references/docs-taxonomy.md) — the **canonical
   `docs/` taxonomy** (single source of the tree + boundaries + variant migration).
 - [references/scripts-taxonomy.md](references/scripts-taxonomy.md) — the

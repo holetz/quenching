@@ -73,7 +73,7 @@ confirmation**). The gap → payload map and deprecation doctrine are in
 
 ## No payload (method only proposes)
 
-Dimensions **3 (direction)**, **10 (memory)** and **12 (boundaries)** have no
+Dimensions **3 (vision)**, **10 (memory)** and **12 (boundaries)** have no
 content payload — they are human decisions. The `docs/vision/` skeleton (with
 the `templates/docs/vision/area.md` mold) and the template
 `templates/memory/memory.md` exist as a starting point, but installing/writing

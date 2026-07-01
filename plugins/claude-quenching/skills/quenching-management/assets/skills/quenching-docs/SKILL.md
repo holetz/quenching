@@ -2,7 +2,7 @@
 name: quenching-docs
 description: >-
   Creates and edits the versioned knowledge documentation of a repo — current
-  normative reference (architecture/standards), backlog, ADRs, direction, and
+  standards (architecture/code), backlog, ADRs, direction, and
   domain doctrine — keeping each artifact in a single Diátaxis quadrant and
   synchronizing the index and pointers. Use when the user asks to "document a
   standard/convention", "create/edit an architecture doc", "update the index",
@@ -18,14 +18,14 @@ allowed-tools: Read, Grep, Glob, Edit, Write
 # Knowledge documentation — docs-as-code
 
 > Skill-template of the `quenching-management` method. Generic and portable:
-> fix the real paths of the layers (normative reference, backlog, ADR, direction)
+> fix the real paths of the layers (standards, backlog, ADR, vision)
 > as derived in the repo where it is installed — the names below are examples.
 
 ## One purpose per artifact (Diátaxis quadrant)
 
 Each doc serves **one** type; "if it serves two purposes, it has two homes":
 
-- **Normative reference** (architecture/standards) = *current reference* — "how it
+- **Standards** (architecture) = *current reference* — "how it
   is today", versioned. One standard per file; frontmatter (`title`/`updated`/
   `status: current`); kebab-case without accents. **Index in sync** (lists exactly
   the files that exist).
@@ -34,15 +34,15 @@ Each doc serves **one** type; "if it serves two purposes, it has two homes":
 - **Backlog** = *how-to of pending work* — trackable items; completed item **leaves
   the tree** (history stays in git); reference to direction in frontmatter.
 - **ADR** = *explanation of an open decision* — weighed alternatives; when
-  implemented, **distill to the normative reference and leave** the tree (ledger of
+  implemented, **distill to the standards and leave** the tree (ledger of
   "Distilled" items is preserved).
 - **Domain** — doctrine of how skills/agents consume the domain.
 
 ## Procedure
 
 1. **Identify the quadrant** of what is being written; choose the canonical home.
-   Content that migrated quadrant (rationale in the map, direction in the normative
-   reference, task list in VISION) goes back to the right home, leaving **only a
+   Content that migrated quadrant (rationale in the map, direction in the standards,
+   task list in VISION) goes back to the right home, leaving **only a
    link** in the others.
 2. **Write** with minimal frontmatter and one standard/decision/item per file.
 3. **Synchronize the index and pointers** whenever creating/moving/removing —

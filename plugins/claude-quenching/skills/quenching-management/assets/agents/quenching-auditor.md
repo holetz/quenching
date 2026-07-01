@@ -27,8 +27,8 @@ evidence.
 
 ## Steps
 
-1. **Derive the paths** (Step 0 of `detection-and-smells.md`): locate the normative
-   layer, direction doc, backlog, ADRs, domain doctrine, memory directory.
+1. **Derive the paths** (Step 0 of `detection-and-smells.md`): locate the standards
+   layer, vision doc, backlog, ADRs, domain doctrine, memory directory.
    Empty variable ⇒ layer is Absent.
 2. **Run detection per dimension** (1–15) with the reference commands. For each
    one, collect **the minimum evidence** that decides the state.

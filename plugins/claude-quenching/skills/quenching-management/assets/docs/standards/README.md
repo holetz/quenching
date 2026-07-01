@@ -12,7 +12,7 @@ updated: 2026-06-29
 Here lives the current/active **standard/contract** — "how it should be and why",
 versioned, the shared source of truth. One standard per file; subfolder names by
 **subject**. Distinct from `reference/` (facts about what we consume, external) and
-from `catalog/` (our data). Direction does not live here (→ `vision/`); open
+from `catalog/` (our data). Vision does not live here (→ `vision/`); open
 decisions do not live here (→ `decisions/`).
 
 We keep only the subtopics that apply to the repo (completeness of what fits, not

@@ -7,7 +7,7 @@ metadata:
 
 <The fact, concise. For feedback/project, follow with **Why:** and **How to apply:**.
 Exact dates (YYYY-MM-DD), never "recently"/"today". Do not duplicate what already
-lives in the repo (code/CLAUDE.md/normative reference) — **link** via `[[other-memory]]`
+lives in the repo (code/CLAUDE.md/standards) — **link** via `[[other-memory]]`
 or `@path`, do not copy.>
 
 # NOTE: this is just a REFERENCE TEMPLATE. The knowledge-management method

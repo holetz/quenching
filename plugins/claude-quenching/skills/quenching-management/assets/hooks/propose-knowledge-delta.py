@@ -65,7 +65,7 @@ SIGNALS: tuple[tuple[str, str, str], ...] = (
         r"(?i)\b(?:that['']s|this is)\s+(?:deprecated|outdated|no longer)\b|"
         r"\b(?:isso|esse padrão|isto)\s+(?:está|esta|foi)\s+(?:obsoleto|substitu)",
         "pattern described as obsolete/replaced (fossil)",
-        "current normative reference (and pruning the fossil from CLAUDE.md)",
+        "current standards (and pruning the fossil from CLAUDE.md)",
     ),
     (
         r"(?i)\b(?:gotcha|pitfall|footgun|caveat)\b|"

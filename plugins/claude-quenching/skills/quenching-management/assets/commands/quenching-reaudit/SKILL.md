@@ -57,7 +57,7 @@ Scope of this invocation: **$ARGUMENTS**
 ## What to do
 
 1. **Derive the target repo shape** (Step 0 / Step 1 of the method): locate the
-   CLAUDE.md(s), normative layer, direction, backlog, decisions, catalog/domain,
+   CLAUDE.md(s), standards layer, vision, backlog, decisions, catalog,
    memory, and the `.claude/` inventory. Empty variable ⇒ layer is **Absent**.
    The adaptive globs/greps live in `references/detection-and-smells.md` of the
    `quenching-management` skill.

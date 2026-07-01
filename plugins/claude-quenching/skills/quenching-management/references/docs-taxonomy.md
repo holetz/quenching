@@ -5,7 +5,7 @@
 > [README.md](README.md) (`references/` index).
 
 > **This is the CANONICAL specification of `docs/`.** Dimension 2
-> ([dimensions-template.md](dimensions-template.md)), detection
+> ([dimensions/dim-02-standards.md](dimensions/dim-02-standards.md)), detection
 > ([detection-and-smells.md](detection-and-smells.md)) and the baseline-payload
 > (`../assets/docs/`) **point here** — they do not repeat the tree. Keep this
 > file navigable: it is the single source of the canonical taxonomy.
@@ -82,7 +82,7 @@ For each home: **purpose**, **Diátaxis type** of content, **`audience:`**,
 - **`authority: current`** (contract; edited only by the owning skill).
 - **Boundary:** `standards/` = "how **WE** do it (current/active)". Distinct from
   `reference/` (facts about what we **consume**, external) and from `catalog/`
-  (our data). Direction does not live here (→ `vision/`); open decisions do not live
+  (our data). Vision does not live here (→ `vision/`); open decisions do not live
   here (→ `decisions/`).
 - **Subfolders** (by subject, not type): `architecture/` (structure + architectural
   patterns — **`patterns` dissolves here**, there is no `docs/patterns/`);
@@ -226,7 +226,7 @@ For each home: **purpose**, **Diátaxis type** of content, **`audience:`**,
 
 ### `presentations/` — human deliverables (binary)
 - **Purpose:** our **visual deliverables** — slides, source diagrams,
-  reports. Binaries that belong in `docs/` but **not** in the normative layer.
+  reports. Binaries that belong in `docs/` but **not** in the standards layer.
 - **Diátaxis:** outside the four types (human material, not a technical doc).
 - **`audience: human`** (the binary) · **`authority: background`**; the **sidecar**
   is `audience: agent`/`authority: background`.

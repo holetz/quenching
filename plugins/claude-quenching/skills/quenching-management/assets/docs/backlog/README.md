@@ -26,7 +26,7 @@ Each item references the `vision/` area it unlocks (`vision_refs`).
 ## What does NOT go here
 
 - An already-done item (remove it).
-- Direction/aspiration (goes in `vision/`).
+- Vision/aspiration (goes in `vision/`).
 - Open decision with alternatives (goes in `decisions/`).
 
 > _Skeleton installed by `quenching-management` — spec in
