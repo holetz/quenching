@@ -60,7 +60,15 @@
 > Current summary of each frontier in this dimension (what is in effect today). The detail and rationale are in the history below.
 
 - **R0 · initial skeleton** — 14 dimensions, audit+apply-with-confirmation workflow,
-  delegation map, report format, self-evolving agent. (base state)
+  delegation map, report format, self-evolving agent. (base state) · **revised-by Rev9**
+  (FORM refactor: the 15-dimension catalog `references/dimensions-template.md` split
+  into **one file per dimension** under `references/dimensions/`, mirroring `evolution/log/`
+  — the template stays as the thin index holding the transversal doctrine; structural move,
+  no smell/payload changed) · **Rev10** (user-sanctioned TERMINOLOGY alignment: dim 2
+  "Normative reference"→**"Standards"**, dim 3 "Direction"→**"Vision"** — dimension names now
+  match their canonical `docs/` homes; dim 5 deliberately kept "Open decisions"; ROADMAP.md
+  restored in the `docs-taxonomy.md` migration map; display labels/prose only, no grep/logic
+  changed).
 
 - **R34 · Eval of PRESCRIPTION (planted profile → expected emphasis), not just detection** — **EXTENDS R12**
   (does not redo it). Through R33 the «Eval of the audit itself» section (R12) only covered **DETECTION** — a fixture with
@@ -962,7 +970,7 @@
   another skill) or "Completeness of normative reference / reconstruction test" (dim 2 — reopen with the
   right source, R2 deferred due to `mischaracterized` attribution).
 
-### Round 0 — 2026-06-28 · frontier: initial skeleton
+### Round 0 — 2026-06-28 · frontier: initial skeleton · **revised-by: Rev9, Rev10**
 
 - **Change:** creation of the method (`SKILL.md` + 4 references + this log) and of the
   `quenching-evolutionist` agent. 14 dimensions covering the Claude
@@ -980,3 +988,126 @@
   template/log in `docs/` (would pollute the product the method audits).
 - **Next candidate:** "MCP coverage" or "Boundary detection by heuristic"
   (sharpen dimension 12).
+
+#### Revision Rev9 — 2026-07-01 · FORM refactor: split the `dimensions-template.md` monolith into one file per dimension (progressive disclosure)
+
+- **Target:** the **home of the 15-dimension catalog** created in Round 0 —
+  `references/dimensions-template.md`. Not the content of any single dimension: the
+  **shape** of the reference that materializes all of them.
+- **Critique (bloat / Simplicity First × the method's own doctrine):** the template had
+  grown to a **~546-line / ~26k-token monolith** holding all 15 dimensions in one file.
+  When the agent consults the template for **one** dimension (Step 2, per-dimension
+  scoring), it pulls the **entire** file — which **defeats the progressive-disclosure
+  principle the method itself prescribes** (thin `SKILL.md` → on-demand detail in
+  `references/`; dim 1/5 "always-loaded × on-demand" and dim 6 "SKILL.md <500, detail
+  pushed to `references/`") and inflates token cost per invocation. Evidence: the file
+  paged past the 25k-token read cap (546 lines total); the same anti-pattern the
+  `evolution/log/` split already fixed for its own history (one file per dimension/theme —
+  *«smallest high-signal set + just-in-time retrieval»*, `log/README.md`).
+- **Scope (STRUCTURE only — the terminology relabel of dims 2/3 is NOT part of this Rev; see Rev10):**
+  this revision is purely the **file split**. Each dimension's six-field body (Purpose · How
+  "good" looks · Detection · Smells · Remediation · Payload) was **moved** into its own file;
+  the **dimension names carried by this split are the ORIGINAL ones** (dim 2 "Normative
+  reference", dim 3 "Direction", dim 5 "Open decisions"). The subsequent, **separate and
+  deliberate** relabel of dims 2/3 to their canonical `docs/` home names is recorded as
+  **Rev10** below — kept out of this entry so the structural move and the terminology change
+  are each honestly attributable.
+- **Refinement (FORM — the split):** sliced the monolith into **one file
+  per dimension** under the new `references/dimensions/` subdirectory
+  (`dim-01-claude-md.md` … `dim-15-mcp.md`), **mirroring the organization
+  `evolution/log/` already uses**. The six-field body of each dimension migrated
+  unchanged — no prose rewritten, no smell/criterion/payload altered.
+  `dimensions-template.md`
+  **stays at its path** and becomes the **thin index**: it keeps the **transversal
+  doctrine that applies to all dimensions** (the ADAPTABLE preamble, the canonical-`docs/`-names
+  exception for dim 2/3/5/11, the 6-field explanation, the "How the method scores"
+  summary) + a routing table to the 15 files. Added `references/dimensions/README.md`
+  as the subdirectory's own index (mirrors `log/README.md`). Each dimension file gained a
+  "Back path" breadcrumb to the index + `SKILL.md` (consistent with the human-navigability
+  layer). Relative-link depth adjusted in the moved bodies (`../assets/` → `../../assets/`,
+  `../SKILL.md` → `../../SKILL.md`, siblings `docs-taxonomy.md`/`detection-and-smells.md`/
+  `scripts-taxonomy.md`/`installation.md` → `../<sibling>.md`).
+- **Rejected alternative (recorded so it is not re-attacked):** **"one skill per
+  dimension"** was evaluated and **REJECTED** — it would (a) break the single-flow
+  reasoning of Step 4 (the boundary-doctrine confrontation needs all dimensions in one
+  reasoning pass, not 15 isolated skill contexts); (b) **violate the method's own dim 6/9**
+  (trigger collision across 15 near-identical descriptions + the ~1% description-list
+  character budget of dim 9); and (c) force **duplication of cross-cutting assets**
+  (the `docs/`/`scripts/` taxonomies, the shared payloads) across 15 skills, breaking the
+  **self-contained + single-source** invariants. The split is **organizational within
+  `references/`** — it does **not** touch the skill layer.
+- **Inbound links rewritten (integrity verified):** the 9 "Complete doctrine: **dim N**"
+  pointers in `detection-and-smells.md` now target the specific `dimensions/dim-NN-*.md`
+  file (previously the monolith); its top-of-file pointer now names the `dimensions/`
+  collection. `docs-taxonomy.md` (dim 2 pointer) → `dimensions/dim-02-standards.md`;
+  `scripts-taxonomy.md` (dim 8 pointer) → `dimensions/dim-08-hooks.md`. `references/README.md`
+  (the "heart" description + the "home of DOCTRINE" convention note) and `SKILL.md`
+  (Step 2 + the References list) updated to describe the index + per-file structure.
+  The **`1b/2b/6b/7b/8b/9b/14b` block anchors are internal to `detection-and-smells.md`**
+  (not anchors into the template) — they still resolve unchanged. `docs/`, `evolution/`
+  history, `CLAUDE.md` and `.claude/agents/*` references to `dimensions-template.md` still
+  resolve (the file kept its path) and describe the surface generically — not rewritten.
+- **Sources:** none reopened — this is a form refactor aligned with the
+  progressive-disclosure principle **already cited** by the method (dim 1/5/6; the
+  `evolution/log/` split doctrine in `log/README.md`).
+- **Effect:** consulting one dimension now loads **one small file** instead of the 26k-token
+  monolith — the method finally applies its own *just-in-time retrieval* to its reference
+  layer; edit isolation per dimension (mirrors `evolution/log/`); the transversal doctrine
+  stays single-homed in the index (no duplication across the 15 files). **Self-contained /
+  portable invariant preserved** (all links stay internal to the package; no coupling to a
+  repo or external skill introduced). **No dimension content, smell, criterion or payload
+  changed → no MEASURED detection rule changed → harness does not run.** Does **not**
+  advance the frontier; `current-round` untouched.
+
+#### Revision Rev10 — 2026-07-01 · deliberate TERMINOLOGY alignment: dimension names → their canonical `docs/` home names (dim 2 "Normative reference"→"Standards", dim 3 "Direction"→"Vision") · **user-sanctioned**
+
+- **Target:** the **NAMES** of dimensions 2 and 3 across the active spec. This is the
+  content/terminology change that Rev9 deliberately left out.
+- **Critique (naming inconsistency between a dimension and its own canonical home):** dim 2's
+  home is the **prescriptive canonical `docs/standards/`** and dim 3's home is **`docs/vision/`**
+  (Rev1's canonical taxonomy), yet the dimensions were named "Normative reference" and
+  "Direction" — names that **do not match the home the method itself prescribes**. A reader
+  moving between the taxonomy (`standards/`, `vision/`) and the dimension labels
+  ("Normative reference", "Direction") had to re-map by function — the exact friction the
+  canonical-convergence doctrine exists to remove. **User-sanctioned** decision to align the
+  dimension names to their home names.
+- **Refinement (terminology, applied across the active spec):**
+  - **dim 2:** "Normative reference" → **"Standards"**. Retitled `dimensions/dim-02-standards.md`
+    H1; index rows in `dimensions-template.md` and `dimensions/README.md`; and the
+    dimension-label prose that names the dim-2 layer in `dimensions/dim-10-memory.md`
+    (hygiene rows 2 & 6 + "good"), `dimensions/dim-12-boundaries.md` (Diátaxis artifact
+    row + "good"/Detection/Smells/Payload prose), `dimensions/dim-13-conventions.md`
+    ("good"/Detection), and the `assets/skills/quenching-docs/SKILL.md` description
+    ("current standards (architecture/code)").
+  - **dim 3:** "Direction" → **"Vision"**. Retitled `dimensions/dim-03-vision.md` H1; index
+    rows in `dimensions-template.md` and `dimensions/README.md`. (The **generic English word
+    "direction"**, used as a *concept* — "where the platform heads", "content/direction
+    decisions", "explanation of direction" — is **kept**: it is not the dimension label.)
+  - **dim 5 was DELIBERATELY NOT renamed:** its home is `docs/decisions/`, so **"Open
+    decisions" is retained** everywhere (title, index rows, detection). "ADR" was rejected —
+    it does not match the `decisions/` home and would re-break consistency. (The `# 5. ADR:`
+    shorthand in a `detection-and-smells.md` bash-block comment is a pre-existing section
+    marker, not a dimension label — left untouched.)
+  - **"catalog/domain" (dim 11):** kept as-is ("Data / domain catalog", home `docs/catalog/`) —
+    no relabel was actually applied; noted here only to close the loop that dim 11 stays
+    consistent.
+  - The filenames `dim-02-standards.md` / `dim-03-vision.md` / `dim-05-decisions.md` are
+    **unchanged** (they already encode the home slug).
+- **Restored (out-of-scope deletion reverted):** the migration-mapping in `docs-taxonomy.md`
+  had lost `ROADMAP.md`; restored to **`VISION.md` / `ROADMAP.md` → `docs/vision/`** (a
+  content deletion, unrelated to terminology — reverted).
+- **Not rewritten (history is immutable):** the `evolution/log/*` and `evolution/research/*`
+  files (and the `dim-02-docs.md` log filename) keep the **old** term — they record **past
+  states** and are never rewritten (evolution-layer doctrine). The **repo-root `CLAUDE.md`
+  already reads "vision (3)"** — consistent, no edit needed.
+- **Verification:** grep of the active spec (`references/`, `assets/`) shows **zero** remaining
+  dimension-label "Normative reference"/"normative layer"/"Direction —" for dims 2/3 (the sole
+  "external normative references" left in `quenching-writer.md` is a **generic phrase for
+  external regulations**, not the dim-2 name). Full relative-link resolution across
+  `references/dimensions/` passes.
+- **Effect:** dimension names now **match their canonical `docs/` homes** (Standards↔`standards/`,
+  Vision↔`vision/`) — one vocabulary end-to-end, no re-mapping by function. **Self-contained /
+  portable invariant preserved.** **No smell/criterion/grep/payload logic changed** (only display
+  labels/prose) → **no MEASURED detection rule changed → harness does not run.** Does **not**
+  advance the frontier; `current-round` untouched. **Distinct from Rev9** (which was the
+  structural file split, terminology-neutral).
