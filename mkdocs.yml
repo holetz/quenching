@@ -29,6 +29,7 @@ theme:
     - navigation.top
     - navigation.tracking
     - navigation.indexes
+    - navigation.footer
     - content.code.copy
     - search.suggest
     - search.highlight
@@ -48,12 +49,32 @@ plugins:
   - search
 
 nav:
-  - Home: index.md
-  - Method:
-      - Architecture: method/architecture.md
-      - The 15 dimensions: method/dimensions.md
-      - The 8-step workflow: method/workflow.md
-      - Repository layout: method/layout.md
-  - Plugin:
-      - Install & use: plugin/install.md
+  - Introduction: index.md
+
+  - Context:
+      - context/index.md
+      - The knowledge surface & how it rots: context/knowledge-surface.md
+      - The 15 dimensions: method/dimensions/index.md
+      - 1 · CLAUDE.md entry map: method/dimensions/01-claude-md.md
+      - 2 · Standards: method/dimensions/02-standards.md
+      - 3 · Vision: method/dimensions/03-vision.md
+      - 4 · Backlog: method/dimensions/04-backlog.md
+      - 5 · ADR: method/dimensions/05-adr.md
+      - 6 · Skills: method/dimensions/06-skills.md
+      - 7 · Sub-agents: method/dimensions/07-subagents.md
+      - 8 · Hooks: method/dimensions/08-hooks.md
+      - 9 · Commands: method/dimensions/09-commands.md
+      - 10 · Memory: method/dimensions/10-memory.md
+      - 11 · Catalog: method/dimensions/11-catalog.md
+      - 12 · Boundary doctrine: method/dimensions/12-boundary-doctrine.md
+      - 13 · Conventions: method/dimensions/13-conventions.md
+      - 14 · Guardrails: method/dimensions/14-guardrails.md
+      - 15 · MCP: method/dimensions/15-mcp.md
+
+  - Technical guide:
+      - Install & run: plugin/install.md
+      - Using it — the 8-step workflow: plugin/workflow.md
+      - Architecture — how the tool works: method/architecture.md
       - Bundled artifacts: plugin/artifacts.md
+      - Repository layout: method/layout.md
+      - Contributing (maintainers): https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md

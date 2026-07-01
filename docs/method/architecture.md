@@ -1,171 +1,124 @@
-# Architecture of the `quenching-management` skill — how the pieces connect
+# Architecture — how the tool works
 
-This page is the **system map** — how the parts fit together. For what the skill
-is, start with the [Home page](../index.md); for how to trigger it and the
-scenarios it covers, see the [8-step workflow](workflow.md). The instructions the
-agent executes are in
-[SKILL.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/SKILL.md), with per-piece detail in
-[references/](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/README.md) and [assets/](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md).
+This is the Technical guide's reference on **how the parts fit together as a
+system**: how the skill turns "organize this repo's knowledge" into a concrete
+audit and a set of installed artifacts. For *why the harness is the work*, see the
+[Context](../context/index.md) movement; for *what it measures*, see
+[The 15 dimensions](dimensions/index.md); for *how you run it step by step*, see the
+[8-step workflow](../plugin/workflow.md).
 
-This page exists to answer, in one place, **what is being implemented and how
-it operates as a system** — without needing to reconstruct the design by opening
-twelve files. It **references** the spec; it does not rewrite it (each concept
-has **one unique home** — this page links to it).
-
----
+The page answers one question — **how the parts fit together as a system** — and
+then hands each part to its own page. It does not restate them.
 
 ## What the skill does
 
-The skill **applies the method** to a target repo — it audits the repo's
-knowledge surface and installs what's missing. This is what fires when someone
-asks "organize the repo's knowledge". Roadmap: the **8 steps** of
-[SKILL.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/SKILL.md),
-designed below.
+The plugin ships one skill, `quenching-management`. Point it at a repository and
+it does two things, in order: it **audits** the repo's knowledge surface against a
+fixed checklist, then — only with your confirmation — it **installs** the artifacts
+that close the gaps. The instructions the agent follows live in
+[`SKILL.md`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/SKILL.md);
+the per-piece detail lives in
+[`references/`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/README.md)
+and the installable payloads in
+[`assets/`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md).
 
-> The method is also a **living method** — its dimensions, smells and payloads
-> are improved over time. That work is **maintainer tooling of the development
-> repo, never shipped or installed**, so it is out of scope for this page;
-> contributors see [CONTRIBUTING.md](https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md).
+## The governing axis — audit by default, install with confirmation
 
----
-
-## The audit/install flow
-
-The flow is a **single line of 8 steps** (defined in [SKILL.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/SKILL.md)). Each
-step consults a reference piece and/or produces/consumes an artifact:
+Everything hangs off one axis: **the report always comes first; installation is a
+separate, explicit, item-by-item step.** The audit is read-only and complete (it
+scores every dimension); installation only happens after you say yes, one artifact
+at a time, and it never removes anything you already have without an OK.
 
 ```
-                                 [ target repo ]
-                                       │
- Step 1  derive the shape  ............│..........  read-only; discovers language,
-          (+ note the profile)         │             taxonomy, where each layer lives
-                                       ▼
- Step 2  inventory 15 dimensions ......│..........  detection-and-smells.md (the greps)
-                                       │             dimensions-template.md (what to measure)
-                                       ▼
- Step 3  score: Present/Partial/......│..........  4 states + file:line evidence
-          Drifted/Absent              │
-                                       ▼
- Step 4  prioritized report ...........│..........  report-format.md (the skeleton)
-          + modulate emphasis by profile│            repo-profiles.md (signals → emphasis)
-                                       │             quenching-roadmap (sequenced order)
-                                       ▼
- Step 5  propose → INSTALL with OK ....│..........  installation.md (gap → payload)
-          (item-by-item)               │             assets/ (the stamped payloads)
-                                       ▼
- Step 6  items without payload → propose│..........  dims 3 (direction) · 10 (memory) · 12
-          (human content decision)     │             (boundaries): only text, never applies
-                                       ▼
- Step 7  flag deprecables .............│..........  what the package payload replaces
-                                       ▼
- Step 8  maintenance cycle ............│..........  3 triggers (PR · release · command)
-          (the base is alive)          │             + orchestration contract of links
-                                       ▼
-                        [ .claude/ + docs/ of target, alive ]
+   [ target repo ]
+         │
+         ▼
+   ┌───────────────┐   read-only — derive the repo's shape, score all 15
+   │     AUDIT     │   dimensions Present / Partial / Drifted / Absent,
+   └───────────────┘   with file:line evidence
+         │
+         ▼
+   ┌───────────────┐   prioritized gaps, deprecables, and an install plan —
+   │    REPORT     │   emphasis tuned to the repo's profile
+   └───────────────┘
+         │  (your OK, item by item)
+         ▼
+   ┌───────────────┐   stamp the package payloads into .claude/ and docs/,
+   │    INSTALL    │   adapted to the repo; three dimensions are proposed,
+   └───────────────┘   never written (human content)
+         │
+         ▼
+   ┌───────────────┐   hooks, a re-audit command and sub-agents keep the
+   │  MAINTENANCE  │   surface fresh between audits
+   └───────────────┘
+         │
+         ▼
+   [ a living .claude/ + docs/ ]
 ```
 
-**The axis that ties everything together:** *audit-by-default + install-with-confirmation*.
-The report always comes **first** (Steps 1-4); installation (Steps 5-7) is an
-explicit second step, **item-by-item, with OK**; Step 8 ensures the base
-**doesn't rot** afterwards.
+The prose form of these stages — the 8 steps and the three usage scenarios — is
+the [workflow page](../plugin/workflow.md). This page stays at the level of *which
+parts exist and how they relate*.
 
----
+## Fixed vs. adaptive — what converges, what the repo keeps
 
-## The 15 dimensions and the artifacts that fill them
+The method is **portable**: it does not impose a foreign structure. But "portable"
+does not mean "anything goes" — some things **adapt to the repo** and some things
+the repo **converges toward**. Keeping this line clear is what stops the method
+from either fighting the repo or letting every repo drift into its own shape. Every
+dimension page tags its canonical home **Fixed** or **Adaptive** using exactly this
+distinction.
 
-The **15 dimensions** ([references/dimensions-template.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/dimensions-template.md))
-are the coverage checklist: each has purpose · "good" · detection · smells ·
-remediation · **payload**. The payload is the artifact from [assets/](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md)
-that the method **installs** to close the gap. The map below shows **which piece
-addresses which dimension** (detail and install-in: [assets/README.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md)
-and [references/installation.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/installation.md)):
+**Adaptive — the repo's own convention wins.** The method derives these in Step 1
+and bends its artifacts to fit:
 
-| Dimension | Piece that addresses it | Type |
-| --- | --- | --- |
-| 1 · CLAUDE.md / context budget | `assets/skills/quenching-map/` + hook `validate-claude-md.py` | skill + hook |
-| 2 · normative reference & `docs/` | `assets/skills/quenching-docs/`, `quenching-standards/`, `quenching-announcement/` + scaffold `assets/docs/` ([docs-taxonomy.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/docs-taxonomy.md)) | skills + skeleton |
-| 3 · direction / VISION | — (only proposes; human content) | Step 6 |
-| 4 · backlog | scaffold `assets/docs/backlog/` | skeleton |
-| 5 · ADR / decisions | scaffold `assets/docs/decisions/` | skeleton |
-| 6 · skills | `assets/skills/quenching-skills/` (+ recognizes domain artifact) | skill |
-| 7 · sub-agents | `assets/agents/{quenching-auditor,quenching-writer}.md` | sub-agents |
-| 8 · hooks (+ `scripts/` home) | the 6 hooks from [assets/hooks/](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/hooks/) (see below) + scaffold `assets/scripts/` ([scripts-taxonomy.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/scripts-taxonomy.md): hook calls script) | hooks + skeleton |
-| 9 · commands | `assets/commands/quenching-reaudit/` (composable command, installs as skill) | skill |
-| 10 · memory | — (only proposes; human content) | Step 6 |
-| 11 · catalog / domain | scaffold `assets/docs/catalog/` + templates | skeleton |
-| 12 · boundary doctrine | — (only proposes the home; human content) | Step 6 |
-| 13 · conventions | `assets/skills/quenching-map/` + frontmatter templates | skill |
-| 14 · guardrails | `assets/skills/quenching-guardrails/` + enforcement hook `protect-generated.py` | skill + hook |
-| 15 · MCP | `assets/skills/quenching-config/` | skill |
+- the content **language** and the **naming/prefix** of skills and agents;
+- **where** a layer physically lives (the exact path of the CLAUDE.md(s), the
+  `.claude/` location);
+- **which** homes actually apply — a repo with no data gets no `catalog/`;
+- the **priority and emphasis** ordering, tuned to the repo's profile.
 
-> **Three dimensions never install (3 · 10 · 12)** — they are **human content
-> decisions**. The method only **proposes** the text/diff; the repo writes it.
-> This is the limit "modulate the METHOD, never define the CONTENT".
+**Fixed — canonical, the repo converges with your OK.** These are prescriptive so
+that anyone moving between repos sees the *same* tree of the *same* names instead
+of re-learning each one:
 
----
+- the `docs/` home tree — `standards/`, `decisions/`, `vision/`, `backlog/`,
+  `guides/`, `reference/`, `catalog/`, `communications/`, `presentations/`
+  (single source:
+  [`docs-taxonomy.md`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/docs-taxonomy.md));
+- the `scripts/` purpose tree — `ci/`, `checks/`, `<gen>/`, `maintenance/`, `dev/`
+  (single source:
+  [`scripts-taxonomy.md`](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/scripts-taxonomy.md));
+- **English kebab-case** folder names; the four scoring states; the *"X defines Y"*
+  rule (a generated artifact is never hand-edited).
 
-## The 6 hooks — what keeps the base fresh between audits
+Variant names — `docs/arquitetura/`, `docs/adr/`, a single `VISION.md` — are
+**migration candidates**, proposed for convergence and never renamed or deleted
+without your confirmation.
 
-Dimension 8 installs hooks that provide **automatic freshness** (Step 8). Most
-**observe/propose**, one **always blocks**, one **can block if configured** —
-the *guidance* (probabilistic) × *enforcement* (deterministic) distinction is
-central:
+## The four kinds of pieces
 
-| Hook | Event | Role | Blocks? |
-| --- | --- | --- | --- |
-| `propose-knowledge-delta.py` | `Stop` | proposes CLAUDE.md/memory delta at end of turn | no |
-| `reinject-conventions.py` | `SessionStart` (compact/clear/resume) | re-injects conventions that `/compact` would erase | no |
-| `audit-config-change.py` | `ConfigChange` | records who/when changed the surface (append-only) | no |
-| `propose-docs-home.py` | `PostToolUse` (Write\|Edit) | proposes the canonical home for a doc written outside it | no |
-| `protect-generated.py` | `PreToolUse` (Write\|Edit) | **BLOCKS** editing of generated target artifacts | **yes** |
-| `run-validation.py` | `Stop` | at end of turn **CALLS the target's validation script** (`scripts/checks`/`ci`) on altered files and proposes the result | optional (`blockOnFail`) |
+Read top to bottom, the system is just four kinds of parts, each with its own home:
 
-Detail of wiring (each hook only runs if **wired** in `settings.json`) and
-output semantics: [references/installation.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/installation.md) and dim 8
-in [references/dimensions-template.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/dimensions-template.md).
+- **Dimensions** — the coverage checklist the audit scores. What each one is, why
+  it belongs, and how it drifts is on its own page under
+  [The 15 dimensions](dimensions/index.md).
+- **Payloads** — the artifacts the method installs to close a gap (skills, hooks,
+  sub-agents, `docs/`/`scripts/` scaffolds, templates). The full manifest is
+  [Bundled artifacts](../plugin/artifacts.md).
+- **Hooks** — the subset of payloads that keep the surface fresh *between* audits.
+  Most observe or propose; one always blocks. The table of all six lives in
+  [Bundled artifacts](../plugin/artifacts.md).
+- **Orchestration** — the contract that lets these compose without runaway: a
+  **hook** observes/proposes (at most blocks), a **command or skill** applies *with
+  your OK*, a **sub-agent** returns a condensed summary. The link that mutates the
+  base always has a human in the loop; the runtime caps sub-agent recursion. The
+  step-by-step form is Step 8 of the [workflow](../plugin/workflow.md).
 
----
+## A living method
 
-## The orchestration contract — how the links compose
-
-The Step 8 pieces don't live in isolation; they **chain** under a contract
-(detail in the "Orchestration contract of links" subsection of
-[SKILL.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/SKILL.md)):
-
-- **Hook** = automatic trigger that **OBSERVES / PROPOSES / at most BLOCKS** —
-  never mutates the base alone.
-- **Command / skill** = on-demand step that **APPLIES, with OK** — the only link
-  that changes the base.
-- **Sub-agent** = isolated context that returns **condensed summary** — never
-  floods the main context.
-
-The barrier against "chaining too much" is **double**: human (the link that
-mutates always has OK) and deterministic (the runtime caps sub-agent recursion).
-
----
-
-## Why the active spec describes only the present
-
-The method pages (SKILL.md / references / assets) describe **only the present** —
-the system as it is today. The method is nonetheless a **living method**: its
-*history* (how it got here — rounds, revisions, superseded decisions) and the
-**eval-harness** that gates rule changes (fixtures with planted gaps, measuring
-hit rate, false-negative and cost) live **outside the shipped package**, in the
-development repo's maintainer tooling. None of that is shipped or installed into a
-target repo. Contributors: see [CONTRIBUTING.md](https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md). That is why
-you won't find "before/now" or round tags anywhere in the method spec.
-
----
-
-## Where to read what (depth index)
-
-| I want… | Go to |
-| --- | --- |
-| Understand what it is | [Home](../index.md) |
-| Know how to trigger it and the scenarios | [The 8-step workflow](workflow.md) |
-| See the whole system at once | **this page** |
-| See how the repository is laid out | [Repository layout](layout.md) |
-| Execute the audit (the 8 steps) | [SKILL.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/SKILL.md) |
-| Detail of each dimension / smell / detection | [references/](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/references/README.md) |
-| What each payload installs | [assets/README.md](https://github.com/holetz/claude-quenching/blob/main/plugins/claude-quenching/skills/quenching-management/assets/README.md) |
-| Contribute to the method itself | [CONTRIBUTING.md](https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md) |
+The skill describes only the **present** — the system as it is today. Its history
+(how it got here) and the eval harness that gates rule changes are **maintainer
+tooling of this repo, never shipped or installed**, so they are out of scope here.
+Contributors: see
+[CONTRIBUTING.md](https://github.com/holetz/claude-quenching/blob/main/CONTRIBUTING.md).

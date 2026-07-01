@@ -58,7 +58,7 @@ One skill, three layers:
 
 ### Operation model: `audit-by-default + install-with-confirmation`
 
-The report always comes first; installation is a separate, explicit, item-by-item step that uses the **package's** artifact (the single evolved source), flagging any pre-existing equivalent in the target as **deprecable** rather than duplicating it — and never removing it without an explicit OK. Three dimensions are **human-content decisions** the method only *proposes*, never writes: **direction/VISION (3)**, **memory (10)**, **boundary doctrine (12)**. The line the method never crosses: it installs *structure/method*, never *content/direction*.
+The report always comes first; installation is a separate, explicit, item-by-item step that uses the **package's** artifact (the single evolved source), flagging any pre-existing equivalent in the target as **deprecable** rather than duplicating it — and never removing it without an explicit OK. Three dimensions are **human-content decisions** the method only *proposes*, never writes: **vision (3)**, **memory (10)**, **boundary doctrine (12)**. The line the method never crosses: it installs *structure/method*, never *content/direction*.
 
 ## Working on the method itself — read this before editing
 
