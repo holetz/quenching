@@ -1,89 +1,83 @@
-# MkDocs Material toolkit
+# MkDocs Material toolkit (syntax reference)
 
-The Material features that carry the "engaging Claude-docs look" — and, for
-each, the `markdown_extensions` it needs in `mkdocs.yml`. Enable an extension
-**before** using its syntax, or `--strict` fails.
+The mechanical *how* — exact syntax and the `mkdocs.yml` each element needs.
+*When/why* to use them is [visual-language.md](visual-language.md). Enable an
+extension **before** using its syntax, or `--strict` fails.
 
-## Extensions to enable (superset for a rich site)
+## Extensions — the rich superset
 ```yaml
 markdown_extensions:
   - admonition            # !!! note / tip / warning callouts
-  - attr_list             # {.class} / {: attrs } — needed by grids, buttons
-  - md_in_html            # Markdown inside <div> — needed by card grids
+  - attr_list             # { .class } / { #id } — cards, buttons, badges
+  - md_in_html            # markdown inside <div> — needed by card grids & hero
   - tables
   - toc:
-      permalink: true
-  - pymdownx.superfences  # nested code / content in fences
+      permalink: true     # stable anchors for deep-linking (LLM-readable)
+  - pymdownx.superfences: # nested fences + custom fences (Mermaid)
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.details      # ??? collapsible admonitions
   - pymdownx.tabbed:      # content tabs
       alternate_style: true
-  - pymdownx.emoji:       # :material-icon: / :rocket: signposts
+  - pymdownx.emoji:       # :material-icon: / :octicons-*: signposts
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 ```
-The repo currently ships the first block (admonition, tables, toc, superfences,
-highlight, inlinehilite, details). Add `attr_list`, `md_in_html`,
-`pymdownx.tabbed`, `pymdownx.emoji` when a page starts using grids, tabs or
-icons — don't enable what no page uses.
 
-## Theme features worth turning on
+## Theme features worth enabling
 ```yaml
 theme:
   features:
-    - navigation.instant      # SPA-like, fast page loads
+    - navigation.instant          # SPA-like nav (see the document$ note below)
     - navigation.instant.progress
-    - navigation.tracking     # URL follows the active anchor
-    - navigation.top          # back-to-top button
-    - navigation.indexes      # section landing pages
-    - navigation.footer       # prev/next footer — powers the "one read"
+    - navigation.indexes          # section landing pages
+    - navigation.footer           # prev/next — powers the "one read"
+    - navigation.tracking
+    - navigation.top
     - toc.follow
-    - content.code.copy       # copy button on code blocks
-    - content.code.annotate   # (1) annotations inside code
-    - content.tabs.link       # tabs sync across the page
+    - content.code.copy           # copy button (copyable examples)
+    - content.code.annotate       # (1) inline code annotations
+    - content.tabs.link           # tabs sync across the page
     - search.suggest
     - search.highlight
 ```
 
 ## Snippets
 
-### Admonitions — meaning by color
+### Admonitions
 ```markdown
 !!! tip "Applied tip"
-    The right position on the spectrum depends on the stakes.
+    The right call depends on the stakes.
 
 !!! warning "Don't"
-    Never remove a pre-existing artifact without an explicit OK.
+    Never remove an artifact without an explicit OK.
 
-??? note "Why it's built this way (click to expand)"
-    Progressive disclosure: the skimmer skips this; the curious opens it.
+??? note "Deep detail (collapsed by default)"
+    The skimmer skips this; the curious expands it.
 ```
+Types carry meaning: `tip` (do this) · `warning`/`danger` (risk) · `note`/`info`
+(aside) · `abstract` (TL;DR) · `example` · `quote` · `success`.
 
-### Card grid — "choose your path" (needs `attr_list` + `md_in_html`)
+### Card grid (needs `attr_list` + `md_in_html`)
 ```markdown
 <div class="grid cards" markdown>
 
--   :rocket: **Quick start**
+-   :material-rocket: **Quick start**
 
     ---
 
-    Run it in one command and see output in 30 seconds.
+    First win in 30 seconds.
 
     [:octicons-arrow-right-24: Get started](install.md)
-
--   :material-map: **The 8-step workflow**
-
-    ---
-
-    How the tool actually thinks, step by step.
-
-    [:octicons-arrow-right-24: Read the workflow](workflow.md)
 
 </div>
 ```
 
-### Content tabs — one concept, many contexts (needs `pymdownx.tabbed`)
+### Content tabs (needs `pymdownx.tabbed`)
 ```markdown
 === "macOS / Linux"
     ```bash
@@ -95,29 +89,90 @@ theme:
     ```
 ```
 
-### Code annotations (needs `content.code.annotate` + `superfences`)
+### Mermaid (needs the custom fence above)
+````markdown
+```mermaid
+flowchart TD
+    A([start]) --> B[do the thing]
+    B -->|on success| C([done])
+    B -. on failure .-> A
+```
+````
+Renders theme-aware (light/slate). Use `flowchart`, `sequenceDiagram`,
+`stateDiagram-v2`, `graph`. Keep node labels short; `<br/>` wraps lines.
+
+### Code annotations (needs `content.code.annotate`)
 ````markdown
 ```yaml
 nav:
   - Home: index.md   # (1)!
 ```
 
-1.  Labels here are the reader's map — make them descriptive, not filenames.
+1.  Labels are the reader's map — make them descriptive, not filenames.
 ````
 
 ### Buttons (needs `attr_list`)
 ```markdown
 [Get started](install.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/...){ .md-button }
+[GitHub](https://github.com/…){ .md-button }
 ```
 
-## Palette
-The repo uses `indigo`. Keep it unless the user wants a brand shift. Both a
-light (`default`) and dark (`slate`) scheme with a toggle are already wired —
-preserve the toggle; a site that only looks right in one mode reads as broken.
+### Badges (info bar under an H1; needs `attr_list`)
+Material's built-in badge components:
+```markdown
+:material-check-circle:{ .mdx-badge } **Status** · stable
+```
+Simpler, portable version — small inline labels with a CSS class you define in
+`extra.css` (e.g. `.q-badge { … }`):
+```markdown
+<span class="q-badge">Audience: implementer</span>
+<span class="q-badge">~10 min</span>
+```
+
+### Hero (landing first-fold; needs `md_in_html` + `attr_list` + a CSS class)
+```markdown
+<div class="hero" markdown>
+
+<p class="hero__eyebrow">Product · tagline</p>
+
+# Name { .hero__title }
+
+One-sentence promise.
+{ .hero__tag }
+
+[Get started](install.md){ .md-button .md-button--primary }
+
+</div>
+```
+The `#` inside stays the real page H1 (MkDocs uses it as the title); style it and
+hide its `.headerlink` via CSS. If the repo already ships a hero component, reuse
+its classes instead of adding a second.
+
+## Palette (keep the repo's)
+```yaml
+theme:
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+```
+Always keep both schemes + the toggle — a site that only looks right in one mode
+reads as broken.
+
+## Custom CSS / JS (last resort)
+Wire via `extra_css:` / `extra_javascript:` (paths relative to `docs/`). Two rules:
+- **Namespace everything** (`.q-*`) so it can't leak into Material internals.
+- **Instant-nav gotcha:** with `navigation.instant`, `DOMContentLoaded` fires
+  once. Attach behavior through Material's observable so it re-runs per page:
+  ```javascript
+  document$.subscribe(function () { /* (re)initialize here */ });
+  ```
+- Honor `@media (prefers-reduced-motion: reduce)` for any animation.
 
 ## When to reach past Material
-Almost never. A card grid, tabs, admonitions and annotations cover the
-Claude-docs feel. Only add `extra_css` for something Material genuinely can't
-express (a true hero band, a bespoke landing). Custom CSS is maintenance debt —
-justify it before adding it.
+Almost never. Cards, tabs, admonitions, Mermaid, annotations and badges cover the
+Claude-docs feel. Add CSS only for what Material genuinely can't express (a true
+hero band, a stat counter). Custom code is maintenance debt — justify it first.

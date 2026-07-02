@@ -1,112 +1,138 @@
 ---
 name: mkdocs-storyteller
 description: >-
-  Use when turning raw Markdown (READMEs, specs, evolution notes, a pasted
-  document) into an engaging, intuitive, technically-deep MkDocs Material
-  documentation site — restructuring the .md into a story-driven page tree,
-  wiring the nav, and previewing it live on a local mkdocs dev server. This
-  skill authors the STORY; MkDocs renders it. Triggers: "transformar os md em
-  mkdocs", "montar/reconstruir a documentação", "reconstruir o /docs", "deixar
-  os docs mais engajantes/palatáveis", "rodar o mkdocs local", "subir o preview
-  da doc", "make the docs a joy to read".
+  Use when turning raw Markdown (READMEs, specs, internal notes, a pasted
+  document, or an existing docs/ tree) into a MkDocs Material documentation site
+  that humans want to read AND agents can reuse, copy, and reconstruct precisely.
+  It diagnoses the sources, designs an intent-based information architecture,
+  rewrites each page into scannable technical storytelling, applies a visual
+  language (icons, cards, tabs, Mermaid, badges, hero), makes the output
+  LLM-readable, and previews it live. Triggers: "transformar os md em mkdocs",
+  "montar/reestruturar a documentação", "reconstruir o /docs", "documentação
+  mais engajante/palatável", "organizar a navegação dos docs", "criar landing da
+  doc", "rodar/subir o mkdocs local", "make the docs a joy to read", "docs an LLM
+  can reuse".
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # mkdocs-storyteller
 
-Turn a pile of `.md` into documentation people *want* to read — the way the
-[Claude docs](https://code.claude.com/docs/en/claude-directory) read: intent
-first, scannable, one idea per page, technical depth on tap. You do the
-**storytelling and structure**; MkDocs (a Python lib) does the rendering; the
-reader gets a live local site to judge the result.
+Turn a pile of Markdown into documentation that is a **joy for humans** and a
+**reliable substrate for agents** — the way the [Claude Code](https://code.claude.com/docs/en/claude-directory)
+and [Claude Platform](https://platform.claude.com/docs) docs read: intent-first
+navigation, "choose the right file" tables, actionable pages, elegant restraint.
 
-> **Division of labor.** This skill decides *what each page says, in what order,
-> and in what shape*. It does **not** reinvent rendering — that is MkDocs
-> Material's job. It does **not** invent facts — every claim traces back to a
-> source `.md` or the codebase.
+> **Division of labor.** This skill owns three things: the **story** (what each
+> page says and in what order), the **information architecture** (how a reader
+> navigates by intent), and **LLM-readability** (how an agent reuses it). MkDocs
+> Material owns **rendering**. You never invent facts — every claim traces to a
+> source `.md`, the codebase, or a link the user gave you.
 
-## The narrative loop (run in order)
+## The three audiences (design for all, never average them)
 
-### 1 — Derive the current shape (read-only)
-Before writing anything, know the terrain:
-- **Sources**: which `.md` files are the raw material (`git ls-files '*.md'`,
-  READMEs, specs, the doc the user pasted). Note who each one is *for*.
-- **Site state**: read `mkdocs.yml` (theme, `markdown_extensions`, `plugins`,
-  `nav`) and the existing `docs/` tree. Is there a site already, or greenfield?
-- **Toolchain**: how the site runs — here it's `uv` + `make docs-serve` /
-  `make docs-build` (see [references/live-preview.md](references/live-preview.md)).
+Every page serves one of three readers primarily. Know which before you write:
 
-Report the shape in two lines before proposing changes.
+| Reader | Wants | Optimize for |
+| --- | --- | --- |
+| **Human — skimmer** | "Is this for me? Where do I start?" | hook, scannability, a clear next step |
+| **Human — implementer** | "How exactly do I do this?" | real examples, exact commands, edge cases |
+| **Agent (LLM)** | "What can I copy, reconstruct, and cite?" | stable headings, contracts, TL;DR blocks, copyable code |
 
-### 2 — Design the story arc (the part that matters)
-Documentation is a **read**, not a dump. Draft the arc first, on paper:
-- **Audience & intent** per section — a newcomer skimming vs. an engineer
-  implementing want different pages. Split them; don't average them.
-- **One spine, prev→next.** Order pages so each answers the question the last
-  one raised. A landing page hooks with the *problem*, then the *solution*,
-  then *how*.
-- **One idea per page.** If a page needs two H1-sized ideas, it's two pages.
-- **Progressive disclosure.** Lead with the intent and the shortest path;
-  push depth into later sections, tabs, and collapsible admonitions — never
-  make the reader scroll past what they don't need yet.
+A page that tries to serve all three at once serves none. Split them — or layer
+them with progressive disclosure. See [llm-readability.md](references/llm-readability.md).
 
-Map each source `.md` → target page(s). Full patterns:
-[references/storytelling.md](references/storytelling.md).
+## The operating loop (run in order)
 
-### 3 — Author each page for engagement *without* losing rigor
-Rewrite, don't just relocate. Every page earns its keep with:
-- a **one-sentence hook** up top (what this is / why you're here),
-- **scannable structure** — short paragraphs, meaningful headings, tables for
-  anything comparative,
-- **the "why"**, not only the "what" — the reason a rule exists is the part
-  that sticks,
-- **runnable, real examples** (real package names, real commands — no `foo`),
-- **Material affordances** to carry meaning: admonitions (`!!! note/tip/warning`),
-  content tabs, card grids for "choose your path", code annotations, emoji/icons
-  as signposts. The toolkit + copy-paste snippets + the extensions each needs:
-  [references/material-toolkit.md](references/material-toolkit.md).
+### 1 — Diagnose before writing (read-only)
+Map the terrain with `rg`/Glob before touching anything:
+- **Sources & site**: `rg --files -g '*.md'`, the READMEs, `mkdocs.yml`
+  (theme, extensions, plugins, `nav`), the existing `docs/` tree.
+- **Reader model**: who is this *for*, what is their intent and technical
+  maturity, what journey are they on.
+- **Faults**: gaps, duplication, orphan pages, weak titles, walls of text, and
+  facts smeared across files.
+- **Audience split**: tag each chunk human-skimmer / implementer / agent.
 
-Keep the technical altitude high — palatable is not shallow. The goal is a
-reader who understands *more* because it was pleasant, not less.
+Report the diagnosis before proposing structure. Method:
+[information-architecture.md](references/information-architecture.md) · agent lens:
+[llm-readability.md](references/llm-readability.md).
 
-### 4 — Wire the navigation
-Update `mkdocs.yml` `nav:` to match the new arc (labels are the reader's map —
-make them descriptive, e.g. `The knowledge surface & how it rots`, not
-`knowledge-surface`). Enable any `markdown_extensions`/`features` the new pages
-depend on. Keep internal links **relative** (`context/index.md`) so
-`--strict` resolves them.
+### 2 — Design the architecture (the part that matters most)
+Draft the site as a **journey**, not a file list:
+- A narrative spine — **landing (promise) → problem → solution → mental model →
+  quick start → workflow → reference → examples → maintenance** — each stage
+  answering the question the last one raised.
+- **Navigate by intent, not filename** ("Get started", "Guides", "Reference"),
+  Databricks-style usage paths.
+- **One central idea per page.** Two H1-sized ideas → two pages.
+- Every section must earn *"why should I keep reading?"*.
 
-### 5 — Preview it live
-Spin up the dev server and hand the reader a URL to judge:
+Full method (journeys, nav wiring, the arc): [information-architecture.md](references/information-architecture.md).
+
+### 3 — Write irresistible-but-objective pages
+Rewrite, never relocate. Each page carries: a strong **hook**, a **scannable
+summary**, the **fast path**, **progressive depth**, **real examples**, tables
+for comparisons, flows for processes, diagrams for architecture, callouts for
+risk/tips/decisions/tradeoffs, and a **clear next step**. Beautiful but
+technically dense — never empty marketing. Craft & voice:
+[storytelling.md](references/storytelling.md). Ready skeletons per page type:
+[page-patterns.md](references/page-patterns.md).
+
+### 4 — Apply the visual language with intent
+Every visual element must carry meaning, never decorate. Choose the right form —
+icons/emoji as semantic signposts, cards for "choose your path", tabs for
+platforms/profiles/scenarios, Mermaid for flows/maps/architecture, badges for
+status/audience/difficulty/read-time, a hero for the landing's first fold. Which
+form for which content: [visual-language.md](references/visual-language.md).
+Exact syntax + required extensions: [material-toolkit.md](references/material-toolkit.md).
+
+!!! warning "Images are a proposal, not a default"
+    Before adding any external image, **propose the strategy first** — real
+    screenshot · Mermaid diagram · local asset · generated image — and never hide
+    a critical fact only inside an image. Rules in [visual-language.md](references/visual-language.md).
+
+### 5 — Make it LLM-readable too
+The same page that delights a human must let an agent reuse it: descriptive,
+stable headings; predictable anchors; `TL;DR for agents` blocks where useful;
+copyable examples; explicit contracts; a glossary for core terms; consistent
+relative links; a concept map/index. Doctrine: [llm-readability.md](references/llm-readability.md).
+
+### 6 — Preview it live
+Spin up the dev server and hand over a URL to judge:
 ```bash
-make docs-serve      # → http://127.0.0.1:8000, live-reloads on every save
+make docs-serve      # → http://127.0.0.1:8000, live-reload; or: uv run mkdocs serve
 ```
-Run it in the background, confirm it bound, and give the user the local URL.
-Full runbook (including plain `uv run mkdocs serve`, port conflicts, and how to
-read the reload log): [references/live-preview.md](references/live-preview.md).
+Run it in the background, confirm it bound, report the URL. Runbook:
+[live-preview.md](references/live-preview.md).
 
-### 6 — Gate on a strict build
-Before calling it done:
-```bash
-make docs-build      # mkdocs build --strict — fails on any broken ref/nav
-```
-A green strict build is the definition of done. Fix every warning it prints
-(dangling links, pages missing from `nav`, unknown extensions).
+### 7 — Gate on quality (definition of done)
+Nothing ships until it passes [engagement-checklist.md](references/engagement-checklist.md),
+whose hard gate is a green **`uv run mkdocs build --strict`**.
 
 ## Invariants
-- **Story, not rendering.** Restructure and rewrite `.md`; let MkDocs render.
-  Reach for CSS only when a Material feature genuinely can't express the idea.
-- **No invented facts.** Every claim resolves to a source `.md` or the code. A
-  gap in the sources is a gap in the docs — flag it, don't fabricate it.
+- **Story, IA & agent-readability — not rendering.** Restructure and rewrite the
+  Markdown; let MkDocs render. Reach for custom CSS/JS only when a Material
+  feature genuinely can't express the idea (it's maintenance debt — justify it).
+- **No invented facts.** Every technical claim resolves to a source `.md`, the
+  code, or a provided link. A gap in the sources is a gap in the docs — flag it.
+- **Beautiful *and* dense.** Never trade technical usefulness for polish. No
+  empty marketing, no visual without a function, no page that reads like a README
+  dump.
 - **The repo's convention wins.** Match the existing palette, tone, extensions
-  and file layout unless the user asks to change them. Propose upgrades; don't
-  impose them.
-- **`--strict` is the bar.** Nothing ships with a red build.
+  and layout unless asked to change them. Propose upgrades; don't impose them.
+- **`--strict` is the floor**, not the ceiling.
+- **Don't touch the shipped plugin** (`plugins/…`) or unrelated local changes
+  without explicit confirmation.
 
-## References
-- [references/storytelling.md](references/storytelling.md) — the narrative
-  patterns (arc, page shapes, the Claude-docs voice, progressive disclosure).
-- [references/material-toolkit.md](references/material-toolkit.md) — MkDocs
-  Material features → the engaging look, with snippets and required extensions.
-- [references/live-preview.md](references/live-preview.md) — running the dev
-  server, the strict build gate, and troubleshooting.
+## Reference map
+
+| When you're… | Read |
+| --- | --- |
+| Diagnosing sources & designing the site | [information-architecture.md](references/information-architecture.md) |
+| Writing the prose of a page | [storytelling.md](references/storytelling.md) |
+| Reaching for a page skeleton | [page-patterns.md](references/page-patterns.md) |
+| Deciding which visual to use | [visual-language.md](references/visual-language.md) |
+| Needing the exact MkDocs syntax | [material-toolkit.md](references/material-toolkit.md) |
+| Making the page reusable by agents | [llm-readability.md](references/llm-readability.md) |
+| Running / previewing / building | [live-preview.md](references/live-preview.md) |
+| Deciding if it's done | [engagement-checklist.md](references/engagement-checklist.md) |
