@@ -1,138 +1,125 @@
 ---
 name: mkdocs-storyteller
 description: >-
-  Use when turning raw Markdown (READMEs, specs, internal notes, a pasted
-  document, or an existing docs/ tree) into a MkDocs Material documentation site
-  that humans want to read AND agents can reuse, copy, and reconstruct precisely.
-  It diagnoses the sources, designs an intent-based information architecture,
-  rewrites each page into scannable technical storytelling, applies a visual
-  language (icons, cards, tabs, Mermaid, badges, hero), makes the output
-  LLM-readable, and previews it live. Triggers: "transformar os md em mkdocs",
-  "montar/reestruturar a documentação", "reconstruir o /docs", "documentação
-  mais engajante/palatável", "organizar a navegação dos docs", "criar landing da
-  doc", "rodar/subir o mkdocs local", "make the docs a joy to read", "docs an LLM
-  can reuse".
+  Use to GENERATE documentation, not just prettify Markdown. Give it raw
+  Markdown, a README, specs, notes, existing docs, or a whole docs/ tree and it
+  runs a full editorial studio — diagnose → information architecture → write →
+  visual design → LLM-readability → hard critique → reconstruct → validate →
+  deliver with a quality score — producing a MkDocs Material site humans want to
+  read, engineers can execute, and LLMs can copy, navigate and reconstruct.
+  Triggers: "transformar/gerar os md em mkdocs", "montar/reestruturar a
+  documentação", "reconstruir o /docs", "documentação mais engajante", "organizar
+  a navegação dos docs", "criar landing da doc", "rodar/subir o mkdocs local",
+  "documentação que um LLM consiga reutilizar", "make the docs a joy to read",
+  "docs studio", "score the docs".
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
-# mkdocs-storyteller
+# mkdocs-storyteller — the documentation studio
 
-Turn a pile of Markdown into documentation that is a **joy for humans** and a
-**reliable substrate for agents** — the way the [Claude Code](https://code.claude.com/docs/en/claude-directory)
-and [Claude Platform](https://platform.claude.com/docs) docs read: intent-first
-navigation, "choose the right file" tables, actionable pages, elegant restraint.
+A **documentation-generation machine**, not a style guide. It turns raw material
+into a MkDocs Material site that is, at once, a joy to read, executable by
+engineers, and a reliable substrate for agents — the way the
+[Claude Code](https://code.claude.com/docs/en/claude-directory),
+[Claude Platform](https://platform.claude.com/docs) and Databricks docs read.
 
-> **Division of labor.** This skill owns three things: the **story** (what each
-> page says and in what order), the **information architecture** (how a reader
-> navigates by intent), and **LLM-readability** (how an agent reuses it). MkDocs
-> Material owns **rendering**. You never invent facts — every claim traces to a
-> source `.md`, the codebase, or a link the user gave you.
+It thinks in six roles and works in cycles: **information architect · technical
+editor · experience designer · critical reviewer · LLM reader · build validator.**
+
+> **Division of labor.** This skill owns the **story, the architecture, and
+> LLM-readability**; MkDocs owns **rendering**. It never invents facts — every
+> claim traces to a source (see [source-ledger.md](references/source-ledger.md)).
+
+## Non-negotiables (read first)
+- **Contracts before edits.** You may not touch a page until you have produced the
+  six intermediate contracts ([output-contracts.md](references/output-contracts.md)).
+- **Score everything.** Every page is scored against the rubric
+  ([quality-rubric.md](references/quality-rubric.md)); a page below threshold is
+  **not done**.
+- **Beauty never replaces precision** — image ≠ fact, slogan ≠ contract, visual ≠
+  structure ([signature-experience.md](references/signature-experience.md)).
+- **The build gate is hard.** Never declare done on a red `--strict` build, a
+  broken link, or an orphan page ([engagement-checklist.md](references/engagement-checklist.md)).
+- **Scope:** work only inside the target docs. Don't touch `plugins/…` or
+  unrelated files without confirmation.
 
 ## The three audiences (design for all, never average them)
 
-Every page serves one of three readers primarily. Know which before you write:
-
 | Reader | Wants | Optimize for |
 | --- | --- | --- |
-| **Human — skimmer** | "Is this for me? Where do I start?" | hook, scannability, a clear next step |
+| **Human — skimmer** | "Is this for me? Where do I start?" | hook, scannability, next step |
 | **Human — implementer** | "How exactly do I do this?" | real examples, exact commands, edge cases |
-| **Agent (LLM)** | "What can I copy, reconstruct, and cite?" | stable headings, contracts, TL;DR blocks, copyable code |
+| **Agent (LLM)** | "What can I copy, reconstruct, cite?" | stable headings, contracts, TL;DR blocks, copyable code |
 
-A page that tries to serve all three at once serves none. Split them — or layer
-them with progressive disclosure. See [llm-readability.md](references/llm-readability.md).
+## The studio cycle (9 phases, in order)
 
-## The operating loop (run in order)
+### 1 — Diagnose (read-only)
+Map the terrain with `rg`/Glob (`rg --files -g '*.md'`, read `mkdocs.yml`, the
+`docs/` tree). Produce the **Diagnosis** contract. Method:
+[information-architecture.md](references/information-architecture.md).
 
-### 1 — Diagnose before writing (read-only)
-Map the terrain with `rg`/Glob before touching anything:
-- **Sources & site**: `rg --files -g '*.md'`, the READMEs, `mkdocs.yml`
-  (theme, extensions, plugins, `nav`), the existing `docs/` tree.
-- **Reader model**: who is this *for*, what is their intent and technical
-  maturity, what journey are they on.
-- **Faults**: gaps, duplication, orphan pages, weak titles, walls of text, and
-  facts smeared across files.
-- **Audience split**: tag each chunk human-skimmer / implementer / agent.
+### 2 — Information architecture
+Design the site as a journey, by intent, not by filename. Produce the **Reader
+journeys** and **IA proposal** contracts. Method:
+[information-architecture.md](references/information-architecture.md).
 
-Report the diagnosis before proposing structure. Method:
-[information-architecture.md](references/information-architecture.md) · agent lens:
-[llm-readability.md](references/llm-readability.md).
+### 3 — Write (draft)
+Rewrite, never relocate — hook, fast path, progressive depth, real examples, clear
+next step. Craft: [storytelling.md](references/storytelling.md). Skeletons per page
+type: [page-patterns.md](references/page-patterns.md).
 
-### 2 — Design the architecture (the part that matters most)
-Draft the site as a **journey**, not a file list:
-- A narrative spine — **landing (promise) → problem → solution → mental model →
-  quick start → workflow → reference → examples → maintenance** — each stage
-  answering the question the last one raised.
-- **Navigate by intent, not filename** ("Get started", "Guides", "Reference"),
-  Databricks-style usage paths.
-- **One central idea per page.** Two H1-sized ideas → two pages.
-- Every section must earn *"why should I keep reading?"*.
+### 4 — Visual design
+Apply the **Visual plan** contract — every element carries meaning or is cut.
+Decisions: [visual-language.md](references/visual-language.md). Syntax:
+[material-toolkit.md](references/material-toolkit.md).
 
-Full method (journeys, nav wiring, the arc): [information-architecture.md](references/information-architecture.md).
+### 5 — LLM-readability
+Make the same page reusable by agents (stable headings, anchors, `TL;DR for
+agents`, contracts, glossary). Produce the **LLM-readability plan** contract.
+Doctrine: [llm-readability.md](references/llm-readability.md).
 
-### 3 — Write irresistible-but-objective pages
-Rewrite, never relocate. Each page carries: a strong **hook**, a **scannable
-summary**, the **fast path**, **progressive depth**, **real examples**, tables
-for comparisons, flows for processes, diagrams for architecture, callouts for
-risk/tips/decisions/tradeoffs, and a **clear next step**. Beautiful but
-technically dense — never empty marketing. Craft & voice:
-[storytelling.md](references/storytelling.md). Ready skeletons per page type:
-[page-patterns.md](references/page-patterns.md).
+### 6 — Critique (hard)
+Run the critical pass: hunt empty marketing, unsourced claims, useless visuals,
+README-dump pages, fake depth. Score with the rubric. Roles & how to run the loop:
+[editorial-loop.md](references/editorial-loop.md).
 
-### 4 — Apply the visual language with intent
-Every visual element must carry meaning, never decorate. Choose the right form —
-icons/emoji as semantic signposts, cards for "choose your path", tabs for
-platforms/profiles/scenarios, Mermaid for flows/maps/architecture, badges for
-status/audience/difficulty/read-time, a hero for the landing's first fold. Which
-form for which content: [visual-language.md](references/visual-language.md).
-Exact syntax + required extensions: [material-toolkit.md](references/material-toolkit.md).
+### 7 — Reconstruct
+Fix what critique flagged and re-score. Loop **critique → reconstruct** at most
+**2–3 rounds** unless the user asks for more (limit in [editorial-loop.md](references/editorial-loop.md)).
 
-!!! warning "Images are a proposal, not a default"
-    Before adding any external image, **propose the strategy first** — real
-    screenshot · Mermaid diagram · local asset · generated image — and never hide
-    a critical fact only inside an image. Rules in [visual-language.md](references/visual-language.md).
-
-### 5 — Make it LLM-readable too
-The same page that delights a human must let an agent reuse it: descriptive,
-stable headings; predictable anchors; `TL;DR for agents` blocks where useful;
-copyable examples; explicit contracts; a glossary for core terms; consistent
-relative links; a concept map/index. Doctrine: [llm-readability.md](references/llm-readability.md).
-
-### 6 — Preview it live
-Spin up the dev server and hand over a URL to judge:
+### 8 — Validate
+Build strict and QA the rendered site (desktop/mobile, dark/light, Mermaid, tabs,
+motion). Use a throwaway site dir so a live server never blocks it:
 ```bash
-make docs-serve      # → http://127.0.0.1:8000, live-reload; or: uv run mkdocs serve
+mkdocs build --strict --site-dir .mkdocs-check && rm -rf .mkdocs-check
 ```
-Run it in the background, confirm it bound, report the URL. Runbook:
-[live-preview.md](references/live-preview.md).
+Full runbook: [visual-qa.md](references/visual-qa.md) · [live-preview.md](references/live-preview.md).
 
-### 7 — Gate on quality (definition of done)
-Nothing ships until it passes [engagement-checklist.md](references/engagement-checklist.md),
-whose hard gate is a green **`uv run mkdocs build --strict`**.
+### 9 — Deliver with a score
+Report per-page rubric scores, the **Source ledger** for strong claims
+([source-ledger.md](references/source-ledger.md)), residual gaps, and the build
+result. Nothing below threshold ships without being flagged.
 
-## Invariants
-- **Story, IA & agent-readability — not rendering.** Restructure and rewrite the
-  Markdown; let MkDocs render. Reach for custom CSS/JS only when a Material
-  feature genuinely can't express the idea (it's maintenance debt — justify it).
-- **No invented facts.** Every technical claim resolves to a source `.md`, the
-  code, or a provided link. A gap in the sources is a gap in the docs — flag it.
-- **Beautiful *and* dense.** Never trade technical usefulness for polish. No
-  empty marketing, no visual without a function, no page that reads like a README
-  dump.
-- **The repo's convention wins.** Match the existing palette, tone, extensions
-  and layout unless asked to change them. Propose upgrades; don't impose them.
-- **`--strict` is the floor**, not the ceiling.
-- **Don't touch the shipped plugin** (`plugins/…`) or unrelated local changes
-  without explicit confirmation.
+## The editorial loop (how phases 3–8 actually run)
+`draft → critique → reconstruct → validate`, bounded to 2–3 rounds. The main skill
+orchestrates and may wear each role as a **pass**, or delegate to small
+sub-agents that return a **condensed verdict** (never edit unbounded). See
+[editorial-loop.md](references/editorial-loop.md) — the sub-agents there are
+**proposed**, created only with your confirmation, in `.claude/agents/`.
 
 ## Reference map
 
 | When you're… | Read |
 | --- | --- |
-| Diagnosing sources & designing the site | [information-architecture.md](references/information-architecture.md) |
-| Writing the prose of a page | [storytelling.md](references/storytelling.md) |
-| Reaching for a page skeleton | [page-patterns.md](references/page-patterns.md) |
-| Deciding which visual to use | [visual-language.md](references/visual-language.md) |
-| Needing the exact MkDocs syntax | [material-toolkit.md](references/material-toolkit.md) |
-| Making the page reusable by agents | [llm-readability.md](references/llm-readability.md) |
-| Running / previewing / building | [live-preview.md](references/live-preview.md) |
+| Producing the required intermediate outputs | [output-contracts.md](references/output-contracts.md) |
+| Diagnosing & designing the site | [information-architecture.md](references/information-architecture.md) |
+| Writing a page | [storytelling.md](references/storytelling.md) · [page-patterns.md](references/page-patterns.md) |
+| Learning by example (before → after) | [rewrite-examples.md](references/rewrite-examples.md) |
+| Choosing visuals / the syntax | [visual-language.md](references/visual-language.md) · [material-toolkit.md](references/material-toolkit.md) |
+| Making it reusable by agents | [llm-readability.md](references/llm-readability.md) |
+| Making it memorable | [signature-experience.md](references/signature-experience.md) |
+| Running the critique/rewrite loop | [editorial-loop.md](references/editorial-loop.md) |
+| Scoring a page | [quality-rubric.md](references/quality-rubric.md) |
+| Tracing claims to sources | [source-ledger.md](references/source-ledger.md) |
+| Validating (build + visual QA) | [visual-qa.md](references/visual-qa.md) · [live-preview.md](references/live-preview.md) |
 | Deciding if it's done | [engagement-checklist.md](references/engagement-checklist.md) |
