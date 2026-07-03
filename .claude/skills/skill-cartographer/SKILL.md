@@ -1,0 +1,82 @@
+---
+name: skill-cartographer
+description: >-
+  Use to turn a skill, agent system, or architecture into a single self-contained
+  interactive HTML "kit map" — a layered infographic in the style of the
+  Claude-Code Agent-Development-Kit poster (numbered layers, cards with icons,
+  side rails for inputs/outputs, connectors, a footer of principles). One .html
+  file, no external dependencies, opens in any browser: hover to highlight,
+  click a card to expand its detail, toggle light/dark. Triggers: "criar um mapa
+  visual da skill", "gerar um .html do que foi construído", "infográfico/fluxo em
+  HTML", "mapa interativo da arquitetura", "kit map", "visualize this skill/system
+  as HTML".
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
+---
+
+# skill-cartographer
+
+Turn a system you built — a skill and its references, an agent studio, a layered
+architecture — into **one self-contained interactive HTML map**: a layered "kit"
+infographic like the *Agent Development Kit* poster (a header, numbered layer
+bands, cards, input/output side rails, connectors, a principles footer).
+
+> **What it produces.** A single `.html` file with **inline CSS + JS and no
+> external requests** (no CDN, no web fonts, no remote images — emoji/inline SVG
+> only), so it opens offline in any browser and can be shared as a file.
+
+## Non-negotiables
+- **One self-contained file.** Everything inlined; nothing fetched at runtime.
+- **Facts only.** Every layer, card, and label maps to a real component of the
+  system (read it with `rg`/Read first) — never invent a layer or a feature.
+- **Legible in light and dark**, and responsive (bands stack on narrow screens).
+- **Interactive but robust** — with JS off, the full map is still readable.
+
+## The workflow
+
+### 1 — Inventory the system (read-only)
+Read the real thing with `rg`/Glob before drawing. For a skill, that's its
+`SKILL.md` + `references/` + any sub-agents. Extract:
+- **Inputs** (what goes in) and **outputs** (what comes out) → the side rails.
+- **Layers** — the 3–6 conceptual bands (e.g. cycle · library · agents · gates).
+- **Cards** — the concrete items inside each layer (each with a one-line detail).
+- **Principles** — the invariants → the footer.
+
+### 2 — Map to the visual model
+Assign each layer a number, an accent color, and an icon; place items as cards.
+The anatomy, palette, and component specs are in
+[design-spec.md](references/design-spec.md).
+
+### 3 — Generate the HTML
+Write one `.html` following the spec: header (title · subtitle · optional mark),
+left rail (inputs) → numbered layer bands (each: badge + title + subtitle + card
+grid) → right rail (outputs), a connectors motif, and a footer principles row.
+Inline all CSS/JS. Each card carries a `data-detail` used by the click-to-expand
+panel.
+
+### 4 — Add interactivity
+- **Hover** — card lifts + accent border.
+- **Click** — opens a detail panel (or inline reveal) with the card's `data-detail`.
+- **Theme toggle** — light/dark via a `data-theme` attribute + `prefers-color-scheme`.
+- Respect `prefers-reduced-motion`.
+
+### 5 — Verify & deliver
+Confirm the file is self-contained and parses:
+```bash
+grep -Eic 'https?://[^"]*\.(css|js)|cdn|googleapis|unpkg|jsdelivr' map.html   # want 0 external asset refs
+```
+Report the path; offer to open it or publish it as an Artifact for instant viewing.
+
+## Style target
+The *Agent Development Kit* poster look: warm paper background, a centered title
+with a small mark, **numbered layer bands** in soft pastel tints, white cards with
+a colored left accent and checkmark/■ bullets, thin connectors between bands, two
+vertical **side rails** (inputs left, outputs right), and a **footer row** of small
+icons + captions. Elegant restraint — every card carries information, never
+decoration. Full recipe: [design-spec.md](references/design-spec.md); a complete
+worked file is in [examples/](examples/).
+
+## References
+- [design-spec.md](references/design-spec.md) — palette, layer/card anatomy, side
+  rails, connectors, typography, interactivity, responsive rules.
+- [examples/mkdocs-storyteller.html](examples/mkdocs-storyteller.html) — a full
+  map of the mkdocs-storyteller studio; copy it as the working template.
