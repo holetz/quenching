@@ -34,6 +34,15 @@ uv run mkdocs serve -a 127.0.0.1:8001
 ```bash
 make docs-build          # uv run mkdocs build --strict → ./site
 ```
+
+!!! warning "A live server locks `site/` — build to a throwaway dir"
+    If `mkdocs serve` is running, it holds `./site` and a plain `build` collides.
+    Validate to a disposable dir instead, then remove it:
+    ```bash
+    mkdocs build --strict --site-dir .mkdocs-check && rm -rf .mkdocs-check
+    ```
+    This is the server-safe validation the studio's phase 8 uses ([visual-qa.md](visual-qa.md)).
+
 `--strict` turns every warning into a failure. It catches exactly the mistakes this
 skill must not make:
 - **dangling links** — a relative link to a page that moved or doesn't exist;

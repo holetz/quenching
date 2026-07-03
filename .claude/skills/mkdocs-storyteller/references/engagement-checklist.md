@@ -1,62 +1,70 @@
 # Engagement checklist — definition of done
 
-Nothing ships until it passes this gate. Run top to bottom; the build gate is
-non-negotiable.
+The hard gate. Nothing ships until it passes. A page that fails **any** gate goes
+back into the [editorial loop](editorial-loop.md); it is never silently shipped.
 
-## Hard gates (build must be green)
-- [ ] **`uv run mkdocs build --strict`** passes with zero warnings.
-- [ ] **No orphan pages** — every `docs/*.md` is in `nav`, every `nav` entry has a
-      file.
+## Score gate (the rubric decides)
+- [ ] **Every page scored** on all ten [rubric](quality-rubric.md) dimensions.
+- [ ] **No dimension scores 0** on any shipped page.
+- [ ] **Critical dimensions ≥ 2:** Integrity/source · Scannability · Navigation.
+- [ ] **Overall average ≥ 2.5** per page (landings & indexes **≥ 3.5**).
+- [ ] Any page below threshold is **reported as such**, with the failing dimensions
+      and the reason (usually a source gap) — not passed off as done.
+
+## The five forbiddens (auto-fail)
+- [ ] **No fake depth** — no page that sounds technical but says nothing checkable.
+- [ ] **No pretty-but-useless** — no visual, hero, or flourish without a function.
+- [ ] **No README dump** — every page rewritten for a reader who arrived from search.
+- [ ] **No claims without source** — see the ledger gate below.
+- [ ] **No section without intent** — every section answers "why keep reading?".
+
+## Hard build gates (must be green)
+- [ ] **`mkdocs build --strict --site-dir .mkdocs-check`** passes with zero
+      warnings (throwaway dir so a live server can't block it; then `rm -rf`).
+- [ ] **No orphan pages** — every `docs/*.md` in `nav`; every `nav` entry has a file.
 - [ ] **All internal links relative and resolving** (`--strict` enforces this).
-- [ ] **Every extension used is enabled** in `markdown_extensions` (tabs, emoji,
-      Mermaid, cards).
+- [ ] **Every extension used is enabled** (tabs, emoji, Mermaid, cards).
 
 ## Content gates (the human read)
-- [ ] **No README dump** — every page was rewritten for a reader who arrived from
-      search, not from the repo root.
-- [ ] **No wall of text** — no section runs longer than a screen without a
-      heading, list, table, or callout.
-- [ ] **Every page has a hook** — the first sentence states what it is / why
-      you're here.
+- [ ] **Every page has a hook** — first line states what it is / why you're here.
 - [ ] **One central idea per page.**
-- [ ] **Comparisons are tables, processes are flows, options are cards** — not
-      prose.
-- [ ] **Risks/tips/tradeoffs are callouts.**
+- [ ] **No wall of text** — nothing longer than a screen without a heading, list,
+      table, or callout.
+- [ ] **Comparisons are tables, processes are flows, options are cards** — not prose.
+- [ ] **Risks/tips/tradeoffs are callouts**; **every rule states its why**.
 - [ ] **Every page ends with a next step.**
-- [ ] **Every rule states its why.**
 
 ## Visual gates (intent, not carnival)
-- [ ] **No visual without a function** — every diagram/card/tab/icon carries
-      information.
-- [ ] **Icons/emoji are semantic signposts**, consistent site-wide, one per
-      card/section max.
-- [ ] **Mermaid** used for flows/architecture; ≤ ~9 nodes each; edges labeled.
-- [ ] **Images cleared first** — external images proposed by strategy (screenshot
-      / Mermaid / local asset) and vendored locally; none block the build.
+- [ ] **No visual without a function**; icons are consistent semantic signposts.
+- [ ] **Mermaid** for flows/architecture; ≤ ~9 nodes; edges labeled.
+- [ ] **Images cleared first** — proposed by strategy, vendored locally, none block
+      the build ([visual-language.md](visual-language.md)).
 - [ ] **Palette/typography** match the repo; light **and** dark both look right.
 
-## Integrity gates (truth)
-- [ ] **No invented facts** — every technical claim traces to a source `.md`, the
-      code, or a provided link.
-- [ ] **No fact only in an image** — critical facts also exist in text.
-- [ ] **Gaps flagged, not fabricated** — where the sources are silent, the docs say
-      so rather than inventing.
+## Source-ledger gate (truth)
+- [ ] **A [source ledger](source-ledger.md) exists** for pages with strong claims.
+- [ ] **No invented facts** — every strong claim traces to file / code / provided
+      doc / user link / **marked** inference.
+- [ ] **No fact only in an image** — critical facts also in text.
+- [ ] **Open `source gap`s flagged**, never fabricated over.
 
-## Agent-readability gates
-- [ ] Headings descriptive and stable; anchors resolve
-      ([llm-readability.md](llm-readability.md)).
+## Agent-readability gate
+- [ ] Headings descriptive & stable; anchors resolve ([llm-readability.md](llm-readability.md)).
 - [ ] Reusable contracts carry a `TL;DR for agents` block.
 - [ ] Examples are real, copyable, with expected output.
-- [ ] Core terms defined once (glossary) and linked; a concept map/routing table
-      exists.
+- [ ] Core terms defined once (glossary) and linked; a concept map/routing table exists.
+
+## Visual-QA gate
+- [ ] Ran the [visual QA](visual-qa.md) pass (or declared the static-only fallback
+      + its limitation honestly).
+- [ ] Dark/light both legible; mobile/narrow reflows; motion honors
+      `prefers-reduced-motion`.
 
 ## Journey gate (the whole read)
-- [ ] Walk the 2–3 reader journeys from
-      [information-architecture.md](information-architecture.md) end to end — no
-      dead-ends, no forced backtracking.
-- [ ] Preview live (light + dark, narrow viewport) and read it as a stranger would.
+- [ ] Walk the 3 reader journeys ([information-architecture.md](information-architecture.md))
+      end to end — no dead-ends, no forced backtracking.
 
-## Reporting done
-When it passes, report: what changed, the journeys it now serves, the strict-build
-result, and any gaps flagged for the source owners to fill. Never claim done on a
-red build.
+## Reporting done (phase 9)
+Report: per-page **rubric scores**, the **source ledger** for strong claims, the
+**validation** result (build + visual QA or declared fallback), **residual gaps**,
+and any page marked below threshold. **Never claim done on a red build.**
