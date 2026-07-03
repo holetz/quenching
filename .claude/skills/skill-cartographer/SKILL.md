@@ -31,6 +31,18 @@ bands, cards, input/output side rails, connectors, a principles footer).
 - **Legible in light and dark**, and responsive (bands stack on narrow screens).
 - **Interactive but robust** — with JS off, the full map is still readable.
 
+## Language / localization
+The map is generated in the **requested language** (or the sources' language) —
+default English; produce **pt-BR** when asked. Translate the *prose*: title
+subtitle & tagline, layer titles/roles, card labels & one-line details, the side
+rails, the footer principles, and the UI strings (theme button, "expand all", the
+detail close). **Keep identifiers in their original form** — file names
+(`storytelling.md`), agent names (`docs-architect`), commands (`--strict`,
+`mkdocs build`), and product names (MkDocs Material, TL;DR). Set the matching
+`<html lang="…">`, and keep the `title=` fallback in the same language as the
+`data-detail`. Emit one file per language (e.g. `map.html`, `map.pt-br.html`); a
+single file may instead carry an EN/PT toggle if the user prefers.
+
 ## The workflow
 
 ### 1 — Inventory the system (read-only)
@@ -79,4 +91,6 @@ worked file is in [examples/](examples/).
 - [design-spec.md](references/design-spec.md) — palette, layer/card anatomy, side
   rails, connectors, typography, interactivity, responsive rules.
 - [examples/mkdocs-storyteller.html](examples/mkdocs-storyteller.html) — a full
-  map of the mkdocs-storyteller studio; copy it as the working template.
+  map of the mkdocs-storyteller studio (EN); copy it as the working template.
+- [examples/mkdocs-storyteller.pt-br.html](examples/mkdocs-storyteller.pt-br.html)
+  — the same map localized to **pt-BR** (identifiers kept in English).
