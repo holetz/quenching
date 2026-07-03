@@ -45,21 +45,23 @@ The main skill performs each role as a **sequential pass on itself**, switching
 hats and keeping each pass's output to the contract format. This needs no extra
 agents and is the default.
 
-## Running it with sub-agents (proposed — needs your OK)
-For large trees, the roles map cleanly onto small sub-agents that return a
-**condensed parecer** and never edit unbounded. These are **proposed, not
-created** — they would live in `.claude/agents/` and require confirmation first.
-
-Proposed set (small, single-purpose, condensed return):
+## Running it with sub-agents (available in `.claude/agents/`)
+For large trees, the roles map onto six small sub-agents that return a **condensed
+parecer** and never edit unbounded. They **exist** in `.claude/agents/` — invoke
+them by name via the Agent tool; the main skill orchestrates and decides.
 
 | Agent | Tools | Returns |
 | --- | --- | --- |
 | `docs-architect` | Read, Grep, Glob | Diagnosis + IA + Journeys contracts |
-| `docs-storyteller` | Read, Grep, Edit, Write | page drafts for assigned files |
+| `docs-storyteller` | Read, Grep, Glob, Edit, Write | page drafts for assigned files |
 | `docs-visual-director` | Read, Grep, Edit | visual plan + surgical visual edits |
 | `docs-agent-reader` | Read, Grep | LLM-readability verdict + fixes list |
 | `docs-critic` | Read, Grep | ranked defect list + rubric scores |
 | `docs-validator` | Read, Bash | build/link/QA report |
+
+Only `docs-storyteller` and `docs-visual-director` edit files; the rest are
+read-only. Orchestrate: architect → storyteller → visual-director → agent-reader →
+critic (score) → reconstruct (loop, ≤2–3×) → validator.
 
 Proposed frontmatter shape (example — `docs-critic`):
 ```yaml
