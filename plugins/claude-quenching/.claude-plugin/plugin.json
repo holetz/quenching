@@ -1,6 +1,6 @@
 {
   "name": "claude-quenching",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Portable, self-contained knowledge-management method and installer for the Claude Code surface of any repository. Audits the repo across 15 dimensions (CLAUDE.md, normative docs, vision, backlog, ADRs, skills, subagents, hooks, commands, memory, catalog/domain, boundary doctrine, conventions, guardrails, MCP), produces a prioritized gap report, and — with confirmation, item by item — installs its own bundled artifacts (template skills, subagents, hooks, doc skeletons, frontmatter templates) into the target's .claude/ and docs/.",
   "author": {
     "name": "Israel Holetz"

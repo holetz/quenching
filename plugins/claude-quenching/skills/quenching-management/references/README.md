@@ -14,17 +14,19 @@ for the step you're on.
 > what's missing. The files below are, in this order, **what to measure**, **how
 > to measure**, **how to prioritize**, **how to report** and **how to install**.
 
-## The 7 files
+## The 9 files
 
 | File | What it is | When to open |
 | --- | --- | --- |
 | [dimensions-template.md](dimensions-template.md) | **The heart.** The **index** of the 15 dimensions + the transversal doctrine (ADAPTABLE preamble, canonical-`docs/`-names exception, 6-field explanation, scoring). Each dimension is one file under [dimensions/](dimensions/README.md), self-contained: purpose · how "good" looks · detection · smells · remediation · payload. Open only the dimension you are scoring. | Steps 2-3 (inventory and score each dimension). Start here to understand the method. |
+| [module-contract.md](module-contract.md) | The **uniform runtime shape** of a dimension unit: **detect → score → apply → verify → payload → return**, dispatched as a per-dimension sub-agent by the thin orchestrator. Defines the **verify gate** (apply is done only when the dimension's own detection is silent on the output). | Steps 5-7 (apply + verify each dimension's remediation). |
 | [docs-taxonomy.md](docs-taxonomy.md) | The **canonical `docs/` tree** (single source): the homes (`standards/`, `decisions/`, `vision/`, `backlog/`, `guides/`, `reference/`, `catalog/`, `communications/`, `presentations/`), their boundaries and the variant→canonical mapping. | Whenever the task touches `docs/` (dims 2/3/5/11). Dimensions and detection **link** here instead of repeating the tree. |
 | [scripts-taxonomy.md](scripts-taxonomy.md) | The **canonical `scripts/` organization** (single source): purpose subfolders (`ci`/`<gen>`/`checks`/`maintenance`/`dev`), README-map, execution convention, and the boundaries `repo scripts/` × `.claude/hooks/*` × skill-internal `scripts/` × `src/`. | Whenever the task touches the executable logic invoked by the surface (dim 8, crosses 1/9). Dim 8 and detection **link** here. |
 | [detection-and-smells.md](detection-and-smells.md) | The detection **cookbook**: the rule of 4 states + Step 0 (derive the repo's paths) + read-only bash per dimension. Only commands + how to read the result; *doctrine* lives in the dimensions. | Steps 1-2 (derive the repo's shape and run the greps). |
 | [repo-profiles.md](repo-profiles.md) | Catalog of **repo profiles** (signals → emphasis): how to modulate priority for the concrete repo (monorepo, MLOps, greenfield…). Example guide, not an enum. | Step 4 (modulate the report's emphasis by profile). |
 | [report-format.md](report-format.md) | The **skeleton of the audit report** (scorecard · prioritized gaps · deprecables · installation plan). | Step 4 (produce the output). |
 | [installation.md](installation.md) | The **gap → package payload** map + the installation procedure, hook wiring and deprecation doctrine. | Steps 5-7 (install what's missing, with OK; deprecate what the repo already had). |
+| [lifecycle.md](lifecycle.md) | The **conduction layer**: install manifest (receipt), reconcile/upgrade classes, consent modes (`advise` × `managed`), distribution channels (stamp × plugin rollout). | Step 5 (record installs) and Step 8 (reconcile the installed harness; grant/revoke `managed`; choose the rollout channel). |
 
 ## How the files chain
 
@@ -35,7 +37,9 @@ SKILL.md (the roadmap, 8 steps)
    2-3  measure each dimension against "good" . dimensions-template.md  (↘ docs-taxonomy.md for docs/)
    4    prioritize by repo shape ............. repo-profiles.md
    4    write the report ..................... report-format.md
+   5-7  apply + verify each dimension module . module-contract.md
    5-7  install payload / deprecate .......... installation.md
+   5+8  record install / reconcile / modes ... lifecycle.md
 ```
 
 ## Conventions of this folder

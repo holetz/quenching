@@ -1,0 +1,80 @@
+{
+  "$comment": "TEMPLATE of the plugin's auto-wired hook config — lands at <plugin>/hooks/hooks.json. It is settings.snippet.json re-expressed for the plugin channel: same events/matchers/doctrine (see assets/hooks/settings.snippet.json for the per-hook $comment contracts), but commands point INSIDE the plugin via ${CLAUDE_PLUGIN_ROOT} (plugins are copied to a local cache when installed) and the hooks register WITH the plugin — no per-repo settings.json merge. Include ONLY the hooks the org approved in Steps 4-5; hooks-config.json ships inside the plugin's hooks/ dir, and per-repo overrides stay possible via hooks-config.local.json in ${CLAUDE_PLUGIN_DATA}.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/protect-generated.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/validate-claude-md.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/propose-docs-home.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/guard-config-surface.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|clear|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/reinject-conventions.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/propose-knowledge-delta.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/run-validation.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "matcher": "user_settings|project_settings|local_settings|policy_settings|skills",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/hooks/audit-config-change.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

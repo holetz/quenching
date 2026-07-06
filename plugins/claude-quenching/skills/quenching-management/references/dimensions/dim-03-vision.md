@@ -13,4 +13,4 @@
 
 - **Remediation:** remove deadlines; move "what's still missing" → `backlog/`; distill what became reality → `standards/`; segment single `VISION.md` into shells by pillar under `vision/` (propose, with OK).
 
-- **Payload:** — (no content payload; the method **only proposes** the diff). The `vision/` skeleton (empty shells by pillar) is part of the canonical scaffold [../../assets/docs/](../../assets/docs/), materialized by the second agent. Specification: [../docs-taxonomy.md](../docs-taxonomy.md).
+- **Payload:** **direction-draft discipline** [../../assets/agents/quenching-direction.md](../../assets/agents/quenching-direction.md) — the method **DRAFTS** the vision as a labeled `authority: background` draft (banner "pending human ratification"), seeded from README/goals, `backlog/`, recent commits and open ADRs; the human **ratifies** it (never `current`, never decided by the method). The `vision/` skeleton (empty shells by pillar) is part of the canonical scaffold [../../assets/docs/](../../assets/docs/). Specification: [../docs-taxonomy.md](../docs-taxonomy.md).

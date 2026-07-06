@@ -35,7 +35,12 @@ done by the orchestrator from disk) and do **not** edit generated artifacts.
   each topic governs, the boundary between neighbors — e.g., `code/` governs
   symbols, `naming/` governs data; external normative references don't live here,
   they live in `reference/regulations/`).
-- The **frontmatter mold**: `assets/templates/docs/docs-front.md`.
+- The **candidate sub-standards catalog** for this topic (`references/docs-taxonomy.md`
+  § Candidate sub-standards per subject) — the **non-closed** list of concepts to
+  **consider** breaking this topic into (one concept per file).
+- The **frontmatter mold**: `assets/templates/docs/standards-front.md` (the full
+  mandatory OKF set for a standards bundle — distinct from the generic
+  `docs-front.md`).
 
 ## Steps
 
@@ -48,17 +53,36 @@ done by the orchestrator from disk) and do **not** edit generated artifacts.
    **If the topic does NOT apply to the repo** (e.g., a repo without ML has no
    `mlops/`; without data, no `naming/`/`data-modeling/`) → **return "not applicable"**
    and stop. Completeness of **what fits**, not a blind checklist.
+   **Evaluate the topic's candidate sub-standards catalog** (a **consideration**
+   checklist, not a blind generate list): for **each** candidate, decide from the
+   mined evidence whether the repo practices it — an **applicable** candidate becomes
+   its **own** `file:line`-anchored file (step 4); an **inapplicable** one is an
+   **explicit deferral** recorded in the subject `README.md` "Coverage / deferred
+   sub-standards" ledger with a one-line why (never a silent skip). **One concept per
+   file** — do not bundle several candidates into a monolith.
 3. **Research external references** (`WebSearch`/`WebFetch`; lib docs via
    context7/ToolSearch when useful) for **documented best practices** for the
    topic. Note URL + access date for each source that backs a proposal.
-4. **Reconcile and write/update** `docs/standards/<topic>/<standard>.md`:
+4. **Reconcile and write/update** the applicable sub-standards as **separate files**
+   `docs/standards/<topic>/<concept>.md` (one concept per file — e.g.
+   `code/imports.md`, `code/logging.md`; never a `code/conventions.md` monolith):
    - **BUILD** if the standard is absent and the repo practices it.
-   - **UPDATE** if it already exists: reconcile with current code, update
-     `updated`, and if the doc asserts something the code **no longer does**,
-     mark it **Drifted** (and correct to the de-facto current state).
-   - Minimal frontmatter per `docs-front.md`: `title` · `updated` (today's date)
-     · `status: current` (or `authority: current`) · `audience` · `authority`.
-     One standard per file, kebab-case.
+   - **UPDATE** if it already exists: **merge/enrich, never wholesale-overwrite** an
+     authored body — reconcile with current code, update `updated`, add only what is
+     missing; if the doc asserts something the code **no longer does**, mark it
+     **Drifted** (and correct to the de-facto current state). **Rewriting an existing
+     authored body requires a per-doc OK** — it is human knowledge; do not clobber it.
+   - **Full mandatory OKF frontmatter** per `standards-front.md` (all fields
+     required for a standards bundle): `title` · `summary` (one sentence — what the
+     doc covers; the deterministic source for the index's "Covers" column) ·
+     `audience` · `authority` · `source` · `maintainer` · `updated` (today's date) ·
+     the OKF pair `type: standard` · `resource:`. **`resource:` = the repo scope this
+     standard governs** (path/glob/FQN of the code it describes) — **derive it from
+     the `file:line` anchors you mined in step 2, NEVER fabricate it**; an empty or
+     self-pointing `resource` is disallowed (conformance theater). Stamping **merges**
+     — a pre-existing `status:`/foreign key is preserved, never clobbered nor newly
+     stamped (`authority:`, not `status:`, is the current/background axis). One
+     standard per file, kebab-case.
 5. **ANTI-FABRICATION INVARIANT — the most important rule.** `current` = **only**
    the de-facto **proven in the repo**, and **EVERY** current rule is anchored at
    `file:line` (or FQN/path). An external best-practice the repo **does NOT
@@ -77,10 +101,18 @@ done by the orchestrator from disk) and do **not** edit generated artifacts.
      avoid resource enumeration").
    A requirement-only doc regenerates a **different behavior each time** (implicit
    decisions reappear as divergences). When a current rule hides a decision,
-   **make the why explicit**.
-7. **Never edit a generated artifact** (AUTO-GENERATED catalog, manifests, job
-   YAML) — respect the "X defines Y" rule of the repo. You document the
-   **standard**, not rewrite the generated output.
+   **make the why explicit** — **but a *why* not evidenced in the code, a commit, or
+   an ADR is NOT `current`**: record it as `authority: background` (a proposal), never
+   assert it as the current rule. Inventing a rationale is exactly the
+   direction-fabrication this rail exists to stop (the requirement is de-facto and
+   anchorable; the *why* is often human rationale that is not in the code).
+7. **Write ONLY under `docs/standards/<topic>/`** (+ register proposed gaps in
+   `backlog/`/`decisions/`). **Never** edit product code, a generated artifact
+   (AUTO-GENERATED catalog, manifests, job YAML), or **any file outside the
+   standards layer** — respect the "X defines Y" rule and the repo's product code.
+   You document the **standard**, not rewrite the code or the generated output. A
+   convergence that *would* touch code (a path constant, a docstring) is **not
+   yours**: surface it to the orchestrator as a blast-radius item for per-item OK.
 
 ## Return format (condensed — never the dump)
 
@@ -95,6 +127,9 @@ Return only the essentials; semantic identifiers (`file:line`, FQN, path),
 - **Evidence:** the `file:line` anchors that back each current standard.
 - **Proposed gaps:** each best-practice the repo does NOT follow → where it was
   registered (`backlog/`/`decisions/`/section "Proposal") + the source (URL + date).
+- **Coverage:** the candidate sub-standards **generated** (each → its file) and
+  **deferred** (each → one-line why) — so the orchestrator can fill the subject's
+  "Coverage / deferred sub-standards" ledger and the verify gate can read it.
 
 Do not dump the scan or the doc text. Only the summary the orchestrator uses to
 regenerate the index and expose the gaps.

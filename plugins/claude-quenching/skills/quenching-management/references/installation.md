@@ -38,6 +38,9 @@ prefixes, paths).
 | Catalog without generated×curated separation, or missing consumption doctrine | skill `quenching-docs` | target's domain layer |
 | Missing behavioral guardrail, or copied in prose in CLAUDE.md | skill `quenching-guardrails` (CLAUDE.md cites, does not copy) | `.claude/skills/<prefix>-guardrails/` |
 | Missing **manual trigger** of the recurring maintenance cycle (re-audit on demand; repo doesn't have `/<re-audit>` yet) | **command-skill** `commands/quenching-reaudit/` + sub-agent `agents/quenching-auditor.md` | `.claude/skills/<prefix>-reauditar/` (+ `.claude/agents/` of target) |
+| Quenching artifacts present but **no install manifest** (*untracked install*): nobody can tell an intentional adaptation from a rotted copy, and no upgrade can be offered | **manifest template** `templates/claude/quenching-manifest.json`, **backfilled from evidence** (which payloads are recognizably the package's, at which likely version); doctrine [lifecycle.md](lifecycle.md) §1 | `.claude/quenching-manifest.json` of target (committed) |
+| The `.claude/` **config surface itself changes without a guard** (new/edited skill, agent, settings.json) and nothing re-checks dims 6/7/8/9 "while it's fresh" — the harness rots silently between audits | **PostToolUse hook** `hooks/guard-config-surface.py` (matcher `Write\|Edit`): on touches under `.claude/`, re-applies the cheap scoped checks (skill/agent frontmatter present, `name`≠folder, description-as-trigger, orphan/dangling wiring 8b) and **PROPOSES** via `additionalContext` (exit 0, never blocks) + `settings.snippet.json` | `.claude/hooks/` + 3rd hook in the `PostToolUse` block (matcher `Write\|Edit`) in `settings.json` |
+| **Several repos/teams need the same setup** (org/monorepo profile signal) and per-repo stamping multiplies drift and manual hook wiring | **plugin rollout channel**: package the approved payload set as an internal **plugin + marketplace** (scaffold `assets/plugin/` — `plugin.json` with `version`, `hooks/hooks.json` auto-wired via `${CLAUDE_PLUGIN_ROOT}`, `extraKnownMarketplaces`/`enabledPlugins` snippet); doctrine [lifecycle.md](lifecycle.md) §4 | org marketplace repo + each target's `.claude/settings.json` (pre-configured adoption) |
 | Scorecard/report exists but the user **doesn't know where to start / in what order** to install (greenfield, or many gaps with no sequence) — missing the "invest first in X, then Y" roadmap | **read-only** orchestrator skill `skills/quenching-roadmap/` (+ sub-agent `agents/quenching-auditor.md` via `context: fork`) — PRODUCES the SEQUENCED roadmap "invest first in X, then Y" (METHOD/structure investment order by leverage×cost×prerequisite); PROPOSES the order, does not install (Steps 5-7, with OK) | `.claude/skills/<prefix>-roadmap/` (+ `.claude/agents/` of target) |
 
 > **Paths/prefixes are examples.** Adapt `<prefix>` to the taxonomy derived in
@@ -48,8 +51,8 @@ prefixes, paths).
 ## Installation procedure (Step 5 of SKILL.md, with confirmation)
 
 1. **Copy** the payload from [../assets/](../assets/) to the target's destination.
-2. **Rename** folder/`name` to the derived taxonomy; **translate** to the repo's
-   language if needed.
+2. **Rename** folder/`name` to the derived taxonomy; the agent-facing surface
+   stays **English** (only `audience: human` material follows the repo's language).
 3. **Repoint** the payload's internal paths to where the layer lives in the
    target (e.g.: the skill `quenching-docs` references "the standards layer" — fix
    it to the real path derived in Step 0 of
@@ -60,6 +63,43 @@ prefixes, paths).
 5. **Never** overwrite the target's generated artifacts (`*.job.yml`, manifests,
    AUTO-GENERATED catalog or equivalent) — these respect the repo's "X defines Y"
    rule.
+6. **Record the item in the install manifest**
+   (`.claude/quenching-manifest.json`; template
+   `assets/templates/claude/quenching-manifest.json`): payload `id`, package
+   `version`, `dest`, and each deliberate adaptation (renames, repointed paths,
+   config values). The manifest is the receipt the maintenance loop reconciles
+   against — doctrine, reconcile classes, consent modes and distribution
+   channels in [lifecycle.md](lifecycle.md).
+7. **Populate derived content (dim 2 only; after the structural steps and its own
+   grant).** For the standards layer, installing the scaffold is **not** the end:
+   fan out the `quenching-writer` discipline as **method-run sub-agents, one per
+   applicable subject** (orchestrated by `quenching-standards`, run **inline**),
+   each mining the repo and writing its standard — for each subject **evaluating the
+   candidate sub-standards catalog** (a consideration checklist: generate each
+   applicable one as its own `file:line`-anchored file, record each deferral in the
+   subject `README.md` "Coverage / deferred sub-standards" ledger); `current`
+   anchored at `file:line`, unproven → `authority: background`; writes **only under
+   `docs/standards/`**; an existing authored body is **merged/enriched, never
+   overwritten** (a body rewrite is per-doc OK); **adversarial review mandatory**;
+   **one subject first** to calibrate. Gated by the enumerated **`generate-derived`**
+   grant ([lifecycle.md](lifecycle.md) §3), never by the read-only audit. This
+   **fulfills the gap→payload table's mining promise** for the whole `standards/`
+   layer that the structure-only steps above leave open. The **human-direction**
+   dims (3/10/12) instead get a labeled, ratification-gated draft — see
+   "Human-direction dimensions" below.
+8. **Verify against canon (the gate).** After applying, **re-run the touched
+   dimension's own detection on the just-written output** (its block in
+   [detection-and-smells.md](detection-and-smells.md)); the item is **done only
+   when that re-check is clean**. A firing grep — a variant name left
+   un-migrated, mandatory-incomplete / OKF-non-conformant frontmatter (missing a
+   mandatory key or `type:`/`resource:`), a missing front-door, an `INDEX.md`
+   without `<!-- BEGIN/END GENERATED -->` or out of sync with disk, **a standards
+   home left as an empty skeleton or a subject with de-facto evidence but no doc** —
+   means the apply is **incomplete**: loop on the missed items or flag loudly,
+   **never** record it as installed. *"Applied"* must **pass its own greps**. The
+   per-dimension verify contract is [module-contract.md](module-contract.md)
+   (part 4); human-direction dims 3/10/12 verify the labeled **draft** (present,
+   `authority: background`, nothing promoted to `current`), below.
 
 ## Hook wiring — merge the snippet, don't overwrite
 
@@ -144,11 +184,24 @@ The installation procedure is a **converge-to-canonical** in four stages:
    `catalog/`): the taxonomy is completeness **of what fits**, not a blind
    checklist. The homes **layer**, not **replace** — *"they layer rather than
    replace each other"*.
-4. **Migrate the variant; never rename/delete without OK.** Where the repo has
-   the home under a variant name, **propose migration to the canonical** (move
+4. **Migrate the variant; measure the blast radius, never rename/delete without OK.** Where the
+   repo has the home under a variant name, **propose migration to the canonical** (move
    content, sync index/labels) and apply the **deprecation doctrine** below to
-   the variant (signals, does not remove). Step 5 confirmation and "don't delete
-   without OK" **remain**.
+   the variant (signals, does not remove). First **measure and SURFACE the blast radius**
+   ([docs-taxonomy.md](docs-taxonomy.md) § Variant migration doctrine): a variant path that
+   resolves to **product code** (path constants, docstrings) or **gitignored-but-live maps** makes
+   the migration a **DISTINCT confirmation item** with its scope shown, never folded into a bulk
+   opt-in. Step 5 confirmation and "don't delete without OK" **remain**.
+5. **Populate the installed/migrated homes with derived content (dim 2).** A home is
+   **not converged as an empty skeleton** — nor as a **monolith**: after the
+   structural stages, run the `quenching-writer` fan-out (per applicable subject) to
+   **generate the standard from the code**, **evaluating each subject's candidate
+   sub-standards** (generate each applicable one as its own file, record deferrals in
+   the subject `README.md` ledger) — anchored-`current` rail, unproven → `authority:
+   background`, bodies **merged-not-clobbered**, adversarial review mandatory, one
+   subject first — then re-derive `INDEX.md` and re-run the verify gate on the
+   populated output. Gated by the `generate-derived` grant. Human-direction homes
+   (`vision/`) instead receive a labeled, ratification-gated draft.
 
 > **Deterministic and prescriptive, with safety preserved:** the variant→canonical
 > mapping and installation of absent homes are repeatable (same inputs → same
@@ -157,22 +210,29 @@ The installation procedure is a **converge-to-canonical** in four stages:
 > = rename/delete without OK. The migration of a variant is **recommendation**
 > (deprecable); removal of the old name is the user's decision.
 
-## Items without payload — the method only proposes (does not install)
+## Human-direction dimensions — the method drafts, the human ratifies
 
-Three dimensions have no content payload, because content is a **human decision**.
-For them the method delivers the **suggested text/diff** in the corresponding
-section of the report and **stops there**:
+Three dimensions encode **direction/judgment**, not derivable description. For them
+the method **drafts** the content from **observable signals** (git history,
+README/goals, backlog/ADR) and writes it into the canonical home **labeled
+`authority: background` + a "DRAFT — pending human ratification" banner** (discipline
+[../assets/agents/quenching-direction.md](../assets/agents/quenching-direction.md)),
+**never** asserting it as ratified `current` — a **human ratification gate** promotes
+it. The report still surfaces the draft/diff for review. The `draft-direction` class
+**never** enters `managed` and is not covered by the `generate-derived` grant:
 
-- **3. Vision (`docs/vision/`)** — proposes the edit/segmentation of the
-  direction; user applies. The canonical home is the **`docs/vision/`** folder
-  segmented by area (empty shells + comment, part of the `assets/docs/` scaffold);
-  a single `VISION.md` is a variant to migrate. Installing is the user's decision.
-- **10. Memory** — signals index×files divergence; **never writes memory**.
-- **12. Boundary doctrine** — proposes which is the canonical home and what
-  becomes just a link in the other artifacts. This is the method's **core**: the
-  diagnosis no payload produces. *Applying* the rearrangement uses the templates
-  that own the touched artifacts (moving a standard from VISION to standards
-  = `quenching-docs` on the writing end).
+- **3. Vision (`docs/vision/`)** — **drafts** the direction/segmentation as a labeled
+  `authority: background` draft in the **`docs/vision/`** folder segmented by area
+  (shells part of the `assets/docs/` scaffold); the human ratifies. A single
+  `VISION.md` is a variant to migrate.
+- **10. Memory** — signals index×files divergence and **drafts** candidate memory
+  entries as clearly-marked drafts; **never ratifies memory as fact** — the human
+  accepts each entry.
+- **12. Boundary doctrine** — proposes which is the canonical home and what becomes
+  just a link in the other artifacts, and **drafts** the rearrangement labeled;
+  the human ratifies. This is the method's **core** diagnosis. *Applying* the
+  rearrangement uses the templates that own the touched artifacts (moving a standard
+  from VISION to standards = `quenching-docs` on the writing end).
 
 ## Deprecation doctrine — what the repo already had
 
@@ -200,7 +260,9 @@ a skill/agent/hook doing the same work:
 
 The method is **self-contained**: everything it installs comes from
 [../assets/](../assets/). It **does not depend** on any external skill and
-**does not reference** skills from another repo. It only **does not install**
-when the dimension has no payload (3/10/12) — and even then, only **proposes**.
-Never writes memory, never decides the direction alone, never edits generated
-artifacts, never removes the old artifact without OK.
+**does not reference** skills from another repo. It **writes** derived standards
+content (every `current` rule anchored at `file:line`; unproven → `authority:
+background`, never asserted `current`) and **drafts** direction (dims 3/10/12) as a
+labeled, ratification-gated `authority: background` draft — but **never decides the
+direction alone** (a human gate ratifies it), never edits generated artifacts, and
+never removes the old artifact without OK.

@@ -5,7 +5,7 @@ artifacts of the target repo live here — **centralized** and organized by
 **destination surface**. Two types coexist:
 
 - **Header fragments** (`claude/`, `memory/`, `docs/docs-front.md`,
-  `docs/decisions/adr.md`, `docs/backlog/backlog-item.md`) — the canonical
+  `docs/standards-front.md`, `docs/decisions/adr.md`, `docs/backlog/backlog-item.md`) — the canonical
   frontmatter for an artifact type. The method **stamps** them at the top of the
   artifact **where missing**; they do not become standalone files in the target.
   They are the minimal form that makes the artifact **discoverable/routable**
@@ -31,9 +31,9 @@ canonical `docs/` taxonomy is already all English (`decisions/`, `vision/`,
 ```
 templates/
   claude/          # harness surface (.claude/ + CLAUDE.md)
-    claude-md.md  skill.md  agent.md
+    claude-md.md  skill.md  agent.md  quenching-manifest.json
   docs/            # mirrors the docs/ taxonomy
-    docs-front.md  sidecar.md
+    docs-front.md  standards-front.md  sidecar.md
     decisions/adr.md   backlog/backlog-item.md   vision/area.md
     catalog/system.md  catalog/schema.md  catalog/table.md
   memory/          # agent memory store
@@ -47,7 +47,9 @@ templates/
 | `claude/claude-md.md` | CLAUDE.md skeleton | any `CLAUDE.md`/sub-`CLAUDE.md` | 1, 13 |
 | `claude/skill.md` | skill frontmatter | `.claude/skills/<name>/SKILL.md` | 6 |
 | `claude/agent.md` | sub-agent frontmatter | `.claude/agents/<name>.md` | 6, 7 |
+| `claude/quenching-manifest.json` | install receipt (manifest) | `.claude/quenching-manifest.json` | core (lifecycle: reconcile/upgrade, consent mode, channel) |
 | `docs/docs-front.md` | doc/folder frontmatter for `docs/` | header of any doc/`README` in `docs/` | 2, 12 |
+| `docs/standards-front.md` | full mandatory OKF frontmatter for a standard | header of any `docs/standards/**` standard | 2, 13 |
 | `docs/sidecar.md` | textual extract alongside binary | `presentations/`, `reference/regulations/` | 2, 12 |
 | `docs/decisions/adr.md` | ADR frontmatter | `docs/decisions/*.md` | 5 |
 | `docs/backlog/backlog-item.md` | backlog item frontmatter | `docs/backlog/**` | 4 |
@@ -70,7 +72,9 @@ templates/
 4. **Derive enums to the repo**: the `type` in `memory.md` and the labels in
    `docs-front.md` (`audience`/`authority`) follow the taxonomy detected in Step 0
    — do not force this method's list.
-5. **Translate** the text to the repo's language; keep **field names** stable
-   (keys in English) to match the validation hooks (dim 8).
+5. **Keep the agent-facing text English** (`audience: agent`/`both` — the majority
+   of these molds); only `audience: human` material follows the repo's language.
+   **Field names** stay stable (keys in English) to match the validation hooks
+   (dim 8).
 6. Keep the skill/agent `description` as **routing code** (dim 6):
    third person, literal triggers, exclusion against neighboring skills.

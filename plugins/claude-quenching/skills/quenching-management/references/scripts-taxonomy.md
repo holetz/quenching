@@ -46,9 +46,11 @@ root without a purpose subfolder is a **disorganization smell**.
 by purpose (everything in one bag, or loose at the root). Derive the label from the repo's
 convention; **lock the separation**, not the string.
 
-**Language:** subfolder names in **English kebab-case** (stable across repos); the
-content/docstrings follow the repo's language (the repo convention wins — e.g.: PT-BR
-outside the library).
+**Language:** subfolder names in **English kebab-case** (stable across repos), and
+the `scripts/README.md` **map** (the agent-facing index) is **English** too. Script
+**content and docstrings** are product/executable code — they stay the repo's
+business (the repo convention wins — e.g.: PT-BR outside the library), never
+rewritten by the method.
 
 ## The canonical tree (organization by purpose)
 

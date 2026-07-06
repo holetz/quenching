@@ -38,8 +38,8 @@ scorecard (dim 7 return contract), not the dump.
 
 1. **Copy** `quenching-reaudit/` to `.claude/skills/<prefix>-reauditar/` of the
    target.
-2. **Rename** the folder/`name` to the derived taxonomy (`<prefix>`) and
-   **translate** to the repo's language.
+2. **Rename** the folder/`name` to the derived taxonomy (`<prefix>`); the skill is
+   an agent-facing surface — keep its `description`/body **English**.
 3. Ensure the `quenching-auditor` sub-agent (from `../agents/`) is also installed
    in `.claude/agents/` of the target — the `agent:` frontmatter field references
    it. If the repo uses another auditor name, point `agent:` to it.

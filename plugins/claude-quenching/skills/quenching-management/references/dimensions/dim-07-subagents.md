@@ -29,7 +29,7 @@
 
   **When to CREATE a domain-specific sub-agent** (sub-agent side of the dim 6 criterion):
   - **Trigger:** a **recurring verbose domain side-task** — diagnosing job logs/runs, sweeping a family of artifacts, dependency audit (*«a side task floods your conversation… → route it through a subagent»*; *«you keep spawning the same kind of worker with the same instructions»*).
-  - **The method proposes the skeleton** (frontmatter + minimal `tools` + condensed return contract); the repo fills in the **content** (human decision, Step 6).
+  - **The method proposes the skeleton** (frontmatter + minimal `tools` + condensed return contract); the repo fills in the **content** (a **portability boundary** — the package can't carry a repo-coupled procedure — not the human-direction limit of Step 6).
   - The package **does not carry** ready domain sub-agents (they break self-contained), only the generic read-only mold above.
 
 - **Detection:** `ls .claude/agents/`; read frontmatters and bodies; verify that **every** agent declares `tools`/`disallowedTools` (item **7b** in [../detection-and-smells.md](../detection-and-smells.md)).

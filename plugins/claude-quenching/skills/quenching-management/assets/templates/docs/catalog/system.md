@@ -1,14 +1,15 @@
 ---
 title: <system alias> — access card
+type: system            # concept type (OKF) — non-empty on every catalog page
+engine: <postgres | sqlserver | databricks-uc | bigquery | ...>
 audience: both
 authority: current
-type: <postgres | sqlserver | databricks-uc | bigquery | ...>
 source: <where metadata comes from — UC, origin dictionary, curation>
 maintainer: <team/person owning the access>
 updated: <YYYY-MM-DD>
 ---
 
-# `<system alias>` — `<type>`
+# `<system alias>` — `<engine>`
 
 > **SYSTEM mold** (becomes `<system>/README.md`). Entry point: the LLM reads
 > **this card** before touching any table in this system — how to connect,
@@ -16,7 +17,7 @@ updated: <YYYY-MM-DD>
 
 ## Access
 
-- **Type:** `<postgres | sqlserver | databricks-uc | bigquery>`
+- **Engine:** `<postgres | sqlserver | databricks-uc | bigquery>`
 - **Endpoint:** `<host:port>` · **catalog/database:** `<name>`
 - **Mechanism:** `<JDBC | SQL warehouse | Spark Connect | native client>` —
   `<connection string/template, WITHOUT secrets>`

@@ -111,6 +111,8 @@ ls .claude/commands/*.md 2>/dev/null
 
 # 11. Catalog (if present): $CATALOG already derived in Step 0 (canonical docs/catalog/)
 [ -n "$CATALOG" ] && grep -rL 'AUTO-GERADO\|AUTO-GENERATED' "$CATALOG"/**/*.md 2>/dev/null   # expected: few
+#   OKF conformance: every catalog page carries a non-empty `type:` in frontmatter
+[ -n "$CATALOG" ] && grep -rL '^type:' "$CATALOG"/**/*.md 2>/dev/null   # listed = non-conformant page
 
 # 13. Conventions: code/naming docs in the standards layer
 [ -n "$ARCH_DIR" ] && ls "$ARCH_DIR"/codigo/ "$ARCH_DIR"/code/ "$ARCH_DIR"/nomenclatura/ "$ARCH_DIR"/naming/ 2>/dev/null
@@ -137,8 +139,9 @@ decision criteria, semantics) lives in the **dimension** indicated.
 
 Cross the index (`MEMORY.md`) of the project memory directory (path from the session
 context) with the `.md` files alongside it. The greps **list candidates**; whoever decides
-the smell is the reading. The method **only signals** — it does not write memory. Run from the
-memory folder (replace `$MEM` with the context path).
+the smell is the reading. The method signals the hygiene smells and may **draft** a labeled
+candidate entry (`draft-direction`); it **never ratifies/commits** memory — the `/memory`
+flow / human does. Run from the memory folder (replace `$MEM` with the context path).
 
 ```bash
 # (1) index orphan: topic file with no line in MEMORY.md
@@ -214,6 +217,20 @@ SLOTS='-path */presentations/* -o -path */reference/regulations/* -o -path */apr
 [ -n "$DOCS" ] && for f in $(find "$DOCS" -name '*.md' -not -iname 'README.md' 2>/dev/null); do \
   head -20 "$f" | grep -qiE '^\s*(audience|authority)\s*:' || echo "NO-LABEL  $f"; done | head
 #   (the label may be at the FOLDER level — home README/index; only a smell if neither the doc nor the home has it)
+# Standards OKF conformance (per DOC — audience/authority MAY inherit from the home, but OKF identity is per-doc):
+#   every standard .md carries a non-empty `type:` AND a non-empty `resource:` — parallels the catalog `type:` check
+[ -n "$ARCH_DIR" ] && for f in $(find "$ARCH_DIR" -name '*.md' \
+  -not -iname 'README.md' -not -iname 'CLAUDE.md' -not -iname 'INDEX*' -not -iname 'log.md' 2>/dev/null); do \
+  head -20 "$f" | grep -qiE '^\s*type\s*:\s*\S'     || echo "OKF-NO-TYPE      $f"; \
+  head -20 "$f" | grep -qiE '^\s*resource\s*:\s*\S' || echo "OKF-NO-RESOURCE  $f (empty/absent = conformance theater)"; done | head
+#   listed = standard not OKF-conformant (type/resource are per-DOC, never inherited from the home)
+# Standards MANDATORY-INCOMPLETE: standard missing any of title/summary/source/maintainer/updated (per-DOC mandatory)
+[ -n "$ARCH_DIR" ] && for f in $(find "$ARCH_DIR" -name '*.md' \
+  -not -iname 'README.md' -not -iname 'CLAUDE.md' -not -iname 'INDEX*' -not -iname 'log.md' 2>/dev/null); do \
+  for k in title summary source maintainer updated; do \
+    head -20 "$f" | grep -qiE "^\s*$k\s*:\s*\S" || echo "MANDATORY-INCOMPLETE  $f  (missing $k)"; done; done | head
+#   audience/authority MAY inherit from the home (NO-LABEL above); title/summary/source/maintainer/updated + the OKF
+#   pair (type/resource) are per-DOC mandatory for a standards bundle (dim 2 contract)
 # CONVERGENCE: docs/ home that matches NO canonical home (neither by canonical name,
 #   nor by a known variant, nor by what Step 0 derived)
 [ -n "$DOCS" ] && for d in $(find "$DOCS" -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
@@ -234,6 +251,20 @@ for pair in "standards:arquitetura architecture" "decisions:adr" "catalog:catalo
   for v in $vars; do [ -d "$DOCS/$v" ] && { \
     [ "$have_canon" -eq 1 ] && echo "TWO-HOMES  $canon AND $v (migrate $v → $canon, do not duplicate)" \
                             || echo "VARIANT  $v → canonical $canon (propose migration, with OK)"; }; done; done
+# EMPTY-SKELETON: a standards subject home with only front-doors (README/CLAUDE/INDEX) and no standard .md
+#   ⇒ home present but never populated from the code (dim 2 generate trigger — apply move 5, not just a note)
+[ -n "$DOCS" ] && [ -d "$ARCH_DIR" ] && for d in $(find "$ARCH_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
+  n=$(find "$d" -maxdepth 1 -name '*.md' -not -iname 'README.md' -not -iname 'CLAUDE.md' -not -iname 'INDEX*' 2>/dev/null | wc -l); \
+  [ "$n" -eq 0 ] && echo "EMPTY-SKELETON  $d (home present, zero standards — populate from the code)"; done | head
+#   SUBJECT-GAP (evidence-gated READING, not a pure grep): a canonical subject the repo demonstrably practices but
+#   hasn't documented — CI config ⇒ ci-cd/, MLflow/model-lifecycle ⇒ mlops/, DQ/row checks ⇒ quality/, a job/task
+#   framework filed under code/ ⇒ workflows/. Flag ONLY with the observed file:line; never invent a subject.
+#   PARTIAL-COVERAGE (evidence-gated READING, parallels SUBJECT-GAP one level down; the candidate catalog is NON-CLOSED,
+#   so NOT a rigid grep): a POPULATED subject that stays a MONOLITH (one doc bundling several candidate sub-standards —
+#   imports+lint+logging+pins in a single code/conventions.md) OR a candidate the repo demonstrably practices that is
+#   neither its own file nor recorded as deferred in the subject README's "Coverage / deferred sub-standards" ledger.
+#   Flag a missing candidate ONLY with observed file:line; a candidate with no evidence is a legitimate deferral, not a
+#   gap. Distinct from EMPTY-SKELETON (zero docs) — this is considered-but-uncovered / not-broken-out.
 # DIRECTED COMMUNICATION (communications/ home) — PENDING measurement vs. fixtures (no Bash in this context)
 # loose communication outside its home: notice/incident/announcement md at the ROOT of docs/ or in guides/standards/
 [ -n "$DOCS" ] && grep -rliE '^\s*\*?\*?(comunicado|escopo|status|impacto|público|público afetado|incidente)\b' \
@@ -361,8 +392,8 @@ event/matcher; blocking uses `exit 2` (not `exit 1`); every `Stop` checks
 `stop_hook_active`; and the **`scripts/` home** organized by purpose (no single bag /
 loose-at-root), the hook calling the script (not inline logic), the invoked
 `scripts/<…>` existing, and the README map in sync with the disk. **The wiring and
-`scripts/` greps are PENDING measurement vs. fixtures** — no Bash in this context; see
-the spine's review queue. Complete doctrine (exit semantics, 3 lifecycle hooks,
+`scripts/` greps are PENDING measurement vs. fixtures** — validate them against the eval
+fixtures before relying on them. Complete doctrine (exit semantics, 3 lifecycle hooks,
 wiring/scope/precedence): **dim 8** in [dimensions/dim-08-hooks.md](dimensions/dim-08-hooks.md); the
 `scripts/` organization: [scripts-taxonomy.md](scripts-taxonomy.md).
 

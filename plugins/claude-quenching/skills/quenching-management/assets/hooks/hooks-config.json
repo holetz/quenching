@@ -34,6 +34,15 @@
     "deadlineMs": 200,
     "maxFindings": 3
   },
+  "guardConfigSurface": {
+    "$comment": "Guard of the .claude/ config surface (PostToolUse Write|Edit): re-applies the cheap dims-6/7/8 checks to the touched skill/agent/hook/settings and PROPOSES (never blocks). minDescriptionChars is the sub-trigger floor for skill descriptions (dim 6).",
+    "enabled": true,
+    "claudeDir": ".claude",
+    "maxHeadBytes": 2000,
+    "minDescriptionChars": 60,
+    "deadlineMs": 200,
+    "maxFindings": 3
+  },
   "protectGenerated": {
     "$comment": "DERIVE protectedGlobs/sourceHint from the target in Step 1 (what the 'X defines Y' rule marks as generated). Empty list = hook INERT (blocks nothing) — fill in to activate. The examples below illustrate the FORM; they are NOT paths from this repo (replace with the target's). denyMode 'deny' = modern JSON (recommended, wins even under bypassPermissions); 'exit2' = legacy/stderr.",
     "enabled": true,

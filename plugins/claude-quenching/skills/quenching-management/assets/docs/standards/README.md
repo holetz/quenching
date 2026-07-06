@@ -1,5 +1,6 @@
 ---
 title: standards/ — current/active reference (our contracts)
+summary: the current/active contracts and conventions of this repo — one standard per file, subject subfolders, indexed by INDEX.md
 audience: both
 authority: current
 source: <owning team>
@@ -15,9 +16,12 @@ versioned, the shared source of truth. One standard per file; subfolder names by
 from `catalog/` (our data). Vision does not live here (→ `vision/`); open
 decisions do not live here (→ `decisions/`).
 
-We keep only the subtopics that apply to the repo (completeness of what fits, not
-a blind checklist). Every current doc goes into [INDEX.md](INDEX.md) — the layer
-index must list exactly what exists (an index that lies = Drifted).
+We keep only the subtopics that apply to the repo, and within each subtopic break the
+standards **one concept per file** by considering the candidate sub-standards catalog
+(spec in `references/docs-taxonomy.md`) — a **consideration** checklist, evidence-gated
+generation, recorded deferral, **not** a blind generate list (completeness of what
+fits). Every current doc goes into [INDEX.md](INDEX.md) — the layer index must list
+exactly what exists (an index that lies = Drifted).
 
 ## Subtopics
 

@@ -28,6 +28,12 @@
             "type": "command",
             "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/propose-docs-home.py",
             "timeout": 5
+          },
+          {
+            "$comment": "Config-surface guard (Step 8, .claude/ slice of the event trigger): when Write/Edit touches the harness itself (.claude/skills|agents|hooks|settings*.json), re-applies the cheap dims-6/7/8 checks to the touched artifact (frontmatter present, name==folder, description-as-trigger, orphan/dangling wiring 8b) and only PROPOSES via additionalContext. NEVER blocks; exit 0 always. Sibling of propose-docs-home (that one covers docs/); distinct from audit-config-change (ConfigChange, records metadata) and protect-generated (PreToolUse, blocks).",
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-config-surface.py",
+            "timeout": 5
           }
         ]
       }

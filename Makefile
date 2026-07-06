@@ -2,11 +2,16 @@
 # All targets run through `uv` against the pinned toolchain in pyproject.toml/uv.lock.
 
 .DEFAULT_GOAL := help
-.PHONY: help docs-install docs-serve docs-build docs-deploy docs-update
+.PHONY: help hooks docs-install docs-serve docs-build docs-deploy docs-update
 
 help: ## List the available scripts
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+
+hooks: ## Enable the repo-tracked git hooks in .githooks/ (version stamp)
+	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-commit
+	@echo "Git hooks enabled (core.hooksPath=.githooks)."
 
 docs-install: ## Sync the docs toolchain into .venv (creates it if missing)
 	uv sync

@@ -33,7 +33,12 @@ evidence.
 2. **Run detection per dimension** (1–15) with the reference commands. For each
    one, collect **the minimum evidence** that decides the state.
 3. **Score** each dimension: Present / Partial / Drifted / Absent, **always**
-   with `file:line` (never "seems outdated").
+   with `file:line` (never "seems outdated"). **Reconfirm before you cry `Drifted`:**
+   presence (a file / `_template` exists), index×disk sync (an index lists what is
+   actually on disk), and sidecar presence (`.md` beside a binary) are the verdicts a
+   cheap condensed scan most often **fabricates** — re-run the exact `grep`/`ls`/`diff`
+   that proves it and quote that evidence. A first-pass impression is a **candidate**,
+   never a reported `Drifted`.
 4. **Do not decide boundaries or memory** — only gather the evidence; boundary
    diagnosis (dim 12) and comparative memory reading (dim 10) stay in the main
    thread.

@@ -25,7 +25,7 @@ Each dimension has 6 fields:
 - **Detection** — where to look (operational detail, adaptive + bash, in [detection-and-smells.md](detection-and-smells.md)).
 - **Smells** — signals of Partial/Drifted/Absent.
 - **Remediation** — the concrete action.
-- **Payload** — the artifact **from the package** ([../assets/](../assets/)) that the method **installs** to fill the gap; `—` = no payload, the method only proposes (human content decision).
+- **Payload** — the artifact **from the package** ([../assets/](../assets/)) that the method **installs** to fill the gap. Dims 3/10/12 carry the **direction-draft discipline** ([../assets/agents/quenching-direction.md](../assets/agents/quenching-direction.md)) instead of a structure payload: the method **drafts** direction as a labeled, ratification-gated `authority: background` draft — never ratified content it decides alone.
 
 > **`docs/` names are CANONICAL (dim 2/3/5/11), other paths are examples.**
 > The `docs/` tree (`standards/`, `decisions/`, `vision/`, `backlog/`, `guides/`,
@@ -76,3 +76,34 @@ For each dimension, assign **Present / Partial / Drifted / Absent** with evidenc
 per dimension are in [detection-and-smells.md](detection-and-smells.md). The final report
 follows [report-format.md](report-format.md); the gap → payload map and the deprecation
 doctrine are in [installation.md](installation.md).
+
+---
+
+## Each dimension is a MODULE (uniform runtime shape)
+
+The six doctrine fields above are **read** by a thin orchestrator that dispatches each
+dimension as a **self-contained module** with a uniform runtime shape —
+**detect → score → apply → verify → payload → return** — so a dimension is
+independently evolvable and improvement lives in **one place** (its
+`dimensions/dim-NN-*.md` file). The
+module runs as a **per-dimension sub-agent** (dim-7 home: isolated context, condensed
+return), **not** as one of 15 free-triggering skills (that would break the dim-6
+trigger/bloat doctrine).
+
+Two parts extend the doctrine fields into runtime behavior:
+
+- **apply** — the **Remediation** field, driven to completion, in the dimension's regime
+  (single source: [module-contract.md](module-contract.md) part 3): **derived-content**
+  (dim 2, incl. dim 13 in the standards home) installs structure AND **generates the derived
+  standard** by mining the repo — every `current` rule anchored at `file:line`, unproven →
+  `authority: background` (the anti-fabrication rail); **human-direction** (dims 3/10/12)
+  **drafts** the text and writes it labeled `authority: background` + "pending ratification"
+  (a human gate promotes it, never the method); **structural** (dim 1 map file, dim 11
+  catalog) is install/migrate/re-stamp/regenerate only.
+- **verify** — after apply, **re-run this dimension's own `detect` block on the just-written
+  output**; a non-empty result means the apply is **incomplete** (not "done"). *"Applied"*
+  is a claim that must **pass its own greps**, closing the failure mode where an install
+  reports success while the output stayed non-canonical.
+
+The full contract (the six parts, the sub-agent vehicle, the verify gate, and how the
+orchestrator composes modules) is in [module-contract.md](module-contract.md).

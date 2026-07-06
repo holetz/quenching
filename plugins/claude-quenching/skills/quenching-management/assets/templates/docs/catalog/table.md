@@ -1,5 +1,7 @@
 ---
 title: <system>.<catalog>.<schema>.<table>
+type: table             # concept type (OKF) — non-empty on every catalog page
+resource: <URI/FQN of the underlying asset — e.g. uc://<catalog>.<schema>.<table>>
 audience: both
 authority: current
 source: <metadata origin — UC, origin dictionary, curation>
