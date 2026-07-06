@@ -1,0 +1,14 @@
+{
+  "$comment": "TEMPLATE of the per-repo adoption snippet — MERGE into each consuming repo's .claude/settings.json (never overwrite). extraKnownMarketplaces makes team members be prompted to install the org marketplace when they trust the folder; enabledPlugins enables the org plugin by default. Replace the placeholders with the org's marketplace repo and plugin name.",
+  "extraKnownMarketplaces": {
+    "<org-marketplace-name>": {
+      "source": {
+        "source": "github",
+        "repo": "<org>/<claude-plugins-repo>"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "<org-prefix>-knowledge@<org-marketplace-name>": true
+  }
+}

@@ -1,53 +1,68 @@
-# Contributing — evolving the `claude-quenching` method
+# Contributing — maintaining the `claude-quenching` method
 
 This repository hosts a **living method**, not just a static plugin. The shipped
 skill ([`plugins/claude-quenching/skills/quenching-management/`](plugins/claude-quenching/skills/quenching-management/))
-describes **only the present** — what the method does today. **How it got there**
-(rounds, revisions, superseded decisions) lives **only** in the non-shipped
-[`evolution/`](evolution/) layer.
+describes **only the present** — what the method does today. There is **no separate
+evolution log**: the history of how the method got here lives in **git**, and the
+commit message is where you record anything about a change worth remembering beyond
+its diff.
 
-> **Golden rule: do not edit the method by hand outside the flow below.** Editing
-> `SKILL.md`/`references/`/`assets/` directly breaks the log that prevents
-> re-attacking a solved problem (evolutionist) or losing the improvement trail
-> (reviewer).
+## The maintainer skill
 
-## The two maintainer agents
+There is **one** dev-only maintainer skill, at the repository root in
+[`.claude/skills/quenching-maintainer/`](.claude/skills/quenching-maintainer/) —
+**never shipped, never installed into a target repo.** It runs **inline** in the
+maintainer's conversation, so the maintainer sees the surgical change directly.
 
-Both live at the repository root in [`.claude/agents/`](.claude/agents/) (dev-only —
-**never installed into a target repo**), and both read the next action from the
-spine [`evolution/README.md`](evolution/README.md) and write detail into the right
-context file in [`evolution/log/`](evolution/log/).
+**[`quenching-maintainer`](.claude/skills/quenching-maintainer/SKILL.md)** accepts
+**mixed directions in a single invocation** and makes the changes directly in
+`SKILL.md` / `references/` / `assets/`:
 
-- **[`quenching-evolutionist`](.claude/agents/quenching-evolutionist.md) — advances
-  the frontier.** Each round (`R*`) makes **one** improvement beyond today's state,
-  on a topic **not yet addressed**, and increments `current-round`. Trigger:
-  *"evolve the method"*, *"run an evolution round"*.
-- **[`quenching-reviewer`](.claude/agents/quenching-reviewer.md) — critiques and
-  refines what already exists.** Each invocation (`Rev*`) revisits an
-  already-made definition and improves it (sharpens a smell, fixes a stale source,
-  merges/prunes, or supersedes a round) **without** advancing the frontier.
-  Trigger: *"critique/review/refine the method"*, *"go back to a round"*.
+- **Revise a section** — sharpen a smell, prune bloat, fix a stale source, merge
+  duplicates, clarify a criterion.
+- **Evolve a concept** — add or reshape something the method doesn't yet handle,
+  grounded in current Claude/Claude Code practice.
+- **Change the main skill** — edit the `SKILL.md` workflow itself.
+- **Analyze a repository/session** — audit the method's own source for drift and
+  contradiction, or mine a real application session under `~/.claude/projects/` for
+  field evidence and apply the fixes it justifies.
 
-The research input for both lives in [`evolution/research/`](evolution/research/).
-Every round needs **≥1 citable source** (URL + date) or it does not close.
+A request may combine several of these — e.g. "audit that run **and** fix the smell
+it tripped over **and** tighten step 5." Trigger it with *"evolve/refine/critique
+the method"*, *"revise section X"*, *"change the main skill"*, *"run a retrospective
+on session Y"*, *"harvest field feedback"*, or any mix.
 
-## How to evolve the method
+> **No log to keep in sync.** Earlier versions of this method split the work across
+> three skills (`evolutionist` / `reviewer` / `retrospective`) and recorded every
+> edit as an ADR round/revision in an `evolution/` layer. That apparatus is gone.
+> Do **not** reintroduce round/revision numbering, a spine, an exclusion index, a
+> review queue, or an advance backlog. Make the change; commit it; move on.
 
-1. Invoke the relevant agent (e.g. *"run an evolution round"* →
-   `quenching-evolutionist`; *"refine round N"* → `quenching-reviewer`).
-2. The agent reads the spine, picks the next frontier / revision target, does the
-   research, makes **one surgical change**, and records the round/revision in the
-   per-context log + updates the anchor state in the spine.
-3. Keep `SKILL.md` focused on application (the 8 steps) and under ~500 lines —
-   push detail to `references/`. The active spec is **present-tense only**.
+## How to change the method
+
+1. Invoke `quenching-maintainer` with what you want done (one direction or several).
+2. It locates the relevant surface, reads only what's relevant, makes the surgical
+   change(s), self-checks the invariants, and reports what changed.
+3. Keep `SKILL.md` focused on application (the 8 steps) and under ~500 lines — push
+   detail to `references/`. The active spec is **present-tense only**; if a change
+   has history worth keeping, put it in the commit message, not in the spec.
+4. When the change is worth a commit, use the `commit-incremental` skill to slice it
+   into atomic commits.
+
+## Grounding a change
+
+When a change hinges on how Claude or Claude Code actually behaves (a new skills /
+hooks / sub-agent / CLAUDE.md capability), verify it against **current** official
+Anthropic sources — `docs.claude.com`, the engineering blog — dated, rather than
+assuming. This is about getting the change right, not a bureaucratic gate: a wording
+cleanup or a bloat prune needs no citation.
 
 ## Evaluating the method (the curator is a production tool)
 
 This method **is an agent tool**, so it is evaluated against **realistic tasks**,
-not by inspection. Before closing a round that changes a detection rule
-(smell / grep / "good" criterion), the evolutionist runs a **minimal harness** of
-**fixtures** — small sample repos with one **known planted gap** each — and reads
-three measures:
+not by inspection. When a change alters a detection rule (a smell / grep / "good"
+criterion), sanity-check it against **fixtures** — small sample repos with one
+**known planted gap** each — reading three measures:
 
 - **Hit rate per dimension** — was the planted gap flagged in the right dimension,
   with `file:line` evidence?
@@ -58,18 +73,17 @@ three measures:
   (a candidate to push to the auditor sub-agent)?
 
 The *fit-to-repo* layer (Step 4 emphasis modulation) is evaluated the same way, with
-**planted-profile fixtures** that carry the **expected emphasis/roadmap** as ground
+**planted-profile fixtures** carrying the **expected emphasis/roadmap** as ground
 truth — measuring **prescription-hit** and **prescription-false-negative** (a
 clearly-shaped repo that came out with flat emphasis). A fixture with an
 **ambiguous shape** expects **flat emphasis** as the correct answer (strong emphasis
-there is over-prescription). The fixture catalog lives in
-[`evolution/research/14-eval-fixtures.md`](evolution/research/14-eval-fixtures.md).
+there is over-prescription).
 
 ## Repository conventions
 
-- The plugin is **self-contained and portable** — no round may reintroduce coupling
+- The plugin is **self-contained and portable** — no change may reintroduce coupling
   to a specific repo or to an external skill.
 - The payloads under `assets/` are **inert installers**, not active components — they
   must never become auto-discoverable native skills/hooks of the plugin.
-- The `evolution/`, `.claude/agents/` and `docs/` layers are **dev-only** and must
-  stay outside `plugins/claude-quenching/` so they are never shipped.
+- The `.claude/skills/` and `mkdocs/` layers are **dev-only** and must stay outside
+  `plugins/claude-quenching/` so they are never shipped.

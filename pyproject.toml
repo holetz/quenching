@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 
 # This repository is NOT a Python package — the distributed artifact is the
 # Claude Code plugin under plugins/claude-quenching/. This pyproject only pins
-# the toolchain used to build the docs/ site, managed with `uv`.
+# the toolchain used to build the docs site (mkdocs/), managed with `uv`.
 
 [dependency-groups]
 docs = [

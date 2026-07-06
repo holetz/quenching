@@ -5,7 +5,8 @@ site_description: >-
 site_author: Israel Holetz
 repo_url: https://github.com/holetz/claude-quenching
 repo_name: israelholetz/claude-quenching
-edit_uri: edit/main/docs/
+edit_uri: edit/main/mkdocs/
+docs_dir: mkdocs
 
 theme:
   name: material

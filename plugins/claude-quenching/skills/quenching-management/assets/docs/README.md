@@ -12,8 +12,9 @@ updated: 2026-06-29
 This is the canonical knowledge tree of the repository. Each **home** has a fixed
 name and a unique purpose; the content inside each home follows Diátaxis (tutorial /
 how-to / reference / explanation). Folder names in **English kebab-case** (stable
-across repos); content follows the project language. Anyone moving between repos
-finds the **same** tree in the same place.
+across repos); the **agent-facing content is English too** (only `audience: human`
+material — `presentations/`, `communications/` — follows the project language).
+Anyone moving between repos finds the **same** tree in the same place.
 
 Open the `README.md` of each home to see what lives there and which subfolders exist.
 

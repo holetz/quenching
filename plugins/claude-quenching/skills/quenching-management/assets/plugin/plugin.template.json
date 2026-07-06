@@ -1,0 +1,12 @@
+{
+  "$comment": "TEMPLATE of the org plugin manifest — lands at <plugin>/.claude-plugin/plugin.json in the org's marketplace repo (never live in this package). 'version' is the upgrade key: consumers only receive updates when it changes, so BUMP IT ON EVERY RELEASE; the reconcile scope compares it against each target's install manifest. Skills/agents in the conventional directories are auto-discovered; 'hooks' points to the auto-wired hooks file.",
+  "name": "<org-prefix>-knowledge",
+  "displayName": "<Org> knowledge harness",
+  "version": "0.1.0",
+  "description": "<one line: the approved quenching payload set for <org>'s repos>",
+  "author": {
+    "name": "<platform/enabling team>",
+    "email": "<team email>"
+  },
+  "hooks": "./hooks/hooks.json"
+}

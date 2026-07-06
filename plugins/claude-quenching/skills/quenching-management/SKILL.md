@@ -45,7 +45,7 @@ confirmation**, **installs the own artifacts** this package carries.
 > `.claude/`/`docs/`. Payload manifest:
 > [assets/README.md](assets/README.md).
 
-## Operation model: pure installer
+## Operation model: installer + knowledge generator
 
 `audit-by-default + install-with-confirmation`. The method **always** delivers
 the report first. Installation is an **explicit second step**, item-by-item,
@@ -56,12 +56,68 @@ the method **does not duplicate silently**: it **installs the package's one**
 as DEPRECABLE** in the report, leaving removal as the user's decision. See
 [references/installation.md](references/installation.md).
 
-> **Why pure installer (not delegation):** a previous version of this method
+**Beyond structure, the method GENERATES knowledge** — it is **intrusive where
+there are gaps**, bringing the repo to the exact canonical harness, in **three
+regimes by dimension type** (single source:
+[references/module-contract.md](references/module-contract.md) part 3):
+
+- **Derived-content** (dim 2 standards, incl. dim 13's writes in the standards
+  home) — the method **mines the repo and WRITES the standard itself**, running
+  the [quenching-writer](assets/agents/quenching-writer.md) fan-out as
+  **method-run sub-agents** (not only installing them for the maintainer to run
+  later). Every `current` rule is anchored at `file:line`; anything not
+  de-facto-proven enters as `authority: background` (a proposal, never asserted
+  current). This transcribes what the code already does — **description, not
+  direction**.
+- **Human-direction** (dim 3 vision, 10 memory, 12 boundary) — the method
+  **DRAFTS** the text from observable signals (git history, README/goals,
+  backlog/ADR) and writes it labeled `authority: background` + a "DRAFT — pending
+  human ratification" banner. It **never** asserts direction as ratified truth; a
+  **human ratification gate** promotes it (Step 6).
+- **Structural** (dim 1 CLAUDE.md map file, dim 11 catalog) — install / migrate /
+  re-stamp / regenerate only; catalog generators are repo-specific, the map stays
+  a thin pointer.
+
+The invariant is **not** "never content" — it is **never assert DIRECTION as
+ratified truth**. Derived description the method writes; direction it only drafts
+for the human to ratify.
+
+The confirmation contract has **two modes**, recorded in the target's install
+manifest and granted/revoked only by the human
+([references/lifecycle.md](references/lifecycle.md) §3): **`advise`** (default —
+everything above, per-item OK) and **`managed`** (explicit opt-in — a standing
+consent for the maintenance loop to apply, without per-item re-confirmation,
+**only** the bounded reconcile classes: upgrade of an already-approved
+artifact, re-wiring of a rotted one, manifest hygiene — every apply
+audit-trailed and git-reversible). Human-direction drafts (Step 6),
+deletions/renames and first installs of new payloads **never** enter `managed`.
+
+> **Why self-contained (not delegation):** a previous version of this method
 > *delegated* editing to skills that had to pre-exist in the repo. This made it
 > **coupled** — only worked where those skills already existed. The current model
 > carries the capabilities inside itself: runs on a repo from scratch, is the
-> **single source** of the artifacts it installs, and keeps them coherent via
-> its own evolution loop, maintained outside the shipped package.
+> **single source** of the artifacts it installs **and the engine that generates
+> the derived content**, and keeps them coherent via its own evolution loop,
+> maintained outside the shipped package.
+
+## Opening protocol — one-line self-introduction (before Step 1)
+
+**Always open the dialogue with a single-line self-introduction** that states
+**who this method is and its current version**, then the report-first promise.
+Read the version from the **bundled `VERSION` file shipped at the plugin root**
+— `${CLAUDE_PLUGIN_ROOT}/VERSION` (or `../../VERSION` relative to this file); it
+holds the current version string (a **dev build is the short commit hash**, kept
+fresh by the repo's version-stamp hook). If the file is absent or unreadable,
+introduce **without** a version — never block on it.
+
+Keep it to **one line**, e.g.:
+
+> 🔥 **quenching-management** `v<version>` — portable knowledge-base audit +
+> installer for the Claude Code surface. I audit first and report; nothing is
+> installed without your item-by-item OK.
+
+The greeting **does not** change the operation model: the report still comes
+first (Step 4), installation stays explicit and item-by-item (Steps 5-7).
 
 ## Steps
 
@@ -181,7 +237,8 @@ boundaries/dim 12 before hooks; observed trigger before payload). Proposes the
 > reorders and **recommends where the method yields more** for **this** repo —
 > **probabilistic** guidance about the METHOD itself (which dimension/trigger/
 > payload to invest in), not enforcement or **content/direction** decisions
-> (those only happen in Step 6). Profile-weight **does not invent a gap** (it
+> (direction is only **drafted** in Step 6 and **ratified by the human**, never
+> decided by the method). Profile-weight **does not invent a gap** (it
 > comes from Step 3 evidence), **does not hide** any from the scorecard, and
 > **does not decide** what the repo's memory/VISION/boundary should say. Modulating
 > the method's emphasis ≠ defining the repo's content: the first is "for you, it's
@@ -200,11 +257,69 @@ OK, **item-by-item**:
   `.claude/skills/<name>/`, a sub-agent to `.claude/agents/`, a hook to
   `.claude/hooks/` + entry in `settings.json`, a doc skeleton to the right
   layer, a frontmatter template where missing.
-- **Adapt** the installed artifact to the repo's conventions (language, prefixes,
-  paths) — the package is the starting point, not a rigid mold.
+- **Adapt** the installed artifact to the repo's conventions (prefixes, paths) —
+  the package is the starting point, not a rigid mold. Payloads are **authored
+  in English**, and the **agent-facing knowledge surface stays English on
+  install** — do **not** translate bodies, titles or section headings. The
+  dividing line is the **`audience:` axis**: `agent`/`both` docs (all
+  `docs/standards/**`, every `CLAUDE.md`, the `.claude/` skills/agents/hooks, and
+  all frontmatter keys+enums) stay English so the surface is uniform, stable and
+  cross-repo greppable; **`audience: human`** material (`presentations/`,
+  `communications/`, human-only `guides/`) **may** follow the repo's own language.
+  The target's **product code, docstrings and business content are never touched**
+  — they stay the repo's business. (Structural identifiers — canonical `docs/`
+  folder names and frontmatter keys — were already English by taxonomy; this rule
+  now covers the prose around them too.)
 - The method **edits the target's `.claude/`/`docs/` directly**, but **only**
   what the approved item asks; keeps generated artifacts intact (`*.job.yml`,
   manifests, AUTO-GENERATED catalog or equivalent).
+- **Record every installed item in the install manifest**
+  (`.claude/quenching-manifest.json` — template in `assets/templates/claude/`,
+  doctrine in [references/lifecycle.md](references/lifecycle.md) §1): payload
+  id, package version, destination, and each deliberate **adaptation** — the
+  receipt that lets the maintenance loop later tell *upgradable* from
+  *intentionally adapted* instead of guessing.
+- **Generate the derived standards content (dim 2) — a second phase, with its own
+  grant.** Installing the scaffold is **not** the end for the standards layer:
+  once its structure is approved, the method **populates it itself** — it fans out
+  the [quenching-writer](assets/agents/quenching-writer.md) discipline as
+  **method-run sub-agents, one per applicable subject** (the
+  [quenching-standards](assets/skills/quenching-standards/SKILL.md) orchestration,
+  run **inline** — not merely installed for the maintainer to run later), each
+  mining the repo and **writing its standard** — every writer **evaluates its
+  candidate sub-standards** (generate each applicable concept as its own file,
+  record the rest as deferrals). It fires **after the report and an
+  enumerated generate-grant** (the report lists every absent/empty subject to fill,
+  each with its `file:line` anchor; **one OK** authorizes generating them all —
+  [references/lifecycle.md](references/lifecycle.md) §3 `generate-derived`), never
+  as part of the cheap read-only audit. Rails: `current` is anchored at
+  `file:line`, unproven → `authority: background`; the writer writes **only under
+  `docs/standards/`**; an **existing authored body is merged/enriched, never
+  overwritten** (rewriting a body is a **per-doc OK**); **adversarial review is
+  mandatory** before merge and **one subject is generated first to calibrate**.
+  This is the inverse of the DOMAIN-artifact callout below (which proposes a
+  skeleton only): the standards layer is the **portable** layer the method fully
+  populates.
+- **Verify every apply against canon (the gate).** An install, migration or
+  re-stamp is **not "done"** until you **re-run that dimension's own detection on
+  the just-written output** and it comes back **clean**. A non-empty result — a
+  mandatory-incomplete / OKF-non-conformant standard, a variant folder left
+  un-migrated, a missing front-door, an `INDEX.md` without
+  `<!-- BEGIN/END GENERATED -->` or out of sync with disk — means the apply is
+  **incomplete**: loop on the missed items or
+  **flag it loudly**, never report success. *"Applied"* is a claim that must
+  **pass its own greps**, not an assumed side effect — this is what stops an
+  install reporting success while the output stayed non-canonical. The
+  per-dimension contract is [references/module-contract.md](references/module-contract.md)
+  (part 4, the verify gate); human-direction dims 3/10/12 verify the **labeled
+  DRAFT** (`authority: background` + banner), never a `current` claim (Step 6).
+
+> **Reference sections by ROLE, not by title.** Agent-facing headings stay
+> English (above), but a repo may still **rename or reorder** them to fit its own
+> outline — so any method doctrine or hook payload that keys on a CLAUDE.md
+> section still matches it by **role** or a language-neutral signal (e.g. the
+> changed files a validation hook reads via `git status`), **never** by a brittle
+> literal heading string.
 
 > **DOMAIN artifact guided by need (propose, not install).** Beyond the generic
 > `knowledge-*` payloads the package **installs** (portable), the method
@@ -219,14 +334,30 @@ OK, **item-by-item**:
 > coupled to a repo, breaking self-containment; it teaches how to **recognize the
 > trigger** and sketches the **form**, never the content.
 
-### 6. Items without payload → only propose
+### 6. Human-direction dimensions → draft, label, and let the human ratify
 
-Three dimensions have no installable artifact, because they are **human content
-decisions**: **3 (vision)**, **10 (memory)** and **12 (boundary
-doctrine)**. For them the method **only proposes** the text/diff (and, for
-boundaries, which is the canonical home and what becomes just a link) and leaves
-the application to the user. Never writes memory; never decides the direction
-alone.
+Three dimensions encode **direction/judgment**, not derivable description: **3
+(vision)**, **10 (memory)** and **12 (boundary doctrine)**. For them the method
+**drafts** the content from **observable signals** (git history, README/goals,
+the backlog/ADR trail, the boundary already crystallized in CLAUDE.md) using the
+[direction-draft discipline](assets/agents/quenching-direction.md), and **writes
+the draft into the canonical home** clearly **labeled as a draft** — an
+`authority: background` doc in `vision/`, a plainly-marked draft entry for
+memory/boundary — with a **"DRAFT — pending human ratification" banner** at the
+top. For boundaries it also drafts **which is the canonical home and what becomes
+just a link** in the other artifacts.
+
+It **never** marks any of this `current` and **never asserts the direction as
+ratified truth**: a **human ratification gate** stands between the draft and any
+authoritative status. This is the **inverse** of the derived-content regime
+(Step 5) — there the method writes `current` because it transcribes proven
+de-facto reality; here it can only **seed a draft**, because *where the project is
+going* and *what the team's boundary doctrine is* are human calls the code cannot
+prove. An evidence-seeded draft is a strong starting point, **not** a decision.
+The `draft-direction` consent class **never** enters `managed` and **always**
+requires the ratification gate ([references/lifecycle.md](references/lifecycle.md)
+§3) — **even a bulk generate-grant does not cover it** (that grant is scoped to
+derived standards content only).
 
 ### 7. Flag what became deprecable
 
@@ -279,7 +410,12 @@ applied to maintenance):
   ([assets/agents/quenching-auditor.md](assets/agents/quenching-auditor.md)).
   Because it's a manual-work-shortcut (not a side-effect), it is born as a
   **skill** with description trigger (dim 9: new command is born a skill), not
-  a legacy command.
+  a legacy command. With an install manifest present, it also runs the
+  **reconcile scope**: classifies every installed artifact
+  (Current/Upgradable/Adapted/Rotted/Orphaned) against the package and applies
+  the outcome per the consent mode
+  ([references/lifecycle.md](references/lifecycle.md) §2-3) — this is how the
+  **installed harness itself evolves**, not just the docs it audits.
 
 The **automatic freshness signal** between audits is the **evolutionary Stop
 hook** (dim 8: reads the transcript at the end of the turn and proposes deltas
@@ -304,7 +440,7 @@ choice of authorship) and the boundary *workflow (predefined code path) × agent
 - **Hook = automatic trigger that OBSERVES / PROPOSES / at most BLOCKS — never
   mutates the base alone.** Fires by event, without request; reads and returns
   proposal (`additionalContext`) or deterministic record/veto. Proposing ≠
-  applying: consistent with "the method never writes memory or decides the
+  applying: consistent with "the method **drafts** but never **ratifies**
   direction" (Step 6), only PreToolUse/*enforcement* decides, and only about
   generated artifacts.
 - **Command/skill = on-demand step that APPLIES, with OK.** The operator (or
@@ -348,6 +484,9 @@ choice of authorship) and the boundary *workflow (predefined code path) × agent
   the target's path) + the rule of 4 states; doctrine lives in the dimensions.
 - [references/installation.md](references/installation.md) — gap → package payload
   map + the **deprecation** doctrine for what the repo already had.
+- [references/lifecycle.md](references/lifecycle.md) — the **conduction layer**:
+  install manifest (receipt), reconcile/upgrade classes, consent modes
+  (`advise` × `managed`) and distribution channels (stamp × plugin rollout).
 - [references/repo-profiles.md](references/repo-profiles.md) — lightweight and
   **non-closed** catalog of repo profiles (signals → emphasis) that Step 4
   consults when modulating priority (fit-to-repo guidance).

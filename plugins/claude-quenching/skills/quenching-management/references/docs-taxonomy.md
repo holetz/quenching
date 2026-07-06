@@ -24,15 +24,46 @@ in the same place in all of them. This is "a predictable place… the nearest fi
 the **whole set** of `docs/`, not just the repo root.
 
 **Language:** folder names in **English kebab-case** (stable across repos,
-independent of the project's language); the **content** inside each home follows the
-repo's language. The current/active layer index is called **`INDEX.md`** (not
+independent of the project's language). The **agent-facing surface is English**
+too — for every `audience: agent`/`both` home (`standards/`, `decisions/`,
+`vision/`, `backlog/`, `catalog/`, and any doc an agent consumes as
+normative/contract) the bodies, titles and `##` headings stay English, so the
+surface is uniform and cross-repo greppable. Only **`audience: human`** material
+(`presentations/`, `communications/`, human-only `guides/`) may follow the repo's
+language. The current/active layer index is called **`INDEX.md`** (not
 `INDICE.md`).
+
+**Frontmatter is a structural identifier, not localizable content.** Both the
+**keys** (`title`/`audience`/`authority`/`type`/`resource`/…) and the **controlled enum values**
+(`audience: both|agent|human`, `authority: current|background`) are **canonical
+English**, never translated — so a single `grep 'authority: current'` finds every
+current-authority doc across **every** repo the method touches. On the
+**agent-facing surface** (`audience: agent`/`both`) the free-text values
+(`title:`, the body) are **English too** (per the language rule above); only in
+**`audience: human`** material may free-text follow the repo's language (`source:`
+is a provenance name, language-neutral either way). A localized enum
+(`authority: vigente`, `audience: ambos`) is an **un-localized-scaffold inverse
+smell**: it breaks cross-repo machine-greppability and is a migration candidate back
+to the canonical value.
 
 **Content × home:** the **homes** are by **subject** (subject-first — GitLab
 *"primarily follow the structure of the GitLab UI or API"*, "put files for a
 specific product area into the related folder"); the **content inside each home**
 follows **Diátaxis** (tutorial / how-to / reference / explanation). Home = subject;
 text form within the home = Diátaxis.
+
+**Authoring conventions (all homes):**
+
+- **The folder already carries the context — the filename does NOT repeat it.** In
+  `naming/`, the doc is `columns.md`, not `naming-columns.md`; in `platform/`,
+  `deploy-targets.md`, not `platform-deploy-targets.md`. Kebab-case, no accents, one
+  standard/concept per file. Redundant prefixes are a rename candidate.
+- **Link discipline: relative inside the home, absolute for outside.** A link
+  **within** the same top-level home is **relative** (`[columns.md](columns.md)`,
+  `[../naming/columns.md](../naming/columns.md)`); a link that **leaves** for another
+  home or the repo root is **absolute from the repo root** (`/docs/vision/README.md`,
+  `/src/...`). This keeps cross-links stable when a home is moved or a variant is
+  migrated (dim 2 migration doctrine) — relative-outside links break on the move.
 
 ## The canonical tree (locked)
 
@@ -77,6 +108,13 @@ For each home: **purpose**, **Diátaxis type** of content, **`audience:`**,
 - **Purpose:** the current/active standard/contract (how it should be and why),
   versioned — the shared source of truth. Has an **`INDEX.md`** index in
   sync + one standard per file.
+- **Two front-doors (audience split at folder level, dim 12):** a human **`README.md`**
+  (what the home is, its subtopics) **and** a thin **`CLAUDE.md`** — an
+  agent-facing pointer that Claude Code **auto-loads** when working under the home
+  (nearest-file navigation, dim 1): what the layer is · where the index is · which
+  skill edits it · the one-line boundary. Keep it a pointer, never a copy of the
+  standards. Same README-humans × CLAUDE.md-agent separation as the repo root,
+  carried down to the home.
 - **Diátaxis:** reference (and explanation of the *why* behind each standard).
 - **`audience: both`** (human + LLM) or **`agent`** (LLM-first norm/spec).
 - **`authority: current`** (contract; edited only by the owning skill).
@@ -96,6 +134,54 @@ For each home: **purpose**, **Diátaxis type** of content, **`audience:`**,
   services).
 - **Internal boundary `code/` × `naming/`:** `code/` governs **symbols** (code);
   `naming/` governs **data** (tables/columns).
+- **Format — conformant OKF bundle (additive):** one standard per `.md`, identity =
+  the file **path** (which carries the subject); frontmatter carries the **full
+  mandatory set** — `title`/`summary`/`audience`/`authority`/`source`/`maintainer`/
+  `updated` **and** the OKF pair `type: standard` + `resource:` (the repo scope the
+  standard governs — path/glob/FQN of the code it describes, **derived from the
+  doc's `file:line` anchors**, never empty/self-pointing). The layer index
+  **`INDEX.md`** plays the OKF `index.md` role; a `log.md` at the standards root is
+  the bundle's change history (date-grouped, **newest-first**). The set is stamped
+  via the dedicated mold (`assets/templates/docs/standards-front.md`, not the
+  generic `docs-front.md`); the stamp **merges** (fills a missing key, never
+  clobbers a foreign one) — same additive OKF discipline as `catalog/` below.
+
+#### Candidate sub-standards per subject (a consideration checklist, not a blind generate list)
+
+Each subject subfolder holds **one concept per file** — **files, not sub-folders**
+(a new folder level would break the `INDEX.md` "### `<subject>/` → one row per doc"
+model). To guarantee the per-subject breakdown is **even** (so `code/` doesn't stay a
+231-line monolith while `naming/` is correctly split), the method carries a
+**candidate sub-standards catalog per subject** — the **single source** below. It is a
+**consideration checklist, NOT a generation checklist**: the writer **evaluates every
+candidate**, generates each **applicable** one as its own `file:line`-anchored file,
+and **records a deferral** for the rest (never a silent skip). **Guaranteed floor of
+consideration + open ceiling** — the list is **non-closed** (a repo may have more), and
+a candidate is generated **only** with observed `file:line` evidence. Same
+"completeness **of what fits**, evidence-gated, not a blind checklist" rule as
+installing homes — applied one level down.
+
+Candidate catalog (representative — non-closed):
+
+| Subject | Candidate sub-standards |
+| --- | --- |
+| `code/` | `imports` · `format-lint` · `typing` · `symbol-naming` · `dependencies-pins` · `error-handling` · `logging` · `docstrings` · `testing-conventions` |
+| `naming/` | `tables` · `columns` · `descriptions` · `schemas-catalogs` |
+| `architecture/` | `layers` · `module-boundaries` · `patterns` · `dependency-direction` · `integration-points` |
+| `data-modeling/` | `grain` · `keys` · `joins` · `schema-catalog-choice` · `historization` |
+| `ci-cd/` | `build` · `deploy` · `manifest-generation` · `pipeline-stages` · `versioning-release` |
+| `workflows/` | `job-framework` · `task-parameters` · `scheduling` · `orchestration` |
+| `mlops/` | `model-lifecycle` · `lineage` · `experiment-tracking` · `regulatory-interface` · `serving` |
+| `quality/` | `row-checks` · `data-drift` · `model-monitoring` · `stability` |
+| `platform/` | `deploy-targets` · `permissions-governance` · `external-services` · `secrets` |
+
+**Coverage / deferral ledger.** Each generated sub-standard is a
+`file:line`-anchored file (full mandatory OKF frontmatter, per the format above);
+each **deferred** candidate is recorded in a **"Coverage / deferred sub-standards"**
+section of that subject's `README.md` — a per-subject, re-checkable ledger the verify
+gate reads — with a one-line why. Chronological bundle history lives in the
+standards-root `log.md`. A subject is **"done"** only when every considered candidate
+is **present or explicitly deferred** — never silently partial.
 
 ### `decisions/` — ADR, open decision
 - **Purpose:** a decision **not yet implemented**, under debate, with weighed
@@ -171,7 +257,7 @@ For each home: **purpose**, **Diátaxis type** of content, **`audience:`**,
   `authority: current`.
 - **4-level hierarchy:** `<system>/<catalog>/<schema>/<table>` — `system`
   is the physical origin (PostgreSQL, SQL Server, Databricks/UC, BigQuery…), and its
-  `README.md` holds **how to access it** (type, connection, **secret by
+  `README.md` holds **how to access it** (engine, connection, **secret by
   reference**, never the credential) and **where the scripts are** that build the
   tables.
 - **Two granularities:** **consolidated** (`<schema>.md`, one row per table,
@@ -183,6 +269,12 @@ For each home: **purpose**, **Diátaxis type** of content, **`audience:`**,
   hand — "X defines Y" rule; system without a generator has entirely curated pages).
   `catalog/` = "the **data** we produce/consume" — distinct from `reference/`
   (external) and `standards/` (our code/process contracts).
+- **Format — conformant OKF bundle (additive):** one concept per `.md`, identity = file
+  path; frontmatter carries a non-empty `type` (`system`/`schema`/`table`) + `resource`
+  (URI/FQN of the underlying asset); the consolidated `<schema>.md` plays the OKF
+  `index.md` role; optional `log.md` at the bundle root = change history (date-grouped, newest-first).
+  The method's labels (`audience`/`authority`/`source`) ride along as extra keys
+  (consumers preserve them); no OKF tooling/SDK dependency.
 - **Templates** (in `assets/templates/docs/catalog/`): `system.md` (access sheet +
   scripts), `schema.md` (consolidated index), `table.md` (detailed page).
 
@@ -258,11 +350,41 @@ canonical name** — in a **deterministic and prescriptive** manner, but **safel
    `docs/catalogo_dados/` / `docs/dominio/` → `docs/catalog/`;
    `docs/apresentacoes/` / `docs/diagramas/` / `docs/normativos/` →
    `docs/presentations/` or `docs/reference/regulations/` depending on content.
+
+   **1a. Subfolder-level map (inside `standards/`).** Convergence applies one level
+   down — a variant **subfolder** name is a non-convergence smell too:
+   `codigo/` → `code/`; `modelagem/` → `data-modeling/`; `nomenclatura/` → `naming/`;
+   `plataforma/` → `platform/`; `arquitetura/` (as a subfolder) → `architecture/`;
+   `servicos/` → the fitting subject (usually `platform/`, or split by content).
+   On this agent-facing surface the free-text values (`title:`, the body) stay
+   **English** (language rule above), and the **folder name** + frontmatter
+   keys/enum values stay **canonical English**.
+
+   **Content relocation (distinct from rename).** A doc filed under the **wrong
+   subject** moves to its subject home — a job/task framework under `code/` →
+   `workflows/`; "code defines YAML" under `platform/` → `ci-cd/`. Relocation is a
+   **semantic placement** call: PROPOSE it **per item, with OK**, and measure the
+   referrer blast radius (step 3) — never fold it into a bulk opt-in.
 2. **Flag the variant as DEPRECATABLE.** A variant name is a **non-convergence smell**
    — it enters the "Deprecatable" section of the report with the proposed canonical destination.
-3. **PROPOSE the migration; NEVER rename/delete without OK.** Human confirmation and
-   the "do not delete without OK" rule from the deprecation doctrine ([installation.md](installation.md))
-   **remain in effect**. Deterministic ≠ automatic: the mapping is repeatable, but
-   each migration goes through Step 5 confirmation.
-4. **Install only the missing canonical homes that apply.** A repo without data does not
+3. **Measure and SURFACE the blast radius BEFORE executing.** A variant path is often
+   **load-bearing beyond `docs/`**: sweep for **every** reference to it — not only `docs/`
+   cross-links, but **product code** (path constants, imports, **docstrings**) and
+   **gitignored-but-live maps** (a ripgrep-aliased `grep -r` silently skips gitignored paths →
+   use `grep --no-ignore` / `git grep` / `find … -exec grep` for a complete sweep). **Report the
+   scope in the proposal** — how many files, which reach **code**, and **which non-`docs/`
+   referrers** (skills, `CLAUDE.md`, prose links) the rename will edit. The OK covers exactly this
+   **enumerated** set, shown **in the proposal** — never deferred to an after-the-fact wrap-up. A
+   rename that resolves to a code constant is a **refactor of the target's product**, not a docs
+   move: **alert** the user to it, never perform it silently.
+4. **PROPOSE the migration; NEVER rename/delete without OK — code-coupled ⇒ its OWN confirmation.**
+   Human confirmation and the "do not delete without OK" rule from the deprecation doctrine
+   ([installation.md](installation.md)) **remain in effect**. A migration whose blast radius reaches
+   product code, or is otherwise irreversible, is a **DISTINCT confirmation item** with its scope
+   shown — **never folded into a bulk "install all" opt-in**. Deterministic ≠ automatic: the mapping
+   is repeatable, but each migration goes through its **own** Step 5 confirmation.
+5. **Install only the missing canonical homes that apply.** A repo without data does not
    receive `catalog/`; the baseline is completeness **of what fits**, not a blind checklist.
+   The same rule governs the **candidate sub-standards** one level down (§ Candidate
+   sub-standards per subject): a **consideration** checklist, evidence-gated generation,
+   recorded deferral — never a blind generate list.

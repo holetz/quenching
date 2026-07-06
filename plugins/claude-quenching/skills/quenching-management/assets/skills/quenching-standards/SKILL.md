@@ -36,13 +36,17 @@ discipline — one standard per file, frontmatter, kebab-case, no duplication),
 
 ## Procedure
 
-1. **Derive the topics that APPLY.** From the nine canonical ones (`architecture` ·
-   `code` · `naming` · `data-modeling` · `ci-cd` · `workflows` · `mlops` ·
-   `quality` · `platform` — see `references/docs-taxonomy.md`), select **only
-   those that fit** the repo (repo without ML → no `mlops/`; without data → no
-   `naming/`/`data-modeling/`). Completeness of **what fits**, not a blind
-   checklist. **Effort scale:** few topics → few agents (fan-out proportional to
-   scope, not fixed).
+1. **Derive the topics that APPLY, and each topic's candidate sub-standards.** From
+   the nine canonical ones (`architecture` · `code` · `naming` · `data-modeling` ·
+   `ci-cd` · `workflows` · `mlops` · `quality` · `platform` — see
+   `references/docs-taxonomy.md`), select **only those that fit** the repo (repo
+   without ML → no `mlops/`; without data → no `naming/`/`data-modeling/`). For each
+   selected topic, also load its **candidate sub-standards catalog**
+   (`references/docs-taxonomy.md` § Candidate sub-standards per subject) — the
+   **non-closed** list of concepts each worker will **consider** breaking the topic
+   into (one concept per file). Completeness of **what fits**, a **consideration**
+   checklist, not a blind generate list. **Effort scale:** few topics → few agents
+   (fan-out proportional to scope, not fixed).
 
 2. **Fan-out: ONE `quenching-writer` per topic, IN PARALLEL.** Fire the workers
    in a **single message with multiple sub-agent invocations** — each in its own
@@ -59,14 +63,18 @@ discipline — one standard per file, frontmatter, kebab-case, no duplication),
      that each return detailed results can consume significant context"*.
    - **Parallelism ≈ 15× tokens** (*"multi-agent systems use about 15× more
      tokens than chats"*): it's a purchase of **quality/latency**, not savings.
-     In a **large repo**, run **one slice** (one topic) first to calibrate before
-     opening the full fan-out.
+     In a **large repo — and always on the method's own first pass** — run **one
+     slice** (one topic) first to calibrate before opening the full fan-out.
 
-3. **(Quality, optional) Adversarial review in fresh context** before merging: a
+3. **Adversarial review in fresh context before merging — MANDATORY when this runs
+   as the method's own apply** (optional only for a maintainer-run refresh): a
    sub-agent that sees only the diff and the criterion (*"A reviewer running in a
    fresh subagent context sees only the diff and the criteria you give it"*) and
    checks **the anti-fabrication INVARIANT** — no unimplemented best-practice
-   asserted as `current`; **every** current rule anchored at `file:line`.
+   asserted as `current`; **every** current rule anchored at `file:line`; a *why*
+   not evidenced in code/commit/ADR left `authority: background`, never `current`.
+   The method writing content into a target is higher-stakes than a maintainer-run,
+   so the review is **not skippable** there.
 
 4. **Collect condensed returns** and **expose the gaps** that workers proposed as
    **PROPOSED** items in `backlog/` / `decisions/`. **Proposes, does not impose** —
@@ -76,22 +84,36 @@ discipline — one standard per file, frontmatter, kebab-case, no duplication),
    artifact**, never hand-edited ("X defines Y" rule; structural drift becomes
    impossible by construction):
    - **Scan** `docs/standards/**/*.md` (ignore `INDEX.md` itself and
-     home/subfolder `README.md` files).
-   - From each file, **read the frontmatter** `title:` / `updated:` / `status:`.
-   - **Rebuild the list** in the index **BETWEEN the markers**
+     home/subfolder `README.md`/`CLAUDE.md` files).
+   - From each file, **read the frontmatter** `title:` / `summary:` / `updated:` /
+     `authority:` (the current/background axis — never the legacy `status:`) — and
+     the OKF pair `type:` / `resource:` (may be surfaced in a "Governs" column).
+   - **Rebuild the tables** in the index **BETWEEN the markers**
      `<!-- BEGIN GENERATED -->` … `<!-- END GENERATED -->`, **preserving the
      authored preamble above** (do not discard the prose to "be deterministic" —
-     the generated zone is only the list).
+     the generated zone is only the tables). **Group by subject subfolder**: one
+     `### <subfolder>/` heading + a `| Doc | Covers |` table, one row per doc — `Doc`
+     = relative link labelled with `title`, `Covers` = the doc's **`summary:`** (now
+     **mandatory** for a standards bundle; the `→ title` fallback is
+     **defensive-only**, for a malformed doc that slipped the frontmatter gate).
+     This gives the agent a scannable, subject-sectioned map instead of a flat list.
+   - **Establish / append `log.md`** at the standards root (the OKF bundle change
+     log): on each build/refresh, **prepend** a dated entry (`## <YYYY-MM-DD>`,
+     **newest first**) summarizing what was built/updated this run. Unlike
+     `INDEX.md` it is **authored, not derived** — append, never regenerate.
    - **Order by topic-subfolder** (deterministic, e.g., alphabetical by
      `<topic>/<file>`), with a **light optional override** (`order:` in the doc
      frontmatter) when the repo wants to fix an order.
    - The index eliminates **structural drift** (the list lying about which files
-     exist) — it does **not** validate that each `status: current` is still true
+     exist) — it does **not** validate that each `authority: current` is still true
      (content drift stays with the standard's owner and the method's drift audit).
 
 6. **Report per topic:** `built` / `updated` / `drifted-corrected` /
-   `not-applicable` + the **proposed gaps** (with the source for each). Semantic
-   identifiers, never the dump.
+   `not-applicable` + the **proposed gaps** (with the source for each) + the
+   **per-topic coverage**: which candidate sub-standards were **generated** (each →
+   its file) and which were **deferred** (each → a one-line why), so the deferral
+   ledger in each subject `README.md` is filled and the verify gate can read it.
+   Semantic identifiers, never the dump.
 
 ## Guardrails
 

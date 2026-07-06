@@ -53,7 +53,7 @@ The full method documentation — architecture, the 15 dimensions, the 8-step wo
 
 ## Contributing
 
-The method is **alive** — it is advanced over time through a traceable evolution log and two maintainer agents. See [`CONTRIBUTING.md`](CONTRIBUTING.md) before proposing a change.
+The method is **alive** — it is advanced over time through a traceable evolution log and two maintainer skills. See [`CONTRIBUTING.md`](CONTRIBUTING.md) before proposing a change.
 
 ## Authors
 

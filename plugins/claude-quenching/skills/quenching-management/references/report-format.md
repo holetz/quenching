@@ -20,9 +20,9 @@ and installation plan at the end. Cite **`file:line`** in every piece of evidenc
 | --- | --- | --- | --- | --- |
 | 1 | Map (CLAUDE.md) | Drifted | CLAUDE.md:22 → link to absent file | quenching-map + hook |
 | 2 | Standards | Present | <index>:1 | quenching-docs |
-| 3 | Vision | Partial | <vision>:40 (milestone crept in) | — (propose) |
+| 3 | Vision | Partial | <vision>:40 (milestone crept in) | direction-draft (background) |
 | … | … | … | … | … |
-| 12 | Boundaries | Drifted | rule X in CLAUDE.md:30 **and** <index>:12 | — (propose) |
+| 12 | Boundaries | Drifted | rule X in CLAUDE.md:30 **and** <index>:12 | direction-draft (background) |
 
 States: **Present · Partial · Drifted · Absent**.
 
@@ -48,7 +48,7 @@ States: **Present · Partial · Drifted · Absent**.
 - **Symptom:** <what is wrong>
 - **Evidence:** <file:line>
 - **Remediation:** <concrete action>
-- **Install:** <payload from assets/… → destination in target | "no payload: propose to user">
+- **Install:** <payload from assets/… → destination | derived-content: generate (dim 2, `file:line`-anchored) | direction: draft labeled `background`, human ratifies (dim 3/10/12)>
 
 ### P2 — <title>  ·  [dimension N · state]
 - …
@@ -64,20 +64,31 @@ States: **Present · Partial · Drifted · Absent**.
     keep the repo's and discard the payload (goal = single source, not
     imposing the package).
 
-## Items without payload (human decision)
+## Human-direction drafts (dims 3/10/12 — ratify before authoritative)
 
-Dimensions 3 (vision), 10 (memory), 12 (boundaries): the method **proposes**,
-does not install.
+The method **drafts** vision (3), memory (10), boundary (12) from observable
+signals and writes each as a labeled `authority: background` draft (banner
+"pending human ratification"). Ratify or edit before any of it is authoritative —
+the method never promotes a draft to `current`.
 
-- **<dimension>:** <suggested diff/text, ready for the user to apply (or for
-  the artifact's owner template to execute the writing).>
+- **<dimension>:** <what was drafted + where + the signals (`file:line`/commit/ADR)
+  it rests on + the open questions the human must decide.>
 
 ## Installation plan
 
 - [ ] Install P1: copy <payload> → <destination>, adapt to derived shape (after OK)
 - [ ] Install P2: … (after OK)
+- [ ] **Derived content to generate (dim 2 — `generate-derived` grant):** the
+      absent/empty standards subjects to populate, **each with its `file:line`
+      anchor**, and **per subject the candidate sub-standards** to generate (each
+      anchored) vs. **defer** with a one-line why (`code/` → generate `imports`,
+      `logging`, …; defer `typing` — no evidence · `ci-cd/` ← <anchor> · …). One OK
+      authorizes generating them all; rewriting an existing authored body is a
+      separate per-doc OK.
+- [ ] **Direction drafts to write (dims 3/10/12 — `draft-direction`):** vision /
+      memory / boundary drafted as labeled `authority: background`, pending human
+      ratification (never auto-applied).
 - [ ] Deprecables: review and, with OK, remove the listed old artifacts
-- [ ] Items without payload: review the proposed diffs
 ```
 
 ## Usage notes

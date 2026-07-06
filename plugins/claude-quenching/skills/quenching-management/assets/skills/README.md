@@ -38,9 +38,10 @@ Distinguish them in Step 0: *"document ONE standard"* → `quenching-docs`;
 ## How to install (summary)
 
 1. **Copy** the skill folder to `.claude/skills/<prefix>-<name>/` of the target.
-2. **Rename** folder/`name` to the derived taxonomy (`<prefix>`) and **translate**
-   the `description` to the repo's language — keeping the **literal trigger
-   phrases** that the users of that repo would actually type.
+2. **Rename** folder/`name` to the derived taxonomy (`<prefix>`); the
+   `description` is **agent routing code → keep it English**, keeping the
+   **literal trigger phrases** users of that repo would actually type so routing
+   still fires.
 3. **Fix the internal paths** in `SKILL.md` (`docs/` layers, reference, sub-agent
    names referenced by `agent:`) to the real shape derived in Step 0 of
    [../../references/detection-and-smells.md](../../references/detection-and-smells.md).

@@ -85,8 +85,8 @@ Show the user in a compact format:
 Plano de commits (N grupos):
 
 [1] <proposed message>
-    - arquivo/a.py
-    - arquivo/b.py
+    - file/a.py
+    - file/b.py
     (reason: <1 line on why these files belong together>)
 
 [2] <proposed message>
