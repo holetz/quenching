@@ -2,72 +2,166 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What this repo is
+## What this repository is
 
-This repo is **two things at once**, and the distinction governs almost every decision here:
+A **Claude Code plugin marketplace** with a single plugin, `claude-quenching`
+(source: [plugins/claude-quenching/](plugins/claude-quenching/)). The plugin forces any
+*target* repository's `docs/` into one canonical **Open Knowledge Format (OKF v0.1)**
+bundle and keeps it conformant, via ten skills plus a self-contained enforcement hook and
+an offline HTML diagram generator.
 
-1. A **Claude Code plugin marketplace** ([`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json)) hosting a single plugin, **`claude-quenching`**.
-2. The **development workspace** for that plugin — its maintainer skill and documentation-site source.
+There is no application code, no build step, and no test framework here — the repo is
+markdown skills (instructions for Claude) plus two dependency-free Python scripts (the
+validator and the diagram generator) and a pair of vendored MIT JS libraries the generator
+inlines. Treat
+skill bodies (`SKILL.md`, `references/*.md`) as the "source code": they are prose
+instructions a future Claude session executes literally, so precision in wording matters
+as much as correctness in a normal codebase.
 
-**The only thing ever shipped to a user is [`plugins/claude-quenching/`](plugins/claude-quenching/).** The marketplace `source` points only there. Everything else — [`.claude/skills/`](.claude/skills/), [`mkdocs/`](mkdocs/) — is **maintainer tooling, versioned but never delivered**. Keep these siblings *outside* `plugins/claude-quenching/` so they stay un-shipped.
+## Repository layout
 
-The plugin itself is a **portable, self-contained audit + installer** for the Claude Code "knowledge surface" (CLAUDE.md, docs, skills, sub-agents, hooks, commands, memory, MCP, …) of *any* target repo. It scores a repo across **15 dimensions**, produces a prioritized gap report, and — with item-by-item confirmation — **installs its own bundled artifacts** into the target's `.claude/`/`docs/`.
-
-> Note: the working directory is `harness-gestao` ("gestão" = management), but the project/repo is `claude-quenching` (`israelholetz/claude-quenching`). The codebase is English; some Portuguese strings are **intentional** (detection regexes, folder-variant literals) — do not "translate" them.
-
-## Commands
-
-There is no build/test toolchain for the plugin itself — it is Markdown + a few inert Python hook payloads. The only tooling is for the **docs site** (MkDocs Material, managed by [`uv`](https://docs.astral.sh/uv/), pinned in `pyproject.toml`/`uv.lock`):
-
-```bash
-make help            # list all scripts
-make docs-serve      # uv sync + serve with live reload at http://127.0.0.1:8000
-make docs-build      # strict static build into ./site (fails on broken refs)
-make docs-deploy     # publish to GitHub Pages (gh-pages branch)
-make docs-update     # upgrade pinned docs deps, then re-sync
+```
+.claude-plugin/marketplace.json        # marketplace manifest, lists the one plugin
+plugins/claude-quenching/
+  .claude-plugin/plugin.json           # plugin manifest (name, version, keywords)
+  VERSION                              # plugin version, kept in lockstep with plugin.json
+  skills/<skill-name>/
+    SKILL.md                           # frontmatter (name/description/when_to_use/allowed-tools) + workflow
+    references/*.md                    # doctrine/spec loaded only when the skill runs
+  assets/                              # the INSTALLABLE PAYLOAD — copied into target repos, never executed here
+    docs/                              # canonical OKF bundle skeleton (index.md listings, log.md seeds, glossary seed)
+    templates/                         # molds: concept-front, standard-front, catalog/*, decisions/adr, harness/*, ...
+    hooks/
+      okf-validate.py                  # zero-dependency OKF v0.1 conformance checker (CLI + hook)
+      hooks-config.json                # checker config (block `okfValidate`)
+      settings.snippet.json            # hook wiring to merge into a target's .claude/settings.json
+    tools/
+      okf-visualize.py                 # zero-dependency OKF v0.1 → interactive HTML diagram generator (CLI)
+      viewer/                          # viz.html/css/js + vendor/ (Cytoscape.js & marked, MIT) it inlines offline
 ```
 
-Every target runs through `uv` (e.g. `uv run mkdocs serve`); no global Python is touched. `docs-build --strict` is the closest thing to a CI gate — run it before changing `mkdocs/`. CI auto-deploys the site on push to `main` touching `mkdocs/`/`mkdocs.yml`/`pyproject.toml`/`uv.lock` ([.github/workflows/docs.yml](.github/workflows/docs.yml)).
+`assets/` is inert here (≥2 levels below any `SKILL.md`, so Claude Code does not surface it
+as a live skill) — it is the payload the skills stamp into *other* repositories.
 
-### Loading the plugin locally
+## The ten skills and how they relate
+
+| Skill | Role |
+| --- | --- |
+| `quenching-align` | Installer + force-aligner + validator. Migrates a target's `docs/` to the canonical tree, stamps frontmatter, regenerates every `index.md`, establishes `log.md`. Invasive: one full plan, one confirmation (a code-coupled rename gets its own). |
+| `quenching-insert` | Adds ONE new concept doc (standard, ADR, catalog table, announcement, …) into the right home with a complete OKF stamp. |
+| `quenching-enrich` | Imports an external source (local files/folders, or URLs) and mints MULTIPLE OKF docs in one plan→OK pass — a batch fan-out of the insert procedure (cites `homes.md`). Bounded web ingestion; additive/merge only, never deletes. |
+| `quenching-knowledge` | Captures ONE piece of generic knowledge a human states into `knowledge/`. |
+| `quenching-knowledge-scan` | Sweeps the WHOLE bundle to backfill `knowledge/glossary.md` with terms already documented but never listed; fans sub-agents out per home slice. |
+| `quenching-glossary` | Adds/refines ONE glossary entry on demand — the single-term counterpart of `quenching-knowledge-scan`. |
+| `quenching-memory-to-docs` | Drains `~/.claude/projects/<cwd>/memory/` into the bundle, clearing each memory once its doc lands and passes conformance. |
+| `quenching-harness` | Refactors a target's `CLAUDE.md`/`AGENTS.md` into thin pointers over its `docs/` bundle, MOVING (never copying) inlined durable knowledge into its home. |
+| `quenching-visualize` | Renders the bundle as ONE self-contained, offline HTML diagram (force-directed graph, coloured by `type`, edges from cross-links) via `assets/tools/okf-visualize.py`. Read-only; the `.html` is written outside `docs/`. |
+| `quenching-cycle` | The conductor: runs `align` → `memory-to-docs` → `harness` → `knowledge-scan` as a dependency pipeline, pass after pass, until a fixpoint (nothing changes and the validator is clean) or a pass cap. (`enrich`/`visualize` are on-demand tools, not loop stages.) |
+
+Each `SKILL.md` frontmatter `description` carries its own trigger phrases and its "Not
+for: X → other-skill" boundary — read the target skill's frontmatter before assuming
+which one owns a task. Shared procedure lives once in its owner and other skills cite it
+rather than restating it: the insert procedure in
+[`quenching-insert/references/homes.md`](plugins/claude-quenching/skills/quenching-insert/references/homes.md),
+the checks in
+[`quenching-align/references/conformance.md`](plugins/claude-quenching/skills/quenching-align/references/conformance.md).
+
+## The OKF bundle contract
+
+Every target repo the plugin aligns converges to the **same tree** under `docs/`:
+`standards/` (current contracts, subject subfolders), `catalog/` (own data), `decisions/`
+(ADRs), `vision/`, `backlog/`, `guides/`, `knowledge/` (incl. fixed `glossary.md`),
+`reference/` (external facts), `communications/`, `presentations/`. Rules the plugin
+enforces everywhere:
+
+- `index.md` is a reserved, frontmatter-free listing (exception: root `docs/index.md`
+  carries only `okf_version: "0.1"`).
+- Every other concept doc MUST have YAML frontmatter with a non-empty `type` from the
+  fixed vocabulary.
+- `log.md` uses `## YYYY-MM-DD` headings, newest first.
+- Folder names, concept-doc file slugs, frontmatter keys, and `type` values are canonical
+  English (cross-repo greppable); body prose may follow the target repo's language;
+  identifier-derived slugs (catalog tables, repo names, ADR `NNNN-` prefixes) stay verbatim.
+
+The full normative spec is in each skill's `references/` (`okf-spec.md`, `taxonomy.md`,
+`migration.md`, `conformance.md`).
+
+## The enforcement hook (`assets/hooks/okf-validate.py`)
+
+Stdlib-only Python; runs as a CLI (`okf-validate.py <docs-dir> [--json]`, exit 0 = conforms)
+or as a hook (reads hook JSON on stdin, dispatches on `hook_event_name`):
+`PostToolUse` and `Stop` propose fixes via `additionalContext`; an opt-in `PreToolUse`
+(`hardBlock: true`) denies the two hard violations (a typed `index.md`, an untyped concept
+doc). The `Stop` sweep is dirty-gated by default (`stopScan: "dirty"`) via a marker file so
+a turn touching no `docs/**` file costs one stat. `--version` is kept in lockstep with
+`plugins/claude-quenching/VERSION`; `quenching-align` step 6 offers to install or upgrade it
+into a target's `.claude/hooks/`.
+
+## The diagram generator (`assets/tools/okf-visualize.py`)
+
+Stdlib-only Python, zero dependencies. Self-contained: it reuses the same frontmatter parser
+and link resolver as `okf-validate.py` (so the diagram's edges are exactly the within-bundle
+link graph the validator models — relative AND `/docs/...` links) but imports nothing from it.
+CLI: `okf-visualize.py <docs-dir> [--out okf-diagram.html] [--name NAME] [--json] [--version]`,
+exit 0 = written. It walks the bundle's concept docs, builds a graph (nodes coloured by the OKF
+`type` vocabulary, directed edges from cross-links), and injects it plus `viewer/viz.{html,css,js}`
+and the two **vendored MIT libraries** (`viewer/vendor/cytoscape.min.js`, `marked.min.js`)
+**inline** into one HTML file — so the output renders **offline**. Doc bodies are JSON-embedded
+with `<` escaped so a body containing `</script>` cannot break the page. The `.html` is written
+**outside** `docs/` (default `./okf-diagram.html`) — never inside the bundle, or the validator
+would scan generated output. `--version` is kept in lockstep with `VERSION`; the
+`quenching-visualize` skill drives it (and `quenching-align` step 7 offers it). The tool and the
+`viewer/` shell are adapted from the OKF reference implementation's `visualize` command
+(`GoogleCloudPlatform/knowledge-catalog`, Apache-2.0) — see `assets/tools/viewer/vendor/LICENSES.md`.
+
+## Verifying changes
+
+There is no test suite. To verify the plugin's own shipped skeleton is still conformant
+after touching anything under `plugins/claude-quenching/assets/docs/`:
 
 ```bash
-claude --plugin-dir ./plugins/claude-quenching   # then /reload-plugins after edits
+cd plugins/claude-quenching
+python3 assets/hooks/okf-validate.py assets/docs
 ```
 
-Only `quenching-management` should appear as an active skill — the payloads under `assets/` are **not** auto-discovered (that is intentional; see below).
+This must report `0 error(s), 0 warning(s)` — the skeleton is conformant by construction.
 
-### "Tests"
+And to verify the diagram generator still builds an offline diagram of the skeleton and its
+`--version` matches `VERSION`:
 
-There is no unit-test runner. The method is evaluated against **eval fixtures** — small sample repos with one known planted gap each. The harness measures hit-rate, **false-negative rate (the metric that matters most)**, and token cost per dimension. Run it only when a change alters a *measured* detection rule (a grep / smell / "good" criterion); a change that touches no measured rule needs no harness run. See [CONTRIBUTING.md](CONTRIBUTING.md) for the eval doctrine.
+```bash
+python3 assets/tools/okf-visualize.py assets/docs --out /tmp/okf-diagram.html   # exit 0 + node/edge counts
+python3 assets/tools/okf-visualize.py --version                                 # == VERSION
+```
 
-## Architecture
+Write the generated `.html` to `/tmp` or the repo root — **never** under `assets/docs/`, or the
+validator would flag generated output. Re-run `okf-validate.py assets/docs` after, to confirm the
+skeleton is untouched.
 
-### The plugin (`plugins/claude-quenching/skills/quenching-management/`)
+When editing a `SKILL.md`, keep the `description` under the shared **1,536-character**
+per-skill cap (Claude Code truncates beyond it) with trigger phrases in the frontmatter's
+second sentence so truncation never eats them; keep skill bodies well under 500 lines and
+push shared procedure into the owning `references/*.md` instead of restating it in every
+skill that cites it.
 
-One skill, three layers:
+## Two rules that must survive any refactor
 
-- **[`SKILL.md`](plugins/claude-quenching/skills/quenching-management/SKILL.md)** — the agent's roadmap: the **8-step workflow** (derive shape → inventory → score → prioritized report → install-with-OK → propose human-content items → flag deprecables → install the recurring maintenance loop). Keep it **present-tense and under ~500 lines**; push detail to `references/`.
-- **[`references/`](plugins/claude-quenching/skills/quenching-management/references/)** — operational detail consulted per step. The heart is [`dimensions-template.md`](plugins/claude-quenching/skills/quenching-management/references/dimensions-template.md) (the 15 dimensions: purpose · "good" · detection · smells · remediation · payload). Others: `docs-taxonomy.md` and `scripts-taxonomy.md` (single sources for the canonical `docs/`/`scripts/` trees), `detection-and-smells.md` (the adaptive grep cookbook + 4-state scoring), `repo-profiles.md`, `report-format.md`, `installation.md`.
-- **[`assets/`](plugins/claude-quenching/skills/quenching-management/assets/)** — the **installable payloads** the method stamps into a target: skill templates (`skills/`), **worker** sub-agents (`agents/` — `quenching-auditor`/`quenching-writer`/`quenching-direction`), Python hooks (`hooks/`), `docs/`/`scripts/` scaffolds, frontmatter/body `templates/`. The **maintainer skill** (`quenching-maintainer`) lives at `.claude/skills/` and is **never** under `assets/` (or anywhere under `plugins/`) — it is dev-only; see "Working on the method itself" below.
+- **Never add `context: fork` to these skills.** Every sweep skill gates on a mid-flow
+  confirmation (one plan → one OK) when run standalone — and even a cycle-authorized run
+  (`quenching-cycle/references/cycle.md` §cycle-authorization) must still surface code-coupled
+  confirmations mid-flow, which a forked context cannot present.
+- **Never downgrade classification or executor sub-agents to `haiku` in
+  `quenching-memory-to-docs`.** A misclassification there becomes a wrong memory deletion —
+  see the model-policy table in
+  [plugins/claude-quenching/README.md](plugins/claude-quenching/README.md#cost-model) for
+  which sub-agent calls in the other skills are safe to run on cheaper models/effort.
 
-### Two non-negotiable invariants
+## Releasing
 
-1. **Self-contained & portable.** Everything the method needs to audit *and* install lives inside the skill (in `assets/`). Nothing references an external skill or a hardcoded path from another repo. The method **derives the target's shape first**, and **the target repo's existing convention wins** — artifacts adapt their names/paths to fit. Hooks are written so an empty config makes them **inert** (e.g. empty `protectedGlobs`/`validateScript` ⇒ no-op); concrete logic is the documented *example*, never hardcoded.
-2. **The `assets/` payloads are INERT installers, not active components.** They must never become auto-discoverable native skills/hooks of *this* plugin. They are inert files that get copied into a *target* repo, where they become live.
-
-### Operation model: `audit-by-default + install-with-confirmation`
-
-The report always comes first; installation is a separate, explicit, item-by-item step that uses the **package's** artifact (the single evolved source), flagging any pre-existing equivalent in the target as **deprecable** rather than duplicating it — and never removing it without an explicit OK. Beyond structure, the method **generates knowledge** in three regimes by dimension type (single source: `references/module-contract.md` part 3): for **derived-content** dims (standards/2, conventions/13) it **mines the code and writes the standard itself** — every `current` rule anchored at `file:line`, unproven → `authority: background`; for **human-direction** dims — **vision (3)**, **memory (10)**, **boundary doctrine (12)** — it **drafts** the content from observable signals and writes it **labeled `authority: background` + a "pending human ratification" banner**, promoted only by a human gate; **structural** dims (map/1, catalog/11) are install/migrate/regenerate only. The line the method never crosses is **not** "never content" — it is **never assert DIRECTION as ratified truth**: derived description it writes; direction it only drafts for the human to ratify.
-
-## Working on the method itself — read this before editing
-
-The method is a **living method**, maintained through **one dev-only skill** that lives **exclusively at this repo's root** [`.claude/skills/quenching-maintainer/`](.claude/skills/quenching-maintainer/). It is never shipped, never installed into a target, and never duplicated under `plugins/` (the shipped `assets/agents/` holds only the *worker* payloads `quenching-auditor`/`quenching-writer`/`quenching-direction`). It runs **inline**, so the maintainer reviews the surgical change directly.
-
-- **[`quenching-maintainer`](.claude/skills/quenching-maintainer/SKILL.md)** accepts **mixed directions in one invocation** and makes the change directly in `SKILL.md` / `references/` / `assets/`: revise a section (sharpen a smell, prune bloat, fix a stale source, merge duplicates), evolve a concept (grounded in current Claude/Claude Code practice), change the main `SKILL.md` workflow, or analyze a repository/session (audit the method's own source for drift, or mine a real application session under `~/.claude/projects/` for field evidence and apply the fixes). Triggers: "evolve/refine/critique the method", "revise section X", "change the main skill", "run a retrospective on session Y", "harvest field feedback".
-
-**There is no evolution log.** History lives in **git** — the commit message records anything about a change worth remembering beyond its diff. Do **not** reintroduce `R*`/`Rev*` round/revision numbering, a spine/index, an exclusion index, a review queue, or an advance backlog: that apparatus was removed on purpose. The active spec (`SKILL.md`/`references/`/`assets/`) is **present-tense only**. **Canonical reference: [CONTRIBUTING.md](CONTRIBUTING.md)** — it wins on any discrepancy.
-
-The **public docs site** ([`mkdocs/`](mkdocs/), the MkDocs source) describes the **plugin for its users** — what to expect when *applying* the method to a target repo. It must **not** re-document the maintainer skill; that belongs in CONTRIBUTING.md, and the site only carries a thin pointer to [CONTRIBUTING.md](CONTRIBUTING.md).
-
-To make a method change: invoke `quenching-maintainer` with the direction(s) → it locates the relevant surface, reads only what's relevant, makes the surgical change(s), self-checks the invariants, and reports. No change may reintroduce coupling to a specific repo or external skill. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full doctrine.
+Bump `version` in `plugins/claude-quenching/.claude-plugin/plugin.json` **and**
+`plugins/claude-quenching/VERSION` together — that pair is what Claude Code uses to detect
+and apply an upgrade. Keep the `VERSION` constant in **both** shipped scripts in lockstep with
+that pair — `assets/hooks/okf-validate.py` and `assets/tools/okf-visualize.py` — since each
+script's `--version` is what `quenching-align` (the hook) and `quenching-visualize` (the tool)
+compare against an already-installed copy in a target repo. Mirror the plugin `version` in the
+marketplace manifest's plugin entry (`.claude-plugin/marketplace.json`) too.

@@ -1,18 +1,16 @@
-# Python (the bundled lifecycle hooks under
-# plugins/claude-quenching/skills/quenching-management/assets/hooks are .py)
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Python (the validation hook is Python; no build, but ignore caches)
 __pycache__/
 *.py[cod]
-*$py.class
-*.egg-info/
 .venv/
 venv/
 
-# MkDocs build output (the site is published, not committed)
-/site/
-
-# OS / editor cruft
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.swp
+# Per-developer hook overrides installed into a target repo (never committed there,
+# and never here either): the plugin ships only the shared hooks-config.json
+hooks-config.local.json
+settings.local.json

@@ -1,29 +1,29 @@
 {
   "name": "claude-quenching",
-  "version": "0.2.0",
-  "description": "Portable, self-contained knowledge-management method and installer for the Claude Code surface of any repository. Audits the repo across 15 dimensions (CLAUDE.md, normative docs, vision, backlog, ADRs, skills, subagents, hooks, commands, memory, catalog/domain, boundary doctrine, conventions, guardrails, MCP), produces a prioritized gap report, and — with confirmation, item by item — installs its own bundled artifacts (template skills, subagents, hooks, doc skeletons, frontmatter templates) into the target's .claude/ and docs/.",
+  "version": "0.10.0",
+  "description": "OKF-centric knowledge-base aligner for the Claude Code surface of any repository. Installs one canonical Open Knowledge Format (OKF v0.1) docs/ bundle, forces existing docs into conformance, inserts knowledge into the right home, curates a fixed A–Z glossary, drains project memory into docs, refactors CLAUDE.md/AGENTS.md into thin pointers, imports external sources as OKF docs, renders the bundle as a self-contained offline HTML diagram, and loops it all to convergence. Ten skills (the routing story lives in each skill's own description) plus a self-contained validation hook and a zero-dependency HTML diagram generator. Every repository that adopts it looks the same.",
   "author": {
-    "name": "Israel Holetz"
+    "name": "Eloy Sekonell",
+    "email": "consultoria@eloysekonell.com.br"
   },
-  "contributors": [
-    {
-      "name": "Gabriel Groehs",
-      "url": "https://gabriel-groehs.github.io/"
-    }
-  ],
-  "homepage": "https://github.com/holetz/claude-quenching#readme",
-  "repository": "https://github.com/holetz/claude-quenching",
   "license": "MIT",
   "keywords": [
     "claude-code",
     "knowledge-management",
     "documentation",
-    "claude-md",
-    "skills",
-    "subagents",
-    "hooks",
-    "audit",
+    "okf",
+    "open-knowledge-format",
+    "conformance",
     "scaffolding",
-    "developer-tools"
+    "memory-migration",
+    "claude-md",
+    "orchestration",
+    "visualize",
+    "diagram",
+    "graph",
+    "html",
+    "enrich",
+    "developer-tools",
+    "mkdocs"
   ]
 }

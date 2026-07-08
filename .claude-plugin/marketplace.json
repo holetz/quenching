@@ -1,34 +1,35 @@
 {
   "name": "claude-quenching",
   "owner": {
-    "name": "Israel Holetz"
+    "name": "Eloy Sekonell",
+    "email": "consultoria@eloysekonell.com.br"
   },
-  "description": "Marketplace hosting the claude-quenching knowledge-management plugin for Claude Code.",
+  "description": "Marketplace hosting the claude-quenching plugin: an OKF-centric knowledge-base aligner, inserter, knowledge-capturer, glossary-curator, memory-to-docs migrator, CLAUDE.md/AGENTS.md harness-refactorer, external-source importer, offline HTML diagram renderer, and run-to-convergence cycle for the Claude Code surface of any repository.",
   "plugins": [
     {
       "name": "claude-quenching",
       "source": "./plugins/claude-quenching",
-      "description": "Portable, self-contained knowledge-management method and installer for the Claude Code surface of any repository: audits 15 dimensions, produces a prioritized gap report, and installs its bundled artifacts with confirmation.",
-      "version": "0.2.0",
+      "description": "Forces any repository's docs/ knowledge base into a single canonical Open Knowledge Format (OKF v0.1) bundle and keeps it conformant. Ten skills — align (structure), insert (any doc), knowledge (concepts), glossary + knowledge-scan (the fixed A–Z term lookup), memory-to-docs (drain project memory), harness (thin CLAUDE.md/AGENTS.md pointers), enrich (import external sources), visualize (offline HTML diagram), cycle (run everything to convergence) — plus a self-contained enforcement hook and a zero-dependency diagram generator. The routing story lives in each skill's own description. Every repository that adopts it looks the same.",
+      "version": "0.10.0",
       "author": {
-        "name": "Israel Holetz"
+        "name": "Eloy Sekonell",
+        "email": "consultoria@eloysekonell.com.br"
       },
-      "contributors": [
-        {
-          "name": "Gabriel Groehs",
-          "url": "https://gabriel-groehs.github.io/"
-        }
-      ],
-      "homepage": "https://github.com/holetz/claude-quenching#readme",
-      "repository": "https://github.com/holetz/claude-quenching",
       "license": "MIT",
       "category": "documentation",
       "keywords": [
         "claude-code",
         "knowledge-management",
         "documentation",
-        "audit",
-        "scaffolding"
+        "okf",
+        "open-knowledge-format",
+        "scaffolding",
+        "conformance",
+        "memory-migration",
+        "orchestration",
+        "visualize",
+        "diagram",
+        "enrich"
       ]
     }
   ]
