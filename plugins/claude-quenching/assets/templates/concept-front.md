@@ -1,0 +1,26 @@
+---
+type: <REQUIRED — the concept kind; pick the home's type from references/homes.md, e.g. standard|decision|vision|idea|documentation|knowledge|reference|system|schema|table|communication|sidecar>
+title: <short title of the doc>
+description: <one sentence — WHAT this doc covers; the "Covers" cell an index renders>
+resource: <URI / glob / FQN of the asset this concept describes — never empty/self-pointing>
+tags: [<cross-cutting-tag>, <...>]
+timestamp: <ISO 8601 — e.g. 2026-07-06>
+audience: both          # both (human+LLM) | agent (LLM-first) | human (human-only) — CANONICAL English enum, never localized
+authority: current      # current (source-of-truth/contract) | background (background/historical) — CANONICAL English enum, never localized
+source: <origin/author — person, team, external standard>
+maintainer: <owner who keeps it alive (may = source)>
+---
+
+<Doc body. Favor STRUCTURAL markdown — headings, lists, tables (OKF SHOULD).>
+
+<!-- MOLD (claude-quenching · generic concept frontmatter — do NOT copy this note into the doc):
+     The OKF core requires `type` non-empty on every concept doc; `title`/`description`/
+     `resource`/`timestamp` are OKF-recommended; `audience`/`authority`/`source`/`maintainer`
+     are the method's extra keys (canonical English enums — a single `grep 'authority: current'`
+     finds every contract across every repo).
+
+     STAMP = MERGE, NEVER CLOBBER: fill a MISSING key, preserve a filled one and any third-party
+     key (OKF consumers, a legacy `status:`, site generators). Field migration when aligning a
+     legacy doc: `summary:` → `description:`, `updated:` → `timestamp:` (keep the original as an
+     extra key if ambiguous). Identity is the file PATH (kebab-case, one concept per file); the
+     folder carries the subject, so the filename does not repeat it. -->
