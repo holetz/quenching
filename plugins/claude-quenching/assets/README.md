@@ -14,7 +14,7 @@ and copy them out — they depend on no external skill. Both skills reach this p
 | Path | What it is | Installs into the target |
 | --- | --- | --- |
 | `docs/` | the canonical **OKF bundle skeleton** — 27 `index.md` listings, root `okf_version`, `log.md` seeds, `standards/CLAUDE.md`, 4 channel molds, and the fixed `knowledge/glossary.md` term-lookup seed | the target's `docs/` (only the homes that apply) |
-| `templates/` | the **molds** — `concept-front`, `standard-front`, `catalog/{system,schema,table}`, `decisions/adr`, `backlog/idea`, `vision/area`, `sidecar`, `harness/{claude-root,claude-subfolder}`, `index.md.tmpl`, `log.md.tmpl` | applied per insert (not copied wholesale) |
+| `templates/` | the **molds** — `concept-front`, `standard-front`, `catalog/{system,schema,table}`, `decisions/adr`, `backlog/task`, `vision/area`, `sidecar`, `harness/{claude-root,claude-subfolder}`, `index.md.tmpl`, `log.md.tmpl` | applied per insert (not copied wholesale) |
 | `hooks/okf-validate.py` | the zero-dependency **OKF conformance checker** (CLI + hook) | `.claude/hooks/` |
 | `hooks/hooks-config.json` | the checker's config (block `okfValidate`) | `.claude/hooks/` |
 | `hooks/settings.snippet.json` | hook wiring (`PostToolUse` + `Stop`; opt-in `PreToolUse`) | merge into `.claude/settings.json` |

@@ -1,5 +1,5 @@
 ---
-type: <REQUIRED — the concept kind; pick the home's type from references/homes.md, e.g. standard|decision|vision|idea|documentation|knowledge|reference|system|schema|table|communication|sidecar>
+type: <REQUIRED — the concept kind; pick the home's type from references/homes.md, e.g. standard|decision|vision|task|documentation|knowledge|reference|system|schema|table|communication|sidecar>
 title: <short title of the doc>
 description: <one sentence — WHAT this doc covers; the "Covers" cell an index renders>
 resource: <URI / glob / FQN of the asset this concept describes — never empty/self-pointing>

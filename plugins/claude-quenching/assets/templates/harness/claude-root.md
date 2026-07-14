@@ -27,7 +27,7 @@ one entry per term with a link to its full doc when one exists. `grep -i '<term>
 - [docs/knowledge/](docs/knowledge/index.md) — generic understanding we hold (concepts, learnings);
   its [glossary.md](docs/knowledge/glossary.md) is the term lookup.
 - [docs/reference/](docs/reference/index.md) — facts about what we consume (tools, libs, regulations).
-- [docs/backlog/](docs/backlog/index.md) — raw idea inbox (pre-brainstorming).
+- [docs/backlog/](docs/backlog/index.md) — task inbox (park now, triage later).
 - [docs/<other-home>/](docs/<other-home>/index.md) — <boundary one-liner>.
 
 <!-- HOW TO FIND A TERM: the glossary is the repo's A–Z vocabulary index at

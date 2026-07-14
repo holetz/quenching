@@ -25,5 +25,5 @@ maintainer: <owning team>
 ## Non-goals
 <what is explicitly NOT in scope.>
 
-> A **raw idea** toward this direction lives in `backlog/` (the idea inbox); what **has
+> A **raw task** toward this direction lives in `backlog/` (the task inbox); what **has
 > already become reality** distills into `standards/`.
