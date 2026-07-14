@@ -82,7 +82,7 @@ import sys
 import tempfile
 import time
 
-VERSION = "0.10.0"  # kept in lockstep with the plugin VERSION file
+VERSION = "0.11.0"  # kept in lockstep with the plugin VERSION file
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"

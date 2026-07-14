@@ -7,8 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A **Claude Code plugin marketplace** with a single plugin, `claude-quenching`
 (source: [plugins/claude-quenching/](plugins/claude-quenching/)). The plugin forces any
 *target* repository's `docs/` into one canonical **Open Knowledge Format (OKF v0.1)**
-bundle and keeps it conformant, via ten skills plus a self-contained enforcement hook and
-an offline HTML diagram generator.
+bundle and keeps it conformant, via sixteen skills (ten `quenching-*` plus six
+`openspec-*`) plus `/opsx` commands, a self-contained enforcement hook, and an offline
+HTML diagram generator.
 
 There is no application code, no build step, and no test framework here — the repo is
 markdown skills (instructions for Claude) plus two dependency-free Python scripts (the
@@ -28,6 +29,7 @@ plugins/claude-quenching/
   skills/<skill-name>/
     SKILL.md                           # frontmatter (name/description/when_to_use/allowed-tools) + workflow
     references/*.md                    # doctrine/spec loaded only when the skill runs
+  commands/opsx/*.md                   # /opsx:* — thin wrappers that invoke the openspec-* skills
   assets/                              # the INSTALLABLE PAYLOAD — copied into target repos, never executed here
     docs/                              # canonical OKF bundle skeleton (index.md listings, log.md seeds, glossary seed)
     templates/                         # molds: concept-front, standard-front, catalog/*, decisions/adr, harness/*, ...
@@ -43,7 +45,7 @@ plugins/claude-quenching/
 `assets/` is inert here (≥2 levels below any `SKILL.md`, so Claude Code does not surface it
 as a live skill) — it is the payload the skills stamp into *other* repositories.
 
-## The ten skills and how they relate
+## The sixteen skills and how they relate
 
 | Skill | Role |
 | --- | --- |
@@ -57,6 +59,12 @@ as a live skill) — it is the payload the skills stamp into *other* repositorie
 | `quenching-harness` | Refactors a target's `CLAUDE.md`/`AGENTS.md` into thin pointers over its `docs/` bundle, MOVING (never copying) inlined durable knowledge into its home. |
 | `quenching-visualize` | Renders the bundle as ONE self-contained, offline HTML diagram (force-directed graph, coloured by `type`, edges from cross-links) via `assets/tools/okf-visualize.py`. Read-only; the `.html` is written outside `docs/`. |
 | `quenching-cycle` | The conductor: runs `align` → `memory-to-docs` → `harness` → `knowledge-scan` as a dependency pipeline, pass after pass, until a fixpoint (nothing changes and the validator is clean) or a pass cap. (`enrich`/`visualize` are on-demand tools, not loop stages.) |
+| `openspec-explore` | Thinking partner before/during an OpenSpec change; OpenSpec + OKF awareness (reads glossary/knowledge/standards, routes durable insights to the quenching skills). Never implements. |
+| `openspec-propose` | Creates an OpenSpec change and generates all artifacts (proposal, delta specs, design, tasks) until apply-ready; reads the OKF bundle as context; retires a seed `backlog/` idea into the Developed ledger. |
+| `openspec-apply-change` | Implements a change's `tasks.md`; reads the touched subjects' `standards/` as binding contracts; routes durable learning to its OKF home. |
+| `openspec-update-change` | Revises a change's existing planning artifacts and keeps them coherent; never edits code. |
+| `openspec-sync-specs` | Merges delta specs into `openspec/specs/` (current behavior). Boundary: `openspec/specs/` = WHAT the product does; `docs/standards/` = HOW we build. |
+| `openspec-archive-change` | Checks completion, offers the sync, moves the change to `changes/archive/`, then offers ONE OKF distillation pass (durable knowledge → `docs/`, per its `references/distill.md`). |
 
 Each `SKILL.md` frontmatter `description` carries its own trigger phrases and its "Not
 for: X → other-skill" boundary — read the target skill's frontmatter before assuming
@@ -64,7 +72,24 @@ which one owns a task. Shared procedure lives once in its owner and other skills
 rather than restating it: the insert procedure in
 [`quenching-insert/references/homes.md`](plugins/claude-quenching/skills/quenching-insert/references/homes.md),
 the checks in
-[`quenching-align/references/conformance.md`](plugins/claude-quenching/skills/quenching-align/references/conformance.md).
+[`quenching-align/references/conformance.md`](plugins/claude-quenching/skills/quenching-align/references/conformance.md),
+the OpenSpec facts (layout, artifact graph, CLI surface, store selection) in
+[`openspec-propose/references/openspec.md`](plugins/claude-quenching/skills/openspec-propose/references/openspec.md),
+and the OKF distillation doctrine in
+[`openspec-archive-change/references/distill.md`](plugins/claude-quenching/skills/openspec-archive-change/references/distill.md).
+
+### The OpenSpec ↔ OKF relation
+
+The six `openspec-*` skills are adapted 1:1 from the skills the OpenSpec CLI
+(`@fission-ai/openspec` 1.6.0, `metadata.generatedBy`) generates, so target repos drop
+their local `.claude/skills/openspec-*` / `.claude/commands/opsx/` copies and get them from
+the plugin. The upstream CLI-driven mechanics (`openspec new change`, `status --json`,
+`instructions --json`, `list --json`) are the contract that survives upgrades — keep them
+intact. The adaptation is the **OKF bridge**: `docs/` is read as context going in
+(standards, ADRs, glossary; a `backlog/` idea as seed), and durable knowledge is distilled
+back out at archive time (never bulk-copied). `openspec/specs/` and `docs/` never duplicate
+content. These skills are on-demand tools, **not** `quenching-cycle` loop stages, and the
+scaffold in target repos comes from `openspec init` (no setup skill).
 
 ## The OKF bundle contract
 

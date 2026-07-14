@@ -77,9 +77,10 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
   A raw idea toward it → `backlog/`; what became reality → `standards/`.
 - **`backlog/`** — the **raw idea inbox** (`type: idea`): fast, low-ceremony capture of a
-  thought before its scope/direction is decided, feeding `superpowers:brainstorming`. Flat
-  (`<idea-slug>.md`, no pillar subfolders); no `vision_refs`/done-criteria. Once brainstorming
-  develops an idea into an approved spec, the idea **leaves** the tree (Developed ledger in
+  thought before its scope/direction is decided, seeding the OpenSpec cycle
+  (`openspec-explore` / `openspec-propose`). Flat (`<idea-slug>.md`, no pillar subfolders);
+  no `vision_refs`/done-criteria. Once `openspec-propose` develops an idea into a change
+  with apply-ready artifacts, the idea **leaves** the tree (Developed ledger in
   `backlog/index.md` keeps the trail).
 - **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
   home rendered as the product's documentation site (`type: documentation`). Four fixed
