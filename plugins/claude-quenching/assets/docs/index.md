@@ -16,7 +16,7 @@ English kebab-case; only `audience: human` material follows the repo's language.
 * [standards/](/docs/standards/index.md) — how **WE** do it (current contracts/conventions), by subject
 * [decisions/](/docs/decisions/index.md) — ADRs: open decisions; distill to `standards/` on implementation
 * [vision/](/docs/vision/index.md) — direction segmented by area, no deadline
-* [backlog/](/docs/backlog/index.md) — raw idea inbox (pre-brainstorming), one file per idea
+* [backlog/](/docs/backlog/index.md) — task inbox (raw or scoped; optional priority/tags), one file per task
 * [documentation/](/docs/documentation/index.md) — product docs site (Diátaxis: getting-started, how-to, reference, concepts)
 * [knowledge/](/docs/knowledge/index.md) — generic knowledge we hold (domain concepts, explanations, learnings); ships the fixed [glossary.md](/docs/knowledge/glossary.md) term lookup
 * [reference/](/docs/reference/index.md) — facts about what **WE CONSUME** (external, background)

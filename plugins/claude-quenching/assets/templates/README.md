@@ -12,7 +12,7 @@ filled. `quenching-insert` picks the mold by home → `type` (see `quenching-ins
 | `catalog/schema.md` | `catalog/<system>/<catalog>/<schema>.md` | `schema` |
 | `catalog/table.md` | `catalog/<system>/<catalog>/<schema>/<table>.md` | `table` |
 | `decisions/adr.md` | `decisions/NNNN-slug.md` | `decision` |
-| `backlog/idea.md` | `backlog/<idea-slug>.md` | `idea` |
+| `backlog/task.md` | `backlog/<task-slug>.md` | `task` |
 | `vision/area.md` | `vision/<area>.md` | `vision` |
 | `sidecar.md` | `presentations/**` · `reference/regulations/**` extract | `sidecar` |
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
