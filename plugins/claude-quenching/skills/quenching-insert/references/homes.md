@@ -19,7 +19,7 @@ Ask **"what IS this, relative to us?"**:
 | a rule for **how WE build** (current, proven) | `standards/<subject>/` | `standard` | `standard-front.md` | `<subject>/<concept>.md` |
 | a **decision** not yet implemented | `decisions/` | `decision` | `decisions/adr.md` | `NNNN-slug.md` |
 | **direction** for an area (no deadline) | `vision/` | `vision` | `vision/area.md` | `<area>.md` |
-| a **raw idea** to capture (pre-brainstorming) | `backlog/` | `idea` | `backlog/idea.md` | `<idea-slug>.md` |
+| a **raw idea** to capture (pre-OpenSpec-change) | `backlog/` | `idea` | `backlog/idea.md` | `<idea-slug>.md` |
 | a **how-to / task recipe** (product usage) | `documentation/how-to/` | `documentation` | `concept-front.md` | `how-to/<slug>.md` |
 | a **tutorial** (learning-oriented) | `documentation/getting-started/` | `documentation` | `concept-front.md` | `getting-started/<slug>.md` |
 | **product reference / explanation** (site page) | `documentation/{reference,concepts}/` | `documentation` | `concept-front.md` | `<section>/<slug>.md` |
@@ -49,9 +49,9 @@ Ask **"what IS this, relative to us?"**:
 - **idea vs vision/decisions:** a **raw, undeveloped** thought is an `idea` in `backlog/` — no
   scope, no alternatives yet; a **settled direction** with no deadline is a `vision`; a
   **settled decision** with considered alternatives is a `decision`. An idea is deliberately
-  unscoped: it graduates to a `decision`/`vision`/`standard` only after
-  `superpowers:brainstorming` develops it into an approved spec, at which point the idea file
-  leaves `backlog/`.
+  unscoped: it graduates only after the OpenSpec cycle (`openspec-explore` /
+  `openspec-propose`) develops it into a change with apply-ready artifacts, at which point
+  the idea file leaves `backlog/` (Developed ledger keeps the trail).
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
   (`data-modeling/`); the *actual tables* are `catalog/`.
 - **communications vs documentation/presentations:** a **dated message to an audience** is a
