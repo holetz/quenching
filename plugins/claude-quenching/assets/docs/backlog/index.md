@@ -1,46 +1,67 @@
-# `backlog/` — the raw idea inbox
+# `backlog/` — the task inbox
 
-The fast, low-ceremony landing spot for an **idea** before its scope or direction is
-decided — the place a thought is parked between "I thought of this" and "I'm ready to
-work on it". It exists to **seed the OpenSpec cycle**: when an idea is ready,
-`openspec-propose` develops it into a change with apply-ready artifacts
-(`openspec/changes/<name>/` — proposal, design, delta specs, tasks).
+The fast, low-ceremony landing spot for a **task** — a unit of work captured in seconds,
+raw (it needs the OpenSpec cycle before it becomes work) or already clear in scope —
+parked between "I thought of this" and "I'm working on this". A raw task seeds the
+OpenSpec cycle: `openspec-explore` thinks it through and `openspec-propose` develops it
+into a change with apply-ready artifacts (`openspec/changes/<name>/` — proposal, design,
+delta specs, tasks); a task already clear in scope goes straight to execution.
 
-**Boundary:** a *raw, undeveloped* idea — distinct from `vision/` (settled direction with
-no deadline) and `decisions/` (a settled decision with considered alternatives). Each idea
-carries `type: idea` and nothing more than a title, one-sentence gist, and timestamp — no
-pillar, no `vision_refs`, no done-criteria (that thinking belongs in the OpenSpec cycle).
+**Boundary:** a *parked* unit of work — distinct from `vision/` (settled direction with no
+deadline) and `decisions/` (a settled decision with considered alternatives). Each task
+carries `type: task`, a title, a one-sentence gist, and a timestamp; `tags` (themes) and
+`priority` (`critical|high|medium|low`) are **optional** — a task without `priority` is
+**untriaged**, a valid state `quenching-backlog-triage` exists to fill. No done-criteria,
+no `vision_refs`, no estimates (that thinking belongs to the OpenSpec cycle or execution).
 
 ## Organization
 
 ```
 backlog/
-  <idea-slug>.md     # one idea per file (type: idea) — flat, no pillar subfolders
+  <task-slug>.md     # one task per file (type: task) — flat, no subfolders
 ```
 
 ## Lifecycle
 
-1. **Capture** — an idea lands here in seconds (`quenching-insert`, minimal `idea` mold).
-2. **Develop** — `openspec-explore` thinks it through and/or `openspec-propose` uses the
-   idea as the seed of a change, generating its artifacts.
-3. **Distill** — once the change's artifacts are **apply-ready**, the idea file **leaves
-   the tree** (mirroring how an implemented ADR distills into `standards/` and leaves
-   `decisions/`) and the transition is recorded in the Developed ledger below. An abandoned
-   exploration leaves the idea in place.
+1. **Capture** — a task lands here in seconds (`quenching-backlog`, or generic
+   `quenching-insert` routing; minimal `task` mold — priority/tags only when stated).
+2. **Triage (optional)** — `quenching-backlog-triage` proposes priority/tags in one
+   plan → one OK sweep; a task may also be born triaged (stated inline at capture).
+3. **Develop / execute** — the OpenSpec cycle (`openspec-explore` / `openspec-propose`)
+   for raw tasks; direct execution for tasks already clear in scope.
+4. **Leave the tree** — once developed into a change with apply-ready artifacts or done,
+   the file is **removed** and the transition recorded in the Completed ledger below.
+   Removal happens on completion/approval, never on triage; an abandoned development
+   leaves the task in place.
 
 ## What does NOT go here
 
-- An idea already developed into an OpenSpec change (remove it; log it in the Developed
-  ledger).
+- A task already developed or done (remove it; log it in the Completed ledger).
 - Settled direction with no deadline (→ `vision/`).
 - A settled decision with considered alternatives (→ `decisions/`).
 
-## Developed ledger
+## Current tasks
 
-Record each idea here when a change's artifacts are apply-ready and you remove the file:
+<!-- BEGIN GENERATED: rebuilt from the tasks' frontmatter by `quenching-backlog`/
+     `quenching-backlog-triage`/`quenching-insert`/`quenching-align` — DO NOT edit by hand.
+     Content, in order:
+       **N tasks** · X critical · Y high · Z medium · W low · K untriaged
+       one table per priority level (Critical → High → Medium → Low → Untriaged; empty
+       groups omitted), columns `Task | Description | Tags | Since` (Since = the task's
+       `timestamp`), rows OLDEST-FIRST within each group so stale tasks surface;
+       then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
+       (a task with two tags appears under both).
+-->
+_(no tasks parked — this listing is regenerated deterministically from `backlog/*.md` frontmatter)_
+<!-- END GENERATED -->
 
-| Idea | Developed into | Date |
+## Completed ledger
+
+Record each task here when it is completed — or its OpenSpec change supersedes it — and
+you remove the file (curated history, kept **outside** the generated zone):
+
+| Task | Outcome | Date |
 | --- | --- | --- |
 | _(none yet)_ | | |
 
-Mold: `backlog/idea.md` (applied by `quenching-insert`).
+Mold: `backlog/task.md` (applied by `quenching-backlog` / `quenching-insert`).
