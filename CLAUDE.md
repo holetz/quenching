@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A **Claude Code plugin marketplace** with a single plugin, `claude-quenching`
 (source: [plugins/claude-quenching/](plugins/claude-quenching/)). The plugin forces any
 *target* repository's `docs/` into one canonical **Open Knowledge Format (OKF v0.1)**
-bundle and keeps it conformant, via sixteen skills (ten `quenching-*` plus six
+bundle and keeps it conformant, via eighteen skills (twelve `quenching-*` plus six
 `openspec-*`) plus `/opsx` commands, a self-contained enforcement hook, and an offline
 HTML diagram generator.
 
@@ -45,12 +45,14 @@ plugins/claude-quenching/
 `assets/` is inert here (≥2 levels below any `SKILL.md`, so Claude Code does not surface it
 as a live skill) — it is the payload the skills stamp into *other* repositories.
 
-## The sixteen skills and how they relate
+## The eighteen skills and how they relate
 
 | Skill | Role |
 | --- | --- |
 | `quenching-align` | Installer + force-aligner + validator. Migrates a target's `docs/` to the canonical tree, stamps frontmatter, regenerates every `index.md`, establishes `log.md`. Invasive: one full plan, one confirmation (a code-coupled rename gets its own). |
 | `quenching-insert` | Adds ONE new concept doc (standard, ADR, catalog table, announcement, …) into the right home with a complete OKF stamp. |
+| `quenching-backlog` | Captures ONE task into `backlog/` in seconds — minimal `type: task` stamp; inline-stated `priority`/`tags` only (zero interrogation; untriaged is a valid state); dedupes, regenerates the index's derived zone, logs. |
+| `quenching-backlog-triage` | The prioritization sweep: reads task frontmatter directly (no sub-agents), proposes ONE triage plan (priority/tags with rationale, staleness, duplicates), applies on one OK, regenerates the zone. Completion only when human-stated. On-demand tool, not a cycle stage. |
 | `quenching-enrich` | Imports an external source (local files/folders, or URLs) and mints MULTIPLE OKF docs in one plan→OK pass — a batch fan-out of the insert procedure (cites `homes.md`). Bounded web ingestion; additive/merge only, never deletes. |
 | `quenching-knowledge` | Captures ONE piece of generic knowledge a human states into `knowledge/`. |
 | `quenching-knowledge-scan` | Sweeps the WHOLE bundle to backfill `knowledge/glossary.md` with terms already documented but never listed; fans sub-agents out per home slice. |
@@ -60,7 +62,7 @@ as a live skill) — it is the payload the skills stamp into *other* repositorie
 | `quenching-visualize` | Renders the bundle as ONE self-contained, offline HTML diagram (force-directed graph, coloured by `type`, edges from cross-links) via `assets/tools/okf-visualize.py`. Read-only; the `.html` is written outside `docs/`. |
 | `quenching-cycle` | The conductor: runs `align` → `memory-to-docs` → `harness` → `knowledge-scan` as a dependency pipeline, pass after pass, until a fixpoint (nothing changes and the validator is clean) or a pass cap. (`enrich`/`visualize` are on-demand tools, not loop stages.) |
 | `openspec-explore` | Thinking partner before/during an OpenSpec change; OpenSpec + OKF awareness (reads glossary/knowledge/standards, routes durable insights to the quenching skills). Never implements. |
-| `openspec-propose` | Creates an OpenSpec change and generates all artifacts (proposal, delta specs, design, tasks) until apply-ready; reads the OKF bundle as context; retires a seed `backlog/` idea into the Developed ledger. |
+| `openspec-propose` | Creates an OpenSpec change and generates all artifacts (proposal, delta specs, design, tasks) until apply-ready; reads the OKF bundle as context; retires a seed `backlog/` task into the Completed ledger. |
 | `openspec-apply-change` | Implements a change's `tasks.md`; reads the touched subjects' `standards/` as binding contracts; routes durable learning to its OKF home. |
 | `openspec-update-change` | Revises a change's existing planning artifacts and keeps them coherent; never edits code. |
 | `openspec-sync-specs` | Merges delta specs into `openspec/specs/` (current behavior). Boundary: `openspec/specs/` = WHAT the product does; `docs/standards/` = HOW we build. |
@@ -95,7 +97,8 @@ scaffold in target repos comes from `openspec init` (no setup skill).
 
 Every target repo the plugin aligns converges to the **same tree** under `docs/`:
 `standards/` (current contracts, subject subfolders), `catalog/` (own data), `decisions/`
-(ADRs), `vision/`, `backlog/`, `guides/`, `knowledge/` (incl. fixed `glossary.md`),
+(ADRs), `vision/`, `backlog/` (task inbox: `type: task`, optional `priority`/`tags`,
+derived index zone), `documentation/`, `knowledge/` (incl. fixed `glossary.md`),
 `reference/` (external facts), `communications/`, `presentations/`. Rules the plugin
 enforces everywhere:
 
