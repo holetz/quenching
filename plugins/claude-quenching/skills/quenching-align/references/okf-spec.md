@@ -27,7 +27,7 @@ the plugin enforces; [conformance.md](conformance.md) turns them into checks.
 - Type values are **not** registered centrally. Producers **SHOULD** pick descriptive,
   self-explanatory values; consumers **MUST** tolerate unknown types gracefully.
 - This plugin fixes a **descriptive vocabulary** per home (`standard`, `system`, `schema`,
-  `table`, `decision`, `vision`, `idea`, `documentation`, `knowledge`, `reference`,
+  `table`, `decision`, `vision`, `task`, `documentation`, `knowledge`, `reference`,
   `communication`, `communication-template`, `sidecar`) so the surface is uniform and greppable — still valid
   OKF (self-explanatory, tolerated by any consumer).
 

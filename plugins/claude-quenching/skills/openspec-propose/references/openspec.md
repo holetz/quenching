@@ -120,7 +120,7 @@ The two stores answer different questions and **must not duplicate content**:
   (Requirement/Scenario). Owned by the OpenSpec cycle; updated only via delta sync.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/decisions/` — decisions with alternatives; `docs/knowledge/` — generic understanding;
-  `docs/backlog/` — raw idea inbox that **seeds** changes (see the idea lifecycle in the
+  `docs/backlog/` — task inbox that **seeds** changes (see the task lifecycle in the
   backlog mold and `backlog/index.md`).
 
 A behavior statement belongs in a spec; a build-rule belongs in `standards/`; what a change

@@ -117,7 +117,7 @@ conversation context. If vague or ambiguous you MUST prompt for available change
    distillation procedure in [references/distill.md](references/distill.md):
    - **harvest** the archived artifacts for durable candidates (decision with alternatives
      → ADR in `decisions/`; generic understanding → `knowledge/`; new repo-specific terms →
-     `knowledge/glossary.md`; proven build-rule → `standards/`; unpursued follow-up idea →
+     `knowledge/glossary.md`; proven build-rule → `standards/`; unpursued follow-up task →
      `backlog/`);
    - present them as **one plan, one confirmation** (an empty harvest is a valid outcome —
      say so and finish);

@@ -4,11 +4,11 @@ description: >-
   Inserts ONE new piece of knowledge into a repo's OKF docs/ bundle — right home, right
   type, complete conformant OKF frontmatter stamp. Use when the user asks to "insert new
   information into the base", "add a standard/convention", "write an ADR", "add a catalog
-  table", "record a domain decision", "capture a raw idea", "draft an announcement", "add
-  a reference doc", or "register knowledge in the OKF docs". Classifies into home + type +
-  mold, derives the concept path, writes the doc, updates the folder's index.md, appends a
-  log.md entry, and self-checks. Not for: installing/aligning the whole docs/ structure →
-  quenching-align.
+  table", "record a domain decision", "draft an announcement", "add a reference doc", or
+  "register knowledge in the OKF docs". Classifies into home + type + mold, derives the
+  concept path, writes the doc, updates the folder's index.md, appends a log.md entry, and
+  self-checks. Not for: installing/aligning the whole docs/ structure → quenching-align;
+  parking a task in the backlog → quenching-backlog.
 when_to_use: >-
   adding ONE new concept doc into an existing OKF bundle. The content half; the
   structural install/migration half is quenching-align.
@@ -80,7 +80,10 @@ links absolute (`/docs/...`); within-home links relative.
 Add a bullet-link with the doc's `description` (`* [<title>](<rel-path>.md) — <description>`).
 For `standards/**`, the layer index's **Current docs** tables are a DERIVED zone — regenerate
 only what is between `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` from disk; never
-hand-edit inside the markers. Never add frontmatter to an `index.md`.
+hand-edit inside the markers. For `backlog/`, the index's task listing is likewise a DERIVED
+zone — regenerate it from the tasks' frontmatter per the `backlog/index.md` bullet in
+[references/homes.md](references/homes.md); never hand-edit inside the markers. Never add
+frontmatter to an `index.md`.
 
 ### 6. Append to `log.md`
 Per **Appending to `log.md`** in [references/homes.md](references/homes.md), with the entry:

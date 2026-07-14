@@ -133,7 +133,7 @@ If the user mentions a change or you detect one is relevant:
     | Generic understanding gained          | `quenching-knowledge` → `docs/knowledge/` |
     | Decision beyond this change's scope   | `quenching-insert` → ADR in `docs/decisions/` |
     | New repo-specific term coined         | `quenching-glossary` → `docs/knowledge/glossary.md` |
-    | Raw follow-up idea, out of scope      | `quenching-insert` → `docs/backlog/`      |
+    | Raw follow-up task, out of scope      | `quenching-backlog` → `docs/backlog/`    |
 
    Example offers:
    - "That's a design decision. Capture it in design.md?"
@@ -154,7 +154,7 @@ ground truth you explore:
 - **Stand on what's already understood**: `docs/knowledge/` holds the team's mental models
   and learnings; `docs/standards/` holds the binding contracts a future design must respect;
   `docs/decisions/` holds open ADRs the exploration may resolve or collide with;
-  `docs/backlog/` may already hold the very idea being explored — read it as the seed.
+  `docs/backlog/` may already hold the very task being explored — read it as the seed.
 - **Route durable insights** by the capture table above: change-scoped → the change's
   artifacts; durable → the OKF home. Same rule either way: offer, don't auto-capture.
 
@@ -197,7 +197,7 @@ There's no required ending. Discovery might:
 - **Flow into a proposal**: "Ready to start? I can create a change proposal." (→
   openspec-propose)
 - **Result in artifact updates**: "Updated design.md with these decisions"
-- **Seed the backlog**: an idea worth keeping but not pursuing lands in `docs/backlog/`
+- **Seed the backlog**: a task worth keeping but not pursuing lands in `docs/backlog/`
 - **Just provide clarity**: User has what they need, moves on
 - **Continue later**: "We can pick this up anytime"
 
