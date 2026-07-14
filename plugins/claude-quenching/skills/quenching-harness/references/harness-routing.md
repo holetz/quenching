@@ -50,7 +50,7 @@ units. One unit, one verdict.
 | architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `knowledge/<subject>/` (`knowledge`) if non-binding |
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
 | "we chose X because Y" — open / implemented | **MOVE** | `decisions/` (`decision`) if open · `standards/` (`standard`) if proven |
-| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | `backlog/` (`idea`), or `vision/` (`vision`) for settled direction with no deadline |
+| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | `backlog/` (`task`, untriaged), or `vision/` (`vision`) for settled direction with no deadline |
 | step-by-step procedure / onboarding | **MOVE** | `documentation/how-to/` (`documentation`) |
 | facts about an external tool / lib / service | **MOVE** | `reference/{tools,libraries,regulations}/` (`reference`) |
 | domain concept / glossary term | **MOVE** | `knowledge/<subject>/` (`knowledge`) |
@@ -62,7 +62,7 @@ units. One unit, one verdict.
 
 **Tie-breakers** are `quenching-insert`'s — "how **WE** do it" (proven) → `standards/`; open with
 alternatives → `decisions/`; a fact about a **named external** asset → `reference/`; generic
-understanding → `knowledge/`; a **raw idea** → `backlog/`; **direction** → `vision/`; a
+understanding → `knowledge/`; a **parked task** → `backlog/`; **direction** → `vision/`; a
 **procedure** → `documentation/how-to/`. Don't duplicate them here — see
 [../../quenching-insert/references/homes.md](../../quenching-insert/references/homes.md).
 

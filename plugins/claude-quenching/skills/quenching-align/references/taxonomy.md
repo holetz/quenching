@@ -19,7 +19,7 @@ docs/                          # OKF bundle root
   catalog/                     # our data — <system>/{index.md, access.md} · <catalog>/<schema>.md · <schema>/<table>.md
   decisions/                   # ADRs — NNNN-slug.md (type: decision)
   vision/                      # direction by area — <area>.md (type: vision)
-  backlog/                     # raw idea inbox (pre-brainstorming) — <idea-slug>.md (type: idea)
+  backlog/                     # task inbox — <task-slug>.md (type: task; optional priority/tags); DERIVED index zone
   documentation/               # product docs (Diátaxis prose) — getting-started/ how-to/ reference/ concepts/ (type: documentation)
   knowledge/                   # generic knowledge we hold — subject subfolders (type: knowledge)
                                #   ships one FIXED file: glossary.md (the A–Z term lookup)
@@ -40,7 +40,7 @@ docs/                          # OKF bundle root
 | `catalog/**/<schema>/<table>.md` | `table` | detailed page |
 | `decisions/` | `decision` | `NNNN-slug.md` |
 | `vision/` | `vision` | `<area>.md` |
-| `backlog/` | `idea` | `<idea-slug>.md` |
+| `backlog/` | `task` | `<task-slug>.md` |
 | `documentation/**` | `documentation` | `getting-started/`·`how-to/`·`reference/`·`concepts/` |
 | `knowledge/` | `knowledge` | subject subfolders |
 | `reference/` | `reference` | `tools/`·`libraries/`·`regulations/` |
@@ -75,13 +75,18 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   (`NNNN-slug.md`, `type: decision`). On implementation it **distills into `standards/`** and
   leaves the tree (git + the "Distilled ledger" keep the trail).
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
-  A raw idea toward it → `backlog/`; what became reality → `standards/`.
-- **`backlog/`** — the **raw idea inbox** (`type: idea`): fast, low-ceremony capture of a
-  thought before its scope/direction is decided, seeding the OpenSpec cycle
-  (`openspec-explore` / `openspec-propose`). Flat (`<idea-slug>.md`, no pillar subfolders);
-  no `vision_refs`/done-criteria. Once `openspec-propose` develops an idea into a change
-  with apply-ready artifacts, the idea **leaves** the tree (Developed ledger in
-  `backlog/index.md` keeps the trail).
+  A raw task toward it → `backlog/`; what became reality → `standards/`.
+- **`backlog/`** — the **task inbox** (`type: task`): fast, low-ceremony capture of a unit
+  of work — raw (it seeds the OpenSpec cycle, `openspec-explore` / `openspec-propose`) or
+  already clear in scope. Flat (`<task-slug>.md`, no subfolders); no
+  `vision_refs`/done-criteria/estimates; **optional** `priority` (`critical|high|medium|low`
+  — absent = untriaged, a valid state) and `tags` (themes). Its `index.md` carries a
+  **DERIVED zone** (summary + per-priority tables + by-theme bullets, rebuilt from the
+  tasks' frontmatter — format owned by `homes.md` §Updating `index.md`) plus a curated
+  **Completed ledger** outside the zone. Captured by `quenching-backlog` (or generic
+  `quenching-insert` routing); prioritized by `quenching-backlog-triage`. Once a task is
+  developed into a change with apply-ready artifacts or done, it **leaves** the tree (the
+  Completed ledger keeps the trail).
 - **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
   home rendered as the product's documentation site (`type: documentation`). Four fixed
   subfolders: `getting-started/` (tutorial), `how-to/` (task recipes — absorbs the former

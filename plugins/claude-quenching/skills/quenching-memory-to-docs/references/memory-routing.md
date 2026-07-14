@@ -34,14 +34,14 @@ metadata:
 | Memory `type` | What it holds | Likely OKF home | OKF `type` |
 | --- | --- | --- | --- |
 | `feedback` | how you should work (a correction / confirmed approach, with a why) | a durable working rule → `standards/workflows/` (or `standards/code`, `standards/quality` by subject); a step-by-step *how WE work* → `standards/workflows/`; an explanation of *why* → `knowledge/` | `standard` / `knowledge` |
-| `project` | ongoing work, goals, constraints not derivable from code/git | a **raw idea / thing to explore or build** → `backlog/` (a raw `idea`); an **open decision** → `decisions/`; a **binding constraint/rule** → `standards/`; **direction** (no deadline) → `knowledge/` (this skill emits no `vision/`) | `idea` / `decision` / `standard` / `knowledge` |
+| `project` | ongoing work, goals, constraints not derivable from code/git | a **thing to explore or build** → `backlog/` (a `task`, **always untriaged** — inventing a priority the human never stated would violate anti-fabrication); an **open decision** → `decisions/`; a **binding constraint/rule** → `standards/`; **direction** (no deadline) → `knowledge/` (this skill emits no `vision/`) | `task` / `decision` / `standard` / `knowledge` |
 | `reference` | pointer to an external resource (URL, dashboard, ticket, tool, lib) | facts about a **named tool/lib/regulation we consume** collapse into `knowledge/` (this skill emits no `reference/` docs) | `knowledge` |
 | `user` | who the user is (role, expertise, preferences) | **usually not repo docs** — personal/session context. Only migrate a **durable, team-relevant** fact (a role convention, an authority) → `knowledge/` or `standards/workflows/`. Otherwise **flag and ask**; never silently delete a `user` memory. | `knowledge` / `standard` |
 
 ### Tie-breakers (four homes only)
 - "how **WE** do it" (proven, current) → `standards/`; open with alternatives → `decisions/`.
 - a fact about a **named external** asset we consume → **collapses into `knowledge/`** (no `reference/` output).
-- a **raw idea / thing to explore** → `backlog/` (a raw `idea`); **direction** (no deadline) → `knowledge/` (this skill emits no `vision/`); a **procedure** for how WE work → `standards/workflows/`, else `knowledge/` (no `documentation/` output).
+- a **thing to explore or build** → `backlog/` (a `task`, always untriaged); **direction** (no deadline) → `knowledge/` (this skill emits no `vision/`); a **procedure** for how WE work → `standards/workflows/`, else `knowledge/` (no `documentation/` output).
 - If a memory carries **several** facts, split it — one concept per file across the right homes.
 - Anything that fits **none** of the four → flag-and-keep (do not fabricate an out-of-scope doc).
 

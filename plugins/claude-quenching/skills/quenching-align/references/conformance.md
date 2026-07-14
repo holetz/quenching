@@ -85,4 +85,6 @@ WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`, `index-o
 WARN, so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
 Beyond that, the skill also confirms the method-level completeness the validator can't see:
 applicable homes present, each standards subject's **coverage/deferral ledger** filled (every
-candidate present or listed), and `standards/index.md`'s GENERATED zone matching disk.
+candidate present or listed), and the GENERATED zones matching disk — `standards/index.md`'s
+"Current docs" tables and `backlog/index.md`'s task listing (each rebuilt exclusively from
+the frontmatter on disk).

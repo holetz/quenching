@@ -17,7 +17,7 @@ this file only decides **what crosses** and cites that procedure for **how**.
 | **generic understanding** gained (domain insight, mental model, a learning from implementation) | yes | `knowledge/<subject>/<slug>.md` (`type: knowledge`) |
 | a **repo-specific term** the change coined or clarified | yes | an entry in `knowledge/glossary.md` (§Enriching the glossary in homes.md) |
 | a rule for **how WE build** that the change proved out | yes | `standards/<subject>/<concept>.md` (`type: standard`) — only if genuinely proven, else it is a `decision` |
-| a **follow-up idea** the change surfaced but did not pursue | yes | `backlog/<idea-slug>.md` (`type: idea`, idea mold) |
+| a **follow-up task** the change surfaced but did not pursue | yes | `backlog/<task-slug>.md` (`type: task`, task mold — untriaged unless the human states a priority) |
 | the **behavior** the change implemented | no | already synced into `openspec/specs/` (main specs) — that store owns current behavior |
 | proposal.md / design.md / tasks.md as documents | no | they are the OpenSpec archive's history; copying them into `docs/` duplicates a source of truth |
 | task checklists, progress notes, transient debugging chatter | no | transient by nature |

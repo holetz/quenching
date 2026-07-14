@@ -19,7 +19,7 @@ Ask **"what IS this, relative to us?"**:
 | a rule for **how WE build** (current, proven) | `standards/<subject>/` | `standard` | `standard-front.md` | `<subject>/<concept>.md` |
 | a **decision** not yet implemented | `decisions/` | `decision` | `decisions/adr.md` | `NNNN-slug.md` |
 | **direction** for an area (no deadline) | `vision/` | `vision` | `vision/area.md` | `<area>.md` |
-| a **raw idea** to capture (pre-OpenSpec-change) | `backlog/` | `idea` | `backlog/idea.md` | `<idea-slug>.md` |
+| a **task** to park (raw or already scoped) | `backlog/` | `task` | `backlog/task.md` | `<task-slug>.md` |
 | a **how-to / task recipe** (product usage) | `documentation/how-to/` | `documentation` | `concept-front.md` | `how-to/<slug>.md` |
 | a **tutorial** (learning-oriented) | `documentation/getting-started/` | `documentation` | `concept-front.md` | `getting-started/<slug>.md` |
 | **product reference / explanation** (site page) | `documentation/{reference,concepts}/` | `documentation` | `concept-front.md` | `<section>/<slug>.md` |
@@ -46,12 +46,14 @@ Ask **"what IS this, relative to us?"**:
 - **standards vs decisions:** a **proven, current** rule is a `standard`; an **open** decision
   with alternatives is a `decision`. On implementation an ADR **distills** into `standards/`
   and leaves.
-- **idea vs vision/decisions:** a **raw, undeveloped** thought is an `idea` in `backlog/` — no
-  scope, no alternatives yet; a **settled direction** with no deadline is a `vision`; a
-  **settled decision** with considered alternatives is a `decision`. An idea is deliberately
-  unscoped: it graduates only after the OpenSpec cycle (`openspec-explore` /
-  `openspec-propose`) develops it into a change with apply-ready artifacts, at which point
-  the idea file leaves `backlog/` (Developed ledger keeps the trail).
+- **task vs vision/decisions:** a **parked unit of work** is a `task` in `backlog/` — raw
+  (no scope or alternatives yet, it seeds the OpenSpec cycle) or already clear in scope; a
+  **settled direction** with no deadline is a `vision`; a **settled decision** with
+  considered alternatives is a `decision`. A raw task graduates to a
+  `decision`/`vision`/`standard` only after the OpenSpec cycle (`openspec-explore` /
+  `openspec-propose`) develops it into a change with apply-ready artifacts; on
+  completion/approval the task file leaves `backlog/` (its Completed ledger keeps the
+  trail).
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
   (`data-modeling/`); the *actual tables* are `catalog/`.
 - **communications vs documentation/presentations:** a **dated message to an audience** is a
@@ -97,6 +99,17 @@ maintainer: <owner>
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` by scanning `standards/**/*.md`
   (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit
   inside the markers.
+- **`backlog/index.md`** has a DERIVED zone too: rebuild only what is between
+  `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->`, exclusively from `backlog/*.md`
+  frontmatter (`title`/`description`/`tags`/`priority`/`timestamp`) — a summary line
+  (`**N tasks** · X critical · Y high · Z medium · W low · K untriaged`), one
+  `Task | Description | Tags | Since` table per priority level (Critical → High →
+  Medium → Low → Untriaged; empty groups omitted; rows oldest-first within each group),
+  then alphabetical "By theme" bullets (`**<tag>** (n): [task-a](task-a.md), …` — a task
+  lists under each of its tags). A task with an unknown `priority` value renders under
+  Untriaged. Never hand-edit inside the markers; the **Completed ledger** stays OUTSIDE
+  the zone (curated by hand, rows only on completion). If a target's `backlog/index.md`
+  predates the markers, install them without touching the fixed prose around them.
 
 ## Appending to `log.md` (the history)
 

@@ -71,6 +71,19 @@ X") → `docs/documentation/how-to/`; a **learning-oriented tutorial** → `docs
 Sweep the blast radius like any rename (its **own** confirmation when links reach product code).
 Without this rule `align` would read a conformant `guides/` and never migrate it.
 
+### 1d. Renamed backlog item — `idea` → `task`
+
+OKF v0.11 renamed the backlog item concept: a `backlog/*.md` carrying the legacy
+`type: idea` restamps to `type: task` (same home, same minimal stamp; the optional
+`priority`/`tags` keys are NOT backfilled — an untriaged legacy item simply stays
+untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Completed
+ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
+`Idea` → `Task`, `Developed into` → `Outcome`). The DERIVED
+`<!-- BEGIN/END GENERATED -->` zone is installed/regenerated (align already regenerates
+every `index.md`); an index that predates the markers gains them without touching the
+fixed prose around them. A legacy mold reference `backlog/idea.md` maps to
+`backlog/task.md`.
+
 ### Content relocation (distinct from rename)
 
 A doc filed under the **wrong subject** moves to its subject home — a job/task framework under
@@ -117,6 +130,7 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 - `updated:` → `timestamp:`
 - add non-empty `type:` (from the home's vocabulary in [taxonomy.md](taxonomy.md))
 - rename the retired type `type: guide` → `type: documentation` (its home moved to `documentation/`)
+- rename the retired type `type: idea` → `type: task` (the backlog item concept was renamed in v0.11 — see §1d)
 - normalize enums to canonical English (`authority: vigente` → `current`; `audience: ambos` → `both`)
 - preserve third-party keys (a legacy `status:`, OKF-consumer keys, site-generator keys)
 - convert each front-door `README.md` → `index.md` (strip its frontmatter; keep boundary +

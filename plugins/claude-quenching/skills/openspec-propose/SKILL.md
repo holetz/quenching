@@ -5,10 +5,10 @@ description: >-
   (proposal.md, delta specs, design.md, tasks.md) in one CLI-driven pass, reading the OKF
   docs/ bundle first so standards, ADRs, and glossary terminology shape the artifacts. Use
   when the user asks to "propose a change", "create an openspec change", "start a spec-driven
-  change", "draft a proposal", "generate the change artifacts", or "develop this backlog idea
+  change", "draft a proposal", "generate the change artifacts", or "develop this backlog task
   into a change". Derives a kebab-case name, runs `openspec new change`, then loops
-  `status --json` → `instructions --json` → write, until apply-ready; a backlog/ idea used as
-  seed is retired into the Developed ledger on completion (one confirmation). Requires the
+  `status --json` → `instructions --json` → write, until apply-ready; a backlog/ task used as
+  seed is retired into the Completed ledger on completion (one confirmation). Requires the
   openspec CLI (`@fission-ai/openspec`). Not for: implementing the tasks →
   openspec-apply-change; revising an existing change's artifacts → openspec-update-change;
   open-ended thinking before committing to a change → openspec-explore; a durable doc
@@ -33,7 +33,7 @@ in [references/openspec.md](references/openspec.md) — read it if any of those 
 **Store selection:** per §Store selection there.
 
 **Input**: The user's request should include a change name (kebab-case) OR a description of
-what they want to build — possibly a `docs/backlog/` idea to develop.
+what they want to build — possibly a `docs/backlog/` task to develop.
 
 **Steps**
 
@@ -56,7 +56,7 @@ what they want to build — possibly a `docs/backlog/` idea to develop.
    - `docs/decisions/` ADRs that bear on the area (an open decision the change resolves or
      depends on);
    - `docs/knowledge/glossary.md` — use the repo's canonical terminology in every artifact;
-   - if the seed is a `docs/backlog/<idea-slug>.md` idea, read it — it is the proposal's
+   - if the seed is a `docs/backlog/<task-slug>.md` task, read it — it is the proposal's
      germ, and it will be retired in step 7.
 
    No bundle → skip silently; this step never blocks a repo that hasn't adopted OKF.
@@ -101,7 +101,7 @@ what they want to build — possibly a `docs/backlog/` idea to develop.
         `resolvedOutputPath`
       - Apply `context` and `rules` as constraints - but do NOT copy them into the file
       - Apply the OKF context from step 2 the same way: standards constrain the design,
-        glossary terms name things, the seed idea's gist anchors the proposal
+        glossary terms name things, the seed task's gist anchors the proposal
       - Show brief progress: "Created <artifact-id>"
 
    b. **Continue until all `applyRequires` artifacts are complete**
@@ -119,20 +119,21 @@ what they want to build — possibly a `docs/backlog/` idea to develop.
    openspec status --change "<name>"
    ```
 
-7. **Retire the seed idea (only when the seed was a `backlog/` idea)**
+7. **Retire the seed task (only when the seed was a `backlog/` task)**
 
-   The backlog lifecycle: once a change's artifacts are apply-ready, the idea has been
+   The backlog lifecycle: once a change's artifacts are apply-ready, the task has been
    **developed** and leaves the tree. With ONE confirmation ("the change is apply-ready —
-   retire the seed idea <slug>?"):
-   - add a row to the Developed ledger in `docs/backlog/index.md`:
-     `| <idea title> | openspec change <name> | YYYY-MM-DD |`, and remove the idea's bullet
-     from the listing;
-   - delete `docs/backlog/<idea-slug>.md`;
-   - append to `docs/log.md` (per §Appending to `log.md` in
-     [../quenching-insert/references/homes.md](../quenching-insert/references/homes.md)):
-     `**Deprecation**: <idea title> — developed into openspec change <name>`.
+   retire the seed task <slug>?"):
+   - add a row to the Completed ledger in `docs/backlog/index.md`:
+     `| <task title> | openspec change <name> | YYYY-MM-DD |`;
+   - delete `docs/backlog/<task-slug>.md`, then regenerate the index's DERIVED zone from the
+     remaining tasks' frontmatter (per the `backlog/index.md` bullet in
+     [../quenching-insert/references/homes.md](../quenching-insert/references/homes.md)) —
+     never hand-edit inside the markers;
+   - append to `docs/log.md` (per §Appending to `log.md` in the same reference):
+     `**Deprecation**: <task title> — developed into openspec change <name>`.
 
-   If the user declines, or the artifacts stopped short of apply-ready, the idea stays put —
+   If the user declines, or the artifacts stopped short of apply-ready, the task stays put —
    an abandoned exploration leaves the inbox untouched.
 
 **Output**
@@ -140,7 +141,7 @@ what they want to build — possibly a `docs/backlog/` idea to develop.
 After completing all artifacts, summarize:
 - Change name and location
 - List of artifacts created with brief descriptions
-- Which OKF inputs shaped them (standards read, seed idea, glossary terms) — one line
+- Which OKF inputs shaped them (standards read, seed task, glossary terms) — one line
 - What's ready: "All artifacts created! Ready for implementation."
 - Prompt: "Run `/opsx:apply` or ask me to implement to start working on the tasks."
 
@@ -162,7 +163,7 @@ After completing all artifacts, summarize:
 - If a change with that name already exists, ask if user wants to continue it or create a
   new one
 - Verify each artifact file exists after writing before proceeding to next
-- Never delete a seed idea without the step-7 confirmation, and never touch `docs/` beyond
+- Never delete a seed task without the step-7 confirmation, and never touch `docs/` beyond
   step 7's three writes — durable knowledge the proposal surfaces routes through
   `quenching-insert`/`quenching-knowledge`, and archive-time distillation belongs to
   openspec-archive-change
