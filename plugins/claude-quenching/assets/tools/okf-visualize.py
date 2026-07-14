@@ -65,7 +65,8 @@ TYPE_PALETTE = {
     "table": "#0ea5e9",
     "decision": "#f59e0b",
     "vision": "#14b8a6",
-    "idea": "#ef4444",
+    "task": "#ef4444",
+    "idea": "#ef4444",  # legacy pre-0.11 backlog type — kept for un-migrated bundles
     "documentation": "#22c55e",
     "knowledge": "#06b6d4",
     "reference": "#10b981",

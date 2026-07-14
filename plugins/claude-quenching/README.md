@@ -11,7 +11,7 @@ repository that adopts the plugin looks the **same**. It also carries the repo's
 [OpenSpec](https://github.com/Fission-AI/OpenSpec) CLI with the OKF bundle as their
 knowledge substrate.
 
-## The sixteen skills
+## The eighteen skills
 
 ### `quenching-align` — structure (installer + force-aligner + validator)
 
@@ -38,6 +38,35 @@ the concept names a repo-specific term, and validates.
 
 Triggers: *"insert new information into the base"*, *"add a standard/ADR/table/announcement"*,
 *"record knowledge in the OKF docs"*.
+
+### `quenching-backlog` — park one task in the inbox
+
+Captures **ONE task** into `backlog/` — the task inbox — in seconds: a minimal
+`type: task` stamp (title, one-sentence gist, timestamp), with optional `priority`
+(`critical|high|medium|low`) and `tags` (themes) **only when the human states them
+inline** ("park X, high priority, theme auth"). **Zero interrogation** — what was not
+said is left out; a task without `priority` is untriaged, a valid state. Dedupes by
+slug/title (MERGE, never clobber), regenerates the derived GENERATED zone in
+`backlog/index.md`, logs the creation, and self-checks. The per-item counterpart of
+`quenching-backlog-triage`.
+
+Triggers: *"add to the backlog"*, *"park a task"*, *"capture a task"*, *"note this for
+later"*.
+
+### `quenching-backlog-triage` — prioritize the task inbox
+
+The prioritization sweep over the whole inbox: reads every task's frontmatter
+**directly** (no sub-agents — a backlog is small by nature) plus `vision/` when present,
+and builds **ONE triage plan** — a proposed priority + tags per untriaged task with a
+one-line rationale, re-ranks of already-triaged tasks only with an explicit reason,
+staleness flags, duplicate-merge suggestions. **One OK** applies the whole plan (a
+rejected plan applies nothing; a human-set priority is never silently clobbered).
+Completion/removal enters the plan **only when the human states a task is done** — the
+removed task gains a row in the index's Completed ledger. Regenerates the zone and logs
+one consolidated update.
+
+Triggers: *"prioritize the backlog"*, *"triage the backlog"*, *"groom the backlog"*,
+*"re-rank the tasks"*.
 
 ### `quenching-enrich` — import an external source into the bundle
 
@@ -101,7 +130,7 @@ to the glossary"*, *"update the glossary"*.
 
 Migrates the durable facts in the project's Claude Code memory
 (`~/.claude/projects/<cwd>/memory/`) into the bundle — promoting each memory into a
-standard, backlog `idea`, decision, or `knowledge` doc in the
+standard, backlog `task` (always untriaged), decision, or `knowledge` doc in the
 right home — then **clears each memory once its doc has landed and passed the
 conformance check**. Presents one migration plan and executes on a single
 confirmation; a `user` memory or an unroutable fact is flagged and kept, never
@@ -181,7 +210,7 @@ The plugin ships no setup skill — `openspec init` is the installer.
 | Skill | `/opsx` | Role + OKF bridge |
 | --- | --- | --- |
 | `openspec-explore` | `/opsx:explore` | Thinking partner before/during a change. Bridge: reads `knowledge/`, `glossary.md`, `standards/` as ground truth; routes durable insights to `quenching-knowledge` / `quenching-insert` (ADR) / `quenching-glossary`. |
-| `openspec-propose` | `/opsx:propose` | Creates a change and generates all artifacts until apply-ready. Bridge: reads relevant `standards/`, ADRs, and glossary first; a `backlog/` idea used as seed is retired into the Developed ledger when the artifacts are apply-ready (one confirmation). |
+| `openspec-propose` | `/opsx:propose` | Creates a change and generates all artifacts until apply-ready. Bridge: reads relevant `standards/`, ADRs, and glossary first; a `backlog/` task used as seed is retired into the Completed ledger when the artifacts are apply-ready (one confirmation). |
 | `openspec-apply-change` | `/opsx:apply` | Implements `tasks.md` checkbox by checkbox. Bridge: reads the touched subjects' `standards/` as binding contracts; pauses on conflicts; routes durable learning to its OKF home. |
 | `openspec-update-change` | `/opsx:update` | Revises existing planning artifacts, keeps them coherent; never edits code. Faithful port. |
 | `openspec-sync-specs` | `/opsx:sync` | Merges a change's delta specs into `openspec/specs/` (current behavior). Boundary: `openspec/specs/` = WHAT the product does; `docs/standards/` = HOW we build — never duplicated. |
@@ -193,7 +222,8 @@ the distillation doctrine in
 [`openspec-archive-change/references/distill.md`](skills/openspec-archive-change/references/distill.md)
 — and the `/opsx` commands are thin wrappers that invoke the skills (no duplicated bodies).
 These six are **on-demand tools, not `quenching-cycle` loop stages** (like enrich/visualize).
-The backlog lifecycle they close: **Capture** (`quenching-insert`, idea mold) → **Develop**
+The backlog lifecycle they close: **Capture** (`quenching-backlog`, task mold) → **Triage**
+(`quenching-backlog-triage`, optional) → **Develop**
 (`openspec-explore`/`openspec-propose` seed a change from the idea) → **Distill** (artifacts
 apply-ready → the idea leaves the tree; the Developed ledger records the change).
 
@@ -216,7 +246,7 @@ docs/                    # OKF bundle root
   catalog/               # our data — <system>/index.md · <schema>.md · <schema>/<table>.md
   decisions/             # ADRs (type: decision)
   vision/                # direction by area (type: vision)
-  backlog/               # raw idea inbox — seeds the OpenSpec cycle (type: idea)
+  backlog/               # task inbox — optional priority/tags; derived index zone (type: task)
   documentation/         # product docs site — Diátaxis prose (type: documentation)
   knowledge/             # generic knowledge we hold (type: knowledge) — ships fixed glossary.md (A–Z term lookup)
   reference/             # what we consume — tools/ libraries/ regulations/ (type: reference)
@@ -253,7 +283,7 @@ The plugin keeps its context and token footprint predictable on three levels:
 
 1. **Always-on metadata (shared cap).** Every skill's `description` + `when_to_use` is
    loaded into context each session, and Claude Code truncates each skill at **1,536
-   combined characters** — a budget shared with every other installed plugin. All sixteen
+   combined characters** — a budget shared with every other installed plugin. All eighteen
    skills fit under the cap and carry their verbatim trigger phrases in the **second**
    sentence, so truncation can never eat them.
 2. **Body on invocation.** A `SKILL.md` body loads only when the skill runs; every body
@@ -269,6 +299,8 @@ The plugin keeps its context and token footprint predictable on three levels:
 | Surface | Policy |
 | --- | --- |
 | `quenching-glossary` | `effort: low`; no model pin (mechanical single-entry edit) |
+| `quenching-backlog` | `effort: low`; no model pin (mechanical single-task capture; zero interrogation, no sub-agents) |
+| `quenching-backlog-triage` | no pin, no `effort` override — priority judgment inherits the session default; the human plan-gate contains misjudgment; no sub-agents |
 | `quenching-knowledge-scan` | `effort: medium`; slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) |
 | `quenching-memory-to-docs` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion) |
 | `quenching-align` / `quenching-harness` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. **Exception:** under `quenching-cycle`'s parallel prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
@@ -313,6 +345,10 @@ the key Claude Code uses to detect and apply an upgrade.
 - **0.11.0:** absorbed the OpenSpec spec-driven cycle — six `openspec-*` skills (adapted
   from OpenSpec 1.6.0's generated skills, with OKF knowledge bridges) plus thin `/opsx`
   commands; the backlog lifecycle now seeds `openspec-propose` (the previous
-  brainstorming-based flow is retired).
+  brainstorming-based flow is retired). Same release: renamed the backlog item `idea` →
+  `task` (optional `priority`/`tags`; derived GENERATED zone in `backlog/index.md`;
+  "Developed" → "Completed" ledger) and added `quenching-backlog` (capture) +
+  `quenching-backlog-triage` (triage sweep) — ten quenching skills → twelve, eighteen in
+  all.
 - **0.9.0:** retired the `guides/` home into `documentation/how-to/`; added the `documentation/`
   home (Diátaxis product docs) and a shippable mkdocs-material site setup (`assets/mkdocs/`).
