@@ -27,8 +27,8 @@ pages: <N>              # pages/slides in the source (signals the avoided cost)
 ## When the agent should open the `binary:` (rare)
 <what ONLY exists in the source and was not extracted — usually leave empty (the extract suffices).>
 
-<!-- MOLD (claude-quenching · sidecar) for human/external binaries consumed via extract:
-     presentations/ (slides/diagrams/reports) and reference/regulations/ (normative PDFs).
+<!-- MOLD (claude-quenching · sidecar) for external binaries consumed via extract:
+     reference/regulations/ (normative PDFs) and other external binaries we consume.
      A sidecar marked `authority: current` is a smell (external/human material is background).
      If the CONTENT became a current contract, distill it into standards/ — the sidecar then
      stays only as a historical pointer. Extract what governs a decision; index the rest. -->

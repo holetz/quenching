@@ -79,8 +79,8 @@ excluded from the sweep.
 
 ### 3. Slice and fan out
 Group the remaining paths by top-level home (`standards/`, `decisions/`, `vision/`,
-`backlog/`, `documentation/`, `knowledge/`, `reference/` minus the excluded slice,
-`communications/`, `presentations/`); split further if a home runs large (~15–20 docs per
+`backlog/`, `documentation/`, `knowledge/`, `reference/` minus the excluded slice);
+split further if a home runs large (~15–20 docs per
 agent). Dispatch one `Task` sub-agent per slice — with `model: haiku` and `effort: low`:
 a slice agent does pure extraction and returns compact tuples, and over-collection is
 harmless because the orchestrator cross-checks every candidate against the Step 1

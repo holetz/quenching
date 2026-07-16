@@ -24,8 +24,6 @@ docs/                          # OKF bundle root
   knowledge/                   # generic knowledge we hold — subject subfolders (type: knowledge)
                                #   ships one FIXED file: glossary.md (the A–Z term lookup)
   reference/                   # what we consume — tools/ libraries/ regulations/ (type: reference; PDFs via sidecar)
-  communications/              # outbound — templates/ (type: communication-template) · archive/ (type: communication)
-  presentations/               # human deliverables — slides/ diagrams/ reports/ (binary via sidecar, type: sidecar)
 ```
 
 ## The `type` vocabulary (the greppable signature)
@@ -44,9 +42,7 @@ docs/                          # OKF bundle root
 | `documentation/**` | `documentation` | `getting-started/`·`how-to/`·`reference/`·`concepts/` |
 | `knowledge/` | `knowledge` | subject subfolders |
 | `reference/` | `reference` | `tools/`·`libraries/`·`regulations/` |
-| `communications/templates/` | `communication-template` | one per channel |
-| `communications/archive/` | `communication` | `YYYY-MM-DD-<scope>-<slug>.md` |
-| `presentations/` · `reference/regulations/` (extracts) | `sidecar` | one per binary |
+| `reference/regulations/` (extracts) | `sidecar` | one per binary |
 
 Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are exempt.
 
@@ -57,8 +53,6 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
 - `documentation/` = "**prose docs for humans**, Diátaxis-structured (the published site)".
 - `reference/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
-- `communications/` = "**messages we send to an audience**" (directed, dated; template per channel).
-- `presentations/` = "our **visual** deliverables" (LLM reads the sidecar, never the binary).
 - `decisions/` → `standards/` **on implementation** (distills and leaves).
 - **`patterns` is not a silo** — it dissolves into `standards/architecture/`.
 
@@ -79,8 +73,9 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
 - **`backlog/`** — the **task inbox** (`type: task`): fast, low-ceremony capture of a unit
   of work — raw (it seeds the OpenSpec cycle, `openspec-explore` / `openspec-propose`) or
   already clear in scope. Flat (`<task-slug>.md`, no subfolders); no
-  `vision_refs`/done-criteria/estimates; **optional** `priority` (`critical|high|medium|low`
-  — absent = untriaged, a valid state) and `tags` (themes). Its `index.md` carries a
+  `vision_refs`/done-criteria/detailed planning; **optional** `priority` (`critical|high|medium|low`
+  — absent = untriaged, a valid state), `tags` (themes), and `complexity` (a rough size in
+  development hours — the one estimate that may be stamped at capture). Its `index.md` carries a
   **DERIVED zone** (summary + per-priority tables + by-theme bullets, rebuilt from the
   tasks' frontmatter — format owned by `homes.md` §Updating `index.md`) plus a curated
   **Completed ledger** outside the zone. Captured by `quenching-backlog` (or generic
@@ -113,13 +108,6 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   listing; `<system>/access.md` is the access card (`type: system`, secret by reference).
   Two granularities (consolidated `<schema>.md` × detailed `<schema>/<table>.md`);
   generated × curated kept separate ("X defines Y").
-- **`communications/`** — outbound announcements with a fixed **scannable header**; one
-  **template per channel** (`type: communication-template`) ships as structure; issued
-  announcements go to `archive/` (`type: communication`, dated). A message that becomes a rule
-  distills to `standards/`.
-- **`presentations/`** — human visual deliverables; the LLM reads the **sidecar**
-  (`type: sidecar`), never the binary.
-
 ## Authoring conventions (all homes)
 
 - **The folder carries the subject — the filename does not repeat it.** In `naming/`, the doc
@@ -140,8 +128,7 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   MAY follow the repo's language.** **Identifier-derived slugs are verbatim, never translated:**
   a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>` the
   real repo, an ADR keeps its `NNNN-` prefix — translating them would break the greppable tie to
-  the asset. `audience: human` homes (`presentations/`, `communications/`) may use the repo's
-  language for slugs and free-text.
+  the asset.
 - **Links:** relative **within** a home; absolute from the bundle root (`/docs/...`) when
   leaving for another home — so cross-links survive a home move/migration.
 - **Every knowledge-holding folder has an `index.md`.** A directory that holds concept docs

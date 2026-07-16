@@ -35,8 +35,7 @@ vocabulary, and conformance rules are shared with `quenching-align`
   English on `standards/`·`decisions/`·`vision/`·`backlog/`·`documentation/`·`reference/` (as are
   folder names, frontmatter keys, and enum values). **Exception:** an identifier-derived name is
   verbatim — a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>`
-  the real repo, an ADR keeps its `NNNN-` prefix. Body prose may be the repo's language;
-  `audience: human` homes may use it for slugs too.
+  the real repo, an ADR keeps its `NNNN-` prefix. Body prose may be the repo's language.
 - **`type` mandatory; `resource` derived, never invented.** For a standard, `resource` comes
   from the doc's `file:line` anchors; for catalog/reference, the asset URI. Empty or
   self-pointing is disallowed.
@@ -55,8 +54,7 @@ vocabulary, and conformance rules are shared with `quenching-align`
 ### 1. Classify → home + `type` + mold
 Apply the boundary rules ([references/homes.md](references/homes.md)):
 `standards` = "how **we** do it" · `reference` = "what we **consume**" · `catalog` = "our
-**data**" · `communications` = "messages we **send**" · `presentations` = "visual
-**deliverables**" · `decisions` → distills to `standards` when implemented. Pick the home, its
+**data**" · `decisions` → distills to `standards` when implemented. Pick the home, its
 `type`, and the matching mold.
 
 ### 2. Determine identity (path)
@@ -64,7 +62,7 @@ Concept ID = the path without `.md`. Place it under the home's subject folder; o
 file; kebab-case; **English slug on the technical homes** (identifier-derived names verbatim, see
 Doctrine). If the subject already carries a **cluster subfolder**, nest the new doc inside it. For
 homes with a fixed shape, follow it (`decisions/NNNN-slug.md`,
-`catalog/<system>/<catalog>/<schema>/<table>.md`, `communications/archive/YYYY-MM-DD-<scope>-<slug>.md`).
+`catalog/<system>/<catalog>/<schema>/<table>.md`).
 
 ### 3. Fill the mold
 Copy the mold from `${CLAUDE_PLUGIN_ROOT}/assets/templates/...` and complete the frontmatter:
@@ -110,7 +108,5 @@ the same checks the installed `okf-validate.py` hook (if wired) machine-verifies
   ledger".
 - **Catalog table with descriptions** → detailed `table.md`; without → keep it a row in the
   consolidated `<schema>.md`. Never create an empty detailed page.
-- **Announcement** → pick the channel mold in `communications/templates/`, fill the scannable
-  header, write to `communications/archive/` (`type: communication`, dated filename).
-- **Binary (slides/diagram/report/regulation PDF)** → write a `sidecar.md` extract
-  (`type: sidecar`), never ingest the binary.
+- **Binary (a regulation PDF we consume)** → write a `sidecar.md` extract under
+  `reference/regulations/` (`type: sidecar`), never ingest the binary.

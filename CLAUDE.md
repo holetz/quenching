@@ -51,8 +51,8 @@ as a live skill) — it is the payload the skills stamp into *other* repositorie
 | --- | --- |
 | `quenching-align` | Installer + force-aligner + validator. Migrates a target's `docs/` to the canonical tree, stamps frontmatter, regenerates every `index.md`, establishes `log.md`. Invasive: one full plan, one confirmation (a code-coupled rename gets its own). |
 | `quenching-insert` | Adds ONE new concept doc (standard, ADR, catalog table, announcement, …) into the right home with a complete OKF stamp. |
-| `quenching-backlog` | Captures ONE task into `backlog/` in seconds — minimal `type: task` stamp; inline-stated `priority`/`tags` only (zero interrogation; untriaged is a valid state); dedupes, regenerates the index's derived zone, logs. |
-| `quenching-backlog-triage` | The prioritization sweep: reads task frontmatter directly (no sub-agents), proposes ONE triage plan (priority/tags with rationale, staleness, duplicates), applies on one OK, regenerates the zone. Completion only when human-stated. On-demand tool, not a cycle stage. |
+| `quenching-backlog` | Captures ONE task into `backlog/` in seconds — minimal `type: task` stamp; inline-stated `priority`/`tags`/`complexity` (rough dev hours) only (zero interrogation; untriaged is a valid state); dedupes, regenerates the index's derived zone, logs. |
+| `quenching-backlog-triage` | The prioritization sweep: reads task frontmatter directly (no sub-agents), proposes ONE triage plan (priority/tags/optional complexity with rationale, staleness, duplicates), applies on one OK, regenerates the zone. Completion only when human-stated. On-demand tool, not a cycle stage. |
 | `quenching-enrich` | Imports an external source (local files/folders, or URLs) and mints MULTIPLE OKF docs in one plan→OK pass — a batch fan-out of the insert procedure (cites `homes.md`). Bounded web ingestion; additive/merge only, never deletes. |
 | `quenching-knowledge` | Captures ONE piece of generic knowledge a human states into `knowledge/`. |
 | `quenching-knowledge-scan` | Sweeps the WHOLE bundle to backfill `knowledge/glossary.md` with terms already documented but never listed; fans sub-agents out per home slice. |
@@ -97,9 +97,9 @@ scaffold in target repos comes from `openspec init` (no setup skill).
 
 Every target repo the plugin aligns converges to the **same tree** under `docs/`:
 `standards/` (current contracts, subject subfolders), `catalog/` (own data), `decisions/`
-(ADRs), `vision/`, `backlog/` (task inbox: `type: task`, optional `priority`/`tags`,
+(ADRs), `vision/`, `backlog/` (task inbox: `type: task`, optional `priority`/`tags`/`complexity`,
 derived index zone), `documentation/`, `knowledge/` (incl. fixed `glossary.md`),
-`reference/` (external facts), `communications/`, `presentations/`. Rules the plugin
+`reference/` (external facts). Rules the plugin
 enforces everywhere:
 
 - `index.md` is a reserved, frontmatter-free listing (exception: root `docs/index.md`

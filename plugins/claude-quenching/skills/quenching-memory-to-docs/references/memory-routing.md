@@ -9,7 +9,7 @@ home is chosen, the concept is filed exactly as `quenching-insert` would — see
 boundaries.
 
 This skill writes to **only four homes** — `standards/`, `decisions/`, `backlog/`, `knowledge/`.
-`vision/`, `documentation/`, `reference/` (and `catalog/`, `communications/`, `presentations/`) are out of
+`vision/`, `documentation/`, `reference/` (and `catalog/`) are out of
 scope; collapse to the nearest of the four (below) or flag-and-keep.
 
 ## The memory file
@@ -63,5 +63,5 @@ A memory is removed **only after** its concept doc is written and passes the con
 self-check. For each migrated memory: delete its `.md` file and prune its `- [..](..)` line from
 `MEMORY.md`. Leave `MEMORY.md` in place even if it ends empty. A memory that could **not** be
 routed (no documentary home, a `user` fact the human did not clear, or one that only fits an
-out-of-scope home — `vision`/`documentation`/`reference`/`catalog`/`communications`/`presentations` — and
+out-of-scope home — `vision`/`documentation`/`reference`/`catalog` — and
 cannot be collapsed into one of the four) **stays** — report it, never delete it.

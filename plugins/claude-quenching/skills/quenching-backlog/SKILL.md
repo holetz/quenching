@@ -2,11 +2,11 @@
 name: quenching-backlog
 description: >-
   Captures ONE task into the repo's OKF backlog/ — the task inbox — in seconds: a minimal
-  type: task stamp, with optional priority/tags only when the human states them inline.
-  Use when the user asks to "add to the backlog", "park a task", "capture a task", "note
-  this for later", or "backlog this". Extracts title + gist from the phrasing ("park X,
-  high priority, theme auth" → priority: high, tags: [auth]; tags normalized against ones
-  already in the backlog), dedupes by slug/title (MERGE, never clobber), writes
+  type: task stamp, with optional priority/tags/complexity only when the human states them
+  inline. Use when the user asks to "add to the backlog", "park a task", "capture a task",
+  "note this for later", or "backlog this". Extracts title + gist from the phrasing ("park X,
+  high priority, theme auth, ~8h" → priority: high, tags: [auth], complexity: 8; tags
+  normalized against ones already in the backlog), dedupes by slug/title (MERGE, never clobber), writes
   backlog/<task-slug>.md from the task mold, regenerates the derived GENERATED zone in
   backlog/index.md, logs the creation, and self-checks. Zero interrogation: what was not
   said is left out — no priority means untriaged, a valid state. Not for: prioritizing
@@ -36,10 +36,11 @@ whole inbox instead of capturing one task, see `quenching-backlog-triage`.
 ## Doctrine
 
 - **Capture in seconds — the stamp stays minimal.** `type: task`, title, one-sentence
-  gist, timestamp. `priority` (`critical|high|medium|low`) and `tags` (themes) are
-  stamped ONLY when the human states them inline. No `done-criteria`, no `vision_refs`,
-  no estimates — that thinking belongs to the OpenSpec cycle or execution, never to
-  capture. `resource` is deliberately omitted (nothing built yet to point at); the
+  gist, timestamp. `priority` (`critical|high|medium|low`), `tags` (themes), and
+  `complexity` (a rough size in development hours) are stamped ONLY when the human states
+  them inline. No `done-criteria`, no `vision_refs`, no detailed planning — that thinking
+  belongs to the OpenSpec cycle or execution, never to capture; `complexity` is the one
+  rough estimate that may be stamped here. `resource` is deliberately omitted (nothing built yet to point at); the
   resulting `missing-resource` WARN is expected, not a defect.
 - **Zero interrogation.** Never ask for a priority, a theme, or scope. What was not said
   is left out; a task without `priority` is **untriaged** — a valid state
@@ -76,8 +77,9 @@ existing task (never clobber a filled key) — or abort and say so if it is the 
 
 ### 4. Stamp and write
 Fill the `task.md` mold and write `backlog/<task-slug>.md` (English kebab slug). Drop the
-optional keys that were not stated; `priority` only ever takes
-`critical|high|medium|low`.
+optional keys (`priority`/`tags`/`complexity`) that were not stated; `priority` only ever
+takes `critical|high|medium|low`, and `complexity` is development hours (a number or a range
+like `4-8`).
 
 ### 5. Regenerate the derived zone
 Rebuild `backlog/index.md`'s GENERATED zone from the tasks' frontmatter, per the
@@ -108,5 +110,6 @@ link resolves.
 - Never clobber an existing task on collision — MERGE or abort.
 - Never hand-edit inside the GENERATED markers, never touch the Completed ledger at
   capture, and never add frontmatter to `backlog/index.md`.
-- Never expand the stamp — no `done-criteria`, `vision_refs`, estimates, assignees, or a
-  status field; status is positional (in the tree = open).
+- Never expand the stamp beyond the mold — no `done-criteria`, `vision_refs`, assignees, or a
+  status field (`complexity` in dev hours is the one allowed estimate); status is positional
+  (in the tree = open).

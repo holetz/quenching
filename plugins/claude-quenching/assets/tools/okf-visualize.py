@@ -42,7 +42,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "0.11.0"  # kept in lockstep with the plugin VERSION file
+VERSION = "0.12.0"  # kept in lockstep with the plugin VERSION file
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 VIEWER = os.path.join(HERE, "viewer")
@@ -57,7 +57,7 @@ HEADING_RE = re.compile(r"^#{1,6}\s+(.*\S)\s*$")
 
 # One colour per OKF v0.1 `type` (the greppable signature — see taxonomy.md). Grouped
 # by home family: standards indigo, catalog blues, decisions amber, knowledge/reference
-# greens, communications pinks, presentations slate.
+# greens, reference-sidecar slate.
 TYPE_PALETTE = {
     "standard": "#6366f1",
     "system": "#8b5cf6",
@@ -70,8 +70,6 @@ TYPE_PALETTE = {
     "documentation": "#22c55e",
     "knowledge": "#06b6d4",
     "reference": "#10b981",
-    "communication-template": "#ec4899",
-    "communication": "#d946ef",
     "sidecar": "#94a3b8",
 }
 DEFAULT_NODE_COLOR = "#64748b"

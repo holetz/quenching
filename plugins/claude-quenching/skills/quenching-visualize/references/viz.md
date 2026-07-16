@@ -42,7 +42,7 @@ script resolves them relative to its own location, so it must travel **with** th
   node into internal navigation (via a per-doc link map the generator precomputes).
 - **Colours** — keyed on the OKF v0.1 `type` vocabulary (`standard`, `system`, `schema`,
   `table`, `decision`, `vision`, `task`, `documentation`, `knowledge`, `reference`,
-  `communication-template`, `communication`, `sidecar`); an unknown/absent `type` falls back
+  `sidecar`); an unknown/absent `type` falls back
   to a neutral slate. The retired `idea` type keeps its legacy colour so an un-migrated
   bundle still renders. The in-page legend lists every type present and toggles its nodes.
 

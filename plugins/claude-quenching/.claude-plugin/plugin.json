@@ -1,6 +1,6 @@
 {
   "name": "claude-quenching",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "OKF-centric knowledge-base aligner for the Claude Code surface of any repository. Installs one canonical Open Knowledge Format (OKF v0.1) docs/ bundle, forces existing docs into conformance, inserts knowledge into the right home, curates a fixed A–Z glossary, drains project memory into docs, refactors CLAUDE.md/AGENTS.md into thin pointers, imports external sources as OKF docs, parks and triages a task backlog, renders the bundle as a self-contained offline HTML diagram, loops it all to convergence, and drives the OpenSpec spec-driven change cycle (explore → propose → apply → sync/archive) with the bundle as its knowledge substrate. Eighteen skills — twelve quenching-* plus six openspec-* (the routing story lives in each skill's own description) — plus /opsx commands, a self-contained validation hook, and a zero-dependency HTML diagram generator. Every repository that adopts it looks the same.",
   "author": {
     "name": "Eloy Sekonell",

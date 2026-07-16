@@ -10,7 +10,7 @@
       "name": "claude-quenching",
       "source": "./plugins/claude-quenching",
       "description": "Forces any repository's docs/ knowledge base into a single canonical Open Knowledge Format (OKF v0.1) bundle and keeps it conformant. Eighteen skills — align (structure), insert (any doc), backlog + backlog-triage (the task inbox: capture + prioritize), knowledge (concepts), glossary + knowledge-scan (the fixed A–Z term lookup), memory-to-docs (drain project memory), harness (thin CLAUDE.md/AGENTS.md pointers), enrich (import external sources), visualize (offline HTML diagram), cycle (run everything to convergence), plus the six openspec-* skills and /opsx commands driving the OpenSpec spec-driven change cycle with OKF knowledge bridges — plus a self-contained enforcement hook and a zero-dependency diagram generator. The routing story lives in each skill's own description. Every repository that adopts it looks the same.",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "author": {
         "name": "Eloy Sekonell",
         "email": "consultoria@eloysekonell.com.br"

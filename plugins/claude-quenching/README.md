@@ -246,12 +246,10 @@ docs/                    # OKF bundle root
   catalog/               # our data — <system>/index.md · <schema>.md · <schema>/<table>.md
   decisions/             # ADRs (type: decision)
   vision/                # direction by area (type: vision)
-  backlog/               # task inbox — optional priority/tags; derived index zone (type: task)
+  backlog/               # task inbox — optional priority/tags/complexity; derived index zone (type: task)
   documentation/         # product docs site — Diátaxis prose (type: documentation)
   knowledge/             # generic knowledge we hold (type: knowledge) — ships fixed glossary.md (A–Z term lookup)
   reference/             # what we consume — tools/ libraries/ regulations/ (type: reference)
-  communications/        # outbound announcements — templates/ + archive/ (type: communication)
-  presentations/         # human deliverables via sidecar (type: sidecar)
 ```
 
 **OKF-strict rules the plugin enforces:**
@@ -266,7 +264,7 @@ docs/                    # OKF bundle root
 - Folder names **and concept-doc file slugs**, frontmatter keys/enums, and the `type`
   vocabulary are **canonical English** (cross-repo greppable); **body prose may follow the
   repo's language**, and identifier-derived slugs (catalog tables, repo names, ADR prefixes)
-  stay verbatim. `audience: human` homes may use the repo's language for slugs and free-text.
+  stay verbatim.
 - **Structure is aggregated and listed** — a run of prefix-clustered files
   (`nomenclatura-*.md`) folds into a subject subfolder; every folder that holds concept docs
   has an honest `index.md`. The validator flags (WARN) a missing `index.md` (`dir-no-index`),
@@ -342,6 +340,13 @@ All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 Bump `version` in `.claude-plugin/plugin.json` and `VERSION` on each release; that is
 the key Claude Code uses to detect and apply an upgrade.
 
+- **0.12.0:** narrowed the OKF taxonomy from eleven homes to **nine** — retired the
+  `communications/` and `presentations/` homes (and dropped the leftover empty
+  `superpowers/` folder), removing the `communication`/`communication-template` types from
+  the vocabulary (the `sidecar` type stays, now scoped to `reference/regulations/` extracts).
+  Same release: added an optional **`complexity`** field to backlog tasks — a rough size in
+  development hours, stamped only when stated (like `priority`/`tags`), surfaced as a column
+  in `backlog/index.md`'s derived zone and proposable by `quenching-backlog-triage`.
 - **0.11.0:** absorbed the OpenSpec spec-driven cycle — six `openspec-*` skills (adapted
   from OpenSpec 1.6.0's generated skills, with OKF knowledge bridges) plus thin `/opsx`
   commands; the backlog lifecycle now seeds `openspec-propose` (the previous
