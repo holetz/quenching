@@ -9,10 +9,12 @@ delta specs, tasks); a task already clear in scope goes straight to execution.
 
 **Boundary:** a *parked* unit of work — distinct from `vision/` (settled direction with no
 deadline) and `decisions/` (a settled decision with considered alternatives). Each task
-carries `type: task`, a title, a one-sentence gist, and a timestamp; `tags` (themes) and
-`priority` (`critical|high|medium|low`) are **optional** — a task without `priority` is
-**untriaged**, a valid state `quenching-backlog-triage` exists to fill. No done-criteria,
-no `vision_refs`, no estimates (that thinking belongs to the OpenSpec cycle or execution).
+carries `type: task`, a title, a one-sentence gist, and a timestamp; `tags` (themes),
+`priority` (`critical|high|medium|low`), and `complexity` (a rough size in development hours)
+are **optional** — a task without `priority` is **untriaged**, a valid state
+`quenching-backlog-triage` exists to fill. No done-criteria, no `vision_refs`, no detailed
+planning (that thinking belongs to the OpenSpec cycle or execution) — `complexity` is the one
+rough estimate that may be stamped at capture.
 
 ## Organization
 
@@ -47,8 +49,9 @@ backlog/
      Content, in order:
        **N tasks** · X critical · Y high · Z medium · W low · K untriaged
        one table per priority level (Critical → High → Medium → Low → Untriaged; empty
-       groups omitted), columns `Task | Description | Tags | Since` (Since = the task's
-       `timestamp`), rows OLDEST-FIRST within each group so stale tasks surface;
+       groups omitted), columns `Task | Description | Tags | Complexity | Since` (Complexity =
+       the task's `complexity` in dev hours rendered `Nh`, or `—` when absent; Since = the
+       task's `timestamp`), rows OLDEST-FIRST within each group so stale tasks surface;
        then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
        (a task with two tags appears under both).
 -->

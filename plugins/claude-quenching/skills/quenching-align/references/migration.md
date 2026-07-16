@@ -15,12 +15,10 @@ Each existing section matches a canonical home **by function**:
 | `docs/adr/`, `docs/decisions` (as ADRs) | `docs/decisions/` |
 | `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `docs/vision/` |
 | `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `docs/catalog/` |
-| `docs/apresentacoes/`, `docs/slides/`, `docs/diagramas/` | `docs/presentations/` |
 | `docs/normativos/`, `docs/regulamentos/` | `docs/reference/regulations/` (content) |
 | `docs/guias/`, `docs/howto/`, `docs/how-to/` | `docs/documentation/how-to/` |
 | `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `docs/documentation/getting-started/` |
 | `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `docs/documentation/` |
-| `docs/comunicados/`, `docs/announcements/` | `docs/communications/` |
 
 ### 1a. Subfolder-level map (inside `standards/`)
 
@@ -54,8 +52,7 @@ are both smells `quenching-align` resolves as renames (each swept for its blast 
 - **Identifier-derived slugs are verbatim — never translate them.** A catalog `<schema>`/
   `<table>` mirrors the real object (`dim_associado.md` stays `dim_associado.md`);
   `reference/repositories/<repo>` mirrors the real repo; an ADR keeps its `NNNN-` prefix. The
-  slug is the greppable key to the asset — anglicizing it is data loss. `audience: human` homes
-  (`presentations/`, `communications/`) keep the repo's language for slugs and free-text.
+  slug is the greppable key to the asset — anglicizing it is data loss.
 - **Content is content — only the surface converges.** Body prose may be Portuguese; the slug,
   folder, and frontmatter are English.
 

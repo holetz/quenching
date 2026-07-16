@@ -28,7 +28,7 @@ the plugin enforces; [conformance.md](conformance.md) turns them into checks.
   self-explanatory values; consumers **MUST** tolerate unknown types gracefully.
 - This plugin fixes a **descriptive vocabulary** per home (`standard`, `system`, `schema`,
   `table`, `decision`, `vision`, `task`, `documentation`, `knowledge`, `reference`,
-  `communication`, `communication-template`, `sidecar`) so the surface is uniform and greppable — still valid
+  `sidecar`) so the surface is uniform and greppable — still valid
   OKF (self-explanatory, tolerated by any consumer).
 
 ## Normative rules
@@ -90,8 +90,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
 6. **Canonical English structure** — folder names **and concept-doc file slugs**, keys, enum
    values, and the `type` vocabulary. Frontmatter is English; **body prose MAY follow the repo's
    language**. Identifier-derived slugs (catalog tables/schemas, repo names, ADR `NNNN-` prefixes)
-   stay **verbatim** — the slug is the greppable key to the asset. `audience: human` material
-   (`presentations/`, `communications/`) may follow the repo's language for slugs and free-text.
+   stay **verbatim** — the slug is the greppable key to the asset.
 7. **Harness files** `CLAUDE.md`/`AGENTS.md` are navigation pointers, **not** OKF concepts —
    exempt from the `type` requirement. The validator skips them entirely; the `quenching-harness`
    skill keeps them thin and honest (moving inlined knowledge into its home and verifying every

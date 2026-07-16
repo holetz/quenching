@@ -21,8 +21,6 @@ English kebab-case; only `audience: human` material follows the repo's language.
 * [knowledge/](/docs/knowledge/index.md) — generic knowledge we hold (domain concepts, explanations, learnings); ships the fixed [glossary.md](/docs/knowledge/glossary.md) term lookup
 * [reference/](/docs/reference/index.md) — facts about what **WE CONSUME** (external, background)
 * [catalog/](/docs/catalog/index.md) — our **data** / domain (`system/catalog/schema/table`)
-* [communications/](/docs/communications/index.md) — outbound announcements (one template per channel)
-* [presentations/](/docs/presentations/index.md) — human deliverables (via sidecar)
 
 ## Boundaries (memorable summary)
 
@@ -30,8 +28,6 @@ English kebab-case; only `audience: human` material follows the repo's language.
 - `knowledge/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `reference/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
-- `communications/` = "**messages we send to an audience**" (directed, dated).
-- `presentations/` = "our **visual** deliverables" (LLM reads the sidecar, never the binary).
 - `decisions/` → `standards/` on implementation (distill and leave).
 - `patterns` **is not a silo** — it dissolves into `standards/architecture/`.
 

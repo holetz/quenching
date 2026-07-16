@@ -26,8 +26,7 @@ Ask **"what IS this, relative to us?"**:
 | **generic understanding we hold** (concept / explanation / learning) | `knowledge/<subject>/` | `knowledge` | `concept-front.md` | `<subject>/<slug>.md` |
 | a **fact about an external** tool/lib/regulation | `reference/{tools,libraries,regulations}/` | `reference` | `concept-front.md` | `<slug>.md` |
 | **our data** — a system / schema / table | `catalog/<system>/…` | `system`/`schema`/`table` | `catalog/{system,schema,table}.md` | see below |
-| a **message we send** to an audience | `communications/archive/` | `communication` | a channel mold in `communications/templates/` | `YYYY-MM-DD-<scope>-<slug>.md` |
-| a **binary** deliverable / regulation PDF (extract) | `presentations/…` · `reference/regulations/` | `sidecar` | `sidecar.md` | `<slug>.md` (+ `binary:`) |
+| a **regulation PDF / binary we consume** (extract) | `reference/regulations/` | `sidecar` | `sidecar.md` | `<slug>.md` (+ `binary:`) |
 
 ### Boundary tie-breakers
 - **standards vs reference:** "how **WE** do it" (standards) vs "a fact about what **WE
@@ -56,9 +55,6 @@ Ask **"what IS this, relative to us?"**:
   trail).
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
   (`data-modeling/`); the *actual tables* are `catalog/`.
-- **communications vs documentation/presentations:** a **dated message to an audience** is a
-  `communication`; a **how-to** is a `documentation` page; a **visual binary** is a `sidecar`
-  under `presentations/`.
 - **code vs naming (inside standards):** `code/` governs **symbols**; `naming/` governs
   **data** (tables/columns).
 
@@ -101,10 +97,11 @@ maintainer: <owner>
   inside the markers.
 - **`backlog/index.md`** has a DERIVED zone too: rebuild only what is between
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->`, exclusively from `backlog/*.md`
-  frontmatter (`title`/`description`/`tags`/`priority`/`timestamp`) — a summary line
-  (`**N tasks** · X critical · Y high · Z medium · W low · K untriaged`), one
-  `Task | Description | Tags | Since` table per priority level (Critical → High →
-  Medium → Low → Untriaged; empty groups omitted; rows oldest-first within each group),
+  frontmatter (`title`/`description`/`tags`/`priority`/`complexity`/`timestamp`) — a summary
+  line (`**N tasks** · X critical · Y high · Z medium · W low · K untriaged`), one
+  `Task | Description | Tags | Complexity | Since` table per priority level (Critical → High →
+  Medium → Low → Untriaged; empty groups omitted; rows oldest-first within each group;
+  Complexity = the task's `complexity` in dev hours rendered `Nh`, or `—` when absent),
   then alphabetical "By theme" bullets (`**<tag>** (n): [task-a](task-a.md), …` — a task
   lists under each of its tags). A task with an unknown `priority` value renders under
   Untriaged. Never hand-edit inside the markers; the **Completed ledger** stays OUTSIDE

@@ -7,7 +7,7 @@ description: >-
   conformance", "migrate docs/ to the standard", "make docs/ OKF-compliant", "organize
   docs/ into the canonical tree", or when docs/ has variant names / missing frontmatter /
   a lying index. Installs the canonical homes (standards/ decisions/ vision/ backlog/
-  documentation/ knowledge/ reference/ catalog/ communications/ presentations/), migrates
+  documentation/ knowledge/ reference/ catalog/), migrates
   variant folder names, folds prefix-clusters into subject subfolders, translates
   non-English slugs, stamps OKF frontmatter, regenerates every index.md, establishes
   log.md, and validates. Invasive by design: ONE full plan, one confirmation; a rename
@@ -64,8 +64,7 @@ The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
   **Exception — identifier-derived names are verbatim, never translated:** a catalog
   `<schema>`/`<table>` slug mirrors the real object, `reference/repositories/<repo>` the real
   repo, an ADR keeps its `NNNN-` prefix — anglicizing them would sever the greppable tie to the
-  asset. `audience: human` homes (`presentations/`, `communications/`) may use the repo's
-  language for slugs and free-text too.
+  asset.
 
 ## Workflow (force-with-1-confirmation)
 

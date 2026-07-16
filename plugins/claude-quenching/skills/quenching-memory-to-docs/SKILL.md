@@ -43,7 +43,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   `vision`, `documentation`, or `reference` doc is **re-routed to the nearest of the four** per the routing
   table ([references/memory-routing.md](references/memory-routing.md)); a memory that fits none of
   the four **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
-  `vision/`, `documentation/`, `reference/`, `catalog/`, `communications/`, or `presentations/` doc from a
+  `vision/`, `documentation/`, `reference/`, or `catalog/` doc from a
   memory.
 - **Bounded reconnaissance — read indexes, not the whole tree.** Because the skill writes to only
   four homes, it only ever inspects those four. **Never enumerate the whole bundle** (`find docs
@@ -173,7 +173,7 @@ if it ends empty. If the `okf-validate.py` hook is wired, it machine-verifies ea
   presented in full and write-then-verify-then-delete still holds.
 - Never write outside the four homes (`standards/`, `decisions/`, `backlog/`, `knowledge/`) —
   re-route to the nearest, or flag-and-keep; never fabricate a
-  `vision`/`documentation`/`reference`/`catalog`/`communications`/`presentations` doc from a memory.
+  `vision`/`documentation`/`reference`/`catalog` doc from a memory.
 - Fan-out never fractures the single up-front plan, never skips a memory, and never lets a
   sub-agent delete ahead of a landed, self-checked doc.
 - When a migrated memory names a repo-specific term, feed `knowledge/glossary.md` before deleting

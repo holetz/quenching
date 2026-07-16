@@ -2,8 +2,9 @@
 name: quenching-backlog-triage
 description: >-
   Sweeps the repo's OKF backlog/ task inbox and proposes ONE consolidated triage plan — a
-  priority (critical|high|medium|low) and tags for each untriaged task, grounded in
-  vision/ when present — applied on a single confirmation. Use when the user asks to
+  priority (critical|high|medium|low), tags, and an optional rough complexity (dev hours)
+  for each untriaged task, grounded in vision/ when present — applied on a single
+  confirmation. Use when the user asks to
   "prioritize the backlog", "triage the backlog", "groom the backlog", or "re-rank the
   tasks". Reads every task's frontmatter directly (no sub-agents — the backlog is small
   by nature), builds one table of proposals with one-line rationales, flags stale tasks
@@ -38,15 +39,17 @@ below always applies.
 
 ## Doctrine
 
-- **Propose, don't invent.** Every proposed priority and tag traces to the task's own
-  title/gist and, when present, the direction in `vision/` — each with a one-line
-  rationale in the plan. Priorities only ever take `critical|high|medium|low`.
+- **Propose, don't invent.** Every proposed priority, tag, and complexity traces to the
+  task's own title/gist and, when present, the direction in `vision/` — each with a one-line
+  rationale in the plan. Priorities only ever take `critical|high|medium|low`; `complexity`
+  is a rough size in development hours, proposed only when the task is concrete enough to
+  size (otherwise left absent — no forced estimate).
 - **One plan, one OK.** Every proposal merges into ONE consolidated table before any
   write. A single confirmation approves the whole plan; partial adjustments → re-plan; a
   rejected plan applies **nothing**.
-- **MERGE, never clobber.** A human-set priority is never silently overwritten — a
-  re-rank of an already-triaged task enters the plan only with an explicit reason, and
-  only the approved edits are applied.
+- **MERGE, never clobber.** A human-set priority or complexity is never silently
+  overwritten — a re-rank (or re-size) of an already-triaged task enters the plan only with
+  an explicit reason, and only the approved edits are applied.
 - **Untriaged is a valid state.** A task the plan cannot honestly rank stays untriaged —
   no forced ranking. An invalid priority value found in a target (e.g.
   `priority: urgent`) renders under Untriaged and the plan proposes the fix.
@@ -69,9 +72,10 @@ do); if the home is missing, stop and offer `quenching-align`, then resume. `Glo
 near-duplicate pairs, and any invalid `priority` value.
 
 ### 2. Build ONE triage plan
-One table: `Task | Current | Proposed priority | Proposed tags | Rationale (one line)`.
+One table: `Task | Current | Proposed priority | Proposed tags | Proposed complexity | Rationale (one line)`.
 Include: a proposal for every untriaged task (or an honest "stays untriaged"); re-ranks
-of triaged tasks **only with an explicit reason**; staleness flags (old `Since`);
+of triaged tasks **only with an explicit reason**; a rough `complexity` (dev hours) only when
+the task is concrete enough to size (else leave the cell empty); staleness flags (old `Since`);
 duplicate MERGE suggestions; fixes for invalid priority values; completions **only when
 the human stated the task is done**. Tags normalized against the ones already in the
 backlog.
