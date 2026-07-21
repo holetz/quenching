@@ -20,9 +20,10 @@ that may be stamped here is `complexity` — a rough size in development hours, 
      raw (it needs the OpenSpec cycle to be developed) or already clear in scope — parked
      between "I thought of this" and "I'm working on this". `tags`/`priority`/`complexity` are
      OPTIONAL: stamp them only when the human states them inline, and DROP the lines otherwise — a
-     task without `priority` is untriaged, a valid state `quenching-backlog-triage` exists to fill.
-     `resource` is intentionally omitted — nothing is built yet to point at (the resulting
-     `missing-resource` WARN is expected, not a defect). Once the task is developed into an
-     OpenSpec change with apply-ready artifacts (`openspec/changes/<name>/`) or done, the file
-     LEAVES the tree and the transition is recorded in `backlog/index.md`'s Completed ledger
-     (mirroring how an implemented ADR distills into `standards/` and leaves `decisions/`). -->
+     task without `priority` is untriaged, a valid state `openspec-backlog-triage` exists to fill.
+     `resource` is intentionally omitted — nothing is built yet to point at. The backlog lives
+     under `openspec/backlog/`, OUTSIDE the OKF `docs/` bundle, so the OKF validator never scans
+     it; the backlog skills self-check each task's frontmatter on write. Once the task is
+     developed into an OpenSpec change with apply-ready artifacts (`openspec/changes/<name>/`) or
+     done, the file LEAVES the tree and the transition is recorded in `backlog/index.md`'s
+     Completed ledger. -->

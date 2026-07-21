@@ -6,13 +6,14 @@ organized in subject subfolders. This is the detail the root pointer cites on de
 - **Where each standard lives:** [index.md](index.md) — the layer listing (its
   "Current docs" tables are DERIVED from disk; do not hand-edit the `GENERATED` zone).
 - **To create / edit / move / rename a standard here** (keeping the listing + `log.md`
-  in sync): use the `claude-quenching` skills — `quenching-insert` to add one, `quenching-align`
+  in sync): use the `claude-quenching` skills — `quenching-add` to add one, `quenching-align`
   to migrate/normalize the layer.
 - **Unfamiliar term?** Resolve it in the glossary first:
   [/docs/knowledge/glossary.md](/docs/knowledge/glossary.md) (`grep -i '<term>'`) — the repo's
   A–Z lookup, one entry per term with a link to its full doc when one exists.
-- **Boundary:** only the current/active contract lives here — direction → `vision/`,
-  open decision → `decisions/`, external fact → `reference/`, our data → `catalog/`.
+- **Boundary:** the contract for how WE build lives here — a proven rule is `authority: current`,
+  an agreed-but-unproven one `authority: background` (no separate decisions home). Direction →
+  `vision/`, external fact → `reference/`, our data → `catalog/`.
 - **OKF:** every standard carries `type: standard` + a derived `resource:` (the repo
   scope it governs, from the doc's `file:line` anchors — never invented).
 

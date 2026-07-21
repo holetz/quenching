@@ -41,12 +41,12 @@ Add a term whenever a repo-specific word, acronym, or piece of jargon surfaces t
 newcomer would not know. Three ways in:
 
 - **Automatically, as a tail of a capture.** The `claude-quenching` knowledge skills
-  (`quenching-knowledge`, `quenching-insert`, `quenching-memory-to-docs`) each check, at
+  (`quenching-learn`, `quenching-add`, `quenching-import-memory`) each check, at
   the end of a capture, whether the new concept introduced a term that belongs here, and
   add or update the entry — linking it to the concept doc just written.
-- **On demand, one term at a time.** Run `quenching-glossary` to add or refine a single
+- **On demand, one term at a time.** Run `quenching-define` to add or refine a single
   entry (inserted in alphabetical position, MERGE — never clobbering a filled definition).
-- **In bulk, across the whole bundle.** Run `quenching-knowledge-scan` to sweep every doc
+- **In bulk, across the whole bundle.** Run `quenching-glossary-backfill` to sweep every doc
   already in `docs/` for repo-specific terms that were never fed into the glossary and
   backfill them in one pass.
 

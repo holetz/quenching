@@ -7,7 +7,9 @@ concept doc carries `type: standard` + a derived `resource:` (the repo scope it 
 **Boundary:** `standards/` = "how **WE** do it (current/active)". Distinct from
 [reference/](/docs/reference/index.md) (external facts we consume) and
 [catalog/](/docs/catalog/index.md) (our data). Direction lives in
-[vision/](/docs/vision/index.md); open decisions in [decisions/](/docs/decisions/index.md).
+[vision/](/docs/vision/index.md). An **agreed-but-unproven** rule sits here as
+`authority: background` and graduates to `current` once proven — there is no separate decisions
+home.
 
 Keep only the subtopics that apply to the repo; within each, break standards **one
 concept per file** by considering the candidate sub-standards catalog (a
@@ -29,7 +31,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 ## Current docs
 
-<!-- BEGIN GENERATED: rebuilt from disk by `quenching-align`/`quenching-insert` — DO NOT edit by hand.
+<!-- BEGIN GENERATED: rebuilt from disk by `quenching-align`/`quenching-add` — DO NOT edit by hand.
      Scans standards/**/*.md, reads title/description/timestamp/type, grouped by subject subfolder.
      Row model per subfolder:
        ### code/

@@ -16,6 +16,7 @@ when_to_use: >-
   merging a change's delta specs into the main specs without archiving. Archive-time sync
   is offered by openspec-archive-change; editing the delta is openspec-update-change.
 allowed-tools: Bash(openspec:*), Read, Glob, Grep, Write, Edit
+user-invocable: false
 metadata:
   generatedBy: "1.6.0"
 ---
@@ -142,5 +143,5 @@ complete.
 - **Stay out of `docs/`**: `openspec/specs/` owns WHAT the product currently does
   (capability behavior); `docs/standards/` owns HOW we build (binding contracts). A sync
   never writes into the OKF bundle, and behavior statements never get mirrored into
-  `standards/` — if a delta reveals a build-rule worth codifying, offer `quenching-insert`
+  `standards/` — if a delta reveals a build-rule worth codifying, offer `quenching-add`
   separately.

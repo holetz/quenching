@@ -1,7 +1,7 @@
 {
   "name": "claude-quenching",
-  "version": "0.12.0",
-  "description": "OKF-centric knowledge-base aligner for the Claude Code surface of any repository. Installs one canonical Open Knowledge Format (OKF v0.1) docs/ bundle, forces existing docs into conformance, inserts knowledge into the right home, curates a fixed A–Z glossary, drains project memory into docs, refactors CLAUDE.md/AGENTS.md into thin pointers, imports external sources as OKF docs, parks and triages a task backlog, renders the bundle as a self-contained offline HTML diagram, loops it all to convergence, and drives the OpenSpec spec-driven change cycle (explore → propose → apply → sync/archive) with the bundle as its knowledge substrate. Eighteen skills — twelve quenching-* plus six openspec-* (the routing story lives in each skill's own description) — plus /opsx commands, a self-contained validation hook, and a zero-dependency HTML diagram generator. Every repository that adopts it looks the same.",
+  "version": "0.16.0",
+  "description": "OKF-centric knowledge-base aligner for the Claude Code surface of any repository. Installs one canonical Open Knowledge Format (OKF v0.1) docs/ bundle, forces existing docs into conformance, inserts knowledge into the right home, curates a fixed A–Z glossary, drains project memory into docs, refactors CLAUDE.md/AGENTS.md into thin pointers, imports external sources as OKF docs, parks and triages a task backlog, mints and aligns the repo's own .claude/skills + .claude/commands surface under a single taxonomy, loops it all to convergence, and drives the OpenSpec spec-driven change cycle (explore → propose → implement → sync-specs/archive) with the bundle as its knowledge substrate. Nineteen skills — eleven quenching-* plus eight openspec-* (the routing story lives in each skill's own description) — each user-invocable: false behind a thin command wrapper (/docs:* and /skill:* for quenching-*, /opsx:* for openspec-*), plus a self-contained validation hook. Every repository that adopts it looks the same.",
   "author": {
     "name": "Eloy Sekonell",
     "email": "consultoria@eloysekonell.com.br"
@@ -18,16 +18,14 @@
     "memory-migration",
     "claude-md",
     "orchestration",
-    "visualize",
-    "diagram",
-    "graph",
-    "html",
     "enrich",
     "developer-tools",
     "mkdocs",
     "backlog",
     "openspec",
     "spec-driven",
-    "change-management"
+    "change-management",
+    "skill-authoring",
+    "automation"
   ]
 }

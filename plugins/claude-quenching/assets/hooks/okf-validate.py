@@ -13,7 +13,7 @@ TWO ENTRY MODES
 1. **CLI**  `okf-validate.py <bundle-or-docs-dir> [--json]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
-   This is what `quenching-align`/`quenching-insert` invoke and what the plugin's own
+   This is what `quenching-align`/`quenching-add` invoke and what the plugin's own
    verification runs over `assets/docs/`.
 
 2. **HOOK**  (no path arg → reads the hook JSON on stdin)
@@ -57,7 +57,7 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`index-broken-link`** an `index.md` links to a `.md`/dir that does not exist on disk.
 - **`index-orphan`**      a concept doc nothing links to (unlisted / not discoverable).
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
-synthesize a missing index); the `quenching-align`/`quenching-insert` skills treat them as must-fix
+synthesize a missing index); the `quenching-align`/`quenching-add` skills treat them as must-fix
 in their own verify gate. `_`-prefixed, dot, and asset dirs are pruned from the whole
 bundle walk (they hold private/raw sidecar content, never OKF concepts), and every
 whole-tree check consumes ONE shared read pass over the tree (`_build_corpus`).
@@ -82,7 +82,7 @@ import sys
 import tempfile
 import time
 
-VERSION = "0.12.0"  # kept in lockstep with the plugin VERSION file
+VERSION = "0.16.0"  # kept in lockstep with the plugin VERSION file
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
@@ -578,7 +578,7 @@ def _render_proposal(findings) -> str:
     body = "\n".join(f"  - [{sev}] {rel}: {msg}" for sev, rel, code, msg in shown)
     return (f"[{TAG}] OKF conformance findings ({len(errors)} error(s), {len(warns)} warning(s)):\n"
             f"{body}\n"
-            "Fix with the `quenching-align` / `quenching-insert` skill (stamp `type`, keep `index.md` a "
+            "Fix with the `quenching-align` / `quenching-add` skill (stamp `type`, keep `index.md` a "
             "frontmatter-free listing, format `log.md` as `## YYYY-MM-DD` newest-first).")
 
 
@@ -680,7 +680,7 @@ def run_hook() -> int:
             fm, has_block, well_formed = parse_frontmatter(content)
             if not has_block or not well_formed or not _nonempty(fm, "type"):
                 _emit_deny(f"[{TAG}] this concept doc needs parseable frontmatter with a non-empty `type` "
-                           "(OKF requirement). Add the `type` before writing, or use `quenching-insert`.")
+                           "(OKF requirement). Add the `type` before writing, or use `quenching-add`.")
                 return 0
         return 0
 

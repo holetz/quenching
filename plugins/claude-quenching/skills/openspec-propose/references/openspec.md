@@ -31,6 +31,11 @@ openspec/
     archive/             # completed changes, moved here as YYYY-MM-DD-<change-name>/
 ```
 
+`openspec-backlog` adds a sibling `openspec/backlog/` (the **task inbox** — one `type: task`
+file per parked task). It is **quenching-managed**: the OpenSpec CLI (`init`, `status`,
+`validate`, `doctor`) neither creates nor reads it and ignores unrecognized subfolders under
+`openspec/`. It is **not** part of the OKF `docs/` bundle, so `okf-validate.py` does not scan it.
+
 Two spec stores, one truth rule: `openspec/specs/` holds the **current** behavior of each
 capability (updated only by syncing a delta); `openspec/changes/<name>/specs/` holds the
 **proposed delta**. Never edit main specs directly to plan a change — plan in the delta,
@@ -112,16 +117,19 @@ In a repo carrying an OKF bundle, keep `context:` a **thin pointer** to `docs/` 
 docs/standards/ and knowledge/glossary.md first") rather than restating the bundle — the
 same move-don't-copy doctrine `quenching-harness` applies to `CLAUDE.md`.
 
-## Boundary: `openspec/specs/` vs the OKF bundle
+## Boundary: `openspec/` vs the OKF `docs/` bundle
 
-The two stores answer different questions and **must not duplicate content**:
+These stores answer different questions and **must not duplicate content**:
 
 - `openspec/specs/` — **what the product currently does**, capability by capability
   (Requirement/Scenario). Owned by the OpenSpec cycle; updated only via delta sync.
+- `openspec/backlog/` — the **task inbox** that **seeds** changes: a quenching-managed peer of
+  `specs/` and `changes/` (see the task lifecycle in the backlog mold and `backlog/index.md`),
+  owned by `openspec-backlog`/`openspec-backlog-triage`, outside the OKF `docs/` bundle.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
-  `docs/decisions/` — decisions with alternatives; `docs/knowledge/` — generic understanding;
-  `docs/backlog/` — task inbox that **seeds** changes (see the task lifecycle in the
-  backlog mold and `backlog/index.md`).
+  `docs/knowledge/` — generic understanding. A decision's rationale + considered alternatives
+  live in a change's `design.md` while it is active and distill to a `standard`
+  (`authority`-graded) at archive time — there is no separate ADR home.
 
 A behavior statement belongs in a spec; a build-rule belongs in `standards/`; what a change
 *taught us* crosses to `docs/` only through the archive-time distillation
