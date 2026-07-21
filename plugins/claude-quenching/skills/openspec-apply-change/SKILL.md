@@ -7,7 +7,7 @@ description: >-
   change", "implement the openspec change", "start implementing", "continue implementation",
   or "work through the tasks". CLI-driven: `openspec instructions apply --json` supplies the
   context files, progress, and dynamic instruction; durable learning discovered while
-  implementing routes to quenching-knowledge/quenching-insert, never into loose comments.
+  implementing routes to quenching-learn/quenching-add, never into loose comments.
   Requires the openspec CLI (`@fission-ai/openspec`). Not for: creating the change and its
   artifacts → openspec-propose; revising planning artifacts without touching code →
   openspec-update-change; archiving a finished change → openspec-archive-change.
@@ -16,6 +16,7 @@ when_to_use: >-
   openspec-propose; planning-only revisions are openspec-update-change; archiving is
   openspec-archive-change.
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit
+user-invocable: false
 metadata:
   generatedBy: "1.6.0"
 ---
@@ -41,7 +42,7 @@ conversation context. If vague or ambiguous you MUST prompt for available change
    - If ambiguous, run `openspec list --json` to get available changes and use the
      **AskUserQuestion tool** to let the user select
 
-   Always announce: "Using change: <name>" and how to override (e.g., `/opsx:apply <other>`).
+   Always announce: "Using change: <name>" and how to override (e.g., `/opsx:implement <other>`).
 
 2. **Check status to understand the schema**
    ```bash
@@ -109,7 +110,7 @@ conversation context. If vague or ambiguous you MUST prompt for available change
    - Task is unclear → ask for clarification
    - Implementation reveals a design issue → suggest updating artifacts
    - A task conflicts with a `docs/standards/` contract → surface the conflict, let the
-     user pick (update the standard via `quenching-insert`, or revise the change)
+     user pick (update the standard via `quenching-add`, or revise the change)
    - Error or blocker encountered → report and wait for guidance
    - User interrupts
 
@@ -178,8 +179,8 @@ What would you like to do?
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
 - **Route durable learning to its OKF home**: an insight worth keeping (a gotcha, a domain
-  understanding, a term, a decision beyond this change) goes through `quenching-knowledge` /
-  `quenching-insert` / `quenching-glossary` — not into loose code comments or the tasks
+  understanding, a term, a rule beyond this change) goes through `quenching-learn` /
+  `quenching-add` / `quenching-define` — not into loose code comments or the tasks
   file; offer the capture, don't auto-write it
 
 **Fluid Workflow Integration**

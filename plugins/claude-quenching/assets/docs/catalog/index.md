@@ -48,5 +48,5 @@ content is **AUTO-GENERATED** (never edited by hand — the `<!-- AUTO-GENERATED
 overwritten on the next build). **Curation** (grain/usage notes, missing descriptions,
 access card, script links) is versioned separately and **survives** regeneration.
 
-Molds: `system.md` / `schema.md` / `table.md` (applied by `quenching-insert`). Seed this home
+Molds: `system.md` / `schema.md` / `table.md` (applied by `quenching-add`). Seed this home
 by inserting a `<system>/index.md` first.

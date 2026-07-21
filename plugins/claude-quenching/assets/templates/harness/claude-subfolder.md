@@ -7,7 +7,7 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
 - **Knowledge for this area:** [<home>](/docs/<home>/index.md) — <one line on what that home holds>.
 - **Unfamiliar term?** Resolve it in the glossary: [/docs/knowledge/glossary.md](/docs/knowledge/glossary.md)
   (`grep -i '<term>'`) — omit this bullet if the repo has no glossary.
-- **To create / edit knowledge:** use the `claude-quenching` skills (`quenching-insert` to add
+- **To create / edit knowledge:** use the `claude-quenching` skills (`quenching-add` to add
   one, `quenching-align` to migrate/normalize, `quenching-harness` to keep pointers thin).
 - **Boundary:** only <this folder's> concern lives here — <neighbor concern> → <its home>.
 

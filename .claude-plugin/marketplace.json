@@ -4,13 +4,13 @@
     "name": "Eloy Sekonell",
     "email": "consultoria@eloysekonell.com.br"
   },
-  "description": "Marketplace hosting the claude-quenching plugin: an OKF-centric knowledge-base aligner, inserter, task-backlog capturer and triager, knowledge-capturer, glossary-curator, memory-to-docs migrator, CLAUDE.md/AGENTS.md harness-refactorer, external-source importer, offline HTML diagram renderer, run-to-convergence cycle, and OpenSpec spec-driven change cycle for the Claude Code surface of any repository.",
+  "description": "Marketplace hosting the claude-quenching plugin: an OKF-centric knowledge-base aligner, inserter, task-backlog capturer and triager, knowledge-capturer, glossary-curator, memory-to-docs migrator, CLAUDE.md/AGENTS.md harness-refactorer, external-source importer, skill minter and skill-surface aligner, run-to-convergence cycle, and OpenSpec spec-driven change cycle for the Claude Code surface of any repository.",
   "plugins": [
     {
       "name": "claude-quenching",
       "source": "./plugins/claude-quenching",
-      "description": "Forces any repository's docs/ knowledge base into a single canonical Open Knowledge Format (OKF v0.1) bundle and keeps it conformant. Eighteen skills — align (structure), insert (any doc), backlog + backlog-triage (the task inbox: capture + prioritize), knowledge (concepts), glossary + knowledge-scan (the fixed A–Z term lookup), memory-to-docs (drain project memory), harness (thin CLAUDE.md/AGENTS.md pointers), enrich (import external sources), visualize (offline HTML diagram), cycle (run everything to convergence), plus the six openspec-* skills and /opsx commands driving the OpenSpec spec-driven change cycle with OKF knowledge bridges — plus a self-contained enforcement hook and a zero-dependency diagram generator. The routing story lives in each skill's own description. Every repository that adopts it looks the same.",
-      "version": "0.12.0",
+      "description": "Forces any repository's docs/ knowledge base into a single canonical Open Knowledge Format (OKF v0.1) bundle and keeps it conformant. Nineteen skills — align (structure), add (any doc), learn (concepts), define + glossary-backfill (the fixed A–Z term lookup), import-memory (drain project memory), harness (thin CLAUDE.md/AGENTS.md pointers), new + align under the skill: namespace (the repo's own .claude skill/command surface under one taxonomy), import (external sources), converge (run everything to convergence), plus the eight openspec-* skills driving the OpenSpec spec-driven change cycle with OKF knowledge bridges — six CLI-derived (explore/propose/implement/revise/sync-specs/archive) plus the quenching-native openspec-backlog + openspec-backlog-triage task inbox. Every skill is user-invocable: false behind a thin command wrapper (/docs:* and /skill:* for quenching-*, /opsx:* for openspec-*), plus a self-contained enforcement hook. The routing story lives in each skill's own description. Every repository that adopts it looks the same.",
+      "version": "0.16.0",
       "author": {
         "name": "Eloy Sekonell",
         "email": "consultoria@eloysekonell.com.br"
@@ -28,9 +28,9 @@
         "backlog",
         "memory-migration",
         "orchestration",
-        "visualize",
-        "diagram",
-        "enrich"
+        "enrich",
+        "skill-authoring",
+        "automation"
       ]
     }
   ]

@@ -2,8 +2,8 @@
 
 How `quenching-harness` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
-is filed exactly as `quenching-insert` would — see
-[../../quenching-insert/references/homes.md](../../quenching-insert/references/homes.md) for the
+is filed exactly as `quenching-add` would — see
+[../../quenching-add/references/homes.md](../../quenching-add/references/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
 [../../quenching-align/references/taxonomy.md](../../quenching-align/references/taxonomy.md) for the
 home boundaries.
@@ -49,8 +49,8 @@ units. One unit, one verdict.
 | environment quirk needed every turn | **KEEP** | stays in the harness file |
 | architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `knowledge/<subject>/` (`knowledge`) if non-binding |
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
-| "we chose X because Y" — open / implemented | **MOVE** | `decisions/` (`decision`) if open · `standards/` (`standard`) if proven |
-| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | `backlog/` (`task`, untriaged), or `vision/` (`vision`) for settled direction with no deadline |
+| "we chose X because Y" — agreed / proven | **MOVE** | `standards/` (`standard`; agreed-but-unproven ⇒ `authority: background`, proven ⇒ `current`) — no separate decision home |
+| roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | `openspec/backlog/` (`task`, untriaged — via `openspec-backlog`, outside the OKF bundle), or `vision/` (`vision`) for settled direction with no deadline |
 | step-by-step procedure / onboarding | **MOVE** | `documentation/how-to/` (`documentation`) |
 | facts about an external tool / lib / service | **MOVE** | `reference/{tools,libraries,regulations}/` (`reference`) |
 | domain concept / glossary term | **MOVE** | `knowledge/<subject>/` (`knowledge`) |
@@ -60,11 +60,12 @@ units. One unit, one verdict.
 | secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `docs/` |
 | no documentary home | **UNROUTABLE** | stays + reported |
 
-**Tie-breakers** are `quenching-insert`'s — "how **WE** do it" (proven) → `standards/`; open with
-alternatives → `decisions/`; a fact about a **named external** asset → `reference/`; generic
-understanding → `knowledge/`; a **parked task** → `backlog/`; **direction** → `vision/`; a
+**Tie-breakers** are `quenching-add`'s — "how **WE** do it" (proven) → `standards/`
+(`authority: current`); agreed-but-unproven → `standards/` (`authority: background`); a fact
+about a **named external** asset → `reference/`; generic understanding → `knowledge/`; a
+**parked task** → `openspec/backlog/` (via `openspec-backlog`); **direction** → `vision/`; a
 **procedure** → `documentation/how-to/`. Don't duplicate them here — see
-[../../quenching-insert/references/homes.md](../../quenching-insert/references/homes.md).
+[../../quenching-add/references/homes.md](../../quenching-add/references/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
 

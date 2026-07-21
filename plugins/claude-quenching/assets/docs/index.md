@@ -13,10 +13,8 @@ English kebab-case; only `audience: human` material follows the repo's language.
 
 ## Homes
 
-* [standards/](/docs/standards/index.md) — how **WE** do it (current contracts/conventions), by subject
-* [decisions/](/docs/decisions/index.md) — ADRs: open decisions; distill to `standards/` on implementation
+* [standards/](/docs/standards/index.md) — how **WE** do it (current contracts/conventions), by subject; agreed-but-unproven rules sit here as `authority: background`
 * [vision/](/docs/vision/index.md) — direction segmented by area, no deadline
-* [backlog/](/docs/backlog/index.md) — task inbox (raw or scoped; optional priority/tags), one file per task
 * [documentation/](/docs/documentation/index.md) — product docs site (Diátaxis: getting-started, how-to, reference, concepts)
 * [knowledge/](/docs/knowledge/index.md) — generic knowledge we hold (domain concepts, explanations, learnings); ships the fixed [glossary.md](/docs/knowledge/glossary.md) term lookup
 * [reference/](/docs/reference/index.md) — facts about what **WE CONSUME** (external, background)
@@ -24,11 +22,11 @@ English kebab-case; only `audience: human` material follows the repo's language.
 
 ## Boundaries (memorable summary)
 
-- `standards/` = "how **WE** do it (current/active)".
+- `standards/` = "how **WE** do it (current/active)"; an agreed-but-unproven rule sits here as `authority: background` (no separate decisions home).
 - `knowledge/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `reference/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
-- `decisions/` → `standards/` on implementation (distill and leave).
+- The **task inbox** lives at `openspec/backlog/`, **outside** this bundle (quenching-managed).
 - `patterns` **is not a silo** — it dissolves into `standards/architecture/`.
 
 **Resolving a term.** Unfamiliar repo word, acronym, or codename? Look it up in the glossary

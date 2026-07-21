@@ -8,15 +8,16 @@ description: >-
   through this with me", "enter explore mode", "investigate this problem before proposing",
   or "help me clarify what to build". A stance, not a workflow: reads code and docs freely,
   visualizes with ASCII diagrams, never implements; insights route to the change's artifacts
-  or to the OKF homes (knowledge/ADR/glossary) only on the user's word. Requires the
+  or to the OKF homes (knowledge/standards/glossary) only on the user's word. Requires the
   openspec CLI (`@fission-ai/openspec`). Not for: generating the change artifacts →
   openspec-propose; implementing tasks → openspec-apply-change; capturing one stated fact
-  into docs/ → quenching-knowledge or quenching-insert.
+  into docs/ → quenching-learn or quenching-add.
 when_to_use: >-
   open-ended thinking, investigation, and requirement clarification before or during an
   OpenSpec change. Generating artifacts is openspec-propose; implementation is
   openspec-apply-change.
 allowed-tools: Bash(openspec:*), Read, Glob, Grep, Write, Edit
+user-invocable: false
 metadata:
   generatedBy: "1.6.0"
 ---
@@ -130,15 +131,15 @@ If the user mentions a change or you detect one is relevant:
     | Scope changed                         | `proposal.md`                             |
     | New work identified                   | `tasks.md`                                |
     | Assumption invalidated                | Relevant artifact                         |
-    | Generic understanding gained          | `quenching-knowledge` → `docs/knowledge/` |
-    | Decision beyond this change's scope   | `quenching-insert` → ADR in `docs/decisions/` |
-    | New repo-specific term coined         | `quenching-glossary` → `docs/knowledge/glossary.md` |
-    | Raw follow-up task, out of scope      | `quenching-backlog` → `docs/backlog/`    |
+    | Generic understanding gained          | `quenching-learn` → `docs/knowledge/` |
+    | Rule/decision beyond this change's scope | `quenching-add` → `standards/` (`authority`-graded) |
+    | New repo-specific term coined         | `quenching-define` → `docs/knowledge/glossary.md` |
+    | Raw follow-up task, out of scope      | `openspec-backlog` → `openspec/backlog/` |
 
    Example offers:
    - "That's a design decision. Capture it in design.md?"
    - "This is a new requirement. Add it to specs?"
-   - "That understanding outlives this change. Capture it with quenching-knowledge?"
+   - "That understanding outlives this change. Capture it with quenching-learn?"
 
 4. **The user decides** - Offer and move on. Don't pressure. Don't auto-capture.
 
@@ -152,9 +153,10 @@ ground truth you explore:
 - **Speak the repo's language**: consult `docs/knowledge/glossary.md` early and use its
   terms; if the user uses a term the glossary defines differently, surface the mismatch.
 - **Stand on what's already understood**: `docs/knowledge/` holds the team's mental models
-  and learnings; `docs/standards/` holds the binding contracts a future design must respect;
-  `docs/decisions/` holds open ADRs the exploration may resolve or collide with;
-  `docs/backlog/` may already hold the very task being explored — read it as the seed.
+  and learnings; `docs/standards/` holds the binding contracts a future design must respect
+  (a `standard` with `authority: background` is an agreed-but-unproven rule the exploration may
+  resolve or collide with); `openspec/backlog/` may already hold the very task being explored —
+  read it as the seed.
 - **Route durable insights** by the capture table above: change-scoped → the change's
   artifacts; durable → the OKF home. Same rule either way: offer, don't auto-capture.
 
@@ -197,7 +199,7 @@ There's no required ending. Discovery might:
 - **Flow into a proposal**: "Ready to start? I can create a change proposal." (→
   openspec-propose)
 - **Result in artifact updates**: "Updated design.md with these decisions"
-- **Seed the backlog**: a task worth keeping but not pursuing lands in `docs/backlog/`
+- **Seed the backlog**: a task worth keeping but not pursuing lands in `openspec/backlog/`
 - **Just provide clarity**: User has what they need, moves on
 - **Continue later**: "We can pick this up anytime"
 

@@ -12,7 +12,8 @@ Each existing section matches a canonical home **by function**:
 | Variant (examples) | Canonical |
 | --- | --- |
 | `docs/arquitetura/`, `docs/architecture-docs/` | `docs/standards/` (or `standards/architecture/` if only that) |
-| `docs/adr/`, `docs/decisions` (as ADRs) | `docs/decisions/` |
+| `docs/adr/`, `docs/decisions` (ADRs) | `docs/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
+| `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `openspec/backlog/` (leaves the bundle — §1e) |
 | `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `docs/vision/` |
 | `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `docs/catalog/` |
 | `docs/normativos/`, `docs/regulamentos/` | `docs/reference/regulations/` (content) |
@@ -34,8 +35,8 @@ surface) become canonical English; the **body prose MAY stay in the repo's langu
 Convergence reaches the **filename** too — a non-English concept-doc slug and a prefix-cluster
 are both smells `quenching-align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
 
-- **Translate non-English slugs** on the technical homes (`standards/`, `decisions/`, `vision/`,
-  `backlog/`, `documentation/`, `reference/` non-identifier) to canonical English describing the concept:
+- **Translate non-English slugs** on the technical homes (`standards/`, `vision/`,
+  `documentation/`, `reference/` non-identifier) to canonical English describing the concept:
   `convencoes.md`→`conventions.md` · `hierarquia-tasks.md`→`task-hierarchy.md` ·
   `validacao-desenvolvimento.md`→`development-validation.md` · `notebooks-spark.md`→`spark-notebooks.md`.
 - **Fold a prefix-cluster into a subfolder** (prefix stripped, English leaf names, generated
@@ -51,7 +52,7 @@ are both smells `quenching-align` resolves as renames (each swept for its blast 
 
 - **Identifier-derived slugs are verbatim — never translate them.** A catalog `<schema>`/
   `<table>` mirrors the real object (`dim_associado.md` stays `dim_associado.md`);
-  `reference/repositories/<repo>` mirrors the real repo; an ADR keeps its `NNNN-` prefix. The
+  `reference/repositories/<repo>` mirrors the real repo. The
   slug is the greppable key to the asset — anglicizing it is data loss.
 - **Content is content — only the surface converges.** Body prose may be Portuguese; the slug,
   folder, and frontmatter are English.
@@ -71,15 +72,40 @@ Without this rule `align` would read a conformant `guides/` and never migrate it
 ### 1d. Renamed backlog item — `idea` → `task`
 
 OKF v0.11 renamed the backlog item concept: a `backlog/*.md` carrying the legacy
-`type: idea` restamps to `type: task` (same home, same minimal stamp; the optional
+`type: idea` restamps to `type: task` (same minimal stamp; the optional
 `priority`/`tags` keys are NOT backfilled — an untriaged legacy item simply stays
 untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Completed
 ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
 `Idea` → `Task`, `Developed into` → `Outcome`). The DERIVED
-`<!-- BEGIN/END GENERATED -->` zone is installed/regenerated (align already regenerates
-every `index.md`); an index that predates the markers gains them without touching the
-fixed prose around them. A legacy mold reference `backlog/idea.md` maps to
-`backlog/task.md`.
+`<!-- BEGIN/END GENERATED -->` zone is installed/regenerated per
+[`../../openspec-backlog/references/backlog-zone.md`](../../openspec-backlog/references/backlog-zone.md);
+an index that predates the markers gains them without touching the fixed prose around them. A
+legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies at the
+backlog's new home, `openspec/backlog/` (§1e).
+
+### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → `openspec/backlog/`
+
+OKF v0.13 moved the task inbox out of the `docs/` bundle: a target's existing `docs/backlog/`
+relocates to **`openspec/backlog/`** — a **quenching-managed** sibling of `openspec/specs/` and
+`changes/`, **outside** the bundle (no longer scanned by `okf-validate.py`, and `type: task`
+leaves the OKF `type` vocabulary). Create `openspec/backlog/` — offer `openspec init` if
+`openspec/` is absent, else just create the folder and install the seed `index.md` from
+`${CLAUDE_PLUGIN_ROOT}/assets/openspec/backlog/index.md` — then move every `docs/backlog/*.md`
+task across, applying the `idea`→`task` restamp (§1d) at the new path. This is its **own**
+confirmation, blast-radius swept (§3–4): the move rewrites every cross-link into `docs/backlog/`
+(now `/openspec/backlog/…`). After the move, the backlog skills
+(`openspec-backlog`/`openspec-backlog-triage`) own the inbox.
+
+### 1f. Retired home — `decisions/` → `standards/`
+
+OKF v0.13 removed the standalone ADR home. A target's existing `docs/decisions/*.md`
+(`type: decision`, usually `NNNN-slug.md` ADRs) migrates by restamping `type: decision` →
+`type: standard` with `authority: background` (or `current` if the decision is clearly
+implemented in the code), and relocating to the fitting `standards/<subject>/` — naming the
+concept in an English slug, dropping the `NNNN-` prefix. This is a **per-item
+semantic-placement call with its own OK**, blast-radius swept (§3–4) — never a bulk move. A
+decision's rationale and still-open alternatives belong in an OpenSpec change's `design.md`,
+not a docs home.
 
 ### Content relocation (distinct from rename)
 
@@ -115,8 +141,8 @@ radius reaches **product code**, or is otherwise irreversible, is a **distinct c
 item** with its scope shown — never folded into a bulk "align all" opt-in. A rename that
 resolves to a code constant is a **refactor of the target's product**, not a docs move: alert
 the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked by
-`quenching-cycle` under its cycle-authorization contract
-([cycle.md §contract](../../quenching-cycle/references/cycle.md)) replaces only the batch gate
+`quenching-converge` under its cycle-authorization contract
+([cycle.md §contract](../../quenching-converge/references/cycle.md)) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
 
 ## 5. Frontmatter migration (field renames)
@@ -127,7 +153,8 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 - `updated:` → `timestamp:`
 - add non-empty `type:` (from the home's vocabulary in [taxonomy.md](taxonomy.md))
 - rename the retired type `type: guide` → `type: documentation` (its home moved to `documentation/`)
-- rename the retired type `type: idea` → `type: task` (the backlog item concept was renamed in v0.11 — see §1d)
+- rename the retired type `type: idea` → `type: task` (the backlog item concept was renamed in v0.11 — see §1d; the backlog itself relocates to `openspec/backlog/` per §1e)
+- rename the retired type `type: decision` → `type: standard` (the ADR home was retired in v0.13 — see §1f; stamp `authority: background`, or `current` if implemented)
 - normalize enums to canonical English (`authority: vigente` → `current`; `audience: ambos` → `both`)
 - preserve third-party keys (a legacy `status:`, OKF-consumer keys, site-generator keys)
 - convert each front-door `README.md` → `index.md` (strip its frontmatter; keep boundary +

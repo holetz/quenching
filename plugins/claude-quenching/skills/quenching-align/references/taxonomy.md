@@ -1,6 +1,6 @@
 # Canonical taxonomy — the tree, homes, `type` vocabulary, boundaries
 
-The single source of the tree `quenching-align` installs and `quenching-insert` files into. Every repo
+The single source of the tree `quenching-align` installs and `quenching-add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
 (→ [migration.md](migration.md)).
 
@@ -17,9 +17,7 @@ docs/                          # OKF bundle root
     architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
                                #   each: index.md + one standard per file (type: standard)
   catalog/                     # our data — <system>/{index.md, access.md} · <catalog>/<schema>.md · <schema>/<table>.md
-  decisions/                   # ADRs — NNNN-slug.md (type: decision)
   vision/                      # direction by area — <area>.md (type: vision)
-  backlog/                     # task inbox — <task-slug>.md (type: task; optional priority/tags); DERIVED index zone
   documentation/               # product docs (Diátaxis prose) — getting-started/ how-to/ reference/ concepts/ (type: documentation)
   knowledge/                   # generic knowledge we hold — subject subfolders (type: knowledge)
                                #   ships one FIXED file: glossary.md (the A–Z term lookup)
@@ -36,9 +34,7 @@ docs/                          # OKF bundle root
 | `catalog/<system>/access.md` | `system` | the access card |
 | `catalog/**/<schema>.md` | `schema` | consolidated index |
 | `catalog/**/<schema>/<table>.md` | `table` | detailed page |
-| `decisions/` | `decision` | `NNNN-slug.md` |
 | `vision/` | `vision` | `<area>.md` |
-| `backlog/` | `task` | `<task-slug>.md` |
 | `documentation/**` | `documentation` | `getting-started/`·`how-to/`·`reference/`·`concepts/` |
 | `knowledge/` | `knowledge` | subject subfolders |
 | `reference/` | `reference` | `tools/`·`libraries/`·`regulations/` |
@@ -53,7 +49,8 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
 - `documentation/` = "**prose docs for humans**, Diátaxis-structured (the published site)".
 - `reference/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
-- `decisions/` → `standards/` **on implementation** (distills and leaves).
+- An **agreed-but-unproven rule** for how we build is a `standard` with `authority: background`;
+  it graduates to `authority: current` once proven (there is no separate decision home).
 - **`patterns` is not a silo** — it dissolves into `standards/architecture/`.
 
 ## The homes, one by one
@@ -65,23 +62,9 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   **coverage/deferral ledger** — a consideration checklist, evidence-gated generation,
   recorded deferral (not a blind generate list). Internal boundary: `code/` governs
   **symbols**, `naming/` governs **data**.
-- **`decisions/`** — an ADR is a decision **not yet implemented**; one per file
-  (`NNNN-slug.md`, `type: decision`). On implementation it **distills into `standards/`** and
-  leaves the tree (git + the "Distilled ledger" keep the trail).
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
-  A raw task toward it → `backlog/`; what became reality → `standards/`.
-- **`backlog/`** — the **task inbox** (`type: task`): fast, low-ceremony capture of a unit
-  of work — raw (it seeds the OpenSpec cycle, `openspec-explore` / `openspec-propose`) or
-  already clear in scope. Flat (`<task-slug>.md`, no subfolders); no
-  `vision_refs`/done-criteria/detailed planning; **optional** `priority` (`critical|high|medium|low`
-  — absent = untriaged, a valid state), `tags` (themes), and `complexity` (a rough size in
-  development hours — the one estimate that may be stamped at capture). Its `index.md` carries a
-  **DERIVED zone** (summary + per-priority tables + by-theme bullets, rebuilt from the
-  tasks' frontmatter — format owned by `homes.md` §Updating `index.md`) plus a curated
-  **Completed ledger** outside the zone. Captured by `quenching-backlog` (or generic
-  `quenching-insert` routing); prioritized by `quenching-backlog-triage`. Once a task is
-  developed into a change with apply-ready artifacts or done, it **leaves** the tree (the
-  Completed ledger keeps the trail).
+  A raw task toward it → `openspec/backlog/` (the task inbox, **outside** this OKF bundle —
+  see `openspec-backlog`); what became reality → `standards/`.
 - **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
   home rendered as the product's documentation site (`type: documentation`). Four fixed
   subfolders: `getting-started/` (tutorial), `how-to/` (task recipes — absorbs the former
@@ -100,7 +83,7 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
   unlinked entry is a valid permanent state). `quenching-align` installs the seed;
-  `quenching-glossary` enriches one term on demand, `quenching-knowledge-scan` backfills the
+  `quenching-define` enriches one term on demand, `quenching-glossary-backfill` backfills the
   whole bundle in one sweep, and the other knowledge skills enrich it as a tail step.
 - **`reference/`** — external facts we consume (`type: reference`); a regulation's PDF lives
   here via a **sidecar**, while *our* implementation of it lives in `standards/`.
@@ -127,8 +110,7 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   `nomenclatura-variaveis.md` → `naming/variables.md`. Frontmatter stays English; **body prose
   MAY follow the repo's language.** **Identifier-derived slugs are verbatim, never translated:**
   a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>` the
-  real repo, an ADR keeps its `NNNN-` prefix — translating them would break the greppable tie to
-  the asset.
+  real repo — translating them would break the greppable tie to the asset.
 - **Links:** relative **within** a home; absolute from the bundle root (`/docs/...`) when
   leaving for another home — so cross-links survive a home move/migration.
 - **Every knowledge-holding folder has an `index.md`.** A directory that holds concept docs

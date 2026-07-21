@@ -15,6 +15,7 @@ when_to_use: >-
   revising an existing OpenSpec change's planning artifacts and keeping them coherent.
   Creating artifacts is openspec-propose; implementing is openspec-apply-change.
 allowed-tools: Bash(openspec:*), Read, Glob, Grep, Write, Edit
+user-invocable: false
 metadata:
   generatedBy: "1.6.0"
 ---
@@ -97,7 +98,7 @@ conversation context. If vague or ambiguous you MUST prompt for available change
 6. **Point to the next step (guidance only - NEVER act on it)**
    - Artifacts still missing -> suggest `/opsx:propose <name>` to create them.
    - Change already implemented (tasks checked off / already applied) -> the code may no
-     longer match the revised plan; suggest `/opsx:apply` to carry the delta into code.
+     longer match the revised plan; suggest `/opsx:implement` to carry the delta into code.
    - Everything done and implemented -> suggest `/opsx:archive`.
 
 **Output**
@@ -109,7 +110,7 @@ After each invocation, show:
 
 **Guardrails**
 - Planning artifacts only - NEVER edit implementation code. If the revised plan implies
-  code changes, stop and point to `/opsx:apply`.
+  code changes, stop and point to `/opsx:implement`.
 - Use the artifact ids and paths reported by `openspec status`; never branch on hardcoded
   artifact names.
 - Edit only the concrete files in `existingOutputPaths`; never write to a glob
@@ -119,6 +120,6 @@ After each invocation, show:
 - Confirm every edit with the user before writing.
 - If the request changes the change's *intent* rather than refining it, recommend starting
   fresh with a new `/opsx:propose` (the "Update vs. Start Fresh" heuristic).
-- A revision that surfaces durable knowledge (a decision beyond this change, a generic
-  understanding) routes to `quenching-insert`/`quenching-knowledge` — this skill never
-  writes into `docs/`.
+- A revision that surfaces durable knowledge (a rule/decision beyond this change → a
+  `standard`, a generic understanding → `knowledge/`) routes to
+  `quenching-add`/`quenching-learn` — this skill never writes into `docs/`.

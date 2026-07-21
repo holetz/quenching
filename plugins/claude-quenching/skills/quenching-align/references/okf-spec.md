@@ -27,7 +27,7 @@ the plugin enforces; [conformance.md](conformance.md) turns them into checks.
 - Type values are **not** registered centrally. Producers **SHOULD** pick descriptive,
   self-explanatory values; consumers **MUST** tolerate unknown types gracefully.
 - This plugin fixes a **descriptive vocabulary** per home (`standard`, `system`, `schema`,
-  `table`, `decision`, `vision`, `task`, `documentation`, `knowledge`, `reference`,
+  `table`, `vision`, `documentation`, `knowledge`, `reference`,
   `sidecar`) so the surface is uniform and greppable — still valid
   OKF (self-explanatory, tolerated by any consumer).
 
@@ -89,7 +89,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
 5. **Links:** relative within a home, absolute `/docs/...` across homes.
 6. **Canonical English structure** — folder names **and concept-doc file slugs**, keys, enum
    values, and the `type` vocabulary. Frontmatter is English; **body prose MAY follow the repo's
-   language**. Identifier-derived slugs (catalog tables/schemas, repo names, ADR `NNNN-` prefixes)
+   language**. Identifier-derived slugs (catalog tables/schemas, repo names)
    stay **verbatim** — the slug is the greppable key to the asset.
 7. **Harness files** `CLAUDE.md`/`AGENTS.md` are navigation pointers, **not** OKF concepts —
    exempt from the `type` requirement. The validator skips them entirely; the `quenching-harness`

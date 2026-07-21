@@ -6,16 +6,17 @@ description: >-
   to "align the knowledge base to OKF", "install the docs structure", "force OKF
   conformance", "migrate docs/ to the standard", "make docs/ OKF-compliant", "organize
   docs/ into the canonical tree", or when docs/ has variant names / missing frontmatter /
-  a lying index. Installs the canonical homes (standards/ decisions/ vision/ backlog/
+  a lying index. Installs the canonical homes (standards/ vision/
   documentation/ knowledge/ reference/ catalog/), migrates
   variant folder names, folds prefix-clusters into subject subfolders, translates
   non-English slugs, stamps OKF frontmatter, regenerates every index.md, establishes
   log.md, and validates. Invasive by design: ONE full plan, one confirmation; a rename
-  reaching product code confirms on its own. Not for: adding content → quenching-insert.
+  reaching product code confirms on its own. Not for: adding content → quenching-add.
 when_to_use: >-
   installing and force-aligning a repo's docs/ structure to the canonical OKF bundle.
-  The structural half; content insertion is quenching-insert.
+  The structural half; content insertion is quenching-add.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
+user-invocable: false
 ---
 
 # quenching-align — force the knowledge base into OKF shape
@@ -41,8 +42,8 @@ The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
   whole batch. **Exception:** a rename whose blast radius reaches **product code** (path
   constants, imports, docstrings) is a **distinct** confirmation item with its scope shown —
   **never** folded into the batch OK. **Exception — cycle-authorized runs:** invoked by
-  `quenching-cycle` under its cycle-authorization contract
-  ([../quenching-cycle/references/cycle.md](../quenching-cycle/references/cycle.md)), the plan
+  `quenching-converge` under its cycle-authorization contract
+  ([../quenching-converge/references/cycle.md](../quenching-converge/references/cycle.md)), the plan
   is presented as narration, not a gate; a code-coupled item still confirms on its own, always.
 - **Stamp = MERGE, never clobber.** Fill a missing key; preserve a filled one and any
   third-party key (OKF consumers, a legacy `status:`, site generators).
@@ -63,7 +64,7 @@ The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
   **body prose MAY follow the repo's language** — only the content, never the surface.
   **Exception — identifier-derived names are verbatim, never translated:** a catalog
   `<schema>`/`<table>` slug mirrors the real object, `reference/repositories/<repo>` the real
-  repo, an ADR keeps its `NNNN-` prefix — anglicizing them would sever the greppable tie to the
+  repo — anglicizing them would sever the greppable tie to the
   asset.
 
 ## Workflow (force-with-1-confirmation)
@@ -86,7 +87,7 @@ Produce the **alignment plan** — enumerate:
     kept flat and why;
   - **(b3)** **non-English slugs to translate** — every concept-doc file slug on a technical home
     that is not canonical English, with its English target (`convencoes.md` → `conventions.md`);
-    leave identifier-derived names (catalog tables, repo names, ADR prefixes) verbatim;
+    leave identifier-derived names (catalog tables, repo names) verbatim;
   - **(c)** misfiled docs to relocate (semantic placement, per item);
   - **(d)** frontmatter to stamp/normalize — add non-empty `type`, migrate `summary:`→
     `description:` and `updated:`→`timestamp:`, normalize enums to canonical English;
@@ -159,21 +160,6 @@ If the bundle has a `documentation/` home, offer to install the batteries-includ
 The `.pages` nav files ship **with** the `documentation/` skeleton (Step 4), so nav needs no
 separate install and no regeneration. See [../../assets/mkdocs/README.md](../../assets/mkdocs/README.md).
 
-### 8. Offer the diagram (optional)
-Once the bundle conforms, offer to render it as a **self-contained, offline HTML diagram** —
-the [quenching-visualize](../quenching-visualize/SKILL.md) skill's job — by running the
-plugin's zero-dependency generator straight from the plugin root (no install):
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/tools/okf-visualize.py" <docs-dir> --out ./okf-diagram.html
-```
-
-Write the `.html` **outside** the bundle (default `./okf-diagram.html`), **never** under
-`docs/` — it is generated output the validator must not scan. As with the hook (step 6), also
-offer to install/upgrade the tool into the target's `.claude/tools/` for standalone use: copy
-`okf-visualize.py` **and** its `viewer/` payload together, comparing `--version` with the
-plugin's `VERSION`.
-
 ## Invariants to never violate
 - Never put a concept `type` on an `index.md`; never leave a concept doc without one.
 - Never invent a `resource:` — derive it from the doc's `file:line` anchors (standards) or
@@ -182,8 +168,8 @@ plugin's `VERSION`.
   translation and a cluster-fold are renames — same rule. A cycle-authorized run
   (cycle.md §contract) replaces only the batch gate with narration — never a code-coupled
   item's own OK.
-- Never translate an **identifier-derived** slug (catalog table/schema, repo name, ADR `NNNN-`
-  prefix) — it mirrors a real asset; anglicizing it breaks the greppable tie.
+- Never translate an **identifier-derived** slug (catalog table/schema, repo name) — it mirrors
+  a real asset; anglicizing it breaks the greppable tie.
 - Never leave a directory that holds concept docs without an `index.md`, and never leave a
   listing that links to a nonexistent file (a lying index).
 - Never hand-edit a `<!-- BEGIN/END GENERATED -->` zone — regenerate it from disk.

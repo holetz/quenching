@@ -10,13 +10,14 @@ description: >-
   move durable knowledge, dedupe, flag contradictions, keep-and-report the unroutable),
   presents ONE refactor plan executed on a single confirmation (a product-code edit
   confirms on its own), and verifies every pointer resolves. Not for: draining ~/.claude
-  memory → quenching-memory-to-docs; run quenching-align first if docs/ is not an OKF
+  memory → quenching-import-memory; run quenching-align first if docs/ is not an OKF
   bundle.
 when_to_use: >-
   refactoring CLAUDE.md/AGENTS.md into thin pointers over the OKF bundle — keep the
   operational, move the knowledge, verify pointers. The harness counterpart of
-  quenching-memory-to-docs.
+  quenching-import-memory.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
+user-invocable: false
 ---
 
 # quenching-harness — make CLAUDE.md a thin, honest pointer into the bundle
@@ -31,8 +32,8 @@ is invisible to anyone browsing `docs/`, and drifts. Assumes the bundle already 
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
 in [references/harness-routing.md](references/harness-routing.md); the home boundaries, `type`
-vocabulary, molds, and index/log procedure are shared with `quenching-insert`
-([../quenching-insert/references/homes.md](../quenching-insert/references/homes.md)) and
+vocabulary, molds, and index/log procedure are shared with `quenching-add`
+([../quenching-add/references/homes.md](../quenching-add/references/homes.md)) and
 `quenching-align` ([../quenching-align/references/taxonomy.md](../quenching-align/references/taxonomy.md),
 [../quenching-align/references/conformance.md](../quenching-align/references/conformance.md),
 [../quenching-align/references/migration.md](../quenching-align/references/migration.md)). Harness
@@ -53,16 +54,16 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 - **Plan first, execute on one confirmation.** Read every harness file, classify every unit, and
   present **ONE** table — file → unit → verdict → destination. A single OK executes the batch; an
   edit whose blast radius reaches **product code** is its own confirmation item. **Exception —
-  cycle-authorized runs:** invoked by `quenching-cycle` under its cycle-authorization contract
-  ([../quenching-cycle/references/cycle.md](../quenching-cycle/references/cycle.md)), the plan is
+  cycle-authorized runs:** invoked by `quenching-converge` under its cycle-authorization contract
+  ([../quenching-converge/references/cycle.md](../quenching-converge/references/cycle.md)), the plan is
   presented as narration, not a gate; a product-code edit still confirms on its own, always. The
   cycle may hand this skill a **pre-collected steps 1–4 table** (gathered read-only while
-  `quenching-memory-to-docs` ran — cycle.md §Parallel prep); before writing, re-verify any unit
+  `quenching-import-memory` ran — cycle.md §Parallel prep); before writing, re-verify any unit
   whose home/subject intersects the docs that run just created — a fresh doc can flip a MOVE
   into a DEDUPE (the staleness delta-recheck); the rest of the table stands.
 - **Write-then-verify-then-cut.** A unit leaves the harness file **only after** its concept doc is
   written, indexed, logged, and passes the conformance self-check. A failed insert leaves the unit
-  in place (the same contract as `quenching-memory-to-docs`' write-then-verify-then-delete).
+  in place (the same contract as `quenching-import-memory`' write-then-verify-then-delete).
 - **Never silently drop a unit.** Unroutable content **stays** and is reported; a contradiction
   with `docs/` is a **FLAG** resolved per item; secrets and personal notes are flagged and **NEVER**
   filed into shared `docs/` (`CLAUDE.local.md` is treated like a `user` memory).
@@ -108,7 +109,7 @@ build command paired with an architecture note becomes two).
 ### 3. Classify every unit
 Apply the [references/harness-routing.md](references/harness-routing.md) table →
 **KEEP / MOVE / DEDUPE / FLAG / UNROUTABLE**. A **MOVE** derives its home + `type` + mold via
-[../quenching-insert/references/homes.md](../quenching-insert/references/homes.md); a **DEDUPE**
+[../quenching-add/references/homes.md](../quenching-add/references/homes.md); a **DEDUPE**
 cites the existing doc (`Grep docs/` to confirm coverage); a **FLAG** quotes both sides of the
 contradiction.
 
@@ -130,7 +131,7 @@ confirmation** before writing anything.
 
 ### 6. Per MOVE unit: insert, verify, then cut
 For each MOVE row, run the full insert procedure exactly as
-[../quenching-insert/references/homes.md](../quenching-insert/references/homes.md) specifies it —
+[../quenching-add/references/homes.md](../quenching-add/references/homes.md) specifies it —
 stamp → index → log → glossary → self-check (against
 [../quenching-align/references/conformance.md](../quenching-align/references/conformance.md)) —
 with this skill's deltas kept inline:

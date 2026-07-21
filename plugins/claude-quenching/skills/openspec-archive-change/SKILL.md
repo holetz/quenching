@@ -4,19 +4,20 @@ description: >-
   Archives a completed OpenSpec change — checks artifact and task completion, offers the
   delta-spec sync into main specs, moves the change folder to changes/archive/YYYY-MM-DD-
   <name>/, then offers ONE OKF distillation pass: minting into docs/ the durable knowledge
-  the change produced (decision with alternatives → ADR, generic understanding →
+  the change produced (decision → standards/ authority-graded, generic understanding →
   knowledge/, new terms → glossary). Use when the user asks to "archive the change",
   "finalize the change", "close out this openspec change", or "the change is done, wrap it
   up". Warnings never block (incomplete items just confirm); nothing is bulk-copied — the
   archived change stays the OpenSpec history, only durable knowledge crosses the bridge.
   Requires the openspec CLI (`@fission-ai/openspec`). Not for: implementing remaining tasks
   → openspec-apply-change; syncing specs without archiving → openspec-sync-specs; inserting
-  an arbitrary doc into docs/ → quenching-insert.
+  an arbitrary doc into docs/ → quenching-add.
 when_to_use: >-
   finalizing and archiving a completed OpenSpec change, including the post-archive OKF
   distillation offer. Implementation is openspec-apply-change; sync-only is
   openspec-sync-specs.
 allowed-tools: Bash(openspec:*), Bash(mkdir:*), Bash(mv:*), Read, Glob, Grep, Write, Edit
+user-invocable: false
 metadata:
   generatedBy: "1.6.0"
 ---
@@ -115,14 +116,14 @@ conversation context. If vague or ambiguous you MUST prompt for available change
 
    If the repo carries an OKF bundle (`docs/index.md` with `okf_version`), run the
    distillation procedure in [references/distill.md](references/distill.md):
-   - **harvest** the archived artifacts for durable candidates (decision with alternatives
-     → ADR in `decisions/`; generic understanding → `knowledge/`; new repo-specific terms →
-     `knowledge/glossary.md`; proven build-rule → `standards/`; unpursued follow-up task →
-     `backlog/`);
+   - **harvest** the archived artifacts for durable candidates (a decision the change made
+     → `standards/` (`authority: current` if the change proved it, else `background`); generic
+     understanding → `knowledge/`; new repo-specific terms → `knowledge/glossary.md`; unpursued
+     follow-up task → `openspec/backlog/`);
    - present them as **one plan, one confirmation** (an empty harvest is a valid outcome —
      say so and finish);
    - mint each approved doc under the insert procedure
-     ([../quenching-insert/references/homes.md](../quenching-insert/references/homes.md))
+     ([../quenching-add/references/homes.md](../quenching-add/references/homes.md))
      and log each in `docs/log.md` as distilled from the change;
    - self-check against
      [../quenching-align/references/conformance.md](../quenching-align/references/conformance.md).
