@@ -7,7 +7,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: a **fully native** `specs/` front (the twelve `quenching-specs-*`
+**spec-driven plan cycle**: a **fully native** `specs/` front (the thirteen `quenching-specs-*`
 skills plus `/specs` commands) with the OKF bundle as its knowledge substrate — no external
 CLI, driven by the bundled stdlib `specs.py`.
 
@@ -48,12 +48,12 @@ confirms on its own, always — and inside a conducted run, so does every **plan
 That contract lives once, in
 [`quenching-align-and-update-all/references/convergence.md`](skills/quenching-align-and-update-all/references/convergence.md).
 
-## The twenty-seven skills
+## The twenty-eight skills
 
 Every skill is `user-invocable: false` (hidden from the `/` menu) and paired with a thin
-**command wrapper**. All twenty-seven share one `quenching-<front>-<object>-<verb>` taxonomy and
+**command wrapper**. All twenty-eight share one `quenching-<front>-<object>-<verb>` taxonomy and
 split by front: `/docs:*` for the ten that act on the OKF `docs/` bundle (one nested a level
-deeper at `/docs:documentation:build`), `/specs:*` for the twelve that act on the native `specs/`
+deeper at `/docs:documentation:build`), `/specs:*` for the thirteen that act on the native `specs/`
 workspace (the plan skills under `/specs:plan:*`, the inbox under `/specs:backlog:*`), `/skill:*`
 for the three that act on the target's `.claude/` automation surface, and the root `/align` +
 `/align-and-update` for the two that span all three fronts. Claude still auto-routes to a skill by
@@ -371,7 +371,7 @@ deterministic rails are the bundled stdlib `assets/bin/specs.py` (subcommands
 `new`/`list`/`status`/`next`/`task`/`backlog`/`validate`/`archive`/`doctor`, uniform `--json`,
 strict exit codes `0` ok · `1` findings · `2` refusal), the same self-contained mold as the OKF
 hook — a skill branches on data, never on prose. `quenching-specs-align` installs it into a
-target's `.claude/hooks/`. Every one of these twelve skills reads the `docs/` bundle as context
+target's `.claude/hooks/`. Every one of these thirteen skills reads the `docs/` bundle as context
 going in and distils durable knowledge back out at archive time.
 
 The **unit of work is a plan** — `specs/<plan-name>/` holding `proposal.md`, an optional
@@ -384,7 +384,8 @@ store for a delta to bridge to: isolation-while-building is a real git **branch 
 | --- | --- | --- |
 | `quenching-specs-explore` | `/specs:explore` | Thinking partner before/during a plan. Bridge: reads `knowledge/`, `glossary.md`, `standards/` as ground truth; routes durable insights to `quenching-docs-learn` / `quenching-docs-add` (standard) / `quenching-docs-define`. Never implements. |
 | `quenching-specs-plan-propose` | `/specs:plan:propose` | Creates a plan and generates its artifacts until apply-ready — **no deltas**; the `docs/standards/` docs it will write appear as `tasks.md` items and declared `## Impact` scope. Bridge: reads relevant `standards/` and glossary first; a `specs/backlog/` task used as seed is retired into the Completed ledger when the artifacts are apply-ready (one confirmation). |
-| `quenching-specs-plan-apply` | `/specs:plan:apply` | Implements `tasks.md` checkbox by checkbox — **opens by offering branch/worktree isolation** (recommended, never imposed). Bridge: reads the touched subjects' `standards/` as binding contracts; pauses on conflicts; writes the plan's durable rules straight into `docs/standards/`, honestly `authority`-graded; ticks each box via `specs.py task --check`. |
+| `quenching-specs-plan-refine` | `/specs:plan:refine` | **New.** Interrogates a plan's artifacts before it is built — the questions nobody asked, generated rather than waited for. Four modes (`interview` default, `critic`, `premortem`, `alternatives`), **one question at a time with an inline recommendation**, answers accumulated and applied in **ONE** edit at the end, under a declared stop condition. Records `refined: {mode, date}` in `.specs.json`, clearing `sp-unrefined`. **Never gates** — `applyReady` is untouched. |
+| `quenching-specs-plan-apply` | `/specs:plan:apply` | Implements `tasks.md` **and proves each task** — refuses to start on a dirty tree, **opens by offering branch/worktree isolation** (recommended, never imposed), then per task: writes the code, runs its `verify:` under the plan's declared `verification` policy, retries within a **five-attempt budget** (re-reading from scratch at two consecutive failures, reporting *blocked* at five), self-reviews the diff on four items, and **commits that task alone** as `plan/<name>: <id> <title>`. Bridge: reads the touched subjects' `standards/` as binding contracts; pauses on conflicts; writes the plan's durable rules straight into `docs/standards/`, honestly `authority`-graded; ticks each box via `specs.py task --check`. Offers the whole-branch review and chains into archive at 100%. |
 | `quenching-specs-plan-update` | `/specs:plan:update` | Revises existing planning artifacts, keeps them coherent; never edits code. |
 | `quenching-specs-plan-from-claude` | `/specs:plan:from-claude` | **New.** Turns a Claude Code native plan (`~/.claude/plans/*.md`, or a given path) into an archivable front plan, so the work gains the archive-time distillation instead of dying in the plan file: `## Context` → proposal *Why*, decisions → `design.md`, phases/steps → `tasks.md` checkboxes. Runs `specs.py new`, one confirmation; offers to link and retire a seeding backlog task. |
 | `quenching-specs-plan-archive` | `/specs:plan:archive` | Checks completion via `specs.py status`, moves the plan to `specs/archive/YYYY-MM-DD-<name>/` via `specs.py archive`. Bridge: a post-archive **distillation pass** (one plan, one OK) — **the single bridge** — carries by-products the plan did not already write into `docs/`: understanding → `knowledge/`, terms → glossary, a follow-up → a backlog task. Nothing is synced (the behavior landed in `standards/` during apply), nothing is bulk-copied. |
@@ -397,7 +398,7 @@ the per-artifact authoring doctrine in
 the distillation doctrine in
 [`quenching-specs-plan-archive/references/distill.md`](skills/quenching-specs-plan-archive/references/distill.md)
 — and the `/specs` commands are thin wrappers that invoke the skills (no duplicated bodies). **Two**
-of the twelve are **stages of the front's 3-stage pipeline** when `quenching-specs-align-and-update`
+of the thirteen are **stages of the front's 3-stage pipeline** when `quenching-specs-align-and-update`
 conducts it — `quenching-specs-plan-archive` and `quenching-specs-backlog-triage`; the other plan
 skills (`propose`, `apply`, `update`, `from-claude`) and `explore` never are, because each needs
 fresh human intent a conducted pass does not have. Every skill on this front is **quenching-native**
@@ -541,7 +542,7 @@ and identical in every adopting repo:
 | Manual | Installed by | Covers |
 | --- | --- | --- |
 | `docs/QUENCHING.md` | `quenching-docs-align` | the "I want to → run this" table, the homes and `type` vocabulary, the ten `/docs:*` commands, the shared operating model (one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
-| `specs/QUENCHING.md` | `quenching-specs-align` | the workspace layout, the capture → triage → explore → propose → apply → archive → distill lifecycle (and the abandon and from-claude branches off it), the twelve `/specs:*` commands, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, the backlog contract and its ledger's two meanings |
+| `specs/QUENCHING.md` | `quenching-specs-align` | the workspace layout, the capture → triage → explore → propose → apply → archive → distill lifecycle (and the abandon and from-claude branches off it), the thirteen `/specs:*` commands, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, the backlog contract and its ledger's two meanings |
 | `.claude/QUENCHING.md` | `quenching-skill-align` | the single taxonomy axis, naming and mirroring, `/skill:new` + `/skill:align`, the rule + registry artifacts, hook/settings hygiene |
 
 They complement, never duplicate, the reserved listings: `docs/index.md` says **what** is in the
@@ -559,7 +560,7 @@ The plugin keeps its context and token footprint predictable on three levels:
 
 1. **Always-on metadata (shared cap).** Every skill's `description` + `when_to_use` is
    loaded into context each session, and Claude Code truncates each skill at **1,536
-   combined characters** — a budget shared with every other installed plugin. All twenty-seven
+   combined characters** — a budget shared with every other installed plugin. All twenty-eight
    skills fit under the cap and carry their verbatim trigger phrases in the **second**
    sentence, so truncation can never eat them.
 2. **Body on invocation.** A `SKILL.md` body loads only when the skill runs; every body
@@ -592,7 +593,9 @@ The plugin keeps its context and token footprint predictable on three levels:
 | `quenching-docs-add` / `quenching-docs-learn` | no pin — they inherit the session model (they classify, route, and gate operations) |
 | `quenching-docs-documentation-build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain |
 | `quenching-skill-new` / `quenching-skill-align` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
-| the six plan-authoring `quenching-specs-*` skills (`explore`, `plan-propose`, `plan-apply`, `plan-update`, `plan-from-claude`, `plan-archive`) | no pin, and **no sub-agents at all** — they run on the session model (they author artifacts, implement code, offer branch/worktree isolation, and gate the OKF distillation). The expensive steps are the git and `specs.py` calls, not tokens. (`quenching-specs-align`, `quenching-specs-align-and-update`, `quenching-specs-status`, `quenching-specs-plan-abandon`, and `quenching-specs-backlog-add`/`-triage` have their own rows.) |
+| `quenching-specs-plan-refine` | no pin, no sub-agents — the whole skill *is* judgment: generating the questions a plan never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the skill exists to replace. Cost is bounded by the mode's declared stop condition, not by a model tier |
+| the six plan-authoring `quenching-specs-*` skills (`explore`, `plan-propose`, `plan-update`, `plan-from-claude`, `plan-archive`, and `plan-refine`'s row above) | no pin, and **no sub-agents at all** — they run on the session model (they author artifacts, offer branch/worktree isolation, and gate the OKF distillation). The expensive steps are the git and `specs.py` calls, not tokens. (`quenching-specs-plan-apply`, `quenching-specs-align`, `quenching-specs-align-and-update`, `quenching-specs-status`, `quenching-specs-plan-abandon`, and `quenching-specs-backlog-add`/`-triage` have their own rows.) |
+| `quenching-specs-plan-apply` | no pin. **Amended:** a per-task **executor sub-agent is now permitted** when the task declares `files:` and touches no `docs/` — pinned to the **session model, never `haiku`** (it writes production code, the same rationale that protects `quenching-docs-import-memory`'s executors). The orchestrator keeps plan selection, every confirmation, every `specs.py task --check`/`--attempt`, every `docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `specs.py parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`skills/quenching-specs-plan-apply/references/execution.md` §This is not `context: fork`) |
 
 Two rules are deliberate and must survive any future "optimization":
 
@@ -637,7 +640,7 @@ copy in a target repo.
   (`new`/`list`/`status`/`next`/`task`/`backlog`/`validate`/`archive`/`doctor`, uniform `--json`,
   exit codes `0`/`1`/`2`), the second self-contained tool beside `okf-validate.py`, installed by
   `quenching-specs-align` into a target's `.claude/hooks/`. The **unit of work is a plan**
-  (`specs/<plan-name>/`: `proposal.md`, optional `design.md`, `tasks.md`, `.specs.json`), not an
+  (`specs/<plan-name>/`: `proposal.md`, `design.md`, `tasks.md`, `.specs.json`), not an
   "OpenSpec change" — and because a plan writes its durable rule **straight into
   `docs/standards/`**, honestly `authority`-graded, there is nothing to sync: isolation-while-building
   is a real git **branch or worktree** (offered by `/specs:plan:apply`), not a markdown delta. The

@@ -1,0 +1,9 @@
+{
+  "schema": "spec-driven",
+  "name": "docs-verification-layer",
+  "title": "Verification layer for the docs/ front",
+  "created": "2026-07-25T13:49:56",
+  "backlogTask": null,
+  "verification": "per-section",
+  "refined": null
+}
