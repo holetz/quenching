@@ -25,5 +25,5 @@ maintainer: <owning team>
 ## Non-goals
 <what is explicitly NOT in scope.>
 
-> A **raw task** toward this direction lives in `openspec/backlog/` (the task inbox, outside
+> A **raw task** toward this direction lives in `specs/backlog/` (the task inbox, outside
 > the OKF bundle); what **has already become reality** distills into `standards/`.

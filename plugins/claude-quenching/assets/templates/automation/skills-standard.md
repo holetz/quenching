@@ -7,7 +7,7 @@ tags: [automation, skills, naming]
 timestamp: <ISO 8601 — e.g. 2026-07-20>
 audience: both
 authority: background   # born background (agreed-but-unproven); graduates to current once the surface follows it in practice
-source: <who agreed the rule — e.g. quenching-skill first run, team decision>
+source: <who agreed the rule — e.g. quenching-skill-new first run, team decision>
 maintainer: <owner>
 ---
 
@@ -32,16 +32,16 @@ expressing domain-binding; new skills are minted with the mirrored-wrapper mecha
 The surface is listed in the registry at
 [/docs/documentation/reference/automation.md](/docs/documentation/reference/automation.md):
 its GENERATED zone is derived from `.claude/skills/*/SKILL.md` frontmatter, and its only
-editors are the owning skills (`quenching-skill`, `quenching-skill-align`) — hand edits
+editors are the owning skills (`quenching-skill-new`, `quenching-skill-align`) — hand edits
 inside the markers are repaired on their next run.
 
 <!-- MOLD (claude-quenching · skills standard) → becomes
      `docs/standards/automation/skills.md` in a target repo's OKF bundle, offered by
-     `quenching-skill`/`quenching-skill-align` on first run (never created without an OK).
+     `quenching-skill-new`/`quenching-skill-align` on first run (never created without an OK).
      The body above IS the canonical rule — fill the frontmatter placeholders and keep the
      body; add repo-specific deltas (extra verbs, reserved names) below the standard text
      rather than rewriting it. Born `authority: background` per the house doctrine for
      agreed-but-unproven rules; graduate to `current` once the surface demonstrably
      follows it. STAMP = MERGE, never clobber. The full doctrine lives in the plugin
-     (`quenching-skill/references/taxonomy.md`); this standard is the target-repo
+     (`quenching-skill-new/references/taxonomy.md`); this standard is the target-repo
      projection of it. -->

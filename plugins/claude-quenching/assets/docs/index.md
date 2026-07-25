@@ -26,12 +26,17 @@ English kebab-case; only `audience: human` material follows the repo's language.
 - `knowledge/` = "generic **understanding** we hold" (concepts/explanations; non-binding).
 - `reference/` = "facts about what **WE CONSUME** (external, background)".
 - `catalog/` = "our **data** / domain".
-- The **task inbox** lives at `openspec/backlog/`, **outside** this bundle (quenching-managed).
+- The **task inbox** lives at `specs/backlog/`, **outside** this bundle (quenching-managed).
 - `patterns` **is not a silo** — it dissolves into `standards/architecture/`.
 
 **Resolving a term.** Unfamiliar repo word, acronym, or codename? Look it up in the glossary
 first — [knowledge/glossary.md](/docs/knowledge/glossary.md), the A–Z lookup (one entry per
 term, linked to its full doc when one exists): `grep -i '<term>' docs/knowledge/glossary.md`.
+
+**Operating this bundle.** How knowledge gets in, which command to run, what the enforcement
+hook checks, and how to read a validator finding — [QUENCHING.md](QUENCHING.md), the operator
+manual installed beside this listing. This `index.md` says **what** is here; that file says
+**how** it is worked.
 
 The bundle's change history is in [log.md](log.md). The full contract (homes, types,
 migration doctrine, conformance) lives in the `claude-quenching` skills' `references/`.

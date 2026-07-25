@@ -28,9 +28,9 @@ empty, a command exits 0>.>
 exist, exists; every step's criterion held. Report what was written.>
 
 <!-- MOLD (claude-quenching · automation skill) → becomes `.claude/skills/<skill-name>/SKILL.md`
-     in a target repo, minted by `quenching-skill` under the taxonomy rule
+     in a target repo, minted by `quenching-skill-new` under the taxonomy rule
      (`docs/standards/automation/skills.md`) and the writing doctrine (predictability as
-     the root virtue; the plugin's `quenching-skill/references/doctrine.md` is the owner).
+     the root virtue; the plugin's `quenching-skill-new/references/doctrine.md` is the owner).
      Discipline the mint enforces — keep it when editing by hand:
        • description caps at the per-skill limit (Claude Code truncates description +
          when_to_use at 1,536 combined chars) with triggers in the SECOND sentence, so

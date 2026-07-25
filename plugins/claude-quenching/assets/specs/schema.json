@@ -1,0 +1,10 @@
+{
+  "schema": "spec-driven",
+  "version": "1.0.0",
+  "artifacts": [
+    { "id": "proposal", "file": "proposal.md", "required": true, "dependsOn": [] },
+    { "id": "design", "file": "design.md", "required": false, "dependsOn": ["proposal"] },
+    { "id": "tasks", "file": "tasks.md", "required": true, "dependsOn": ["proposal"] }
+  ],
+  "applyRequires": ["tasks"]
+}

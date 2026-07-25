@@ -20,7 +20,7 @@ and, when relevant, a pointer to installed plugins whose commands extend the sur
 (they stay out of the table below).>
 
 The table between the markers is **DERIVED** — regenerated exclusively by its owning
-skills (`quenching-skill`, `quenching-skill-align`) from the local
+skills (`quenching-skill-new`, `quenching-skill-align`) from the local
 `.claude/skills/*/SKILL.md` frontmatter. Edit outside the markers only.
 
 <!-- GENERATED:BEGIN -->
@@ -32,9 +32,9 @@ skills (`quenching-skill`, `quenching-skill-align`) from the local
 
 <!-- MOLD (claude-quenching · automation registry) → becomes
      `docs/documentation/reference/automation.md` in a target repo's OKF bundle. Zone
-     rules (owner: the plugin's `quenching-skill/references/taxonomy.md`): rows ordered by
+     rules (owner: the plugin's `quenching-skill-new/references/taxonomy.md`): rows ordered by
      the Command column, wrapperless rows (`—`) last ordered by Skill; the zone lists ONLY
-     the repo's own surface — plugin-contributed commands (/opsx:*, marketplace plugins)
+     the repo's own surface — plugin-contributed commands (e.g. /specs:*, marketplace plugins)
      may be pointed at from the curated prose, never listed in the zone; the two owning
      skills are the zone's only editors, and their self-checks diff the zone against
      `.claude/skills/` and regenerate on mismatch. STAMP = MERGE, never clobber. -->

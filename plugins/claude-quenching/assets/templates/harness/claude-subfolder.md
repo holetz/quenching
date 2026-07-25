@@ -7,8 +7,8 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
 - **Knowledge for this area:** [<home>](/docs/<home>/index.md) — <one line on what that home holds>.
 - **Unfamiliar term?** Resolve it in the glossary: [/docs/knowledge/glossary.md](/docs/knowledge/glossary.md)
   (`grep -i '<term>'`) — omit this bullet if the repo has no glossary.
-- **To create / edit knowledge:** use the `claude-quenching` skills (`quenching-add` to add
-  one, `quenching-align` to migrate/normalize, `quenching-harness` to keep pointers thin).
+- **To create / edit knowledge:** use the `claude-quenching` skills (`quenching-docs-add` to add
+  one, `quenching-docs-align` to migrate/normalize, `quenching-docs-harness` to keep pointers thin).
 - **Boundary:** only <this folder's> concern lives here — <neighbor concern> → <its home>.
 
 <!-- Auto-loaded by Claude Code when working under <folder>/. Keep it a thin pointer
@@ -20,7 +20,7 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
      Produces a subfolder CLAUDE.md as a THIN, NEAREST-FILE navigation pointer. Modeled on the
      shipped exemplar assets/docs/standards/CLAUDE.md (18 lines).
      • NO frontmatter, NO `type` — EXEMPT from OKF (okf-spec §strict-7); the validator skips it.
-       EVERY link MUST resolve (checked by quenching-harness, not the validator).
+       EVERY link MUST resolve (checked by quenching-docs-harness, not the validator).
      • It auto-loads ONLY when the agent works under this folder: put the LOCAL commands/quirks
        and a pointer to the home that COVERS this area. Never duplicate the root — the root owns
        repo-wide operations and the full home map.
@@ -28,5 +28,5 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
        either a harness unit clearly scoped to this folder, or a greenfield folder with a local
        operational surface (build/run script, distinct toolchain, README of run-commands) and no
        CLAUDE.md. Never one per directory; data/output/asset folders earn nothing.
-       `quenching-align`'s skeleton already ships docs/standards/CLAUDE.md.
+       `quenching-docs-align`'s skeleton already ships docs/standards/CLAUDE.md.
      • Size budget: aim ≤ ~20 lines. Structure/links canonical English; prose MAY follow the repo's language. -->

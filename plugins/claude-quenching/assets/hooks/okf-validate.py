@@ -4,17 +4,24 @@
 Payload of the `claude-quenching` plugin. Generic, portable, ZERO dependencies
 (a minimal frontmatter parser — no PyYAML). It is the **executable enforcement**
 that keeps a target repo's `docs/` bundle aligned to the Open Knowledge Format
-after `quenching-align` has installed it: the skills call it, the verification step calls
+after `quenching-docs-align` has installed it: the skills call it, the verification step calls
 it, and it wires into the target's `.claude/settings.json` as a hook so future edits
 stay conformant.
 
 TWO ENTRY MODES
 ---------------
-1. **CLI**  `okf-validate.py <bundle-or-docs-dir> [--json]`
+1. **CLI**  `okf-validate.py <bundle-or-docs-dir> [--json] [--listing-root]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
-   This is what `quenching-align`/`quenching-add` invoke and what the plugin's own
+   This is what `quenching-docs-align`/`quenching-docs-add` invoke and what the plugin's own
    verification runs over `assets/docs/`.
+   `--listing-root` validates a quenching-managed tree that is **not** an OKF bundle
+   root — today that means `specs/backlog/`. The scanned directory's `index.md` is
+   then held to the plain-listing rule (frontmatter-free, ERROR if it carries any)
+   instead of the bundle-root rule (`okf_version` expected), and the `bundle-no-index`
+   SHOULD is dropped. Everything else — concept docs need a non-empty `type`, no index
+   carries a `type`, links resolve, nothing is orphaned — applies unchanged. This is
+   what lets the backlog skills replace a prose self-check with a real check.
 
 2. **HOOK**  (no path arg → reads the hook JSON on stdin)
    Dispatches on `hook_event_name`:
@@ -40,7 +47,9 @@ TWO ENTRY MODES
 THE CONFORMANCE CORE (single source — mirrored in the skills' `references/conformance.md`)
 -----------------------------------------------------------------------------------------
 Reserved filenames: `index.md` (a listing), `log.md` (a change history).
-Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts).
+Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts) and
+`QUENCHING.md` (the operator manual the aligns install beside each front — a payload
+file, not authored knowledge).
 `README.md` in the bundle → WARN (OKF-strict converts it to `index.md`).
 - Every **non-reserved** `.md`  → MUST have parseable YAML frontmatter (ERROR if
   absent/broken) with a **non-empty `type`** (ERROR if missing/empty). Recommended
@@ -57,7 +66,7 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`index-broken-link`** an `index.md` links to a `.md`/dir that does not exist on disk.
 - **`index-orphan`**      a concept doc nothing links to (unlisted / not discoverable).
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
-synthesize a missing index); the `quenching-align`/`quenching-add` skills treat them as must-fix
+synthesize a missing index); the `quenching-docs-align`/`quenching-docs-add` skills treat them as must-fix
 in their own verify gate. `_`-prefixed, dot, and asset dirs are pruned from the whole
 bundle walk (they hold private/raw sidecar content, never OKF concepts), and every
 whole-tree check consumes ONE shared read pass over the tree (`_build_corpus`).
@@ -82,15 +91,21 @@ import sys
 import tempfile
 import time
 
-VERSION = "0.16.0"  # kept in lockstep with the plugin VERSION file
+VERSION = "1.0.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
 RESERVED = ("index.md", "log.md")
-# Harness navigation files — never OKF concepts, never required to carry a `type`.
-# `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness; skip them.
-EXEMPT = ("CLAUDE.md", "AGENTS.md")
+# Navigation/payload files — never OKF concepts, never required to carry a `type`.
+# `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness; `QUENCHING.md`
+# is the operator manual the `claude-quenching` aligns install beside each front they
+# own (`docs/`, `specs/`, `.claude/`). Skip all three.
+EXEMPT = ("CLAUDE.md", "AGENTS.md", "QUENCHING.md")
 RECOMMENDED = ("title", "description", "resource", "timestamp")
+# Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
+# A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
+# the key on purpose). Every other type anchors to code, an asset, or a URI.
+TYPES_WITHOUT_RESOURCE = ("task",)
 DATE_HEADING = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\b")
 # Directories that never need an `index.md` and hold no OKF concepts: `_`-prefixed
 # private/raw sidecar folders (`_curadoria/`, `_azimutt/`), dotfolders, and common
@@ -226,7 +241,10 @@ def check_concept(text: str) -> list[tuple[str, str, str]]:
     if not _nonempty(fm, "type"):
         out.append(("ERROR", "missing-type",
                     "frontmatter has no non-empty `type` (OKF requires it on every concept doc)"))
-    for key in RECOMMENDED:
+    recommended = RECOMMENDED
+    if str(fm.get("type", "")).strip() in TYPES_WITHOUT_RESOURCE:
+        recommended = tuple(k for k in RECOMMENDED if k != "resource")
+    for key in recommended:
         if not _nonempty(fm, key):
             out.append(("WARN", f"missing-{key}",
                         f"recommended field `{key}` is absent (OKF recommends it)"))
@@ -492,7 +510,8 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
     return findings
 
 
-def validate_file(path: str, bundle_root: str) -> list[tuple[str, str, str, str]]:
+def validate_file(path: str, bundle_root: str,
+                  listing_root: bool = False) -> list[tuple[str, str, str, str]]:
     """Return findings for one file as (severity, rel, code, message). Reads the
     file itself — the single-file entry point (PostToolUse); whole-tree callers
     go through `_build_corpus` + `_validate_text` instead."""
@@ -500,17 +519,23 @@ def validate_file(path: str, bundle_root: str) -> list[tuple[str, str, str, str]
         text = pathlib.Path(path).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         return [("ERROR", os.path.basename(path), "unreadable", f"cannot read file: {exc}")]
-    return _validate_text(path, text, bundle_root)
+    return _validate_text(path, text, bundle_root, listing_root)
 
 
-def _validate_text(path: str, text: str, bundle_root: str) -> list[tuple[str, str, str, str]]:
-    """Findings for one file whose text is already in hand (no disk read)."""
+def _validate_text(path: str, text: str, bundle_root: str,
+                   listing_root: bool = False) -> list[tuple[str, str, str, str]]:
+    """Findings for one file whose text is already in hand (no disk read).
+
+    `listing_root` marks a scan whose root is NOT an OKF bundle root (a
+    quenching-managed sub-tree such as `specs/backlog/`): its `index.md` is a plain
+    listing like any other, so the bundle-root exemption never applies."""
     rel = os.path.relpath(path, bundle_root).replace(os.sep, "/")
     base = os.path.basename(path)
     if base in EXEMPT:
         raw = []
     elif base == "index.md":
-        is_root = os.path.dirname(os.path.abspath(path)) == os.path.abspath(bundle_root)
+        is_root = (not listing_root) and \
+            os.path.dirname(os.path.abspath(path)) == os.path.abspath(bundle_root)
         raw = check_index(text, is_root)
     elif base == "log.md":
         raw = check_log(text)
@@ -527,10 +552,15 @@ def _validate_text(path: str, text: str, bundle_root: str) -> list[tuple[str, st
 
 
 def validate_tree(bundle_root: str, deadline: float | None = None,
-                   ignore_globs: tuple[str, ...] = ()):
+                   ignore_globs: tuple[str, ...] = (),
+                   listing_root: bool = False):
     """Validate the whole bundle from ONE read pass. Returns the findings list,
     or **None** when `deadline` (a `time.monotonic()` instant) expired mid-walk —
-    hook mode aborts silently; CLI mode passes no deadline."""
+    hook mode aborts silently; CLI mode passes no deadline.
+
+    `listing_root=True` scans a quenching-managed sub-tree (`specs/backlog/`) rather
+    than an OKF bundle root: the root `index.md` is held to the plain-listing rule and
+    the `bundle-no-index` SHOULD is dropped."""
     findings: list[tuple[str, str, str, str]] = []
     root = pathlib.Path(bundle_root)
     if not root.is_dir():
@@ -543,9 +573,9 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         if text is None:
             findings.append(("ERROR", os.path.basename(path), "unreadable", "cannot read file"))
         else:
-            findings.extend(_validate_text(path, text, bundle_root))
-    # bundle-level SHOULDs
-    if not (root / "index.md").exists():
+            findings.extend(_validate_text(path, text, bundle_root, listing_root))
+    # bundle-level SHOULDs — a listing-root sub-tree is not a bundle and owes none of them
+    if not listing_root and not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
     # whole-tree structural integrity (missing/broken/orphaned listings)
     findings.extend(validate_structure(bundle_root, corpus))
@@ -578,7 +608,7 @@ def _render_proposal(findings) -> str:
     body = "\n".join(f"  - [{sev}] {rel}: {msg}" for sev, rel, code, msg in shown)
     return (f"[{TAG}] OKF conformance findings ({len(errors)} error(s), {len(warns)} warning(s)):\n"
             f"{body}\n"
-            "Fix with the `quenching-align` / `quenching-add` skill (stamp `type`, keep `index.md` a "
+            "Fix with the `quenching-docs-align` / `quenching-docs-add` skill (stamp `type`, keep `index.md` a "
             "frontmatter-free listing, format `log.md` as `## YYYY-MM-DD` newest-first).")
 
 
@@ -620,10 +650,12 @@ def run_cli(argv: list[str]) -> int:
         return 0
     cfg = _load_config()
     as_json = "--json" in argv
+    listing_root = "--listing-root" in argv
     paths = [a for a in argv if not a.startswith("-")]
     target = paths[0] if paths else cfg.get("docsDir", "docs")
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
-    findings = validate_tree(target, ignore_globs=ignore_globs)  # no deadline in CLI mode — always a full scan
+    # no deadline in CLI mode — always a full scan
+    findings = validate_tree(target, ignore_globs=ignore_globs, listing_root=listing_root)
     if as_json:
         print(json.dumps([
             {"severity": s, "path": r, "code": c, "message": m} for s, r, c, m in findings
@@ -680,7 +712,7 @@ def run_hook() -> int:
             fm, has_block, well_formed = parse_frontmatter(content)
             if not has_block or not well_formed or not _nonempty(fm, "type"):
                 _emit_deny(f"[{TAG}] this concept doc needs parseable frontmatter with a non-empty `type` "
-                           "(OKF requirement). Add the `type` before writing, or use `quenching-add`.")
+                           "(OKF requirement). Add the `type` before writing, or use `quenching-docs-add`.")
                 return 0
         return 0
 
