@@ -3,6 +3,6 @@ description: Sweep the whole bundle to backfill knowledge/glossary.md with missi
 argument-hint: [optional-home-scope]
 ---
 
-Use the Skill tool to invoke `claude-quenching:quenching-glossary-backfill`, passing `$ARGUMENTS`
+Use the Skill tool to invoke `claude-quenching:quenching-docs-glossary-backfill`, passing `$ARGUMENTS`
 (an optional home/slice to scope the sweep; omit to scan the whole bundle) as the skill's
 input.

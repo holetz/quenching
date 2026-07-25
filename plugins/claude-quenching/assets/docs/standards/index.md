@@ -31,7 +31,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 ## Current docs
 
-<!-- BEGIN GENERATED: rebuilt from disk by `quenching-align`/`quenching-add` — DO NOT edit by hand.
+<!-- BEGIN GENERATED: rebuilt from disk by `quenching-docs-align`/`quenching-docs-add` — DO NOT edit by hand.
      Scans standards/**/*.md, reads title/description/timestamp/type, grouped by subject subfolder.
      Row model per subfolder:
        ### code/

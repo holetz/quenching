@@ -2,7 +2,7 @@
 
 Frontmatter + body molds the skills stamp/apply. They live **outside** the `docs/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
-filled. `quenching-add` picks the mold by home → `type` (see `quenching-add/references/homes.md`).
+filled. `quenching-docs-add` picks the mold by home → `type` (see `quenching-docs-add/references/homes.md`).
 
 | Mold | Produces | `type` |
 | --- | --- | --- |
@@ -11,7 +11,7 @@ filled. `quenching-add` picks the mold by home → `type` (see `quenching-add/re
 | `catalog/system.md` | `catalog/<system>/access.md` | `system` |
 | `catalog/schema.md` | `catalog/<system>/<catalog>/<schema>.md` | `schema` |
 | `catalog/table.md` | `catalog/<system>/<catalog>/<schema>/<table>.md` | `table` |
-| `backlog/task.md` | `openspec/backlog/<task-slug>.md` (**outside** the OKF bundle) | `task` |
+| `backlog/task.md` | `specs/backlog/<task-slug>.md` (**outside** the OKF bundle) | `task` |
 | `vision/area.md` | `vision/<area>.md` | `vision` |
 | `sidecar.md` | `reference/regulations/**` extract | `sidecar` |
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
@@ -25,16 +25,16 @@ filled. `quenching-add` picks the mold by home → `type` (see `quenching-add/re
 
 The **harness molds** (`harness/`) produce **exempt** files — `CLAUDE.md`/`AGENTS.md` carry **no
 frontmatter and no `type`** (harness pointers, not OKF concepts — okf-spec strict-7; the validator
-skips them). `quenching-harness` applies them when it refactors a repo's harness files into thin
+skips them). `quenching-docs-harness` applies them when it refactors a repo's harness files into thin
 pointers over the bundle.
 
-The **automation molds** (`automation/`) are the `quenching-skill` /
+The **automation molds** (`automation/`) are the `quenching-skill-new` /
 `quenching-skill-align` family: the skill and command-wrapper molds land under `.claude/`
 (outside the bundle — never validated), while the registry and taxonomy-standard molds are
 OKF concept docs the pair maintains in the bundle; the registry's
 `<!-- GENERATED:BEGIN/END -->` zone is derived from `.claude/skills/*/SKILL.md` and only
 those two skills write inside its markers (taxonomy owner:
-`quenching-skill/references/taxonomy.md`).
+`quenching-skill-new/references/taxonomy.md`).
 
 ## Stamp discipline
 
