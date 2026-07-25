@@ -17,7 +17,7 @@ when_to_use: >-
   promoting a Claude Code native plan file (~/.claude/plans/*.md, or a given path) into a
   specs/ plan so it can be built and archived. Generating a plan from scratch is
   quenching-specs-plan-propose; implementing one is quenching-specs-plan-apply.
-allowed-tools: Read, Write, Edit, Bash(python3:*), Bash(py:*), Glob, Grep
+allowed-tools: Read, Write, Edit, Bash(python3:*), Bash(py:*), Glob, Grep, AskUserQuestion, Skill
 user-invocable: false
 ---
 
@@ -25,7 +25,7 @@ user-invocable: false
 
 A Claude Code native plan (the markdown a planning turn writes to `~/.claude/plans/`) is a
 one-shot artifact: it drives the turn that made it, then it is inert. This skill lifts one into
-the `specs/` front as a real plan — `proposal.md`, optional `design.md`, `tasks.md` — so the work
+the `specs/` front as a real plan — `proposal.md`, `design.md`, `tasks.md` — so the work
 gains everything the front gives: a task checklist `specs.py` can track, isolation while it is
 built, and the archive-time distillation of its by-products into the OKF `docs/` bundle. The
 native plan file is **read, never moved or deleted** — it stays where Claude Code put it.
@@ -54,13 +54,21 @@ sections may be named in any language (`## Context` / `## Contexto`, `## Decisio
 | the goal / what it changes | `proposal.md` | `## What Changes`; declared scope → `## Impact` |
 | decisions, chosen approach, "Decisões", architecture | `design.md` | `## Decisions` |
 | the situation the decisions answer | `design.md` | `## Context` |
-| risks, trade-offs, open questions, "Riscos" | `design.md` | `## Risks` |
+| risks, trade-offs, "Riscos" | `design.md` | `## Risks` |
+| approaches weighed and dropped | `design.md` | `## Alternatives Considered` |
+| open questions, "a decidir", unresolved choices | `design.md` | `## Open Decisions` |
+| non-goals, "fora de escopo", what it won't do | `proposal.md` | `## Out of Scope` |
+| acceptance criteria, how to confirm it worked | `proposal.md` | `## Validation` |
 | phases, steps, numbered work, "Etapas" | `tasks.md` | `- [ ]` checkboxes under `## N. <Section>` |
 | a verification / testing / acceptance section | `tasks.md` | trailing `- [ ]` verification tasks |
 
-`design.md` is **optional** — if the native plan carries no real decisions, trade-offs, or risks
-(a purely mechanical plan), omit it rather than emitting an empty shell. Never invent content the
-native plan does not contain: an empty `## Risks` is honest; a fabricated risk is not.
+`design.md` is **required-with-explicit-fallback**, never omitted: if the native plan carries no
+real decisions, trade-offs, or risks (a purely mechanical plan), write `- none — <reason>` in each
+empty section rather than deleting the file. Never invent content the native plan does not
+contain — `- none — the native plan recorded no alternatives` is honest; a fabricated risk is not.
+The proposal's `## Out of Scope` and `## Validation` follow the same rule: map them from the
+native plan's non-goals and its verification/acceptance section, and answer `- none` where it
+said nothing.
 
 ## Workflow
 
@@ -85,7 +93,7 @@ in every artifact). No bundle → skip silently.
 
 ### 4. Present ONE plan → one confirmation
 Show, in one plan: the slug and destination `specs/<slug>/`; which artifacts will be written
-(`proposal.md`, `design.md` if warranted, `tasks.md`) and a one-line preview of each from the
+(`proposal.md`, `design.md`, `tasks.md`) and a one-line preview of each from the
 mapping; the number of tasks derived; and — if Step 6 found a seed — the backlog task that would be
 linked and retired. Wait for the confirmation. Declined → nothing is scaffolded.
 **Done when:** the user has answered.
@@ -95,15 +103,17 @@ Run `specs.py new <slug>` (add `--title "<title>"`, and `--backlog-task <slug>` 
 seed) — it creates `specs/<slug>/` with `.specs.json` and the filled `proposal`/`design`/`tasks`
 templates. Then rewrite each template's sections from the mapping, using the resolved paths from
 `specs.py status --plan <slug> --json` (never assume paths):
-- fill `proposal.md`'s `## Why` / `## What Changes` / `## Impact`;
-- fill `design.md`'s `## Context` / `## Decisions` / `## Risks`, or delete the file if the plan
-  warranted none;
+- fill `proposal.md`'s `## Why` / `## What Changes` / `## Out of Scope` / `## Validation` /
+  `## Impact`;
+- fill `design.md`'s `## Context` / `## Decisions` / `## Alternatives Considered` /
+  `## Open Decisions` / `## Risks`, answering `- none — <reason>` where the native plan had
+  nothing — never delete the file;
 - turn every phase/step/verification item into a `- [ ]` checkbox in `tasks.md` under its
   `## N. <Section>` heading.
 
 Then run `specs.py validate --plan <slug>` and branch on the exit code (**0** ok · **1** findings ·
 **2** refusal), never on prose — fix any finding before reporting done.
-**Done when:** the three (or two) artifacts exist and `specs.py validate` is clean.
+**Done when:** all three artifacts exist and `specs.py validate` reports no error.
 
 ### 6. Offer to retire the seed backlog task (only if one exists)
 If the native plan clearly came from a `specs/backlog/<task-slug>.md` task — the user names it, or

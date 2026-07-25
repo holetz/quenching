@@ -51,4 +51,11 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | Doc | Covers |
 | --- | --- |
 | [command-surface.md](naming/command-surface.md) | How the plugin's skills and command wrappers are named, namespaced, and paired one-to-one |
+
+### workflows/
+
+| Doc | Covers |
+| --- | --- |
+| [plan-artifacts.md](workflows/plan-artifacts.md) | The required sections of a plan's artifacts, the parsed Impact declaration, the refinement record, and what applyReady does and does not guarantee |
+| [task-execution.md](workflows/task-execution.md) | How a plan's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and `[P]` disjunction rules |
 <!-- END GENERATED -->

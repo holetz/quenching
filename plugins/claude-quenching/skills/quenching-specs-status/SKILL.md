@@ -94,8 +94,9 @@ Map each observation onto a code from
 — what a sweep **fixes** (`sp-no-workspace`, `sp-legacy-workspace`, `sp-doctor`,
 `sp-invalid-plan`, `sp-plan-name`, `sp-archive-name`, `sp-task-slug`, the `backlog/` codes, the
 shadow-copy codes) versus what it only **reports** (`sp-plan-complete`, `sp-plan-blocked`,
-`sp-plan-stale`, `sp-backlog-untriaged`, `sp-ledger-orphan`, `sp-ledger-in-flight`). Every code is
-the sweep's — this skill contributes none of its own. Without an OKF bundle, note that a legacy
+`sp-plan-stale`, `sp-backlog-untriaged`, `sp-ledger-orphan`, `sp-ledger-in-flight`, plus the three
+`specs.py validate` warnings — `sp-unrefined`, `sp-design-scaffold`, `sp-impact-uncovered`). Every
+code is the sweep's — this skill contributes none of its own. Without an OKF bundle, note that a legacy
 `openspec/` fold could not complete (main specs have nowhere to land) and mention `/docs:align`
 once.
 **Done when:** every observation carries a code and a table.
@@ -118,7 +119,13 @@ One report, in this order:
    archives (**by name**, each its own confirmation) and triage.
 6. **Closed by neither** — everything needing a human, each with its command: blocked plans →
    `/specs:plan:update`, abandoned candidates → `/specs:plan:abandon`, ledger orphans, diverged
-   shadow copies, tasks nobody has said are done.
+   shadow copies, tasks nobody has said are done, and the three **thinking** warnings
+   `specs.py validate` reports — `sp-unrefined` (a plan that reached a checklist with nobody
+   interrogating it → `/specs:plan:refine`), `sp-design-scaffold` (a `design.md` still on the
+   shipped scaffold → `/specs:plan:refine`, or `/specs:plan:update` when the content already
+   exists), and `sp-impact-uncovered` (a declared standard no task writes →
+   `/specs:plan:update`). Report each with its plan name; state plainly that none of them gates
+   apply, so a reader never mistakes a warning for a blocker.
 
 Close with the single most useful next command for this repo's actual state, and nothing else —
 no plan, no offer to fix, no "shall I". A status read ends by handing control back.

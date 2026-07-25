@@ -2,7 +2,8 @@
 name: quenching-specs-plan-propose
 description: >-
   Proposes a new plan — scaffolds specs/<name>/ and generates every planning artifact
-  (proposal.md, an optional design.md, tasks.md), reading the OKF docs/ bundle first so
+  (proposal.md, design.md, tasks.md — every section required-with-explicit-fallback), reading
+  the OKF docs/ bundle first so
   standards and glossary terminology shape them; it writes NO delta specs. Use when the user
   asks to "propose a plan", "create a spec-driven plan", "start a plan", "draft a proposal",
   "generate the plan artifacts", or "develop this backlog task into a plan". Derives a
@@ -23,7 +24,7 @@ user-invocable: false
 # quenching-specs-plan-propose — create a plan with all artifacts
 
 Propose a new **plan** — scaffold `specs/<name>/` and generate all its artifacts in one pass:
-`proposal.md` (what & why + declared scope), an optional `design.md` (how), `tasks.md`
+`proposal.md` (what & why + declared scope), `design.md` (how), `tasks.md`
 (implementation steps). When ready to implement, run `/specs:plan:apply`.
 
 The spec-driven facts — the `specs/` layout, the plan artifact graph, the artifact formats,
@@ -75,15 +76,29 @@ they want to build — possibly a `specs/backlog/` task to develop.
 
    No bundle → skip silently; this step never blocks a repo that hasn't adopted OKF.
 
-3. **Scaffold the plan**
+3. **Scaffold the plan, and declare its verification policy**
    ```bash
-   specs.py new "<name>" [--title "<T>"] [--backlog-task <slug>]
+   specs.py new "<name>" [--title "<T>"] [--backlog-task <slug>] [--verification <policy>]
    ```
    This creates `specs/<name>/` with `.specs.json` and the three templates stamped from
    `assets/specs/templates/`. Pass `--backlog-task <slug>` when a `specs/backlog/` task seeds
    the plan — it records the linkage in `.specs.json` so step 7 knows which task to retire. If a
    plan with that name already exists (exit ≠ 0), ask whether to continue it
    (`quenching-specs-plan-update`) or pick a new name.
+
+   **`--verification` is decided here, at propose time, and never again.** It records when
+   `quenching-specs-plan-apply` runs each task's check, so implementation never has to guess and
+   never has to interrupt the human mid-task to ask:
+
+   | Policy | Runs the check | Choose when |
+   | --- | --- | --- |
+   | `per-task` | after every task | the suite is fast, or each step can break the last |
+   | `per-section` *(default)* | after each `## N.` section's last task | most repos |
+   | `end-of-plan` | once, after the final task | the suite is slow, or nothing is meaningful until the whole plan lands |
+
+   Pick from what the repo actually is — its test command, its CI, its `docs/standards/quality/`
+   contracts if it has any. The default is right often enough that it needs no ceremony; state the
+   choice in one line rather than asking.
 
 4. **Get the artifact build order**
    ```bash
@@ -100,16 +115,22 @@ they want to build — possibly a `specs/backlog/` task to develop.
       ```bash
       specs.py next --plan "<name>"
       ```
-      It collapses the graph to one instruction (write proposal · write/delete design · write
-      tasks · ready to archive) — never infer the next step from prose.
+      It collapses the graph to one instruction (write proposal · write design · write
+      tasks · implement task N · ready to archive) — never infer the next step from prose.
 
    b. **Write that artifact** to its resolved path, following
-      [references/artifacts.md](references/artifacts.md) for what belongs in it:
-      - `proposal.md` → `## Why`, `## What Changes`, `## Impact` (the declared `docs/` + code
-        scope; every `docs/standards/` path here also becomes a `tasks.md` item);
-      - `design.md` → written **only if there is a real decision to record**; otherwise
-        **delete the scaffolded file** (absent is valid — do not fill it with restated proposal
-        text);
+      [references/artifacts.md](references/artifacts.md) for what belongs in it. Every section is
+      **required-with-explicit-fallback**: the heading always exists and an empty one is answered
+      `- none` (`- none — <reason>` in `design.md`), never deleted and never padded.
+      - `proposal.md` → `## Why`, `## What Changes`, `## Out of Scope`, `## Validation`,
+        `## Impact`. Under `## Impact`, the `### Standards this plan will write into
+        docs/standards/` sub-heading is **parsed** — every path bulleted there must also become a
+        `tasks.md` item, or `validate` reports `sp-impact-uncovered`.
+      - `design.md` → `## Context`, `## Decisions`, `## Alternatives Considered`,
+        `## Open Decisions`, `## Risks`. **Never delete this file.** An absent `design.md` cannot
+        distinguish *we weighed the alternatives and there were none* from *nobody thought about
+        it*; an explicit `- none — <reason>` can. A file left as the bare scaffold is reported as
+        `sp-design-scaffold` (warn) — it does not block apply.
       - `tasks.md` → dependency-ordered checkboxes, with an explicit item for each standard the
         plan will write into `docs/standards/` and for verification.
       Apply the step-2 OKF context as constraints: standards constrain the design, glossary
@@ -117,17 +138,31 @@ they want to build — possibly a `specs/backlog/` task to develop.
       verbatim as boilerplate.
 
    c. **Re-run `specs.py status --plan "<name>" --json`** after each write and continue until
-      `applyReady` is true (proposal + tasks present and well-formed; design present or
-      deliberately absent).
+      `applyReady` is true (proposal + tasks present and well-formed).
+
+      `applyReady` is a **floor, not a verdict**: it means the required artifacts have content,
+      never that the plan is any good. `specs.py validate` reports what it cannot —
+      `sp-design-scaffold`, `sp-impact-uncovered`, `sp-unrefined` — and none of them gates.
 
    d. **If an artifact needs user input** (unclear scope, a decision only the human can make),
       use **AskUserQuestion** to clarify, then continue.
 
-6. **Show final status**
+6. **Show final status, and offer a refinement pass**
    ```bash
    specs.py status --plan "<name>" --json
    ```
    Confirm `applyReady: true` and that `specs.py validate --plan "<name>"` exits 0.
+
+   Then **offer one refinement pass** — `/specs:plan:refine <name>` — before the plan is built.
+   The plan just reached apply-ready without anyone having disagreed with it, and this guardrail's
+   own "prefer reasonable decisions to keep momentum" is exactly what a refinement is there to go
+   back and check. Recommend the mode the plan's state argues for (`critic` for a large or
+   code-reaching plan, `premortem` for an irreversible one, `alternatives` when only one approach
+   was ever weighed, `interview` otherwise).
+
+   **Offer it; never impose it, and never gate on it.** A declined offer is a complete answer —
+   the plan stays apply-ready and `validate` carries `sp-unrefined` as the honest record that
+   nobody interrogated it.
 
 7. **Retire the seed task (only when the seed was a `specs/backlog/` task)**
 
@@ -160,18 +195,22 @@ they want to build — possibly a `specs/backlog/` task to develop.
 
 After completing all artifacts, summarize:
 - Plan name and `specs/<name>/` location
-- Artifacts created (and whether `design.md` was written or deliberately omitted)
+- Artifacts created, and any section answered `- none` with its reason
 - Which OKF inputs shaped them (standards read, seed task, glossary terms) — one line
-- What's ready: "All artifacts created — apply-ready."
-- Prompt: "Run `/specs:plan:apply` or ask me to implement to start working on the tasks."
+- What's ready: "All artifacts created — apply-ready." plus any open `validate` warning
+- Prompt: "Refine it first (`/specs:plan:refine`), or run `/specs:plan:apply` to start the tasks."
 
 **Guardrails**
-- Create every artifact `applyRequires` names (`proposal`, `tasks`); `design.md` is optional —
-  write it only when warranted, else delete the scaffold.
+- Create all three artifacts. `design.md` is required as a **section set** (never deleted; an
+  empty section answered `- none — <reason>`) but not as a **dependency** — `applyRequires` stays
+  `["tasks"]`, so a thin design never blocks apply.
 - Drive the loop off `specs.py next` / `status --json` and its exit codes — never infer state
   from prose, never assume artifact paths.
 - Always read completed artifacts (and the step-2 OKF context) before writing the next one.
-- If context is critically unclear, ask — but prefer reasonable decisions to keep momentum.
+- If context is critically unclear, ask — but prefer reasonable decisions to keep momentum, then
+  **offer the refinement pass** (step 6) so the decisions momentum made get argued with before the
+  plan is built. Momentum is the right default for authoring and the wrong default for shipping;
+  `/specs:plan:refine` is where the difference gets settled.
 - Never write a delta spec, a `spec.md`, or sync anything: durable rules go **directly** into
   `docs/standards/` at apply time, not into a second store.
 - Never delete a seed task without the step-7 confirmation, and never touch `docs/` beyond

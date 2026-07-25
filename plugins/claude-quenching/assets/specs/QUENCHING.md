@@ -36,6 +36,7 @@ python3 --version           # or `py --version` on Windows
 | Think an idea through before committing to it | `/specs:explore` |
 | Turn a task or idea into a real plan with artifacts | `/specs:plan:propose` |
 | Promote a Claude Code plan file into the workspace | `/specs:plan:from-claude` |
+| Interrogate a plan before building it — poke holes, weigh alternatives | `/specs:plan:refine` |
 | Build it (opens by offering branch/worktree isolation) | `/specs:plan:apply` |
 | Revise the plan without touching code | `/specs:plan:update` |
 | Close the plan out and distill what it taught us | `/specs:plan:archive` |
@@ -59,10 +60,11 @@ no `changes/` nesting, because there is no delta to keep separate from a main st
 specs/
   QUENCHING.md         # this manual (payload — not a spec, not a plan)
   <plan-name>/         # an ACTIVE plan, one folder each
-    .specs.json        # plan metadata (schema, name, title, created, backlogTask)
-    proposal.md        # what & why (+ the ## Impact scope)
-    design.md          # how — OPTIONAL; delete it if the plan needs none
-    tasks.md           # implementation checklist (- [ ] / - [x])
+    .specs.json        # plan metadata (name, title, created, backlogTask,
+                       #   verification policy, refinement record, attempt state)
+    proposal.md        # what & why (+ ## Out of Scope, ## Validation, the ## Impact scope)
+    design.md          # how — ALWAYS present; an empty section reads `- none — <reason>`
+    tasks.md           # implementation checklist (- [ ] / - [x], + optional files:/verify:)
   archive/             # completed & abandoned plans, as YYYY-MM-DD-<plan-name>/
   backlog/             # THE TASK INBOX (quenching-managed, outside the docs/ bundle)
     index.md           # derived listing + the Completed ledger
@@ -89,11 +91,13 @@ skills, which validate it on every write (`okf-validate.py specs/backlog --listi
         │                          │                     │
         ▼                          ▼                     ▼
    backlog/<task>.md  ──────►  (thinking)  ──────►  specs/<plan-name>/
-        │                                            proposal · design? · tasks
+        │                                            proposal · design · tasks
         │  /specs:backlog:triage                          │
-        ▼  (priority · tags · complexity)                 │ /specs:plan:apply
-   still backlog/, now ranked                             ▼  (offers branch/worktree isolation)
-                                                    code + tasks.md ticked
+        ▼  (priority · tags · complexity)                 │ /specs:plan:refine  (offered — argue
+   still backlog/, now ranked                             │   with it before you build it)
+                                                          │ /specs:plan:apply
+                                                          ▼  (offers branch/worktree isolation)
+                                              code, verified + committed per task
         ~/.claude/plans/*.md                              │  durable rules → docs/standards/
         │ /specs:plan:from-claude                         │
         └───────────────────────────►  specs/<plan-name>/ │
@@ -172,11 +176,32 @@ sharpen the requirement. **It never implements.** Insights route to a plan's art
 ### `/specs:plan:propose` — create the plan and all its artifacts
 
 Derives a kebab-case name, runs `specs.py new <name>`, then works the artifact graph to
-apply-ready: `proposal.md`, an optional `design.md`, and `tasks.md`. Reads the relevant
-`standards/` and the glossary first, so the artifacts speak this repo's vocabulary. If a
-`backlog/` task seeded it, that task is retired into the Completed ledger when the artifacts are
-ready (one confirmation). There is **no delta spec** to write — the durable rules land in
-`docs/standards/` when the plan is built.
+apply-ready: `proposal.md`, `design.md`, and `tasks.md`. Reads the relevant `standards/` and the
+glossary first, so the artifacts speak this repo's vocabulary. Every section is
+**required-with-explicit-fallback** — an empty one is answered `- none`, never deleted, because
+*we considered it and there was nothing* and *nobody considered it* are different facts. It also
+declares the plan's **verification policy** here (`per-task` / `per-section` / `end-of-plan`), so
+`/specs:plan:apply` never has to guess when to run your tests. If a `backlog/` task seeded it,
+that task is retired into the Completed ledger when the artifacts are ready (one confirmation).
+There is **no delta spec** to write — the durable rules land in `docs/standards/` when the plan is
+built.
+
+### `/specs:plan:refine` — argue with the plan before you build it
+
+A plan becomes apply-ready the moment its proposal and tasks have content. Nothing in that gate
+requires anyone to have **disagreed** with it. This is the disagreement: it generates the
+questions the artifacts never answered, asks them **one at a time with a recommendation** so you
+can answer in a word, and applies every accumulated answer in **one** edit at the end — so a
+refinement you abandon halfway leaves the plan exactly as it was.
+
+Four modes pick the technique: `interview` (default — fills the gaps the artifacts leave),
+`critic` (attacks the plan as a hostile reviewer), `premortem` (assumes it already failed and
+works backwards), `alternatives` (forces the shapes nobody weighed). Each has a declared stop
+condition, so it terminates instead of wandering.
+
+It records `refined: {mode, date}` in `.specs.json`. A plan without that record shows up as
+`sp-unrefined` in `/specs:status` — **a warning, never a gate**: nothing here refuses to let you
+build an unrefined plan.
 
 ### `/specs:plan:from-claude` — promote a Claude Code plan file into the workspace
 
@@ -187,15 +212,30 @@ instead of dying in a one-shot file. Maps the native plan's `## Context` into th
 scaffolds with `specs.py new` and writes on **one** confirmation. The native file is **read, never
 moved or deleted**. Offers to link and retire the seed `backlog/` task if one exists.
 
-### `/specs:plan:apply` — implement it (opens by offering isolation)
+### `/specs:plan:apply` — implement it, prove it, commit it
 
-Its **first act is to offer isolation** — a dedicated branch or a git worktree for the plan — so
-the build has real version control (merge, history, reversion) around it rather than a markdown
-imitation. It then works through `tasks.md` checkbox by checkbox (each flipped mechanically with
-`specs.py task --check`), reads the touched subjects' `standards/` as **binding contracts**, and
-pauses when the plan conflicts with one rather than quietly picking a side. Durable rules the plan
-proves out are **written straight into `docs/standards/`** (honestly `authority`-graded); other
-durable learning routes to `/docs:learn` or `/docs:add` — never into a loose code comment.
+**It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
+your task's diff from an unrelated edit already sitting there. Then it **offers isolation** — a
+dedicated branch or a git worktree — so the build has real version control (merge, history,
+reversion) around it rather than a markdown imitation.
+
+For each task it writes the code, runs that task's `verify:` command under the plan's declared
+verification policy, self-reviews the diff (reuse · useless defense · obvious comment · dead
+code), commits it alone as `plan/<name>: <id> <title>`, and only then ticks the box with
+`specs.py task --check`. A failing check gets a bounded retry — the approach is re-read from
+scratch after two consecutive failures and the task is reported **blocked** after five, so one bad
+task never stalls the plan and never spins forever.
+
+It reads the touched subjects' `standards/` as **binding contracts** and pauses when the plan
+conflicts with one rather than quietly picking a side. Durable rules the plan proves out are
+**written straight into `docs/standards/`** (honestly `authority`-graded); other durable learning
+routes to `/docs:learn` or `/docs:add` — never into a loose code comment.
+
+What it will **never** do, whatever the pressure: disable or delete a test, edit the check so it
+stops failing, or pass `--no-verify`. A green checkbox has to mean something.
+
+At 100% it offers a review of the whole branch diff — a different thing at a different scale from
+the per-task check — and then offers to chain straight into `/specs:plan:archive`.
 
 ### `/specs:plan:update` — revise the plan, never the code
 
@@ -341,13 +381,16 @@ findings · **2** refusal. A skill branches on the exit code and the JSON, never
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <name> [--title T] [--backlog-task SLUG]` | scaffold a plan folder + filled templates + `.specs.json` |
+| `specs.py new <name> [--title T] [--backlog-task SLUG] [--verification P]` | scaffold a plan folder + filled templates + `.specs.json` |
 | `specs.py list [--json]` | active plans, task progress, `lastModified` |
-| `specs.py status --plan <n> [--json]` | the artifact graph — `done`/`ready`/`blocked`, `applyReady`, resolved paths |
-| `specs.py next --plan <n> [--json]` | THE single next action (write X · implement task Y · ready to archive) |
+| `specs.py status --plan <n> [--json]` | the artifact graph — `done`/`ready`/`blocked`, `applyReady`, resolved paths, verification policy, blocked tasks |
+| `specs.py next --plan <n> [--json]` | THE single next action (write X · implement task Y · blocked · ready to archive) |
 | `specs.py task --plan <n> --check ID \| --uncheck ID` | flip a `tasks.md` checkbox mechanically |
+| `specs.py task --plan <n> --attempt ID [--error MSG]` | record a failed attempt against the five-attempt budget |
+| `specs.py task --plan <n> --reset-attempts ID` | clear a blocked task's attempts so `next` offers it again |
+| `specs.py parallel --plan <n> [--json]` | verify each `[P]` group's `files:` sets are disjoint; exit 1 if any is not |
 | `specs.py backlog reindex` | regenerate the `backlog/index.md` GENERATED zone from frontmatter |
-| `specs.py validate [--plan <n>]` | required artifacts present, `tasks.md` parseable, kebab-case names |
+| `specs.py validate [--plan <n>]` | required artifacts present, `tasks.md` parseable, kebab-case names, plus the thinking warnings (`sp-unrefined`, `sp-design-scaffold`, `sp-impact-uncovered`) |
 | `specs.py archive <n> [--dry-run] [--force]` | move to `specs/archive/YYYY-MM-DD-<n>/`; exit 2 on open tasks without `--force` |
 | `specs.py doctor` | workspace shape; remedies **declared** for the skill to apply |
 

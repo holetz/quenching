@@ -21,6 +21,14 @@ user-invocable: false
 
 Revise a plan's existing planning artifacts and keep them coherent. **Never edit code.**
 
+**Reactive, by design.** This skill waits for an edit the human has already formulated and
+reconciles the rest of the plan around it. It never generates the questions — if the user does not
+know what to change, or the plan has simply never been argued with, that is
+`quenching-specs-plan-refine` (`/specs:plan:refine`), which interrogates the artifacts one question
+at a time and hands its accumulated answers back here in shape to apply. Same target, opposite
+direction of initiative: **refine produces the change, update absorbs it.** Offer the refine pass
+when a request arrives as "make this better" rather than as a specific edit.
+
 The spec-driven facts — the `specs/` layout, the plan artifact graph, the artifact formats,
 the `specs.py` tool surface, and the `specs/` ↔ `docs/` boundary — live in
 [../quenching-specs-plan-propose/references/spec-driven.md](../quenching-specs-plan-propose/references/spec-driven.md).
@@ -58,8 +66,9 @@ ambiguous you MUST prompt.
    Parse the JSON: each artifact's `state` (`done` / `ready` / `blocked`), `applyReady`, and the
    **resolved file paths**. The files to edit are the concrete paths `status` reports as existing
    on disk — never assume repo-local paths, and never write to a path for an artifact that does
-   not yet exist. The three artifacts are `proposal`, `design` (optional), `tasks`; a `design.md`
-   the plan deliberately omitted is a valid absent state, not a file to create.
+   not yet exist. The three artifacts are `proposal`, `design`, `tasks`. `design.md` is now
+   required-with-explicit-fallback (an empty section reads `- none — <reason>`), but an ABSENT
+   one on a plan authored before that rule is a valid legacy state — report it, do not create it.
 
 3. **Understand the request**
    - A specific revision ("the design now uses X") → that is the starting edit.

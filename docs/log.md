@@ -4,6 +4,18 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 `## YYYY-MM-DD` heading and prefixed `**Creation**` / `**Update**` / `**Deprecation**`.
 `quenching-docs-align` and `quenching-docs-add` append here whenever they scaffold, migrate, or insert.
 
+## 2026-07-25
+
+**Creation**: [Plan artifact contract](/docs/standards/workflows/plan-artifacts.md) — the required
+sections of a plan's artifacts (explicit-none rather than omission), the one parsed sub-heading of
+`## Impact`, the refinement record, and what `applyReady` is and is not evidence of. Written while
+implementing the `refine-and-execute-specs-flow` plan, which proved each rule as it landed.
+
+**Creation**: [Task execution contract](/docs/standards/workflows/task-execution.md) — the three
+verification policies and when each applies, the five-attempt failure budget with a re-read at
+two, commit-per-task, the per-task/end-of-plan review split, and the executor-delegation and `[P]`
+disjunction rules (including why delegating a sub-agent is **not** `context: fork`).
+
 ## 2026-07-24
 
 **Creation**: [Skill authoring and alignment](/docs/standards/automation/skills.md) distilled from

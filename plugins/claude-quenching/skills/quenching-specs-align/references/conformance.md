@@ -120,10 +120,18 @@ each has an owning skill the report names.
 | `sp-backlog-untriaged` | N tasks carry no `priority`, or a `priority` outside `critical\|high\|medium\|low` | `quenching-specs-backlog-triage` (`/specs:backlog:triage`) — priority is triage's to set, never align's |
 | `sp-ledger-orphan` | A `backlog/index.md` **Completed ledger** row names a plan that exists in neither `specs/` nor `specs/archive/` | Report the row and the missing plan. `quenching-specs-plan-abandon` (`/specs:plan:abandon`) reopens such a task **going forward**; an already-orphaned row is a hand fix. Never rewrite the ledger |
 | `sp-ledger-in-flight` | A ledger row names a plan still **active** in `specs/` | Not a defect — the honest in-flight state: the task was developed, the work is not finished. Report as work in progress |
+| `sp-unrefined` | `specs.py validate` — a plan has a `tasks.md` and no `refined` object in `.specs.json`: it reached a checklist without anyone interrogating it | `quenching-specs-plan-refine` (`/specs:plan:refine`). **Never gates** — `applyReady` is untouched, and no sweep may refuse a plan for it |
+| `sp-design-scaffold` | `specs.py validate` — `design.md` exists but is still the shipped scaffold. An **absent** `design.md` is a legacy plan and is never flagged | `quenching-specs-plan-refine` (`/specs:plan:refine`), or `quenching-specs-plan-update` when the human already has the content. Writing a design is authoring — never a sweep's to fill |
+| `sp-impact-uncovered` | `specs.py validate` — a `docs/standards/**.md` path declared under `## Impact`'s parsed sub-heading that no `tasks.md` item names | `quenching-specs-plan-update` (`/specs:plan:update`) — add the task, or drop the path from the declared scope. Which of the two is correct is a judgment, so the sweep never picks |
 
 Untriaged is a **valid state**, a stale plan is **not** a defect, and an unarchived complete plan
 may be waiting on a deploy. Reporting them is the whole job — the anti-fabrication boundary the
 plugin draws everywhere between a sweep and a decision.
+
+The last three come from `specs.py validate` at **warn** severity and are listed here because the
+sweep and `quenching-specs-status` must report them in the same vocabulary as everything else.
+None is an error, none affects `applyReady`, and none is ever auto-repaired: each names a piece of
+**thinking** a plan skipped, and thinking is not something a sweep can supply.
 
 ### The ledger's two meanings
 

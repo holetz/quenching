@@ -209,6 +209,39 @@ this summary is optional. Sometimes the thinking IS the value.
 
 ---
 
+## Landing — before the exploration ends
+
+**The one step that is not optional when the exploration produced something.** A comparison table,
+a recommendation, a rejected approach and the reason it lost — these live in conversation context,
+and conversation context is exactly what gets summarized away. An exploration whose output dies
+there was free thinking that has to be paid for again.
+
+So when the thinking has produced anything durable, **offer a destination before the conversation
+moves on**. Name what was produced, then offer these three:
+
+| What the exploration produced | Destination | How |
+| --- | --- | --- |
+| A shape for work that is now worth planning — approach, alternatives weighed, risks | a **`design.md` draft** on the relevant plan | write the sections into an existing plan's `design.md` (`## Context`, `## Decisions`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`), or note them for the `/specs:plan:propose` that follows |
+| Work identified but not being pursued now | a **`specs/backlog/` task** | `quenching-specs-backlog-add` — the gist, no interrogation; untriaged is fine |
+| Generic understanding of the domain or the system — true regardless of what gets built | **`docs/knowledge/`** | `quenching-docs-learn`; a coined term also goes to `quenching-docs-define` |
+
+Rules that do not bend:
+
+- **Offer, never auto-capture.** Same as everywhere else in this skill — present the destination
+  and let the user choose. A declined offer is a complete answer, and the exploration still ends
+  cleanly.
+- **Offer once.** If the user declines or says "later", say where it would have gone in one line
+  and stop. Re-offering is pressure, and this is a thinking skill.
+- **Nothing durable produced → skip this step entirely and silently.** An exploration that
+  clarified something in the user's head produced no artifact, and inventing one to have something
+  to land is exactly the fabrication the front forbids.
+- **A rejected alternative is worth landing.** The reason an approach lost is the part nobody
+  writes down and everybody re-derives — `## Alternatives Considered` exists for it.
+- **A durable rule about how WE build** is not knowledge — it routes to `quenching-docs-add` →
+  `docs/standards/`, `authority`-graded (`background` when it is agreed but unproven).
+
+---
+
 ## Guardrails
 
 - **Don't implement** - Never write code or implement features. Creating plan artifacts is fine,
