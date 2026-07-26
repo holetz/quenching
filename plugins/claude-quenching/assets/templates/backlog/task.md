@@ -12,7 +12,7 @@ complexity: <dev hours — e.g. 8 or 4-8>   # OPTIONAL — a rough size in devel
 
 <1–3 sentences: what the task is, why it might matter, any seed context.
 No done-criteria, no vision_refs, no detailed planning — that thinking happens in the
-plan cycle (`/specs:plan:propose`) or at execution. The one estimate
+plan cycle (`/specs:develop`) or at execution. The one estimate
 that may be stamped here is `complexity` — a rough size in development hours, when stated.>
 
 <!-- MOLD (claude-quenching · backlog task) → becomes `backlog/<task-slug>.md`.
@@ -20,7 +20,7 @@ that may be stamped here is `complexity` — a rough size in development hours, 
      raw (it needs the plan cycle to be developed) or already clear in scope — parked
      between "I thought of this" and "I'm working on this". `tags`/`priority`/`complexity` are
      OPTIONAL: stamp them only when the human states them inline, and DROP the lines otherwise — a
-     task without `priority` is untriaged, a valid state `quenching-specs-backlog-triage` exists to fill.
+     task without `priority` is untriaged, a valid state `quenching-specs-triage` exists to fill.
      `resource` is intentionally omitted — nothing is built yet to point at. The backlog lives
      under `specs/backlog/`, OUTSIDE the OKF `docs/` bundle, so the OKF validator never scans
      it; the backlog skills self-check each task's frontmatter on write. Once the task is

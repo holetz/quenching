@@ -155,9 +155,9 @@ stamp → index → log → glossary → self-check (against
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
   line is `**Creation**: [<title>](/docs/<path>.md) — migrated from project memory`.
-- A **task** row instead follows the `quenching-specs-backlog-add` capture path: stamp the `task.md` mold
+- A **task** row instead follows the `quenching-specs-capture` capture path: stamp the `task.md` mold
   into `specs/backlog/<slug>.md`, regenerate its DERIVED zone, and run the on-write self-check
-  per [../quenching-specs-backlog-add/references/backlog-zone.md](../quenching-specs-backlog-add/references/backlog-zone.md)
+  per [../quenching-specs-capture/references/backlog-zone.md](../quenching-specs-capture/references/backlog-zone.md)
   (the OKF hook does not cover the backlog); the bundle-log line is
   `**Creation**: [<title>](/specs/backlog/<slug>.md) — migrated from project memory`.
 - **Only after the self-check passes:** delete the memory `.md` and prune its `- [..](..)` line

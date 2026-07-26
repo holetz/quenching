@@ -4,7 +4,7 @@ title: Skill authoring and alignment
 description: How the plugin's skills are classified, authored, named, mirrored as commands, and swept into conformance
 resource: plugins/claude-quenching/skills/**, plugins/claude-quenching/commands/**
 tags: [automation, skills, taxonomy, authoring]
-timestamp: 2026-07-24
+timestamp: 2026-07-26
 audience: both
 authority: current
 source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas)
@@ -36,7 +36,7 @@ as-is and reported, never forced onto the axis.
 elicitation scripts, different depths, different output shapes — become an argument to a single
 skill, never sibling skills. The axis is the object plus the verb; the technique rides along. Four
 interrogation modes (`interview`, `critic`, `premortem`, `alternatives`) shipped as
-`quenching-specs-plan-refine --mode`, not as four `refine-*` skills, because four always-on
+`quenching-specs-refine --mode`, not as four `refine-*` skills, because four always-on
 descriptions spend the shared per-skill cap forever to express one verb four ways, and the wrapper
 bijection would mirror them into four near-identical files. Split only when the *object* or the
 *verb* differs — a skill that waits for a human-stated edit and one that generates the questions
@@ -96,7 +96,7 @@ shell for the turn. `skills.py lint` reports a bare grant as `sk-unscoped-bash`.
 One exception, and it must be **stated in the body**: a skill that runs the *target repo's own*
 toolchain — its build, its tests, its linters, its migrations — cannot enumerate those commands in
 advance, because they are the repo's, not the plugin's. Such a skill may hold an unscoped `Bash`
-provided its body says so and says why. `quenching-specs-plan-apply` is the standing example. The
+provided its body says so and says why. `quenching-specs-apply` is the standing example. The
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
 

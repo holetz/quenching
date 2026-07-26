@@ -60,7 +60,7 @@ run-start OK they are the only possible stops:
 1. **Code-coupled items** — the exception above, unchanged. No authorization from any conductor
    ever absorbs one.
 2. **Irreversible cycle actions** — an action that discards or relocates a record of work rather
-   than reshaping it (archiving a plan, removing a backlog task). An align never performs one; it
+   than reshaping it (archiving a plan, removing a captured spec). An align never performs one; it
    reports them (§5), and the conductor gates each on its own.
 
 ## 3. The blast-radius sweep

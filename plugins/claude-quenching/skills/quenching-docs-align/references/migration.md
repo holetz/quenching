@@ -87,7 +87,7 @@ untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Comp
 ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
 `Idea` → `Task`, `Developed into` → `Outcome`). The DERIVED
 `<!-- BEGIN/END GENERATED -->` zone is installed/regenerated per
-[`../../quenching-specs-backlog-add/references/backlog-zone.md`](../../quenching-specs-backlog-add/references/backlog-zone.md);
+[`../../quenching-specs-capture/references/backlog-zone.md`](../../quenching-specs-capture/references/backlog-zone.md);
 an index that predates the markers gains them without touching the fixed prose around them. A
 legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies at the
 backlog's new home, `specs/backlog/` (§1e).
@@ -103,7 +103,7 @@ leaves the OKF `type` vocabulary). Create `specs/backlog/` — `quenching-specs-
 task across, applying the `idea`→`task` restamp (§1d) at the new path. This is its **own**
 confirmation, blast-radius swept (§3–4): the move rewrites every cross-link into `docs/backlog/`
 (now `/specs/backlog/…`). After the move, the backlog skills
-(`quenching-specs-backlog-add`/`quenching-specs-backlog-triage`) own the inbox.
+(`quenching-specs-capture`/`quenching-specs-triage`) own the inbox.
 
 ### 1f. Retired home — `decisions/` → `standards/`
 

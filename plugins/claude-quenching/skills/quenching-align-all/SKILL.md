@@ -139,7 +139,7 @@ state, registry-vs-`.claude/skills/` agreement). State which **operator manuals*
 installed, refreshed, or left alone (`docs/QUENCHING.md`, `specs/QUENCHING.md`,
 `.claude/QUENCHING.md`) — each front writes its own; this skill only reports them, and points a
 first-time adopter at `docs/QUENCHING.md` as the place to start. Name the next moves explicitly —
-`/docs:align-and-update` for the `docs/` fixpoint loop, `/specs:plan:archive` / `/specs:backlog:triage` for the
+`/docs:align-and-update` for the `docs/` fixpoint loop, `/specs:archive` / `/specs:triage` for the
 specs residue, `/skill:new` for a gap the sweep could only report. Then append **one**
 entry to `docs/log.md` per **Appending to `log.md`** in
 [../quenching-docs-add/references/homes.md](../quenching-docs-add/references/homes.md):

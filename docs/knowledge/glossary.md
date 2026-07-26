@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-25
+timestamp: 2026-07-26
 audience: both
 authority: current
 source: claude-quenching skeleton
@@ -32,14 +32,26 @@ sentence, and **link out** rather than explaining in full here.
 
 ## Terms
 
-- [**Failure budget**](../standards/workflows/task-execution.md) — the five attempts a single task
-  gets before implementation stops retrying it and reports it blocked, with a re-read of the
-  touched files at two consecutive failures.
+- [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
+  blocked: <reason>` line implementation writes when attempts stop converging, replacing the
+  earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
+  unblocks it.
+- [**Derived stage**](../standards/workflows/plan-artifacts.md) — a spec's
+  sub-stage (`captured`/`proposed`/`designed`/`refined`/`executing`), COMPUTED from which
+  headings are filled rather than declared in a field, so it regresses on its own when a
+  section empties instead of going stale.
+- [**Phase gate**](../standards/workflows/plan-artifacts.md) — the set of
+  sections a spec must have filled to ENTER a phase folder; `promote` refuses with exit 2 and
+  the missing list rather than warning, and the per-phase sets live once in `schema.json`,
+  read by both `promote` and `validate`.
 - [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task at
   propose time declaring it may run concurrently with its group, honoured only when
   `specs.py parallel` proves the group's `files:` sets disjoint; never inferred while applying.
+- [**Promote**](../standards/workflows/plan-artifacts.md) — the gated `git mv` that
+  moves a spec between phase folders without renaming it; promoting into `ready/` IS the human
+  OK to build, which is what replaced v1's computed `applyReady` flag.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
-  entry a plan's `.specs.json` gains once it has been interrogated, whose absence raises the
+  entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-plan declaration
   (`per-task`, `per-section`, `end-of-plan`) written at propose time that decides when a task's

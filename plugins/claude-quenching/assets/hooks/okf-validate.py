@@ -114,7 +114,7 @@ import sys
 import tempfile
 import time
 
-VERSION = "1.2.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
+VERSION = "2.0.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
@@ -847,6 +847,28 @@ def _validate_text(path: str, text: str, bundle_root: str,
     return [(sev, rel, code, msg) for (sev, code, msg) in raw]
 
 
+SPEC_FILENAME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
+
+
+def _is_spec_file(path: str, text: str) -> bool:
+    """True for a spec-lifecycle file (`specs/<phase>/YYYY-MM-DD-<slug>.md`).
+
+    A spec is NOT an OKF concept doc: it lives outside the bundle, carries
+    `slug`/`title`/`verification` instead of a `type`, and is checked far more strictly by
+    `specs.py validate` (canonical heading set, phase gates, filename conformance, slug
+    identity). Holding it to the bundle's `type:` rule would report a defect that the specs
+    front's own contract forbids fixing — stamping an OKF type on a spec would be exactly
+    the second source of truth that front exists to avoid.
+
+    Detection is deliberately conjunctive: the v2 filename pattern AND the frontmatter keys
+    only a spec carries, so a genuinely untyped concept doc that merely happens to sit under
+    a date-prefixed name is still reported."""
+    if not SPEC_FILENAME_RE.match(os.path.basename(path)):
+        return False
+    head = text[:600]
+    return ("slug:" in head) and ("verification:" in head)
+
+
 def validate_tree(bundle_root: str, deadline: float | None = None,
                    ignore_globs: tuple[str, ...] = (),
                    listing_root: bool = False,
@@ -856,8 +878,9 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     hook mode aborts silently; CLI mode passes no deadline.
 
     `listing_root=True` scans a quenching-managed sub-tree (`specs/backlog/`) rather
-    than an OKF bundle root: the root `index.md` is held to the plain-listing rule and
-    the `bundle-no-index` SHOULD is dropped."""
+    than an OKF bundle root: the root `index.md` is held to the plain-listing rule, the
+    `bundle-no-index` SHOULD is dropped, and **spec-lifecycle files are skipped entirely**
+    (see `_is_spec_file`)."""
     findings: list[tuple[str, str, str, str]] = []
     root = pathlib.Path(bundle_root)
     if not root.is_dir():
@@ -869,6 +892,8 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         text = corpus[path]
         if text is None:
             findings.append(("ERROR", os.path.basename(path), "unreadable", "cannot read file"))
+        elif listing_root and _is_spec_file(path, text):
+            continue      # not an OKF concept doc — `specs.py validate` owns it
         else:
             findings.extend(_validate_text(path, text, bundle_root, listing_root, with_stale))
     # bundle-level SHOULDs — a listing-root sub-tree is not a bundle and owes none of them

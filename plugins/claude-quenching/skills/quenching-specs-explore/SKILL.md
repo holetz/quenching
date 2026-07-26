@@ -2,17 +2,17 @@
 name: quenching-specs-explore
 description: >-
   Enters explore mode — a thinking partner for exploring ideas, investigating problems, and
-  clarifying requirements before or during a plan, with both spec-driven and OKF awareness (it
-  reads active plans AND the docs/ bundle's glossary, knowledge, and standards to ground the
+  clarifying requirements before or during a spec, with both spec-driven and OKF awareness (it
+  reads active specs AND the docs/ bundle's glossary, knowledge, and standards to ground the
   thinking). Use when the user asks to "explore an idea", "think through this with me", "enter
-  explore mode", "investigate this problem before proposing", or "help me clarify what to
-  build". A stance, not a workflow: reads code and docs freely, visualizes with ASCII diagrams,
-  never implements; insights route to the plan's artifacts or to the OKF homes
-  (knowledge/standards/glossary) only on the user's word. Not for: generating the plan artifacts
-  → quenching-specs-plan-propose; implementing tasks → quenching-specs-plan-apply; capturing one
-  stated fact into docs/ → quenching-docs-learn or quenching-docs-add.
+  explore mode", "investigate this before capturing", or "help me clarify what to build". A
+  stance, not a workflow: reads code and docs freely, visualizes with ASCII diagrams, never
+  implements; insights route to a spec's sections or to the OKF homes
+  (knowledge/standards/glossary) only on the user's word. Not for: filling a spec's sections ->
+  quenching-specs-develop; capturing one -> quenching-specs-capture; building one ->
+  quenching-specs-apply; a stated fact into docs/ -> quenching-docs-learn or quenching-docs-add.
 when_to_use: >-
-  open-ended thinking, investigation, and requirement clarification before or during a plan.
+  open-ended thinking, investigation, and requirement clarification before or during a spec.
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Glob, Grep, Write, Edit, AskUserQuestion
 user-invocable: false
 ---
@@ -30,9 +30,9 @@ thinking, not implementing.
 **This is a stance, not a workflow.** There are no fixed steps, no required sequence, no mandatory
 outputs. You're a thinking partner helping the user explore.
 
-The spec-driven facts (the `specs/` layout, the plan artifact graph, artifact formats, the
+The spec-driven facts (the `specs/` layout, the thirteen canonical sections, artifact formats, the
 `specs.py` tool surface) live in
-[../quenching-specs-plan-propose/references/spec-driven.md](../quenching-specs-plan-propose/references/spec-driven.md).
+[../quenching-specs-develop/references/spec-driven.md](../quenching-specs-develop/references/spec-driven.md).
 Resolve `specs.py` per §Resolving the tool there (plugin path → `.claude/hooks/specs.py` → manual),
 invoked via `python3`/`py`.
 
@@ -110,9 +110,9 @@ Think freely. When insights crystallize, you might offer:
 If the user mentions a plan or you detect one is relevant:
 
 1. **Resolve and read existing artifacts for context**
-   - Run `specs.py status --plan "<name>" --json`.
+   - Run `specs.py status --spec "<name>" --json`.
    - Use the resolved artifact paths it reports — never assume paths.
-   - Read the existing `proposal.md`, `design.md`, and `tasks.md` from those paths.
+   - Read the existing the spec's thirteen canonical sections from those paths.
 
 2. **Reference them naturally in conversation**
    - "Your design mentions using Redis, but we just realized SQLite fits better..."
@@ -122,21 +122,21 @@ If the user mentions a plan or you detect one is relevant:
 
     | Insight Type                             | Where to Capture                                        |
     |------------------------------------------|---------------------------------------------------------|
-    | Design decision made (for this plan)     | `design.md`                                             |
-    | Scope changed                            | `proposal.md`                                           |
-    | New work identified                      | `tasks.md`                                              |
+    | Design decision made (for this plan)     | `## Design`                                             |
+    | Scope changed                            | `## Problem`/`## Proposal`                                           |
+    | New work identified                      | `## Tasks`                                              |
     | Assumption invalidated                   | Relevant artifact                                       |
     | Generic understanding gained             | `quenching-docs-learn` → `docs/knowledge/`              |
     | Durable rule/decision (beyond this plan) | `quenching-docs-add` → `docs/standards/` (`authority`-graded) |
     | New repo-specific term coined            | `quenching-docs-define` → `docs/knowledge/glossary.md`  |
-    | Raw follow-up task, out of scope         | `quenching-specs-backlog-add` → `specs/backlog/`        |
+    | Raw follow-up task, out of scope         | `quenching-specs-capture` → `specs/backlog/`        |
 
    A plan writes its durable rule **directly** into `docs/standards/` as it is built — there is no
    separate spec store and no delta to author. A rule the plan proves out but has not yet built is
    captured at `authority: background`.
 
    Example offers:
-   - "That's a design decision. Capture it in design.md?"
+   - "That's a design decision. Capture it in ## Design?"
    - "That rule outlives this plan. Add it to docs/standards/ with quenching-docs-add?"
    - "That understanding outlives this plan. Capture it with quenching-docs-learn?"
 
@@ -156,7 +156,7 @@ truth you explore:
   `standard` with `authority: background` is an agreed-but-unproven rule the exploration may
   resolve or collide with); `specs/backlog/` may already hold the very task being explored — read
   it as the seed.
-- **Route durable insights** by the capture table above: plan-scoped → the plan's artifacts;
+- **Route durable insights** by the capture table above: plan-scoped → the spec's sections;
   durable → the OKF home. Same rule either way: offer, don't auto-capture.
 
 No bundle → explore without it; never scaffold `docs/` from here (that's `quenching-docs-align`).
@@ -182,7 +182,7 @@ head is at.
 **User brings a specific problem** — read the codebase first, draw the current flow, point at the
 tangles: "I see three tangles. Which one's burning?"
 
-**User is stuck mid-implementation** — read the plan's artifacts, locate the task they're on,
+**User is stuck mid-implementation** — read the spec's sections, locate the task they're on,
 trace what's involved, explore options; offer to update the design or add a spike task.
 
 **User wants to compare options** — refuse the generic answer; get the context, build the
@@ -195,8 +195,8 @@ Unless... is there a sync component?").
 
 There's no required ending. Discovery might:
 
-- **Flow into a proposal**: "Ready to start? I can propose a plan." (→ quenching-specs-plan-propose)
-- **Result in artifact updates**: "Updated design.md with these decisions"
+- **Flow into a proposal**: "Ready to start? I can propose a plan." (→ quenching-specs-develop)
+- **Result in artifact updates**: "Updated ## Design with these decisions"
 - **Seed the backlog**: a task worth keeping but not pursuing lands in `specs/backlog/`
 - **Just provide clarity**: User has what they need, moves on
 - **Continue later**: "We can pick this up anytime"
@@ -219,8 +219,8 @@ moves on**. Name what was produced, then offer these three:
 
 | What the exploration produced | Destination | How |
 | --- | --- | --- |
-| A shape for work that is now worth planning — approach, alternatives weighed, risks | a **`design.md` draft** on the relevant plan | write the sections into an existing plan's `design.md` (`## Context`, `## Decisions`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`), or note them for the `/specs:plan:propose` that follows |
-| Work identified but not being pursued now | a **`specs/backlog/` task** | `quenching-specs-backlog-add` — the gist, no interrogation; untriaged is fine |
+| A shape for work that is now worth planning — approach, alternatives weighed, risks | a **`## Design` draft** on the relevant plan | write the sections into an existing plan's `## Design` (`## Context`, `## Decisions`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`), or note them for the `/specs:develop` that follows |
+| Work identified but not being pursued now | a **`specs/backlog/` task** | `quenching-specs-capture` — the gist, no interrogation; untriaged is fine |
 | Generic understanding of the domain or the system — true regardless of what gets built | **`docs/knowledge/`** | `quenching-docs-learn`; a coined term also goes to `quenching-docs-define` |
 
 Rules that do not bend:

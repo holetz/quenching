@@ -131,8 +131,8 @@ registry (→ `docs/` listings to regenerate)? Then:
 ### 7. Consolidated report + one log entry
 One report, front by front: passes run, what each front's stages did in total, its ending verify
 state (validator findings · doctor/validate · registry-vs-disk), and — explicitly — everything
-**deferred**, each with the command that closes it (`/docs:add`, `/docs:learn`, `/specs:plan:update`,
-`/specs:plan:propose`, `/skill:new`). Name the cross-front edges that actually fired, so the loop's
+**deferred**, each with the command that closes it (`/docs:add`, `/docs:learn`, `/specs:develop`,
+`/specs:develop`, `/skill:new`). Name the cross-front edges that actually fired, so the loop's
 value is visible. Append **one** entry to `docs/log.md` per **Appending to `log.md`** in
 [../quenching-docs-add/references/homes.md](../quenching-docs-add/references/homes.md):
 `**Update**: [Repository](/docs/index.md) — aligned and updated all fronts in N passes
