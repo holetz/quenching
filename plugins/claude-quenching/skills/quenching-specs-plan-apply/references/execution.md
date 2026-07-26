@@ -8,6 +8,16 @@ Everything here exists for one reason: a plan's tasks used to be *written* and *
 nothing in between and nothing after. A task that was never run, never reviewed, and never
 committed leaves a checkbox that claims more than the repo can show.
 
+## Contents
+
+- [The precondition: a clean tree](#the-precondition-a-clean-tree)
+- [The verification policy](#the-verification-policy)
+- [The validation loop](#the-validation-loop)
+- [The diff self-review — four items, before every commit](#the-diff-self-review--four-items-before-every-commit)
+- [The commit — one per task](#the-commit--one-per-task)
+- [The end-of-plan review — a different thing at a different scale](#the-end-of-plan-review--a-different-thing-at-a-different-scale)
+- [Delegating an executor — permitted, and bounded](#delegating-an-executor--permitted-and-bounded)
+
 ## The precondition: a clean tree
 
 **Refuse to start the loop while `git status --porcelain` is non-empty**, and say why: this skill

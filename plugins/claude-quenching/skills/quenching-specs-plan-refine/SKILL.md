@@ -2,24 +2,20 @@
 name: quenching-specs-plan-refine
 description: >-
   Interrogates an existing plan's artifacts until they are worth building — generating the
-  questions nobody thought to ask, ONE at a time with an inline recommendation, and applying
-  every accumulated answer in a SINGLE edit at the end. Use when the user asks to "refine the
+  questions nobody thought to ask, ONE at a time with an inline recommendation, applying
+  every answer in a SINGLE edit at the end. Use when the user asks to "refine the
   plan", "challenge this plan", "poke holes in the proposal", "what am I missing here", "critique
   the design", "run a premortem", "what alternatives did we skip", or "interview me about this
-  plan". Four modes select the technique — interview (default; fills the gaps the artifacts
-  leave), critic (attacks it as a hostile reviewer), premortem (assumes it already failed and
-  works backwards), alternatives (forces the shapes nobody weighed) — each with a declared stop
-  condition, so a refinement terminates instead of wandering. Records refined {mode, date} in
-  .specs.json, dropping validate's sp-unrefined warning. Never edits code or writes into docs/,
-  and never gates: an unrefined plan may always be built. Not for: applying an edit the human
-  already formulated → quenching-specs-plan-update (reactive, where this is generative);
-  open-ended thinking before any plan exists → quenching-specs-explore (unbounded, where this
-  targets one plan and must terminate); creating a missing artifact →
-  quenching-specs-plan-propose.
+  plan". Four modes select the technique — interview (default), critic, premortem, alternatives
+  — each with a stop condition, so it terminates instead of wandering.
+  Records refined {mode, date} in .specs.json, dropping validate's sp-unrefined. Never
+  edits code or writes into docs/, and never gates: an unrefined plan may still be built. Not
+  for: applying an edit the human already formulated → quenching-specs-plan-update (reactive,
+  where this is generative); open-ended thinking before any plan exists →
+  quenching-specs-explore; a missing artifact → quenching-specs-plan-propose.
 when_to_use: >-
   interrogating a plan's artifacts to surface what nobody asked, then applying the answers in
-  one edit. An already-formulated edit is quenching-specs-plan-update; pre-plan thinking is
-  quenching-specs-explore.
+  one edit.
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Glob, Grep, Write, Edit, AskUserQuestion
 user-invocable: false
 ---

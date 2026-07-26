@@ -19,12 +19,14 @@ trigger position, the 500-line body, the bijection) is checked by reading.
 
 **The consequence is already measurable, in this plugin.** Measured across the 28 shipped skills:
 the always-on metadata (`description` + `when_to_use`, as Claude Code concatenates them) totals
-**34,579 characters**, plus **2,072** for the 28 command wrappers — **36,651 characters, roughly
-9,200 tokens, paid on every session before a single skill fires**. The average skill costs ~309
-tokens of always-on metadata against the ~100 the documentation budgets. Two skills exceed the
-1,536-character cap the plugin's own doctrine mandates — `quenching-specs-plan-refine` (1,568) and
-`quenching-specs-plan-apply` (1,559) — and what truncation eats is the tail, which is exactly where
-the `Not for:` routing boundary lives. Seventeen of the 28 descriptions exceed 1,024 characters,
+**34,431 characters**, plus **2,072** for the 28 command wrappers — **36,503 characters, roughly
+9,126 tokens, paid on every session before a single skill fires**. The average skill costs ~307
+tokens of always-on metadata against the ~100 the documentation budgets. No skill exceeds the
+1,536-character cap the plugin's own doctrine mandates — the most expensive is
+`quenching-specs-align` at 1,506 — and that is itself a finding about how the front measures:
+counted on the YAML **source lines**, three skills read over the cap, because a folded `>-` block's
+indentation and newlines are counted as if the model paid for them. Every number here is taken on
+the **parsed** value, which is what Claude Code actually loads. Seventeen of the 28 descriptions exceed 1,024 characters,
 the hard limit of the Agent Skills standard, so those skills are not portable outside Claude Code;
 `when_to_use` is itself a Claude-Code-only extension the doctrine adopted without saying so, and it
 routinely restates the boundary the description already carries — the doctrine's own **Duplication**
@@ -76,7 +78,8 @@ unscoped grant for the turn — while the `specs/` front scopes every one of its
   hand; `quenching-skill-align` runs `doctor` for its inventory and `lint` for its conformance
   gaps; `quenching-skill-align-and-update` Stage 2 consumes `lint --json` for the mechanical half
   and keeps human reading for the judgment half (the no-op test, sediment, sprawl).
-- **The surface goes on a measured diet.** The two skills over the 1,536 cap come back under it,
+- **The surface goes on a measured diet.** The descriptions over the 1,024-character Agent Skills
+  limit come back under it where that costs no trigger phrase,
   `when_to_use` stops restating the description's boundary, and `skills.py budget` makes the total
   a number in the report rather than a discovery. The 2-level reference chain
   (`SKILL.md` → `sweep-doctrine.md` → `convergence.md`) is flattened to one level, and every
@@ -128,12 +131,13 @@ unscoped grant for the turn — while the `specs/` front scopes every one of its
 - `python assets/hooks/okf-validate.py assets/docs` → `0 error(s), 0 warning(s)`, and
   `assets/specs/backlog --listing-root` likewise.
 - **Dogfood:** `python assets/bin/skills.py lint plugins/claude-quenching/skills --json` exits 0
-  with zero findings against this plugin's own 31 skills — the same surface that today carries two
-  cap violations.
+  against this plugin's own 31 skills, with no `sk-metadata-cap` and no `sk-description-portable`
+  finding. (Exit 0 is the no-**error** condition; warnings are reported and never set the exit
+  code, so "zero findings" is not the bar — naming the two codes is.)
 - `python assets/bin/skills.py doctor --json` reports the bijection at 31 ↔ 31 with no dangling
   wrapper and no orphan skill.
 - `python assets/bin/skills.py budget --json` reports the always-on total, and it is **below the
-  36,651 characters measured before this plan** despite three added skills.
+  36,503 characters measured before this plan** despite three added skills.
 - A throwaway target repo exercises the tool end to end: a surface with a non-canonical name, a
   missing wrapper, an over-cap description, and a hand-edited registry zone produces one `sk-*`
   finding each, and `registry reindex` restores the zone byte-for-byte.
@@ -151,8 +155,9 @@ unscoped grant for the turn — while the `specs/` front scopes every one of its
   (`user-invocable` × `disable-model-invocation` × `context: fork`), the scoped-`allowed-tools`
   rule, and `skills.py` named as the front's verifier.
 - `docs/standards/automation/context-budget.md` — the always-on metadata contract: the two caps
-  (1,536 Claude Code, 1,024 Agent Skills standard), what `when_to_use` may and may not carry, the
-  per-surface ceiling, and `skills.py budget` as its measurement.
+  (1,536 Claude Code, 1,024 Agent Skills standard), the rule that both are counted on the parsed
+  value and never on the YAML source, what `when_to_use` may and may not carry, the per-surface
+  ceiling (36,503, this plugin's measured baseline), and `skills.py budget` as its measurement.
 - `docs/standards/automation/skill-evaluation.md` — the evaluation contract: `evals/evals.json`
   location and shape, isolated with/without runs, assertion grading with evidence, the
   `benchmark.json` delta, and what a skill must show before its description is tuned.

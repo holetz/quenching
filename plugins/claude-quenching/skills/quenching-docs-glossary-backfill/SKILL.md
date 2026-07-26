@@ -13,8 +13,7 @@ description: >-
   quenching-docs-define.
 when_to_use: >-
   retroactively sweeping the WHOLE docs/ bundle for glossary terms never fed into
-  knowledge/glossary.md. The bulk counterpart of the per-capture glossary tail step; one
-  term on demand is quenching-docs-define.
+  knowledge/glossary.md. The bulk counterpart of the per-capture glossary tail step.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
 user-invocable: false
 effort: medium

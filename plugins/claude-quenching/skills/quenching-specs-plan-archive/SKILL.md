@@ -9,14 +9,12 @@ description: >-
   "archive the plan", "finalize the plan", "close out this plan", or "the plan is done, wrap it
   up". The rule the plan implemented was ALREADY written into docs/standards/ during apply —
   archiving syncs nothing; it only catches what was not yet captured. Warnings never block:
-  incomplete items just confirm, never silently stop. Not for: implementing remaining tasks →
-  quenching-specs-plan-apply; a plan that will NOT be built (no distillation of a proved rule,
-  reopen its seed task) → quenching-specs-plan-abandon; inserting an arbitrary doc into docs/ →
+  incomplete items confirm, never silently stop. Not for: implementing remaining tasks →
+  quenching-specs-plan-apply; a plan that will NOT be built (nothing proved to distil, reopen
+  its seed task) → quenching-specs-plan-abandon; an arbitrary doc into docs/ →
   quenching-docs-add.
 when_to_use: >-
   finalizing and archiving a COMPLETED plan, including the post-archive OKF distillation offer.
-  Implementation is quenching-specs-plan-apply; a plan that will not be built is
-  quenching-specs-plan-abandon.
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bash(mv:*), Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 user-invocable: false
 ---

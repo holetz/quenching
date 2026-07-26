@@ -8,10 +8,21 @@ here, once, and each align cites this file instead of restating it. Only a front
 (what it inventories, which findings it produces, what its verifier is) stay in its `SKILL.md`
 and its own `references/`.
 
-This is the sweep-side peer of
-[`../../quenching-align-and-update-all/references/convergence.md`](../../quenching-align-and-update-all/references/convergence.md),
-which owns the conductor side (authorization, convergence, anti-spin). Where the two touch —
-a cycle-authorized run — this file defers to that one.
+This file is **self-contained**: an align reads it and needs nothing else. Its conductor-side
+peer — authorization across a whole run, cross-front convergence, the anti-spin guards — is
+owned by `quenching-align-and-update-all`, and the one place the two touch (a cycle-authorized
+run) is stated here in full at §2 rather than deferred. A reference that sends a reader to
+another reference makes the second one mandatory, which is the opposite of what the loading
+hierarchy is for.
+
+## Contents
+
+- [1. Convergence, not accommodation](#1-convergence-not-accommodation)
+- [2. Force with ONE confirmation](#2-force-with-one-confirmation)
+- [3. The blast-radius sweep](#3-the-blast-radius-sweep)
+- [4. MERGE, never clobber; never delete on a guess](#4-merge-never-clobber-never-delete-on-a-guess)
+- [5. Align conformance; report the cycle](#5-align-conformance-report-the-cycle)
+- [6. End honest](#6-end-honest)
 
 ## 1. Convergence, not accommodation
 
@@ -35,13 +46,22 @@ not "just the safe ones".
 code** (a path constant, an import, a docstring, a branch name, a CI job, a script) is a
 **distinct** confirmation item, with its scope shown, and is **never** folded into the batch OK.
 
-**Exception — cycle-authorized runs.** Invoked by a conductor under the cycle-authorization
-contract
-([convergence.md](../../quenching-align-and-update-all/references/convergence.md)
-§cycle-authorization), the plan is presented as **narration, not a gate**. The narration is not
-optional — the user watching the session still sees the full plan table and simply types
-nothing. A code-coupled item still confirms on its own, **always**; no authorization from any
-conductor ever absorbs one.
+**Exception — cycle-authorized runs.** When a conductor invokes this align as a stage, the human
+already gave ONE confirmation at run start that authorizes the whole run. The align's own plan is
+then presented as **narration, not a gate**: the narration is not optional — the user watching the
+session still sees the full plan table and simply types nothing.
+
+That authorization covers every routine write a stage performs — frontmatter stamps, new concept
+docs, index/log/glossary entries, routine renames, variant migrations and the deletions they
+require, structural repairs — **as long as it touches no product code**. It covers nothing else.
+Two classes still gate individually, exactly as when the align runs standalone, and after the
+run-start OK they are the only possible stops:
+
+1. **Code-coupled items** — the exception above, unchanged. No authorization from any conductor
+   ever absorbs one.
+2. **Irreversible cycle actions** — an action that discards or relocates a record of work rather
+   than reshaping it (archiving a plan, removing a backlog task). An align never performs one; it
+   reports them (§5), and the conductor gates each on its own.
 
 ## 3. The blast-radius sweep
 
@@ -101,4 +121,11 @@ beats a clean-looking run that quietly dropped something.
 | --- | --- | --- |
 | `docs/` | `quenching-docs-align` | `okf-validate.py <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
 | `specs/` | `quenching-specs-align` | `specs.py doctor` + `specs.py validate`, plus `okf-validate.py specs/backlog --listing-root` for the inbox |
-| `.claude/` | `quenching-skill-align` | the registry's GENERATED zone matching `.claude/skills/` exactly, and every wrapper resolving |
+| `.claude/` | `quenching-skill-align` | `skills.py lint` + `skills.py doctor`, plus `skills.py registry reindex` reporting `changed: false` for the zone |
+
+Each front's verifier is now a **program**, and that is the point: a rule whose only check is a
+sentence decays, because nothing fails when it is broken. All three read the same contract —
+`--json` on every subcommand and exit **0** ok · **1** findings · **2** refusal — so an align
+branches on data it did not have to interpret. Warnings are reported and never set the exit code;
+an align that ends on exit 0 with warnings names each one by its code rather than implying the
+front is clean.

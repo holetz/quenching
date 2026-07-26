@@ -5,6 +5,16 @@ of markdown **concept documents**, plus reserved listing/history files. Source:
 `GoogleCloudPlatform/knowledge-catalog/okf/SPEC.md`. This file condenses the normative rules
 the plugin enforces; [conformance.md](conformance.md) turns them into checks.
 
+## Contents
+
+- [Reserved filenames](#reserved-filenames)
+- [Frontmatter](#frontmatter)
+- [Concept `type`](#concept-type)
+- [Normative rules](#normative-rules)
+- [Links](#links)
+- [Bundle & conformance](#bundle--conformance)
+- [What this plugin adds on top (OKF-strict profile)](#what-this-plugin-adds-on-top-okf-strict-profile)
+
 ## Reserved filenames
 
 - **`index.md`** — a directory **listing** (progressive disclosure). It MUST NOT be used for
@@ -82,8 +92,12 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    a hand-maintained, frontmatter-free listing.)
 2. **`type` is mandatory and drawn from the fixed vocabulary** per home (see
    [taxonomy.md](taxonomy.md)).
-3. **`resource` is derived, never invented** — for standards from `file:line` anchors; empty
-   or self-pointing is disallowed.
+3. **`resource` is derived, never invented** — for standards a comma-separated **glob set** of
+   what the doc governs (`*`/`**` only, repo-root-relative); for catalog/reference the asset URI.
+   Empty is disallowed, and so is self-pointing (`resource-self`) — except a **bundle-level
+   aggregate** whose scope contains the bundle root, which `knowledge/glossary.md` legitimately
+   is. A glob states what the doc governs and is the input the staleness check reads; a
+   `file:line` states only where a rule happens to be written today.
 4. **`log.md` uses `## YYYY-MM-DD` headings, newest first**, with `**Creation**/**Update**/
    **Deprecation**` prefixes, at `docs/` and `docs/standards/`.
 5. **Links:** relative within a home, absolute `/docs/...` across homes.

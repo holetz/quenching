@@ -196,11 +196,11 @@ preserving your `hooks-config.json`.
 
 ## 8. The other fronts
 
-| Front | Manual | Align (structure, one pass) | Align-and-update (+ content, looped) |
-| --- | --- | --- | --- |
-| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:align` | `/docs:align-and-update` |
-| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:align` | `/specs:align-and-update` |
-| `.claude/` — this surface | this file | `/skill:align` | `/skill:align-and-update` |
+| Front | Manual | Status (read-only) | Align (structure, one pass) | Align-and-update (+ content, looped) |
+| --- | --- | --- | --- | --- |
+| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:status` | `/docs:align` | `/docs:align-and-update` |
+| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:status` | `/specs:align` | `/specs:align-and-update` |
+| `.claude/` — this surface | this file | — | `/skill:align` | `/skill:align-and-update` |
 
 `/align` runs the three aligns in dependency order on one confirmation, and `/align-and-update`
 runs the three conductors the same way, looped: `docs/` first (the other two

@@ -10,6 +10,15 @@ safety deltas stay inline in its SKILL.md. The full home boundaries and tree liv
 `../../quenching-docs-align/references/taxonomy.md`; the checks in
 `../../quenching-docs-align/references/conformance.md`.
 
+## Contents
+
+- [Classification — one question decides the home](#classification--one-question-decides-the-home)
+- [The frontmatter stamp](#the-frontmatter-stamp)
+- [Updating `index.md` (the listing)](#updating-indexmd-the-listing)
+- [Appending to `log.md` (the history)](#appending-to-logmd-the-history)
+- [Enriching the glossary (tail step, every capture)](#enriching-the-glossary-tail-step-every-capture)
+- [Self-check before finishing](#self-check-before-finishing)
+
 ## Classification — one question decides the home
 
 Ask **"what IS this, relative to us?"**:
@@ -72,7 +81,7 @@ Fill from the mold; every concept gets:
 type: <from the table above — non-empty>
 title: <short name>
 description: <one sentence — the "Covers" cell an index renders>
-resource: <derived — never invented; standards from file:line anchors, catalog/reference from the asset URI>
+resource: <derived — never invented; standards a comma-separated GLOB SET of what the doc governs (`*`/`**` only, repo-root-relative), catalog/reference the asset URI>
 tags: [<...>]
 timestamp: <today, ISO 8601>
 audience: both | agent | human       # canonical English enum

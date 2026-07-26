@@ -1,23 +1,20 @@
 ---
 name: quenching-specs-plan-apply
 description: >-
-  Implements a plan's tasks and proves each one — refuses to start on a dirty tree, offers branch
-  or worktree isolation (recommended, never imposed), reads the touched subjects' docs/standards/
-  as binding contracts, then per task: writes the code, runs the task's verify command under the
-  plan's declared verification policy, retries within a five-attempt budget, self-reviews the
-  diff, and commits that task alone. Use when the user asks to "apply the plan", "implement the
-  plan", "start implementing", "continue implementation", or "work through the tasks". Boxes are
-  flipped with specs.py task --check and failures recorded with --attempt, so a task that burned
-  its budget is reported blocked rather than retried forever. Durable rules go straight into
-  docs/standards/ under the OKF insert procedure, authority-graded honestly; other learning
-  routes to quenching-docs-learn/quenching-docs-add, never into loose comments. Offers the
+  Implements a plan's tasks and proves each one — refuses a dirty tree, offers branch or
+  worktree isolation, reads the touched subjects' docs/standards/ as binding contracts, then per
+  task: writes the code, runs its verify under the plan's declared policy within a five-attempt
+  budget, self-reviews the diff, and commits that task alone. Use when the user asks to "apply
+  the plan", "implement the plan", "start implementing", "continue implementation", or "work
+  through the tasks". Boxes flip via specs.py task --check; a task that burns its budget is
+  reported blocked, never retried forever. Durable rules go straight into
+  docs/standards/, authority-graded honestly. Offers the
   whole-branch review and chains into archiving at 100%. Not for: creating the plan and its
   artifacts → quenching-specs-plan-propose; interrogating a plan before building it →
   quenching-specs-plan-refine; revising artifacts without touching code →
   quenching-specs-plan-update; archiving a finished plan → quenching-specs-plan-archive.
 when_to_use: >-
-  implementing, verifying, and committing the tasks of an existing plan. Creating artifacts is
-  quenching-specs-plan-propose; planning-only revisions are quenching-specs-plan-update.
+  implementing, verifying, and committing the tasks of an existing plan.
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 user-invocable: false
 ---

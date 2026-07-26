@@ -25,6 +25,14 @@ sweep can align every part of it — scaffold, rename, seed, stamp, regenerate �
 the never-delete-on-a-guess and code-coupled-renames-gate-individually rules the three aligns
 share ([`../../quenching-align-all/references/sweep-doctrine.md`](../../quenching-align-all/references/sweep-doctrine.md)).
 
+## Contents
+
+- [The canonical workspace](#the-canonical-workspace)
+- [Findings the sweep FIXES (inside the one plan → one OK)](#findings-the-sweep-fixes-inside-the-one-plan--one-ok)
+- [Migrating a legacy `openspec/` workspace (`sp-legacy-workspace`)](#migrating-a-legacy-openspec-workspace-sp-legacy-workspace)
+- [Findings the sweep REPORTS (never auto-closes)](#findings-the-sweep-reports-never-auto-closes)
+- [The convergence condition](#the-convergence-condition)
+
 ## The canonical workspace
 
 ```

@@ -13,9 +13,8 @@ description: >-
   memory → quenching-docs-import-memory; run quenching-docs-align first if docs/ is not an OKF
   bundle.
 when_to_use: >-
-  refactoring CLAUDE.md/AGENTS.md into thin pointers over the OKF bundle — keep the
-  operational, move the knowledge, verify pointers. The harness counterpart of
-  quenching-docs-import-memory.
+  refactoring CLAUDE.md/AGENTS.md into thin pointers over the OKF bundle — keep the operational,
+  move the knowledge, verify pointers.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
 user-invocable: false
 ---

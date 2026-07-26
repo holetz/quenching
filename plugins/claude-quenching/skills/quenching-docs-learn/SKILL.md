@@ -10,9 +10,7 @@ description: >-
   self-checks. Not for: a rule or decision for how WE build (a standard), a how-to, or an external
   tool/lib fact → quenching-docs-add; draining project memory → quenching-docs-import-memory.
 when_to_use: >-
-  filing ONE piece of generic understanding into knowledge/. Contracts, decisions, documentation,
-  and external-dependency facts route via quenching-docs-add; memory migration is
-  quenching-docs-import-memory.
+  filing ONE piece of generic understanding into knowledge/.
 allowed-tools: Read, Grep, Glob, Write, Edit
 user-invocable: false
 ---

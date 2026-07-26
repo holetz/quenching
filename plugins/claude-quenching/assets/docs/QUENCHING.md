@@ -27,6 +27,7 @@ which command to run. It is a payload file — not an OKF concept doc, and the v
 
 | I want to… | Command | Scope |
 | --- | --- | --- |
+| See where the bundle stands, changing nothing | `/docs:status` | WHOLE bundle, read-only |
 | Record a rule or convention **we follow** | `/docs:add` | ONE doc |
 | Capture an understanding, concept, or learning | `/docs:learn` | ONE doc |
 | Define a term, acronym, or codename | `/docs:define` | ONE glossary entry |
@@ -113,6 +114,19 @@ No entry means it is not defined yet — add it with `/docs:define`.
 ---
 
 ## 3. The commands, one by one
+
+### `/docs:status` — look, change nothing
+
+The only command here that cannot write. It reports the resolved bundle, the checker's result in
+its own finding codes, and the bundle's **density** — concept docs per home (empty homes shown as
+`0`, never omitted), glossary size, which `standards/` subjects hold anything — then splits what it
+found into what `/docs:align` would fix on one OK, what `/docs:align-and-update` would then drive,
+and what neither closes because it needs you. Use it as the preview before authorizing a sweep: it
+speaks the validator's own vocabulary, so the two never disagree.
+
+Density is reported as **figures with no finding code**. A bundle can pass every check while
+holding scaffolded-but-empty homes and a placeholder glossary — that is not a defect list, but you
+should still be able to see it. *Not for:* fixing any of it (`/docs:align`).
 
 ### `/docs:add` — insert ONE concept doc
 

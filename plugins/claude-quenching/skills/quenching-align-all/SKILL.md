@@ -1,25 +1,21 @@
 ---
 name: quenching-align-all
 description: >-
-  Aligns ALL THREE of a repository's quenching fronts in one run — quenching-docs-align (the OKF
+  Aligns ALL THREE of a repository's fronts in one run — quenching-docs-align (the OKF
   docs/ bundle), then quenching-specs-align (the specs/ spec-driven workspace), then
   quenching-skill-align (the .claude/ skill + command surface) — as a dependency pipeline,
   on a single confirmation. Use when the user asks to "align everything", "align the whole
   repo", "run all the aligns", "normalize this repo", "install quenching in this repo",
-  "align docs, specs and skills", or "set the repo up end to end". ONE read-only probe of
-  the three fronts → ONE OK authorizes the whole run (each front still narrates its own plan,
-  and any item touching product code confirms on its own) → the three sweeps run in order,
-  each under its own doctrine → one consolidated report. Order is a dependency, not a
-  preference: docs/ first because the other two write OKF artifacts into it, specs/ before
-  skills because migrating a legacy openspec/ workspace clears the CLI shadow copies the skill
-  sweep would otherwise inventory.
-  Conducts, never reimplements — no front's logic is re-derived here. Not for: one front alone
+  "align docs, specs and skills", or "set the repo up end to end". ONE read-only probe →
+  ONE OK authorizes the whole run (each front still narrates its own plan, and any item
+  touching product code confirms on its own) → the three sweeps run in order, each under its
+  own doctrine → one consolidated report. The order is a dependency: docs/ first, because the
+  other two write OKF artifacts into it. Not for: one front alone
   → quenching-docs-align / quenching-specs-align / quenching-skill-align; also pulling content in and
   looping every front to a fixpoint → quenching-align-and-update-all.
 when_to_use: >-
   running the three align sweeps (docs → specs → skills) in dependency order on one
-  confirmation. A single front is its own align skill; the docs fixpoint loop is
-  quenching-docs-align-and-update.
+  confirmation.
 allowed-tools: Read, Grep, Glob, Bash, Skill
 user-invocable: false
 ---

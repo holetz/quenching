@@ -1,0 +1,17 @@
+Precisamos repensar a estrutura do fluxo de specs.
+Atualmente estamos esbarrando em dois problemas chaves:
+1. Os planos ficam facilmente muito complexos, e o raciocinio da LLM se torna confuso para o humano seguir/entender
+2. A estrutura dos arquivos é complexa e imutável, demonstrando certa duplicidade de informacao e dificultando a organizacao
+
+Estou pensando em uma solução e preciso que voce ajude a estressar ela comigo. Entender se é o caminho certo, refinar onde ela falha, etc.
+
+A solução que estou pensando segue as seguintes premissas:
+- Uma spec é representada apenas por um arquivo markdown em qualquer momento do seu ciclo de vida. Isso permite um movimento fácil da spec entre as fases do processo, com cada uma enriquecendo o arquivo com novas informações ou atualizações de existentes
+- As specs são organizadas em pastas nomeadas pelo ciclo de vida (ex: backlog), facilitando a organizacao e leitura do humano do status das specs
+- As specs devem possuir uma fase no ciclo de vida que permita a LLM despejar pontos que o humano possa triar fora da secao que criou ela. O objetivo é evitar o humano ser sobrecarregado de decisoes sobre descobertas que vao aparecendo naturalmente durante o desenvolvimento de solucoes (ex: quando plano X identificou problemas Y e Z, não relacionados ao plano, ele levanta as questoes ao humano que precisaria para o fluxo para entender o problema e tomar uma decisao que pode levar a novos problemas)
+- Uma spec deve permitir tarefas complexas e simples, mas a estrutura de skills deve preferir a criação de planos enxutos, segmentando um problema em mais de um plano quando possivel.
+- As specs devem possuir informacoes plenas e simples/claras o suficiente para o humano ler e entender o problema que está sendo resolvido, com exemplos quando possível. Isso reduz o atrito de quando um projeto pode evolui muito rápido com uso de LLM, e o humano não consegue acompanhar os novos conceitos que vao surgindo, ou pode se sentir confuso com termos que a LLM utiliza para se espressas.
+- As specs devem possuir frontmatters e seções fixas (obrigatórias ou opcionais por fase), permitindo uma iteração deterministica onde possível como para validação, check de tasks, ou leitura parcial de secoes. A leitura parcial pode ser importante quando consideramos que necessidades de explicacao do problema pode gerar muito insumo e atrapalhar o contexto dos agentes.
+- Um fluxo de melhoria nessa estrutura pode iniciar com uma skill de exploração de um problema que vai descobrindo item a item pontos de melhoria e transformando eles, com alinhamentos com o humano, em specs na fase mais baixa. Quando exaurido o fluxo, o humano pode pegar esses problemas e trabalhar eles com o fluxo de skills, um a um de forma independente.
+- As specs devem ter secoes/informacoes que facilitem o handoff do processo a novas secoes, com indicacoes de quais arquivos ler por exemplo. O objetivo é evitar a necessidade de reexplorar o código a cada nova secao para consolidar o contexto necessario para prosseguir com o processo
+- As specs devem permitir uma execucao por agentes, e uma possibilidade para redução de contexto é um orquestrador indicar quais secoes ele precisa ler, e qual/quais tarefas executar. Assim permitindo o uso eficiente de agentes, sem inflar o contexto (e custo) de cada um deles 

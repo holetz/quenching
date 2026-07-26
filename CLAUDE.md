@@ -8,7 +8,7 @@ A **Claude Code plugin marketplace** with a single plugin, `claude-quenching`
 (source: [plugins/claude-quenching/](plugins/claude-quenching/)). The plugin forces a *target*
 repository's **three fronts** — the `docs/` **Open Knowledge Format (OKF v0.1)** bundle, the
 native `specs/` spec-driven workspace, and the `.claude/` skill + command surface — into one
-canonical shape and keeps them conformant, via twenty-eight skills, all under one
+canonical shape and keeps them conformant, via thirty skills, all under one
 `quenching-<front>-<object>-<verb>` taxonomy, plus `/docs`, `/specs`, `/skill` and the root
 `/align`, `/align-and-update` commands and two self-contained stdlib Python tools (the OKF
 enforcement hook `okf-validate.py` and the plan-cycle CLI `specs.py`).
@@ -48,9 +48,9 @@ plugins/claude-quenching/
   commands/align.md                    # /align — root wrapper over quenching-align-all (three fronts, one pass)
   commands/align-and-update.md         # /align-and-update — root wrapper over quenching-align-and-update-all (three fronts, looped)
   commands/specs/*.md                  # /specs:* — thin wrappers over the thirteen specs-front quenching-specs-* skills (specs/plan/*, specs/backlog/* nested a level deeper)
-  commands/docs/*.md                   # /docs:* — thin wrappers over the ten OKF-bundle quenching-docs-* skills
+  commands/docs/*.md                   # /docs:* — thin wrappers over the eleven OKF-bundle quenching-docs-* skills
   commands/docs/documentation/build.md # /docs:documentation:build — the one nested wrapper (acts on ONE home)
-  commands/skill/*.md                  # /skill:* — thin wrappers over the three .claude-automation quenching-skill-* skills
+  commands/skill/*.md                  # /skill:* — thin wrappers over the four .claude-automation quenching-skill-* skills
   assets/                              # the INSTALLABLE PAYLOAD — copied into target repos, never executed here
     docs/                              # canonical OKF bundle skeleton (index.md listings, log.md seeds, glossary seed)
       QUENCHING.md                     # operator manual for the docs/ front — installed by quenching-docs-align
@@ -70,20 +70,20 @@ plugins/claude-quenching/
 as a live skill) — it is the payload the skills stamp into *other* repositories.
 
 Every skill is `user-invocable: false` — hidden from the `/` menu, but still invoked by Claude
-via its description or by a thin **command wrapper**. All twenty-eight skills share one
+via its description or by a thin **command wrapper**. All thirty skills share one
 `quenching-<front>-<object>-<verb>` taxonomy, mirrored in the command path. They split by front:
-`/docs:*` mirrors the ten that act on the OKF `docs/` bundle (one nested a level deeper as
+`/docs:*` mirrors the eleven that act on the OKF `docs/` bundle (one nested a level deeper as
 `/docs:documentation:build`, because it acts on a single **home**, not the bundle); `/specs:*`
 mirrors the thirteen that act on the native `specs/` workspace (the plan skills nested under
-`/specs:plan:*`, the inbox under `/specs:backlog:*`); `/skill:*` mirrors the three that act on the
+`/specs:plan:*`, the inbox under `/specs:backlog:*`); `/skill:*` mirrors the four that act on the
 target's `.claude/` automation surface (`quenching-skill-new` → `/skill:new`,
 `quenching-skill-align` → `/skill:align`, `quenching-skill-align-and-update` →
-`/skill:align-and-update`); and the **root `/align`** + **`/align-and-update`** mirror the two
+`/skill:align-and-update`, `quenching-skill-eval` → `/skill:eval`); and the **root `/align`** + **`/align-and-update`** mirror the two
 that span all three fronts — deliberately outside the three namespaces, because they are what
 cross them. The wrappers under `commands/` are the explicit user entry points, the skills are
-the implementation. Every skill has exactly one wrapper (28 ↔ 28).
+the implementation. Every skill has exactly one wrapper (30 ↔ 30).
 
-## The twenty-eight skills and how they relate
+## The thirty skills and how they relate
 
 | Skill | Role |
 | --- | --- |
@@ -96,7 +96,9 @@ the implementation. Every skill has exactly one wrapper (28 ↔ 28).
 | `quenching-docs-import-memory` | Drains `~/.claude/projects/<cwd>/memory/` into the bundle, clearing each memory once its doc lands and passes conformance. |
 | `quenching-docs-harness` | Refactors a target's `CLAUDE.md`/`AGENTS.md` into thin pointers over its `docs/` bundle, MOVING (never copying) inlined durable knowledge into its home. |
 | `quenching-docs-documentation-build` | Owns the **site layer** over the `documentation/` home (`/docs:documentation:build`): the root `mkdocs.yml`/`requirements.txt`, the `.pages` nav files, `site/` gitignore, opt-in Pages CI, and a `mkdocs build --strict` verification. Installs, MERGES a customized config forward (missing keys only, as a diff), regenerates a stale nav; **never touches a page** — page-level drift is reported (`site-*` codes) with the command that fixes it. `quenching-docs-align` step 7 does the first install and hands off here. On-demand tool, not a loop stage. |
+| `quenching-docs-status` | The `docs`-front's only **read-only** view (`/docs:status`): every conformance finding in the validator's own codes, plus bundle **density** — concept docs per home (empty homes shown as `0`), glossary size, which `standards/` subjects hold anything — split into what `/docs:align` fixes, what `/docs:align-and-update` drives, and what neither closes. Density figures carry **no finding code**, so a bundle that passes every check while knowing nothing is visible without becoming a defect list. Writes nothing (no `Write`/`Edit` in `allowed-tools`); owns no contract, cites `conformance.md` + `cycle.md`. The `docs` counterpart of `quenching-specs-status`. |
 | `quenching-skill-new` | Mints or edits ONE skill in a target's local automation surface (`.claude/skills/` + `.claude/commands/`): single-axis classification (domain-bound × generic), canonical name, mirrored command wrapper, writing doctrine, OKF tail (registry GENERATED zone, glossary offer, log, self-check). One plan → one OK. Owns `references/doctrine.md` + `references/taxonomy.md`. |
+| `quenching-skill-eval` | Evaluates ONE skill (`/skill:eval`) by running its cases twice — with the skill loaded and without — in isolated sub-agents, grading every assertion against **quoted evidence**, and reporting the delta over pass rate, tokens and duration. Writes `evals/evals.json` beside the skill plus a per-case `grading.json` and a `benchmark.json`; a skill whose delta is **zero is reported as teaching nothing**, never quietly passed. Description tuning runs on measured should-trigger / should-not-trigger rates, never on taste. Not for: minting or editing a skill → `quenching-skill-new`; the mechanical conformance checks → `skills.py lint`. |
 | `quenching-skill-align` | The sweep counterpart: read-only inventory of the existing skill/command surface, ONE migration plan (renames, wrapper mirroring, rule + registry from the molds when missing; keep-and-report unroutables; deletion only on human word), one OK (code-coupled renames individually), post-apply verification. Cites the sibling's references. |
 | `quenching-docs-align-and-update` | The `docs`-front conductor: runs `align` → `import-memory` → `harness` → `glossary-backfill` as a dependency pipeline, pass after pass, until a fixpoint (nothing changes and the validator is clean) or a pass cap. (`import` and `quenching-docs-documentation-build` are on-demand tools, not loop stages.) |
 | `quenching-skill-align-and-update` | The `.claude`-front conductor: Stage 1 `quenching-skill-align`, Stage 2 a **read-only doctrine audit of every skill body** — the one thing the align is forbidden to touch — reported with the `/skill:new` that fixes it, never rewritten. No out-of-band store to drain, so it converges in 1–2 passes and says so. |

@@ -14,9 +14,8 @@ description: >-
   plan's tasks → quenching-specs-plan-apply; revising a plan already in specs/ →
   quenching-specs-plan-update.
 when_to_use: >-
-  promoting a Claude Code native plan file (~/.claude/plans/*.md, or a given path) into a
-  specs/ plan so it can be built and archived. Generating a plan from scratch is
-  quenching-specs-plan-propose; implementing one is quenching-specs-plan-apply.
+  promoting a Claude Code native plan file (~/.claude/plans/*.md, or a given path) into a specs/
+  plan so it can be built and archived.
 allowed-tools: Read, Write, Edit, Bash(python3:*), Bash(py:*), Glob, Grep, AskUserQuestion, Skill
 user-invocable: false
 ---

@@ -114,6 +114,18 @@ One authority per concern is the rule that made the rest of this plugin coherent
   repo to specify without guessing. It is decided by running `/docs:status` against two or three
   adopting repos and seeing whether the empty-home rows read as signal or as wallpaper; the
   outcome routes to a follow-up plan, not to this one. Task 5.3 records the observation.
+
+  **Observation from task 4.5 (n=1, this repository).** The zeros read as **signal**, decisively:
+  four of six homes and seven of ten `standards/` subjects are installed and empty, against five
+  concept docs — while the validator reports nothing a sweep would fix. The density table is the
+  only part of the report carrying information, which is exactly the failure the plan was written
+  against. Two caveats keep this from settling the decision. First, this repo is the pathological
+  case — it *authored* the mold, so it has every home the mold installs and content for almost
+  none; an adopting repo scaffolds only its applicable homes and would show fewer, more meaningful
+  zeros. Second, the sharper form ("empty **and** the repo clearly contains code that subject
+  governs") is untested here, because a plugin repo has no `mlops/` or `data-modeling/` code to
+  contradict the emptiness. The decision still needs two or three adopting repos; this run
+  confirms only that the figures are worth printing, not how they should be scored.
 - **Whether `resource-unresolved` should understand glob syntax beyond `*`/`**`.** The five
   observed values use only those two, so the plan implements only those and reports anything it
   cannot parse as unresolved-unknown rather than as a violation. Decided by the first target repo

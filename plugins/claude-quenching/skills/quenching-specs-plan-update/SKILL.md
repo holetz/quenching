@@ -11,8 +11,7 @@ description: >-
   quenching-specs-plan-propose; carrying a revised plan into code → quenching-specs-plan-apply;
   a durable rule/decision straight into docs/ → quenching-docs-add/quenching-docs-learn.
 when_to_use: >-
-  revising an existing plan's planning artifacts and keeping them coherent. Creating artifacts
-  is quenching-specs-plan-propose; implementing is quenching-specs-plan-apply.
+  revising an existing plan's planning artifacts and keeping them coherent.
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Glob, Grep, Write, Edit, AskUserQuestion
 user-invocable: false
 ---

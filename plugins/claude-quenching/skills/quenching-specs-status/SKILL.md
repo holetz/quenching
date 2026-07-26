@@ -15,8 +15,7 @@ description: >-
   --plan.
 when_to_use: >-
   answering "where does the specs front stand" without writing anything, and previewing what a
-  sweep would do. Fixing structure is quenching-specs-align; driving the cycle is
-  quenching-specs-align-and-update.
+  sweep would do.
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 user-invocable: false
 effort: low

@@ -48,14 +48,14 @@ confirms on its own, always — and inside a conducted run, so does every **plan
 That contract lives once, in
 [`quenching-align-and-update-all/references/convergence.md`](skills/quenching-align-and-update-all/references/convergence.md).
 
-## The twenty-eight skills
+## The thirty skills
 
 Every skill is `user-invocable: false` (hidden from the `/` menu) and paired with a thin
-**command wrapper**. All twenty-eight share one `quenching-<front>-<object>-<verb>` taxonomy and
-split by front: `/docs:*` for the ten that act on the OKF `docs/` bundle (one nested a level
+**command wrapper**. All thirty share one `quenching-<front>-<object>-<verb>` taxonomy and
+split by front: `/docs:*` for the eleven that act on the OKF `docs/` bundle (one nested a level
 deeper at `/docs:documentation:build`), `/specs:*` for the thirteen that act on the native `specs/`
 workspace (the plan skills under `/specs:plan:*`, the inbox under `/specs:backlog:*`), `/skill:*`
-for the three that act on the target's `.claude/` automation surface, and the root `/align` +
+for the four that act on the target's `.claude/` automation surface, and the root `/align` +
 `/align-and-update` for the two that span all three fronts. Claude still auto-routes to a skill by
 its `description`; the wrappers under `commands/` are the explicit user entry points.
 
@@ -207,6 +207,24 @@ here. Move, never copy: after the run each fact lives in exactly one place.
 
 Triggers: *"refactor CLAUDE.md"*, *"slim down CLAUDE.md"*, *"move CLAUDE.md content into
 docs"*, *"make CLAUDE.md point to the knowledge base"*, *"align CLAUDE.md/AGENTS.md with docs/"*.
+
+### `quenching-docs-status` — read the bundle, change nothing
+
+The `docs/` front's only read-only view (`/docs:status`), and the counterpart of
+`quenching-specs-status`. It reports every conformance finding in the validator's own codes and
+the bundle's **density** — concept docs per home with empty homes shown as `0`, glossary size,
+which `standards/` subjects hold anything — then splits it into what `/docs:align` would fix on
+one OK, what `/docs:align-and-update` would then drive, and what neither closes because it needs
+a human.
+
+Density figures carry **no finding code**, deliberately: a bundle can pass every check while
+holding scaffolded-but-empty homes and a placeholder glossary, and that is a signal worth seeing
+but not a defect list to chase. It writes nothing — `allowed-tools` carries no `Write` or `Edit`,
+which is the enforcement rather than a promise — and owns no contract, citing `conformance.md`
+and `cycle.md` so the preview and the sweep cannot disagree.
+
+Triggers: *"what's the status of the docs"*, *"how healthy is the knowledge base"*, *"show me the
+docs dashboard"*, *"what would /docs:align do"*, *"is the bundle conformant"*.
 
 ### `quenching-docs-documentation-build` — create/update the documentation **site**
 
@@ -541,7 +559,7 @@ and identical in every adopting repo:
 
 | Manual | Installed by | Covers |
 | --- | --- | --- |
-| `docs/QUENCHING.md` | `quenching-docs-align` | the "I want to → run this" table, the homes and `type` vocabulary, the ten `/docs:*` commands, the shared operating model (one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
+| `docs/QUENCHING.md` | `quenching-docs-align` | the "I want to → run this" table, the homes and `type` vocabulary, the eleven `/docs:*` commands, the shared operating model (one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
 | `specs/QUENCHING.md` | `quenching-specs-align` | the workspace layout, the capture → triage → explore → propose → apply → archive → distill lifecycle (and the abandon and from-claude branches off it), the thirteen `/specs:*` commands, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, the backlog contract and its ledger's two meanings |
 | `.claude/QUENCHING.md` | `quenching-skill-align` | the single taxonomy axis, naming and mirroring, `/skill:new` + `/skill:align`, the rule + registry artifacts, hook/settings hygiene |
 
@@ -560,7 +578,7 @@ The plugin keeps its context and token footprint predictable on three levels:
 
 1. **Always-on metadata (shared cap).** Every skill's `description` + `when_to_use` is
    loaded into context each session, and Claude Code truncates each skill at **1,536
-   combined characters** — a budget shared with every other installed plugin. All twenty-eight
+   combined characters** — a budget shared with every other installed plugin. All thirty
    skills fit under the cap and carry their verbatim trigger phrases in the **second**
    sentence, so truncation can never eat them.
 2. **Body on invocation.** A `SKILL.md` body loads only when the skill runs; every body

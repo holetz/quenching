@@ -2,24 +2,22 @@
 name: quenching-specs-align
 description: >-
   Forces a repository's specs/ workspace into the canonical shape this plugin defines — the
-  sweep counterpart of quenching-docs-align, for the spec-driven surface instead of docs/.
+  sweep counterpart of quenching-docs-align.
   Use when the user asks to "align specs", "align the specs workspace", "scaffold specs",
   "make specs conformant", "clean up specs/", "normalize the backlog and the plans", or
-  "migrate openspec to specs". Scaffolds specs/ by copying the plugin's assets when absent,
-  installs specs.py, runs specs.py doctor/validate and applies their DECLARED remedies,
-  normalizes plan and archive names (kebab-case, YYYY-MM-DD-<name>), seeds and stamps the
-  specs/backlog/ inbox (type: task) and regenerates its derived index zone, migrates a legacy
-  openspec/ workspace to specs/ (one-way), and removes CLI-generated shadow copies. Cycle
+  "migrate openspec to specs". Scaffolds specs/ from the plugin's assets, installs specs.py,
+  applies doctor/validate's DECLARED remedies, normalizes plan and archive names, seeds and
+  stamps the backlog inbox and regenerates its zone, and migrates a legacy openspec/
+  workspace one-way. Cycle
   actions are REPORTED, never driven — a complete-but-unarchived plan routes to
   quenching-specs-plan-archive, untriaged tasks to quenching-specs-backlog-triage. ONE plan,
-  one confirmation; a rename reaching product code confirms on its own. Not for: aligning
+  one confirmation. Not for: aligning
   docs/ → quenching-docs-align; the rest of the .claude surface → quenching-skill-align; all
   three fronts at once → quenching-align-all; driving the cycle actions this one only reports
   → quenching-specs-align-and-update.
 when_to_use: >-
-  installing and force-aligning a repo's specs/ workspace to the canonical shape in one
-  plan → one OK. The docs/ bundle is quenching-docs-align; the .claude surface is
-  quenching-skill-align; all three in sequence is quenching-align-all.
+  installing and force-aligning a repo's specs/ workspace to the canonical shape in one plan →
+  one OK.
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash, Write, Edit, Task
 user-invocable: false
 ---

@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-07
+timestamp: 2026-07-25
 audience: both
 authority: current
 source: claude-quenching skeleton
@@ -32,8 +32,18 @@ sentence, and **link out** rather than explaining in full here.
 
 ## Terms
 
-- **_(seed — replace with this repo's first term)_** — _one-sentence meaning in this repo,
-  linked to its concept doc once one exists_
+- [**Failure budget**](../standards/workflows/task-execution.md) — the five attempts a single task
+  gets before implementation stops retrying it and reports it blocked, with a re-read of the
+  touched files at two consecutive failures.
+- [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task at
+  propose time declaring it may run concurrently with its group, honoured only when
+  `specs.py parallel` proves the group's `files:` sets disjoint; never inferred while applying.
+- [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
+  entry a plan's `.specs.json` gains once it has been interrogated, whose absence raises the
+  non-gating `sp-unrefined` warning.
+- [**Verification policy**](../standards/workflows/task-execution.md) — the per-plan declaration
+  (`per-task`, `per-section`, `end-of-plan`) written at propose time that decides when a task's
+  `verify:` command runs, so implementation never guesses and never asks mid-task.
 
 ## How to enrich
 

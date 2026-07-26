@@ -52,6 +52,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | --- | --- |
 | [command-surface.md](naming/command-surface.md) | How the plugin's skills and command wrappers are named, namespaced, and paired one-to-one |
 
+### quality/
+
+| Doc | Covers |
+| --- | --- |
+| [bundle-verification.md](quality/bundle-verification.md) | What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, and the resource glob-set format |
+
 ### workflows/
 
 | Doc | Covers |

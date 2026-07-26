@@ -13,8 +13,6 @@ description: >-
   stated fact into docs/ → quenching-docs-learn or quenching-docs-add.
 when_to_use: >-
   open-ended thinking, investigation, and requirement clarification before or during a plan.
-  Generating artifacts is quenching-specs-plan-propose; implementation is
-  quenching-specs-plan-apply.
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Glob, Grep, Write, Edit, AskUserQuestion
 user-invocable: false
 ---
