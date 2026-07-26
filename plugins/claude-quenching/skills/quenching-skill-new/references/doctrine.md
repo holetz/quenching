@@ -3,7 +3,29 @@
 How a `SKILL.md` earns its place in a target repo's context. `quenching-skill-new` applies this
 doctrine to every skill it mints or edits; `quenching-skill-align` cites it when judging
 conformance gaps. Adapted from mattpocock/skills' `writing-great-skills`, folded into this
-plugin's own constraints (the description cap, the references/ pattern, the plan → OK gate).
+plugin's own constraints (the description caps, the references/ pattern, the plan → OK gate).
+
+**This file owns the judgement; the tool owns the thresholds.** Every number a rule below depends
+on — the two description caps, the body line limit, trigger position, the `Not for:` boundary —
+lives in `docs/standards/automation/context-budget.md` and `docs/standards/automation/skills.md`,
+and is checked by `skills.py lint` under a stable `sk-*` code. This file names the code and never
+restates the number, so the rule and its checker cannot drift apart.
+
+| Doctrine rule | Checked by | Code |
+| --- | --- | --- |
+| Triggers in the second sentence | `lint` | `sk-trigger-position` |
+| The `Not for:` boundary is present | `lint` | `sk-no-boundary` |
+| The metadata fits Claude Code's cap | `lint` | `sk-metadata-cap` (error) |
+| The description is portable | `lint` | `sk-description-portable` |
+| The body stays under the size cap | `lint` | `sk-body-length` |
+| Every numbered step has a criterion | `lint` | `sk-step-criterion` |
+| `allowed-tools` is scoped | `lint` | `sk-unscoped-bash` |
+| Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value` |
+| **The no-op test, sediment, sprawl, positive prescription** | **a reader** | — |
+
+The last row is the boundary. Each of those needs a claim about how an agent would *behave*, and
+no parser makes one. They are why this file exists, and why a clean `lint` is a floor rather than
+a verdict.
 
 ## Predictability is the root virtue
 
@@ -37,10 +59,11 @@ level that still reaches it in time:
 ## Steps carry checkable completion criteria
 
 A step is done when a stated condition is observable — a file exists, a diff is empty, a
-command exits 0, a table matches disk. "Handle the edge cases" is not a step; "the
-GENERATED zone diffs clean against `.claude/skills/`" is. A skill whose last step has a
-checkable criterion cannot end early and call itself done — that is the guard against
-premature conclusion.
+command exits 0, a table matches disk. "Handle the edge cases" is not a step;
+"`skills.py registry reindex` reports `changed: false`" is. Write the criterion as
+`**Done when:** …` — that literal marker is what `lint` counts (`sk-step-criterion`). A skill
+whose last step has a checkable criterion cannot end early and call itself done — that is the
+guard against premature conclusion.
 
 ## The no-op test
 
@@ -67,6 +90,6 @@ Judge a draft (and an existing skill under review) against these six; each has a
 | **Premature conclusion** | The skill can claim "done" while work remains | End-state criteria per step; a final self-check step that diffs the promise against disk |
 | **Duplication** | Procedure restated from another skill or doc | Cite the owner's `references/` file; one owner per fact |
 | **Sediment** | Lines surviving edits that no longer change behavior | Re-run the no-op test on every edit; delete with the edit that obsoleted them |
-| **Sprawl** | Body creeping toward the context it was meant to save | Push doctrine down the hierarchy; body stays well under 500 lines; description within the per-skill cap |
+| **Sprawl** | Body creeping toward the context it was meant to save | Push doctrine down the hierarchy; `lint` reports the caps (`sk-body-length`, `sk-metadata-cap`) — staying *well* under them is the judgement it cannot make |
 | **No-op** | A line no input can distinguish from its absence | The no-op test, at mint and at every edit |
 | **Negation** | Rules phrased as prohibitions with no stated target | Rewrite positively; keep negation only for hard invariants with consequences |

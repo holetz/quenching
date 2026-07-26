@@ -7,6 +7,13 @@ repo the rule itself lives at `docs/standards/automation/skills.md` (stamped fro
 `assets/templates/automation/skills-standard.md`); this file is the plugin-side owner both
 skills load, and the standard the target carries says the same thing.
 
+**Three facts this file no longer states, because each has one owner that executes.** The
+invocation/permission decision table and the scoped-`allowed-tools` rule live in
+`docs/standards/automation/skills.md`; the metadata caps and the surface ceiling in
+`docs/standards/automation/context-budget.md`; the registry zone's row format in
+`skills.py registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
+restated threshold.
+
 ## The single axis
 
 Every skill is classified on **exactly one axis** with two values:
@@ -60,23 +67,30 @@ the mirrored-wrapper mechanism above, keeping `.claude/` auditable in one place.
 
 The registry at `docs/documentation/reference/automation.md` (`type: documentation`,
 stamped from `assets/templates/automation/registry.md`) is the bundle's authoritative
-listing of the local automation surface. Its derived zone:
+listing of the local automation surface.
 
-- Sits between the markers `<!-- GENERATED:BEGIN -->` and `<!-- GENERATED:END -->`;
-  **curated prose** (how the surface is organized, a link to the rule, pointers to
-  installed plugins) lives **outside** the markers and is never touched by regeneration.
-- Holds one table: `| Command | Skill | Serves | Typical trigger |`. Per row: the
-  invocation (`/communications:teams:create`; `—` for a wrapperless generic skill), the
-  skill name, the folder it serves (`communications/teams/` — or `generic`), and the first
-  quoted trigger phrase from the skill's description.
-- Rows are **ordered by the Command column** (byte order); wrapperless rows (`—`) sort
-  last, ordered by Skill.
-- Is **derived exclusively** from the local `.claude/skills/*/SKILL.md` frontmatter — the
-  zone lists the repo's own surface only; commands contributed by installed plugins
-  (e.g. `/specs:*`, marketplace plugins) stay out of the zone and may be pointed at from the
-  curated prose.
-- Has exactly two writers: **`quenching-skill-new` and `quenching-skill-align` are the owning
-  skills of the zone** — they regenerate it in their tails, and the rule the target repo
-  carries declares them its only editors. The self-check in both skills diffs the zone
-  against `.claude/skills/*/SKILL.md` and regenerates on any mismatch, so a hand edit
-  inside the markers is repaired, not accumulated.
+**`skills.py registry reindex` owns the zone's format.** The row shape, the column
+order, the sort, and the placeholders are the tool's, exactly as `specs.py backlog
+reindex` owns the backlog listing's — so the format is stated in one place that
+executes, not in prose two skills reproduce by hand. To see the current shape, run the
+tool; to change it, change the tool.
+
+What this file still owns, because no tool decides it:
+
+- **Where the zone may live.** Between `<!-- GENERATED:BEGIN -->` and
+  `<!-- GENERATED:END -->`, and nowhere else. **Curated prose** — how the surface is
+  organized, a link to the rule, pointers to installed plugins — lives **outside** the
+  markers and is never touched by regeneration. A registry with no markers is
+  `sk-no-zone`: the tool refuses rather than placing a table at a guessed anchor inside
+  prose a human wrote.
+- **What the zone is derived from.** The local `.claude/skills/*/SKILL.md` frontmatter,
+  and only that: the zone lists the repo's **own** surface. Commands contributed by
+  installed plugins (`/specs:*`, marketplace plugins) stay out of it and may be pointed
+  at from the curated prose.
+- **Who may run the regeneration.** `quenching-skill-new` (in its OKF tail) and
+  `quenching-skill-align` (in its verify step). Neither writes between the markers by
+  hand, and neither composes the table itself — a skill that generates a derived table
+  and then diffs it against its own source is one reader checking its own arithmetic,
+  which is the failure this tool exists to remove. Both end their run on a second
+  `registry reindex` reporting `changed: false`; a hand edit inside the markers is
+  therefore repaired, not accumulated.

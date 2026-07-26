@@ -11,6 +11,13 @@ There is **no delta spec and no sync**. A plan proves its durable rules straight
 scope. Two things in these files are machine contracts — the `tasks.md` checkboxes and the one
 parsed sub-heading of `## Impact` — and everything else is prose for a human reviewer.
 
+## Contents
+
+- [The explicit-none rule](#the-explicit-none-rule)
+- [`proposal.md` — required, no dependencies](#proposalmd--required-no-dependencies)
+- [`design.md` — required-with-explicit-fallback, depends on `proposal`](#designmd--required-with-explicit-fallback-depends-on-proposal)
+- [`tasks.md` — required, depends on `proposal`](#tasksmd--required-depends-on-proposal)
+
 ## The explicit-none rule
 
 Every section of `proposal.md` and `design.md` is **required-with-explicit-fallback**: the heading

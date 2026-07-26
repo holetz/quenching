@@ -61,15 +61,34 @@ file, not authored knowledge).
 - Every **`log.md`**            → entries under `## YYYY-MM-DD` headings, newest
   first (no date heading → WARN; ascending order → WARN); a `type` here → ERROR.
 
+RESOURCE INTEGRITY (per-doc; WARN — a doc that is provably lying about itself)
+- **`resource-unresolved`** a path- or glob-shaped `resource` entry matching nothing
+  on disk. `uri` entries are never resolved, and an entry carrying glob syntax this
+  validator does not implement is classified `unknown` and never reported.
+- **`resource-self`** the doc's own path falls inside the scope its `resource`
+  declares. Such a doc governs nothing and is eternally fresh, which is what makes
+  the rule load-bearing rather than cosmetic.
+
 STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`dir-no-index`**      a directory holds concept docs but has no `index.md` listing.
 - **`index-broken-link`** an `index.md` links to a `.md`/dir that does not exist on disk.
 - **`index-orphan`**      a concept doc nothing links to (unlisted / not discoverable).
+- **`glossary-broken-link`** the same link rule applied to `knowledge/glossary.md`,
+  whose links ARE its content — a dead entry is a dead lookup, and `index-broken-link`
+  never reached it because the glossary is a concept doc, not an `index.md`.
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
 synthesize a missing index); the `quenching-docs-align`/`quenching-docs-add` skills treat them as must-fix
 in their own verify gate. `_`-prefixed, dot, and asset dirs are pruned from the whole
 bundle walk (they hold private/raw sidecar content, never OKF concepts), and every
 whole-tree check consumes ONE shared read pass over the tree (`_build_corpus`).
+
+STALENESS (CLI only — advisory, never blocking)
+- **`stale-doc`** the doc's `timestamp` predates the last commit touching the code its
+  `resource` globs name (`git log -1 --format=%cI`, explicit `:(glob)` pathspec magic).
+  It is **advisory and part of no verify gate**: unlike the integrity codes, a
+  stale-looking doc may be perfectly correct, because code moves under a rule that did
+  not change. It runs in CLI mode only — never `PostToolUse`, never `Stop` — since it
+  shells out once per doc, and a tree that is not a git checkout skips it silently.
 
 Config (`hooks-config.json` + `hooks-config.local.json`, block `okfValidate`):
   enabled, docsDir, warnAsError, blockOnFail, hardBlock, deadlineMs, stopScan.
@@ -77,25 +96,32 @@ An empty/absent config uses the defaults below; `enabled: false` makes the hook 
 
 Trust note: hook config is executable code with shell privileges. This script reads
 the touched path/content and prints; the only thing it ever writes is the dirty-marker
-stamp file in the system temp dir. Version and review it like infra.
+stamp file in the system temp dir. In **CLI mode only** it additionally shells out to
+`git log`/`git rev-parse` (read-only, timeout-bounded) for `stale-doc`; the hook paths
+never spawn a subprocess. Version and review it like infra.
 """
 from __future__ import annotations
 
 import fnmatch
+import glob
 import hashlib
 import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
 import time
 
-VERSION = "1.1.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
+VERSION = "1.2.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
 RESERVED = ("index.md", "log.md")
+# The bundle's one fixed concept doc, at a path the OKF contract pins. Its links are
+# its content, so it is link-checked alongside the reserved listings.
+GLOSSARY_REL = "knowledge/glossary.md"
 # Navigation/payload files — never OKF concepts, never required to carry a `type`.
 # `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness; `QUENCHING.md`
 # is the operator manual the `claude-quenching` aligns install beside each front they
@@ -105,8 +131,23 @@ RECOMMENDED = ("title", "description", "resource", "timestamp")
 # Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
 # A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
 # the key on purpose). Every other type anchors to code, an asset, or a URI.
+# The sibling case — a doc that HAS a resource whose honest scope is the whole bundle — is
+# handled by the bundle-aggregate exemption in `check_resource`, the same mechanism
+# generalized rather than a second one.
 TYPES_WITHOUT_RESOURCE = ("task",)
+# Glob metacharacters `parse_resource` does not implement. An entry carrying one is
+# classified `unknown` and never reported as a violation — see `parse_resource`.
+UNSUPPORTED_GLOB_CHARS = ("{", "}", "[", "]", "?")
+# `resource` kinds resolved against the checkout. `uri` points outside it and `unknown`
+# carries syntax this validator does not implement, so neither is ever judged. Defined
+# ONCE: every consumer must agree on which kinds it may judge, or a kind added later is
+# silently in-scope for one check and out-of-scope for another.
+RESOLVABLE_KINDS = ("path", "glob")
 DATE_HEADING = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\b")
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# Seconds `stale-doc` waits on one `git log`. CLI-only, but a pathological repo must
+# not hang an operator's sweep; a timeout yields no finding rather than a wrong one.
+GIT_TIMEOUT_S = 10
 # Directories that never need an `index.md` and hold no OKF concepts: `_`-prefixed
 # private/raw sidecar folders (`_curadoria/`, `_azimutt/`), dotfolders, and common
 # asset dirs. Pruned from the structural walk (dir-index / broken-link / orphan).
@@ -222,6 +263,235 @@ def parse_frontmatter(text: str):
 
 def _nonempty(fm: dict, key: str) -> bool:
     return bool(str(fm.get(key, "")).strip())
+
+
+def _is_uri(value: str) -> bool:
+    """True for a scheme-bearing target (`https://…`, `mailto:…`) — something that
+    points outside the checkout and is never resolved against disk."""
+    return "://" in value or value.lower().startswith(("mailto:", "tel:"))
+
+
+def parse_resource(value: str) -> list[tuple[str, str]]:
+    """Split a `resource` value into `(entry, kind)` pairs, in written order.
+
+    A comma-separated list of globs and paths is a *plugin convention*, not an OKF
+    rule — three of the five real values in this repo's own bundle are lists and
+    nothing documented the format, so it is parsed here and stated in
+    `docs/standards/quality/bundle-verification.md`.
+
+    kind is one of:
+      `path`    a plain repo-root-relative path.
+      `glob`    a path carrying `*` / `**`, the only two wildcards implemented.
+      `uri`     a scheme-bearing target — outside the checkout, never resolved.
+      `unknown` carries glob syntax this validator does not implement (braces,
+                character classes, `?`). Reported as unknown, NEVER as a
+                violation: no observed value uses them, and guessing at syntax
+                nobody writes would turn a WARN into noise.
+    """
+    out: list[tuple[str, str]] = []
+    for raw in str(value or "").split(","):
+        entry = raw.strip()
+        if entry:
+            out.append((entry, _resource_kind(entry)))
+    return out
+
+
+def _resource_kind(entry: str) -> str:
+    if _is_uri(entry):
+        return "uri"
+    if any(ch in entry for ch in UNSUPPORTED_GLOB_CHARS):
+        return "unknown"
+    return "glob" if "*" in entry else "path"
+
+
+def _project_root(bundle_root: str) -> str:
+    """The checkout root a `resource` entry is written relative to — the bundle's
+    parent. Every observed value is repo-root-relative (`docs/**`,
+    `plugins/…/SKILL.md`), including in the shipped skeleton, where the bundle sits
+    at `assets/docs` and `docs/**` still resolves to that bundle."""
+    return os.path.dirname(os.path.abspath(bundle_root))
+
+
+def _resource_resolves(entry: str, kind: str, project_root: str) -> bool:
+    """True when the entry matches at least one path in the checkout.
+
+    Stops at the FIRST hit (`iglob`, not `glob`): answering "does this resolve?"
+    runs on every concept doc in the hook path, and materializing every match of a
+    `docs/**` would walk the whole tree once per doc under the Stop deadline.
+    `glob.escape` covers a checkout whose own path contains a glob metacharacter.
+    """
+    if kind == "glob":
+        pattern = os.path.join(glob.escape(project_root), entry)
+        return next(glob.iglob(pattern, recursive=True), None) is not None
+    return os.path.exists(os.path.join(project_root, entry))
+
+
+_GIT_CHECKOUT: dict[str, bool] = {}
+
+
+def _is_git_checkout(project_root: str) -> bool:
+    """Whether `project_root` sits inside a git work tree. Cached per process, so a
+    whole-tree sweep asks once per bundle rather than once per doc — a repo that is
+    not a checkout would otherwise pay one failed subprocess per concept doc."""
+    key = os.path.abspath(project_root)
+    if key not in _GIT_CHECKOUT:
+        try:
+            proc = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"],
+                                  cwd=key, capture_output=True, text=True,
+                                  timeout=GIT_TIMEOUT_S)
+            _GIT_CHECKOUT[key] = proc.returncode == 0 and proc.stdout.strip() == "true"
+        except (OSError, subprocess.SubprocessError):
+            _GIT_CHECKOUT[key] = False
+    return _GIT_CHECKOUT[key]
+
+
+def _git_last_commit_date(entries: list[str], project_root: str) -> str | None:
+    """Newest committer date (`YYYY-MM-DD`) across the entry globs, or None when
+    the answer cannot be trusted — not a git checkout, git absent, no commit
+    touching the scope, or the call timed out.
+
+    Pathspecs carry explicit **`:(glob)`** magic. Git's default wildmatch lets a
+    single `*` cross a slash, so a naive `src/*` silently widens to everything
+    under `src/` and reports a perfectly current doc as stale; `:(glob)` gives the
+    same segment-wise semantics `_glob_contains` implements for `resource-self`,
+    so one glob means one thing across the whole checker. The fixture's
+    `shallow.md` pins this: it is silent under `:(glob)` and a false positive
+    without it.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "log", "-1", "--format=%cI", "--"] + [f":(glob){e}" for e in entries],
+            cwd=project_root, capture_output=True, text=True, timeout=GIT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip()[:10] or None
+
+
+def check_stale(text: str, bundle_root: str) -> list[tuple[str, str, str]]:
+    """`stale-doc` — the doc's `timestamp` predates the last commit touching the
+    code its `resource` governs.
+
+    **Advisory, and never must-fix.** Unlike the integrity codes, a stale-looking
+    doc may be perfectly correct: code moves under a rule that did not change.
+    Conflating the two would make the must-fix set unusable, since every mature
+    bundle carries some legitimately stale-looking doc.
+
+    Bundle-aggregate entries are excluded on the same mechanism as `resource-self`:
+    a scope containing the whole bundle contains the doc, so it is touched whenever
+    the doc itself is, and would report fresh forever.
+    """
+    fm, _, _ = parse_frontmatter(text)
+    if not _nonempty(fm, "resource") or not _nonempty(fm, "timestamp"):
+        return []
+    stamped = str(fm["timestamp"]).strip()[:10]
+    if not ISO_DATE.match(stamped):
+        return []          # a non-ISO timestamp is `missing-timestamp`'s business, not ours
+    project_root = _project_root(bundle_root)
+    if not _is_git_checkout(project_root):
+        return []          # no history to compare against — skip silently, never report
+    bundle_rel = _rel_to_project(bundle_root, project_root)
+    entries = [e for e, kind in parse_resource(fm["resource"])
+               if kind in RESOLVABLE_KINDS and not _is_bundle_aggregate(e, kind, bundle_rel)]
+    if not entries:
+        return []
+    last = _git_last_commit_date(entries, project_root)
+    if last and last > stamped:
+        return [("WARN", "stale-doc",
+                 f"`timestamp` {stamped} predates the last commit touching its `resource` "
+                 f"({last}) — the doc may no longer describe what it governs")]
+    return []
+
+
+def _glob_contains(pattern: str, rel_path: str) -> bool:
+    """Segment-wise match of a `*`/`**` glob against a forward-slash relative path.
+
+    `fnmatch` is deliberately NOT used for this: its `*` also matches `/`, so
+    `docs/*` would claim to contain `docs/standards/x.md` and raise a false
+    `resource-self` — and since the skills treat every WARN as must-fix, a false
+    positive here costs more than a missed one. `*` matches inside one segment;
+    `**` matches any number of segments, including none.
+    """
+    pat = [p for p in pattern.strip("/").split("/") if p]
+    parts = [p for p in rel_path.strip("/").split("/") if p]
+
+    def walk(pi: int, si: int) -> bool:
+        while pi < len(pat):
+            if pat[pi] == "**":
+                if pi + 1 == len(pat):
+                    return True                     # a trailing `**` swallows the rest
+                return any(walk(pi + 1, k) for k in range(si, len(parts) + 1))
+            if si >= len(parts) or not fnmatch.fnmatch(parts[si], pat[pi]):
+                return False
+            pi += 1
+            si += 1
+        return si == len(parts)
+
+    return walk(0, 0)
+
+
+def _entry_contains(entry: str, kind: str, rel_doc: str) -> bool:
+    """True when `rel_doc` falls inside the scope the entry declares."""
+    if kind == "glob":
+        return _glob_contains(entry, rel_doc)
+    ent = entry.strip("/")
+    return rel_doc == ent or rel_doc.startswith(ent + "/")
+
+
+def _rel_to_project(target: str, project_root: str) -> str:
+    """`target` as a forward-slash path relative to the checkout root."""
+    return os.path.relpath(os.path.abspath(target), project_root).replace(os.sep, "/")
+
+
+def _is_bundle_aggregate(entry: str, kind: str, bundle_rel: str) -> bool:
+    """True when the entry's scope covers the whole bundle rather than merely this doc.
+
+    Both `resource-self` and `stale-doc` exempt these, for the same reason: a scope
+    containing the bundle root contains every doc in it, so it is touched whenever the
+    doc itself is. Named once so the two checks cannot drift on what "aggregate" means.
+    """
+    return _entry_contains(entry, kind, bundle_rel)
+
+
+def check_resource(text: str, path: str, bundle_root: str) -> list[tuple[str, str, str]]:
+    """`resource` integrity for one concept doc, as (severity, code, message).
+
+    `uri` and `unknown` entries are skipped rather than reported: neither can be
+    resolved against the checkout, and flagging a glob syntax this validator never
+    implemented would be exactly the noise `parse_resource` classifies it to avoid.
+
+    **The bundle-aggregate exemption.** An entry whose scope contains the bundle
+    ROOT is an aggregate, not a mistake, and never raises `resource-self`. This is
+    `TYPES_WITHOUT_RESOURCE` generalized — from "types with nothing to point at" to
+    "docs whose honest scope is bundle-wide" — so the front keeps ONE exemption
+    mechanism rather than two. `knowledge/glossary.md` really does govern the whole
+    bundle, so `resource: docs/**` is truthful and inventing a narrower scope to
+    silence the check would be the fabrication. The discrimination is mechanical
+    and needs no hardcoded path: a scope containing the bundle root contains every
+    doc in it, while a narrower scope that still contains the doc
+    (`docs/standards/**` on a standards doc) stays a real finding.
+    """
+    fm, _, _ = parse_frontmatter(text)
+    if not _nonempty(fm, "resource"):
+        return []          # absent, empty, or unparseable frontmatter — nothing to resolve
+    project_root = _project_root(bundle_root)
+    rel_doc = _rel_to_project(path, project_root)
+    bundle_rel = _rel_to_project(bundle_root, project_root)
+    out: list[tuple[str, str, str]] = []
+    for entry, kind in parse_resource(fm["resource"]):
+        if kind not in RESOLVABLE_KINDS:
+            continue
+        if not _resource_resolves(entry, kind, project_root):
+            out.append(("WARN", "resource-unresolved",
+                        f"`resource` entry `{entry}` matches nothing on disk"))
+        elif _entry_contains(entry, kind, rel_doc) and \
+                not _is_bundle_aggregate(entry, kind, bundle_rel):
+            out.append(("WARN", "resource-self",
+                        f"`resource` entry `{entry}` contains this doc — a doc that points at "
+                        "itself governs nothing and is eternally fresh"))
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -404,8 +674,17 @@ def _resolve_link(target: str, file_dir: str, root: str):
     t = target.split("#", 1)[0].strip()
     if not t:
         return None
+    # A residual angle bracket means a template placeholder — `[<Term>](<path>.md)` in
+    # the glossary mold's own instructions. `_link_targets` already strips the markdown
+    # `[x](<url>)` wrapper, so anything still carrying `<`/`>` is a slot, not a path
+    # (both are illegal in a Windows filename and unused in this bundle's conventions).
+    # Caught here, at the one resolver both link codes share, so neither can drift:
+    # `_strip_noise` cannot remove it, since its inline-code regex is newline-excluding
+    # and the mold wraps that code span across two lines.
+    if "<" in t or ">" in t:
+        return None
     low = t.lower()
-    if "://" in t or low.startswith(("mailto:", "tel:")):
+    if _is_uri(t):
         return None
     if t.startswith("/"):
         rest = t[1:]
@@ -437,6 +716,7 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
       - `dir-no-index`      a folder holds concept docs but has no `index.md`.
       - `index-broken-link` an `index.md` links to a file/dir that does not exist.
       - `index-orphan`      a concept doc no `.md` in the bundle links to (unlisted).
+      - `glossary-broken-link` the same link rule on `knowledge/glossary.md`.
     Consumes the `_build_corpus` dict — no disk reads of its own.
     """
     findings: list[tuple[str, str, str, str]] = []
@@ -479,8 +759,16 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
             elif kind == "dir":
                 linked.add(os.path.normpath(os.path.join(path, "index.md")))
 
-    # broken links — only judged on `index.md` (the reserved listings)
-    for ap in sorted(index_md):
+    # broken links — the reserved listings, plus the fixed glossary under its own code.
+    # The glossary is the one concept doc whose links ARE its content: an entry
+    # pointing at a doc that no longer exists is a dead lookup, not a stale prose
+    # reference, and `index-broken-link` never reached it because it is not an
+    # `index.md`. Same rule, same helpers, different code — never a second walker.
+    link_checked = [(ap, "index-broken-link", "listing") for ap in index_md]
+    glossary = os.path.join(root, *GLOSSARY_REL.split("/"))
+    if glossary in corpus:
+        link_checked.append((glossary, "glossary-broken-link", "glossary entry"))
+    for ap, code, noun in sorted(link_checked):
         text = corpus.get(ap)
         if text is None:
             continue
@@ -494,11 +782,11 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
             seen.add(tgt)
             path, kind = res
             if kind == "md" and not os.path.isfile(path):
-                findings.append(("WARN", rel, "index-broken-link",
-                                 f"listing links to `{tgt}` but no such file exists"))
+                findings.append(("WARN", rel, code,
+                                 f"{noun} links to `{tgt}` but no such file exists"))
             elif kind == "dir" and not os.path.isdir(path):
-                findings.append(("WARN", rel, "index-broken-link",
-                                 f"listing links to `{tgt}` but no such directory exists"))
+                findings.append(("WARN", rel, code,
+                                 f"{noun} links to `{tgt}` but no such directory exists"))
 
     # orphans — a concept doc nothing links to (not reachable from any listing/doc)
     for ap in sorted(concept_md):
@@ -523,12 +811,18 @@ def validate_file(path: str, bundle_root: str,
 
 
 def _validate_text(path: str, text: str, bundle_root: str,
-                   listing_root: bool = False) -> list[tuple[str, str, str, str]]:
+                   listing_root: bool = False,
+                   with_stale: bool = False) -> list[tuple[str, str, str, str]]:
     """Findings for one file whose text is already in hand (no disk read).
 
     `listing_root` marks a scan whose root is NOT an OKF bundle root (a
     quenching-managed sub-tree such as `specs/backlog/`): its `index.md` is a plain
-    listing like any other, so the bundle-root exemption never applies."""
+    listing like any other, so the bundle-root exemption never applies.
+
+    `with_stale` enables `stale-doc`, and **defaults to off**: it shells out to
+    `git log` once per doc, which is fine for an on-demand sweep and unacceptable
+    under the hook path's 4-second Stop deadline. Only `run_cli` turns it on, so a
+    new hook caller cannot acquire it by forgetting to opt out."""
     rel = os.path.relpath(path, bundle_root).replace(os.sep, "/")
     base = os.path.basename(path)
     if base in EXEMPT:
@@ -545,7 +839,9 @@ def _validate_text(path: str, text: str, bundle_root: str,
         raw = [("WARN", "readme-not-index",
                 "OKF-strict uses `index.md` as the reserved listing — convert this README.md to index.md")]
     elif base.endswith(".md"):
-        raw = check_concept(text)
+        raw = check_concept(text) + check_resource(text, path, bundle_root)
+        if with_stale:
+            raw += check_stale(text, bundle_root)
     else:
         raw = []
     return [(sev, rel, code, msg) for (sev, code, msg) in raw]
@@ -553,7 +849,8 @@ def _validate_text(path: str, text: str, bundle_root: str,
 
 def validate_tree(bundle_root: str, deadline: float | None = None,
                    ignore_globs: tuple[str, ...] = (),
-                   listing_root: bool = False):
+                   listing_root: bool = False,
+                   with_stale: bool = False):
     """Validate the whole bundle from ONE read pass. Returns the findings list,
     or **None** when `deadline` (a `time.monotonic()` instant) expired mid-walk —
     hook mode aborts silently; CLI mode passes no deadline.
@@ -573,7 +870,7 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         if text is None:
             findings.append(("ERROR", os.path.basename(path), "unreadable", "cannot read file"))
         else:
-            findings.extend(_validate_text(path, text, bundle_root, listing_root))
+            findings.extend(_validate_text(path, text, bundle_root, listing_root, with_stale))
     # bundle-level SHOULDs — a listing-root sub-tree is not a bundle and owes none of them
     if not listing_root and not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
@@ -655,7 +952,9 @@ def run_cli(argv: list[str]) -> int:
     target = paths[0] if paths else cfg.get("docsDir", "docs")
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # no deadline in CLI mode — always a full scan
-    findings = validate_tree(target, ignore_globs=ignore_globs, listing_root=listing_root)
+    # `with_stale` only here: CLI is the one mode that may shell out to git per doc
+    findings = validate_tree(target, ignore_globs=ignore_globs, listing_root=listing_root,
+                             with_stale=True)
     if as_json:
         print(json.dumps([
             {"severity": s, "path": r, "code": c, "message": m} for s, r, c, m in findings

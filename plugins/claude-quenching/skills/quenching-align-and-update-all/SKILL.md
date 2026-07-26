@@ -8,15 +8,13 @@ description: >-
   repo up to date", "run the full quenching cycle on every front", "converge the repo end to
   end", or "do everything until nothing is left". ONE OK at run start authorizes the whole
   run; each front conductor inherits it and passes it down, so the human confirms once —
-  only code-coupled renames and change archives still interrupt. It loops across fronts
-  because they feed each other: archiving a change distils knowledge into docs/, which the
-  glossary must then index. Conducts, never reimplements. Not for: structure only, one pass,
+  only code-coupled renames and plan archives still interrupt. It loops across fronts
+  because they feed each other: an archive distils knowledge into docs/, which the
+  glossary must then index. Not for: structure only, one pass,
   no loop → quenching-align-all; one front → quenching-docs-align-and-update /
   quenching-specs-align-and-update / quenching-skill-align-and-update.
 when_to_use: >-
-  aligning AND updating all three fronts, looped to a cross-front fixpoint. The structural
-  one-pass version is quenching-align-all; a single front is that front's own
-  align-and-update.
+  aligning AND updating all three fronts, looped to a cross-front fixpoint.
 allowed-tools: Read, Grep, Glob, Bash, Skill
 user-invocable: false
 ---

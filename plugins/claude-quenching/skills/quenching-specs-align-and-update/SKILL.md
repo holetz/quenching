@@ -3,21 +3,19 @@ name: quenching-specs-align-and-update
 description: >-
   Aligns AND updates the specs/ front: runs quenching-specs-align, then
   quenching-specs-plan-archive (each complete plan, its own confirmation), then
-  quenching-specs-backlog-triage as a THREE-STAGE dependency pipeline, pass after pass, until a
+  quenching-specs-backlog-triage as a THREE-STAGE pipeline, pass after pass, until a
   full pass changes nothing and specs.py doctor/validate are clean. Use when the user asks to
   "align and update specs", "bring the specs workspace up to date", "close out the finished
   plans and re-rank the backlog", "run the full specs cycle", or "tidy specs end to end".
-  Where quenching-specs-align only fixes STRUCTURE and merely REPORTS the cycle actions, this
-  one DRIVES them: it archives what specs.py reports complete (distilling durable knowledge into
-  docs/) and triages the inbox. ONE OK at run start authorizes the run; each archive still
-  confirms on its own, and so does any rename reaching product code. Never proposes, never
+  Where quenching-specs-align only REPORTS the cycle actions, this one DRIVES them: it archives
+  what specs.py reports complete (distilling durable knowledge into docs/) and triages the
+  inbox. ONE OK at run start; each archive still confirms on its own. Never proposes, never
   implements, never infers completion. Not for: structure only, one pass → quenching-specs-align;
   the docs/ front → quenching-docs-align-and-update; the .claude/ front →
   quenching-skill-align-and-update; all three → quenching-align-and-update-all.
 when_to_use: >-
   aligning AND updating the specs/ front — align → archive → triage, pass after pass to a
-  fixpoint. Structure-only in one pass is quenching-specs-align; the other fronts have their
-  own align-and-update; all three at once is quenching-align-and-update-all.
+  fixpoint.
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash, Write, Edit, Task, Skill
 user-invocable: false
 ---

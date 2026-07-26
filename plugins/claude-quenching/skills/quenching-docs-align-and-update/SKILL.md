@@ -1,25 +1,22 @@
 ---
 name: quenching-docs-align-and-update
 description: >-
-  Aligns AND updates the docs/ front: runs quenching-docs-align, then quenching-docs-import-memory,
-  then quenching-docs-harness, then quenching-docs-glossary-backfill as a dependency pipeline, pass
-  after pass, until a full pass changes nothing and the validator is clean (a fixpoint).
+  Aligns AND updates the docs/ front: runs quenching-docs-align → quenching-docs-import-memory →
+  quenching-docs-harness → quenching-docs-glossary-backfill as a dependency pipeline, pass
+  after pass, until a full pass changes nothing and the validator is clean.
   Use when the user asks to "align and update the docs", "run the full quenching cycle",
   "loop the skills until the knowledge base is done", "drive the repo to OKF convergence",
   "keep aligning and capturing until nothing's left", or "auto-run
-  align/memory/harness/glossary end to end". Where quenching-docs-align only fixes STRUCTURE in
-  one pass, this also pulls CONTENT in from the two out-of-band stores (project memory, the
-  harness files) and backfills the glossary, looping until stable. ONE OK at run start
-  authorizes the whole run (code-coupled items still gate individually); each pass assesses
-  read-only, runs the applicable stages with plans narrated, re-assesses; stops at the
-  fixpoint, a pass cap, or a no-progress guard — reporting residue, never spinning. Not for:
+  align/memory/harness/glossary end to end". Where quenching-docs-align only fixes STRUCTURE,
+  this also pulls CONTENT in from the two out-of-band stores (project memory, the harness
+  files) and backfills the glossary. ONE OK at run start; it stops at the fixpoint, a pass
+  cap, or a no-progress guard. Not for:
   structure only, one pass → quenching-docs-align; the specs/ front →
   quenching-specs-align-and-update; the .claude/ front → quenching-skill-align-and-update; all
   three fronts → quenching-align-and-update-all.
 when_to_use: >-
-  aligning AND updating the docs/ front — align → memory → harness → glossary, pass after
-  pass to an OKF fixpoint. Structure-only in one pass is quenching-docs-align; all three fronts
-  is quenching-align-and-update-all.
+  aligning AND updating the docs/ front — align → memory → harness → glossary, pass after pass
+  to an OKF fixpoint.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill
 user-invocable: false
 ---

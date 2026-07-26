@@ -20,10 +20,16 @@ everywhere, exit 0/1/2, schema and templates loaded from adjacent assets with em
 an installed copy under a target's `.claude/hooks/` still works, and a `VERSION` constant kept in
 lockstep with the plugin.
 
-The measurements this design answers were taken on the current tree: 34,579 characters of skill
-metadata plus 2,072 of wrapper descriptions (36,651 total, ~9,200 tokens); two skills over the
-1,536 cap; seventeen descriptions over 1,024; eleven skills observed rendered name-only in a live
-session listing.
+The measurements this design answers were taken on the current tree: 34,431 characters of skill
+metadata plus 2,072 of wrapper descriptions (36,503 total, ~9,126 tokens); **no** skill over the
+1,536 cap (the most expensive is 1,506); seventeen descriptions over 1,024; eleven skills observed
+rendered name-only in a live session listing.
+
+Every count above — and every count `skills.py` takes — is on the **parsed** frontmatter value,
+never on the YAML source lines. A description written as a folded `>-` block costs its folded
+string; the block indentation and newlines are syntax the parser removes before Claude Code sees
+the field. The distinction is not academic: counted as source, three of these skills read over the
+1,536 cap and none of them is.
 
 ## Decisions
 
@@ -113,7 +119,7 @@ session listing.
 
 - **The numeric always-on ceiling `budget` warns at.** Decided after `budget` has run on this
   plugin plus at least two adopting repos; until then the standard carries the measured baseline
-  (36,651 characters) as the ceiling and is born `authority: background`.
+  (36,503 characters) as the ceiling and is born `authority: background`.
 - **Whether `quenching-skill-package` also emits a marketplace manifest for a multi-plugin repo, or
   only a single plugin manifest.** Decided at its mint, from what the first real packaging run of
   this repository's own surface requires.

@@ -8,15 +8,14 @@ description: >-
   OKF docs from these files/URLs", "pull this doc/site into docs/", "turn this source into
   the knowledge base", or "ingest this folder/page as OKF". Scopes the source read-only,
   extracts knowledge units and classifies each into its home + type + mold, dedupes within
-  the source and against the existing bundle, presents ONE ingestion plan for one
-  confirmation, then mints each doc (stamp → index → log → glossary) under the insert
-  procedure. Requires an existing OKF bundle (run quenching-docs-align first). Not for: ONE doc
+  the source and against the existing bundle, presents ONE ingestion plan, then mints each doc
+  (stamp → index → log → glossary) under the insert
+  procedure. Requires an existing OKF bundle. Not for: ONE doc
   the human states → quenching-docs-add; installing/aligning the docs structure →
   quenching-docs-align; draining ~/.claude project memory → quenching-docs-import-memory.
 when_to_use: >-
   importing an external source (files/folders/URLs) into an existing OKF bundle as multiple
-  minted concept docs. A batch fan-out of quenching-docs-add; one human-stated fact is
-  quenching-docs-add, project-memory migration is quenching-docs-import-memory.
+  minted concept docs.
 allowed-tools: Read, Grep, Glob, WebFetch, Write, Edit, Task
 user-invocable: false
 ---
@@ -44,8 +43,8 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   allowed hosts** up to the cap; report everything you did **not** fetch.
 - **Anti-fabrication.** Mint only what the source actually supports. A rule not proven in the
   **target's own** code enters as `authority: background` (a proposal), never
-  `authority: current`. Never invent a `resource:` — derive it from the source (`file:line`,
-  the URL). Every minted doc is **attributed** to its source.
+  `authority: current`. Never invent a `resource:` — derive it from the source (a glob set of
+  what the doc governs, or the URL). Every minted doc is **attributed** to its source.
 - **MERGE, never clobber.** A unit that maps to an existing doc/term is an **enrich** target —
   fill missing keys, sharpen the body — never overwrite a filled field or a filled body.
 - **Never ingest transient / secret / PII.** Skip credentials, tokens, personal data, and

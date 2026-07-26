@@ -14,9 +14,7 @@ description: >-
   before committing → quenching-specs-explore; a durable doc straight into docs/ →
   quenching-docs-add.
 when_to_use: >-
-  creating a new plan and generating all its artifacts until apply-ready. Implementation is
-  quenching-specs-plan-apply; revising existing artifacts is quenching-specs-plan-update;
-  pre-plan thinking is quenching-specs-explore.
+  creating a new plan and generating all its artifacts until apply-ready.
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Glob, Grep, Write, Edit, AskUserQuestion, TodoWrite
 user-invocable: false
 ---

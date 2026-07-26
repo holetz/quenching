@@ -468,11 +468,11 @@ blast radius reaches product code confirms on its own.
 
 ## 11. The other fronts
 
-| Front | Manual | Align (structure, one pass) | Align-and-update (+ content, looped) |
-| --- | --- | --- | --- |
-| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:align` | `/docs:align-and-update` |
-| `specs/` — this workspace | this file | `/specs:align` | `/specs:align-and-update` |
-| `.claude/` — the automation surface | `../.claude/QUENCHING.md` | `/skill:align` | `/skill:align-and-update` |
+| Front | Manual | Status (read-only) | Align (structure, one pass) | Align-and-update (+ content, looped) |
+| --- | --- | --- | --- | --- |
+| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:status` | `/docs:align` | `/docs:align-and-update` |
+| `specs/` — this workspace | this file | `/specs:status` | `/specs:align` | `/specs:align-and-update` |
+| `.claude/` — the automation surface | `../.claude/QUENCHING.md` | — | `/skill:align` | `/skill:align-and-update` |
 
 `/align` runs the three aligns in dependency order on one confirmation; `/align-and-update` runs
 the three conductors the same way and loops across fronts, because they feed each other (a plan's

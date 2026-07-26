@@ -1,24 +1,22 @@
 ---
 name: quenching-skill-align-and-update
 description: >-
-  Aligns AND updates the .claude/ automation front: runs quenching-skill-align, then a
+  Aligns AND updates the .claude/ front: runs quenching-skill-align, then a
   read-only doctrine audit of every skill body, pass after pass, until a full pass changes
   nothing and the registry matches .claude/skills/ exactly. Use when the user asks to "align
   and update the skills", "bring the automation surface up to date", "audit the skills
   against the doctrine", "run the full skill cycle", or "tidy .claude end to end". Where
-  quenching-skill-align only fixes NAMES, wrappers, and frontmatter and never touches a
-  body, this also AUDITS each body against the writing doctrine — and reports every violation
-  with the /skill:new invocation that fixes it, because rewriting a body is authoring, which
-  needs a human. This front converges in 1-2 passes by nature; the loop exists so a rename
-  that shifts the registry is caught in the same run. ONE OK at run start; code-coupled
-  renames still gate individually. Not for: names and wrappers only, one pass →
+  quenching-skill-align only fixes NAMES, wrappers, and frontmatter, this also AUDITS each
+  body against the writing doctrine — skills.py lint for the decidable half, a read for the
+  rest — and reports every violation with the /skill:new invocation that fixes it, because
+  rewriting a body is authoring, which needs a human. ONE OK at run start. Not for: names and
+  wrappers only, one pass →
   quenching-skill-align; editing ONE skill → quenching-skill-new; the docs/ front →
   quenching-docs-align-and-update; the specs/ front → quenching-specs-align-and-update; all three →
   quenching-align-and-update-all.
 when_to_use: >-
   aligning AND updating the .claude/ front — migration plus a doctrine audit of every body,
-  looped until stable. Names/wrappers only in one pass is quenching-skill-align; one skill is
-  quenching-skill-new; all three fronts is quenching-align-and-update-all.
+  looped until stable.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Skill
 user-invocable: false
 ---
@@ -60,24 +58,35 @@ will not pretend to more work than the front has, and its report says so.
 - **Conduct, never reimplement.** Stage 1 is `quenching-skill-align` invoked via the Skill tool,
   under its own doctrine and its own confirmation for code-coupled renames. This conductor never
   renames a skill, writes a wrapper, or edits a registry zone itself.
-- **Audit, never rewrite.** Stage 2 is **read-only, always**. A body that violates the doctrine
-  is a finding, not a fix: rewriting it is **authoring**, and authoring needs the human whose
-  intent the skill encodes. The report names the file, the violated rule, and the exact
-  `/skill:new <name>` invocation that opens the edit. This is the same anti-fabrication boundary
-  every conductor holds
+- **Audit, never rewrite — and the tool does not change that.** Stage 2 gaining `lint` gains it a
+  faster, more honest *reading*; it gains no write. A body that violates the doctrine is a
+  finding, not a fix: rewriting it is **authoring**, and authoring needs the human whose intent
+  the skill encodes. The report names the file, the violated rule (by `sk-*` code where the tool
+  decided it), and the exact `/skill:new <name>` invocation that opens the edit. This is the same
+  anti-fabrication boundary every conductor holds
   ([convergence.md](../quenching-align-and-update-all/references/convergence.md) §Per-item
   skills are stage tools).
 - **One OK per run.** The gate fires once, before Pass 1, under the shared contract
   ([convergence.md](../quenching-align-and-update-all/references/convergence.md)
   §cycle-authorization). It absorbs Stage 1's routine plan pause; it never absorbs a code-coupled
   rename. Stage 2 writes nothing, so it needs no authorization at all.
-- **The registry ends the run honest.** Convergence for this front means the GENERATED zone
-  matches `.claude/skills/` exactly, every wrapper resolves to an existing skill, and no skill
-  carries a description over the cap or without triggers in its second sentence.
+- **The registry ends the run honest.** Convergence for this front is a set of exit codes, not a
+  judgement: `registry reindex` reports `changed: false`, and `doctor` and `lint` exit 0 or each
+  surviving finding is named in the report by its code.
+
 - **The legacy `openspec-*` surface is not this front's.** `.claude/skills/openspec-*/` and
   `.claude/commands/opsx/` are legacy CLI artifacts that belong to `quenching-specs-align` (which
   removes them when migrating a legacy `openspec/` workspace) — Stage 1 already sets them aside,
   and the audit skips them too. A native `specs/` repo has none.
+
+## Resolving the tool
+
+Resolve `skills.py` the way the `specs/` front resolves `specs.py`:
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then a copy installed into the target's
+`.claude/hooks/skills.py`, else the declared **manual** fallback — apply the same checks by hand
+and **say in the report that the check was manual**. Invoke with `python3`/`py`; branch on the
+**exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose. Stage 2 runs it
+**read-only**: `lint` and `doctor` write nothing, and `registry reindex` is Stage 1's to call.
 
 ## Workflow (one run OK → assess → pass → re-assess → loop)
 
@@ -91,18 +100,27 @@ suggested once.
 **Done when:** the surface is counted, the bundle's presence recorded, and nothing written.
 
 ### 2. Assess the pass (read-only)
-Two lists, no sub-agents (the surface is small and each item is one file):
-- **Stage 1 work** — items with a non-canonical name, a missing or wrongly nested wrapper, a
-  generic skill mirrored under a folder path, a description over the cap or without triggers,
-  missing frontmatter; a missing taxonomy rule or registry; a stale GENERATED zone. Set aside
-  every legacy `openspec-*` skill and `opsx/` wrapper as out of scope.
-- **Stage 2 findings** — read each remaining body against
-  [doctrine](../quenching-skill-new/references/doctrine.md): predictability, one trigger per branch,
-  checkable step criteria, the no-op test, and a body that stays well under 500 lines with shared
-  procedure cited rather than restated.
-If **both** lists are empty **and** the registry matches disk → already converged, skip to
-Step 6.
-**Done when:** both lists are complete and no file changed.
+Two lists, no sub-agents (the surface is small and each item is one file). Both halves of the
+assessment start from the same two commands — the tool reads nothing this skill would not, and
+running it here costs one call instead of a reader holding 30 files in their head:
+```bash
+skills.py doctor --json   # Stage 1's structural work, by sk-* code
+skills.py lint --json     # the mechanically decidable half of Stage 2
+```
+- **Stage 1 work** — every `doctor` finding, plus a missing taxonomy rule or registry and a stale
+  GENERATED zone (`registry reindex` reporting `changed: true`). Set aside every legacy
+  `openspec-*` skill and `opsx/` wrapper as out of scope, including from the tool's findings.
+- **Stage 2 findings** — `lint`'s per-body codes carry the decidable half: `sk-body-length`,
+  `sk-step-criterion`, `sk-trigger-position`, `sk-no-boundary`, `sk-description-portable`,
+  `sk-metadata-cap`. Then **read** each remaining body for what no parser can judge — the no-op
+  test, sediment, sprawl, positive prescription, and whether shared procedure is cited rather
+  than restated ([doctrine](../quenching-skill-new/references/doctrine.md)). A code and a read
+  are different evidence and the report keeps them apart: a code names a threshold crossed, a
+  read names a claim about behaviour.
+
+If **both** lists are empty **and** `registry reindex` reports `changed: false` → already
+converged, skip to Step 6.
+**Done when:** `doctor` and `lint` have run, both lists are complete, and no file changed.
 
 ### 3. Present the RUN plan → gate on ONE OK (once, before Pass 1)
 One table for Stage 1 (counts and scope — the sweep presents its own detailed plan as narration
@@ -134,8 +152,9 @@ Re-run the Step 2 assessment, then:
 
 ### 6. Report + one log entry
 Report: passes run; renamed / wrappers created / flattened / rule + registry created; the
-verification triple (zone matches disk · every wrapper resolves · every description within the
-cap with triggers); and the **doctrine findings**, each with its `/skill:new` invocation. Say
+verification triple as the tool stated it (`registry reindex` → `changed: false` · `doctor` exit
+0 · `lint` exit 0, or each surviving code); and the **doctrine findings** — the `sk-*` codes and
+the read-only judgements listed apart — each with its `/skill:new` invocation. Say
 plainly when the front converged in one pass — that is the expected outcome here, not a
 shortfall. In a repo with an OKF bundle, append **one** entry to `docs/log.md` per **Appending
 to `log.md`** in

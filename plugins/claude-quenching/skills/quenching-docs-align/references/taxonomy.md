@@ -4,6 +4,14 @@ The single source of the tree `quenching-docs-align` installs and `quenching-doc
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
 (→ [migration.md](migration.md)).
 
+## Contents
+
+- [The canonical tree (locked)](#the-canonical-tree-locked)
+- [The `type` vocabulary (the greppable signature)](#the-type-vocabulary-the-greppable-signature)
+- [Boundary rules (memorable summary)](#boundary-rules-memorable-summary)
+- [The homes, one by one](#the-homes-one-by-one)
+- [Authoring conventions (all homes)](#authoring-conventions-all-homes)
+
 ## The canonical tree (locked)
 
 ```
@@ -56,7 +64,8 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
 ## The homes, one by one
 
 - **`standards/`** — current/active contracts, one standard per file, subject subfolders.
-  `type: standard` + a `resource:` **derived from `file:line` anchors** (never invented).
+  `type: standard` + a `resource:` **derived as a glob set of what the doc governs** (never
+  invented).
   Two front-doors: `index.md` (listing, with a DERIVED "Current docs" zone) and `CLAUDE.md`
   (thin agent pointer). Each subject carries a **candidate sub-standards** catalog and a
   **coverage/deferral ledger** — a consideration checklist, evidence-gated generation,

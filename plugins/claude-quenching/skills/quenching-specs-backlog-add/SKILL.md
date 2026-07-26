@@ -7,16 +7,14 @@ description: >-
   inline. Use when the user asks to "add to the backlog", "park a task", "capture a task",
   "note this for later", or "backlog this". Extracts title + gist from the phrasing ("park X,
   high priority, theme auth, ~8h" → priority: high, tags: [auth], complexity: 8; tags
-  normalized against ones already in the backlog), dedupes by slug/title (MERGE, never clobber),
-  writes backlog/<task-slug>.md from the task mold, calls `specs.py backlog reindex` to
-  regenerate the derived zone, logs the creation, and validates. Zero interrogation: what was
+  normalized against the backlog's), dedupes by slug/title (MERGE, never clobber),
+  writes backlog/<task-slug>.md from the task mold, calls `specs.py backlog reindex`,
+  logs, and validates. Zero interrogation: what was
   not said is left out — no priority means untriaged, a valid state. Not for: prioritizing the
   whole backlog → quenching-specs-backlog-triage; developing a task into a plan →
   quenching-specs-plan-propose; any other kind of doc → quenching-docs-add.
 when_to_use: >-
-  parking ONE task in the backlog/ inbox, fast and minimal. The prioritization sweep is
-  quenching-specs-backlog-triage; developing one into a plan is quenching-specs-plan-propose;
-  routing any other kind of doc is quenching-docs-add.
+  parking ONE task in the backlog/ inbox, fast and minimal.
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*)
 user-invocable: false
 effort: low

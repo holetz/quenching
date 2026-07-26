@@ -7,16 +7,15 @@ description: >-
   conformance", "migrate docs/ to the standard", "make docs/ OKF-compliant", "organize
   docs/ into the canonical tree", or when docs/ has variant names / missing frontmatter /
   a lying index. Installs the canonical homes (standards/ vision/
-  documentation/ knowledge/ reference/ catalog/), migrates
-  variant folder names, folds prefix-clusters into subject subfolders, translates
-  non-English slugs, stamps OKF frontmatter, regenerates every index.md, establishes
-  log.md, and validates. Invasive by design: ONE full plan, one confirmation; a rename
-  reaching product code confirms on its own. Not for: adding content → quenching-docs-add; the
+  documentation/ knowledge/ reference/ catalog/), migrates variant folder names, folds
+  prefix-clusters into subject subfolders, translates non-English slugs, stamps frontmatter,
+  regenerates every index.md, establishes log.md, and validates. Invasive by design: ONE full
+  plan, one confirmation.
+  Not for: adding content → quenching-docs-add; the
   specs/ workspace → quenching-specs-align; all three fronts at once → quenching-align-all; also
   pulling content in (memory, harness, glossary), looped → quenching-docs-align-and-update.
 when_to_use: >-
   installing and force-aligning a repo's docs/ structure to the canonical OKF bundle.
-  The structural half; content insertion is quenching-docs-add.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
 user-invocable: false
 ---
@@ -180,8 +179,9 @@ longer match the tree — hand off to that skill instead of resolving it here.
 
 ## Invariants to never violate
 - Never put a concept `type` on an `index.md`; never leave a concept doc without one.
-- Never invent a `resource:` — derive it from the doc's `file:line` anchors (standards) or
-  the asset URI (catalog/reference); empty/self-pointing is disallowed.
+- Never invent a `resource:` — derive it as a **glob set** of what the doc governs (standards) or
+  the asset URI (catalog/reference); empty is disallowed, and self-pointing (`resource-self`) is
+  too, except a bundle-level aggregate like `knowledge/glossary.md`.
 - Never delete or rename without OK; code-coupled renames get their own confirmation. A slug
   translation and a cluster-fold are renames — same rule. A cycle-authorized run
   (convergence.md §contract) replaces only the batch gate with narration — never a code-coupled

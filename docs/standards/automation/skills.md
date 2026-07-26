@@ -32,6 +32,16 @@ The classification test is naming the one folder/front the skill acts on: exactl
 domain-bound; "the whole surface" means generic; several unrelated targets means the skill is kept
 as-is and reported, never forced onto the axis.
 
+**A technique is a parameter of a verb, not a new axis.** Variants of one action — different
+elicitation scripts, different depths, different output shapes — become an argument to a single
+skill, never sibling skills. The axis is the object plus the verb; the technique rides along. Four
+interrogation modes (`interview`, `critic`, `premortem`, `alternatives`) shipped as
+`quenching-specs-plan-refine --mode`, not as four `refine-*` skills, because four always-on
+descriptions spend the shared per-skill cap forever to express one verb four ways, and the wrapper
+bijection would mirror them into four near-identical files. Split only when the *object* or the
+*verb* differs — a skill that waits for a human-stated edit and one that generates the questions
+are opposite directions of initiative and stay apart; two scripts for the same interrogation do not.
+
 ## Authoring (`quenching-skill-new`)
 
 - **Mirrored wrapper** for every domain-bound skill; a generic skill stays flat.
@@ -57,8 +67,63 @@ as-is and reported, never forced onto the axis.
 - **Post-apply verification**: regenerate the registry zone, confirm every wrapper resolves to a
   skill and vice versa (the bijection), and report residue.
 
+## Invocation and permission are authored decisions
+
+Three frontmatter fields decide who may invoke a skill and what it may reach. They are chosen
+deliberately at mint, never left to default:
+
+| `user-invocable` | `disable-model-invocation` | Who can invoke it | Use for |
+| --- | --- | --- | --- |
+| `false` | *(unset)* | the model, and any command wrapper | **the default here** — every skill behind a `/` wrapper: hidden from the menu, still routable by description |
+| *(unset)* | *(unset)* | everyone | a skill a human is expected to pick from the `/` menu by name |
+| `false` | `true` | **nobody** | never — this is `sk-unreachable`, an error |
+| *(unset)* | `true` | the human only | a skill whose cost or blast radius means a human must choose it, never a router |
+
+`user-invocable: false` **hides the menu entry; it does not block programmatic invocation.**
+`disable-model-invocation: true` is the only field that does. Confusing the two is how a skill
+meant to be human-gated ends up firing from a description match.
+
+`context: fork` runs the skill in a separate context. It is **forbidden** on any skill that gates
+on a mid-flow confirmation — a forked context cannot present the plan whose OK the run depends on.
+A skill that only reads and reports may fork freely.
+
+### `allowed-tools` is always scoped
+
+Grant the narrowest set that lets the workflow finish. A tool that takes a scope gets one:
+`Bash(python3:*)`, `Bash(py:*)`, `Bash(git status:*)` — never a bare `Bash`, which grants the whole
+shell for the turn. `skills.py lint` reports a bare grant as `sk-unscoped-bash`.
+
+One exception, and it must be **stated in the body**: a skill that runs the *target repo's own*
+toolchain — its build, its tests, its linters, its migrations — cannot enumerate those commands in
+advance, because they are the repo's, not the plugin's. Such a skill may hold an unscoped `Bash`
+provided its body says so and says why. `quenching-specs-plan-apply` is the standing example. The
+finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
+from an unexamined one.
+
+## The verifier
+
+`skills.py` is this front's verifier, the peer of `okf-validate.py` for `docs/` and `specs.py` for
+`specs/`. Same contract: `--json` on every subcommand, exit **0** ok · **1** findings · **2**
+refusal, errors setting the exit code and warnings never doing so.
+
+| Subcommand | Decides |
+| --- | --- |
+| `lint [path]` | one skill against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence |
+| `doctor` | the surface's shape — the bijection, canonical names, collisions, unmirrored wrappers |
+| `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
+| `budget` | what the surface costs before anything fires — see [context-budget.md](context-budget.md) |
+
+Every threshold this standard names is implemented there, and the tool is the normative
+statement: a rule whose only check is a sentence decays, because nothing fails when it is broken.
+
+**What the tool does not decide.** The axis. Naming the one folder a skill acts on is a claim
+about what the skill is *for*, and no parser makes it. So are the doctrine's remaining tests — the
+no-op test, sediment, sprawl, positive prescription. Those stay a human read, and a report keeps
+the two kinds of evidence apart: a code names a threshold crossed, a read names a claim about
+behaviour.
+
 ## Convergence condition
 
-The surface is aligned when every domain-bound skill carries the flattened-path name and a mirrored
-wrapper, every generic skill carries a verb-object name with no stray wrapper, the bijection holds,
-and the registry's GENERATED zone matches disk.
+The surface is aligned when `skills.py doctor` and `skills.py lint` exit 0 — or every surviving
+finding is named in the report by its `sk-*` code — and `skills.py registry reindex` reports
+`changed: false`.

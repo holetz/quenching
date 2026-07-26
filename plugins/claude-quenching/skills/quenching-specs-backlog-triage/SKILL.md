@@ -3,19 +3,18 @@ name: quenching-specs-backlog-triage
 description: >-
   Sweeps specs/backlog/ — the task inbox, outside the OKF docs/ bundle — and proposes ONE
   consolidated triage plan: a priority (critical|high|medium|low), tags, and an optional rough
-  complexity (dev hours) for each untriaged task, grounded in vision/ when present — applied on
+  complexity (dev hours) for each untriaged task, grounded in vision/ — applied on
   a single confirmation. Use when the user asks to "prioritize the backlog", "triage the
   backlog", "groom the backlog", or "re-rank the tasks". Reads every task's frontmatter directly
-  (no sub-agents — the backlog is small by nature), builds one table of proposals with one-line
-  rationales, flags stale tasks and duplicates, re-ranks an already-triaged task only with an
-  explicit reason, then applies the edits (MERGE — never silently clobber a human-set priority),
-  calls `specs.py backlog reindex` to regenerate the derived zone, and logs one consolidated
+  (no sub-agents), builds one table of proposals with one-line rationales, flags stale tasks and
+  duplicates, re-ranks an already-triaged task only with an explicit reason, then applies the
+  edits (MERGE — never silently clobber a human-set priority), calls `specs.py backlog reindex`,
+  and logs one consolidated
   update. Completion/removal enters the plan only when the human states a task is done — never
   inferred. Not for: capturing ONE task → quenching-specs-backlog-add; developing a task into a
   plan → quenching-specs-plan-propose; any other kind of doc → quenching-docs-add.
 when_to_use: >-
-  prioritizing the WHOLE backlog/ inbox in one plan → one OK sweep. Capturing a single
-  task is quenching-specs-backlog-add; developing one into a plan is quenching-specs-plan-propose.
+  prioritizing the WHOLE backlog/ inbox in one plan → one OK sweep.
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*)
 user-invocable: false
 ---

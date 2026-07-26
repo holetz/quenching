@@ -8,6 +8,16 @@ is filed exactly as `quenching-docs-add` would — see
 [../../quenching-docs-align/references/taxonomy.md](../../quenching-docs-align/references/taxonomy.md) for the
 home boundaries.
 
+## Contents
+
+- [1. What a harness file is](#1-what-a-harness-file-is)
+- [2. Content units](#2-content-units)
+- [3. The one decision rule](#3-the-one-decision-rule)
+- [4. Verdict table — unit kind → verdict → destination home (`type`)](#4-verdict-table--unit-kind--verdict--destination-home-type)
+- [5. Pointer-honesty checklist (the step-8 verify gate)](#5-pointer-honesty-checklist-the-step-8-verify-gate)
+- [6. Nesting rules](#6-nesting-rules)
+- [7. AGENTS.md](#7-agentsmd)
+
 ## 1. What a harness file is
 
 `CLAUDE.md` and `AGENTS.md` are **navigation pointers** the Claude Code / agent harness

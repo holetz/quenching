@@ -1,0 +1,12 @@
+{
+  "schema": "spec-driven",
+  "name": "specs-front-v2",
+  "title": "Specs front v2 — single-file lifecycle specs",
+  "created": "2026-07-25T22:34:03",
+  "backlogTask": null,
+  "verification": "end-of-plan",
+  "refined": {
+    "mode": "premortem",
+    "date": "2026-07-26"
+  }
+}

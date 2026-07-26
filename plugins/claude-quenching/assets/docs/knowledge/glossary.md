@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-07
+timestamp: 2026-07-25
 audience: both
 authority: current
 source: claude-quenching skeleton
@@ -29,6 +29,13 @@ also the one exception to an `index.md`'s "only list what exists" rule: an **unl
 entry (a term with no concept doc yet) is a normal, permanent, valid state, not a defect.
 Keep the list **alphabetically sorted by Term**, keep each definition to a single
 sentence, and **link out** rather than explaining in full here.
+
+**Its `resource: docs/**` is deliberate, and must not be "corrected".** A glossary
+governs the whole bundle, so a scope that names the whole bundle is the honest one —
+narrowing it to look tidier would be a fabrication. The validator knows: a scope
+containing the bundle root is a **bundle aggregate**, exempt from `resource-self` and
+from `stale-doc` (which would otherwise read fresh forever, since the doc sits inside
+the scope it measures). Every other doc pointing at itself is still a real finding.
 
 ## Terms
 

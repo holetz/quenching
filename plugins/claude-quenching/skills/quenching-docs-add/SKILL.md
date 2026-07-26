@@ -10,8 +10,7 @@ description: >-
   self-checks. Not for: installing/aligning the whole docs/ structure → quenching-docs-align;
   parking a task in the backlog → quenching-specs-backlog-add.
 when_to_use: >-
-  adding ONE new concept doc into an existing OKF bundle. The content half; the
-  structural install/migration half is quenching-docs-align.
+  adding ONE new concept doc into an existing OKF bundle.
 allowed-tools: Read, Grep, Glob, Write, Edit
 user-invocable: false
 ---
@@ -37,9 +36,12 @@ vocabulary, and conformance rules are shared with `quenching-docs-align`
   folder names, frontmatter keys, and enum values). **Exception:** an identifier-derived name is
   verbatim — a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>`
   the real repo. Body prose may be the repo's language.
-- **`type` mandatory; `resource` derived, never invented.** For a standard, `resource` comes
-  from the doc's `file:line` anchors; for catalog/reference, the asset URI. Empty or
-  self-pointing is disallowed.
+- **`type` mandatory; `resource` derived, never invented.** For a standard, `resource` is the
+  **glob set** naming what the doc governs — comma-separated, `*`/`**` only, repo-root-relative;
+  for catalog/reference, the asset URI. Empty is disallowed, and so is self-pointing
+  (`resource-self`) — except a bundle-level aggregate like `knowledge/glossary.md`. A glob says
+  *what this doc governs* and is what the staleness check reads; a `file:line` says only where a
+  rule was written, and rots on the next insertion above it.
 - **Anti-fabrication.** A standard that is **not yet proven** in the code enters as
   `authority: background` (a proposal), never `authority: current`. Never invent evidence.
 - **MERGE, never clobber.** If the target file exists, fill missing keys, preserve filled and
@@ -98,7 +100,8 @@ the same checks the installed `okf-validate.py` hook (if wired) machine-verifies
 `quenching-docs-align` re-validates the whole bundle on demand.
 
 ## Special cases
-- **Standard** → mold `standard-front.md`; anchor rules to `file:line`; derive `resource`;
+- **Standard** → mold `standard-front.md`; anchor rules to the code they govern; derive
+  `resource` as a glob set;
   consider the subject's **candidate sub-standards** and record any deferral in that subject's
   coverage ledger. An **agreed-but-not-yet-proven** rule enters as `authority: background`
   (a proposal), graduating to `authority: current` once proven — there is no separate ADR home.

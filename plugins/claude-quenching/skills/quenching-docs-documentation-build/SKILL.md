@@ -2,24 +2,21 @@
 name: quenching-docs-documentation-build
 description: >-
   Creates or updates the documentation SITE over the OKF bundle's `documentation/` home — the
-  mkdocs-material config at the repo root (`mkdocs.yml`, `requirements.txt`), the awesome-pages
-  `.pages` nav files inside the home, the `site/` gitignore, an opt-in Pages workflow, and a
+  mkdocs-material config at the repo root, the awesome-pages `.pages` nav files,
+  the `site/` gitignore, an opt-in Pages CI, and a
   `mkdocs build --strict` verification. Use when the user asks to "create the mkdocs", "set up
   the docs site", "update mkdocs", "regenerate the docs nav", "build the documentation site",
   "publish the docs", "the site is missing the new pages", or "fix the mkdocs config".
-  Inventories the site layer read-only, reports every finding under an `site-*` code (config
-  absent, unfilled `<placeholder>`, a section with no `.pages`, a stale nav, a `docs_dir` aimed
-  elsewhere, absolute `/docs/` links that cannot resolve in a site rooted at `documentation/`),
-  presents ONE plan, and applies on one confirmation — MERGE, never clobber: a customized
-  `mkdocs.yml` gets only its missing required keys, shown as a diff, and a `docs_dir` change
-  confirms on its own. Touches the **site layer only** — it never writes, rewrites, moves, or
+  Inventories the site layer read-only, reports every finding under an `site-*` code, presents
+  ONE plan, and applies on one confirmation — MERGE, never clobber: a customized `mkdocs.yml`
+  gets only its missing required keys, and a `docs_dir` change confirms on its
+  own. Touches the **site layer only** — it never writes, moves, or
   stamps a documentation page. Not for: writing a page → quenching-docs-add; bundle structure,
   frontmatter, or `index.md` → quenching-docs-align; a permanent preview server → the human runs
   `mkdocs serve`.
 when_to_use: >-
-  creating or updating the mkdocs site over docs/documentation/ — config, nav, gitignore,
-  build check. Writing the pages themselves is quenching-docs-add; bundle structure is
-  quenching-docs-align.
+  creating or updating the mkdocs site over docs/documentation/ — config, nav, gitignore, build
+  check.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 user-invocable: false
 ---

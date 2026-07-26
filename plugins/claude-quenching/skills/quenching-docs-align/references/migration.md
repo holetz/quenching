@@ -5,6 +5,15 @@ name** — deterministic and prescriptive, but **safe**. Deterministic ≠ autom
 is repeatable, but each migration passes its **own** confirmation, and a code-coupled rename is
 a distinct item.
 
+## Contents
+
+- [1. Map variant → canonical](#1-map-variant--canonical)
+- [2. Flag the variant as DEPRECATABLE](#2-flag-the-variant-as-deprecatable)
+- [3. Measure and SURFACE the blast radius BEFORE executing](#3-measure-and-surface-the-blast-radius-before-executing)
+- [4. Propose the migration; NEVER rename/delete without OK — code-coupled ⇒ its OWN confirmation](#4-propose-the-migration-never-renamedelete-without-ok--code-coupled--its-own-confirmation)
+- [5. Frontmatter migration (field renames)](#5-frontmatter-migration-field-renames)
+- [6. Install only the missing canonical homes that apply](#6-install-only-the-missing-canonical-homes-that-apply)
+
 ## 1. Map variant → canonical
 
 Each existing section matches a canonical home **by function**:

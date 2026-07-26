@@ -13,14 +13,25 @@ once, and every conductor and every stage skill cites this file instead of resta
 | `quenching-align-and-update-all` | the three front conductors above | yes, across fronts |
 | `quenching-align-all` | the three front **aligns** only | **no** — one structural pass |
 
-Each front's own pipeline (which stages, in what order, and why) lives with that front's
-conductor: [`../../quenching-docs-align-and-update/references/cycle.md`](../../quenching-docs-align-and-update/references/cycle.md)
-for `docs/`, [`../../quenching-specs-align-and-update/references/cycle.md`](../../quenching-specs-align-and-update/references/cycle.md)
-for `specs/`, and inline in `quenching-skill-align-and-update/SKILL.md` for `.claude/` (two
-stages need no separate file).
+This file is **self-contained**: a conductor reads it and needs nothing else. Each front's own
+pipeline — which stages, in what order, and why — is the invoking conductor's to know and is
+already loaded by the time this contract is read; it is deliberately **not** repeated here and
+**not** linked from here. A reference that sends a reader to another reference makes the second
+one mandatory, which is the opposite of what the loading hierarchy is for.
+
+The sweep-side peer of this contract — how one align behaves standalone — is owned by
+`quenching-align-all`'s `sweep-doctrine.md`, which states the cycle-authorized case in full
+rather than deferring back here. The two files agree by saying the same thing, not by pointing
+at each other.
 
 Read "the cycle" below as "the invoking conductor" — nothing in this contract changes between
 them.
+
+## Contents
+
+- [The cycle-authorization contract](#the-cycle-authorization-contract)
+- [The convergence contract](#the-convergence-contract)
+- [Per-item skills are stage tools, not stages](#per-item-skills-are-stage-tools-not-stages)
 
 ## The cycle-authorization contract
 
@@ -77,8 +88,8 @@ Let a pass be **empty** when every applicable stage reports "nothing to do." Let
 reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `docs/` (these are
 WARN — exit 0 alone does not prove them clear, read the findings); `specs.py doctor` +
 `specs.py validate` clean **and** `okf-validate.py specs/backlog --listing-root` clean by
-the same read-the-findings rule, for `specs/`; the registry matching `.claude/skills/`
-exactly and every wrapper resolving for `.claude/`.
+the same read-the-findings rule, for `specs/`; `skills.py lint` + `skills.py doctor` exiting 0
+**and** `skills.py registry reindex` reporting `changed: false` for `.claude/`.
 
 - **Converged (stop, success):** a pass is **empty** *and* the front is **clean**. This is the
   fixpoint. Report and write the log entry.

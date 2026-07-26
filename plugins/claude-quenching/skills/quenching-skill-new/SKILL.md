@@ -5,20 +5,18 @@ description: >-
   (.claude/skills/ + .claude/commands/) — classified on the single taxonomy axis
   (domain-bound × generic), canonically named, mirrored by a thin command wrapper when
   domain-bound, written under the skill-writing doctrine, with the derived OKF artifacts
-  (registry, glossary, log) regenerated in the tail. Use when the user asks to "create a
+  regenerated in the tail. Use when the user asks to "create a
   skill", "mint a skill for X", "add a new skill", "organize this skill", "make this
   skill conform", or "wire a command for this skill". Reads the taxonomy rule
   (docs/standards/automation/skills.md; offers to create it from the template on first
-  run), presents ONE plan (classification, names, files, OKF tail), writes on a single
-  OK, then self-checks — registry GENERATED zone diffed against .claude/skills/, wrapper
-  resolves, description within the per-skill cap. Without an OKF bundle the mint still
+  run), presents ONE plan, writes on a single
+  OK, then self-checks with skills.py lint + doctor. Without an OKF bundle the mint still
   proceeds (skill + wrapper only), the tail is skipped, and quenching-docs-align is suggested
   once. Not for: migrating the existing skills to the taxonomy → quenching-skill-align; a
   doc into the docs/ bundle → quenching-docs-add.
 when_to_use: >-
   minting or editing ONE conformant skill (+ mirrored command wrapper) in a target repo.
-  The whole-surface migration sweep is quenching-skill-align.
-allowed-tools: Read, Grep, Glob, Write, Edit
+allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 user-invocable: false
 ---
 
@@ -47,10 +45,20 @@ this skill owns both, and `quenching-skill-align` cites them. Molds live at
   confirmation. A declined plan writes nothing.
 - **MERGE, never clobber.** An edit preserves the skill's body and any hand-written
   content; only the gap being fixed changes. This skill never deletes a skill.
-- **The registry zone has two owners.** Only this skill and `quenching-skill-align` write
-  between the registry's GENERATED markers; the tail regenerates the zone from
-  `.claude/skills/*/SKILL.md` frontmatter — full format in
-  [references/taxonomy.md](references/taxonomy.md) §registry.
+- **The registry zone is regenerated, never composed.** `skills.py registry reindex` owns the
+  zone's format; this skill and `quenching-skill-align` are the two that invoke it, and neither
+  writes between the markers by hand. Composing a derived table and then diffing it against its
+  own source is one reader checking its own arithmetic.
+
+## Resolving the tool
+
+Resolve `skills.py` the way the `specs/` front resolves `specs.py`:
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then a copy installed into the target's
+`.claude/hooks/skills.py`, else the declared **manual** fallback — apply the same checks by hand
+and **say in the report that the check was manual**, never silently skip it. Invoke with
+`python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
+never on prose. Findings carry `sk-*` codes: an `error` is fixed, a `warn` is reported with its
+code.
 
 ## Workflow
 
@@ -98,23 +106,36 @@ the Skill tool with `$ARGUMENTS` — the wrapper pattern, mold `automation/comma
 the rule if planned. **Done when:** every planned file exists with its planned content.
 
 ### 7. OKF tail (bundle present)
-Per [references/taxonomy.md](references/taxonomy.md) §registry: regenerate the registry's
-GENERATED zone from all `.claude/skills/*/SKILL.md` frontmatter — creating
-`docs/documentation/reference/automation.md` from `automation/registry.md` if absent (it
-was in the plan), updating `documentation/reference/`'s `index.md` and appending to
-`log.md` (`**Creation**`/`**Update**`: the skill minted/edited) per the procedure in
+Create `docs/documentation/reference/automation.md` from `automation/registry.md` first if it is
+absent (it was in the plan) — `registry reindex` refuses a missing doc (`sk-no-registry`) or a
+doc with no markers (`sk-no-zone`) rather than placing a table at a guessed anchor in curated
+prose. Then regenerate the zone:
+```bash
+skills.py registry reindex --json
+```
+Update `documentation/reference/`'s `index.md` and append to `log.md`
+(`**Creation**`/`**Update**`: the skill minted/edited) per the procedure in
 [../quenching-docs-add/references/homes.md](../quenching-docs-add/references/homes.md). If the
-skill coined a new repo-specific term, **offer** ONE `knowledge/glossary.md` entry — the
-user decides. **Done when:** zone regenerated, index honest, log appended.
+skill coined a new repo-specific term, **offer** ONE `knowledge/glossary.md` entry — the user
+decides. **Done when:** `registry reindex` exits 0, the index is honest, and the log is appended.
 
 ### 8. Self-check
-Verify: the GENERATED zone diffs clean against `.claude/skills/*/SKILL.md` (regenerate on
-mismatch and report it); the wrapper resolves to the skill it names; the description +
-`when_to_use` fit the cap with triggers in the second sentence; the body is under 500
-lines; any OKF doc touched passes
+Ask the tool, do not read for it:
+```bash
+skills.py lint <skills-dir> --json     # this skill's conformance
+skills.py doctor --json                # the bijection it just changed
+skills.py registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 7
+```
+`lint` decides the description caps, trigger position, the `Not for:` boundary, body length, the
+per-step criteria, unscoped `Bash`, and invocation coherence; `doctor` decides that the wrapper
+resolves to this skill and that nothing else claims it. Fix every `error`; report every `warn`
+with its `sk-*` code rather than silently accepting it. What no parser can decide — the no-op
+test, sediment, sprawl, positive prescription — is still read by eye against
+[references/doctrine.md](references/doctrine.md). Any OKF doc touched passes
 [../quenching-docs-align/references/conformance.md](../quenching-docs-align/references/conformance.md).
-Report what was written, the invocation (`/…:…:<verb>`), and any residue. **Done when:**
-every check passed or its mismatch is reported.
+Report what was written, the invocation (`/…:…:<verb>`), and any residue. **Done when:** `lint`
+and `doctor` exit 0, `registry reindex` reports `changed: false`, and every remaining `warn` is
+named in the report with its code.
 
 ## Invariants
 

@@ -12,7 +12,6 @@ description: >-
   → quenching-docs-learn; a single doc into any home → quenching-docs-add.
 when_to_use: >-
   draining the project's ~/.claude memory files into the OKF bundle, then clearing them.
-  Fresh single knowledge is quenching-docs-learn; a single doc is quenching-docs-add.
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
 user-invocable: false
 ---

@@ -13,6 +13,14 @@ into `docs/standards/`, an understanding into `docs/knowledge/`), isolated on a 
 is built, and archived when done. The tool that gives the LLM deterministic rails is
 `assets/bin/specs.py` — a stdlib-only Python script in the same mold as `okf-validate.py`.
 
+## Contents
+
+- [The `specs/` layout](#the-specs-layout)
+- [The plan artifact graph](#the-plan-artifact-graph)
+- [Artifact formats](#artifact-formats)
+- [The `specs.py` tool surface](#the-specspy-tool-surface)
+- [Boundary: `specs/` vs the OKF `docs/` bundle](#boundary-specs-vs-the-okf-docs-bundle)
+
 ## The `specs/` layout
 
 The front lives at the target repo root (never inside `docs/`):

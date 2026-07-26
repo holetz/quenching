@@ -8,6 +8,14 @@ A mode is a **parameter of one action**, not a different skill: same target (one
 artifacts), same output (one consolidated edit), same terminating contract. Only the questions
 differ.
 
+## Contents
+
+- [The three shared mechanics](#the-three-shared-mechanics)
+- [Mode: `interview` (default)](#mode-interview-default)
+- [Mode: `critic`](#mode-critic)
+- [Mode: `premortem`](#mode-premortem)
+- [Mode: `alternatives`](#mode-alternatives)
+
 ## The three shared mechanics
 
 Every mode obeys all three. They are what make a refinement finish.

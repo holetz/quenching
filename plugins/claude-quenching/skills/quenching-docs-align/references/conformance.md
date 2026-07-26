@@ -66,6 +66,45 @@ name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node
   reachable by browsing). The fix is to add it to its folder's `index.md` (or the derived
   standards zone). Link language/wording is **not** machine-checked — the English-slug rule is a
   skill-applied convention (the validator cannot reliably detect a document's natural language).
+- **WARN `glossary-broken-link`** — the same link rule applied to `knowledge/glossary.md`, whose
+  links **are** its content: an entry pointing at a deleted doc is a dead lookup. It needs its own
+  code because `index-broken-link` is only ever judged on an `index.md`, and the glossary is a
+  concept doc. Same resolver, so the two never diverge on what a link means.
+
+## Resource integrity (per-doc — every mode)
+
+A doc that is provably **lying about itself**. These join the structural set the skills treat as
+**must-fix** in their verify gate, for the same reason: `WARN` because OKF does not govern
+`resource` at all, blocking because the plugin does.
+
+- **WARN `resource-unresolved`** — a path- or glob-shaped `resource` entry matching nothing on
+  disk, reported **per entry** so a comma-separated list names which one is broken. A `uri` entry
+  is never resolved, and an entry carrying glob syntax the validator does not implement (braces,
+  character classes, `?`) is classified `unknown` and **never reported** — only `*` and `**` are
+  implemented, and flagging syntax nobody writes would make the must-fix set unusable.
+- **WARN `resource-self`** — the doc's own path falls inside the scope its `resource` declares.
+  Such a doc governs nothing and is eternally fresh, which silently disables `stale-doc` for it.
+  Matching is **segment-wise**: a single `*` does not cross a `/`, so `docs/*` does not contain
+  `docs/standards/x.md`.
+  - **The bundle-aggregate exemption.** An entry whose scope contains the bundle **root** is an
+    aggregate, not a mistake, and never raises this. `knowledge/glossary.md` really does govern
+    the whole bundle, so `resource: docs/**` is truthful and narrowing it would be the
+    fabrication. This is `TYPES_WITHOUT_RESOURCE` generalized — one exemption mechanism, not two.
+
+## Staleness (CLI only — advisory, never blocking)
+
+- **WARN `stale-doc`** — the doc's `timestamp` predates the last commit touching the code its
+  `resource` globs name (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so
+  a single `*` does not cross a `/` here either).
+
+**It is advisory and is NOT part of any verify gate.** The integrity codes describe a doc that is
+provably wrong; a stale-looking doc may be perfectly correct, because code moves under a rule that
+did not change. Every mature bundle carries some, so treating it as must-fix would make the
+must-fix set unusable.
+
+It runs in **CLI mode only** — never `PostToolUse`, never `Stop`: it shells out to `git` once per
+doc, which is fine on demand and unacceptable under the `Stop` deadline. A tree that is not a git
+checkout **skips it silently** rather than reporting a finding it cannot compute.
 
 ## Running it
 
@@ -81,9 +120,12 @@ concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
 
 ## Verify gate (Step 5 of quenching-docs-align)
 
-A bundle is **aligned** when `okf-validate.py <docs>` exits 0 **and** the structural-integrity
-WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`, `index-orphan`. (These are
-WARN, so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
+A bundle is **aligned** when `okf-validate.py <docs>` exits 0 **and** the structural-integrity and
+resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
+`index-orphan`, `glossary-broken-link`, `resource-unresolved`, `resource-self`. (These are WARN,
+so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
+**`stale-doc` is excluded from this gate** — it is advisory, reported and never blocking, and a
+bundle carrying one is still aligned.
 Beyond that, the skill also confirms the method-level completeness the validator can't see:
 applicable homes present, each standards subject's **coverage/deferral ledger** filled (every
 candidate present or listed), and the GENERATED zones matching disk — `standards/index.md`'s

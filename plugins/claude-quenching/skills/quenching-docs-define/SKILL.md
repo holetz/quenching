@@ -10,8 +10,7 @@ description: >-
   entry, and logs the update. Not for: a full concept doc → quenching-docs-learn;
   whole-bundle term backfill → quenching-docs-glossary-backfill.
 when_to_use: >-
-  adding or refining ONE term entry in knowledge/glossary.md. A full concept doc is
-  quenching-docs-learn; a bundle-wide backfill sweep is quenching-docs-glossary-backfill.
+  adding or refining ONE term entry in knowledge/glossary.md.
 allowed-tools: Read, Grep, Glob, Write, Edit
 user-invocable: false
 effort: low

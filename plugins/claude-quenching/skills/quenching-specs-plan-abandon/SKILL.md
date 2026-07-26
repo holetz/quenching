@@ -7,16 +7,15 @@ description: >-
   it", "this one's dead", or "close it without shipping it". Confirms the decision is the
   human's, moves the plan to specs/archive/YYYY-MM-DD-<name>/ with an ABANDONED.md marker (never
   distils a proved standard, never ticks a task), offers to REOPEN the seed task it retired into
-  the Completed ledger at propose time — the one real hole in the task lifecycle — and offers a
+  the Completed ledger at propose time, and offers a
   narrow harvest of what was learned by NOT building it (a note at authority: background, a
-  knowledge doc). Its own confirmation, always: it is irreversible in the sense the cycle
+  knowledge doc). Its own confirmation, always — irreversible in the sense the cycle
   contract means. Not for: a completed plan → quenching-specs-plan-archive; revising a plan you
   still intend to build → quenching-specs-plan-update; pausing without deciding → leave it,
   quenching-specs-status reports it stale.
 when_to_use: >-
   closing out a plan that will not be built, without distilling a proved rule — and reopening
-  the backlog task it consumed. A finished plan is quenching-specs-plan-archive; a plan still
-  alive is quenching-specs-plan-update.
+  the backlog task it consumed.
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bash(mv:*), Read, Glob, Grep, Write, Edit, AskUserQuestion
 user-invocable: false
 ---
