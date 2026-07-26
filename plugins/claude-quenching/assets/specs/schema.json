@@ -1,10 +1,105 @@
 {
-  "schema": "spec-driven",
-  "version": "1.0.0",
-  "artifacts": [
-    { "id": "proposal", "file": "proposal.md", "required": true, "dependsOn": [] },
-    { "id": "design", "file": "design.md", "required": false, "dependsOn": ["proposal"] },
-    { "id": "tasks", "file": "tasks.md", "required": true, "dependsOn": ["proposal"] }
+  "schema": "spec-lifecycle",
+  "version": "2.0.0",
+
+  "filename": {
+    "pattern": "^(\\d{4}-\\d{2}-\\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
+    "groups": ["date", "slug"],
+    "example": "2026-07-25-session-tokens.md",
+    "note": "The same pattern in EVERY folder. The date is stamped once at capture and never rewritten: promote moves the file, never renames it."
+  },
+
+  "frontmatter": {
+    "required": ["slug", "title", "verification"],
+    "optional": ["refined", "outcome"],
+    "verification": ["per-task", "per-section", "end-of-plan"],
+    "outcome": ["done", "abandoned"],
+    "note": "No `created` field — the filename's date prefix is that fact. No `phase` field — the folder is that fact."
+  },
+
+  "sections": [
+    { "heading": "Problem",                 "order": 1,  "group": "definition", "audience": "human" },
+    { "heading": "Proposal",                "order": 2,  "group": "definition", "audience": "human" },
+    { "heading": "Out of Scope",            "order": 3,  "group": "definition", "audience": "human" },
+    { "heading": "Impact",                  "order": 4,  "group": "definition", "audience": "human", "parsed": true },
+    { "heading": "Validation",              "order": 5,  "group": "definition", "audience": "both" },
+    { "heading": "Design",                  "order": 6,  "group": "definition", "audience": "human" },
+    { "heading": "Alternatives Considered", "order": 7,  "group": "definition", "audience": "human" },
+    { "heading": "Open Decisions",          "order": 8,  "group": "definition", "audience": "human" },
+    { "heading": "Risks",                   "order": 9,  "group": "definition", "audience": "human" },
+    { "heading": "Handoff",                 "order": 10, "group": "execution",  "audience": "agent" },
+    { "heading": "Tasks",                   "order": 11, "group": "execution",  "audience": "agent" },
+    { "heading": "Discoveries",             "order": 12, "group": "execution",  "audience": "triage" },
+    { "heading": "Outcome",                 "order": 13, "group": "archive",    "audience": "human" }
   ],
-  "applyRequires": ["tasks"]
+
+  "impact": {
+    "parsedSubheading": "Standards this spec will write into docs/standards/",
+    "acceptedAliases": [
+      "Standards this plan will write into docs/standards/"
+    ],
+    "pathPrefix": "docs/standards/",
+    "note": "Only this sub-heading is parsed. The siblings name paths the spec never promised to write."
+  },
+
+  "phases": [
+    {
+      "id": "backlog",
+      "folder": "backlog",
+      "role": "definition",
+      "entryGate": ["Problem"],
+      "warnWhenEmpty": []
+    },
+    {
+      "id": "ready",
+      "folder": "ready",
+      "role": "execution",
+      "entryGate": [
+        "Problem",
+        "Proposal",
+        "Out of Scope",
+        "Impact",
+        "Validation",
+        "Design",
+        "Alternatives Considered",
+        "Open Decisions",
+        "Risks",
+        "Tasks"
+      ],
+      "warnWhenEmpty": ["Handoff"],
+      "note": "Promote to ready/ IS the human OK to build. `Tasks` is in the gate because nothing may enter the execution phase with nothing to execute — the v2 form of v1's applyRequires:[tasks]."
+    },
+    {
+      "id": "archive",
+      "folder": "archive",
+      "role": "closed",
+      "entryGate": ["Outcome"],
+      "warnWhenEmpty": [],
+      "note": "Only `Outcome` is gated: an abandoned spec may be promoted straight from backlog/, where the ready set was never reached."
+    }
+  ],
+
+  "promote": {
+    "sequence": ["backlog", "ready", "archive"],
+    "explicitNone": "- none — <reason>",
+    "filledRule": "An explicit none counts as FILLED. A heading present with an empty body is malformed and refuses. An absent heading before its own gate is legal.",
+    "openTasks": {
+      "done": "refuse",
+      "abandoned": "allow",
+      "forceFlag": "--force",
+      "note": "Promoting to archive with outcome `done` while `- [ ]` boxes remain exits 2 and lists them, overridable with --force. Outcome `abandoned` is always allowed — open tasks are expected when closing out a spec that will not be built."
+    }
+  },
+
+  "stages": {
+    "resolution": "last-match-wins",
+    "derived": [
+      { "id": "captured",  "phase": "backlog", "when": { "filled": ["Problem"] } },
+      { "id": "proposed",  "phase": "backlog", "when": { "filled": ["Proposal"] } },
+      { "id": "designed",  "phase": "backlog", "when": { "filled": ["Design"] } },
+      { "id": "refined",   "phase": "backlog", "when": { "frontmatter": "refined" } },
+      { "id": "executing", "phase": "ready",   "when": { "anyOf": [{ "taskState": ["x", "!"] }, { "filled": ["Handoff"] }] } }
+    ],
+    "note": "Stages are DERIVED from heading presence and frontmatter, never declared. Declared state is forgotten on edit; derived state regresses automatically when a section empties."
+  }
 }

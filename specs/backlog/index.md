@@ -55,34 +55,18 @@ backlog/
        then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
        (a task with two tags appears under both).
 -->
-**6 tasks** · 0 critical · 0 high · 0 medium · 0 low · 6 untriaged
+**6 specs** · 6 captured
 
-#### Untriaged
+### Captured
 
-| Task | Description | Tags | Complexity | Since |
-| --- | --- | --- | --- | --- |
-| [Add provenance and idempotent re-ingestion to quenching-docs-import](add-import-provenance.md) | Deferred from the docs-verification-layer plan — source_uri plus a content hash so a changed source is detectable and a re-import enriches instead of duplicating | docs, import, provenance | — | 2026-07-25 |
-| [Decide whether AGENTS.md becomes the default harness target](decide-agents-md-harness-default.md) | Deferred from the docs-verification-layer plan — AGENTS.md is now a Linux Foundation open spec with wide adoption, while the harness molds ship only claude-root.md and claude-subfolder.md | docs, harness, templates | — | 2026-07-25 |
-| [Decide whether quenching-specs-plan-quick is still needed](decide-plan-quick-skill.md) | Open decision from the refine-and-execute-specs-flow plan — re-evaluate the express lane after two weeks of using the chained path | specs, skills, taxonomy | — | 2026-07-25 |
-| [Decide whether sp-unrefined should escalate to error](decide-sp-unrefined-severity.md) | Open decision from the refine-and-execute-specs-flow plan — revisit the warning's severity once there is evidence about unrefined plans | specs, validation | — | 2026-07-25 |
-| [Expose a finding's advisory/blocking status as data in okf-validate --json](expose-finding-advisory-as-data.md) | Found by the docs-verification-layer end-of-plan review — "stale-doc is advisory" is restated in five files and twelve places, while the JSON carries no field a skill can branch on | docs, validator, conformance | — | 2026-07-25 |
-| [Split the backlog-zone renderer out of specs.py](split-specs-py-backlog-renderer.md) | specs.py has passed the ~1,200-line threshold its own design set for splitting, and is now 1,388 lines | specs, tooling, maintainability | — | 2026-07-25 |
-
-#### By theme
-
-- **conformance** (1): [expose-finding-advisory-as-data](expose-finding-advisory-as-data.md)
-- **docs** (3): [add-import-provenance](add-import-provenance.md), [decide-agents-md-harness-default](decide-agents-md-harness-default.md), [expose-finding-advisory-as-data](expose-finding-advisory-as-data.md)
-- **harness** (1): [decide-agents-md-harness-default](decide-agents-md-harness-default.md)
-- **import** (1): [add-import-provenance](add-import-provenance.md)
-- **maintainability** (1): [split-specs-py-backlog-renderer](split-specs-py-backlog-renderer.md)
-- **provenance** (1): [add-import-provenance](add-import-provenance.md)
-- **skills** (1): [decide-plan-quick-skill](decide-plan-quick-skill.md)
-- **specs** (3): [decide-plan-quick-skill](decide-plan-quick-skill.md), [decide-sp-unrefined-severity](decide-sp-unrefined-severity.md), [split-specs-py-backlog-renderer](split-specs-py-backlog-renderer.md)
-- **taxonomy** (1): [decide-plan-quick-skill](decide-plan-quick-skill.md)
-- **templates** (1): [decide-agents-md-harness-default](decide-agents-md-harness-default.md)
-- **tooling** (1): [split-specs-py-backlog-renderer](split-specs-py-backlog-renderer.md)
-- **validation** (1): [decide-sp-unrefined-severity](decide-sp-unrefined-severity.md)
-- **validator** (1): [expose-finding-advisory-as-data](expose-finding-advisory-as-data.md)
+| Spec | Title | Since |
+| --- | --- | --- |
+| [add-import-provenance](2026-07-25-add-import-provenance.md) | Add provenance and idempotent re-ingestion to quenching-docs-import | 2026-07-25 |
+| [decide-agents-md-harness-default](2026-07-25-decide-agents-md-harness-default.md) | Decide whether AGENTS.md becomes the default harness target | 2026-07-25 |
+| [decide-plan-quick-skill](2026-07-25-decide-plan-quick-skill.md) | Decide whether quenching-specs-plan-quick is still needed | 2026-07-25 |
+| [decide-sp-unrefined-severity](2026-07-25-decide-sp-unrefined-severity.md) | Decide whether sp-unrefined should escalate to error | 2026-07-25 |
+| [expose-finding-advisory-as-data](2026-07-25-expose-finding-advisory-as-data.md) | Expose a finding's advisory/blocking status as data in okf-validate --json | 2026-07-25 |
+| [split-specs-py-backlog-renderer](2026-07-25-split-specs-py-backlog-renderer.md) | Split the backlog-zone renderer out of specs.py | 2026-07-25 |
 <!-- END GENERATED -->
 
 ## Completed ledger

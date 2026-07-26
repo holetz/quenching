@@ -5,73 +5,75 @@ Payload of the `claude-quenching` plugin, sibling of `assets/hooks/okf-validate.
 and built in the same mold: stdlib-only, ZERO dependencies (its own minimal
 frontmatter parser — no PyYAML), one script installed alone into a target repo.
 
-It replaces the external `@fission-ai/openspec` CLI the `specs/` skills used to
-depend on. Where the OpenSpec CLI needed a Node runtime, a `config.yaml`, a main
-spec store, and a delta format, this front is entirely native: a **plan** writes
-straight into the OKF `docs/` bundle, isolated on a branch, and this tool gives the
-LLM deterministic rails so it branches on DATA (an exit code, a `--json` field),
-never on prose it has to infer.
-
-THE WORKSPACE
--------------
-The front lives under `specs/` at the target repo root (never inside `docs/`):
+ONE SPEC IS ONE FILE
+--------------------
+A spec is a single markdown file for its whole lifecycle. Phases enrich it; they
+never split it. The file moves between three phase folders and is never renamed:
 
     specs/
-      <plan-name>/          # an active plan, one folder per plan
-        .specs.json         # metadata: name, created, seed task, verification policy,
-                            #   refinement record, per-task attempt state
-        proposal.md         # what & why (+ Out of Scope, Validation, the parsed Impact)
-        design.md           # how — ALWAYS present; empty sections read `- none — <reason>`
-        tasks.md            # implementation checklist (- [ ] / - [x], + files:/verify:)
-      archive/              # completed/abandoned plans, YYYY-MM-DD-<name>/
-      backlog/              # the task inbox (type: task), one file per task
-        index.md            # a listing with a GENERATED zone (see `backlog reindex`)
-        <task-slug>.md
+      backlog/                   # DEFINITION — captured -> proposed -> designed -> refined
+        index.md                 # listing with a GENERATED zone (see `backlog reindex`)
+        2026-07-25-<slug>.md
+      ready/                     # EXECUTION — ready to build, or building
+        2026-07-14-<slug>.md
+      archive/                   # done or abandoned, told apart by `outcome:` frontmatter
+        2026-06-30-<slug>.md
 
-The artifact graph is THREE artifacts, not four — the OpenSpec `specs` (delta) node
-is gone: `proposal` -> `design` -> `tasks`, with `applyRequires: [tasks]`.
+THE FOLDER IS THE PHASE, and it is the single truth — there is no `phase:` field,
+because two declared sources of one fact diverge and a folder cannot lie. The
+transition is a `git mv` performed by `promote`, so `git log` narrates the lifecycle.
 
-`design` is required as a SECTION SET but deliberately NOT as a dependency: the file
-always exists, yet `applyRequires` stays `[tasks]`, so a bare scaffold is reported
-(`sp-design-scaffold`, warn) and never blocks. Adding it to `applyRequires` would move
-every plan authored before that rule from apply-ready to blocked on upgrade.
+IDENTITY IS THE SLUG, not the path. Every command names the bare slug; this tool
+resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. Two
+matches is a REFUSAL (exit 2), never a guess.
+
+THE DATE PREFIX is stamped once, at capture, and never rewritten — so the basename is
+stable for the whole lifecycle, `git log --follow` reads as one history, and a plain
+`ls` of any folder is chronological. A file listing IS the status view, and no file
+listing reads frontmatter.
+
+THIRTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
+-----------------------------------------------------------------------
+`## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`, `## Validation`,
+`## Design`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`,
+`## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
+
+Headings are a PARSED contract — canonical English, exactly as written. A heading
+outside the set is a stray. Each canonical heading is in one of three states:
+
+  absent               its phase was never reached — legal before its own gate
+  present, empty       MALFORMED: neither an answer nor a not-yet; refuses
+  present, filled      OK (`- none — <reason>` counts as filled)
+
+A heading is required — and required to carry an explicit none — only once ITS OWN
+phase gate is reached. That scoping is what keeps a captured spec four lines long
+instead of a thirteen-heading skeleton, and it is what keeps the derived stage honest:
+applied absolutely, a fresh spec carrying thirteen `- none` sections would derive as
+`designed` and pass every gate without anyone having thought anything.
+
+DERIVED STAGES, never declared. Computed from heading presence and frontmatter, so
+they regress automatically when a section empties. Declared state is forgotten on edit.
+
+There is NO `.specs.json`, no attempt counter, and no delta format. A blocked task is
+a visible `- [!] <id> <title> — blocked: <reason>` marker in `## Tasks`.
 
 OUTPUT CONTRACT (uniform across every subcommand)
 -------------------------------------------------
-`--json` on every subcommand, and STRICT exit codes so the skill ramifies on data:
+`--json` on every subcommand, and STRICT exit codes so the skill branches on data:
   0  ok
-  1  findings (validate/doctor found something; a plan/task was not found)
-  2  refusal  (archive with open tasks and no --force)
-
-SUBCOMMANDS
-  new <name> [--title T] [--backlog-task SLUG] [--verification P]
-                                                  scaffold a plan folder + filled templates + .specs.json
-  list                                            active plans, task progress, lastModified
-  status --plan N                                 the artifact graph (done/ready/blocked) + policy, refinement, blocked tasks
-  next --plan N                                   THE single next action (write X / implement task Y / blocked / archive)
-  task --plan N --check ID | --uncheck ID         flip a checkbox in tasks.md mechanically
-  task --plan N --attempt ID [--error MSG]        record a failed attempt against the budget
-  task --plan N --reset-attempts ID               clear a task's attempt state
-  parallel --plan N                               verify each [P] group's files: sets are disjoint
-  backlog reindex                                 regenerate the GENERATED zone of backlog/index.md from frontmatter
-  validate [--plan N]                             structure (artifacts, checkboxes, kebab names) + the
-                                                  non-gating warnings sp-unrefined / sp-design-scaffold /
-                                                  sp-impact-uncovered
-  archive N [--dry-run] [--force]                 move to specs/archive/YYYY-MM-DD-N/ (exit 2 on open tasks)
-  doctor                                          workspace shape; remedies DECLARED for the skill to apply
-
-There is no `init` (scaffold is an asset copy — the skill's job), no `store`, no
-`profiles`, no telemetry, and no delta parser.
+  1  findings (validate/doctor found something; a spec/task was not found)
+  2  refusal  (an ambiguous slug; a gate not met; archiving `done` with open tasks)
 
 WORKSPACE RESOLUTION
   --root PATH, else $SPECS_ROOT, else the nearest `specs/` directory walking up from
   cwd (or cwd itself if it is named `specs`). `new` creates `./specs` when none exists.
 
 ASSETS
-  Schema and templates load from `<script>/../specs/` when present (so editing the
-  shipped `assets/specs/schema.json` / `assets/specs/templates/*.md` changes behavior
-  in the plugin), and fall back to the constants embedded below — so an installed copy
-  under `.claude/hooks/` with no adjacent assets still works.
+  Schema and template load from `<script>/../specs/` when present (so editing the
+  shipped `assets/specs/schema.json` / `assets/specs/templates/spec.md` changes
+  behavior in the plugin), and fall back to the constants embedded below — so an
+  installed copy under `.claude/hooks/` with no adjacent assets still works.
+  EDIT BOTH OR NEITHER.
 """
 from __future__ import annotations
 
@@ -83,191 +85,148 @@ import pathlib
 import re
 import sys
 
-VERSION = "1.2.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "2.0.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
-RESERVED_DIRS = ("archive", "backlog")
-KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X)\]\s+(.*)$")
-CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (for malformed detection)
+
+PHASES = ("backlog", "ready", "archive")
+SPEC_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
+SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+# `- [ ]` / `- [x]` / `- [!]` — the third is a BLOCKED task, visible and human-legible,
+# which is what replaced v1's hidden five-attempt counter in `.specs.json`.
+CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
+CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
 TASK_META_RE = re.compile(r"^\s+(files|pattern|verify)\s*:\s*(.+?)\s*$", re.IGNORECASE)
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
+BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
+
 VERIFICATION_POLICIES = ("per-task", "per-section", "end-of-plan")
 DEFAULT_VERIFICATION = "per-section"
-ATTEMPT_BUDGET = 5   # attempts before a task is reported blocked rather than re-offered
+OUTCOMES = ("done", "abandoned")
+
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
-# the ONE parsed anchor inside `## Impact` — as a sub-heading or a bold line
-IMPACT_WRITES_RE = re.compile(r"^\s*(?:#{3,6}\s+|\*\*)\s*Standards this plan will write into\b",
-                              re.IGNORECASE)
 STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
-PRIORITIES = ("critical", "high", "medium", "low")
+
 GEN_BEGIN = "<!-- BEGIN GENERATED"
 GEN_END = "<!-- END GENERATED -->"
-BACKLOG_EMPTY = ("_(no tasks parked — this listing is regenerated deterministically "
-                 "from `backlog/*.md` frontmatter)_")
+BACKLOG_EMPTY = ("_(no specs captured — this listing is regenerated deterministically "
+                 "from `backlog/*.md`)_")
 
 # --------------------------------------------------------------------------- #
 # embedded assets (fallbacks when the sibling asset files are absent)
+# Keep in lockstep with assets/specs/schema.json and assets/specs/templates/spec.md.
 # --------------------------------------------------------------------------- #
-# `design` stays `required: false` and stays OUT of `applyRequires`, and the two facts are
-# not in tension: design.md is required as a SECTION SET (the file exists, and an empty
-# section is answered `- none — <reason>`), never as a DEPENDENCY of apply. Promoting it to
-# a dependency would strand every plan authored before that rule — each would go from
-# apply-ready to blocked on upgrade. `sp-design-scaffold` (warn) is how the section-set rule
-# is enforced; `applyReady` is untouched by it. Keep this in lockstep with assets/specs/schema.json.
 DEFAULT_SCHEMA: dict = {
-    "schema": "spec-driven",
-    "version": VERSION,
-    "artifacts": [
-        {"id": "proposal", "file": "proposal.md", "required": True, "dependsOn": []},
-        {"id": "design", "file": "design.md", "required": False, "dependsOn": ["proposal"]},
-        {"id": "tasks", "file": "tasks.md", "required": True, "dependsOn": ["proposal"]},
+    "schema": "spec-lifecycle",
+    "version": "2.0.0",
+    "filename": {
+        "pattern": r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
+        "groups": ["date", "slug"],
+        "example": "2026-07-25-session-tokens.md",
+    },
+    "frontmatter": {
+        "required": ["slug", "title", "verification"],
+        "optional": ["refined", "outcome"],
+        "verification": list(VERIFICATION_POLICIES),
+        "outcome": list(OUTCOMES),
+    },
+    "sections": [
+        {"heading": "Problem", "order": 1, "group": "definition", "audience": "human"},
+        {"heading": "Proposal", "order": 2, "group": "definition", "audience": "human"},
+        {"heading": "Out of Scope", "order": 3, "group": "definition", "audience": "human"},
+        {"heading": "Impact", "order": 4, "group": "definition", "audience": "human", "parsed": True},
+        {"heading": "Validation", "order": 5, "group": "definition", "audience": "both"},
+        {"heading": "Design", "order": 6, "group": "definition", "audience": "human"},
+        {"heading": "Alternatives Considered", "order": 7, "group": "definition", "audience": "human"},
+        {"heading": "Open Decisions", "order": 8, "group": "definition", "audience": "human"},
+        {"heading": "Risks", "order": 9, "group": "definition", "audience": "human"},
+        {"heading": "Handoff", "order": 10, "group": "execution", "audience": "agent"},
+        {"heading": "Tasks", "order": 11, "group": "execution", "audience": "agent"},
+        {"heading": "Discoveries", "order": 12, "group": "execution", "audience": "triage"},
+        {"heading": "Outcome", "order": 13, "group": "archive", "audience": "human"},
     ],
-    "applyRequires": ["tasks"],
+    "impact": {
+        "parsedSubheading": "Standards this spec will write into docs/standards/",
+        "acceptedAliases": ["Standards this plan will write into docs/standards/"],
+        "pathPrefix": "docs/standards/",
+    },
+    "phases": [
+        {"id": "backlog", "folder": "backlog", "role": "definition",
+         "entryGate": ["Problem"], "warnWhenEmpty": []},
+        {"id": "ready", "folder": "ready", "role": "execution",
+         "entryGate": ["Problem", "Proposal", "Out of Scope", "Impact", "Validation",
+                       "Design", "Alternatives Considered", "Open Decisions", "Risks", "Tasks"],
+         "warnWhenEmpty": ["Handoff"]},
+        {"id": "archive", "folder": "archive", "role": "closed",
+         "entryGate": ["Outcome"], "warnWhenEmpty": []},
+    ],
+    "promote": {
+        "sequence": ["backlog", "ready", "archive"],
+        "explicitNone": "- none — <reason>",
+        "filledRule": "An explicit none counts as FILLED. A heading present with an empty body "
+                      "is malformed and refuses. An absent heading before its own gate is legal.",
+        "openTasks": {"done": "refuse", "abandoned": "allow", "forceFlag": "--force"},
+    },
+    "stages": {
+        "resolution": "last-match-wins",
+        "derived": [
+            {"id": "captured", "phase": "backlog", "when": {"filled": ["Problem"]}},
+            {"id": "proposed", "phase": "backlog", "when": {"filled": ["Proposal"]}},
+            {"id": "designed", "phase": "backlog", "when": {"filled": ["Design"]}},
+            {"id": "refined", "phase": "backlog", "when": {"frontmatter": "refined"}},
+            {"id": "executing", "phase": "ready",
+             "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]}},
+        ],
+    },
 }
 
-TEMPLATE_PROPOSAL = """# <TITLE>
+TEMPLATE_SPEC = """---
+slug: <SLUG>
+title: <TITLE>
+verification: <VERIFICATION>
+---
 
-## Why
+# <TITLE>
 
-<!-- The problem or opportunity this plan answers. Why now? -->
+<!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
-## What Changes
+     `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
+     lines of body, not a thirteen-heading skeleton. Every other heading is created on first
+     write by `specs.py section <slug> "<Heading>" --write`, which inserts it in canonical
+     position.
 
-<!-- The change at a high level, in bullet points. -->
+     THE PHASE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
+     `- none — <reason>` when it has nothing in it — only once ITS OWN phase gate is reached:
 
-## Out of Scope
+       new (capture)        `## Problem`
+       promote -> ready/    the nine definition sections (`## Problem` .. `## Risks`)
+                            AND `## Tasks`
+       ready/  (warn only)  `## Handoff` non-empty
+       promote -> archive/  `## Outcome`
 
-<!-- What this plan deliberately does NOT do, and why it was ruled out.
+     Before its gate, a heading's absence is NOT an omission — it is a not-yet. After its
+     gate, three rules decide whether a section counts as filled:
 
-     An empty section is written as an explicit `- none` — NEVER omitted. "We drew the
-     boundary and nothing fell outside it" and "nobody ever drew the boundary" are
-     different answers, and an absent section cannot tell them apart. -->
+       1. `- none — <reason>` counts as filled. An omission and a null are different facts.
+       2. A heading present with an EMPTY body is malformed and refuses.
+       3. An absent heading before its gate is legal.
 
-## Validation
+     Headings are a PARSED contract — canonical English, exactly as written. Body prose
+     follows the repo's language. A heading outside this set is a stray. -->
 
-<!-- How anyone confirms this plan actually worked: the commands to run and the output
-     they must produce, the fixtures to check, the invariants that must still hold
-     afterwards. Same rule — an empty section is written as `- none`, which is a claim
-     that the plan is unverifiable by construction. Make it on purpose or fill it in. -->
+## Problem
 
-## Impact
+<!-- AUDIENCE: human. Gate: new (capture).
 
-<!-- Declared scope for human review.
-
-     The `### Standards this plan will write into docs/standards/` sub-heading below is
-     PARSED by `specs.py validate`: every `docs/standards/**.md` path bulleted under it
-     must be named by a `tasks.md` item, or validate emits `sp-impact-uncovered` (warn).
-     Keep that heading text verbatim — it is the anchor. A `**Standards this plan will
-     write into ...**` bold line is accepted too, for plans written before this format.
-
-     Example of a parsed bullet:
-       - `docs/standards/naming/command-surface.md` — the bijection rule for wrappers
-
-     The other sub-headings are prose for the reader and are deliberately NOT parsed:
-     they name paths the plan does not promise to write. -->
-
-### Standards this plan will write into docs/standards/
-
-- `<docs/standards/subject/concept.md>` — <the rule it states>
-
-### Standards at `authority: background` this plan may resolve
-
-- <path, or `none`>
-
-### Product code this plan expects to touch
-
-- `<path>` — <why>
+     The problem or opportunity this spec answers, and why now. This is the only section a
+     freshly captured spec carries — write it even if it is two sentences. -->
 """
-
-TEMPLATE_DESIGN = """# Design — <TITLE>
-
-<!-- design.md is REQUIRED-WITH-EXPLICIT-FALLBACK: the file always exists, and a section
-     with nothing in it is answered `- none — <reason>`, never deleted and never padded.
-
-     Do NOT delete this file to signal "no design was needed". An absent design.md cannot
-     distinguish "we weighed the alternatives and there were none" from "nobody ever
-     thought about it", and those are opposite facts. An explicit null is strictly more
-     information than a missing file.
-
-     A file left as this bare scaffold is reported by `specs.py validate` as
-     `sp-design-scaffold` (warn), and `specs.py next` names it as the next artifact to
-     write while tasks.md is still unwritten. Neither one blocks apply. -->
-
-## Context
-
-<!-- Background, the binding contracts this design must not contradict, and the forces
-     at play. -->
-
-## Decisions
-
-<!-- The choices made and their rationale. For each: what was chosen, why, and what was
-     weighed against it. -->
-
-## Alternatives Considered
-
-<!-- Whole-shape alternatives rejected at the plan level, each with the reason it lost.
-     Per-decision alternatives can stay inside `## Decisions`; this section is for the
-     ones that would have changed the plan's shape.
-
-     Empty is written `- none — <reason>` (e.g. "only one viable approach"). -->
-
-## Open Decisions
-
-<!-- What is deliberately still undecided, and how each will be decided — the evidence
-     or the moment that settles it, not "TBD".
-
-     Empty is written `- none — <reason>`. -->
-
-## Risks
-
-<!-- What could go wrong, and the mitigation for each.
-
-     Empty is written `- none — <reason>`. -->
-"""
-
-TEMPLATE_TASKS = """# Tasks — <TITLE>
-
-<!-- Checkboxes are `- [ ] <id> <text>`, grouped under `## N. <Section>` headings.
-     `specs.py task --plan <n> --check <id>` flips one mechanically — never hand-edit the
-     `[ ]` / `[x]` character.
-
-     A checkbox MAY carry indented metadata lines directly beneath it. They are parsed by
-     `specs.py` and are purely additive: a task without them behaves exactly as it always
-     did, and every tasks.md written before this format parses unchanged.
-
-       - [ ] 3.2 Add rate limiting to the auth middleware
-             files: src/middleware/auth.ts, src/config/limits.ts (new)
-             pattern: src/middleware/cors.ts
-             verify: pnpm test middleware/
-
-     files:    the paths this task may touch. Declaring them is what PERMITS the task to be
-               handed to an executor sub-agent, and what makes a `[P]` marker checkable.
-     pattern:  an existing file to imitate — the cheapest context an executor can be given.
-     verify:   the command that proves the task done. When it runs is the plan's
-               `verification` policy in `.specs.json`, not this file's business.
-
-     `[P]` right after the id marks a task parallel-eligible:
-
-       - [ ] 3.3 [P] Add the rate-limit config loader
-
-     It is set HERE, at propose time, and NEVER inferred while applying. It is honoured only
-     when the marked tasks' `files:` sets are provably disjoint and none of them writes into
-     `docs/` — `specs.py` checks the disjunction mechanically rather than judging it in prose.
-     Serial execution is the default and needs no marker. -->
-
-## 1. <Section>
-
-- [ ] 1.1 <first task>
-- [ ] 1.2 <next task>
-"""
-
-TEMPLATES = {"proposal": TEMPLATE_PROPOSAL, "design": TEMPLATE_DESIGN, "tasks": TEMPLATE_TASKS}
 
 
 # --------------------------------------------------------------------------- #
@@ -320,6 +279,14 @@ def parse_frontmatter(text: str) -> dict:
         if val.startswith("[") and val.endswith("]"):
             inner = val[1:-1].strip()
             fm[key] = [x.strip().strip("'\"") for x in inner.split(",") if x.strip()] if inner else []
+        elif val.startswith("{") and val.endswith("}"):
+            inner = val[1:-1].strip()
+            rec: dict = {}
+            for part in inner.split(","):
+                if ":" in part:
+                    k2, _, v2 = part.partition(":")
+                    rec[k2.strip()] = v2.strip().strip("'\"")
+            fm[key] = rec
         else:
             if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
                 val = val[1:-1]
@@ -340,10 +307,6 @@ def titleize(slug: str) -> str:
     return " ".join(w.capitalize() for w in slug.replace("_", "-").split("-") if w)
 
 
-def now_iso() -> str:
-    return datetime.datetime.now().replace(microsecond=0).isoformat()
-
-
 def today() -> str:
     return datetime.date.today().isoformat()
 
@@ -355,23 +318,133 @@ def read_text(path: str) -> str | None:
         return None
 
 
+def write_text(path: str, text: str) -> None:
+    pathlib.Path(path).write_text(text, encoding="utf-8")
+
+
 def load_schema() -> dict:
     p = os.path.join(ASSET_DIR, "schema.json")
     txt = read_text(p)
     if txt:
         try:
-            return json.loads(txt)
+            obj = json.loads(txt)
+            if isinstance(obj, dict) and obj.get("sections"):
+                return obj
         except json.JSONDecodeError:
             pass
     return DEFAULT_SCHEMA
 
 
-def template(name: str) -> str:
-    p = os.path.join(ASSET_DIR, "templates", f"{name}.md")
-    txt = read_text(p)
-    return txt if txt is not None else TEMPLATES[name]
+def load_template() -> str:
+    """The FULL thirteen-section authoring reference — frontmatter, the contract preamble,
+    and every heading with its guidance comment.
+
+    Two consumers read it and they need different slices: `new` stamps only the capture
+    form (below), while `section --write` pulls one heading's guidance when creating it.
+    Keeping one source for both is what stops the guidance drifting from the contract."""
+    txt = read_text(os.path.join(ASSET_DIR, "templates", "spec.md"))
+    return txt if txt is not None else TEMPLATE_SPEC
 
 
+def capture_form(template_text: str | None = None) -> str:
+    """What `new` stamps: everything up to (not including) the SECOND `## ` heading — so
+    frontmatter, the contract preamble, and `## Problem` with its guidance, and nothing else.
+
+    A captured spec is four lines of body, not a thirteen-heading skeleton. That is not
+    cosmetic: the explicit-none rule makes `- none — <reason>` count as filled, so a spec
+    born with thirteen headings would derive as `designed` and pass every promote gate
+    without anyone having thought anything."""
+    text = template_text if template_text is not None else load_template()
+    seen = 0
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        m = HEADING_RE.match(line)
+        if m and len(m.group(1)) == 2:
+            seen += 1
+            if seen == 2:
+                return "".join(lines[:i]).rstrip() + "\n"
+    return text
+
+
+def section_guidance(heading: str, template_text: str | None = None) -> str:
+    """One heading's block from the template — the heading line plus its guidance comment,
+    used by `section --write` when it creates a heading that does not exist yet."""
+    text = template_text if template_text is not None else load_template()
+    lines = text.splitlines()
+    want = heading.strip().lower()
+    start = None
+    for i, line in enumerate(lines):
+        m = HEADING_RE.match(line)
+        if m and len(m.group(1)) == 2:
+            if start is not None:
+                return "\n".join(lines[start:i]).rstrip() + "\n"
+            if m.group(2).strip().lower() == want:
+                start = i
+    if start is not None:
+        return "\n".join(lines[start:]).rstrip() + "\n"
+    return f"## {heading}\n"
+
+
+def canonical_headings(schema: dict | None = None) -> list[str]:
+    s = schema or load_schema()
+    return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))]
+
+
+def phase_spec(phase: str, schema: dict | None = None) -> dict:
+    s = schema or load_schema()
+    for p in s.get("phases", []):
+        if p.get("id") == phase:
+            return p
+    return {"id": phase, "folder": phase, "entryGate": [], "warnWhenEmpty": []}
+
+
+def strip_comments(text: str) -> str:
+    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+
+
+def mask_comments(text: str) -> str:
+    """Blank out HTML-comment spans, preserving every newline and column so line numbers
+    and offsets still line up with the original.
+
+    The template documents the task format with example checkboxes inside its comment
+    guidance. Without this, those examples parse as real tasks and a freshly captured spec
+    reports phantom progress — and `task --check` needs the surviving `lineno` to point at
+    the true line, which stripping (rather than masking) would break."""
+    return re.sub(r"<!--.*?-->",
+                  lambda m: re.sub(r"[^\n]", " ", m.group(0)),
+                  text, flags=re.DOTALL)
+
+
+def body_after_frontmatter(text: str) -> str:
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) == 3:
+            return parts[2]
+    return text
+
+
+def has_real_content(text: str) -> bool:
+    """True when a block carries authored prose beyond the shipped template (headings,
+    HTML comments, and `<placeholder>` lines don't count).
+
+    `- none — <reason>` DOES count: an explicit null is an answer, and the whole
+    explicit-none rule depends on this returning True for it."""
+    body = strip_comments(text)
+    for line in body.splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        residue = PLACEHOLDER_RE.sub("", s)
+        residue = re.sub(r"^[-*+]\s*(\[.?\])?\s*", "", residue)  # drop list/checkbox markers
+        residue = re.sub(r"^\d+(?:\.\d+)*\s*", "", residue)      # drop a leading task id
+        if re.search(r"[A-Za-z0-9]", residue):
+            return True
+    return False
+
+
+# --------------------------------------------------------------------------- #
+# workspace resolution and spec discovery
+# --------------------------------------------------------------------------- #
 def find_specs_root(root_arg: str | None) -> str:
     if root_arg:
         return os.path.abspath(root_arg)
@@ -393,145 +466,156 @@ def find_specs_root(root_arg: str | None) -> str:
     return os.path.join(cur, "specs")   # default (created by `new`)
 
 
-def plan_dirs(root: str) -> list[str]:
-    if not os.path.isdir(root):
-        return []
-    out = []
-    for name in sorted(os.listdir(root)):
-        full = os.path.join(root, name)
-        if os.path.isdir(full) and name not in RESERVED_DIRS and not name.startswith("."):
-            out.append(name)
+def spec_files(root: str, phase: str | None = None) -> list[dict]:
+    """Every conformant spec file across the phase folders, oldest first within each.
+
+    A file whose name does not match `YYYY-MM-DD-<slug>.md` is NOT returned — it is a
+    finding for `validate`/`doctor` to report, not something to silently half-support."""
+    out: list[dict] = []
+    for ph in ([phase] if phase else PHASES):
+        d = os.path.join(root, ph)
+        if not os.path.isdir(d):
+            continue
+        for name in sorted(os.listdir(d)):
+            m = SPEC_FILE_RE.match(name)
+            if not m:
+                continue
+            out.append({
+                "phase": ph,
+                "file": name,
+                "path": os.path.join(d, name),
+                "date": m.group(1),
+                "slug": m.group(2),
+            })
     return out
 
 
-def strip_comments(text: str) -> str:
-    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+def resolve_slug(root: str, slug: str) -> tuple[dict | None, list[dict]]:
+    """The one spec file whose basename ends in `-<slug>.md`, wherever it sits.
+
+    Returns (spec, matches). TWO MATCHES IS A REFUSAL, never a guess: the caller exits 2
+    and names both paths. This is what makes N folder moves survivable — every
+    cross-reference names the bare slug and never a path."""
+    matches = [s for s in spec_files(root) if s["slug"] == slug]
+    return (matches[0] if len(matches) == 1 else None), matches
 
 
-def mask_comments(text: str) -> str:
-    """Blank out HTML-comment spans, preserving every newline and column so line numbers
-    and offsets still line up with the original.
+# --------------------------------------------------------------------------- #
+# the single-file parser
+# --------------------------------------------------------------------------- #
+def parse_sections(text: str) -> dict[str, dict]:
+    """Every level-2 section of a spec file, keyed by its heading text.
 
-    `tasks.md`'s own template documents the format with example checkboxes inside its
-    comment guidance. Without this, those examples parse as real tasks and a freshly
-    scaffolded plan reports phantom progress — and `task --check` needs the surviving
-    `lineno` to point at the true line, which stripping (rather than masking) would break."""
-    return re.sub(r"<!--.*?-->",
-                  lambda m: re.sub(r"[^\n]", " ", m.group(0)),
-                  text, flags=re.DOTALL)
+    Sub-headings (`###`+) belong to their parent section — `## Impact` carries its parsed
+    `### Standards …` sub-heading, and splitting on them would orphan it.
 
+    Each entry carries `lines` (the body), `lineno` (0-based, of the heading itself), and
+    `filled` — the three-state distinction the whole contract rests on: a heading that is
+    present but empty is MALFORMED, which is neither an answer nor a not-yet."""
+    out: dict[str, dict] = {}
+    current: str | None = None
+    buf: list[str] = []
+    start = 0
+    lines = text.splitlines()
 
-def body_after_frontmatter(text: str) -> str:
-    if text.startswith("---"):
-        parts = text.split("---", 2)
-        if len(parts) == 3:
-            return parts[2]
-    return text
+    def flush() -> None:
+        if current is not None and current not in out:
+            body = "\n".join(buf)
+            out[current] = {"lines": list(buf), "lineno": start,
+                            "filled": has_real_content(body), "body": body}
 
-
-def has_real_content(text: str) -> bool:
-    """True when a file carries authored prose beyond the shipped template
-    (headings, HTML comments, and `<placeholder>` lines don't count)."""
-    body = strip_comments(body_after_frontmatter(text))
-    for line in body.splitlines():
-        s = line.strip()
-        if not s or s.startswith("#"):
+    for lineno, line in enumerate(lines):
+        m = HEADING_RE.match(line)
+        if m and len(m.group(1)) == 2:
+            flush()
+            current = m.group(2).strip()
+            buf = []
+            start = lineno
             continue
-        residue = PLACEHOLDER_RE.sub("", s)
-        residue = re.sub(r"^[-*+]\s*(\[.?\])?\s*", "", residue)  # drop list/checkbox markers
-        residue = re.sub(r"^\d+(?:\.\d+)*\s*", "", residue)      # drop a leading task id
-        if re.search(r"[A-Za-z0-9]", residue):
-            return True
+        if current is not None:
+            buf.append(line)
+    flush()
+    return out
+
+
+def section_state(sections: dict, heading: str) -> str:
+    """`absent` · `empty` (present but malformed) · `filled`."""
+    if heading not in sections:
+        return "absent"
+    return "filled" if sections[heading]["filled"] else "empty"
+
+
+def stray_headings(sections: dict, schema: dict | None = None) -> list[str]:
+    canon = set(canonical_headings(schema))
+    return [h for h in sections if h not in canon]
+
+
+def derive_stage(spec: dict, sections: dict, fm: dict, tasks: list[dict],
+                 schema: dict | None = None) -> str:
+    """The sub-stage, COMPUTED from section completeness and frontmatter — never declared.
+
+    Declared state is forgotten on edit and goes stale; derived state regresses on its own
+    when a section empties. Rules are evaluated in schema order and the LAST match wins."""
+    s = schema or load_schema()
+    stage = spec["phase"]
+    for rule in s.get("stages", {}).get("derived", []):
+        if rule.get("phase") != spec["phase"]:
+            continue
+        if _stage_match(rule.get("when", {}), sections, fm, tasks):
+            stage = rule["id"]
+    return stage
+
+
+def _stage_match(when: dict, sections: dict, fm: dict, tasks: list[dict]) -> bool:
+    if "anyOf" in when:
+        return any(_stage_match(w, sections, fm, tasks) for w in when["anyOf"])
+    if "filled" in when:
+        return all(section_state(sections, h) == "filled" for h in when["filled"])
+    if "frontmatter" in when:
+        return bool(fm.get(when["frontmatter"]))
+    if "taskState" in when:
+        want = set(when["taskState"])
+        return any(t["state"] in want for t in tasks)
     return False
 
 
-def section_lines(text: str, heading: str) -> list[str]:
-    """The body lines of one `## <heading>` section — everything up to the next heading
-    at the same or a higher level. Sub-headings (`###`+) stay in. Empty list when the
-    section is absent."""
-    want = heading.strip().lower()
-    out: list[str] = []
-    inside = False
-    for line in text.splitlines():
-        m = HEADING_RE.match(line)
-        if m:
-            level = len(m.group(1))
-            if inside and level <= 2:
-                break
-            if not inside:
-                inside = level == 2 and m.group(2).strip().lower() == want
-                continue
-        if inside:
-            out.append(line)
-    return out
-
-
-def parse_impact_standards(text: str) -> list[str]:
-    """The `docs/standards/**.md` paths a proposal DECLARES it will write, read from the
-    one fixed sub-heading of `## Impact` (`### Standards this plan will write into ...`,
-    or the same text as a `**bold**` line).
-
-    Only that sub-heading is parsed, and deliberately so. Its siblings name paths the
-    plan does NOT promise to write — a background standard it *may* resolve, the product
-    code it touches — and parsing those would flag a plan for not writing a doc it never
-    claimed. A proposal with no such sub-heading (every plan authored before this format)
-    declares nothing and is therefore never flagged: the check is opt-in by writing the
-    heading."""
-    out: list[str] = []
-    seen: set[str] = set()
-    collecting = False
-    for line in section_lines(strip_comments(text), "Impact"):
-        if IMPACT_WRITES_RE.match(line):
-            collecting = True
-            continue
-        if SUBHEADING_RE.match(line):     # any other sub-heading closes the parsed zone
-            collecting = False
-            continue
-        if not collecting or not BULLET_RE.match(line):
-            continue
-        # An unfilled `<placeholder>` declares nothing — same rule has_real_content uses.
-        # Without this the shipped template's own example bullet would make every freshly
-        # scaffolded plan report sp-impact-uncovered against a path nobody ever wrote.
-        for m in STANDARD_PATH_RE.finditer(PLACEHOLDER_RE.sub("", line)):
-            if m.group(0) not in seen:
-                seen.add(m.group(0))
-                out.append(m.group(0))
-    return out
-
-
 def parse_tasks(text: str) -> list[dict]:
-    """Every checkbox in tasks.md, in order: index (1-based), explicit id (leading dotted
-    number, or None), checked bool, text, 0-based line number, the `[P]` parallel-eligible
-    marker, and the optional indented execution metadata beneath it (`files`, `pattern`,
-    `verify`).
+    """Every checkbox under `## Tasks`, in order: index, explicit id, state, text, line
+    number, the `[P]` marker, the optional indented metadata (`files`/`pattern`/`verify`),
+    and — for a blocked task — the reason written right in the line.
 
-    CHECKBOX_RE is deliberately UNTOUCHED. The metadata lives on lines that never matched
-    it, so every tasks.md authored before this format parses identically and simply reports
-    empty metadata — the extension is additive, never a migration."""
+    `state` is `" "` (open), `"x"` (done) or `"!"` (blocked). The blocked marker is
+    deliberately IN THE FILE rather than in sidecar state: it is what a human reads when
+    they come to unblock it, and v1's hidden attempt counter was read by nobody."""
+    sections = parse_sections(mask_comments(text))
+    if "Tasks" not in sections:
+        return []
+    base = sections["Tasks"]["lineno"] + 1
+    lines = sections["Tasks"]["lines"]
     out = []
     idx = 0
     section = 0
-    lines = mask_comments(text).splitlines()
-    for lineno, line in enumerate(lines):
+    for i, line in enumerate(lines):
         hm = HEADING_RE.match(line)
-        if hm and len(hm.group(1)) == 2:
-            section += 1          # a `## N.` heading starts a new section
+        if hm and len(hm.group(1)) == 3:
+            section += 1          # a `### N.` heading starts a new task section
             continue
         m = CHECKBOX_RE.match(line)
         if not m:
             continue
         idx += 1
-        checked = m.group(2).lower() == "x"
+        state = m.group(2).lower()
         body = m.group(3).strip()
         idm = TASK_ID_RE.match(body)
         rest = body[idm.end():].lstrip() if idm else body
         parallel = bool(PARALLEL_RE.match(rest))
+        blocked = BLOCKED_REASON_RE.search(body)
         files: list[str] = []
         pattern = verify = None
-        for cont in lines[lineno + 1:]:
-            # the task's block ends at a blank line, a non-indented line (a heading or the
-            # next section), or another checkbox; anything else indented is scanned, so a
-            # wrapped prose line between the checkbox and its `verify:` does not hide it.
+        for cont in lines[i + 1:]:
+            # the task's block ends at a blank line, a non-indented line, or another
+            # checkbox; anything else indented is scanned, so a wrapped prose line between
+            # the checkbox and its `verify:` does not hide it.
             if not cont.strip() or cont[:1] not in (" ", "\t") or CHECKBOX_RE.match(cont):
                 break
             mm = TASK_META_RE.match(cont)
@@ -547,9 +631,12 @@ def parse_tasks(text: str) -> list[dict]:
         out.append({
             "index": idx,
             "id": idm.group(1) if idm else None,
-            "checked": checked,
+            "state": state,
+            "checked": state == "x",
+            "blocked": state == "!",
+            "reason": blocked.group(1) if blocked else None,
             "text": body,
-            "lineno": lineno,
+            "lineno": base + i,
             "section": section,
             "parallel": parallel,
             "files": files,
@@ -559,288 +646,110 @@ def parse_tasks(text: str) -> list[dict]:
     return out
 
 
-def meta_path(root: str, name: str) -> str:
-    return os.path.join(root, name, ".specs.json")
+def task_progress(tasks: list[dict]) -> tuple[int, int, int]:
+    """(checked, blocked, total)."""
+    return (sum(1 for t in tasks if t["checked"]),
+            sum(1 for t in tasks if t["blocked"]),
+            len(tasks))
 
 
-def read_meta(root: str, name: str) -> dict:
-    txt = read_text(meta_path(root, name))
-    if not txt:
-        return {}
-    try:
-        obj = json.loads(txt)
-    except json.JSONDecodeError:
-        return {}
-    return obj if isinstance(obj, dict) else {}
+def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
+    """The `docs/standards/**.md` paths a spec DECLARES it will write, read from the one
+    fixed sub-heading of `## Impact`.
 
-
-def write_meta(root: str, name: str, meta: dict) -> None:
-    """MERGE semantics are the caller's: read_meta, mutate, write_meta. Never build a
-    fresh dict here — `name`, `title`, `created`, `backlogTask`, `refined`, and
-    `verification` all have to survive an attempt being recorded."""
-    pathlib.Path(meta_path(root, name)).write_text(
-        json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def verification_policy(root: str, name: str) -> str:
-    """The plan's declared verification policy. Declared once at propose time so `apply`
-    never has to guess when to run the suite, and never has to ask mid-implementation."""
-    v = str(read_meta(root, name).get("verification", "")).strip().lower()
-    return v if v in VERIFICATION_POLICIES else DEFAULT_VERIFICATION
-
-
-def task_attempts(root: str, name: str) -> dict:
-    a = read_meta(root, name).get("attempts")
-    return a if isinstance(a, dict) else {}
-
-
-def attempt_count(attempts: dict, label: str) -> int:
-    rec = attempts.get(label)
-    if not isinstance(rec, dict):
-        return 0
-    try:
-        return int(rec.get("count", 0))
-    except (TypeError, ValueError):
-        return 0
-
-
-def task_progress(text: str) -> tuple[int, int]:
-    tasks = parse_tasks(text)
-    return sum(1 for t in tasks if t["checked"]), len(tasks)
-
-
-# --------------------------------------------------------------------------- #
-# artifact graph / status
-# --------------------------------------------------------------------------- #
-def artifact_state(root: str, name: str) -> dict:
-    """Resolve the graph for one plan: per-artifact done/ready/blocked, task
-    progress, apply-readiness, and the concrete file paths."""
-    schema = load_schema()
-    pdir = os.path.join(root, name)
-    arts = []
-    done_ids: set[str] = set()
-    for spec in schema["artifacts"]:
-        fpath = os.path.join(pdir, spec["file"])
-        txt = read_text(fpath)
-        present = os.path.isfile(fpath)
-        if spec["id"] == "tasks":
-            done = present and txt is not None and bool(parse_tasks(txt)) and has_real_content(txt)
-        else:
-            done = present and txt is not None and has_real_content(txt)
-        arts.append({"spec": spec, "present": present, "done": done, "path": fpath})
-        if done:
-            done_ids.add(spec["id"])
-    result = []
-    for a in arts:
-        spec = a["spec"]
-        deps_done = all(d in done_ids for d in spec["dependsOn"])
-        if a["done"]:
-            state = "done"
-        elif deps_done:
-            state = "ready"
-        else:
-            state = "blocked"
-        result.append({
-            "id": spec["id"],
-            "file": spec["file"],
-            "required": spec["required"],
-            "state": state,
-            "path": os.path.relpath(a["path"], os.path.dirname(root)).replace(os.sep, "/"),
-        })
-    tasks_txt = read_text(os.path.join(pdir, "tasks.md")) or ""
-    done_ct, total_ct = task_progress(tasks_txt)
-    apply_ready = all(i in done_ids for i in schema["applyRequires"])
-    attempts = task_attempts(root, name)
-    blocked = []
-    for t in parse_tasks(tasks_txt):
-        if t["checked"]:
+    Only that sub-heading is parsed, and deliberately so. Its siblings name paths the spec
+    does NOT promise to write — a background standard it *may* resolve, the product code it
+    touches — and parsing those would flag a spec for not writing a doc it never claimed. A
+    spec with no such sub-heading declares nothing and is never flagged: the check is
+    opt-in by writing the heading."""
+    s = schema or load_schema()
+    imp = s.get("impact", {})
+    anchors = [imp.get("parsedSubheading", "")] + list(imp.get("acceptedAliases", []))
+    anchor_re = re.compile(
+        r"^\s*(?:#{3,6}\s+|\*\*)\s*(?:" +
+        "|".join(re.escape(a.rstrip("/ ")) for a in anchors if a) + r")",
+        re.IGNORECASE)
+    sections = parse_sections(strip_comments(text))
+    if "Impact" not in sections:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    collecting = False
+    for line in sections["Impact"]["lines"]:
+        if anchor_re.match(line):
+            collecting = True
             continue
-        label = t["id"] or str(t["index"])
-        tried = attempt_count(attempts, label)
-        if tried >= ATTEMPT_BUDGET:
-            rec = attempts.get(label) or {}
-            blocked.append({"task": label, "attempts": tried,
-                            "lastError": rec.get("lastError")})
-    meta = read_meta(root, name)
-    return {
-        "plan": name,
-        "artifacts": result,
-        "tasks": {"checked": done_ct, "total": total_ct, "blocked": blocked},
-        "applyReady": apply_ready,
-        "verification": verification_policy(root, name),
-        "refined": meta.get("refined") if isinstance(meta.get("refined"), dict) else None,
-    }
-
-
-def compute_next(root: str, name: str) -> dict:
-    st = artifact_state(root, name)
-    by_id = {a["id"]: a for a in st["artifacts"]}
-    if by_id["proposal"]["state"] != "done":
-        return {"plan": name, "action": "write_artifact", "artifact": "proposal",
-                "file": "proposal.md",
-                "message": "write proposal.md — the plan's why and declared impact"}
-    design = by_id.get("design")
-    if (design is not None and design["state"] != "done"
-            and by_id["tasks"]["state"] != "done"
-            and os.path.isfile(os.path.join(root, name, "design.md"))):
-        # design.md exists but is a bare scaffold: it is required-with-explicit-fallback,
-        # so an empty section is answered with `- none — <reason>`, never left unfilled.
-        # An ABSENT design.md is a legacy plan and is left alone (backward compatible),
-        # and once tasks.md is authored the plan has moved past the design phase — the
-        # scaffold is then a `sp-design-scaffold` warning from `validate`, not a next action.
-        return {"plan": name, "action": "write_artifact", "artifact": "design",
-                "file": "design.md",
-                "message": "fill design.md — context, decisions, alternatives considered, open "
-                           "decisions, risks (write `- none — <reason>` where a section is empty)"}
-    if by_id["tasks"]["state"] != "done":
-        return {"plan": name, "action": "write_artifact", "artifact": "tasks",
-                "file": "tasks.md",
-                "message": "write tasks.md — the implementation checklist"}
-    tasks_txt = read_text(os.path.join(root, name, "tasks.md")) or ""
-    attempts = task_attempts(root, name)
-    blocked: list[dict] = []
-    for t in parse_tasks(tasks_txt):
-        if t["checked"]:
+        if SUBHEADING_RE.match(line):     # any other sub-heading closes the parsed zone
+            collecting = False
             continue
-        label = t["id"] or str(t["index"])
-        tried = attempt_count(attempts, label)
-        if tried >= ATTEMPT_BUDGET:
-            # A failed task is not an untried one. Re-offering a task that already burned
-            # its budget is how an apply loop spins forever on the same error.
-            rec = attempts.get(label) or {}
-            blocked.append({"task": label, "attempts": tried,
-                            "lastError": rec.get("lastError")})
+        if not collecting or not BULLET_RE.match(line):
             continue
-        return {"plan": name, "action": "implement_task", "task": label,
-                "text": t["text"], "attempts": tried,
-                "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
-                "parallel": t["parallel"],
-                "verification": verification_policy(root, name),
-                "blocked": blocked,
-                "message": f"implement task {label}: {t['text']}"}
-    if blocked:
-        names = ", ".join(b["task"] for b in blocked)
-        return {"plan": name, "action": "blocked", "blocked": blocked,
-                "message": f"every remaining task is blocked after {ATTEMPT_BUDGET} attempts "
-                           f"({names}) — a human decides: revise the plan "
-                           f"(`/specs:plan:update`) or reset the attempts"}
-    return {"plan": name, "action": "archive_ready",
-            "message": "all tasks checked — ready to archive (`specs.py archive %s`)" % name}
-
-
-# --------------------------------------------------------------------------- #
-# backlog reindex — this tool OWNS the GENERATED zone format
-# --------------------------------------------------------------------------- #
-def _as_list(v) -> list[str]:
-    if isinstance(v, list):
-        return [str(x).strip() for x in v if str(x).strip()]
-    if isinstance(v, str) and v.strip():
-        return [v.strip()]
-    return []
-
-
-def backlog_tasks(backlog_dir: str) -> list[dict]:
-    out = []
-    for name in sorted(os.listdir(backlog_dir)):
-        if not name.endswith(".md") or name == "index.md":
-            continue
-        txt = read_text(os.path.join(backlog_dir, name))
-        if txt is None:
-            continue
-        fm = parse_frontmatter(txt)
-        prio = str(fm.get("priority", "")).strip().lower()
-        out.append({
-            "slug": name[:-3],
-            "title": str(fm.get("title", "")).strip() or name[:-3],
-            "description": str(fm.get("description", "")).strip(),
-            "tags": _as_list(fm.get("tags")),
-            "priority": prio if prio in PRIORITIES else "",
-            "complexity": str(fm.get("complexity", "")).strip(),
-            "timestamp": str(fm.get("timestamp", "")).strip(),
-        })
+        # An unfilled `<placeholder>` declares nothing — the same rule has_real_content
+        # uses. Without it the shipped template's own example bullet would make every
+        # freshly captured spec report sp-impact-uncovered against a path nobody wrote.
+        for m in STANDARD_PATH_RE.finditer(PLACEHOLDER_RE.sub("", line)):
+            if m.group(0) not in seen:
+                seen.add(m.group(0))
+                out.append(m.group(0))
     return out
 
 
-def render_backlog_zone(tasks: list[dict]) -> str:
-    if not tasks:
-        return BACKLOG_EMPTY
-    groups: dict[str, list[dict]] = {p: [] for p in PRIORITIES}
-    untriaged: list[dict] = []
-    for t in tasks:
-        (groups[t["priority"]] if t["priority"] else untriaged).append(t)
-    counts = {p: len(groups[p]) for p in PRIORITIES}
-    summary = (f"**{len(tasks)} task{'s' if len(tasks) != 1 else ''}** · "
-               f"{counts['critical']} critical · {counts['high']} high · "
-               f"{counts['medium']} medium · {counts['low']} low · "
-               f"{len(untriaged)} untriaged")
-    lines = [summary, ""]
-    ordered = [(p.capitalize(), groups[p]) for p in PRIORITIES] + [("Untriaged", untriaged)]
-    for label, rows in ordered:
-        if not rows:
-            continue
-        rows = sorted(rows, key=lambda r: (r["timestamp"] or "~", r["slug"]))  # oldest-first
-        lines.append(f"#### {label}")
-        lines.append("")
-        lines.append("| Task | Description | Tags | Complexity | Since |")
-        lines.append("| --- | --- | --- | --- | --- |")
-        for r in rows:
-            tags = ", ".join(r["tags"]) if r["tags"] else "—"
-            cx = f"{r['complexity']}h" if r["complexity"] else "—"
-            since = r["timestamp"] or "—"
-            desc = r["description"] or "—"
-            lines.append(f"| [{r['title']}]({r['slug']}.md) | {desc} | {tags} | {cx} | {since} |")
-        lines.append("")
-    theme: dict[str, list[dict]] = {}
-    for t in tasks:
-        for tag in t["tags"]:
-            theme.setdefault(tag, []).append(t)
-    if theme:
-        lines.append("#### By theme")
-        lines.append("")
-        for tag in sorted(theme):
-            members = sorted(theme[tag], key=lambda r: r["slug"])
-            links = ", ".join(f"[{m['slug']}]({m['slug']}.md)" for m in members)
-            lines.append(f"- **{tag}** ({len(members)}): {links}")
-    return "\n".join(lines).rstrip()
+def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
+    """Resolve a slug and read everything derivable from its file in one pass.
+
+    Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
+    ambiguous, so every command handles both the same way."""
+    spec, matches = resolve_slug(root, slug)
+    if len(matches) > 1:
+        return None, {
+            "code": "sp-ambiguous-slug", "exit": 2, "slug": slug,
+            "matches": [f"{m['phase']}/{m['file']}" for m in matches],
+            "message": f"slug '{slug}' matches {len(matches)} files — "
+                       f"{', '.join(m['phase'] + '/' + m['file'] for m in matches)}",
+        }
+    if not spec:
+        return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
+                      "message": f"no spec with slug '{slug}'"}
+    text = read_text(spec["path"]) or ""
+    fm = parse_frontmatter(text)
+    sections = parse_sections(body_after_frontmatter(text))
+    tasks = parse_tasks(text)
+    info = dict(spec)
+    info.update({
+        "text": text,
+        "frontmatter": fm,
+        "sections": sections,
+        "tasks": tasks,
+        "stage": derive_stage(spec, sections, fm, tasks),
+        "verification": _policy(fm),
+    })
+    return info, {}
 
 
-def reindex_backlog(root: str) -> tuple[int, dict]:
-    backlog_dir = os.path.join(root, "backlog")
-    index_path = os.path.join(backlog_dir, "index.md")
-    if not os.path.isdir(backlog_dir):
-        return 1, {"ok": False, "findings": [{"code": "sp-no-backlog",
-                   "message": "no backlog/ directory under the specs root"}]}
-    txt = read_text(index_path)
-    if txt is None:
-        return 1, {"ok": False, "findings": [{"code": "sp-no-backlog-index",
-                   "message": "backlog/index.md is missing or unreadable"}]}
-    zone = render_backlog_zone(backlog_tasks(backlog_dir))
-    begin = txt.find(GEN_BEGIN)
-    end = txt.find(GEN_END)
-    if begin != -1 and end != -1 and end > begin:
-        comment_close = txt.find("-->", begin)
-        head = txt[:comment_close + 3]
-        tail = txt[end:]
-        new = f"{head}\n{zone}\n{tail}"
-    else:
-        anchor = txt.find("## Current tasks")
-        if anchor == -1:
-            return 1, {"ok": False, "findings": [{"code": "sp-no-zone",
-                       "message": "backlog/index.md has neither GENERATED markers nor a "
-                                  "`## Current tasks` heading to anchor the zone"}]}
-        nl = txt.find("\n", anchor)
-        marker = (f"{GEN_BEGIN}: rebuilt from the tasks' frontmatter by `specs.py backlog reindex` "
-                  f"— DO NOT edit by hand. -->\n{zone}\n{GEN_END}")
-        new = f"{txt[:nl+1]}\n{marker}\n{txt[nl+1:]}"
-    if new != txt:
-        pathlib.Path(index_path).write_text(new, encoding="utf-8")
-    return 0, {"ok": True, "changed": new != txt,
-               "path": os.path.relpath(index_path, os.path.dirname(root)).replace(os.sep, "/"),
-               "taskCount": len(backlog_tasks(backlog_dir))}
+def _policy(fm: dict) -> str:
+    v = str(fm.get("verification", "")).strip().lower()
+    return v if v in VERIFICATION_POLICIES else DEFAULT_VERIFICATION
+
+
+def gate_report(info: dict, phase: str, schema: dict | None = None) -> dict:
+    """What stands between this spec and `phase`: every gate section that is absent or
+    present-but-empty. `- none — <reason>` counts as filled and never appears here."""
+    ph = phase_spec(phase, schema)
+    missing, malformed = [], []
+    for h in ph.get("entryGate", []):
+        st = section_state(info["sections"], h)
+        if st == "absent":
+            missing.append(h)
+        elif st == "empty":
+            malformed.append(h)
+    warn = [h for h in ph.get("warnWhenEmpty", [])
+            if section_state(info["sections"], h) != "filled"]
+    return {"phase": phase, "missing": missing, "malformed": malformed,
+            "warn": warn, "ok": not missing and not malformed}
 
 
 # --------------------------------------------------------------------------- #
-# subcommands
+# output
 # --------------------------------------------------------------------------- #
 def emit(as_json: bool, obj: dict, human: str) -> None:
     if as_json:
@@ -849,521 +758,1134 @@ def emit(as_json: bool, obj: dict, human: str) -> None:
         print(human)
 
 
+def emit_err(as_json: bool, err: dict) -> int:
+    emit(as_json, {"ok": False, **{k: v for k, v in err.items() if k != "exit"}},
+         f"error: {err['message']}")
+    return err.get("exit", 1)
+
+
+# --------------------------------------------------------------------------- #
+# commands
+# --------------------------------------------------------------------------- #
 def cmd_new(args, root: str) -> int:
+    """Scaffold `backlog/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else.
+
+    THE DATE IS STAMPED HERE AND NEVER AGAIN — `promote` moves the file without renaming
+    it, so this basename is the spec's identity for its whole lifecycle."""
     slug = slugify(args.name)
-    if not slug:
-        emit(args.json, {"ok": False, "error": "empty name"}, "error: empty plan name")
-        return 1
-    pdir = os.path.join(root, slug)
-    if os.path.exists(pdir):
-        emit(args.json, {"ok": False, "error": "exists", "plan": slug},
-             f"error: plan '{slug}' already exists")
-        return 1
-    os.makedirs(pdir, exist_ok=True)
+    if not SLUG_RE.match(slug):
+        emit(args.json, {"ok": False, "code": "sp-bad-slug", "slug": args.name,
+                         "message": f"'{args.name}' does not reduce to a kebab-case slug"},
+             f"error: '{args.name}' does not reduce to a kebab-case slug")
+        return 2
+    _, matches = resolve_slug(root, slug)
+    if matches:
+        m = matches[0]
+        emit(args.json, {"ok": False, "code": "sp-slug-exists", "slug": slug,
+                         "existing": f"{m['phase']}/{m['file']}",
+                         "message": f"slug '{slug}' already exists at {m['phase']}/{m['file']}"},
+             f"refused: slug '{slug}' already exists at {m['phase']}/{m['file']}")
+        return 2
+    policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
-    for key, fname in (("proposal", "proposal.md"), ("design", "design.md"), ("tasks", "tasks.md")):
-        content = template(key).replace("<TITLE>", title)
-        pathlib.Path(os.path.join(pdir, fname)).write_text(content, encoding="utf-8")
-    # `refined` is seeded null so the field is discoverable in every plan rather than
-    # appearing out of nowhere: quenching-specs-plan-refine replaces it with
-    # {"mode": ..., "date": ...}, and anything that is not an object reads as unrefined.
-    verification = (args.verification or DEFAULT_VERIFICATION).strip().lower()
-    if verification not in VERIFICATION_POLICIES:
-        emit(args.json, {"ok": False, "error": "bad-verification", "value": verification,
-                         "allowed": list(VERIFICATION_POLICIES)},
-             f"error: --verification must be one of {', '.join(VERIFICATION_POLICIES)}")
-        return 1
-    meta = {"schema": load_schema().get("schema", "spec-driven"), "name": slug,
-            "title": title, "created": now_iso(),
-            "backlogTask": args.backlog_task or None,
-            # declared at propose time so apply never guesses when to run the suite, and
-            # never has to ask mid-implementation; `refined` seeded null so the field is
-            # discoverable rather than appearing out of nowhere after a refine pass.
-            "verification": verification,
-            "refined": None}
-    pathlib.Path(os.path.join(pdir, ".specs.json")).write_text(
-        json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    rel = os.path.relpath(pdir, os.path.dirname(root)).replace(os.sep, "/")
-    emit(args.json, {"ok": True, "plan": slug, "title": title, "path": rel,
-                     "files": ["proposal.md", "design.md", "tasks.md", ".specs.json"]},
-         f"created plan '{slug}' at {rel}/ (proposal.md, design.md, tasks.md, .specs.json)")
+    name = f"{today()}-{slug}.md"
+    dest_dir = os.path.join(root, "backlog")
+    os.makedirs(dest_dir, exist_ok=True)
+    body = (capture_form()
+            .replace("<SLUG>", slug)
+            .replace("<TITLE>", title)
+            .replace("<VERIFICATION>", policy))
+    path = os.path.join(dest_dir, name)
+    write_text(path, body)
+    emit(args.json,
+         {"ok": True, "slug": slug, "title": title, "verification": policy,
+          "phase": "backlog", "file": name, "stage": "backlog",
+          "path": os.path.relpath(path, os.path.dirname(root)).replace(os.sep, "/")},
+         f"created backlog/{name}  (slug: {slug} · verification: {policy})\n"
+         f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
     return 0
 
 
 def cmd_list(args, root: str) -> int:
-    plans = []
-    for name in plan_dirs(root):
-        pdir = os.path.join(root, name)
-        tasks_txt = read_text(os.path.join(pdir, "tasks.md")) or ""
-        checked, total = task_progress(tasks_txt)
-        mtime = 0.0
-        for f in os.listdir(pdir):
-            try:
-                mtime = max(mtime, os.path.getmtime(os.path.join(pdir, f)))
-            except OSError:
-                pass
-        plans.append({"plan": name, "tasks": {"checked": checked, "total": total},
-                      "lastModified": datetime.datetime.fromtimestamp(mtime).replace(
-                          microsecond=0).isoformat() if mtime else None})
+    specs = spec_files(root)
+    rows = []
+    for s in specs:
+        text = read_text(s["path"]) or ""
+        fm = parse_frontmatter(text)
+        sections = parse_sections(body_after_frontmatter(text))
+        tasks = parse_tasks(text)
+        checked, blocked, total = task_progress(tasks)
+        rows.append({
+            "slug": s["slug"], "phase": s["phase"], "file": s["file"], "date": s["date"],
+            "title": fm.get("title", titleize(s["slug"])),
+            "stage": derive_stage(s, sections, fm, tasks),
+            "outcome": fm.get("outcome") or None,
+            "tasks": {"checked": checked, "blocked": blocked, "total": total},
+        })
     if args.json:
-        print(json.dumps({"plans": plans}, indent=2, ensure_ascii=False))
-    else:
-        if not plans:
-            print("no active plans")
-        for p in plans:
-            print(f"  {p['plan']}  [{p['tasks']['checked']}/{p['tasks']['total']} tasks]"
-                  f"  {p['lastModified'] or ''}")
+        print(json.dumps({"ok": True, "root": root, "count": len(rows), "specs": rows},
+                         indent=2, ensure_ascii=False))
+        return 0
+    if not rows:
+        print(f"no specs under {root}")
+        return 0
+    print(f"specs — {root} ({len(rows)})")
+    for ph in PHASES:
+        group = [r for r in rows if r["phase"] == ph]
+        if not group:
+            continue
+        print(f"\n  {ph}/")
+        for r in group:
+            prog = (f"  {r['tasks']['checked']}/{r['tasks']['total']}"
+                    if r["tasks"]["total"] else "")
+            blk = f" · {r['tasks']['blocked']} blocked" if r["tasks"]["blocked"] else ""
+            oc = f" · {r['outcome']}" if r["outcome"] else ""
+            print(f"    {r['date']}  {r['slug']:<28} [{r['stage']}]{prog}{blk}{oc}")
     return 0
 
 
-def _require_plan(args, root: str) -> str | None:
-    if not os.path.isdir(os.path.join(root, args.plan)):
-        emit(args.json, {"ok": False, "error": "no-plan", "plan": args.plan},
-             f"error: no plan '{args.plan}' under {root}")
-        return None
-    return args.plan
+def _next_phase(phase: str, schema: dict | None = None) -> str | None:
+    seq = (schema or load_schema()).get("promote", {}).get("sequence", list(PHASES))
+    return seq[seq.index(phase) + 1] if phase in seq and seq.index(phase) + 1 < len(seq) else None
 
 
 def cmd_status(args, root: str) -> int:
-    if _require_plan(args, root) is None:
-        return 1
-    st = artifact_state(root, args.plan)
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    checked, blocked, total = task_progress(info["tasks"])
+    dest = _next_phase(info["phase"])
+    gates = gate_report(info, dest) if dest else None
+    sections = [{"heading": h, "state": section_state(info["sections"], h)}
+                for h in canonical_headings()]
+    obj = {
+        "ok": True, "slug": info["slug"], "title": info["frontmatter"].get("title", ""),
+        "phase": info["phase"], "stage": info["stage"], "file": info["file"],
+        "date": info["date"], "verification": info["verification"],
+        "refined": info["frontmatter"].get("refined") or None,
+        "outcome": info["frontmatter"].get("outcome") or None,
+        "sections": sections,
+        "strays": stray_headings(info["sections"]),
+        "tasks": {"checked": checked, "blocked": blocked, "total": total,
+                  "blockedTasks": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
+                                   for t in info["tasks"] if t["blocked"]]},
+        "promote": gates,
+    }
     if args.json:
-        print(json.dumps(st, indent=2, ensure_ascii=False))
-    else:
-        print(f"plan: {st['plan']}  (tasks {st['tasks']['checked']}/{st['tasks']['total']}, "
-              f"applyReady={st['applyReady']})")
-        for a in st["artifacts"]:
-            opt = "" if a["required"] else " (optional)"
-            print(f"  {a['id']:<9} {a['state']:<8}{opt}  {a['file']}")
+        print(json.dumps(obj, indent=2, ensure_ascii=False))
+        return 0
+    print(f"{info['slug']} — {obj['title']}")
+    print(f"  {info['phase']}/{info['file']}  [{info['stage']}]  "
+          f"verification: {info['verification']}")
+    if total:
+        print(f"  tasks: {checked}/{total} complete" +
+              (f" · {blocked} blocked" if blocked else ""))
+    for s in sections:
+        mark = {"filled": "✓", "empty": "!", "absent": "·"}[s["state"]]
+        print(f"    {mark} ## {s['heading']}")
+    if obj["strays"]:
+        print(f"  strays: {', '.join(obj['strays'])}")
+    if gates:
+        if gates["ok"]:
+            print(f"  promote → {dest}/: ready")
+        else:
+            if gates["missing"]:
+                print(f"  promote → {dest}/: missing {', '.join(gates['missing'])}")
+            if gates["malformed"]:
+                print(f"  promote → {dest}/: empty (malformed) {', '.join(gates['malformed'])}")
+    return 0
+
+
+def _canonical_index(heading: str, schema: dict | None = None) -> int:
+    canon = canonical_headings(schema)
+    return canon.index(heading) if heading in canon else len(canon)
+
+
+def _match_heading(heading: str) -> str | None:
+    """Case-insensitive lookup onto the canonical spelling. Headings are a parsed contract,
+    so the FILE always carries canonical English — but a human typing `specs.py section x
+    validation` should not get a stray section for their trouble."""
+    want = heading.strip().lower()
+    for h in canonical_headings():
+        if h.lower() == want:
+            return h
+    return None
+
+
+def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
+    """Replace a section's block, or create it in CANONICAL POSITION when absent.
+
+    Position is derived from the schema's declared order, not from where the writer
+    happened to be: a spec whose `## Tasks` was written before its `## Proposal` still
+    reads in contract order, so a human and the parser see the same document."""
+    text = info["text"]
+    lines = text.splitlines(keepends=True)
+    # sections were parsed from the body, so their line numbers need the frontmatter back
+    fm_offset = len(lines) - len(body_after_frontmatter(text).splitlines(keepends=True))
+    if heading in info["sections"]:
+        sec = info["sections"][heading]
+        start = sec["lineno"] + fm_offset
+        end = start + 1 + len(sec["lines"])
+        return "".join(lines[:start]) + block + "".join(lines[end:]), "replaced"
+    idx = _canonical_index(heading)
+    following = [sec["lineno"] + fm_offset for h, sec in info["sections"].items()
+                 if _canonical_index(h) > idx]
+    if following:
+        at = min(following)
+        return "".join(lines[:at]) + block + "\n" + "".join(lines[at:]), "created"
+    return text.rstrip() + "\n\n" + block, "created"
+
+
+def cmd_section(args, root: str) -> int:
+    """Deterministic partial read/write of ONE section — what makes lean agent context real.
+
+    An executor is handed a task line and `## Handoff`, never the whole spec; this is the
+    command that slices it without an LLM re-reading and rewriting the file."""
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    heading = _match_heading(args.heading)
+    if not heading:
+        emit(args.json,
+             {"ok": False, "code": "sp-stray-heading", "heading": args.heading,
+              "canonical": canonical_headings(),
+              "message": f"'{args.heading}' is not one of the thirteen canonical headings"},
+             f"error: '{args.heading}' is not a canonical heading")
+        return 2
+    if not args.write:
+        st = section_state(info["sections"], heading)
+        body = info["sections"].get(heading, {}).get("body", "")
+        if args.json:
+            print(json.dumps({"ok": st != "absent", "slug": info["slug"],
+                              "heading": heading, "state": st, "body": body},
+                             indent=2, ensure_ascii=False))
+        else:
+            print(body.strip() if st != "absent" else f"(## {heading} is absent)")
+        return 0 if st != "absent" else 1
+
+    content = sys.stdin.read() if not sys.stdin.isatty() else ""
+    block = (f"## {heading}\n\n{content.strip()}\n"
+             if content.strip() else section_guidance(heading))
+    new_text, action = upsert_section(info, heading, block)
+    write_text(info["path"], new_text)
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
+          "path": os.path.relpath(info["path"], os.path.dirname(root)).replace(os.sep, "/")},
+         f"{action} ## {heading} in {info['phase']}/{info['file']}")
+    return 0
+
+
+def set_frontmatter_key(text: str, key: str, value: str) -> str:
+    """Set one top-level frontmatter key, preserving every other line as authored.
+
+    Rewriting the block wholesale would reformat a human's `refined: {mode, date}` and
+    reorder their keys — a promote is a move, and the outcome stamp is the ONLY content it
+    is allowed to write."""
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return f"---\n{key}: {value}\n---\n\n" + text
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return text
+    for i in range(1, close):
+        if lines[i].split(":", 1)[0].strip() == key:
+            lines[i] = f"{key}: {value}\n"
+            return "".join(lines)
+    lines.insert(close, f"{key}: {value}\n")
+    return "".join(lines)
+
+
+def cmd_promote(args, root: str) -> int:
+    """The gated transition — and the human OK made auditable.
+
+    Promote to `ready/` IS the authorization to build: one plan, one OK becomes one file
+    move in `git log`. It refuses (exit 2) with the missing list rather than warning,
+    because a gate that warns is not a gate.
+
+    The file is MOVED, never renamed: the date prefix was stamped at capture and the
+    basename is the spec's identity for its whole lifecycle. Git detects the rename by
+    content, so `git log --follow` reads as one history without this tool shelling out."""
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    dest = args.to or _next_phase(info["phase"])
+    if not dest:
+        emit(args.json,
+             {"ok": False, "code": "sp-terminal-phase", "slug": info["slug"],
+              "phase": info["phase"],
+              "message": f"'{info['slug']}' is already in {info['phase']}/ — nowhere to promote"},
+             f"refused: '{info['slug']}' is already in {info['phase']}/")
+        return 2
+    if dest not in PHASES:
+        emit(args.json, {"ok": False, "code": "sp-unknown-phase", "phase": dest,
+                         "message": f"'{dest}' is not a phase folder"},
+             f"error: '{dest}' is not a phase folder")
+        return 2
+
+    gates = gate_report(info, dest)
+    if not gates["ok"]:
+        obj = {"ok": False, "code": "sp-gate-unmet", "slug": info["slug"],
+               "from": info["phase"], "to": dest,
+               "missing": gates["missing"], "malformed": gates["malformed"],
+               "message": f"cannot promote '{info['slug']}' to {dest}/ — "
+                          f"{len(gates['missing'])} missing, {len(gates['malformed'])} empty"}
+        human = [f"refused: cannot promote '{info['slug']}' to {dest}/"]
+        if gates["missing"]:
+            human += [f"  missing:   ## {h}" for h in gates["missing"]]
+        if gates["malformed"]:
+            human += [f"  empty:     ## {h}  (write `- none — <reason>` or fill it)"
+                      for h in gates["malformed"]]
+        emit(args.json, obj, "\n".join(human))
+        return 2
+
+    outcome = None
+    if dest == "archive":
+        outcome = args.outcome or "done"
+        if outcome not in OUTCOMES:
+            emit(args.json, {"ok": False, "code": "sp-bad-outcome", "outcome": outcome,
+                             "message": f"--outcome must be one of {', '.join(OUTCOMES)}"},
+                 f"error: --outcome must be one of {', '.join(OUTCOMES)}")
+            return 2
+        # An abandoned spec is EXPECTED to have open tasks — refusing there would make
+        # every abandonment a forced promote. Only `done` has to be true.
+        open_tasks = [t for t in info["tasks"] if not t["checked"]]
+        if outcome == "done" and open_tasks and not args.force:
+            emit(args.json,
+                 {"ok": False, "code": "sp-open-tasks", "slug": info["slug"],
+                  "open": len(open_tasks), "total": len(info["tasks"]),
+                  "openTasks": [{"id": t["id"], "text": t["text"], "state": t["state"]}
+                                for t in open_tasks],
+                  "message": f"{len(open_tasks)} of {len(info['tasks'])} tasks still open — "
+                             f"pass --force, or --outcome abandoned"},
+                 f"refused: {len(open_tasks)} of {len(info['tasks'])} tasks still open in "
+                 f"'{info['slug']}'\n" +
+                 "\n".join(f"  [{t['state']}] {t['text'][:70]}" for t in open_tasks[:8]) +
+                 "\n  pass --force to archive anyway, or --outcome abandoned")
+            return 2
+
+    dest_dir = os.path.join(root, dest)
+    dest_path = os.path.join(dest_dir, info["file"])
+    rel = f"{dest}/{info['file']}"
+    if args.dry_run:
+        emit(args.json,
+             {"ok": True, "dryRun": True, "slug": info["slug"], "from": info["phase"],
+              "to": dest, "outcome": outcome, "dest": rel,
+              "warn": gates["warn"]},
+             f"dry-run: would move {info['phase']}/{info['file']} → {rel}" +
+             (f"  (outcome: {outcome})" if outcome else ""))
+        return 0
+    if os.path.exists(dest_path):
+        emit(args.json, {"ok": False, "code": "sp-dest-exists", "dest": rel,
+                         "message": f"{rel} already exists"},
+             f"error: {rel} already exists")
+        return 1
+    os.makedirs(dest_dir, exist_ok=True)
+    if outcome:
+        write_text(info["path"], set_frontmatter_key(info["text"], "outcome", outcome))
+    os.rename(info["path"], dest_path)
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "from": info["phase"], "to": dest,
+          "outcome": outcome, "dest": rel, "warn": gates["warn"]},
+         f"promoted '{info['slug']}': {info['phase']}/ → {rel}" +
+         (f"  (outcome: {outcome})" if outcome else "") +
+         ("".join(f"\n  warning: ## {h} is empty" for h in gates["warn"])))
+    return 0
+
+
+def _find_task(tasks: list[dict], ident: str) -> dict | None:
+    for t in tasks:
+        if t["id"] == ident or str(t["index"]) == ident:
+            return t
+    return None
+
+
+def cmd_task(args, root: str) -> int:
+    """Flip a checkbox MECHANICALLY — never by string surgery on the caller's side.
+
+    `--block` writes the reason into the line itself. That visibility is the whole point:
+    v1 kept an attempt counter in `.specs.json` that nobody read, and a task went quiet
+    after five failures with no trace of why."""
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    ident = args.check or args.uncheck or args.block
+    if not ident:
+        emit(args.json, {"ok": False, "code": "sp-no-action",
+                         "message": "pass --check, --uncheck or --block"},
+             "error: pass --check, --uncheck or --block")
+        return 1
+    if args.block and not args.reason:
+        emit(args.json, {"ok": False, "code": "sp-no-reason",
+                         "message": "--block requires --reason"},
+             "error: --block requires --reason (a blocked task without a reason is the "
+             "hidden state this replaced)")
+        return 1
+    t = _find_task(info["tasks"], ident)
+    if not t:
+        emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
+                         "message": f"no task '{ident}' in {info['slug']}"},
+             f"error: no task '{ident}' in {info['slug']}")
+        return 1
+
+    lines = info["text"].splitlines(keepends=True)
+    line = lines[t["lineno"]]
+    m = CHECKBOX_RE.match(line.rstrip("\n"))
+    if not m:
+        emit(args.json, {"ok": False, "code": "sp-line-drift", "task": ident,
+                         "lineno": t["lineno"],
+                         "message": "the parsed line is not a checkbox — the file changed"},
+             "error: the parsed line is not a checkbox — re-read the spec")
+        return 1
+    mark = {"check": "x", "uncheck": " ", "block": "!"}[
+        "check" if args.check else "uncheck" if args.uncheck else "block"]
+    body = m.group(3).rstrip()
+    body = BLOCKED_REASON_RE.sub("", body).rstrip()      # drop any stale blocked suffix
+    if args.block:
+        body = f"{body} — blocked: {args.reason.strip()}"
+    lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
+    write_text(info["path"], "".join(lines))
+
+    verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
+          "state": mark, "text": body,
+          "reason": args.reason if args.block else None},
+         f"task {ident} {verb}: {body}")
     return 0
 
 
 def cmd_next(args, root: str) -> int:
-    if _require_plan(args, root) is None:
-        return 1
-    nxt = compute_next(root, args.plan)
-    emit(args.json, nxt, f"next: {nxt['message']}")
-    return 0
+    """THE single next action, so a skill never infers state from prose.
 
+    In `backlog/` that is the next unfilled promote gate; in `ready/` the next open task.
+    A `[!]` task is SKIPPED — it already has an honest reason recorded and re-offering it
+    forever is what the attempt budget was clumsily trying to prevent."""
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    dest = _next_phase(info["phase"])
+    base = {"slug": info["slug"], "phase": info["phase"], "stage": info["stage"],
+            "verification": info["verification"],
+            "blocked": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
+                        for t in info["tasks"] if t["blocked"]]}
 
-def cmd_task(args, root: str) -> int:
-    if _require_plan(args, root) is None:
-        return 1
-    modes = [bool(args.check), bool(args.uncheck), bool(args.attempt),
-             bool(args.reset_attempts)]
-    if sum(modes) != 1:
-        emit(args.json, {"ok": False,
-                         "error": "need exactly one of --check / --uncheck / --attempt / "
-                                  "--reset-attempts"},
-             "error: pass exactly one of --check ID, --uncheck ID, --attempt ID, "
-             "--reset-attempts ID")
-        return 1
-    if args.attempt or args.reset_attempts:
-        return _cmd_task_attempt(args, root)
-    target = args.check or args.uncheck
-    to_checked = bool(args.check)
-    tpath = os.path.join(root, args.plan, "tasks.md")
-    txt = read_text(tpath)
-    if txt is None:
-        emit(args.json, {"ok": False, "error": "no-tasks"}, "error: tasks.md missing")
-        return 1
-    tasks = parse_tasks(txt)
-    match = None
-    for t in tasks:
-        if t["id"] == target or str(t["index"]) == target:
-            match = t
-            break
-    if match is None:
-        emit(args.json, {"ok": False, "error": "no-such-task", "task": target},
-             f"error: no task '{target}' in {args.plan}/tasks.md")
-        return 1
-    lines = txt.splitlines(keepends=True)
-    ln = match["lineno"]
-    old = lines[ln]
-    mark = "x" if to_checked else " "
-    new_line = re.sub(r"\[( |x|X)\]", f"[{mark}]", old, count=1)
-    lines[ln] = new_line
-    pathlib.Path(tpath).write_text("".join(lines), encoding="utf-8")
-    label = match["id"] or str(match["index"])
-    emit(args.json, {"ok": True, "task": label, "checked": to_checked,
-                     "text": match["text"], "changed": old != new_line},
-         f"task {label} {'checked' if to_checked else 'unchecked'}: {match['text']}")
-    return 0
-
-
-def _cmd_task_attempt(args, root: str) -> int:
-    """Record (or clear) a task's attempt state. Kept mechanical for the same reason the
-    checkbox is: an apply loop hand-editing JSON between retries is exactly the string
-    surgery this tool exists to remove."""
-    target = args.attempt or args.reset_attempts
-    tasks_txt = read_text(os.path.join(root, args.plan, "tasks.md"))
-    if tasks_txt is None:
-        emit(args.json, {"ok": False, "error": "no-tasks"}, "error: tasks.md missing")
-        return 1
-    labels = {(t["id"] or str(t["index"])) for t in parse_tasks(tasks_txt)}
-    if target not in labels:
-        emit(args.json, {"ok": False, "error": "no-such-task", "task": target},
-             f"error: no task '{target}' in {args.plan}/tasks.md")
-        return 1
-    meta = read_meta(root, args.plan)
-    attempts = meta.get("attempts")
-    if not isinstance(attempts, dict):
-        attempts = {}
-    if args.reset_attempts:
-        attempts.pop(target, None)
-        meta["attempts"] = attempts
-        write_meta(root, args.plan, meta)
-        emit(args.json, {"ok": True, "task": target, "attempts": 0, "reset": True},
-             f"task {target}: attempts reset")
+    if info["phase"] == "backlog":
+        gates = gate_report(info, "ready")
+        if not gates["ok"]:
+            want = (gates["missing"] + gates["malformed"])[0]
+            obj = {"ok": True, "action": "write_section", "heading": want, **base,
+                   "missing": gates["missing"], "malformed": gates["malformed"],
+                   "message": f"write ## {want} (then {len(gates['missing']) + len(gates['malformed']) - 1} more) "
+                              f"before promoting to ready/"}
+            emit(args.json, obj, obj["message"])
+            return 0
+        obj = {"ok": True, "action": "promote", "to": "ready", **base,
+               "message": f"all gates met — `specs.py promote {info['slug']}`"}
+        emit(args.json, obj, obj["message"])
         return 0
-    count = attempt_count(attempts, target) + 1
-    attempts[target] = {"count": count, "lastError": args.error or None,
-                        "lastAttempt": now_iso()}
-    meta["attempts"] = attempts
-    write_meta(root, args.plan, meta)
-    exhausted = count >= ATTEMPT_BUDGET
-    emit(args.json,
-         {"ok": True, "task": target, "attempts": count, "budget": ATTEMPT_BUDGET,
-          "exhausted": exhausted, "lastError": args.error or None},
-         f"task {target}: attempt {count}/{ATTEMPT_BUDGET}"
-         + (" — budget exhausted, reported blocked" if exhausted else ""))
+
+    if info["phase"] == "ready":
+        openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
+        if openable:
+            t = openable[0]
+            obj = {"ok": True, "action": "implement_task", "task": t["id"], "text": t["text"],
+                   "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
+                   "parallel": t["parallel"], **base,
+                   "message": f"implement task {t['id']}: {t['text']}"}
+            emit(args.json, obj, obj["message"])
+            return 0
+        if base["blocked"]:
+            obj = {"ok": True, "action": "blocked", **base,
+                   "message": f"every remaining task is blocked ({len(base['blocked'])})"}
+            emit(args.json, obj, obj["message"] + "".join(
+                f"\n  [!] {b['text']}" for b in base["blocked"]))
+            return 0
+        obj = {"ok": True, "action": "promote", "to": "archive", **base,
+               "message": f"all tasks complete — write ## Outcome, then "
+                          f"`specs.py promote {info['slug']} --to archive`"}
+        emit(args.json, obj, obj["message"])
+        return 0
+
+    obj = {"ok": True, "action": "done", **base,
+           "message": f"'{info['slug']}' is archived ("
+                      f"{info['frontmatter'].get('outcome', 'done')})"}
+    emit(args.json, obj, obj["message"])
     return 0
-
-
-def cmd_backlog(args, root: str) -> int:
-    if args.backlog_cmd != "reindex":
-        emit(args.json, {"ok": False, "error": "unknown backlog subcommand"},
-             "error: only `backlog reindex` is supported")
-        return 1
-    code, obj = reindex_backlog(root)
-    if args.json:
-        print(json.dumps(obj, indent=2, ensure_ascii=False))
-    elif obj.get("ok"):
-        print(f"backlog reindexed: {obj['path']} ({obj['taskCount']} task(s), "
-              f"{'changed' if obj['changed'] else 'already current'})")
-    else:
-        for f in obj.get("findings", []):
-            print(f"  [{f['code']}] {f['message']}")
-    return code
 
 
 def _norm_file(p: str) -> str:
-    p = re.sub(r"\s*\([^)]*\)\s*$", "", p.strip())   # drop a trailing "(new)" annotation
-    p = p.replace("\\", "/")
-    if p.startswith("./"):
-        p = p[2:]
-    return p.rstrip("/")
+    p = p.strip().replace("\\", "/")
+    p = re.sub(r"\s*\(new\)\s*$", "", p)      # `src/a.py (new)` is still src/a.py
+    return p.strip("./")
 
 
 def _overlaps(a: str, b: str) -> bool:
-    """Two declared paths conflict when they are the same file, or when one is a
-    directory containing the other — `src/` and `src/a.ts` are not disjoint."""
-    return a == b or a.startswith(b + "/") or b.startswith(a + "/")
+    a, b = _norm_file(a), _norm_file(b)
+    return a == b or a.startswith(b.rstrip("/") + "/") or b.startswith(a.rstrip("/") + "/")
 
 
 def parallel_groups(tasks: list[dict]) -> list[list[dict]]:
-    """Maximal runs of consecutive still-open `[P]` tasks within ONE `## N.` section. An
-    already-checked task does not split a run (it is done, so it cannot conflict); a
-    non-parallel open task does, and so does a section boundary — a section is the smallest
-    independently shippable unit, so a group must not straddle two. A lone `[P]` task is not
-    a group; there is nothing to run it alongside."""
-    groups: list[list[dict]] = []
-    cur: list[dict] = []
+    """Consecutive `[P]` tasks within one `### N.` section form a group."""
+    groups, cur, sec = [], [], None
     for t in tasks:
-        if t["checked"]:
-            continue
-        if t["parallel"] and (not cur or t["section"] == cur[-1]["section"]):
+        if t["parallel"] and (sec is None or t["section"] == sec):
             cur.append(t)
+            sec = t["section"]
             continue
-        if len(cur) >= 2:
+        if len(cur) > 1:
             groups.append(cur)
-        cur = [t] if t["parallel"] else []
-    if len(cur) >= 2:
+        cur, sec = ([t], t["section"]) if t["parallel"] else ([], None)
+    if len(cur) > 1:
         groups.append(cur)
     return groups
 
 
-def check_parallel(tasks: list[dict]) -> list[dict]:
-    """Verify each `[P]` group MECHANICALLY. The marker is a proposal-time claim; this is
-    what makes it a fact, so apply branches on data instead of judging disjunction in prose."""
-    out = []
-    for g in parallel_groups(tasks):
-        labels = [t["id"] or str(t["index"]) for t in g]
-        files = {lbl: [_norm_file(f) for f in t["files"]] for lbl, t in zip(labels, g)}
-        reasons: list[str] = []
-        for lbl in labels:
-            if not files[lbl]:
-                reasons.append(f"task {lbl} declares no `files:` — disjunction cannot be proved")
-            for f in files[lbl]:
-                if f == "docs" or f.startswith("docs/"):
-                    reasons.append(f"task {lbl} writes into docs/ ({f}) — never parallelized")
-        for i, a in enumerate(labels):
-            for b in labels[i + 1:]:
-                for fa in files[a]:
-                    for fb in files[b]:
-                        if _overlaps(fa, fb):
-                            both = fa if fa == fb else f"{fa} / {fb}"
-                            reasons.append(f"tasks {a} and {b} are not disjoint ({both})")
-        out.append({"tasks": labels, "files": files, "eligible": not reasons,
-                    "reasons": sorted(set(reasons))})
-    return out
-
-
 def cmd_parallel(args, root: str) -> int:
-    if _require_plan(args, root) is None:
-        return 1
-    tasks_txt = read_text(os.path.join(root, args.plan, "tasks.md"))
-    if tasks_txt is None:
-        emit(args.json, {"ok": False, "error": "no-tasks"}, "error: tasks.md missing")
-        return 1
-    groups = check_parallel(parse_tasks(tasks_txt))
-    ok = all(g["eligible"] for g in groups)
+    """Prove a `[P]` group's `files:` sets are disjoint — MECHANICALLY, never judged in
+    prose. A group with an undeclared `files:` is ineligible: nothing can be proven about
+    a task that never said what it touches."""
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    findings = []
+    for gi, group in enumerate(parallel_groups(info["tasks"]), 1):
+        undeclared = [t["id"] for t in group if not t["files"]]
+        clashes = []
+        for i, a in enumerate(group):
+            for b in group[i + 1:]:
+                for fa in a["files"]:
+                    for fb in b["files"]:
+                        if _overlaps(fa, fb):
+                            clashes.append({"a": a["id"], "b": b["id"],
+                                            "file": _norm_file(fa)})
+        eligible = not undeclared and not clashes
+        findings.append({"group": gi, "tasks": [t["id"] for t in group],
+                         "eligible": eligible, "undeclared": undeclared,
+                         "clashes": clashes})
+    ok = all(f["eligible"] for f in findings)
     if args.json:
-        print(json.dumps({"ok": ok, "plan": args.plan, "groups": groups},
+        print(json.dumps({"ok": ok, "slug": info["slug"], "groups": findings},
                          indent=2, ensure_ascii=False))
-    elif not groups:
-        print(f"no [P] groups in {args.plan} — every task runs serially")
     else:
-        for g in groups:
-            state = "eligible" if g["eligible"] else "NOT eligible — run serially"
-            print(f"  [{', '.join(g['tasks'])}] {state}")
-            for r in g["reasons"]:
-                print(f"      {r}")
+        if not findings:
+            print(f"{info['slug']}: no [P] groups — serial execution")
+        for f in findings:
+            print(f"group {f['group']}: {', '.join(x or '?' for x in f['tasks'])} — "
+                  f"{'eligible' if f['eligible'] else 'NOT eligible'}")
+            for c in f["clashes"]:
+                print(f"    {c['a']} and {c['b']} both touch {c['file']}")
+            if f["undeclared"]:
+                print(f"    no files: declared by {', '.join(f['undeclared'])}")
     return 0 if ok else 1
 
 
-def _validate_plan(root: str, name: str) -> list[dict]:
-    findings = []
-    pdir = os.path.join(root, name)
-    if not KEBAB_RE.match(name):
-        findings.append({"severity": "error", "plan": name, "code": "sp-bad-name",
-                         "message": f"plan folder '{name}' is not kebab-case"})
-    if not os.path.isfile(os.path.join(pdir, ".specs.json")):
-        findings.append({"severity": "warn", "plan": name, "code": "sp-no-meta",
-                         "message": "plan has no .specs.json metadata"})
-    prop = read_text(os.path.join(pdir, "proposal.md"))
-    if prop is None:
-        findings.append({"severity": "error", "plan": name, "code": "sp-missing-proposal",
-                         "message": "proposal.md is missing"})
-    elif not has_real_content(prop):
-        findings.append({"severity": "warn", "plan": name, "code": "sp-empty-proposal",
-                         "message": "proposal.md is still the unfilled template"})
-    design = read_text(os.path.join(pdir, "design.md"))
-    if design is not None and not has_real_content(design):
-        # An ABSENT design.md is a legacy plan and never flagged; a PRESENT but unfilled
-        # one is the case the old contract could not tell from "we weighed alternatives
-        # and there were none" — an explicit `- none — <reason>` is the answer.
-        findings.append({"severity": "warn", "plan": name, "code": "sp-design-scaffold",
-                         "message": "design.md exists but is still the unfilled scaffold — fill "
-                                    "it, or answer each empty section with `- none — <reason>`"})
-    tasks_txt = read_text(os.path.join(pdir, "tasks.md"))
-    if tasks_txt is None:
-        findings.append({"severity": "error", "plan": name, "code": "sp-missing-tasks",
-                         "message": "tasks.md is missing"})
+def cmd_discover(args, root: str) -> int:
+    """Append one line to `## Discoveries`, creating the section when absent.
+
+    Captured INDISCRIMINATELY during execution — whether a discovery is worth acting on is
+    triage's judgment, not the executor's, and the cost of asking mid-build is a human
+    interrupted for something that may not matter."""
+    info, err = load_spec(root, args.spec)
+    if err:
+        return emit_err(args.json, err)
+    entry = f"- {args.text.strip()}"
+    sec = info["sections"].get("Discoveries")
+    if sec and sec["filled"]:
+        block = f"## Discoveries\n{sec['body'].rstrip()}\n{entry}\n"
     else:
-        strict = 0
-        for line in mask_comments(tasks_txt).splitlines():
-            if CHECKBOX_LOOSE_RE.match(line):
-                if CHECKBOX_RE.match(line):
-                    strict += 1
-                else:
-                    findings.append({"severity": "error", "plan": name, "code": "sp-bad-checkbox",
-                                     "message": f"malformed checkbox: {line.strip()!r} "
-                                                "(expected `- [ ] ` or `- [x] `)"})
-        if strict == 0:
-            findings.append({"severity": "warn", "plan": name, "code": "sp-no-tasks",
-                             "message": "tasks.md has no parseable checkbox"})
-    # Refinement: visible, never gating. A plan with a checklist has reached the point where
-    # somebody should have disagreed with it, and `applyReady` cannot tell whether anyone did.
-    # WARN only — gating apply on this would break every plan in every installed repo on
-    # upgrade, and the front never blocks on a judgment call.
-    if tasks_txt is not None:
-        meta = {}
-        meta_txt = read_text(os.path.join(pdir, ".specs.json"))
-        if meta_txt:
-            try:
-                meta = json.loads(meta_txt)
-            except json.JSONDecodeError:
-                meta = {}
-        if not isinstance(meta.get("refined"), dict):
-            findings.append({"severity": "warn", "plan": name, "code": "sp-unrefined",
-                             "message": "no refinement recorded in .specs.json — the plan reached "
-                                        "a checklist without anyone interrogating it "
-                                        "(`/specs:plan:refine`)"})
-    # Impact coverage: a standard the proposal PROMISES to write must be somebody's job.
-    # Matched against the whole of tasks.md rather than a single parsed checkbox, because
-    # a task item routinely wraps across lines and the path can land on a continuation.
-    if prop is not None and tasks_txt is not None:
-        for path in parse_impact_standards(prop):
-            if path not in tasks_txt:
-                findings.append({"severity": "warn", "plan": name, "code": "sp-impact-uncovered",
-                                 "message": f"proposal.md `## Impact` declares `{path}` but no "
-                                            "tasks.md item names it — add the task, or drop the "
-                                            "path from the declared scope"})
-    return findings
-
-
-def cmd_validate(args, root: str) -> int:
-    names = [args.plan] if args.plan else plan_dirs(root)
-    if args.plan and not os.path.isdir(os.path.join(root, args.plan)):
-        emit(args.json, {"ok": False, "error": "no-plan", "plan": args.plan},
-             f"error: no plan '{args.plan}'")
-        return 1
-    findings = []
-    for name in names:
-        findings.extend(_validate_plan(root, name))
-    errors = [f for f in findings if f["severity"] == "error"]
-    if args.json:
-        print(json.dumps({"ok": not errors, "findings": findings}, indent=2, ensure_ascii=False))
-    else:
-        print(f"specs validate — {len(errors)} error(s), "
-              f"{len(findings) - len(errors)} warning(s)")
-        for f in findings:
-            print(f"  [{f['severity']:<5}] {f['plan']}: {f['message']}  ({f['code']})")
-        if not findings:
-            print("  OK — plans conform.")
-    return 1 if errors else 0
-
-
-def cmd_archive(args, root: str) -> int:
-    name = args.name
-    pdir = os.path.join(root, name)
-    if not os.path.isdir(pdir):
-        emit(args.json, {"ok": False, "error": "no-plan", "plan": name},
-             f"error: no plan '{name}'")
-        return 1
-    tasks_txt = read_text(os.path.join(pdir, "tasks.md")) or ""
-    checked, total = task_progress(tasks_txt)
-    open_tasks = total - checked
-    dest_name = f"{today()}-{name}"
-    dest = os.path.join(root, "archive", dest_name)
-    if open_tasks > 0 and not args.force:
-        emit(args.json,
-             {"ok": False, "code": "sp-open-tasks", "plan": name,
-              "openTasks": open_tasks, "total": total,
-              "message": f"{open_tasks} of {total} tasks still open — pass --force to archive anyway"},
-             f"refused: {open_tasks} of {total} tasks still open in '{name}' — "
-             f"pass --force to archive anyway")
-        return 2
-    if args.dry_run:
-        emit(args.json,
-             {"ok": True, "dryRun": True, "plan": name, "openTasks": open_tasks,
-              "dest": os.path.relpath(dest, os.path.dirname(root)).replace(os.sep, "/")},
-             f"dry-run: would move '{name}' -> archive/{dest_name} "
-             f"({open_tasks} open task(s))")
-        return 0
-    os.makedirs(os.path.join(root, "archive"), exist_ok=True)
-    if os.path.exists(dest):
-        emit(args.json, {"ok": False, "error": "dest-exists", "dest": dest_name},
-             f"error: archive/{dest_name} already exists")
-        return 1
-    os.rename(pdir, dest)
+        block = f"## Discoveries\n\n{entry}\n"
+    new_text, _ = upsert_section(info, "Discoveries", block)
+    write_text(info["path"], new_text)
     emit(args.json,
-         {"ok": True, "plan": name,
-          "dest": os.path.relpath(dest, os.path.dirname(root)).replace(os.sep, "/"),
-          "openTasks": open_tasks},
-         f"archived '{name}' -> archive/{dest_name}")
+         {"ok": True, "slug": info["slug"], "entry": args.text.strip()},
+         f"recorded in ## Discoveries: {args.text.strip()}")
     return 0
 
 
-def cmd_doctor(args, root: str) -> int:
-    findings = []
-    if not os.path.isdir(root):
-        findings.append({"code": "sp-no-workspace", "severity": "error",
-                         "message": f"no specs/ workspace at {root}",
-                         "remedy": "scaffold specs/ (copy the plugin's assets/specs skeleton)"})
-        _emit_doctor(args, root, findings)
-        return 1
-    backlog_index = os.path.join(root, "backlog", "index.md")
-    if not os.path.isfile(backlog_index):
-        findings.append({"code": "sp-no-backlog", "severity": "warn",
-                         "message": "no backlog/index.md",
-                         "remedy": "install assets/specs/backlog/index.md"})
-    for name in plan_dirs(root):
-        pdir = os.path.join(root, name)
-        if not os.path.isfile(os.path.join(pdir, ".specs.json")):
-            findings.append({"code": "sp-no-meta", "severity": "warn", "plan": name,
-                             "message": f"plan '{name}' has no .specs.json",
-                             "remedy": "run `specs.py new` semantics or add .specs.json"})
-        if not KEBAB_RE.match(name):
-            findings.append({"code": "sp-bad-name", "severity": "error", "plan": name,
-                             "message": f"plan '{name}' is not kebab-case",
-                             "remedy": "rename the plan folder to kebab-case (gate on code coupling)"})
-    for entry in (os.listdir(root) if os.path.isdir(root) else []):
-        full = os.path.join(root, entry)
-        if os.path.isfile(full) and entry != ".specs.json":
-            findings.append({"code": "sp-stray-file", "severity": "warn", "path": entry,
-                             "message": f"stray file at the specs root: {entry}",
-                             "remedy": "move it into a plan folder or remove it"})
-    _emit_doctor(args, root, findings)
-    return 1 if any(f["severity"] == "error" for f in findings) else 0
+# --------------------------------------------------------------------------- #
+# migrate (one-way, v1 -> v2)
+# --------------------------------------------------------------------------- #
+# Where each v1 artifact's sections land. `## Context` and `## Decisions` merge into the
+# single `## Design`; everything else is a rename. The v1 heading is matched
+# case-insensitively and its body is carried VERBATIM — a migration must not rewrite prose
+# it does not understand.
+V1_MAP = {
+    "proposal.md": [("Why", "Problem"), ("What Changes", "Proposal"),
+                    ("Out of Scope", "Out of Scope"), ("Validation", "Validation"),
+                    ("Impact", "Impact")],
+    "design.md": [("Context", "Design"), ("Decisions", "Design"),
+                  ("Alternatives Considered", "Alternatives Considered"),
+                  ("Open Decisions", "Open Decisions"), ("Risks", "Risks")],
+}
+MIGRATE_NONE = "- none — not recorded in the v1 plan"
 
 
-def _emit_doctor(args, root: str, findings: list[dict]) -> None:
-    if args.json:
-        print(json.dumps({"ok": not any(f["severity"] == "error" for f in findings),
-                          "root": root, "findings": findings}, indent=2, ensure_ascii=False))
+def _git_first_commit_date(path: str) -> str | None:
+    """The path's first commit date — used only when `.specs.json` has no `created`.
+
+    A birth date is never INVENTED: this walks git history for the real one, and the caller
+    falls back to the file's mtime rather than to today."""
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["git", "log", "--diff-filter=A", "--follow", "--format=%ad",
+             "--date=short", "--", path],
+            capture_output=True, text=True, timeout=10,
+            cwd=os.path.dirname(os.path.abspath(path)) or ".")
+        lines = [l.strip() for l in out.stdout.splitlines() if l.strip()]
+        return lines[-1] if lines else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+
+def _birth_date(meta: dict, path: str) -> str:
+    created = str(meta.get("created", "") or "")
+    if re.match(r"^\d{4}-\d{2}-\d{2}", created):
+        return created[:10]
+    git = _git_first_commit_date(path)
+    if git:
+        return git
+    try:
+        return datetime.date.fromtimestamp(os.path.getmtime(path)).isoformat()
+    except OSError:
+        return today()
+
+
+def _v1_sections(plan_dir: str) -> dict[str, list[str]]:
+    """Collect v1 bodies keyed by their V2 heading, in canonical order."""
+    collected: dict[str, list[str]] = {}
+    for fname, pairs in V1_MAP.items():
+        text = read_text(os.path.join(plan_dir, fname))
+        if text is None:
+            continue
+        secs = parse_sections(body_after_frontmatter(text))
+        lower = {k.lower(): v for k, v in secs.items()}
+        for v1h, v2h in pairs:
+            sec = lower.get(v1h.lower())
+            if sec and sec["filled"]:
+                body = sec["body"].strip()
+                # `## Context` and `## Decisions` both land in `## Design`
+                collected.setdefault(v2h, []).append(
+                    f"### {v1h}\n\n{body}" if v2h == "Design" else body)
+    tasks_text = read_text(os.path.join(plan_dir, "tasks.md"))
+    if tasks_text is not None:
+        body = body_after_frontmatter(tasks_text)
+        body = re.sub(r"(?m)^#\s+.*$", "", body, count=1)     # drop the `# Tasks — X` title
+        # v1 grouped tasks under `## N.`; v2 nests them under the `## Tasks` section
+        body = re.sub(r"(?m)^## ", "### ", body)
+        if has_real_content(body):
+            collected["Tasks"] = [body.strip()]
+    return collected
+
+
+def _migrate_plan(root: str, name: str, dry: bool) -> dict:
+    plan_dir = os.path.join(root, name)
+    meta_txt = read_text(os.path.join(plan_dir, ".specs.json")) or "{}"
+    try:
+        meta = json.loads(meta_txt)
+    except json.JSONDecodeError:
+        meta = {}
+    slug = slugify(name)
+    date = _birth_date(meta, os.path.join(plan_dir, ".specs.json"))
+    collected = _v1_sections(plan_dir)
+    dest_phase = "ready" if collected.get("Tasks") else "backlog"
+    gate = phase_spec(dest_phase).get("entryGate", [])
+
+    fm = [f"slug: {slug}", f"title: {meta.get('title') or titleize(slug)}",
+          f"verification: {_policy(meta)}"]
+    if isinstance(meta.get("refined"), dict) and meta["refined"].get("mode"):
+        r = meta["refined"]
+        fm.append(f"refined: {{mode: {r.get('mode')}, date: {r.get('date', date)}}}")
+
+    parts = ["---", *fm, "---", "", f"# {meta.get('title') or titleize(slug)}", ""]
+    for h in canonical_headings():
+        if h in collected:
+            parts += [f"## {h}", "", "\n\n".join(collected[h]), ""]
+        elif h in gate:
+            # the destination's gate must be satisfiable, and an explicit none that SAYS
+            # the v1 plan never recorded it is a fact — not an invented answer
+            parts += [f"## {h}", "", MIGRATE_NONE, ""]
+    body = "\n".join(parts).rstrip() + "\n"
+
+    strays = sorted(f for f in os.listdir(plan_dir)
+                    if f not in (".specs.json", "proposal.md", "design.md", "tasks.md")
+                    and os.path.isfile(os.path.join(plan_dir, f)))
+    dest = os.path.join(root, dest_phase, f"{date}-{slug}.md")
+    rec = {"from": f"{name}/", "slug": slug, "to": f"{dest_phase}/{date}-{slug}.md",
+           "date": date, "dateSource": "created" if meta.get("created") else "git/mtime",
+           "sections": sorted(collected), "strays": strays}
+    if dry:
+        return rec
+    os.makedirs(os.path.join(root, dest_phase), exist_ok=True)
+    write_text(dest, body)
+    for f in (".specs.json", "proposal.md", "design.md", "tasks.md"):
+        p = os.path.join(plan_dir, f)
+        if os.path.isfile(p):
+            os.remove(p)
+    if not strays:
+        try:
+            os.rmdir(plan_dir)
+        except OSError:
+            rec["kept"] = True
     else:
-        errs = sum(1 for f in findings if f["severity"] == "error")
-        print(f"specs doctor — {root} ({errs} error(s), {len(findings) - errs} warning(s))")
+        rec["kept"] = True          # never delete a folder still holding a human's file
+    return rec
+
+
+def _migrate_task(root: str, path: str, dry: bool) -> dict:
+    text = read_text(path) or ""
+    fm = parse_frontmatter(text)
+    slug = slugify(os.path.splitext(os.path.basename(path))[0])
+    stamp = str(fm.get("timestamp", ""))
+    date = stamp[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", stamp) else _birth_date({}, path)
+    body = strip_comments(body_after_frontmatter(text)).strip()
+    body = re.sub(r"(?m)^#\s+.*$", "", body, count=1).strip()
+    problem = fm.get("description") or body or titleize(slug)
+    extra = [f"{k}: {fm[k]}" for k in ("priority", "tags", "complexity") if fm.get(k)]
+    if extra:
+        problem += f"\n\n_(v1 backlog task — {' · '.join(extra)})_"
+    if body and fm.get("description") and body not in problem:
+        problem += f"\n\n{body}"
+    out = ["---", f"slug: {slug}", f"title: {fm.get('title') or titleize(slug)}",
+           f"verification: {DEFAULT_VERIFICATION}", "---", "",
+           f"# {fm.get('title') or titleize(slug)}", "", "## Problem", "", problem, ""]
+    dest = os.path.join(root, "backlog", f"{date}-{slug}.md")
+    rec = {"from": f"backlog/{os.path.basename(path)}", "slug": slug,
+           "to": f"backlog/{date}-{slug}.md", "date": date, "kind": "task"}
+    if dry:
+        return rec
+    write_text(dest, "\n".join(out).rstrip() + "\n")
+    os.remove(path)
+    return rec
+
+
+def cmd_migrate(args, root: str) -> int:
+    """One-way v1 -> v2. `specs/archive/**` is NEVER touched — it is historical and
+    read-only, and churning it would break every link into it for no gain.
+
+    Refuses (exit 2) when there is nothing v1 left, so a second run cannot quietly
+    re-migrate an already-converted workspace."""
+    plans = _v1_leftovers(root)
+    tasks = []
+    bdir = os.path.join(root, "backlog")
+    if os.path.isdir(bdir):
+        for name in sorted(os.listdir(bdir)):
+            p = os.path.join(bdir, name)
+            if name == "index.md" or not os.path.isfile(p) or SPEC_FILE_RE.match(name):
+                continue
+            if str(parse_frontmatter(read_text(p) or "").get("type", "")) == "task":
+                tasks.append(p)
+    if not plans and not tasks:
+        emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
+                         "message": "no v1 plan folders and no v1 backlog tasks — "
+                                    "this workspace is already v2"},
+             "refused: nothing to migrate — this workspace is already v2")
+        return 2
+
+    migrated = [_migrate_plan(root, n, args.dry_run) for n in plans]
+    migrated += [_migrate_task(root, p, args.dry_run) for p in tasks]
+    obj = {"ok": True, "dryRun": bool(args.dry_run), "root": root,
+           "migrated": migrated,
+           "archiveUntouched": True,
+           "kept": [m["from"] for m in migrated if m.get("kept")]}
+    if args.json:
+        print(json.dumps(obj, indent=2, ensure_ascii=False))
+    else:
+        verb = "would migrate" if args.dry_run else "migrated"
+        print(f"{verb} {len(migrated)} item(s) — specs/archive/** untouched")
+        for m in migrated:
+            print(f"  {m['from']:<40} → {m['to']}   (date from {m.get('dateSource', 'timestamp')})")
+            if m.get("strays"):
+                print(f"      kept, still holds: {', '.join(m['strays'])}")
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# validate / doctor / backlog reindex
+# --------------------------------------------------------------------------- #
+def _finding(code: str, severity: str, message: str, **extra) -> dict:
+    return {"code": code, "severity": severity, "message": message, **extra}
+
+
+def validate_spec(root: str, s: dict) -> list[dict]:
+    """Every finding for ONE spec file, in the v2 `sp-*` vocabulary.
+
+    The phase-scoped rule is asserted against the schema's per-phase sets — the SAME sets
+    `promote` gates on, so the two can never drift into disagreeing about what a phase
+    requires."""
+    where = f"{s['phase']}/{s['file']}"
+    text = read_text(s["path"]) or ""
+    fm = parse_frontmatter(text)
+    sections = parse_sections(body_after_frontmatter(text))
+    tasks = parse_tasks(text)
+    out: list[dict] = []
+
+    schema = load_schema()
+    for key in schema.get("frontmatter", {}).get("required", []):
+        if not str(fm.get(key, "")).strip():
+            out.append(_finding("sp-missing-frontmatter", "error",
+                                f"{where}: frontmatter has no `{key}`", spec=s["slug"],
+                                path=where, remedy=f"add `{key}:` to the frontmatter"))
+    if fm.get("slug") and fm["slug"] != s["slug"]:
+        out.append(_finding("sp-slug-mismatch", "error",
+                            f"{where}: frontmatter slug `{fm['slug']}` disagrees with the "
+                            f"filename suffix `{s['slug']}`", spec=s["slug"], path=where,
+                            remedy="make the frontmatter slug match the filename"))
+    pol = str(fm.get("verification", "")).strip().lower()
+    if pol and pol not in VERIFICATION_POLICIES:
+        out.append(_finding("sp-bad-verification", "error",
+                            f"{where}: verification `{pol}` is not one of "
+                            f"{', '.join(VERIFICATION_POLICIES)}", spec=s["slug"], path=where,
+                            remedy=f"set verification to one of {', '.join(VERIFICATION_POLICIES)}"))
+
+    for h in stray_headings(sections, schema):
+        out.append(_finding("sp-stray-heading", "warn",
+                            f"{where}: `## {h}` is not one of the thirteen canonical headings",
+                            spec=s["slug"], path=where, heading=h,
+                            remedy="rename it to a canonical heading or fold it into one"))
+
+    # The phase-scoped rule governs whether a heading must be PRESENT — so `missing` is
+    # checked only against the gate of the phase this spec is IN.
+    gates = gate_report({"sections": sections}, s["phase"], schema)
+    for h in gates["missing"]:
+        out.append(_finding("sp-gate-unmet", "warn",
+                            f"{where}: `## {h}` is required in {s['phase']}/ and is absent",
+                            spec=s["slug"], path=where, heading=h,
+                            remedy=f"specs.py section {s['slug']} \"{h}\" --write"))
+    # Malformed is NOT phase-scoped. Once a heading exists it must say something, in any
+    # phase: it is neither an answer nor a not-yet, and leaving it for the promote to catch
+    # means a spec looks fine right up until the gate refuses it.
+    for h in canonical_headings(schema):
+        if section_state(sections, h) == "empty":
+            out.append(_finding("sp-empty-section", "error",
+                                f"{where}: `## {h}` is present but empty — neither an answer "
+                                f"nor a not-yet", spec=s["slug"], path=where, heading=h,
+                                remedy="fill it, or write `- none — <reason>`"))
+    for h in gates["warn"]:
+        out.append(_finding("sp-handoff-empty", "warn",
+                            f"{where}: `## {h}` is empty in {s['phase']}/ — an executor "
+                            f"gets no context", spec=s["slug"], path=where, heading=h,
+                            remedy="rewrite it after each committed task and at every promote"))
+
+    declared = parse_impact_standards(text, schema)
+    if declared:
+        named = "\n".join(t["text"] for t in tasks)
+        for p in declared:
+            if p not in named:
+                out.append(_finding("sp-impact-uncovered", "warn",
+                                    f"{where}: `{p}` is declared under ## Impact but no task "
+                                    f"names it", spec=s["slug"], path=where, standard=p,
+                                    remedy="add a task that writes it, or drop the declaration"))
+
+    # Judged against the READY gate, not backlog's: a spec is "unrefined" once it could be
+    # promoted, not the moment it is captured. Warning on every fresh capture would train
+    # the reader to ignore the code.
+    if s["phase"] == "backlog" and not fm.get("refined") \
+            and gate_report({"sections": sections}, "ready", schema)["ok"]:
+        out.append(_finding("sp-unrefined", "warn",
+                            f"{where}: ready to promote, but nobody has interrogated it",
+                            spec=s["slug"], path=where,
+                            remedy="run a refinement pass, or promote as-is (never gated)"))
+    if s["phase"] == "archive" and not fm.get("outcome"):
+        out.append(_finding("sp-no-outcome", "warn",
+                            f"{where}: archived with no `outcome:` — done and abandoned "
+                            f"read alike", spec=s["slug"], path=where,
+                            remedy="stamp `outcome: done` or `outcome: abandoned`"))
+    return out
+
+
+def cmd_validate(args, root: str) -> int:
+    specs = spec_files(root)
+    findings: list[dict] = []
+
+    seen: dict[str, list[str]] = {}
+    for s in specs:
+        seen.setdefault(s["slug"], []).append(f"{s['phase']}/{s['file']}")
+    for slug, paths in seen.items():
+        if len(paths) > 1:
+            findings.append(_finding("sp-duplicate-slug", "error",
+                                     f"slug `{slug}` resolves to {len(paths)} files: "
+                                     f"{', '.join(paths)}", spec=slug,
+                                     remedy="rename one — a slug is an identity, and two "
+                                            "matches makes every command refuse"))
+
+    for ph in PHASES:
+        d = os.path.join(root, ph)
+        if not os.path.isdir(d):
+            continue
+        for name in sorted(os.listdir(d)):
+            if name == "index.md" or name.startswith("."):
+                continue
+            if os.path.isdir(os.path.join(d, name)):
+                # archive/ is DELIBERATELY not migrated — it is historical and read-only, so
+                # its v1 `YYYY-MM-DD-<name>/` plan folders are expected, not strays. Flagging
+                # them would push a reader to migrate the one tree the design protects.
+                if ph == "archive":
+                    continue
+                findings.append(_finding("sp-stray-dir", "warn",
+                                         f"{ph}/{name}/ is a directory — v2 specs are files",
+                                         path=f"{ph}/{name}",
+                                         remedy="a v1 plan folder? run `specs.py migrate`"))
+            elif not SPEC_FILE_RE.match(name):
+                findings.append(_finding("sp-bad-filename", "error",
+                                         f"{ph}/{name} is not `YYYY-MM-DD-<slug>.md`",
+                                         path=f"{ph}/{name}",
+                                         remedy="rename it to the one filename pattern all "
+                                                "three folders share"))
+
+    target = [s for s in specs if s["slug"] == args.spec] if args.spec else specs
+    if args.spec and not target:
+        emit(args.json, {"ok": False, "code": "sp-unknown-slug", "slug": args.spec,
+                         "message": f"no spec with slug '{args.spec}'"},
+             f"error: no spec with slug '{args.spec}'")
+        return 1
+    for s in target:
+        findings.extend(validate_spec(root, s))
+
+    errors = [f for f in findings if f["severity"] == "error"]
+    if args.json:
+        print(json.dumps({"ok": not errors, "root": root, "specs": len(specs),
+                          "findings": findings}, indent=2, ensure_ascii=False))
+    else:
+        print(f"specs validate — {root} ({len(errors)} error(s), "
+              f"{len(findings) - len(errors)} warning(s))")
         for f in findings:
-            print(f"  [{f['severity']:<5}] {f.get('plan', f.get('path', '-'))}: "
-                  f"{f['message']}  ({f['code']})")
+            print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
+            if f.get("remedy"):
+                print(f"          remedy: {f['remedy']}")
+        if not findings:
+            print("  OK — every spec conforms.")
+    return 1 if findings else 0
+
+
+def _v1_leftovers(root: str) -> list[str]:
+    """A v1 plan folder is a directory at the specs root holding proposal/tasks/.specs.json.
+
+    Detecting it matters more than it looks: v2 `list` globs the three phase folders, so an
+    unmigrated v1 workspace reads as EMPTY rather than as wrong-format, and a skill would
+    conclude there is no work when there is."""
+    out = []
+    if not os.path.isdir(root):
+        return out
+    for name in sorted(os.listdir(root)):
+        d = os.path.join(root, name)
+        if not os.path.isdir(d) or name in PHASES or name.startswith("."):
+            continue
+        if any(os.path.isfile(os.path.join(d, f))
+               for f in (".specs.json", "proposal.md", "tasks.md")):
+            out.append(name)
+    return out
+
+
+def cmd_doctor(args, root: str) -> int:
+    findings: list[dict] = []
+    if not os.path.isdir(root):
+        findings.append(_finding("sp-no-workspace", "error", f"no specs/ workspace at {root}",
+                                 remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
+        return _emit_doctor(args, root, findings)
+
+    for ph in PHASES:
+        if not os.path.isdir(os.path.join(root, ph)):
+            findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
+                                     path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
+    if not os.path.isfile(os.path.join(root, "backlog", "index.md")):
+        findings.append(_finding("sp-no-backlog-index", "warn", "no backlog/index.md",
+                                 remedy="install assets/specs/backlog/index.md"))
+
+    leftovers = _v1_leftovers(root)
+    for name in leftovers:
+        findings.append(_finding("sp-v1-leftover", "error",
+                                 f"`{name}/` is a v1 three-file plan folder",
+                                 path=name,
+                                 remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
+                                        f"specs/archive/** is never touched)"))
+    for entry in sorted(os.listdir(root)):
+        full = os.path.join(root, entry)
+        if os.path.isfile(full) and entry not in ("QUENCHING.md", "schema.json") \
+                and not entry.startswith("."):
+            findings.append(_finding("sp-stray-file", "warn",
+                                     f"stray file at the specs root: {entry}", path=entry,
+                                     remedy="move it into a phase folder or remove it"))
+    return _emit_doctor(args, root, findings)
+
+
+def _emit_doctor(args, root: str, findings: list[dict]) -> int:
+    errors = [f for f in findings if f["severity"] == "error"]
+    if args.json:
+        print(json.dumps({"ok": not errors, "root": root, "findings": findings},
+                         indent=2, ensure_ascii=False))
+    else:
+        print(f"specs doctor — {root} ({len(errors)} error(s), "
+              f"{len(findings) - len(errors)} warning(s))")
+        for f in findings:
+            print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
             print(f"          remedy: {f['remedy']}")
         if not findings:
             print("  OK — workspace conforms.")
+    return 1 if errors else 0
+
+
+STAGE_ORDER = ("refined", "designed", "proposed", "captured", "backlog")
+
+
+def render_backlog_zone(rows: list[dict]) -> str:
+    """The GENERATED zone of `backlog/index.md`, grouped by DERIVED stage.
+
+    This tool owns the format — the zone is rebuilt from disk, never hand-edited, so a
+    listing can never drift from what the folder actually holds."""
+    if not rows:
+        return BACKLOG_EMPTY
+    counts = {st: sum(1 for r in rows if r["stage"] == st) for st in STAGE_ORDER}
+    head = f"**{len(rows)} spec{'s' if len(rows) != 1 else ''}**"
+    parts = [f"{counts[st]} {st}" for st in STAGE_ORDER if counts[st]]
+    lines = [head + (" · " + " · ".join(parts) if parts else ""), ""]
+    for st in STAGE_ORDER:
+        group = sorted((r for r in rows if r["stage"] == st), key=lambda r: r["file"])
+        if not group:
+            continue
+        lines += [f"### {st.capitalize()}", "",
+                  "| Spec | Title | Since |", "| --- | --- | --- |"]
+        for r in group:
+            lines.append(f"| [{r['slug']}]({r['file']}) | {r['title']} | {r['date']} |")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def cmd_backlog(args, root: str) -> int:
+    index = os.path.join(root, "backlog", "index.md")
+    text = read_text(index)
+    if text is None:
+        emit(args.json, {"ok": False, "code": "sp-no-backlog-index",
+                         "message": "no backlog/index.md to reindex"},
+             "error: no backlog/index.md to reindex")
+        return 1
+    rows = []
+    for s in spec_files(root, "backlog"):
+        raw = read_text(s["path"]) or ""
+        fm = parse_frontmatter(raw)
+        rows.append({
+            "slug": s["slug"], "file": s["file"], "date": s["date"],
+            "title": fm.get("title", titleize(s["slug"])),
+            "stage": derive_stage(s, parse_sections(body_after_frontmatter(raw)), fm,
+                                  parse_tasks(raw)),
+        })
+    begin = text.find(GEN_BEGIN)
+    end = text.find(GEN_END)
+    if begin < 0 or end < 0 or end < begin:
+        emit(args.json, {"ok": False, "code": "sp-no-generated-zone",
+                         "message": "backlog/index.md has no BEGIN/END GENERATED zone"},
+             "error: backlog/index.md has no BEGIN/END GENERATED zone")
+        return 1
+    head_end = text.find("-->", begin)
+    if head_end < 0:
+        emit(args.json, {"ok": False, "code": "sp-no-generated-zone",
+                         "message": "the BEGIN GENERATED comment is unterminated"},
+             "error: the BEGIN GENERATED comment is unterminated")
+        return 1
+    new_text = (text[:head_end + 3] + "\n" + render_backlog_zone(rows) + "\n" + text[end:])
+    write_text(index, new_text)
+    emit(args.json, {"ok": True, "specs": len(rows),
+                     "stages": {st: sum(1 for r in rows if r["stage"] == st)
+                                for st in STAGE_ORDER
+                                if any(r["stage"] == st for r in rows)}},
+         f"reindexed backlog/index.md — {len(rows)} spec(s)")
+    return 0
 
 
 # --------------------------------------------------------------------------- #
 # dispatch
 # --------------------------------------------------------------------------- #
-def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="specs.py", description="deterministic trail for the specs/ front")
+def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
+    p = argparse.ArgumentParser(prog="specs.py",
+                                description="deterministic trail for the specs/ front")
     p.add_argument("--root", help="the specs/ workspace directory (default: nearest specs/ upward)")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    p.add_argument("--version", action="store_true", help="print the version and exit")
+    sub = p.add_subparsers(dest="cmd")
 
     def add_json(sp):
         sp.add_argument("--json", action="store_true", help="machine-readable output")
+        return sp
 
-    sp = sub.add_parser("new"); sp.add_argument("name"); sp.add_argument("--title")
-    sp.add_argument("--backlog-task", dest="backlog_task")
+    sp = add_json(sub.add_parser("new", help="capture a spec into backlog/"))
+    sp.add_argument("name")
+    sp.add_argument("--title")
     sp.add_argument("--verification", choices=list(VERIFICATION_POLICIES),
                     help=f"when the suite runs (default: {DEFAULT_VERIFICATION})")
-    add_json(sp)
-    add_json(sub.add_parser("list"))
-    sp = sub.add_parser("status"); sp.add_argument("--plan", required=True); add_json(sp)
-    sp = sub.add_parser("next"); sp.add_argument("--plan", required=True); add_json(sp)
-    sp = sub.add_parser("task"); sp.add_argument("--plan", required=True)
-    sp.add_argument("--check"); sp.add_argument("--uncheck")
-    sp.add_argument("--attempt", help="record a failed attempt at TASK (against the budget)")
-    sp.add_argument("--reset-attempts", dest="reset_attempts",
-                    help="clear TASK's attempt state so `next` offers it again")
-    sp.add_argument("--error", help="the failure to record alongside --attempt")
-    add_json(sp)
-    sp = sub.add_parser("parallel"); sp.add_argument("--plan", required=True); add_json(sp)
-    sp = sub.add_parser("backlog"); sp.add_argument("backlog_cmd", choices=["reindex"]); add_json(sp)
-    sp = sub.add_parser("validate"); sp.add_argument("--plan"); add_json(sp)
-    sp = sub.add_parser("archive"); sp.add_argument("name")
-    sp.add_argument("--dry-run", action="store_true"); sp.add_argument("--force", action="store_true")
-    add_json(sp)
-    add_json(sub.add_parser("doctor"))
-    return p
+
+    add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
+
+    sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
+    sp.add_argument("--spec", required=True)
+
+    sp = add_json(sub.add_parser("section", help="read or write ONE section"))
+    sp.add_argument("spec")
+    sp.add_argument("heading")
+    sp.add_argument("--write", action="store_true",
+                    help="replace the section from stdin, creating it in canonical position")
+
+    sp = add_json(sub.add_parser("promote", help="the gated phase transition"))
+    sp.add_argument("spec")
+    sp.add_argument("--to", choices=list(PHASES), help="force the destination phase")
+    sp.add_argument("--outcome", choices=list(OUTCOMES),
+                    help="archive hop only (default: done)")
+    sp.add_argument("--force", action="store_true",
+                    help="archive as done despite open tasks")
+    sp.add_argument("--dry-run", action="store_true", dest="dry_run")
+
+    sp = add_json(sub.add_parser("task", help="flip or block a checkbox"))
+    sp.add_argument("--spec", required=True)
+    sp.add_argument("--check")
+    sp.add_argument("--uncheck")
+    sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
+    sp.add_argument("--reason", help="why the task is blocked — written into the line")
+
+    sp = add_json(sub.add_parser("next", help="THE single next action"))
+    sp.add_argument("--spec", required=True)
+
+    sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
+    sp.add_argument("--spec", required=True)
+
+    sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
+    sp.add_argument("spec")
+    sp.add_argument("text")
+
+    sp = add_json(sub.add_parser("validate", help="the canonical set, the gates, the sp-* codes"))
+    sp.add_argument("--spec", help="one slug (default: every spec)")
+
+    add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
+
+    sp = add_json(sub.add_parser("backlog", help="backlog/index.md maintenance"))
+    sp.add_argument("backlog_cmd", choices=["reindex"])
+
+    sp = add_json(sub.add_parser("migrate", help="one-way v1 → v2 fold"))
+    sp.add_argument("--dry-run", action="store_true", dest="dry_run")
+
+    return p, sub
 
 
-DISPATCH = {
-    "new": cmd_new, "list": cmd_list, "status": cmd_status, "next": cmd_next,
-    "task": cmd_task, "parallel": cmd_parallel, "backlog": cmd_backlog,
-    "validate": cmd_validate, "archive": cmd_archive, "doctor": cmd_doctor,
+DISPATCH: dict = {
+    "new": cmd_new,
+    "list": cmd_list,
+    "status": cmd_status,
+    "section": cmd_section,
+    "promote": cmd_promote,
+    "task": cmd_task,
+    "next": cmd_next,
+    "parallel": cmd_parallel,
+    "discover": cmd_discover,
+    "validate": cmd_validate,
+    "doctor": cmd_doctor,
+    "backlog": cmd_backlog,
+    "migrate": cmd_migrate,
 }
 
 
 def _force_utf8_output() -> None:
-    """Plan artifacts are prose — em-dashes, arrows, accented words — and a Windows
-    console defaults to cp1252, where printing one raises UnicodeEncodeError AFTER the
-    write already landed. That turns a successful `task --check` into a traceback and a
-    nonzero exit, which the exit-code contract (0 ok / 1 findings / 2 refusal) reads as a
-    finding. Encode output as UTF-8 and never let a glyph decide the exit code."""
+    """Spec files are prose — em-dashes, arrows, accented words — and a Windows console
+    defaults to cp1252, where printing one raises UnicodeEncodeError AFTER the write
+    already landed. That turns a successful `task --check` into a traceback and a nonzero
+    exit, which the exit-code contract (0 ok / 1 findings / 2 refusal) reads as a finding.
+    Encode output as UTF-8 and never let a glyph decide the exit code."""
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
@@ -1376,8 +1898,11 @@ def main(argv: list[str]) -> int:
     if "--version" in argv:
         print(f"specs {VERSION}")
         return 0
-    parser = build_parser()
+    parser, _ = build_parser()
     args = parser.parse_args(argv)
+    if not getattr(args, "cmd", None):
+        parser.print_help()
+        return 1
     if not hasattr(args, "json"):
         args.json = False
     root = find_specs_root(args.root)

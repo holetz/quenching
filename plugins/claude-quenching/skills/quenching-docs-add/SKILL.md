@@ -8,7 +8,7 @@ description: >-
   "register knowledge in the OKF docs". Classifies into home + type + mold, derives the
   concept path, writes the doc, updates the folder's index.md, appends a log.md entry, and
   self-checks. Not for: installing/aligning the whole docs/ structure → quenching-docs-align;
-  parking a task in the backlog → quenching-specs-backlog-add.
+  parking a task in the backlog → quenching-specs-capture.
 when_to_use: >-
   adding ONE new concept doc into an existing OKF bundle.
 allowed-tools: Read, Grep, Glob, Write, Edit

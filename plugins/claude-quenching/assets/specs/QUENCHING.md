@@ -6,9 +6,9 @@
 # Operating the spec-driven plan workspace
 
 This is `specs/` — where a change to this product is **thought through, specified, built, and
-recorded** before it becomes history. Its unit of work is a **plan**: a folder holding a
-proposal, an optional design, and a task checklist, built on an isolated branch and archived
-when done. It is operated through the `/specs:*` commands of the
+recorded** before it becomes history. Its unit of work is a **spec**: ONE markdown file that lives through its whole
+lifecycle, moving between three phase folders — captured, built on an isolated branch, and
+archived when done. It is operated through the `/specs:*` commands of the
 [`claude-quenching`](https://github.com/eloysekonell/claude-quenching) plugin.
 
 This file is the **operator manual** for that workspace. Its sibling
@@ -31,103 +31,112 @@ python3 --version           # or `py --version` on Windows
 | I want to… | Command |
 | --- | --- |
 | See where everything stands, changing nothing | `/specs:status` |
-| Park a task I just thought of | `/specs:backlog:add` |
-| Prioritize everything parked | `/specs:backlog:triage` |
-| Think an idea through before committing to it | `/specs:explore` |
-| Turn a task or idea into a real plan with artifacts | `/specs:plan:propose` |
-| Promote a Claude Code plan file into the workspace | `/specs:plan:from-claude` |
-| Interrogate a plan before building it — poke holes, weigh alternatives | `/specs:plan:refine` |
-| Build it (opens by offering branch/worktree isolation) | `/specs:plan:apply` |
-| Revise the plan without touching code | `/specs:plan:update` |
-| Close the plan out and distill what it taught us | `/specs:plan:archive` |
-| Drop a plan we are **not** going to build | `/specs:plan:abandon` |
-| Fix the workspace itself — scaffold, names, inbox | `/specs:align` |
+| Park an idea I just had | `/specs:capture` |
+| Think it through before committing to it | `/specs:explore` |
+| Flesh it out — or revise it — until it can be built | `/specs:develop` |
+| Argue with it before building: poke holes, weigh alternatives | `/specs:refine` |
+| Bring in a Claude Code plan file | `/specs:from-claude` |
+| Build it (opens by offering branch/worktree isolation) | `/specs:apply` |
+| Close it out — shipped, or dropped | `/specs:archive` |
+| Sweep what is parked, and every spec's discoveries | `/specs:triage` |
+| Fix the workspace itself — scaffold, filenames, the v1 fold | `/specs:align` |
 | Fix it **and** drive the cycle, to a fixpoint | `/specs:align-and-update` |
 | Align **and update** every front (`docs/`, `specs/`, `.claude/`) | `/align-and-update` |
 
-> `/specs:plan:propose` is the short form of `/claude-quenching:specs:plan:propose`; use the long
-> form if another plugin claims the namespace. Claude also routes to these skills from prose
-> ("propose a plan for X") — the command is the explicit entry point.
+> `/specs:develop` is the short form of `/claude-quenching:specs:develop`; use the long form if
+> another plugin claims the namespace. Claude also routes to these skills from prose ("flesh out
+> the session-tokens spec") — the command is the explicit entry point.
+
+**Eleven commands, flat.** v1 nested them under `/specs:plan:*` and `/specs:backlog:*` because a
+parked task and the spec it seeded were different objects. They are one file now, so the nesting
+described a distinction that no longer exists. `propose` and `update` became one `develop`
+(creating a section and revising one are the same call), and `archive` and `abandon` became one
+`archive` (same command, opposite `--outcome`).
 
 ---
 
 ## 2. The layout
 
-The front lives at the **repo root** — never inside `docs/`. It is **flat**: one folder per plan,
-no `changes/` nesting, because there is no delta to keep separate from a main store.
+The front lives at the **repo root** — never inside `docs/`. **One spec is ONE markdown file for
+its entire lifecycle.** Phases enrich it; they never split it.
 
 ```
 specs/
-  QUENCHING.md         # this manual (payload — not a spec, not a plan)
-  <plan-name>/         # an ACTIVE plan, one folder each
-    .specs.json        # plan metadata (name, title, created, backlogTask,
-                       #   verification policy, refinement record, attempt state)
-    proposal.md        # what & why (+ ## Out of Scope, ## Validation, the ## Impact scope)
-    design.md          # how — ALWAYS present; an empty section reads `- none — <reason>`
-    tasks.md           # implementation checklist (- [ ] / - [x], + optional files:/verify:)
-  archive/             # completed & abandoned plans, as YYYY-MM-DD-<plan-name>/
-  backlog/             # THE TASK INBOX (quenching-managed, outside the docs/ bundle)
-    index.md           # derived listing + the Completed ledger
-    <task-slug>.md     # one parked task per file (type: task)
+  QUENCHING.md              # this manual (payload — not a spec)
+  backlog/                  # DEFINITION — captured → proposed → designed → refined
+    index.md                # derived listing (generated zone, frontmatter-free)
+    2026-07-25-<slug>.md    # one spec per file
+  ready/                    # EXECUTION — ready to build, or building
+    2026-07-14-<slug>.md
+  archive/                  # done or abandoned, told apart by `outcome:` frontmatter
+    2026-06-30-<slug>.md
 ```
 
-**One truth, not two.** There is no "main spec" store and no proposed "delta" to reconcile with
-it. A plan writes its durable rule **directly** into the OKF `docs/` bundle — a decision into
-`docs/standards/` (honestly `authority`-graded), an understanding into `docs/knowledge/` — as the
-plan is built. Isolation-while-building is what a **branch or worktree** gives you (offered by
-`/specs:plan:apply`), with real merge, history, and reversion — not a markdown reimplementation of
-version control.
+**The folder is the phase, and it is the single truth.** There is no `phase:` frontmatter field:
+two declared sources of one fact will diverge, and a folder cannot lie. The transition is a
+`git mv` performed by `specs.py promote`, so `git log` narrates the lifecycle.
 
-**`backlog/` is the task inbox**, a quenching-managed sibling of the plan folders and `archive/`,
-**outside** the `docs/` OKF bundle. `specs.py` and the OKF validator both leave it to the backlog
-skills, which validate it on every write (`okf-validate.py specs/backlog --listing-root`).
+**Every file is `YYYY-MM-DD-<slug>.md`, in every folder.** The date records when the spec was
+**born** and is stamped once, at capture — promote moves the file and never renames it. So the
+basename is stable for the whole lifecycle, `git log --follow` reads as one history, and a plain
+`ls` of any folder is chronological. That last property is the point: a file listing IS the status
+view, and no file listing reads frontmatter.
+
+**Identity is the slug, not the path.** Every command and cross-reference names the bare slug;
+`specs.py` resolves it to the one file ending in `-<slug>.md`, wherever it sits. Two matches is a
+refusal, never a guess.
+
+**One truth, not two.** There is no "main spec" store and no proposed "delta" to reconcile with
+it. A spec writes its durable rule **directly** into the OKF `docs/` bundle — a decision into
+`docs/standards/` (honestly `authority`-graded), an understanding into `docs/knowledge/` — as it is
+built. Isolation-while-building is what a **branch or worktree** gives you, with real merge,
+history, and reversion — not a markdown reimplementation of version control.
 
 ---
 
 ## 3. The lifecycle
 
-```
-  /specs:backlog:add          /specs:explore         /specs:plan:propose
-        │                          │                     │
-        ▼                          ▼                     ▼
-   backlog/<task>.md  ──────►  (thinking)  ──────►  specs/<plan-name>/
-        │                                            proposal · design · tasks
-        │  /specs:backlog:triage                          │
-        ▼  (priority · tags · complexity)                 │ /specs:plan:refine  (offered — argue
-   still backlog/, now ranked                             │   with it before you build it)
-                                                          │ /specs:plan:apply
-                                                          ▼  (offers branch/worktree isolation)
-                                              code, verified + committed per task
-        ~/.claude/plans/*.md                              │  durable rules → docs/standards/
-        │ /specs:plan:from-claude                         │
-        └───────────────────────────►  specs/<plan-name>/ │
-                                                           │
-                                    /specs:plan:update ◄──┤ (plan drifted?)
-                                                           │
-                                                           ▼ /specs:plan:archive
-                                              specs/archive/YYYY-MM-DD-<name>/
-                                                           │
-                                                           ▼ OKF distillation (offered)
-                                             docs/standards · knowledge · glossary
+One file moves through three folders. Nothing is ever copied, split, or renamed.
 
-   …or the plan is dropped instead:  /specs:plan:abandon
-                                              specs/archive/YYYY-MM-DD-<name>/ + ABANDONED.md
-                                              (nothing to un-sync — and the seed task comes BACK)
+```
+   capture                    enrich, in place                 promote (the OK)
+      │                             │                                 │
+      ▼                             ▼                                 ▼
+  backlog/2026-07-25-<slug>.md ───────────────────────────►  ready/2026-07-25-<slug>.md
+      │   ## Problem                                              │   same basename
+      │      ↓ ## Proposal          derived stages:               │
+      │      ↓ ## Design            captured → proposed →         │  build: code, verified
+      │      ↓ refined:             designed → refined            │  + committed per task
+      │                                                           │  durable rules → docs/standards/
+      │  a spec that will NOT be built                            │  discoveries → ## Discoveries
+      │  skips straight to archive                                │
+      └──────────────────────────┐                                ▼ promote --to archive
+                                 ▼                    archive/2026-07-25-<slug>.md
+                    outcome: abandoned                     outcome: done
+                                                                  │
+                                                                  ▼ OKF distillation (offered)
+                                                    docs/standards · knowledge · glossary
 ```
 
-A task **leaves the inbox** when its plan becomes apply-ready or the work is simply done — the
-file is removed and the transition recorded in the **Completed ledger** in `backlog/index.md`.
-Removal never happens on triage, and an abandoned *exploration* (one that never reached a plan)
-leaves the task in place to begin with.
+**`promote` is the human OK, and it is gated.** Moving a spec into `ready/` requires the ten
+definition sections to be filled — the nine `## Problem` … `## Risks` plus `## Tasks`. Missing any
+of them is **exit 2 with the list**, not a warning. An empty section is filled with an explicit
+`- none — <reason>`; a heading present with an empty body is malformed and refuses. So the
+one-plan-one-OK doctrine becomes one auditable `git mv` in your history.
 
-**The ledger records two different things.** A row written at `/specs:plan:propose` time means
-*developed* — the task became a plan, and the work has **not** shipped. A row written when you
-state a task is done means *done*. The Outcome column is what tells them apart. If a developed
-plan is later dropped, `/specs:plan:abandon` reopens its task, so retiring a task at propose time
-is a reversible handoff rather than a deletion.
+`## Tasks` is in that gate on purpose: nothing enters the execution phase with nothing to execute.
 
-Not every plan starts as a task, and not every task needs the full cycle: a task already clear in
-scope goes straight to execution.
+**Archiving refuses to lie.** Promoting to `archive/` with `outcome: done` while `- [ ]` boxes
+remain exits 2 and lists them (overridable with `--force`). `outcome: abandoned` is always allowed
+— open tasks are exactly what you expect when closing out work that will not be built.
+
+**There is no ledger and no task inbox.** The thing you park and the thing you build are the same
+file, so the two meanings a ledger row had to carry — *developed* versus *done* — simply do not
+arise. A finished spec is in `archive/` with `outcome: done`; a dropped one is there with
+`outcome: abandoned`; `git log --follow` is the rest of the story.
+
+Not every spec needs every stage: one already clear in scope is captured, filled out, and promoted
+in a single sitting.
 
 **`/specs:status` reads this whole picture and writes nothing** — what is open, what is ready to
 archive, what is blocked or stale, how the backlog is ranked, and what a sweep would change if you
@@ -139,176 +148,130 @@ ran one. It is the honest way to look before you authorize anything.
 
 ### `/specs:status` — look, change nothing
 
-The only command here that cannot write. It reports the resolved workspace, every active plan
-with its task progress and state (*ready to archive* · *in progress* · *blocked* · *stale, with
-the age*), the backlog by priority, and the verifier results (`specs.py doctor` / `validate`,
-plus the backlog check) — then splits what it found into what `/specs:align` would fix on one OK,
-what `/specs:align-and-update` would then drive, and what neither closes because it needs you. Use
-it as the preview before authorizing a sweep: it speaks the sweep's own `sp-*` finding vocabulary,
-so the two never disagree.
+The only command here that cannot write. Reports every spec by phase and derived stage, task
+progress, what is blocked or stale, and the verifier results (`specs.py doctor` / `validate`) —
+then splits what it found into what `/specs:align` would fix on one OK, what
+`/specs:align-and-update` would drive, and what neither closes because it needs you. It speaks the
+sweep's own `sp-*` vocabulary, so the two never disagree.
 
-### `/specs:backlog:add` — park ONE task
+### `/specs:capture` — park ONE spec
 
-Seconds, minimal, **zero interrogation**. Extracts a title and a one-sentence gist from your
-phrasing and stamps `type: task` with a timestamp. `priority` (`critical|high|medium|low`),
-`tags`, and `complexity` (rough dev hours) are recorded **only if you say them inline** — *"park
-the token refresh bug, high priority, theme auth, ~8h"*. What you did not say is left out: a task
-with no priority is **untriaged**, which is a valid state. Dedupes by slug and title (MERGE, never
-clobber), regenerates the derived zone in `backlog/index.md` (`specs.py backlog reindex`), and logs.
-
-### `/specs:backlog:triage` — rank the WHOLE inbox
-
-Reads every task's frontmatter directly (no sub-agents — a backlog is small by nature) plus
-`docs/vision/` when it exists, then proposes **one** table: a priority, tags, and optionally a
-complexity per untriaged task, each with a one-line rationale — plus staleness flags and
-duplicate-merge suggestions. **One OK** applies it all; a rejected plan applies nothing. A
-priority **you** set is never silently overwritten, and an already-triaged task is re-ranked only
-with an explicit reason. Completion enters the plan **only when you state a task is done** — it is
-never inferred.
+Seconds, minimal, **zero interrogation**. Runs `specs.py new`, which stamps
+`backlog/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else. Every other heading is left
+absent — a *not-yet*, not an omission — which is what keeps a fresh capture from deriving as
+`designed` and sailing through every gate. The date is stamped here and **never rewritten**.
 
 ### `/specs:explore` — think, don't build
 
-A stance, not a workflow. Reads code, active plans, and the OKF bundle (`knowledge/`,
-`glossary.md`, `standards/`) as ground truth, draws ASCII diagrams, asks the questions that
-sharpen the requirement. **It never implements.** Insights route to a plan's artifacts or to the
-`docs/` homes only on your word.
+A stance, not a workflow. Reads code, active specs, and the OKF bundle (`knowledge/`,
+`glossary.md`, `standards/`) as ground truth, draws ASCII diagrams, asks the questions that sharpen
+the requirement. **It never implements.**
 
-### `/specs:plan:propose` — create the plan and all its artifacts
+### `/specs:develop` — fill it out, or revise it
 
-Derives a kebab-case name, runs `specs.py new <name>`, then works the artifact graph to
-apply-ready: `proposal.md`, `design.md`, and `tasks.md`. Reads the relevant `standards/` and the
-glossary first, so the artifacts speak this repo's vocabulary. Every section is
-**required-with-explicit-fallback** — an empty one is answered `- none`, never deleted, because
-*we considered it and there was nothing* and *nobody considered it* are different facts. It also
-declares the plan's **verification policy** here (`per-task` / `per-section` / `end-of-plan`), so
-`/specs:plan:apply` never has to guess when to run your tests. If a `backlog/` task seeded it,
-that task is retired into the Completed ledger when the artifacts are ready (one confirmation).
-There is **no delta spec** to write — the durable rules land in `docs/standards/` when the plan is
-built.
+Walks the gate: `specs.py next` names the next unfilled section, you confirm, it writes it via
+`specs.py section --write` — which creates the heading in **canonical position**, so a spec whose
+`## Tasks` was written before its `## Proposal` still reads in contract order. Revising a filled
+section is the same call.
 
-### `/specs:plan:refine` — argue with the plan before you build it
+Reads the relevant `docs/standards/` and the glossary first, so the wording does not contradict a
+rule you already agreed on. An empty section is answered `- none — <reason>`, never deleted —
+*we drew the boundary and nothing fell outside it* and *nobody ever drew the boundary* read
+identically when the heading is missing, and only one is safe to build on. It **never edits code**,
+and it never invents an explicit none on your behalf.
 
-A plan becomes apply-ready the moment its proposal and tasks have content. Nothing in that gate
-requires anyone to have **disagreed** with it. This is the disagreement: it generates the
-questions the artifacts never answered, asks them **one at a time with a recommendation** so you
-can answer in a word, and applies every accumulated answer in **one** edit at the end — so a
-refinement you abandon halfway leaves the plan exactly as it was.
+When the gate is met it **offers the promote**. That promote is your OK.
 
-Four modes pick the technique: `interview` (default — fills the gaps the artifacts leave),
-`critic` (attacks the plan as a hostile reviewer), `premortem` (assumes it already failed and
-works backwards), `alternatives` (forces the shapes nobody weighed). Each has a declared stop
-condition, so it terminates instead of wandering.
+### `/specs:refine` — argue with it before you build it
 
-It records `refined: {mode, date}` in `.specs.json`. A plan without that record shows up as
-`sp-unrefined` in `/specs:status` — **a warning, never a gate**: nothing here refuses to let you
-build an unrefined plan.
+A spec becomes promotable the moment its sections have content. Nothing in that gate requires
+anyone to have **disagreed** with it. This is the disagreement: it generates the questions the
+sections never answered, asks them **one at a time with a recommendation** so you can answer in a
+word, and applies every accumulated answer in **one** edit at the end — so a refinement you abandon
+halfway leaves the spec exactly as it was.
 
-### `/specs:plan:from-claude` — promote a Claude Code plan file into the workspace
+Four modes pick the technique: `interview` (default), `critic`, `premortem`, `alternatives`. Each
+has a declared stop condition, so it terminates instead of wandering. It records
+`refined: {mode, date}` in the spec's frontmatter, which clears `sp-unrefined` — **a warning, never
+a gate**: nothing here refuses to let you build an unrefined spec.
 
-Turns a native Claude Code plan (`~/.claude/plans/*.md`, or an explicit path) into a real front
-plan, so it gains the task tracking, isolation, and archive-time distillation the front provides
-instead of dying in a one-shot file. Maps the native plan's `## Context` into the proposal's
-*Why*, its decisions and risks into `design.md`, and its phases/steps into `tasks.md` checkboxes;
-scaffolds with `specs.py new` and writes on **one** confirmation. The native file is **read, never
-moved or deleted**. Offers to link and retire the seed `backlog/` task if one exists.
+### `/specs:from-claude` — bring in a Claude Code plan file
 
-### `/specs:plan:apply` — implement it, prove it, commit it
+Turns a native plan (`~/.claude/specs/*.md`, or an explicit path) into a spec, so the work gains
+the phase gates and the archive-time distillation instead of dying in a one-shot file. The native
+file is **read, never moved or deleted**.
+
+### `/specs:apply` — build it, prove it, commit it
 
 **It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
 your task's diff from an unrelated edit already sitting there. Then it **offers isolation** — a
-dedicated branch or a git worktree — so the build has real version control (merge, history,
-reversion) around it rather than a markdown imitation.
+branch or a worktree — so the build has real version control around it.
 
-For each task it writes the code, runs that task's `verify:` command under the plan's declared
-verification policy, self-reviews the diff (reuse · useless defense · obvious comment · dead
-code), commits it alone as `plan/<name>: <id> <title>`, and only then ticks the box with
-`specs.py task --check`. A failing check gets a bounded retry — the approach is re-read from
-scratch after two consecutive failures and the task is reported **blocked** after five, so one bad
-task never stalls the plan and never spins forever.
+Per task it writes the code, runs that task's `verify:` under the spec's declared policy,
+self-reviews the diff (reuse · useless defense · obvious comment · dead code), commits it alone,
+and only then ticks the box with `specs.py task --check`.
 
-It reads the touched subjects' `standards/` as **binding contracts** and pauses when the plan
-conflicts with one rather than quietly picking a side. Durable rules the plan proves out are
-**written straight into `docs/standards/`** (honestly `authority`-graded); other durable learning
-routes to `/docs:learn` or `/docs:add` — never into a loose code comment.
+When attempts stop converging it writes the task **blocked, in the file**:
+
+```markdown
+- [!] 2.3 Implement the gate check — blocked: waiting on the vendor SDK
+```
+
+`next` skips it and moves on, so one bad task never stalls the spec. There is **no attempt
+counter**: v1 kept one in a sidecar and stopped at five, which meant a task went quiet with no
+trace of *why*. A written reason stops the same runaway loop while being legible to whoever has to
+unblock it.
+
+It reads the touched subjects' `standards/` as **binding contracts** and pauses when the spec
+conflicts with one rather than quietly picking a side. Durable rules go **straight into
+`docs/standards/`**; things noticed in passing go to `## Discoveries` (`specs.py discover`) for
+triage to judge later, so nothing interrupts you mid-build.
 
 What it will **never** do, whatever the pressure: disable or delete a test, edit the check so it
 stops failing, or pass `--no-verify`. A green checkbox has to mean something.
 
-At 100% it offers a review of the whole branch diff — a different thing at a different scale from
-the per-task check — and then offers to chain straight into `/specs:plan:archive`.
+### `/specs:archive` — close it out, shipped or dropped
 
-### `/specs:plan:update` — revise the plan, never the code
+One command, two outcomes, and the outcome is **your word** — never inferred from progress or age.
 
-Applies your edit to one artifact, then checks **every other artifact against it in any
-direction** and confirms each follow-on revision before writing. It only edits files that already
-exist — creating a missing artifact is `/specs:plan:propose`.
+`--outcome done` refuses (exit 2) while boxes are still open, listing them; `--force` is there for
+when you know why. It then offers **one OKF distillation pass**: the durable by-products get minted
+into `docs/` — a proven rule → `standards/` (authority-graded), a generic understanding →
+`knowledge/`, new vocabulary → the glossary. **Nothing is bulk-copied.** There is no spec-sync
+step — the rules were written to `docs/standards/` while it was built.
 
-### `/specs:plan:archive` — close it out and keep what it taught
+`--outcome abandoned` is **always allowed** (open tasks are exactly what you expect) and distils
+**nothing as adopted** — at most a narrow `authority: background` note on what you learned by not
+building it. Archiving a dropped spec as done would enshrine a rule nobody kept.
 
-Checks artifact and task completion (warnings never block — an incomplete item just asks for
-confirmation), then moves the plan to `specs/archive/YYYY-MM-DD-<name>/` (`specs.py archive`).
-Finally it offers **one OKF distillation pass**: the durable by-products the plan produced are
-minted into `docs/` — a remaining decision → `standards/` (authority-graded), a generic
-understanding → `knowledge/`, new vocabulary → the glossary. **Nothing is bulk-copied**; the
-archived plan remains the history, and only what outlives it crosses the bridge. There is **no
-spec-sync step** — the standards a plan touches were written into `docs/standards/` while it was
-built.
+### `/specs:triage` — sweep what is parked, and what was noticed
 
-### `/specs:plan:abandon` — drop a plan we are not going to build
-
-The exit `/specs:plan:archive` cannot give you. Archiving a plan distils its decisions into
-`docs/standards/` as knowledge the product adopted — wrong for work that was dropped, where you
-would be enshrining a rule nobody kept.
-
-`/specs:plan:abandon` asks why, moves the plan to `specs/archive/YYYY-MM-DD-<name>/` with an
-`ABANDONED.md` recording the date and your reason, and **distils nothing as adopted** (at most a
-narrow harvest of what you learned by *not* building it — a `standard` at `authority: background`;
-a decision the plan *would* have made never crosses). Because the front has no separate spec
-store, there is nothing to un-sync. It then offers to **reopen the backlog task** the plan
-consumed at propose time — the task comes back *untriaged*, since whatever ranking it had was
-based on a decision now reversed.
-
-Abandonment is never inferred. No sweep, no conductor, and no age threshold triggers it — a plan
-untouched for a year may be waiting on a vendor. `/specs:align` reports staleness with its age and
-names this command; only you run it.
+Reads every backlog spec by **derived stage** and every active spec's `## Discoveries`, then
+proposes **one** table: what to pick up, what has gone stale, what duplicates what — and for each
+discovery, `→ promoted: <new-slug>` or `→ dismissed: <reason>`, resolved **in place** so provenance
+is never lost. **One OK** applies it all.
 
 ### `/specs:align` — force the workspace into shape
 
-The sweep. Scaffolds `specs/` (backlog seed + templates + schema) when absent, applies only the
-repairs `specs.py doctor` and `specs.py validate` themselves state (never an invented one),
-normalizes plan and archive names to kebab-case / `YYYY-MM-DD-<name>`, seeds and stamps the
-`backlog/` inbox and regenerates its derived zone (`specs.py backlog reindex`). It also **migrates
-a legacy `openspec/` workspace one-way** (§10) and removes CLI-generated
-`.claude/skills/openspec-*` and `.claude/commands/opsx/` **shadow copies** that duplicate what the
-plugin ships.
+The sweep. Scaffolds the three phase folders when absent, installs `specs.py`, **folds a v1
+three-file workspace one-way** (`specs.py migrate`), normalizes filenames and slugs, stamps missing
+frontmatter, and regenerates the backlog listing zone. It also migrates a legacy `openspec/`
+workspace (§10).
 
-**It aligns conformance and only *reports* the cycle.** A complete-but-unarchived plan, a stale
-plan, untriaged tasks — each is reported with the command that owns it. This sweep never archives,
-never ranks, never proposes, and never authors or deletes a plan's contents. One plan, one OK; a
-rename whose blast radius reaches product code, branch names, CI, or scripts confirms on its own.
+**It aligns conformance and only *reports* content.** An empty section, a missing gate heading, a
+stray heading, a complete spec awaiting promote — each is reported with the command that owns it.
+Writing even `- none — <reason>` would be authoring an answer only you can give. One plan, one OK;
+a rename whose blast radius reaches code confirms on its own.
 
 ### `/specs:align-and-update` — align, then close out what is finished
 
-This front's conductor, and the exact complement of the align above: where `/specs:align` only
-**reports** the cycle actions, this one **drives** them. **Three** stages in dependency order —
-`align` (structure) → `plan-archive` (each complete plan) → `backlog-triage` (rank what remains) —
-looped until a full pass changes nothing and `specs.py doctor`/`validate` are clean. There is **no
-sync stage**: with no separate spec store, a plan's rules are already in `docs/standards/`, and
-the archive distils the rest.
+This front's conductor: **three** stages in dependency order — `align` (structure) → `archive`
+(each complete spec) → `triage` (sweep what remains) — looped until a full pass changes nothing.
+There is **no sync stage**: with no separate spec store, a spec's rules are already in
+`docs/standards/`.
 
-Stage 2 is where the value is: archiving a plan distils the durable knowledge it produced into
-`docs/`. It is also the one thing the run's single OK deliberately does **not** cover — **every
-archive asks you separately**, because moving a plan out of `specs/` is irreversible in the sense
-that matters and a plan whose tasks are all checked may still be waiting on a deploy.
-
-Three lines it never crosses: it **never proposes or implements** (no task becomes a plan here, no
-checkbox is ticked — those need your intent), it **never infers completion** (`specs.py status`
-must report every artifact `done` and every task `- [x]`; a task leaves the backlog only when you
-say it is done), and it **never abandons** (a blocked or stale plan stays reported, with the
-command that owns it). Run `/specs:status` first to see what the single OK would be authorizing.
-
-Every front has this same pair (`/docs:align-and-update`, `/skill:align-and-update`);
-`/align-and-update` runs all three.
+Stage 2 is the one thing the run's single OK deliberately does **not** cover — **every archive asks
+you separately**, because the outcome is a claim only you can make.
 
 ---
 
@@ -316,12 +279,12 @@ Every front has this same pair (`/docs:align-and-update`, `/skill:align-and-upda
 
 | Store | Answers | Owned by |
 | --- | --- | --- |
-| `specs/<plan>/` | a change **in flight** — its why, design, and task list | the plan commands, until it archives |
+| `specs/backlog/`, `specs/ready/` | a change **in flight** — its problem, design, and task list | the `/specs:*` commands, until it archives |
 | `docs/standards/` | **HOW we build** (binding contracts, current behavior) | the `/docs:*` commands; a plan writes here directly |
-| `specs/backlog/` | what we **might** do next | `/specs:backlog:add`, `/specs:backlog:triage` |
+| `specs/archive/` | what was **done or dropped**, told apart by `outcome:` | `/specs:archive` |
 | `docs/vision/` | settled **direction**, no deadline | `/docs:add` |
 
-Content is never duplicated across them. A plan's rationale and considered alternatives live in
+Content is never duplicated across them. A spec's rationale and considered alternatives live in
 its `design.md` **while it is active**, and distill into a `standard` at archive time. The plan
 **is** the change: what it proves out lands in `docs/standards/` as it is built — there is no
 second store for it to duplicate.
@@ -349,113 +312,168 @@ the distillation are skipped, and `/docs:align` is suggested once.
 
 ---
 
-## 7. The backlog contract
+## 7. The spec file contract
 
-One file per task, flat, no subfolders.
+One file per spec, flat, no subfolders, the same shape in all three folders.
 
 ```yaml
 ---
-type: task                    # required
-title: <one line>
-description: <one sentence>
-timestamp: <when it was parked>
-priority: high                # OPTIONAL — critical | high | medium | low
-tags: [auth, billing]         # OPTIONAL — themes, normalized against existing tags
-complexity: 8                 # OPTIONAL — rough size in dev hours
+slug: session-tokens          # required — the identity key every command names
+title: <one line>             # required
+verification: per-task        # required — per-task | per-section | end-of-plan
+refined: {mode: premortem, date: 2026-07-25}   # once a refinement pass has run
+outcome: done                 # stamped by `promote --to archive` — done | abandoned
 ---
 ```
 
+There is **no `created` field** (the filename's date prefix is that fact) and **no `phase` field**
+(the folder is that fact). A spec carries no OKF `type:` either — it is not a concept doc, it lives
+outside the bundle, and `specs.py validate` is what checks it.
+
+Thirteen canonical headings, in this order: `## Problem`, `## Proposal`, `## Out of Scope`,
+`## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`, `## Open Decisions`,
+`## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`. **Headings are a parsed
+contract** — canonical English, exactly as written; body prose follows your repo's language. A
+heading outside the set is a stray and `validate` flags it.
+
+A heading is required only once **its own phase gate** is reached — before that, its absence is a
+*not-yet*, not an omission. That is what keeps a freshly captured spec four lines long instead of a
+thirteen-heading skeleton.
+
+Two sections are load-bearing for machinery, not just for thinking: `## Validation` is the fallback
+for a task with no `verify:` line, and `## Impact` is the one machine-parsed declaration.
+
+A blocked task is a **visible marker**, never a hidden counter:
+
+```markdown
+- [!] 2.3 Implement the gate check — blocked: waiting on the vendor SDK
+```
+
+`next` skips it, and the reason is right there for whoever unblocks it. There is no attempt budget.
+
 `backlog/index.md` carries a `<!-- BEGIN GENERATED -->` … `<!-- END GENERATED -->` zone rebuilt
-**deterministically from the tasks' frontmatter** by `specs.py backlog reindex`: counts, one table
-per priority level (oldest-first inside each, so stale tasks surface), then a by-theme roll-up.
-**Never hand-edit inside that zone** and never add frontmatter to `backlog/index.md`. The
-**Completed ledger** below the zone is curated by hand and is never regenerated.
+**deterministically** by `specs.py backlog reindex`: counts, then one table per **derived stage**
+(oldest-first inside each, so stale specs surface). **Never hand-edit inside that zone** and never
+add frontmatter to `backlog/index.md`.
 
 ---
 
 ## 8. The `specs.py` tool
 
-`specs.py` is the deterministic rail under the plan skills — a stdlib-only Python script, no
-dependencies. Every subcommand takes `--json` and returns **strict exit codes**: **0** ok · **1**
-findings · **2** refusal. A skill branches on the exit code and the JSON, never on prose.
+A stdlib-only Python script, no dependencies. Every subcommand takes `--json` and returns **strict
+exit codes**: **0** ok · **1** findings · **2** refusal. A skill branches on the exit code and the
+JSON, never on prose.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <name> [--title T] [--backlog-task SLUG] [--verification P]` | scaffold a plan folder + filled templates + `.specs.json` |
-| `specs.py list [--json]` | active plans, task progress, `lastModified` |
-| `specs.py status --plan <n> [--json]` | the artifact graph — `done`/`ready`/`blocked`, `applyReady`, resolved paths, verification policy, blocked tasks |
-| `specs.py next --plan <n> [--json]` | THE single next action (write X · implement task Y · blocked · ready to archive) |
-| `specs.py task --plan <n> --check ID \| --uncheck ID` | flip a `tasks.md` checkbox mechanically |
-| `specs.py task --plan <n> --attempt ID [--error MSG]` | record a failed attempt against the five-attempt budget |
-| `specs.py task --plan <n> --reset-attempts ID` | clear a blocked task's attempts so `next` offers it again |
-| `specs.py parallel --plan <n> [--json]` | verify each `[P]` group's `files:` sets are disjoint; exit 1 if any is not |
-| `specs.py backlog reindex` | regenerate the `backlog/index.md` GENERATED zone from frontmatter |
-| `specs.py validate [--plan <n>]` | required artifacts present, `tasks.md` parseable, kebab-case names, plus the thinking warnings (`sp-unrefined`, `sp-design-scaffold`, `sp-impact-uncovered`) |
-| `specs.py archive <n> [--dry-run] [--force]` | move to `specs/archive/YYYY-MM-DD-<n>/`; exit 2 on open tasks without `--force` |
-| `specs.py doctor` | workspace shape; remedies **declared** for the skill to apply |
+| `specs.py new <slug> [--title T] [--verification P]` | capture into `backlog/` with `## Problem` alone; stamps the date ONCE |
+| `specs.py list [--json]` | every spec, grouped by folder and derived stage |
+| `specs.py status --spec <slug> [--json]` | sections, stage, tasks, and the destination phase's outstanding gates |
+| `specs.py section <slug> "<Heading>" [--write]` | read or write ONE section; `--write` creates it in canonical position |
+| `specs.py promote <slug> [--to ready\|archive] [--outcome done\|abandoned] [--force]` | the gated transition; **exit 2** with the missing list |
+| `specs.py next --spec <slug> [--json]` | THE single next action; skips `[!]` |
+| `specs.py task --spec <slug> --check ID \| --uncheck ID \| --block ID --reason MSG` | flip or block a checkbox mechanically |
+| `specs.py discover <slug> "<text>"` | append one line to `## Discoveries` |
+| `specs.py parallel --spec <slug> [--json]` | prove a `[P]` group's `files:` are disjoint; exit 1 if not |
+| `specs.py backlog reindex` | regenerate the `backlog/index.md` GENERATED zone by derived stage |
+| `specs.py validate [--spec <slug>]` | the canonical heading set, the phase-scoped rule, filenames, the `sp-*` codes |
+| `specs.py doctor` | workspace shape, v1 leftovers; remedies **declared** for the skill to apply |
+| `specs.py migrate [--dry-run]` | one-way v1 → v2 fold; **exit 2** if already v2 |
 
 There is no `init` (scaffold is an asset copy), no `store`, no `profiles`, no telemetry, and no
-delta parser. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
-any time:
+delta parser. `archive` is gone — it folded into `promote --to archive`. `/specs:align` installs
+the script into `.claude/hooks/specs.py`; run it yourself any time:
 
 ```bash
-python3 .claude/hooks/specs.py doctor --json     # workspace health
-python3 .claude/hooks/specs.py list --json        # active plans
+python3 .claude/hooks/specs.py doctor --json      # workspace health (and v1 detection)
+python3 .claude/hooks/specs.py list --json        # every spec, by phase and stage
 ```
+
+**`--block` requires `--reason`.** The tool refuses without one: a blocked task with no reason is
+exactly the hidden state the marker replaced.
 
 ---
 
 ## 9. Recipes and troubleshooting
 
-**Setting the workspace up.** `/specs:align` — it scaffolds `specs/`, seeds the inbox, installs
-`specs.py`, and clears any CLI shadow copies. No package to `npm i` first.
+**Setting the workspace up.** `/specs:align` — it scaffolds the three phase folders, installs
+`specs.py`, and folds any v1 workspace. No package to `npm i` first.
 
-**From idea to shipped.** `/specs:backlog:add` → (later) `/specs:backlog:triage` →
-`/specs:explore` if it is still fuzzy → `/specs:plan:propose` → `/specs:plan:apply` (accept the
-branch/worktree isolation) → `/specs:plan:archive` (which offers the distillation).
+**From idea to shipped.** `/specs:capture` → `/specs:explore` if it is still fuzzy →
+`/specs:develop` until the gate is met → `/specs:refine` if it deserves an argument →
+**promote** (your OK) → `/specs:apply` (accept the branch isolation) → `/specs:archive`.
 
-**Already have a Claude Code plan?** `/specs:plan:from-claude` promotes it into the workspace so it
-can be built and archived instead of being a one-shot file.
+**Coming back after a while.** `/specs:status` first — what is open, what is ready to close, what
+has gone stale — without touching anything. Or just `ls specs/backlog specs/ready`: the listing IS
+the status view, oldest first, which is exactly the triage question.
 
-**Coming back after a while.** `/specs:status` first — it tells you what is open, what is ready to
-close, and what has gone stale, without touching anything. Then act on what it names.
+**Deciding not to build something.** `/specs:archive` with `--outcome abandoned`, never `done`.
+Done distils its decisions as adopted knowledge; abandoned does not.
 
-**Deciding not to build something.** `/specs:plan:abandon`, not `/specs:plan:archive`. Archive
-distils the plan's decisions as adopted knowledge; abandon does not, and gives you your backlog
-task back.
-
-**Health check.** `specs.py doctor && specs.py validate && specs.py list --json`, plus
-`okf-validate.py specs/backlog --listing-root` for the inbox (the same checker that guards
-`docs/`, pointed at the backlog — `--listing-root` tells it this tree is a listing, not a bundle
-root). `/specs:align` runs all of it and reports whatever it cannot fix; `/specs:status` runs it
-read-only and fixes nothing.
+**Health check.** `specs.py doctor && specs.py validate`, plus
+`okf-validate.py specs/backlog --listing-root` for the **listing**. Read each for what it owns: a
+spec carries no OKF `type:` (it is not a concept doc), so the bundle validator checks `index.md`
+and `specs.py validate` checks the specs.
 
 | Symptom | What is going on |
 | --- | --- |
-| Two skills answer "propose a plan" | This repo still has CLI-generated `.claude/skills/openspec-*` or `.claude/commands/opsx/` copies shadowing the plugin's. Run `/specs:align` — it removes identical ones and reports diverged ones instead of deleting them. |
-| A plan is done but still in `specs/` | `/specs:plan:archive`. `/specs:align` reports it but will never archive on its own. |
-| A plan we decided against is cluttering `specs/` | `/specs:plan:abandon` — never `/specs:plan:archive`, which would distil its decisions as adopted. |
-| A ledger row names a plan that no longer exists | The plan was dropped without `/specs:plan:abandon`, so the task was lost. Recreate it with `/specs:backlog:add` and fix the row by hand — the Completed ledger is never regenerated. |
-| I want to know what a sweep would do before running it | `/specs:status`. It reports in the sweep's own finding vocabulary and writes nothing. |
-| Tasks pile up unranked | `/specs:backlog:triage`. Untriaged is valid, not an error. |
-| `backlog/index.md` disagrees with the files | Its generated zone is stale — `/specs:backlog:add`, `/specs:backlog:triage`, and `/specs:align` each rebuild it from disk with `specs.py backlog reindex`. |
+| `list` says the workspace is empty, but there are files in `specs/` | It is a **v1 workspace**. v2 globs the three phase folders and a `specs/<plan>/` tree matches none of them. Run `specs.py doctor` — it detects v1 leftovers and declares `migrate` as the remedy — or just `/specs:align`. |
+| `promote` refuses with a list of headings | That is the gate doing its job. Fill each one, or answer `- none — <reason>`. A heading that exists but is **empty** also refuses: it is neither an answer nor a not-yet. |
+| A freshly captured spec shows as `designed` | Someone stamped all thirteen headings at capture. An explicit none counts as *filled*, so a skeleton derives as designed. Capture writes `## Problem` alone on purpose. |
+| `promote --to archive` refuses with open boxes | The outcome is `done` and the work is not. Finish them, pass `--force` if you know why, or switch to `--outcome abandoned`. |
+| Two commands both refuse with "slug matches 2 files" | Two specs resolve to the same slug. Identity in v2 *is* the slug — rename one. |
+| A task went quiet and nothing says why | It should not have. `--block` requires `--reason`, and the reason is written into the line: `- [!] 2.3 … — blocked: <why>`. |
+| `backlog/index.md` disagrees with the files | Its generated zone is stale — `specs.py backlog reindex` rebuilds it from disk. Never hand-edit inside the markers. |
 | `python3: command not found` | Install Python 3, or use `py` on Windows. This front needs nothing else — no Node, no npm package. |
-| I still have an `openspec/` folder | It is a legacy external-CLI workspace. `/specs:align` migrates it one-way to `specs/` (§10). |
+| I still have an `openspec/` folder | Legacy external-CLI workspace. `/specs:align` migrates it one-way (§10), then folds it to v2. |
 
 ---
 
-## 10. Migrating from a legacy `openspec/` workspace
+## 10. Upgrading, and migrating older workspaces
 
-Earlier versions of this front were driven by the external `@fission-ai/openspec` CLI and lived in
+### Upgrading a repo that still holds a v1 `specs/` workspace
+
+**You must re-align manually. Nothing migrates on its own.** The plugin ships to other
+repositories, and Claude Code applies an upgrade from the `VERSION`/`plugin.json` bump — so a repo
+can wake up with v2 skills over a v1 three-file workspace, having run no migration. **No format
+coexistence is built for that case**, by design: supporting both would double every skill's
+complexity, which is the opposite of the point.
+
+The exposure this leaves is worth naming, because it is silent: **v2 `list` reads a v1 workspace as
+EMPTY, not as wrong format.** It globs `backlog/`, `ready/`, and `archive/`, and a `specs/<plan>/`
+tree matches none of them — so a skill can conclude there is nothing parked when there is
+unmigrated work sitting right there.
+
+`specs.py doctor` is the one command that sees it, and it declares the remedy:
+
+```bash
+python3 .claude/hooks/specs.py doctor --json     # -> sp-v1-leftover, remedy: specs.py migrate
+```
+
+The fix is one command — **`/specs:align`**, which drives the fold on one confirmation. Run it
+first in any repo that upgraded across this boundary.
+
+The fold is **one-way** and mechanical: each plan folder becomes one file (`## Why`→`## Problem`,
+`## What Changes`→`## Proposal`, `## Context`+`## Decisions`→`## Design`, `tasks.md`→`## Tasks`
+with every checkbox state preserved); the birth date comes from `.specs.json`'s `created`, falling
+back to the path's first commit — **never invented**; a section the v1 plan never recorded is
+written `- none — not recorded in the v1 plan`; a plan folder still holding any other file is
+**kept, not deleted**, and reported for you; and **`specs/archive/**` is never touched** — it stays
+as history, in v1 shape, deliberately.
+
+### Migrating from a legacy `openspec/` workspace
+
+Earlier still, this front was driven by the external `@fission-ai/openspec` CLI and lived in
 `openspec/`. If this repo still has one, `/specs:align` migrates it **one-way** into the native
 `specs/` front, inside its single plan → one OK:
 
 - `openspec/` → `specs/`; `changes/<n>/` → `specs/<n>/`; `changes/archive/` → `specs/archive/`
-  (the delta was the only reason for the `changes/` nesting — without it, plans sit flat).
+  (the delta was the only reason for the `changes/` nesting — without it, specs sit flat).
 - Each `openspec/specs/<capability>/spec.md` is **folded into `docs/standards/`** — the cut is
-  chosen by you in the plan, never inferred. No OKF bundle → the fold stops and `/docs:align` is
+  chosen by you in the spec, never inferred. No OKF bundle → the fold stops and `/docs:align` is
   suggested first.
-- The CLI scaffolding is dropped: `config.yaml` removed, each `.openspec.yaml` → `.specs.json`.
+- The CLI scaffolding is dropped: `config.yaml` and every `.openspec.yaml` removed — v2 keeps
+  no sidecar at all; a spec's state is its frontmatter and its folder.
 - The delta folders are discarded once their content is folded or confirmed obsolete.
 - Non-diverged shadow copies (`.claude/skills/openspec-*`, `.claude/commands/opsx/`) and the
   `/opsx:*` wrappers are removed.
@@ -479,7 +497,7 @@ the three conductors the same way and loops across fronts, because they feed eac
 archive distils docs the glossary must then index). A front this repo does not use simply has no
 manual — the paths above are references, not promises.
 
-The normative spec-driven facts — the layout, the plan artifact graph, the artifact formats, the
-full `specs.py` surface — live in the plugin's
-`skills/quenching-specs-plan-propose/references/spec-driven.md`. This file is the operator's view;
+The normative spec-driven facts — the three folders, the thirteen canonical sections, the phase
+gates, the derived stages, the full `specs.py` surface — live in the plugin's
+`skills/quenching-specs-develop/references/spec-driven.md`. This file is the operator's view;
 that is the specification.

@@ -4,7 +4,7 @@ title: Command surface naming
 description: How the plugin's skills and command wrappers are named, namespaced, and paired one-to-one
 resource: plugins/claude-quenching/skills/*/SKILL.md, plugins/claude-quenching/commands/**
 tags: [naming, commands, skills, taxonomy]
-timestamp: 2026-07-25
+timestamp: 2026-07-26
 audience: both
 authority: current
 source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24)
@@ -26,8 +26,8 @@ verb needs it) the object, then the verb. The name is a **flattened path**, and 
 `/<front>:[<object>:]<verb>` (the `:` separator, one per path segment).
 
 - `quenching-docs-add` → `commands/docs/add.md` → `/docs:add`
-- `quenching-specs-plan-propose` → `commands/specs/plan/propose.md` → `/specs:plan:propose`
-- `quenching-specs-backlog-triage` → `commands/specs/backlog/triage.md` → `/specs:backlog:triage`
+- `quenching-specs-develop` → `commands/specs/develop.md` → `/specs:develop`
+- `quenching-specs-triage` → `commands/specs/triage.md` → `/specs:triage`
 
 ## Namespaces are honest by artifact
 

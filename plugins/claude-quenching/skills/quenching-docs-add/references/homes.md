@@ -56,10 +56,10 @@ Ask **"what IS this, relative to us?"**:
   the change is active, and its durable outcome lands as a `standard` at archive time.
 - **task vs vision:** a **parked unit of work** is a `task` and does **not** belong in this
   bundle at all — the backlog lives at `specs/backlog/`, outside it, so route the capture to
-  `quenching-specs-backlog-add`. A **settled direction** with no deadline is a `vision` and stays here. The
+  `quenching-specs-capture`. A **settled direction** with no deadline is a `vision` and stays here. The
   full `specs/` ↔ `docs/` boundary — which tree answers which question, and why they never
   duplicate content — is owned once by
-  [`../../quenching-specs-plan-propose/references/spec-driven.md`](../../quenching-specs-plan-propose/references/spec-driven.md)
+  [`../../quenching-specs-develop/references/spec-driven.md`](../../quenching-specs-develop/references/spec-driven.md)
   §Boundary; read it there rather than inferring it from this row.
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
   (`data-modeling/`); the *actual tables* are `catalog/`.
@@ -106,7 +106,7 @@ maintainer: <owner>
 
 (The `specs/backlog/index.md` DERIVED zone is **not** part of this OKF insert procedure —
 the backlog lives outside the bundle; its zone spec is owned by the backlog skills, in
-[`../../quenching-specs-backlog-add/references/backlog-zone.md`](../../quenching-specs-backlog-add/references/backlog-zone.md).)
+[`../../quenching-specs-capture/references/backlog-zone.md`](../../quenching-specs-capture/references/backlog-zone.md).)
 
 ## Appending to `log.md` (the history)
 

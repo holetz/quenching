@@ -1,70 +1,85 @@
-# `backlog/` — the task inbox
+# `backlog/` — the definition phase
 
-The fast, low-ceremony landing spot for a **task** — a unit of work captured in seconds,
-raw (it needs the plan cycle before it becomes work) or already clear in scope —
-parked between "I thought of this" and "I'm working on this". It is a **quenching-managed**
-sibling of the plan folders and `archive/` in the `specs/` tree, **outside** the
-`docs/` OKF bundle: a raw task seeds a **plan** — `quenching-specs-explore` thinks it
-through and `quenching-specs-plan-propose` develops it into a plan with apply-ready artifacts
-(`specs/<name>/` — proposal, optional design, tasks); a task already clear in
-scope goes straight to execution.
+Where a spec is **captured, proposed, designed, and refined** — everything before it is ready to
+build. A spec lands here in seconds as a raw problem and leaves, by a gated `promote`, only once
+it can be built.
 
-**Boundary:** a *parked* unit of work — distinct from `docs/vision/` (settled direction with
-no deadline). Each task carries `type: task`, a title, a one-sentence gist, and a timestamp;
-`tags` (themes), `priority` (`critical|high|medium|low`), and `complexity` (a rough size in
-development hours) are **optional** — a task without `priority` is **untriaged**, a valid state
-`quenching-specs-backlog-triage` exists to fill. No done-criteria, no `vision_refs`, no detailed
-planning (that thinking belongs to the plan cycle or execution) — `complexity` is the one
-rough estimate that may be stamped at capture.
+This is one of the three phase folders of the `specs/` tree, **outside** the `docs/` OKF bundle.
+Its siblings are `ready/` (execution) and `archive/` (done or abandoned).
+
+**One spec is ONE file for its whole lifecycle.** There is no separate task inbox and no plan
+folder: the thing you park and the thing you build are the same file, enriched section by section
+and moved between folders. That is why there is no Completed ledger here — a finished spec is in
+`archive/`, told apart by its `outcome:` frontmatter, and `git log --follow` is its history.
 
 ## Organization
 
 ```
 backlog/
-  <task-slug>.md     # one task per file (type: task) — flat, no subfolders
+  index.md                        # this listing (frontmatter-free, generated zone below)
+  YYYY-MM-DD-<slug>.md            # one spec per file — flat, no subfolders
 ```
 
-## Lifecycle
+The date prefix is stamped **once, at capture**, and never rewritten — `promote` moves a file
+without renaming it. So a plain `ls` is chronological, and *how long has this sat here?* is
+answered by the listing itself rather than by a tool.
 
-1. **Capture** — a task lands here in seconds (`quenching-specs-backlog-add`; minimal `task` mold —
-   priority/tags only when stated).
-2. **Triage (optional)** — `quenching-specs-backlog-triage` proposes priority/tags in one
-   plan → one OK sweep; a task may also be born triaged (stated inline at capture).
-3. **Develop / execute** — the plan cycle (`quenching-specs-explore` / `quenching-specs-plan-propose`)
-   for raw tasks; direct execution for tasks already clear in scope.
-4. **Leave the tree** — once developed into a plan with apply-ready artifacts or done,
-   the file is **removed** and the transition recorded in the Completed ledger below.
-   Removal happens on completion/approval, never on triage; an abandoned development
-   leaves the task in place.
+## Derived stages
+
+A spec's stage inside this folder is **computed from section completeness**, never declared —
+declared state is forgotten on edit and goes stale.
+
+| Stage | Reached when |
+| --- | --- |
+| `captured` | only `## Problem` is filled |
+| `proposed` | `## Proposal` is filled |
+| `designed` | `## Design` is filled |
+| `refined` | a `refined` record is in the frontmatter |
+
+## Leaving this folder
+
+`specs.py promote <slug>` moves a spec to `ready/`, and **refuses (exit 2)** unless the ten
+definition-gate sections are filled — the nine `## Problem` … `## Risks` plus `## Tasks`. An empty
+section is filled with an explicit `- none — <reason>`; a heading present with an empty body is
+malformed and refuses.
+
+**That promote IS the human OK to build.** It is one auditable `git mv`, not a checkbox.
+
+A spec that will **not** be built is promoted straight to `archive/` with `outcome: abandoned` —
+no ceremony, and its `## Outcome` records why.
 
 ## What does NOT go here
 
-- A task already developed or done (remove it; log it in the Completed ledger).
+- A spec being built right now (→ `ready/`).
+- A finished or dropped spec (→ `archive/`, with `outcome:`).
 - Settled direction with no deadline (→ `docs/vision/`).
 
-## Current tasks
+## Current specs
 
-<!-- BEGIN GENERATED: rebuilt from the tasks' frontmatter by `specs.py backlog reindex`
-     (called by `quenching-specs-backlog-add`/`quenching-specs-backlog-triage`) — DO NOT edit
-     by hand. Content, in order:
-       **N tasks** · X critical · Y high · Z medium · W low · K untriaged
-       one table per priority level (Critical → High → Medium → Low → Untriaged; empty
-       groups omitted), columns `Task | Description | Tags | Complexity | Since` (Complexity =
-       the task's `complexity` in dev hours rendered `Nh`, or `—` when absent; Since = the
-       task's `timestamp`), rows OLDEST-FIRST within each group so stale tasks surface;
-       then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
-       (a task with two tags appears under both).
+<!-- BEGIN GENERATED: rebuilt from the spec files' headings and frontmatter by
+     `specs.py backlog reindex` — DO NOT edit by hand. Content, in order:
+       **N specs** · X captured · Y proposed · Z designed · W refined
+       one table per DERIVED STAGE (Refined → Designed → Proposed → Captured; empty groups
+       omitted), columns `Spec | Title | Since` (Since = the filename's date prefix), rows
+       OLDEST-FIRST within each group so stale specs surface.
 -->
-_(no tasks parked — this listing is regenerated deterministically from `backlog/*.md` frontmatter)_
+_(no specs captured — this listing is regenerated deterministically from `backlog/*.md`)_
 <!-- END GENERATED -->
 
-## Completed ledger
+## Frontmatter
 
-Record each task here when it is completed — or its plan supersedes it — and
-you remove the file (curated history, kept **outside** the generated zone):
+A spec file carries the lifecycle schema, **not** an OKF `type:` — it is not a concept doc, it
+lives outside the bundle, and `specs.py validate` is what checks it:
 
-| Task | Outcome | Date |
-| --- | --- | --- |
-| _(none yet)_ | | |
+```yaml
+---
+slug: <the identity key every command names>
+title: <one line>
+verification: per-task            # per-task | per-section | end-of-plan
+refined: {mode: premortem, date: 2026-07-25}   # once refined
+---
+```
 
-Mold: `backlog/task.md` (applied by `quenching-specs-backlog-add`).
+There is no `created` field (the filename prefix is that fact) and no `phase` field (the folder is
+that fact). `okf-validate.py backlog --listing-root` checks **this listing**; the spec files are
+`specs.py validate`'s business.

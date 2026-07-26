@@ -40,7 +40,7 @@ to the pass cap or convergence. This section is that contract's single normative
 skill a conductor invokes carries **one** exception sentence pointing here and never restates
 it: the four `docs/` stages (`quenching-docs-align`, `quenching-docs-import-memory`, `quenching-docs-harness`,
 `quenching-docs-glossary-backfill`), the `specs/` stages (`quenching-specs-align`,
-`quenching-specs-plan-archive`, `quenching-specs-backlog-triage`), and
+`quenching-specs-archive`, `quenching-specs-triage`), and
 `quenching-skill-align`.
 
 **What the authorization covers** — every routine write a stage performs: frontmatter stamps,
@@ -62,7 +62,7 @@ stops:
    deploy. One OK **per item**, with what it will do shown.
 
 **What it does not change** — the stages' safe-write invariants (write-then-verify-then-delete
-for memory, write-then-verify-then-cut for harness, write-then-verify for a backlog task) do not
+for memory, write-then-verify-then-cut for harness, write-then-verify for a captured spec) do not
 depend on who authorized the run and remain in force. Scope surprises do not re-gate: a later
 pass discovering more work than the preview estimated proceeds under the same authorization,
 bounded by the pass cap and the stages' own invariants.
@@ -116,11 +116,11 @@ the same read-the-findings rule, for `specs/`; `skills.py lint` + `skills.py doc
 
 A skill that acts on **ONE item a human states** is never a loop stage, because a conducted pass
 has **no fresh human input**: `quenching-docs-add`, `quenching-docs-learn`, `quenching-docs-define`,
-`quenching-docs-import`, `quenching-skill-new`, `quenching-specs-backlog-add`, `quenching-specs-explore`,
-`quenching-specs-plan-propose`, `quenching-specs-plan-apply`, `quenching-specs-plan-update`,
-`quenching-specs-plan-abandon`.
+`quenching-docs-import`, `quenching-skill-new`, `quenching-specs-capture`, `quenching-specs-explore`,
+`quenching-specs-develop`, `quenching-specs-apply`, `quenching-specs-develop`,
+`quenching-specs-archive`.
 
-`quenching-specs-plan-abandon` is the sharpest case: it is not merely un-stageable for lack of input,
+`quenching-specs-archive` is the sharpest case: it is not merely un-stageable for lack of input,
 it is un-stageable **in principle**. Abandonment is a judgment no repo state implies — a change
 untouched for a year may be waiting on a vendor. A conductor that inferred it from staleness
 would be fabricating a decision, which is exactly what this boundary exists to prevent.
@@ -138,5 +138,5 @@ what a sweep can close deterministically from what the repo already contains.
 
 The same split runs through the whole plugin: the whole-bundle glossary sweep
 (`quenching-docs-glossary-backfill`) IS a stage, the single-term capture (`quenching-docs-define`) is not;
-the whole-backlog triage (`quenching-specs-backlog-triage`) IS a stage, the single-task capture
-(`quenching-specs-backlog-add`) is not.
+the whole-backlog triage (`quenching-specs-triage`) IS a stage, the single-task capture
+(`quenching-specs-capture`) is not.

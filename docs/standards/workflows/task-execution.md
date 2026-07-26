@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Task execution contract
-description: How a plan's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
-resource: plugins/claude-quenching/skills/quenching-specs-plan-apply/, plugins/claude-quenching/assets/bin/specs.py, plugins/claude-quenching/assets/specs/templates/tasks.md
+description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
+resource: plugins/claude-quenching/skills/quenching-specs-apply/, plugins/claude-quenching/assets/bin/specs.py, plugins/claude-quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation]
-timestamp: 2026-07-25
+timestamp: 2026-07-26
 audience: both
 authority: current
 source: refine-and-execute-specs-flow plan (sections 5-6)
@@ -15,7 +15,7 @@ maintainer: claude-quenching
 
 A task is not done when the code is written. It is done when it **ran**, its diff was
 **reviewed**, and it is **committed on its own**. This standard is the contract;
-`quenching-specs-plan-apply/references/execution.md` is the procedure that implements it.
+`quenching-specs-apply/references/execution.md` is the procedure that implements it.
 
 ## The precondition: a clean tree
 
@@ -25,9 +25,9 @@ The human may override, in which case the first commit carries the pre-existing 
 report says so**. Not a git repo → no isolation and no commits, stated once; never `git init` on
 the human's behalf.
 
-## Verification is declared per plan, never decided mid-implementation
+## Verification is declared per spec, never decided mid-implementation
 
-`.specs.json` carries `verification`, written at propose time by `specs.py new --verification`:
+the spec's frontmatter carries `verification`, written at propose time by `specs.py new --verification`:
 
 | Policy | Runs each task's `verify:` | Fits |
 | --- | --- | --- |
@@ -35,32 +35,47 @@ the human's behalf.
 | `per-section` *(default)* | after each `## N.` section's last task | most repos — a section is the smallest independently shippable unit |
 | `end-of-plan` | once, after the final task | a slow suite, or work that is meaningless until the whole plan lands |
 
-A single global policy would be right for a fast suite and wrong for a slow one, and the plan's
+A single global policy would be right for a fast suite and wrong for a slow one, and the spec's
 author is the only party who knows which this repo has. Declaring it at propose time means
 implementation never guesses and never interrupts the human mid-task to ask.
 
-A task with no `verify:` falls back to the proposal's `## Validation`, then to the repo's own
+A task with no `verify:` falls back to the spec's `## Validation`, then to the repo's own
 checks. **No verification available at all is reported, never silently passed** — a checkbox must
 not imply a proof that never happened.
 
-## The failure budget: five attempts, re-read at two
+## A blocked task is a visible marker, not a hidden counter
 
-On failure, the attempt is recorded mechanically (`specs.py task --attempt <id> --error "…"`) and
-the code is fixed. Two bounds:
+On failure the code is fixed and the check is run again. Two bounds:
 
 - **Re-read from scratch after two consecutive failures** — the task text, its declared files, and
   the *current* diff. Two failures in a row nearly always means the third attempt is repairing a
   mental model that was already wrong at the first, and each further patch compounds it.
-- **Hard stop at five attempts.** Not a sixth try, not a different approach, not a weaker check.
-  The task is reported **blocked** with its last error, and the loop moves on.
+- **Stop when attempts stop converging**, and write the reason into the file:
 
-A blocked task is **distinguishable from an untried one**: `specs.py next` skips it and offers the
-following task, so one bad task never stalls a plan, and `status --json` reports it under
-`tasks.blocked`. A human resumes it with `--reset-attempts <id>` after changing something — never
-merely to buy five more attempts at the same approach.
+  ```bash
+  specs.py task --spec <slug> --block <id> --reason "<why, one line>"
+  ```
 
-Attempt state lives in `.specs.json`, not in the checkbox. A third glyph (`- [!]`) would break
-every existing consumer of `CHECKBOX_RE` and would not survive a human editing `tasks.md` by hand.
+  which produces `- [!] <id> <title> — blocked: <reason>` in `## Tasks`. Not a sixth try, not a
+  different approach, not a weaker check.
+
+A blocked task is **distinguishable from an untried one**: `specs.py next` skips `[!]` and offers
+the following task, so one bad task never stalls a spec. A human resumes it by fixing the cause and
+returning it to `- [ ]` (`specs.py task --uncheck <id>`) — never merely to retry the same approach.
+
+**`--block` requires `--reason`**; the tool refuses without one.
+
+### Why the marker replaced the counter
+
+The earlier contract kept an attempt count in a the spec's frontmatter sidecar and hard-stopped at five. The
+count was machine state a human never saw: a task went quiet after five failures with **no trace of
+why**, and the only way to resume was a `--reset-attempts` incantation that bought five more
+attempts at the same wrong approach.
+
+The objection to a third glyph was that `- [!]` would break consumers of `CHECKBOX_RE` and would not
+survive hand-editing. Both were answered rather than argued away: the regex admits the glyph
+explicitly, and a marker a human can read is *more* likely to survive hand-editing than a sidecar
+they never open — because the reason is right there in the line they are already looking at.
 
 ## Review splits by cost into two levels
 
@@ -81,7 +96,7 @@ extracting once the third caller appeared, a declared `## Impact` path nothing e
 plan/<plan-name>: <task-id> <task title>
 ```
 
-`git revert` then undoes exactly one task, `git log` reads as the plan's task list, and a review
+`git revert` then undoes exactly one task, `git log` reads as the spec's task list, and a review
 can walk it step by step. N tasks piled into one uncommitted blob gives none of that, and makes
 the branch isolation offered at the start buy nothing.
 
@@ -130,7 +145,7 @@ Two tasks run concurrently only when all three hold:
 Serial is the default and needs no marker. Without proven disjunction, parallel execution trades
 wall-clock for merge conflicts and loses on both.
 
-The disjunction is **checked mechanically, not judged in prose**: `specs.py parallel --plan <n>`
+The disjunction is **checked mechanically, not judged in prose**: `specs.py parallel --spec <n>`
 reports each group and exits **0** when every marked group is eligible, **1** when any overlaps or
 lacks `files:`. Two paths conflict when they are the same file or when one is a directory
 containing the other. A group is bounded to one `## N.` section, so a run never straddles two

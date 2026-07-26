@@ -2,8 +2,8 @@
 name: quenching-specs-align-and-update
 description: >-
   Aligns AND updates the specs/ front: runs quenching-specs-align, then
-  quenching-specs-plan-archive (each complete plan, its own confirmation), then
-  quenching-specs-backlog-triage as a THREE-STAGE pipeline, pass after pass, until a
+  quenching-specs-archive (each complete plan, its own confirmation), then
+  quenching-specs-triage as a THREE-STAGE pipeline, pass after pass, until a
   full pass changes nothing and specs.py doctor/validate are clean. Use when the user asks to
   "align and update specs", "bring the specs workspace up to date", "close out the finished
   plans and re-rank the backlog", "run the full specs cycle", or "tidy specs end to end".
@@ -34,7 +34,7 @@ The pass pipeline and the opportunity→skill routing table live in
 condition, and the anti-spin guards are shared with every conductor and live in
 [../quenching-align-and-update-all/references/convergence.md](../quenching-align-and-update-all/references/convergence.md).
 The workspace facts live in
-[../quenching-specs-plan-propose/references/spec-driven.md](../quenching-specs-plan-propose/references/spec-driven.md)
+[../quenching-specs-develop/references/spec-driven.md](../quenching-specs-develop/references/spec-driven.md)
 and the conformance codes in
 [../quenching-specs-align/references/conformance.md](../quenching-specs-align/references/conformance.md).
 
@@ -42,8 +42,8 @@ and the conformance codes in
 
 - **Three stages, not four.** There is no separate spec store, so there is no sync stage: a plan
   writes its durable rule directly into `docs/standards/` as it is built, and the archive distils
-  the rest. The pipeline is `quenching-specs-align` → `quenching-specs-plan-archive` →
-  `quenching-specs-backlog-triage` ([cycle.md](references/cycle.md) §pipeline).
+  the rest. The pipeline is `quenching-specs-align` → `quenching-specs-archive` →
+  `quenching-specs-triage` ([cycle.md](references/cycle.md) §pipeline).
 - **Convergence to a fixpoint, not a single run.** The front is converged when a full pass finds
   nothing to do **and** `specs.py doctor` + `specs.py validate` are clean **and** the backlog
   check (`okf-validate.py specs/backlog --listing-root`) is clean. Every stage is idempotent on a
@@ -61,14 +61,14 @@ and the conformance codes in
 - **Order is a dependency pipeline.** structure → retire completed work → rank what remains
   ([cycle.md](references/cycle.md) §pipeline). Triage run before archive would rank tasks whose
   plans are already done.
-- **Never propose, never implement, never infer completion.** `quenching-specs-plan-propose`,
-  `quenching-specs-plan-apply`, and `quenching-specs-explore` are per-item skills driven by human
+- **Never propose, never implement, never infer completion.** `quenching-specs-develop`,
+  `quenching-specs-apply`, and `quenching-specs-explore` are per-item skills driven by human
   intent — a conducted pass has no fresh human input. A plan is archivable only when `specs.py
   status` reports every artifact `done` and every task `- [x]`; a task leaves the backlog only
   when a human says it is done. Everything else is **surfaced**, never invented.
-- **Never abandons.** `quenching-specs-plan-abandon` is the exit no signal can justify — age, a
+- **Never abandons.** `quenching-specs-archive` is the exit no signal can justify — age, a
   blocked artifact, and an untouched branch are evidence, never a decision. This loop reports
-  `sp-plan-stale` with its age and names `/specs:plan:abandon`; it never invokes it.
+  `sp-plan-stale` with its age and names `/specs:archive`; it never invokes it.
 - **Idempotence is the stop signal; never spin.** A pass cap (default 5) and a no-progress guard
   bound the loop. An empty pass with residual findings is **residue** — stop and report it, with
   the skill that owns each item.
@@ -77,7 +77,7 @@ and the conformance codes in
 
 ### 1. Preflight — is there a workspace to cycle?
 Resolve `specs.py` by the fallback in
-[../quenching-specs-backlog-add/references/backlog-zone.md](../quenching-specs-backlog-add/references/backlog-zone.md)
+[../quenching-specs-capture/references/backlog-zone.md](../quenching-specs-capture/references/backlog-zone.md)
 §Resolving the tool (invoke via `python3`/`py`). Resolve the `specs/` root at the repo root; if
 **neither** `specs/` nor a legacy `openspec/` exists, that is expected — Pass 1's Stage 1 offers
 to scaffold. Note whether an OKF bundle exists (`docs/index.md` with `okf_version`) — without
@@ -95,7 +95,7 @@ every finding to its owning stage via the routing table in
 - **archive** — plans `specs.py status` reports complete (every artifact `done`, every task
   `- [x]`).
 - **triage** — tasks with no `priority`, or a `priority` outside the enum.
-Run `specs.py status --plan <n> --json` **only** for the plans `list --json` already shows at
+Run `specs.py status --spec <slug> --json` **only** for the plans `list --json` already shows at
 full task progress — those are the archive candidates Stage 2 needs. A plan still
 mid-implementation needs no status payload to be classified as "not this pass".
 No sub-agent fan-out: the tool answers in one call and a backlog is small by nature — the
@@ -124,9 +124,9 @@ assessment found empty, and declaring the authorization mode verbatim per
    inbox, clear shadow copies, validate. **Hand it the Step 2 inventory** (per its Step 1
    §Supplied inventory) so it does not re-run `doctor`, `validate`, and `list --json` against a
    disk nothing has touched since.
-2. `quenching-specs-plan-archive` — **once per complete plan, each with its own confirmation**;
+2. `quenching-specs-archive` — **once per complete plan, each with its own confirmation**;
    accept its OKF distillation pass.
-3. `quenching-specs-backlog-triage` — rank what remains.
+3. `quenching-specs-triage` — rank what remains.
 Never run two stages concurrently: Stage 2 changes what Stage 3 sees (an archived plan removes
 the reason a task is still open). Record what each stage reports it changed.
 **Done when:** every applicable stage has run or been skipped with a stated reason.
@@ -146,14 +146,14 @@ plans `list --json` reports at full progress. Then:
 
 ### 6. Report + one log entry
 Summarize: N passes, what each stage did across all passes, the final doctor/validate state, and
-— explicitly — what the run **deliberately did not close** (blocked plans → `/specs:plan:update`,
-stale plans → `/specs:plan:abandon`, ledger orphans, diverged shadow copies, declined archives),
+— explicitly — what the run **deliberately did not close** (blocked plans → `/specs:develop`,
+stale plans → `/specs:archive`, ledger orphans, diverged shadow copies, declined archives),
 each with its owning command. In a repo with an OKF bundle, append **one** entry to `docs/log.md`
 per **Appending to `log.md`** in
 [../quenching-docs-add/references/homes.md](../quenching-docs-add/references/homes.md):
 `**Update**: [specs/](/specs/backlog/index.md) — aligned and updated in N passes
 (align/archive/triage); M deferred`. Then run the backlog check in
-[../quenching-specs-backlog-add/references/backlog-zone.md](../quenching-specs-backlog-add/references/backlog-zone.md)
+[../quenching-specs-capture/references/backlog-zone.md](../quenching-specs-capture/references/backlog-zone.md)
 §The on-write check (`okf-validate.py specs/backlog --listing-root`).
 **Done when:** counts, residue, and the final state are reported and the entry is written.
 
@@ -161,7 +161,7 @@ per **Appending to `log.md`** in
 
 - Never archive without that plan's **own** confirmation, and never archive a plan `specs.py
   status` does not report complete.
-- Never propose a plan, implement a task, or tick a `tasks.md` checkbox — those need human intent
+- Never propose a plan, implement a task, or tick a `## Tasks` checkbox — those need human intent
   this loop does not have.
 - Never abandon a plan and never remove a backlog task the human has not said is done; never
   author a proposal, a design, or a standard.

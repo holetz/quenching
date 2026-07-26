@@ -73,7 +73,7 @@ Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are ex
   **symbols**, `naming/` governs **data**.
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
   A raw task toward it → `specs/backlog/` (the task inbox, **outside** this OKF bundle —
-  see `quenching-specs-backlog-add`); what became reality → `standards/`.
+  see `quenching-specs-capture`); what became reality → `standards/`.
 - **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
   home rendered as the product's documentation site (`type: documentation`). Four fixed
   subfolders: `getting-started/` (tutorial), `how-to/` (task recipes — absorbs the former

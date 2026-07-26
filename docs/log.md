@@ -4,6 +4,12 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 `## YYYY-MM-DD` heading and prefixed `**Creation**` / `**Update**` / `**Deprecation**`.
 `quenching-docs-align` and `quenching-docs-add` append here whenever they scaffold, migrate, or insert.
 
+## 2026-07-26
+
+**Update**: [specs/](/specs/archive/2026-07-25-specs-front-v2.md) — archived `specs-front-v2` (outcome: done): the `specs/` front is v2 (one file per spec, three phase
+folders, gated promote), shipped as plugin 2.0.0. Glossary gains Derived stage, Phase gate,
+and Promote.
+
 ## 2026-07-25
 
 **Creation**: [Bundle verification](/docs/standards/quality/bundle-verification.md) — what the

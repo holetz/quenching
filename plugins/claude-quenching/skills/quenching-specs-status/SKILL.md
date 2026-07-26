@@ -33,11 +33,11 @@ each answer one question at a time; the cross-cutting view, the backlog, the OKF
 `sp-*` vocabulary are what this skill assembles from them.
 
 The workspace facts (layout, plan artifact graph, `specs.py` surface) live in
-[../quenching-specs-plan-propose/references/spec-driven.md](../quenching-specs-plan-propose/references/spec-driven.md);
+[../quenching-specs-develop/references/spec-driven.md](../quenching-specs-develop/references/spec-driven.md);
 every `sp-*` code and what a sweep would do about it in
 [../quenching-specs-align/references/conformance.md](../quenching-specs-align/references/conformance.md);
 the backlog check in
-[../quenching-specs-backlog-add/references/backlog-zone.md](../quenching-specs-backlog-add/references/backlog-zone.md).
+[../quenching-specs-capture/references/backlog-zone.md](../quenching-specs-capture/references/backlog-zone.md).
 All three are **cited, never restated** — this skill owns no contract of its own, which is the
 point: a status view that disagreed with the sweep would be worse than none.
 
@@ -56,7 +56,7 @@ point: a status view that disagreed with the sweep would be worse than none.
   and what neither closes because it needs a human. A reader must be able to tell what a sweep
   would actually do to their repo.
 - **Cheap by construction.** One `doctor`, one `validate`, one `list --json`, one glob. Run
-  `status --plan <n> --json` **only** for plans `list --json` already shows at full task progress
+  `status --spec <slug> --json` **only** for plans `list --json` already shows at full task progress
   — the archive candidates. A dozen open plans must not cost a dozen JSON payloads to conclude
   eleven of them are mid-flight. Never fan out sub-agents: there is nothing here a sub-agent could
   parallelize that the tool does not already answer in one call.
@@ -68,7 +68,7 @@ point: a status view that disagreed with the sweep would be worse than none.
 
 ### 1. Resolve the tool + workspace
 Resolve `specs.py` by the fallback in
-[../quenching-specs-backlog-add/references/backlog-zone.md](../quenching-specs-backlog-add/references/backlog-zone.md)
+[../quenching-specs-capture/references/backlog-zone.md](../quenching-specs-capture/references/backlog-zone.md)
 §Resolving the tool (plugin path → `.claude/hooks/specs.py` → the declared manual check, saying so
 in the report), invoked via `python3`/`py`. Resolve the `specs/` root at the repo root. **No root
 at all** is a complete, valid answer: report `sp-no-workspace` and that `/specs:align` would
@@ -82,8 +82,8 @@ and that `/specs:align` would migrate it.
 `openspec/` tree and the shadow copies (`.claude/skills/openspec-*/SKILL.md`,
 `.claude/commands/opsx/*.md`); read `docs/index.md` for `okf_version`; run the backlog check
 (`okf-validate.py specs/backlog --listing-root`, per
-[backlog-zone.md](../quenching-specs-backlog-add/references/backlog-zone.md)) — it writes nothing.
-Then `specs.py status --plan <n> --json` **only** for the plans `list --json` reports at full task
+[backlog-zone.md](../quenching-specs-capture/references/backlog-zone.md)) — it writes nothing.
+Then `specs.py status --spec <slug> --json` **only** for the plans `list --json` reports at full task
 progress, plus any plan the user named.
 **Done when:** every source is read and nothing has been written.
 
@@ -117,13 +117,13 @@ One report, in this order:
 5. **Would then be driven by `/specs:align-and-update`** — the cycle actions the conductor closes:
    archives (**by name**, each its own confirmation) and triage.
 6. **Closed by neither** — everything needing a human, each with its command: blocked plans →
-   `/specs:plan:update`, abandoned candidates → `/specs:plan:abandon`, ledger orphans, diverged
+   `/specs:develop`, abandoned candidates → `/specs:archive`, ledger orphans, diverged
    shadow copies, tasks nobody has said are done, and the three **thinking** warnings
    `specs.py validate` reports — `sp-unrefined` (a plan that reached a checklist with nobody
-   interrogating it → `/specs:plan:refine`), `sp-design-scaffold` (a `design.md` still on the
-   shipped scaffold → `/specs:plan:refine`, or `/specs:plan:update` when the content already
+   interrogating it → `/specs:refine`), `sp-design-scaffold` (a `## Design` still on the
+   shipped scaffold → `/specs:refine`, or `/specs:develop` when the content already
    exists), and `sp-impact-uncovered` (a declared standard no task writes →
-   `/specs:plan:update`). Report each with its plan name; state plainly that none of them gates
+   `/specs:develop`). Report each with its plan name; state plainly that none of them gates
    apply, so a reader never mistakes a warning for a blocker.
 
 Close with the single most useful next command for this repo's actual state, and nothing else —
@@ -134,13 +134,13 @@ no plan, no offer to fix, no "shall I". A status read ends by handing control ba
 
 - Never write, anywhere, for any reason — not a stamp, not a zone, not a log line, not a marker.
   If something looks wrong enough to fix, name the command that fixes it and stop.
-- Never run `status --plan <n> --json` per active plan by default — only for full-progress plans
+- Never run `status --spec <slug> --json` per active plan by default — only for full-progress plans
   and ones the user named.
 - Never report a finding with a code the sweep does not define, and never state a finding the
   sweep would not raise.
 - Never call a plan *done*, a task *finished*, or a stale plan *abandoned* — completion and
   abandonment are stated by a human, never inferred from a checkbox or a date.
 - Never rank a backlog task, never propose a priority — the report shows what is untriaged and
-  names `/specs:backlog:triage`.
+  names `/specs:triage`.
 - Never fan out sub-agents, and never hand this SKILL.md `context: fork` when it is invoked as a
   sweep's preview — the report has to land in the conversation where the OK will be given.

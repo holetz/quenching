@@ -133,7 +133,7 @@ should still be able to see it. *Not for:* fixing any of it (`/docs:align`).
 Classifies what you state into its home + `type` + mold, derives the path, writes the doc with a
 complete stamp, updates that folder's `index.md`, appends to `log.md`, and offers a glossary
 entry when the doc introduces a repo-specific term. **Writes exactly one concept doc.**
-*Not for:* structural repair (`/docs:align`), or a task (`/specs:backlog:add`).
+*Not for:* structural repair (`/docs:align`), or a task (`/specs:capture`).
 
 ### `/docs:learn` — capture ONE piece of generic knowledge
 
@@ -299,7 +299,7 @@ is inlined in `CLAUDE.md` into its home, and `/docs:import-memory` if the agent 
 project memory. Finish with `/docs:glossary-backfill`.
 
 **A normal working day.** You decide something → `/docs:add`. You learn something → `/docs:learn`.
-A term keeps coming up → `/docs:define`. Something to do later → `/specs:backlog:add`. Each is
+A term keeps coming up → `/docs:define`. Something to do later → `/specs:capture`. Each is
 seconds, one doc, no interrogation.
 
 **After a big refactor or a doc dump.** `/docs:align-and-update` — it will align the structure, drain
