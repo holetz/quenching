@@ -5,6 +5,7 @@ verification: per-section
 approved: {date: 2026-07-27}
 branch: {base: main, work: plan/specs-flow-consolidation}
 reviewed: {date: 2026-07-27}
+merge: {strategy: squash, commit: 488b794}
 outcome: done
 ---
 
