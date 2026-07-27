@@ -190,21 +190,33 @@ New with the capability layer:
 
 ## Handoff
 
-State of play (2026-07-27): the capability layer is commit `44e09b8` on
-`plan/specs-flow-consolidation`; the doctrine's single owner is
-`plugins/quenching/assets/references/skill-new/capabilities.md`; the standards are
-`docs/standards/automation/{skills,agents,hooks,context-budget}.md`. The
-`specs-flow-consolidation` spec is being executed by another session on this same branch —
-read its `## Tasks` §4–§5 and its Discoveries before touching anything it names; the
-cross-session coordination discovery there records the agreed post-fold count (24 commands)
-and defers the ceiling re-measure to after its task 4.4.
+State of play (2026-07-27, after task 1.1): **`specs-flow-consolidation` has landed** — it is
+archived `outcome: done` and merged to `main`, so the sequencing dependencies in tasks 1.4,
+2.3, 3.3 and 5.1 are all satisfied and nothing in this spec is blocked on another session.
+Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The doctrine's
+single owner is `plugins/quenching/assets/references/skill-new/capabilities.md`; the standards
+are `docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
+
+**Task 1.1 is done** (commit `2f0cff3`): `/skill:agent:new` measured at +0.364 pass rate for
+182,367 FEWER tokens, trigger routing 5/5 and 3/3, no description edit warranted. Artifacts in
+`assets/evals/skill/agent/new/`.
+
+**The eval harness task 1.2 should reuse** (it is in the scratchpad, not the repo — rebuild or
+re-derive it): both arms are sandboxed `claude -p` runs over an identical throwaway git fixture,
+and the ONLY difference is whether `.claude/settings.json` carries the two `quenching@*`
+`enabledPlugins` keys. **Do not use `Task` subagents as arms** — they inherit the session
+registry, so the without-arm would still list the command it is defined by lacking. Both arms
+need an identical authorization suffix in the prompt, or the with-arm stalls at its plan gate
+and writes nothing. Grade from `tool_use` events and the fixture tree, never from prose.
 
 Facts an executor cannot derive: `budget` currently reads 9,868 chars against ceiling 2,083
 (stale by design — see task 2.3's dependency). `functional-checks.sh` has two recorded
-failure modes (that spec's Discoveries): the sandbox needs the repo's own `enabledPlugins`
-copied in, and check 3's probes create real specs in the live workspace unless sandboxed —
-task 1.4 must not reintroduce either. `skills.py parse_frontmatter` ignores indented lines,
-which is WHY frontmatter `hooks:` blocks are invisible today (task 2.1). A `#` inside a
+failure modes: the sandbox needs the repo's own `enabledPlugins` copied in, and check 3's
+probes create real specs in the live workspace unless sandboxed — task 1.4 must not
+reintroduce either, and must also raise check 3's `--max-turns 4`, which is low enough to
+produce false routing misses (see Discoveries). `skills.py parse_frontmatter` ignores indented
+lines, which is WHY frontmatter `hooks:` blocks are invisible today (task 2.1) — `specs.py`
+has the identical defect, so its own nested `branch:` record reads back as null. A `#` inside a
 frontmatter description is read as a YAML comment and silently truncates it — never write
 one into the two mints' descriptions while tuning (task 1.3).
 
@@ -212,10 +224,11 @@ one into the two mints' descriptions while tuning (task 1.3).
 
 ### 1. Prove the capability layer
 
-- [ ] 1.1 Run `/skill:eval` against `/skill:agent:new` — derive the cases from its branches
+- [x] 1.1 Run `/skill:eval` against `/skill:agent:new` — derive the cases from its branches
       (delegation-test reroute included), both arms, evidence-graded, artifacts committed
       files: plugins/quenching/assets/evals/skill/agent/new/
       verify: test -f plugins/quenching/assets/evals/skill/agent/new/evals.json
+      commit: 2f0cff3
 - [ ] 1.2 Run `/skill:eval` against `/skill:hook:new` — the declining case is a session-wide
       hook request that must come back scoped
       files: plugins/quenching/assets/evals/skill/hook/new/
