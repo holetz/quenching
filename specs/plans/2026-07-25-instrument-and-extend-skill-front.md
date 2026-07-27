@@ -2,6 +2,10 @@
 slug: instrument-and-extend-skill-front
 title: Capacidades estrategicas no front .claude/
 verification: per-section
+approved: 2026-07-27
+branch:
+  base: main
+  work: plan/instrument-and-extend-skill-front
 ---
 
 # Capacidades estrategicas no front .claude/
@@ -270,3 +274,10 @@ one into the two mints' descriptions while tuning (task 1.3).
 - [ ] 5.2 Bump the version lockstep — `VERSION`, both manifests, and the `VERSION` constant
       in all three scripts
       verify: python3 assets/bin/skills.py --version && python3 assets/bin/specs.py --version && python3 assets/hooks/okf-validate.py --version && cat VERSION
+
+## Discoveries
+
+- specs.py parse_frontmatter skips indented lines (l.499), so the nested branch/priority/merge records its own SCHEMA declares (l.171-186) parse to '' and status --json reports them null — the exact specs.py twin of the skills.py hooks: blind spot task 2.1 fixes
+- skill/eval step 5 prescribes Task subagents for both arms, but a Task subagent inherits the session plugin registry — so the without-arm still lists the command it is defined by lacking, contradicting evaluation.md 'no path to its body'. Honest isolation needs a sandboxed claude -p with enabledPlugins present/absent, the pattern functional-checks.sh already uses
+- assets/evals/specs/capture/ is stale twice over: the folder mirrors the retired /specs:capture path (now /specs:create) and its benchmark.json names a third retired skill, quenching-specs-backlog-add — eval artifacts do not follow a command rename automatically, which is the one property the mirrored-tree design claimed
+- a trigger probe capped at --max-turns 3 reported two FALSE misses: both arms were still orienting with Bash when the cap cut them off (error_max_turns), and at --max-turns 8 both routed correctly — tuning on the truncated run would have removed a working trigger, which the contract forbids. functional-checks.sh check 3 probes at --max-turns 4 and carries the same risk (task 1.4)
