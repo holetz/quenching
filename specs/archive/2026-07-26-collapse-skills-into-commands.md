@@ -122,8 +122,8 @@ survives is already both.
   command the way one under `commands/` would. All **351** citations — 289 cross-skill, 62
   own-tree — become that absolute form, which the gate spike proved substitutes inside a command
   body.
-- **The five conductors invoke commands by name** — `claude-quenching:docs:align`, not
-  `claude-quenching:quenching-docs-align`. The spike exercised exactly this path.
+- **The five conductors invoke commands by name** — `quenching:docs:align`, not
+  `quenching:quenching-docs-align`. The spike exercised exactly this path.
 - **The name IS the path.** `quenching-<front>-<object>-<verb>` existed as a flattened path *to be
   mirrored*; with nothing to mirror, `/docs:add` is the whole identity. The bijection rule and its
   two root exceptions (`sk-path-mismatch` on `/align` and `/align-and-update`) are deleted, not
@@ -205,24 +205,24 @@ survives is already both.
 
 ### Product code this spec expects to touch
 
-- `plugins/claude-quenching/commands/**` — 28 files, each rewritten from wrapper stub to full
+- `plugins/quenching/commands/**` — 28 files, each rewritten from wrapper stub to full
   entry point
-- `plugins/claude-quenching/skills/**` — 28 `SKILL.md` deleted; 22 `references/*.md` moved out
-- `plugins/claude-quenching/assets/references/**` — new tree, the re-homed shared procedure
-- `plugins/claude-quenching/assets/bin/skills.py` — re-pointed at `commands/**`; the pair logic
+- `plugins/quenching/skills/**` — 28 `SKILL.md` deleted; 22 `references/*.md` moved out
+- `plugins/quenching/assets/references/**` — new tree, the re-homed shared procedure
+- `plugins/quenching/assets/bin/skills.py` — re-pointed at `commands/**`; the pair logic
   removed
-- `plugins/claude-quenching/assets/templates/automation/{skill,command,registry,skills-standard}.md`
+- `plugins/quenching/assets/templates/automation/{skill,command,registry,skills-standard}.md`
   — the molds that teach a target repo the shape
-- `plugins/claude-quenching/{VERSION,.claude-plugin/plugin.json}` + `.claude-plugin/marketplace.json`
+- `plugins/quenching/{VERSION,.claude-plugin/plugin.json}` + `.claude-plugin/marketplace.json`
   — the lockstep set
 
 ### Documents edited that own no contract
 
-- `plugins/claude-quenching/assets/{docs,specs,claude}/QUENCHING.md` — all three enumerate the
+- `plugins/quenching/assets/{docs,specs,claude}/QUENCHING.md` — all three enumerate the
   command surface
 - `CLAUDE.md` (root) — describes the 2×4 matrix, the 28↔28 bijection, and the citation paths
   throughout
-- `plugins/claude-quenching/README.md` §Cost model — states the always-on figures and the model
+- `plugins/quenching/README.md` §Cost model — states the always-on figures and the model
   policy per skill
 - `docs/reference/tools/claude-code-skill-command-mechanics.md` — the spike's measured facts; rows
   1, 2 and 4 are what this migration rests on, so it gains a note that they were relied upon and
@@ -237,21 +237,21 @@ actually load" check runs in a **fresh `claude -p` process**.
 
 **Mechanical — in-process:**
 
-- **The cut is real.** `skills.py --root plugins/claude-quenching budget --json` reports total
+- **The cut is real.** `skills.py --root plugins/quenching budget --json` reports total
   always-on at **2,069** characters against the pre-change 30,705 — exactly today's
   `breakdown.wrappers`, because the surviving strings are the wrapper descriptions unedited. The
   instrument counts parsed frontmatter, as `context-budget.md` requires.
-- **Nothing is left behind.** `plugins/claude-quenching/skills/` does not exist; no `references/`
-  directory survives outside `assets/`; `find plugins/claude-quenching/commands -type d` returns
+- **Nothing is left behind.** `plugins/quenching/skills/` does not exist; no `references/`
+  directory survives outside `assets/`; `find plugins/quenching/commands -type d` returns
   only the four namespace directories (`docs`, `docs/documentation`, `specs`, `skill`), so no
   phantom command can register.
 - **Every citation resolves.** By script, resolving `${CLAUDE_PLUGIN_ROOT}` to
-  `plugins/claude-quenching`: all 351 rewritten citations point at a file that exists, and zero
+  `plugins/quenching`: all 351 rewritten citations point at a file that exists, and zero
   relative forms (`../quenching-`, `](references/`) survive anywhere. Never by eye.
-- **The surface is conformant.** `skills.py --root plugins/claude-quenching lint --json` and
+- **The surface is conformant.** `skills.py --root plugins/quenching lint --json` and
   `doctor --json` both exit 0, with no `sk-*` code that did not exist before, and no code this
   spec deleted still firing.
-- **The surface is still 28.** `find plugins/claude-quenching/commands -name '*.md' | wc -l` = 28,
+- **The surface is still 28.** `find plugins/quenching/commands -name '*.md' | wc -l` = 28,
   and every `/` path that resolved before still resolves.
 - **The shipped payload is undisturbed.** `okf-validate.py assets/docs` and
   `okf-validate.py assets/specs/backlog --listing-root` both clean.
@@ -264,7 +264,7 @@ actually load" check runs in a **fresh `claude -p` process**.
   command by its `/` path and confirm it read its re-homed reference file — that is
   `${CLAUDE_PLUGIN_ROOT}` substituting for real, not in a probe.
 - **A conductor reaches its stages.** In a new `claude -p`, run `/align` far enough to confirm it
-  invokes `claude-quenching:docs:align` **by name** and that body loads. Highest-risk path in the
+  invokes `quenching:docs:align` **by name** and that body loads. Highest-risk path in the
   spec: five conductors, all re-plumbed, and a silent failure here looks like a conductor that
   simply does nothing.
 - **A spoken trigger still routes.** In a new `claude -p`, a capture phrase reaches its command by
@@ -438,7 +438,7 @@ ordering above already creates.
   task 7.1: scriptable, and all three were scripted.** The mechanism is
   `claude -p --output-format stream-json --verbose`, which emits every `tool_use` as JSON — so a
   check asserts on **what the process actually did** (a `Read` whose `file_path` is the re-homed
-  reference; a `Skill` whose `skill` is `claude-quenching:docs:align`) rather than on what its
+  reference; a `Skill` whose `skill` is `quenching:docs:align`) rather than on what its
   prose claims. That is the difference between a functional test and a self-report, and it is why
   this is worth committing.
 
@@ -448,7 +448,7 @@ ordering above already creates.
   `.claude/settings.json` `enabledPlugins`** — the plugin loads from the marketplace path, so the
   sandbox gets the real surface while `/align` writes only into the scratch dir.
 
-  **Committed as `plugins/claude-quenching/assets/bin/functional-checks.sh`**, so the surface
+  **Committed as `plugins/quenching/assets/bin/functional-checks.sh`**, so the surface
   gains the automated functional coverage it has never had.
 
 ## Risks
@@ -495,7 +495,7 @@ surface change as working on the strength of the session that made it.
 
 **Resolve the tools by the plugin path first.** This repo's `.claude/hooks/specs.py` is stale
 (1.0.0, `--plan` flags) against the plugin's 2.0.0 (`--spec`). Use
-`plugins/claude-quenching/assets/bin/{specs,skills}.py`. Branch on exit code (0 ok · 1 findings ·
+`plugins/quenching/assets/bin/{specs,skills}.py`. Branch on exit code (0 ok · 1 findings ·
 2 refusal) and `--json`, never on prose.
 
 **State of play at definition time** (2026-07-26, measured on this tree, Linux, `python3` 3.12.3):
@@ -534,7 +534,7 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
       always-on 30,705 characters (28,636 skill + 2,069 wrapper) against the 36,503 ceiling. If
       the tree differs, correct `## Problem` and `## Proposal` first — never map the numbers by
       guess.
-      verify: python3 plugins/claude-quenching/assets/bin/skills.py --root plugins/claude-quenching budget --json
+      verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
 - [x] 0.2 **The load-bearing re-measure.** In a fresh `claude -p` against the running Claude Code
       version, confirm `${CLAUDE_PLUGIN_ROOT}` still substitutes inside a `commands/*.md` body and
       that a command is still invocable by name through the Skill tool. Record the version
@@ -546,21 +546,21 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
 
 ### 1. Build the new reference tree
 
-- [x] 1.1 Create `plugins/claude-quenching/assets/references/<name>/` and `git mv` all 22
+- [x] 1.1 Create `plugins/quenching/assets/references/<name>/` and `git mv` all 22
       reference files out of the 17 `skills/*/references/` trees; `<name>` is the skill folder
       name minus the `quenching-` prefix. Check the 22 destination paths for collision and settle
       `## Open Decisions` §The `<name>` spelling.
-      files: plugins/claude-quenching/assets/references/**, plugins/claude-quenching/skills/*/references/**
-      verify: find plugins/claude-quenching/assets/references -name '*.md' | wc -l
+      files: plugins/quenching/assets/references/**, plugins/quenching/skills/*/references/**
+      verify: find plugins/quenching/assets/references -name '*.md' | wc -l
 - [x] 1.2 Rewrite all 351 citations to `${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md`
       — mechanical substitution per `## Design` §Citations are absolute, never relative; no
       per-file path derivation.
-      files: plugins/claude-quenching/skills/**, plugins/claude-quenching/commands/**
+      files: plugins/quenching/skills/**, plugins/quenching/commands/**
 - [x] 1.3 Rewrite the citations *between* the moved reference files, which cite each other
       relatively as well.
-      files: plugins/claude-quenching/assets/references/**
+      files: plugins/quenching/assets/references/**
 - [x] 1.4 Prove the rewrite: every citation resolves with the placeholder expanded to
-      `plugins/claude-quenching`, and zero `../quenching-` or `](references/` forms survive
+      `plugins/quenching`, and zero `../quenching-` or `](references/` forms survive
       anywhere in the plugin.
       verify: script — 0 unresolved citations and 0 surviving relative forms
 
@@ -569,56 +569,56 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
 - [x] 2.1 Merge the frontmatter of all 28 pairs per `## Design` §The collapsed file —
       `description` + `argument-hint` from the wrapper, `allowed-tools` + `effort` from the skill;
       drop `name`, `when_to_use`, `user-invocable`.
-      files: plugins/claude-quenching/commands/**
-      pattern: plugins/claude-quenching/commands/docs/add.md
+      files: plugins/quenching/commands/**
+      pattern: plugins/quenching/commands/docs/add.md
 - [x] 2.2 Move each skill body into its command file verbatim, retitling
       `# quenching-<front>-<verb>` to `# /<front>:<verb>` and folding the wrapper's `$ARGUMENTS`
       sentence in as the input contract. No other edit to any body.
-      files: plugins/claude-quenching/commands/**
+      files: plugins/quenching/commands/**
 - [x] 2.3 Prove no body was truncated: each collapsed command's body line count reconciles against
       its source `SKILL.md` body, allowing only the two edits task 2.2 sanctions.
       verify: script — 28 of 28 line counts reconcile
 - [x] 2.4 Re-plumb the five conductors to invoke their stages by command path —
-      `claude-quenching:docs:align`, never `claude-quenching:quenching-docs-align`.
-      files: plugins/claude-quenching/commands/align.md, plugins/claude-quenching/commands/align-and-update.md, plugins/claude-quenching/commands/docs/align-and-update.md, plugins/claude-quenching/commands/specs/align-and-update.md, plugins/claude-quenching/commands/skill/align-and-update.md
+      `quenching:docs:align`, never `quenching:quenching-docs-align`.
+      files: plugins/quenching/commands/align.md, plugins/quenching/commands/align-and-update.md, plugins/quenching/commands/docs/align-and-update.md, plugins/quenching/commands/specs/align-and-update.md, plugins/quenching/commands/skill/align-and-update.md
 - [x] 2.5 Rewrite every remaining bare `quenching-<front>-<object>-<verb>` mention in the 28 bodies
       to its command path. These are the cross-skill routing sentences — `Not for: … →
       quenching-docs-align` — and they now name files that do not exist.
-      files: plugins/claude-quenching/commands/**
-- [x] 2.6 Delete `plugins/claude-quenching/skills/`, as its own commit. This is the last
+      files: plugins/quenching/commands/**
+- [x] 2.6 Delete `plugins/quenching/skills/`, as its own commit. This is the last
       cheaply-reversible point in the spec.
-      files: plugins/claude-quenching/skills/**
-      verify: test ! -d plugins/claude-quenching/skills
+      files: plugins/quenching/skills/**
+      verify: test ! -d plugins/quenching/skills
 
 ### 3. Re-point the tooling
 
 - [x] 3.1 Re-point `skills.py` at `commands/**` as the surface, one row per command file. Delete
       the bijection, `sk-path-mismatch`, and the unmirrored-wrapper finding — they have nothing
       left to compare.
-      files: plugins/claude-quenching/assets/bin/skills.py
-      verify: python3 plugins/claude-quenching/assets/bin/skills.py --root plugins/claude-quenching doctor --json
+      files: plugins/quenching/assets/bin/skills.py
+      verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
 - [x] 3.2 Re-scope the surviving checks to command frontmatter: `sk-no-description`,
       `sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`,
       `sk-unscoped-bash`, `sk-body-length`, invocation coherence.
-      files: plugins/claude-quenching/assets/bin/skills.py
-      verify: python3 plugins/claude-quenching/assets/bin/skills.py --root plugins/claude-quenching lint --json
+      files: plugins/quenching/assets/bin/skills.py
+      verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
 - [x] 3.3 Confirm `sk-no-description` covers the phantom-command mode per `## Design`: a stray
       `.md` under `commands/` with no frontmatter is an error, so the layout rule needs no new
       check. Add a fixture proving it fires.
-      files: plugins/claude-quenching/assets/bin/skills.py
+      files: plugins/quenching/assets/bin/skills.py
 - [x] 3.4 Teach the collapsed shape to the molds in `assets/templates/automation/` — `skill.md`
       becomes the command mold, `command.md` folds into it or is deleted, `registry.md` and
       `skills-standard.md` stop describing a pair.
-      files: plugins/claude-quenching/assets/templates/automation/
+      files: plugins/quenching/assets/templates/automation/
 - [x] 3.5 Rewrite `/skill:new` to mint ONE command file — no wrapper, no bijection step, no
       `user-invocable: false`.
-      files: plugins/claude-quenching/commands/skill/new.md, plugins/claude-quenching/assets/references/skill-new/
+      files: plugins/quenching/commands/skill/new.md, plugins/quenching/assets/references/skill-new/
 - [x] 3.6 Teach `/skill:align` the pair→command migration for a target repo's existing surface,
       under its ordinary one-plan-one-OK gate.
-      files: plugins/claude-quenching/commands/skill/align.md, plugins/claude-quenching/assets/references/skill-align/
+      files: plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/skill-align/
 - [x] 3.7 Version lockstep per `CLAUDE.md` §Releasing — `skills.py` changed, so `VERSION`,
       `plugin.json`, the marketplace manifest, and both other shipped scripts move together.
-      files: plugins/claude-quenching/VERSION, plugins/claude-quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/claude-quenching/assets/bin/specs.py, plugins/claude-quenching/assets/hooks/okf-validate.py
+      files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
 
 ### 4. The standards
 
@@ -645,13 +645,13 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
 
 - [x] 5.1 [P] Rewrite the three operator manuals — each enumerates the command surface and the
       skill-plus-wrapper shape.
-      files: plugins/claude-quenching/assets/docs/QUENCHING.md, plugins/claude-quenching/assets/specs/QUENCHING.md, plugins/claude-quenching/assets/claude/QUENCHING.md
+      files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md
 - [x] 5.2 [P] Rewrite root `CLAUDE.md`: the 2×4 matrix, the repository layout, the 28↔28
       bijection, the skills table, and every citation path in it.
       files: CLAUDE.md
 - [x] 5.3 [P] Rewrite `README.md` §Cost model — its always-on figures are of a two-file surface
       and its skill count is stale.
-      files: plugins/claude-quenching/README.md
+      files: plugins/quenching/README.md
 - [x] 5.4 Note in `docs/reference/tools/claude-code-skill-command-mechanics.md` which rows this
       migration relied on and which spec relied on them, against the version task 0.2 measured.
       files: docs/reference/tools/claude-code-skill-command-mechanics.md
@@ -660,17 +660,17 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
 
 - [x] 6.1 Measure the result: always-on at 2,069 characters, exactly the pre-change
       `breakdown.wrappers`.
-      verify: python3 plugins/claude-quenching/assets/bin/skills.py --root plugins/claude-quenching budget --json
+      verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
 - [x] 6.2 Update `DEFAULT_CEILING` in `skills.py` and the ceiling in `context-budget.md` from
       6.1's measurement — never from this spec's projection, per the standard's own "revised only
       from a measurement" rule.
-      files: plugins/claude-quenching/assets/bin/skills.py, docs/standards/automation/context-budget.md
+      files: plugins/quenching/assets/bin/skills.py, docs/standards/automation/context-budget.md
 - [x] 6.3 Confirm the surface is conformant and complete: `lint` and `doctor` both exit 0 with no
       new `sk-*` code, 28 command files, `skills/` gone, no `references/` outside `assets/`, and
       `find commands -type d` returning only the four namespace directories.
-      verify: python3 plugins/claude-quenching/assets/bin/skills.py --root plugins/claude-quenching lint --json && python3 plugins/claude-quenching/assets/bin/skills.py --root plugins/claude-quenching doctor --json
+      verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
 - [x] 6.4 Confirm the shipped OKF payload is undisturbed.
-      verify: python3 plugins/claude-quenching/assets/hooks/okf-validate.py plugins/claude-quenching/assets/docs && python3 plugins/claude-quenching/assets/hooks/okf-validate.py plugins/claude-quenching/assets/specs/backlog --listing-root
+      verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs && python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/specs/backlog --listing-root
 
 ### 7. Prove it — fresh process, one per check
 
@@ -678,7 +678,7 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
       its re-homed reference file — `${CLAUDE_PLUGIN_ROOT}` substituting in production, not in a
       probe. Settle `## Open Decisions` §Are the three functional checks scriptable here.
 - [x] 7.2 In a fresh `claude -p`, run `/align` far enough to confirm it invokes
-      `claude-quenching:docs:align` **by name** and that body loads. The highest-risk path in the
+      `quenching:docs:align` **by name** and that body loads. The highest-risk path in the
       spec: a silent failure here looks like a conductor that runs and does nothing.
 - [x] 7.3 In a fresh `claude -p`, confirm a spoken capture phrase still reaches its command by
       description alone, with no `/` typed — default invocation genuinely leaving the description
@@ -703,7 +703,7 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
   §Citations are absolute is not contradicted by the plugin's own tree.
 
 - **`skills.py budget` stops being usable as the skill↔command pairing source at task 2.2.** Its
-  pairing key is the wrapper stub's `claude-quenching:<skill>` line, which 2.2 overwrites — so any
+  pairing key is the wrapper stub's `quenching:<skill>` line, which 2.2 overwrites — so any
   later step needing the mapping must recover it from git history (`d3b0cd9`, the last commit
   holding both halves) rather than from the instrument. This bit task 2.3's verifier mid-run.
 
@@ -785,7 +785,7 @@ interpreter — `python3` on Linux; resolve it once at 0.1 rather than trusting 
 ## Outcome
 
 **Shipped.** The 28 skill+wrapper pairs are now one `commands/<path>.md` each;
-`plugins/claude-quenching/skills/` no longer exists. Always-on metadata went
+`plugins/quenching/skills/` no longer exists. Always-on metadata went
 **30,705 → 2,083 characters** — a **93.2% cut**, ~7,676 → 521 approximate tokens, off every
 session in every repo that installs the plugin. The `/` surface is unchanged: still 28 entry
 points, same paths, same behaviour. Landed as 32 commits on
@@ -809,7 +809,7 @@ Beyond the collapse itself:
   a process's own claims.
 
 **Measured, not assumed.** `${CLAUDE_PLUGIN_ROOT}` substitutes inside a command body in
-production (7.1); `/align` reaches `claude-quenching:docs:align` by name (7.2); spoken routing
+production (7.1); `/align` reaches `quenching:docs:align` by name (7.2); spoken routing
 survived 3/3 with no `/` typed (7.3). That last one was the genuinely open question — deleting
 one of two descriptions deleted every quoted trigger phrase and every `Not for:` boundary at
 once, and 7.3 is what turned that from a defect into affordable headroom.

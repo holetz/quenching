@@ -1,4 +1,4 @@
-# claude-quenching
+# quenching
 
 A **Claude Code plugin** that forces any repository's `docs/` into a single
 canonical **[Open Knowledge Format (OKF v0.1)](https://github.com/GoogleCloudPlatform/knowledge-catalog)**
@@ -7,7 +7,7 @@ bundle — and keeps it that way. Every repository that adopts it ends up with t
 between repos sees one structure.
 
 This repository is a **plugin marketplace**. The plugin itself lives in
-[`plugins/claude-quenching/`](plugins/claude-quenching/).
+[`plugins/quenching/`](plugins/quenching/).
 
 ## What it does
 
@@ -33,27 +33,27 @@ conformant: it validates touched `docs/**` files against the OKF core on
 Local (no marketplace publish needed):
 
 ```bash
-claude --plugin-dir ./plugins/claude-quenching
+claude --plugin-dir ./plugins/quenching
 ```
 
 Then, inside a target repository:
 
 ```
-/claude-quenching:quenching-docs-align            # install + force the knowledge base into OKF shape
-/claude-quenching:quenching-docs-add           # add a new standard / table / announcement
-/claude-quenching:quenching-docs-learn        # capture a piece of generic knowledge
-/claude-quenching:quenching-docs-glossary-backfill   # backfill the glossary from the whole bundle
-/claude-quenching:quenching-docs-define         # add / refine one glossary term
-/claude-quenching:quenching-docs-import-memory   # drain project memory into the bundle
-/claude-quenching:quenching-docs-harness          # refactor CLAUDE.md/AGENTS.md into thin pointers
-/claude-quenching:quenching-docs-align-and-update            # loop the sweep skills to OKF convergence
+/quenching:quenching-docs-align            # install + force the knowledge base into OKF shape
+/quenching:quenching-docs-add           # add a new standard / table / announcement
+/quenching:quenching-docs-learn        # capture a piece of generic knowledge
+/quenching:quenching-docs-glossary-backfill   # backfill the glossary from the whole bundle
+/quenching:quenching-docs-define         # add / refine one glossary term
+/quenching:quenching-docs-import-memory   # drain project memory into the bundle
+/quenching:quenching-docs-harness          # refactor CLAUDE.md/AGENTS.md into thin pointers
+/quenching:quenching-docs-align-and-update            # loop the sweep skills to OKF convergence
 ```
 
 Or add this marketplace and enable the plugin the usual way (see the
-[plugin README](plugins/claude-quenching/README.md)).
+[plugin README](plugins/quenching/README.md)).
 
 > **Succession note.** This plugin reuses the marketplace/plugin **name**
-> `claude-quenching` as the lean, OKF-centric successor of the 15-dimension
+> `quenching` as the lean, OKF-centric successor of the 15-dimension
 > audit plugin. **Do not enable both at once** (name collision) — this one
 > replaces it.
 
@@ -65,7 +65,7 @@ lives once in its owning reference file; heavy sweeps fan out to cheaper sub-age
 sonnet at low effort) while every classification and destructive gate stays on the session
 model; and the enforcement hook's `Stop` sweep is dirty-gated — a turn that touches no
 `docs/**` file costs one stat. Full policy:
-[plugin README → Cost model](plugins/claude-quenching/README.md#cost-model).
+[plugin README → Cost model](plugins/quenching/README.md#cost-model).
 
 ## License
 

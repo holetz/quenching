@@ -2,13 +2,13 @@
 type: reference
 title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, and the unified frontmatter schema
-resource: plugins/claude-quenching/commands/**
+resource: plugins/quenching/commands/**
 tags: [claude-code, plugins, skills, commands, frontmatter, tooling]
 timestamp: 2026-07-26
 audience: both
 authority: background
 source: skill-description-tiering spec, task 0.2 gate spike — measured on Claude Code 2.1.215
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Claude Code skill and command loading mechanics
@@ -93,7 +93,7 @@ records who ignored that advice and who did not.
 | Row | Relied on by | How load-bearing |
 | --- | --- | --- |
 | 1 — `${CLAUDE_PLUGIN_ROOT}` substitutes in a command body | `collapse-skills-into-commands` (2026-07-26) | **Total.** All 351 citations in the collapsed surface are `${CLAUDE_PLUGIN_ROOT}` absolute paths. If this row is false, every command body instructs a future session to read a file it cannot resolve — silently, since a bad path does not error. |
-| 2 — a command is invocable by name through the Skill tool | `collapse-skills-into-commands` (2026-07-26) | **Total.** All five conductors invoke their stages this way (`claude-quenching:docs:align`). If false, a conductor runs and does nothing. |
+| 2 — a command is invocable by name through the Skill tool | `collapse-skills-into-commands` (2026-07-26) | **Total.** All five conductors invoke their stages this way (`quenching:docs:align`). If false, a conductor runs and does nothing. |
 | 4 — the registry is built at session start | `collapse-skills-into-commands` (2026-07-26) | **Methodological.** It is why that spec's `verification` is `per-section` and why its three functional checks each need a fresh `claude -p`: nothing it wrote was testable in the session that wrote it. |
 | 3, 5 | — | Corroborating only. Neither was re-measured for the collapse. |
 | 6 — `allowed-tools` did not restrict tools | — | **Explicitly declined.** The collapse needed only *parity* between commands and skills, and its `## Out of Scope` says so. Nobody has relied on this row, and nobody should until it is measured properly. |
@@ -111,7 +111,7 @@ Rows carry a date because the closing rule below is meant to be obeyed, not admi
 
 The 2026-07-26 re-measure ran for the `collapse-skills-into-commands` spec, whose whole design
 rests on rows 1 and 2, immediately before its first file moved. A throwaway command was invoked
-twice in fresh `claude -p` processes — once typed as `/claude-quenching:zzprobe`, once by name
+twice in fresh `claude -p` processes — once typed as `/quenching:zzprobe`, once by name
 through the Skill tool — and each run reported both the **resolved absolute path** it had been
 given and a **token readable only through that path**. Substitution failing would have surfaced a
 literal `${CLAUDE_PLUGIN_ROOT}` and a failed read; neither run did. Row 4 rode along, since both

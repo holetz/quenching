@@ -2,13 +2,13 @@
 type: standard
 title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point
-resource: plugins/claude-quenching/commands/**, plugins/claude-quenching/assets/references/**
+resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-07-26
 audience: both
 authority: current
 source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26)
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Command authoring and alignment
@@ -19,7 +19,7 @@ sweeps the whole surface into conformance. The naming these produce is governed 
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
 writing-doctrine detail lives once in
-`plugins/claude-quenching/assets/references/skill-new/` and is cited, never restated.
+`plugins/quenching/assets/references/skill-new/` and is cited, never restated.
 
 **One file per entry point.** Claude Code merged custom commands into skills, so a command file
 carries both the description that routes to it and the body that runs. Where this standard once

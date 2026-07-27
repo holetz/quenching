@@ -1,4 +1,4 @@
-<!-- claude-quenching v1.0.0 · operator manual · generated payload.
+<!-- quenching v1.0.0 · operator manual · generated payload.
      Refreshed by /docs:align (or /align). Edit the plugin asset, not this copy —
      a run with a newer plugin overwrites this file. Remove this banner to keep
      your own version: the align will then leave it alone and report it. -->
@@ -6,7 +6,7 @@
 # Operating this knowledge base
 
 This repository's `docs/` is an **Open Knowledge Format (OKF v0.1) bundle**, installed and
-maintained by the [`claude-quenching`](https://github.com/eloysekonell/claude-quenching) Claude
+maintained by the [`quenching`](https://github.com/eloysekonell/quenching) Claude
 Code plugin. Every repository that adopts the plugin ends up with the **same tree in the same
 places**, so moving between repos costs you nothing.
 
@@ -45,7 +45,7 @@ when you describe the intent in prose ("record that we always use X"). The wrapp
 **explicit** entry point — use it when you want to be sure which one runs.
 
 > Commands are namespaced by plugin. `/docs:add` is the short form of
-> `/claude-quenching:docs:add`; use the long form if another plugin claims the same namespace.
+> `/quenching:docs:add`; use the long form if another plugin claims the same namespace.
 
 **Not sure between `add` and `learn`?** Ask: *is this a rule we are bound by, or something we
 understand?* A binding rule (naming, architecture, CI, review policy) is a **standard** →
@@ -330,7 +330,7 @@ overwriting only the script and preserving your `hooks-config.json`.
 
 ## 8. The other fronts, and the real contract
 
-`claude-quenching` acts on three surfaces, each with its own align and its own manual:
+`quenching` acts on three surfaces, each with its own align and its own manual:
 
 | Front | Manual | Align (structure, one pass) | Align-and-update (+ content, looped) |
 | --- | --- | --- | --- |

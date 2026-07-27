@@ -2,13 +2,13 @@
 type: standard
 title: Spec lifecycle contract
 description: The one-file spec, its thirteen canonical sections, the phase gates and the phase-scoped explicit-none rule, promote-as-the-human-OK, and how to read a v1 plan in specs/archive/
-resource: plugins/claude-quenching/assets/specs/templates/spec.md, plugins/claude-quenching/assets/specs/schema.json, plugins/claude-quenching/assets/bin/specs.py, plugins/claude-quenching/commands/specs/**
+resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, lifecycle, gates, validation]
 timestamp: 2026-07-26
 audience: both
 authority: current
 source: specs-front-v2 plan (sections 1-2)
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Spec lifecycle contract

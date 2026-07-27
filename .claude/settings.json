@@ -1,5 +1,5 @@
 {
   "enabledPlugins": {
-    "claude-quenching@claude-quenching": true
+    "quenching@quenching": true
   }
 }

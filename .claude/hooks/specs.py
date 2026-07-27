@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """specs.py — self-contained deterministic trail for the `specs/` front.
 
-Payload of the `claude-quenching` plugin, sibling of `assets/hooks/okf-validate.py`
+Payload of the `quenching` plugin, sibling of `assets/hooks/okf-validate.py`
 and built in the same mold: stdlib-only, ZERO dependencies (its own minimal
 frontmatter parser — no PyYAML), one script installed alone into a target repo.
 
