@@ -444,7 +444,7 @@ at task 0.1 rather than trusting either spelling. `SK` is
       baseline. If the applying tree is the nested 30-skill build instead, correct the counts
       in `## Problem` and `## Proposal` before proceeding — do not map them by guess.
       verify: `$PY $SK --root plugins/claude-quenching budget --json`
-- [ ] 0.2 **The gate.** Spike the three questions in `## Design` §The spike and its branch
+- [x] 0.2 **The gate.** Spike the three questions in `## Design` §The spike and its branch
       against one throwaway command file: does `${CLAUDE_PLUGIN_ROOT}` substitute in a
       `commands/*.md` body, does a command honour `allowed-tools`, can a conductor invoke a
       command by name via the Skill tool. Revert the throwaway file either way.
