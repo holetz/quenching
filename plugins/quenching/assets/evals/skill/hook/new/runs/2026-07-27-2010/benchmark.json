@@ -43,7 +43,18 @@
     },
     "edit": "NOT APPLIED HERE — description tuning is task 1.3's deliverable, and this run supplies its evidence. One measured miss to fold back; no trigger is sediment (all four description triggers were reached by a hitting prompt) and no boundary leaked.",
     "measuredMiss": "'I want something to catch it automatically whenever a migration lands' did not route, and the session ended in success rather than error_max_turns, so it is a real miss and not a truncation artifact. Every trigger the description carries names an artifact ('a hook') or an event ('after every edit'); none is phrased as intent. The session reasoned correctly about what the hook would be — it named PostToolUse on Write|Edit against db/migrations/** — but answered inline instead of routing, and asked whether 'lands' meant authoring-time or commit-time. Per the tuning table the action is to add the phrase users actually used, verbatim; that edit is task 1.3's.",
-    "boundaryNote": "All three shouldNotTrigger prompts routed to the exact sibling named in the description's Not for: clause — /skill:new, /skill:agent:new, /docs:align. The three-entry-point split of Design decision 6 is measurably routing, not merely declining."
+    "boundaryNote": "All three shouldNotTrigger prompts routed to the exact sibling named in the description's Not for: clause — /skill:new, /skill:agent:new, /docs:align. The three-entry-point split of Design decision 6 is measurably routing, not merely declining.",
+    "tuningOutcome": {
+      "appliedBy": "task 1.3",
+      "edit": "added \"catch it automatically whenever a migration lands\" to the description's trigger list — the user's own wording minus the 'I want something to' preamble, normalized to the list's quoted-phrase style. Description grew 513 -> 566 chars against the 1,536 cap; no '#' introduced.",
+      "remeasured": {
+        "I want something to catch it automatically whenever a migration lands": "quenching:skill:hook:new (was: no route)",
+        "make me an agent that audits migrations and reports back": "quenching:skill:agent:new (unchanged — no boundary leak, despite both prompts naming migrations)",
+        "make sure our docs folder stays conformant": "quenching:docs:status, quenching:docs:align (unchanged — still not this command)"
+      },
+      "ratesAfter": { "shouldTrigger": "5/5", "shouldNotTrigger": "3/3" },
+      "note": "The fix was re-measured rather than assumed, and the boundary was re-probed because the new trigger names migrations and one shouldNotTrigger prompt does too. Adding a trigger can leak a boundary; this one did not."
+    }
   },
   "untestedSurface": [
     "the frontmatter hooks: rung — a check tied to ONE command's workflow belongs in that command's frontmatter, not settings.json. Untested here, and it is the rung skills.py lint cannot even see until task 2.1 lands",
