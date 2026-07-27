@@ -10,6 +10,12 @@ rule sits here as `authority: background` (no separate decisions home). One stan
 (files, not sub-folders); each carries `type: standard` + a derived `resource:`; add each to
 [../index.md](../index.md).
 
+## Current docs
+
+| Doc | Covers |
+| --- | --- |
+| [plugin-layout.md](plugin-layout.md) | commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path |
+
 ## Candidate sub-standards
 
 Break this subject **one concept per file**. The method evaluates each candidate against

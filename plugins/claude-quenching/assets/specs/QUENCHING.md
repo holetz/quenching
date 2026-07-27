@@ -499,5 +499,5 @@ manual — the paths above are references, not promises.
 
 The normative spec-driven facts — the three folders, the thirteen canonical sections, the phase
 gates, the derived stages, the full `specs.py` surface — live in the plugin's
-`skills/quenching-specs-develop/references/spec-driven.md`. This file is the operator's view;
+`assets/references/specs-develop/spec-driven.md`. This file is the operator's view;
 that is the specification.

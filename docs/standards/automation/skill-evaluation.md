@@ -2,9 +2,9 @@
 type: standard
 title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated agents, assertions graded on quoted evidence, and a reported delta
-resource: plugins/claude-quenching/skills/*/evals/, plugins/claude-quenching/skills/quenching-skill-eval/
+resource: plugins/claude-quenching/assets/evals/**, plugins/claude-quenching/commands/skill/eval.md
 tags: [automation, skills, evaluation, testing, benchmark]
-timestamp: 2026-07-25
+timestamp: 2026-07-26
 audience: both
 authority: background
 source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator

@@ -15,6 +15,9 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [bundle-verification.md](bundle-verification.md) — what the `docs/` front machine-checks versus
   what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check,
   and the `resource` glob-set format.
+* [surface-verification.md](surface-verification.md) — how a change to the command surface is
+  proven: a fresh process because the registry is built at session start, assertions on captured
+  `tool_use` rather than prose, and the three preconditions a functional check must satisfy.
 
 ## Candidate sub-standards
 

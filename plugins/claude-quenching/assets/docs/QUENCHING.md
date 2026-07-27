@@ -41,9 +41,9 @@ which command to run. It is a payload file — not an OKF concept doc, and the v
 | Align **every** front (`docs/`, `specs/`, `.claude/`) | `/align` | whole repo |
 | Align **and update** every front, looped | `/align-and-update` | whole repo, looped |
 
-Every command is a thin wrapper over a skill; Claude also routes to the same skill on its own
-when you describe the intent in prose ("record that we always use X"). The wrapper is the
-**explicit** entry point — use it when you want to be sure which one runs.
+Each command is ONE file carrying both its description and its workflow; Claude can also route to
+it on its own when you describe the intent in prose ("record that we always use X"). Typing the
+command is the **explicit** entry point — use it when you want to be sure which one runs.
 
 > Commands are namespaced by plugin. `/docs:add` is the short form of
 > `/claude-quenching:docs:add`; use the long form if another plugin claims the same namespace.
@@ -358,5 +358,5 @@ archive distils docs the glossary must then index). A front this repo does not u
 simply has no manual.
 
 The **normative** contract — the OKF spec, the taxonomy, the migration map, the exact conformance
-checks — lives in the plugin's own `skills/*/references/*.md`, not here. This file is the
+checks — lives in the plugin's own `assets/references/<name>/*.md`, not here. This file is the
 operator's view; that is the specification.

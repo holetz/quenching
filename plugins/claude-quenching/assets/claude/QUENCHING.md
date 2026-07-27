@@ -5,7 +5,7 @@
 
 # Operating this repo's automation surface
 
-`.claude/` is where **this repository's own** Claude Code automation lives — the skills it
+`.claude/` is where **this repository's own** Claude Code automation lives — the commands it
 wrote for itself, the commands that invoke them, the hooks that enforce its conventions. It is
 kept on a single taxonomy by the
 [`claude-quenching`](https://github.com/eloysekonell/claude-quenching) plugin, via
@@ -23,10 +23,10 @@ Its siblings: `../docs/QUENCHING.md` (the knowledge bundle) and
   QUENCHING.md          # this manual (payload)
   settings.json         # hook wiring, permissions — commit it
   settings.local.json   # personal overrides — gitignore it
-  skills/<name>/
-    SKILL.md            # frontmatter + workflow — the skill itself
-    references/*.md     # loaded only when a step needs them
-  commands/             # thin wrappers that invoke a skill; mirrors the repo's folders
+  commands/             # THE surface — one file per entry point; mirrors the repo's folders
+    <folder>/<verb>.md  # frontmatter + workflow, in the one file
+  references/<name>/    # shared procedure — outside commands/, cited by path
+  evals/<path>/         # measured case sets — outside commands/ too
   hooks/
     okf-validate.py     # the OKF conformance checker (see ../docs/QUENCHING.md §5)
     hooks-config.json   # its config — commit it
@@ -54,48 +54,62 @@ whether it gets a command, where that command sits — follows from the answer.
 | Several unrelated folders | **neither** | — | kept untouched and **reported as unroutable** |
 
 A forced classification is worse than none. The name alone then tells you where a skill acts: a
-reader scanning `skills/` reconstructs the repo map from the domain-bound names, and anything
+reader scanning `commands/` reconstructs the repo map from the domain-bound paths, and anything
 without a path prefix is repo-wide by declaration.
 
-### Mirroring
+### Placement — the path IS the identity
 
-- **Every domain-bound skill gets a thin command wrapper** at
-  `commands/<folder-path>/<verb>.md`, invocable as `/<folder>:<subfolder>:<verb>` — one `:` per
-  path segment. The wrapper carries only a `description`, an `argument-hint`, and one sentence
-  invoking the skill with `$ARGUMENTS`. **The body lives in `skills/` only** — never duplicated.
-- **A generic skill is never mirrored.** It gets a flat `commands/<name>.md` or nothing.
+**One file per entry point.** Claude Code merged custom commands into skills, so a command file
+carries both the description that routes to it and the body that runs. There is no `SKILL.md`
+half and no wrapper to keep in step: the path is the whole identity.
+
+- **A domain-bound command lives at** `commands/<folder-path>/<verb>.md`, invocable as
+  `/<folder>:<subfolder>:<verb>` — one `:` per path segment.
+- **A generic command is a flat** `commands/<verb-object>.md`.
 - `/` + tab then walks the command tree in folder order, so the automation surface is navigable
   the same way the repo is.
 
-**Accepted variation:** a directory-scoped skill at `<folder>/.claude/skills/<name>/` also binds
-a skill to a folder and is conformant. `/skill:align` classifies those in place; `/skill:new`
-always generates the mirrored-wrapper form, so `.claude/` stays auditable in one place.
+**`commands/` is the only tree Claude Code registers**, so nothing else may live in it. A
+`references/` folder placed there would register every file in it as a phantom command like
+`/docs:align:references:conformance` — which does not error, it just quietly appears in your `/`
+menu and does nothing. Shared procedure, references and eval cases live beside `commands/`, not
+inside it, and are cited by path.
+
+**Accepted variation:** a directory-scoped surface at `<folder>/.claude/commands/` also binds a
+command to a folder and is conformant. `/skill:align` classifies those in place; `/skill:new`
+always writes into the repo-root `.claude/`, so the surface stays auditable in one place.
 
 ---
 
 ## 3. The commands
 
-### `/skill:new` — mint or edit ONE skill
+### `/skill:new` — mint or edit ONE command
 
 Reads the taxonomy rule (offering to create it from the mold on first run), classifies on the
-axis, derives the canonical name and the wrapper path, drafts the `SKILL.md` under the writing
-doctrine, and presents **ONE plan** — classification, names, files, and the OKF tail. On a single
-OK it writes, then self-checks: the registry's generated zone matches `skills/` on disk, the
-wrapper resolves, and the description fits the per-skill listing cap.
+axis, derives the command path — which is the name — drafts the file under the writing doctrine,
+and presents **ONE plan**: classification, path, files, and the OKF tail. On a single OK it
+writes, then self-checks: the registry's generated zone matches `commands/` on disk and the
+description fits the listing cap.
 
-Without an OKF `docs/` bundle the mint still proceeds — skill and wrapper only — the OKF tail is
+Without an OKF `docs/` bundle the mint still proceeds — the command file only — the OKF tail is
 skipped, and `/docs:align` is suggested once.
 
 ### `/skill:align` — migrate the WHOLE surface
 
-Read-only inventory first (name, classification, and conformance gaps per item, including
-directory-scoped skills), then **one consolidated plan**: renames to canonical names, wrappers to
-create or rewrite, and the rule + registry created from the molds when missing. Applied on a
+Read-only inventory first (path, classification, and conformance gaps per item, including
+directory-scoped surfaces), then **one consolidated plan**: renames to canonical paths, commands
+to create or rewrite, and the rule + registry created from the molds when missing. Applied on a
 single OK — with a **code-coupled rename confirmed on its own**. Then it verifies: zone
-regenerated, every wrapper resolves, registry matches `skills/` exactly.
+regenerated, registry matches `commands/` exactly.
 
-**Skill bodies are preserved** (MERGE), an unclassifiable skill is **kept and reported**, and
-nothing is deleted unless you state it is obsolete.
+**If this repo still carries the old paired shape** — a `skills/<name>/SKILL.md` plus a thin
+wrapper — the plan includes **collapsing each pair into one file**: the wrapper's `description`
+and `argument-hint`, the skill's `allowed-tools` and `effort`, the skill's body moved verbatim
+into the wrapper's path. Nothing you type today changes. Anything that sat beside the skill
+(`references/`, `evals/`) is re-homed outside `commands/` first.
+
+**Bodies are preserved** (MERGE), an unclassifiable command is **kept and reported**, and nothing
+is deleted unless you state it is obsolete.
 
 ### `/skill:align-and-update` — migrate, then audit every body
 
@@ -111,7 +125,7 @@ behind your back.
 This front is the plugin's shortest, and the command says so: unlike `docs/` (agent memory,
 harness files) and `specs/` (finished plans), it has **no out-of-band store to drain**, so
 it converges in **one or two passes**, essentially always. The loop still earns its keep — a
-Stage 1 rename shifts the registry and can dangle a wrapper, and re-assessing catches that in
+Stage 1 rename shifts the registry and can strand a citation, and re-assessing catches that in
 the same run — but the report will tell you plainly when there was nothing left to do rather
 than dressing it up.
 
@@ -131,9 +145,9 @@ about this repo, so it is recorded where knowledge lives:
 | **The registry** | `docs/documentation/reference/automation.md` | `type: documentation`. The authoritative listing of the local surface. |
 
 The registry's `<!-- GENERATED:BEGIN -->` … `<!-- GENERATED:END -->` zone holds one table —
-`Command | Skill | Serves | Typical trigger` — derived **exclusively** from the local
-`skills/*/SKILL.md` frontmatter, ordered by the Command column, wrapperless rows last. It lists
-**this repo's own** surface, never a plugin's.
+`Command | Serves | Typical trigger` — derived **exclusively** from the local
+`commands/**/*.md` frontmatter, ordered by the Command column. It lists **this repo's own**
+surface, never a plugin's.
 
 **Never hand-edit inside those markers.** Curated prose lives outside them and is never touched
 by regeneration. Only `/skill:new` and `/skill:align` write the zone — the same anti-drift rule
@@ -188,9 +202,10 @@ preserving your `hooks-config.json`.
 | --- | --- |
 | Two skills answer the same request | A local copy shadows a plugin skill. Remove the local one — `/specs:align` clears CLI-generated `openspec-*` duplicates; `/skill:align` reports the rest. |
 | A skill never triggers | Its trigger phrases fell past the description cap, or another skill's description claims the same ground. `/skill:new` on that skill rewrites the description under the doctrine. |
-| A command path does not resolve | The wrapper is missing or points at a renamed skill. `/skill:align` recreates and verifies every wrapper. |
-| The registry disagrees with `skills/` | Its generated zone is stale — `/skill:new` and `/skill:align` both rebuild it from disk. |
-| A skill fits no folder | That is a valid outcome. It is kept and reported as unroutable — do not force a name onto it. |
+| A command path does not resolve | The file is missing or was renamed. `/skill:align` reconciles the tree and verifies every path. |
+| A `/` entry does nothing when invoked | Something that is not an entry point is sitting under `commands/` — a reference or a fixture. Move it out; `skills.py doctor` reports it as `sk-no-description`. |
+| The registry disagrees with `commands/` | Its generated zone is stale — `/skill:new` and `/skill:align` both rebuild it from disk. |
+| A command fits no folder | That is a valid outcome. It is kept and reported as unroutable — do not force a path onto it. |
 
 ---
 
@@ -208,6 +223,5 @@ write artifacts into it), then `specs/` (it clears the shadow copies the skill s
 otherwise inventory), then `.claude/`. A front this repo does not use simply has no manual — the
 paths above are references, not promises.
 
-The normative taxonomy and the full skill-writing doctrine live in the plugin's
-`skills/quenching-skill-new/references/`. This file is the operator's view; those are the
-specification.
+The normative taxonomy and the full command-writing doctrine live in the plugin's
+`assets/references/skill-new/`. This file is the operator's view; those are the specification.

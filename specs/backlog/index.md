@@ -55,7 +55,7 @@ backlog/
        then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
        (a task with two tags appears under both).
 -->
-**8 specs** · 8 captured
+**9 specs** · 9 captured
 
 ### Captured
 
@@ -67,8 +67,9 @@ backlog/
 | [decide-sp-unrefined-severity](2026-07-25-decide-sp-unrefined-severity.md) | Decide whether sp-unrefined should escalate to error | 2026-07-25 |
 | [expose-finding-advisory-as-data](2026-07-25-expose-finding-advisory-as-data.md) | Expose a finding's advisory/blocking status as data in okf-validate --json | 2026-07-25 |
 | [split-specs-py-backlog-renderer](2026-07-25-split-specs-py-backlog-renderer.md) | Split the backlog-zone renderer out of specs.py | 2026-07-25 |
-| [collapse-skills-into-commands](2026-07-26-collapse-skills-into-commands.md) | Collapse the 28 skill+wrapper pairs into one command file per entry point | 2026-07-26 |
 | [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
+| [retire-skill-vocabulary](2026-07-27-retire-skill-vocabulary.md) | Retire the skill vocabulary left behind by the collapse | 2026-07-27 |
+| [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
 <!-- END GENERATED -->
 
 ## Completed ledger
