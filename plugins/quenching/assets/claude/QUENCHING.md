@@ -8,8 +8,9 @@
 `.claude/` is where **this repository's own** Claude Code automation lives — the commands it
 wrote for itself, the commands that invoke them, the hooks that enforce its conventions. It is
 kept on a single taxonomy by the
-[`quenching`](https://github.com/eloysekonell/quenching) plugin, via
-`/skill:new` and `/skill:align`.
+[`quenching`](https://github.com/eloysekonell/quenching) plugin, via the `/skill:*` commands —
+`/skill:new`, `/skill:agent:new`, `/skill:hook:new`, `/skill:eval`, and the sweep
+`/skill:align`.
 
 Its siblings: `../docs/QUENCHING.md` (the knowledge bundle) and
 `../specs/QUENCHING.md` (the plan workspace).
@@ -25,6 +26,7 @@ Its siblings: `../docs/QUENCHING.md` (the knowledge bundle) and
   settings.local.json   # personal overrides — gitignore it
   commands/             # THE surface — one file per entry point; mirrors the repo's folders
     <folder>/<verb>.md  # frontmatter + workflow, in the one file
+  agents/<name>.md      # subagent definitions — minted by /skill:agent:new
   references/<name>/    # shared procedure — outside commands/, cited by path
   evals/<path>/         # measured case sets — outside commands/ too
   hooks/
@@ -94,13 +96,14 @@ description fits the listing cap.
 Without an OKF `docs/` bundle the mint still proceeds — the command file only — the OKF tail is
 skipped, and `/docs:align` is suggested once.
 
-### `/skill:align` — migrate the WHOLE surface
+### `/skill:align` — migrate the WHOLE surface, then audit every body
 
-Read-only inventory first (path, classification, and conformance gaps per item, including
-directory-scoped surfaces), then **one consolidated plan**: renames to canonical paths, commands
-to create or rewrite, and the rule + registry created from the molds when missing. Applied on a
-single OK — with a **code-coupled rename confirmed on its own**. Then it verifies: zone
-regenerated, registry matches `commands/` exactly.
+**Probe-first**: it opens with `skills.py doctor` + `lint`, so a conformant surface costs two
+tool calls and stops there, saying so. Otherwise: a read-only inventory (path, classification,
+and conformance gaps per item, including directory-scoped surfaces), then **one consolidated
+plan**: renames to canonical paths, commands to create or rewrite, and the rule + registry
+created from the molds when missing. Applied on a single OK — with a **code-coupled rename
+confirmed on its own**. Then it verifies: zone regenerated, registry matches `commands/` exactly.
 
 **If this repo still carries the old paired shape** — a `skills/<name>/SKILL.md` plus a thin
 wrapper — the plan includes **collapsing each pair into one file**: the wrapper's `description`
@@ -108,29 +111,37 @@ and `argument-hint`, the skill's `allowed-tools` and `effort`, the skill's body 
 into the wrapper's path. Nothing you type today changes. Anything that sat beside the skill
 (`references/`, `evals/`) is re-homed outside `commands/` first.
 
+The migration's last stage is the one thing the sweep itself is **forbidden** to fix: a
+**read-only audit of every command body** against the writing doctrine in §5. A violation is a
+**finding, not a fix** — rewriting a body is *authoring*, and authoring needs the person whose
+intent the command encodes — so the report names the file, the rule it breaks, the one-line
+evidence, and the exact `/skill:new <name>` that opens the edit. Nothing is rewritten behind
+your back.
+
 **Bodies are preserved** (MERGE), an unclassifiable command is **kept and reported**, and nothing
 is deleted unless you state it is obsolete.
 
-### `/skill:align-and-update` — migrate, then audit every body
+### `/skill:agent:new` — mint or edit ONE subagent definition
 
-This front's conductor, and the exact complement of the align above. Stage 1 is `/skill:align`.
-Stage 2 is the one thing that align is **forbidden** to do: a **read-only audit of every skill
-body** against the writing doctrine in §5.
+The delegation counterpart of `/skill:new`, for `.claude/agents/`. Applies the delegation test
+(does this work return a summary rather than a trail?), scopes the agent's tools to the
+narrowest set that still does the job, prices the definition's always-on cost, and lands the OKF
+tail on one OK. *Not for:* a command (`/skill:new`) or a hook (`/skill:hook:new`).
 
-A violation is a **finding, not a fix**. Rewriting a body is *authoring*, and authoring needs the
-person whose intent the skill encodes — so the report names the file, the rule it breaks, the
-one-line evidence, and the exact `/skill:new <name>` that opens the edit. Nothing is rewritten
-behind your back.
+### `/skill:hook:new` — wire ONE scoped hook
 
-This front is the plugin's shortest, and the command says so: unlike `docs/` (agent memory,
-harness files) and `specs/` (finished plans), it has **no out-of-band store to drain**, so
-it converges in **one or two passes**, essentially always. The loop still earns its keep — a
-Stage 1 rename shifts the registry and can strand a citation, and re-assessing catches that in
-the same run — but the report will tell you plainly when there was nothing left to do rather
-than dressing it up.
+Walks the scope ladder to the narrowest event + matcher and the cheapest handler that still
+catch what it must, states the hook's cost claim, and applies on one OK — **warn by default;
+block only on your word**. *Not for:* the OKF conformance hook, which `/docs:align` installs and
+upgrades.
 
-Every front has this same pair (`/docs:align-and-update`, `/specs:align-and-update`);
-`/align-and-update` runs all three.
+### `/skill:eval` — measure whether a command teaches anything
+
+Runs one command's cases twice — with the command loaded and without — in isolated sub-agents,
+grades every assertion against **quoted evidence**, and reports the delta over pass rate, tokens
+and duration. A command whose delta is zero is reported as teaching nothing, never quietly
+passed. Description tuning runs on measured should-trigger / should-not-trigger rates, never on
+taste.
 
 ---
 
@@ -151,7 +162,7 @@ surface, never a plugin's.
 
 **Never hand-edit inside those markers.** Curated prose lives outside them and is never touched
 by regeneration. Only `/skill:new` and `/skill:align` write the zone — the same anti-drift rule
-that governs `specs/backlog/index.md`.
+that governs `specs/plans/index.md`.
 
 ---
 
@@ -211,17 +222,17 @@ preserving your `hooks-config.json`.
 
 ## 8. The other fronts
 
-| Front | Manual | Status (read-only) | Align (structure, one pass) | Align-and-update (+ content, looped) |
-| --- | --- | --- | --- | --- |
-| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:status` | `/docs:align` | `/docs:align-and-update` |
-| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:status` | `/specs:align` | `/specs:align-and-update` |
-| `.claude/` — this surface | this file | — | `/skill:align` | `/skill:align-and-update` |
+| Front | Manual | Status (read-only) | Align |
+| --- | --- | --- | --- |
+| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:status` | `/docs:align` |
+| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:status` | `/specs:align` |
+| `.claude/` — this surface | this file | — | `/skill:align` |
 
-`/align` runs the three aligns in dependency order on one confirmation, and `/align-and-update`
-runs the three conductors the same way, looped: `docs/` first (the other two
-write artifacts into it), then `specs/` (it clears the shadow copies the skill sweep would
-otherwise inventory), then `.claude/`. A front this repo does not use simply has no manual — the
-paths above are references, not promises.
+**One align per front**, each probe-first, each carrying its front's content stages when the
+probe finds work. `/align` conducts the three in dependency order on one confirmation: `docs/`
+first (the other two write artifacts into it), then `specs/` (it clears the shadow copies the
+skill sweep would otherwise inventory), then `.claude/`. A front this repo does not use simply
+has no manual — the paths above are references, not promises.
 
 The normative taxonomy and the full command-writing doctrine live in the plugin's
 `assets/references/skill-new/`. This file is the operator's view; those are the specification.

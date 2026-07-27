@@ -14,6 +14,7 @@ rule sits here as `authority: background` (no separate decisions home). One stan
 
 | Doc | Covers |
 | --- | --- |
+| [align-surface.md](align-surface.md) | The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, and the probe-before-inventory rule that makes a no-op align cost a couple of tool calls |
 | [plugin-layout.md](plugin-layout.md) | commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path |
 
 ## Candidate sub-standards

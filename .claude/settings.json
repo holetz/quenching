@@ -1,6 +1,10 @@
 {
   "enabledPlugins": {
     "quenching@quenching": true,
-    "quenching@claude-quenching": true
+    "quenching@claude-quenching": true,
+    "agent-sdk-dev@claude-code-plugins": true,
+    "feature-dev@claude-code-plugins": true,
+    "plugin-dev@claude-code-plugins": true,
+    "context7@context7-marketplace": true
   }
 }

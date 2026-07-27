@@ -10,7 +10,7 @@ effort: low
 **Input**: `$ARGUMENTS` (optionally a home or path to focus; omit to read the whole bundle).
 
 The **read-only** view of the `docs/` front. Every other skill here either fixes something
-(`/docs:align`), drives something (`/docs:align-and-update`), or acts on one
+(`/docs:align`) or acts on one
 item a human named. This one only looks — and because it looks at exactly what those sweeps look
 at, it is also their honest preview: the plan you would be authorizing, before you authorize it.
 
@@ -21,8 +21,8 @@ invasive skill and read the plan from inside it.
 
 The conformance codes and their severities live in
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md);
-the opportunity → skill routing in
-[docs-align-and-update/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align-and-update/cycle.md);
+the finding → owning-command routing in
+[docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md);
 the homes and the insert procedure in
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
 All three are **cited, never restated** — this skill owns no contract of its own, which is the
@@ -43,8 +43,8 @@ point: a status view that disagreed with the sweep would be worse than none.
   is permanent noise in a repo that legitimately has no `mlops/`; not reporting it loses the
   signal that motivated the skill. Figures inform; codes accumulate.
 - **Distinguish "would fix" from "would only report".** Split the output the way the sweeps split
-  it: what `/docs:align` fixes on one OK, what `/docs:align-and-update` then drives, and what
-  neither closes because it needs a human. A reader must be able to tell what a sweep would
+  it: what `/docs:align` fixes on one OK, what its later stages then drive, and what neither
+  closes because it needs a human. A reader must be able to tell what a sweep would
   actually do to their repo.
 - **Cheap by construction.** One `okf-validate.py --json` over the bundle, one glob, and reads of
   the few files the report names. Never fan out sub-agents: the validator already answers in one
@@ -85,8 +85,8 @@ every conformance row as unverified rather than reporting a clean bundle.
 ### 3. Classify against the sweeps' own codes
 Map each finding onto a code from
 [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md), and route it with
-[cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align-and-update/cycle.md)'s opportunity table — which
-already says, per row, whether the cycle auto-closes it. Contribute no code and no routing of your
+[cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s routing table — which
+already says, per row, whether the align auto-closes it. Contribute no code and no routing of your
 own: a row the table does not cover is reported under "closed by neither" with the reason, never
 invented into a fix.
 
@@ -105,13 +105,12 @@ One report, in this order:
 2. **Density** — the table §5 defines. It comes *before* the findings, because a bundle with no
    findings and no content is the case this skill exists to make visible.
 3. **Would be fixed by `/docs:align`** — the codes
-   [cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align-and-update/cycle.md)'s table marks auto-closed by
-   the align stage (`dir-no-index`, `index-broken-link`, `index-orphan`, un-stamped or mis-stamped
+   [cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s table marks auto-closed by
+   stage 1 (`dir-no-index`, `index-broken-link`, `index-orphan`, un-stamped or mis-stamped
    frontmatter, variant folder names, prefix-clusters, non-English slugs), with counts. Name which
    would be **code-coupled** — a rename whose blast radius reaches product code — and so would
    confirm on its own. State plainly that this list is what a single OK would authorize.
-4. **Would then be driven by `/docs:align-and-update`** — the content the cycle's later stages pull
-   in: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
+4. **Would then be pulled in by `/docs:align`'s later stages** — the content they carry: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
    and terms in the bundle absent from the glossary. These are the rows the table marks auto-closed
    by `/docs:import-memory`, `/docs:harness` and
    `/docs:glossary-backfill`.

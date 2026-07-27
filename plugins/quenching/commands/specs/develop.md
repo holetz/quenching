@@ -1,37 +1,43 @@
 ---
-description: Advance a spec's sections to the ready gate, then offer the promote
+description: Develop ONE spec by asking about it — one question at a time, with the question bank chosen by the spec's own derived stage rather than by a mode flag. Triggers on "develop this spec", "think this through", "explore this idea", "what shape should this take", "refine the spec", "poke holes in this", "what are the alternatives", "premortem this", "fill in the missing sections", "is this ready to build", "resolve the discoveries", "approve this spec". A raw spec gets shape questions; a proposed one gets argued with; a designed one gets its gate gaps closed; one at the gate gets offered the approval stamp. Answers accumulate and land in ONE confirmed edit per bank. Never edits code. Not for: creating a spec → /specs:create; building one → /specs:execute; closing one out and merging → /specs:conclude; ranking the whole front → /specs:triage; being told which spec to pick up next → /specs:continue.
 argument-hint: [slug-or-description]
-allowed-tools: Bash(python3:*), Bash(py:*), Read, Glob, Grep, Write, Edit, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
-# /specs:develop — advance a spec to the ready gate
+# /specs:develop — ask one spec the questions its stage calls for
 
-**Input**: `$ARGUMENTS` (a spec slug OR a description of what to develop).
+**Input**: `$ARGUMENTS` — a spec slug, or a description of what to work on.
 
-Writes and revises the sections of ONE spec, from a bare `## Problem` through the whole definition
-set, until `specs.py promote` will accept it.
+Takes ONE spec from wherever it is toward being worth building: giving a bare `## Problem` a shape,
+arguing with the shape once it exists, closing the ten-section ready gate, resolving what an
+executor discovered, and finally asking the human for the go-ahead.
 
-**This is one skill because v2 made it one job.** v1 split it in two: `plan-propose` *created*
-three artifact files from templates, and `plan-update` *revised* files that already existed and
-reconciled them against each other. Neither difference survives a single file. Creating a section
-and revising one are the same call — `specs.py section <slug> "<Heading>" --write`, which creates
-the heading in canonical position on first write — and there is nothing to reconcile *between*
-artifacts when there is one artifact.
+**One loop, not a menu.** v2 split this across three commands and a mode flag — `explore` to think,
+`refine --mode critic|premortem|alternatives|interview` to argue, `develop` to fill gaps — which
+made the human choose the interrogation before anything had read the spec. It is one loop now,
+because the spec's **derived stage** answers that question better than the human can: a spec with
+only `## Problem` needs shape, a spec with a proposal needs an argument, a spec at the gate needs a
+yes. Same target, same one-question-at-a-time mechanic, same single confirmed edit — only the bank
+of questions differs, and it is looked up rather than asked for.
 
-What survived from each: the gate walk (fill toward the `ready/` set, then offer the promote), and
-the absolute rule that this skill **never edits code**.
+The banks, the four shared mechanics, and each bank's stop condition live in
+[specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) —
+read it before running a bank; it is the owner of the technique, and this body never restates it.
 
-The spec-driven facts — layout, the thirteen canonical sections, the phase gates, the derived
-stages, the `specs.py` surface, the `specs/`↔`docs/` boundary — live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md). The per-section authoring doctrine (what
-belongs under each heading, and how to write an honest explicit none) lives in
-[specs-develop/artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md). Both are cited here, never restated.
+The spec-driven facts — the layout, the thirteen canonical sections, the gates, the derived stages,
+the `specs.py` surface, the `specs/`↔`docs/` boundary — live in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
+The per-section authoring doctrine — what belongs under each heading, how to write an honest
+explicit none — lives in
+[specs-develop/artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md).
 
 ## Resolving the tool
 
 Resolve `specs.py` by the fallback in
-[specs-capture/backlog-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-capture/backlog-zone.md)
-§Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
+[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+§Resolving the tool: `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then the target's
+`.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
+`python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
 **No deltas.** This front is entirely native: a spec writes its durable rules **directly** into
@@ -40,86 +46,132 @@ so nothing here writes a delta and nothing later syncs one.
 
 ## Doctrine
 
-- **The tool decides what is next, never a reading of the file.** `specs.py next --spec <slug>`
-  returns THE next action — the first unfilled gate section, or `promote` once they are all
-  filled. Walking the headings by eye is how a section gets skipped.
-- **Every write is confirmed before it lands.** This skill authors content into a human's spec.
-  Show what will be written, then write it — one section at a time.
-- **An empty section is `- none — <reason>`, never a deleted heading.** *We drew the boundary and
-  nothing fell outside it* and *nobody ever drew the boundary* read identically when the heading
-  is missing, and only one of them is safe to build on. An explicit null is strictly more
-  information than an absence, and it costs one line.
-- **A heading that exists must say something.** A present-but-empty section is malformed — neither
-  an answer nor a not-yet — and `promote` refuses on it. Never create a heading you are not about
-  to fill in the same step.
-- **Never invent the explicit none.** `- none — <reason>` is an *answer*. If the human has not
-  given one, ask, or leave the heading absent and let the gate report it. A fabricated null is
-  worse than a missing section, because it looks decided.
-- **Read `docs/` before writing.** The relevant `docs/standards/` and `knowledge/glossary.md` shape
-  the wording, so a spec does not contradict a rule the repo already agreed on, or invent a second
-  name for a thing that already has one.
-- **Never edit code.** If the work implies code changes, that is `/specs:apply`. If a
-  request changes the spec's *intent* rather than sharpening it, say so and offer a fresh capture
-  instead of quietly rewriting what was already agreed.
-- **`## Impact` is the one parsed section.** Paths bulleted under
-  `### Standards this spec will write into docs/standards/` are machine-checked against
-  `## Tasks`; writing that heading opts the spec into the check.
+- **The stage picks the bank; the tool reports the stage.** `specs.py status --spec <slug> --json`
+  returns it. Never infer the stage by reading the headings, and never ask the human which mode
+  they want — the answer is on disk. This is the one rule that is this command's own; everything
+  about *how* a bank runs is owned by
+  [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four
+  shared mechanics, and is not optional.
+- **The explicit-none rule is the spec's, not this command's.** A section with nothing in it is
+  `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
+  own gate is legal — stated once in
+  [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The phase
+  gates, applied here on every write.
+- **Read `docs/` before writing.** The relevant `docs/standards/` and `knowledge/glossary.md` are
+  binding on wording, so a spec does not contradict a rule the repo already agreed on or invent a
+  second name for a thing that already has one.
+- **Never edit code.** If the work implies code changes, that is `/specs:execute`. If a request
+  changes the spec's *intent* rather than sharpening it, say so and offer a fresh
+  `/specs:create` instead of quietly rewriting what was already agreed.
 
 ## Workflow
 
 ### 1. Resolve the spec
-Take the slug from the user, or run `specs.py list --json` and ask. Announce it, then read state:
+Take the slug from the input, infer it from the conversation, or run `specs.py list --json` and ask
+with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announce it and how to
+override. Two matches for one slug is exit 2 — report both paths and stop, never guess which was
+meant. An archived spec has nothing to develop: say so and stop.
+**Done when:** one spec in `plans/` is resolved.
+
+### 2. Read the spec and the OKF bundle
 ```bash
-specs.py status --spec <slug> --json
+specs.py status --spec <slug> --json      # stage, section states, records, tasks, gate
 ```
-Two matches for a slug is exit 2 — report both paths and stop; never guess which was meant.
-**Done when:** one spec is resolved and its section states are in hand.
+Read the spec's filled sections at the path `status` resolved — never assume filenames. Then, if
+the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the `docs/standards/`
+subjects this spec touches and `docs/knowledge/glossary.md`, so the questions use the repo's own
+vocabulary and can catch a spec that contradicts a binding contract. No bundle → skip silently.
+**Done when:** the spec's state and the binding context are in hand.
 
-### 2. Read the OKF bundle as context
-If `docs/index.md` carries `okf_version`, read the `docs/standards/` subjects this spec touches
-plus `docs/knowledge/glossary.md`. They are **binding** on wording and on any rule the spec
-restates. No bundle → skip silently.
-**Done when:** the relevant standards and vocabulary are in hand, or no bundle exists.
+### 3. Select the bank
+Look the **derived stage** up in
+[questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §Choosing the
+bank. If `## Discoveries` holds an unresolved line, the discoveries bank runs **first** regardless
+of stage — resolving what execution already found beats adding to a spec that has not absorbed it.
 
-### 3. Set the verification policy, once
-If the human has not declared one, ask which of `per-task` / `per-section` / `end-of-plan` this
-spec verifies under, and write it to frontmatter. Declaring it here is what stops
-`/specs:apply` from having to guess mid-build, or from asking at the worst moment.
-**Done when:** `verification` is set, or was already.
+Name the bank, what it will ask, and **its stop condition** before the first question. If the input
+asked for something the stage does not select — "poke holes in this" on a spec with no proposal —
+say which bank the spec's state calls for, offer the requested one anyway, and let the human pick.
+**Done when:** exactly one bank is named back to the user with its stop condition.
 
-### 4. Walk the gate
-Loop, never batch:
-```bash
-specs.py next --spec <slug> --json              # -> the next unfilled gate section
-specs.py section <slug> "<Heading>"             # read it first, when revising
-specs.py section <slug> "<Heading>" --write     # body on stdin, AFTER confirmation
-```
-Draft each section per [specs-develop/artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md), show it, confirm, write
-it, then ask the tool again. Revising an already-filled section is the same call — read it, show
-the change, write it.
-**Done when:** `specs.py next` reports `action: promote`, or the human stops.
+### 4. Run the bank — one question at a time
+Follow the bank's script in
+[questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md), under the four
+shared mechanics it owns: one question at a time **with an inline recommendation**, accumulate and
+never write mid-flow, the bank's **declared stop condition**, and every answer naming the section
+it lands in.
 
-### 5. Offer the promote
-When the gate is met, say so and offer it — this is the human OK, and it is theirs to give:
-```bash
-specs.py promote <slug>            # backlog/ -> ready/
-```
-A refusal (exit 2) lists exactly what is missing or malformed; fix and offer again. If
-`specs.py validate --spec <slug>` reports `sp-unrefined`, mention `/specs:refine` **once**
-— a spec may always be promoted unrefined, so this is an offer, never a gate.
-**Done when:** the spec is promoted, or the human declines and the run ends cleanly.
+Questions must be **specific to this spec**. One that would read identically against any spec is
+noise — do not ask it, and do not pad the count with it.
+
+Nothing is written to the spec during this step. Keep a running list of
+`(question, answer, target section)`.
+**Done when:** the bank's stop condition is met, or the user calls it.
+
+### 5. Present ONE consolidated edit → one OK
+Show every accumulated answer as a single plan: per section, what changes and the answer it came
+from. Draft each section per
+[artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md). Anything that
+turned out to belong outside the spec — a durable rule, a term, a follow-up — is listed as a
+**routed offer**, not an edit (§Invariants).
+
+Wait. Declined → nothing is written, and the questions and answers are still reported so the
+thinking is not lost.
+**Done when:** the user has answered.
+
+### 6. Apply, and record what the pass earned
+Write each confirmed section with `specs.py section <slug> "<Heading>" --write` (body on stdin) —
+it creates the heading in canonical position on first write, so creating and revising are the same
+call. An emptied section becomes an explicit `- none — <reason>`, never a deleted heading.
+
+Then the frontmatter records this command owns, **merged into the existing frontmatter, never
+rewritten from scratch** (`slug`, `title` and `verification` must survive):
+
+| Record | When | Value |
+| --- | --- | --- |
+| `verification` | the gate bank settled it | one of the three in spec-driven.md §Frontmatter |
+| `refined: {mode, date}` | the adversarial or gate bank ran | per questions.md §Recording the pass |
+| `approved: {date}` | the human said go in the approval bank | today's date |
+
+Re-run `specs.py validate --spec <slug>` and report what it says.
+**Done when:** the sections are written, the records this bank earned are stamped, and validate has
+been re-run.
+
+### 7. Re-derive, and offer the next bank
+Run `specs.py status --spec <slug> --json` again. The stage is now a fact about disk. If it selects
+a different bank, name it and what it would ask — then wait. Accepted → return to step 3. Declined,
+or the same bank selected again with nothing left to ask → go to step 8.
+**Done when:** the human has taken or declined the next bank.
+
+### 8. Report
+The spec and the bank(s) that ran; how many questions were asked and answered; the sections edited;
+the records stamped; the routed offers and whether each was taken; the stage before and after; and
+the next step — `/specs:execute <slug>` once `approved` is stamped, `/specs:develop <slug>` again
+for the next bank, or `/specs:continue` to be told what the whole front wants next.
+**Done when:** the summary is shown.
 
 ## Invariants to never violate
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
-  `/specs:apply`.
+  `/specs:execute`.
+- **Never write into `docs/`.** A durable rule a question surfaces routes to `/docs:add`, an
+  understanding to `/docs:learn`, a term to `/docs:define`, an out-of-scope follow-up to
+  `/specs:create` — **offered, never auto-written**. The rules a spec *proves* are written during
+  execution, not during definition.
 - Never write a section without showing it and getting the human's word first.
+- Never write anything mid-bank — accumulate, then apply once.
+- Never batch questions. One at a time, each with a recommendation.
+- Never ask the human to choose a mode; the derived stage chooses the bank.
+- Never derive the stage from what this pass intends to write — only from disk.
+- Never cross into another bank without offering it first.
 - Never delete a heading to signal that nothing applies — write `- none — <reason>`.
-- Never invent an explicit none the human did not give.
-- Never create a heading you are not filling in the same step.
-- Never choose the next section by reading the file — ask `specs.py next`.
-- Never promote on the human's behalf; the promote IS their confirmation.
-- Never write into `docs/` from here. A durable rule the spec surfaces routes to
-  `/docs:add` / `/docs:learn`; the rules a spec *proves* are written during
-  apply, not during definition.
+- Never invent an explicit none the human did not give, and never invent an answer to an
+  unanswered question: it goes in `## Open Decisions` with how it will be decided, which is a
+  result, not a failure.
+- Never create a heading you are not filling in the same edit.
+- **Never fabricate a record.** `refined` is stamped only after real questions got real answers;
+  `approved` only after a human actually said go. Neither can be inferred from the sections — that
+  is the entire reason they exist.
+- Never gate on refinement. A spec may always be built unrefined; `sp-unrefined` is a warning by
+  design.
 - Never rename a spec or change its date prefix.

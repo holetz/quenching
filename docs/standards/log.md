@@ -3,6 +3,16 @@
 History of the standards bundle, most recent first. Each entry is grouped under a
 `## YYYY-MM-DD` heading and prefixed `**Creation**` / `**Update**` / `**Deprecation**`.
 
+## 2026-07-27
+
+**Update**: [Spec file contract](/docs/standards/workflows/plan-artifacts.md) and [Task execution contract](/docs/standards/workflows/task-execution.md) — reconciled with what the `specs-flow-consolidation` branch shipped, found by its branch review. `plan-artifacts.md` was retitled from "Spec lifecycle contract" and its superseded v2 lifecycle claims (folder-is-the-phase, promote-as-the-human-OK, the five-key frontmatter list, the `backlog/`/`ready/` sub-stages) are now pointers into [plan-lifecycle.md](/docs/standards/workflows/plan-lifecycle.md); the explicit-none gate table names the derived `ready` stage. `task-execution.md`'s `resource` pointed at the deleted `commands/specs/apply.md` (`resource-unresolved`) and is repointed at `execute.md` + `conclude.md`, and §Review splits now names the two commands that own the two levels. Two `authority: current` docs no longer assert the contract the branch deleted.
+
+**Creation**: [Align surface — one align per front, probe first](/docs/standards/architecture/align-surface.md) — the 1×4 column that replaced the 2×4 matrix (`align-and-update` deleted on all four fronts) and the probe-before-inventory rule that makes a no-op align cost a couple of tool calls (`authority: current` — the fold landed and `functional-checks.sh` proved the surface loads).
+
+**Creation**: [Plan git record contract](/docs/standards/workflows/plan-git-record.md) — the per-task `commit:` field written by `specs.py task --check --commit`, the write-once `branch`/`merge` frontmatter records, the squash caveat, and the read-if-present (never installed) contract for a target's `docs/standards/git/**` (`authority: current` — this spec's own build exercises every piece).
+
+**Creation**: [Plan lifecycle contract](/docs/standards/workflows/plan-lifecycle.md) — the v3 single-folder lifecycle (`plans/` + `archive/`), the derived `ready` stage with the `approved: {date}` record, and the frontmatter-records-human-judgments rule; supersedes the v2 lifecycle claims in plan-artifacts.md (`authority: current` — the shipped `specs.py`/`schema.json` rails implement it).
+
 ## 2026-07-26
 
 **Creation**: [Plugin layout — what may live under `commands/`](/docs/standards/architecture/plugin-layout.md) — `commands/**` is the only tree Claude Code registers, so everything that is not an entry point lives under `assets/` and is cited by `${CLAUDE_PLUGIN_ROOT}` absolute path (`authority: current` — the collapse migration proved it).

@@ -2,12 +2,12 @@
 type: standard
 title: Task execution contract
 description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/apply.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation]
-timestamp: 2026-07-26
+timestamp: 2026-07-27
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan
 maintainer: quenching
 ---
 
@@ -15,7 +15,8 @@ maintainer: quenching
 
 A task is not done when the code is written. It is done when it **ran**, its diff was
 **reviewed**, and it is **committed on its own**. This standard is the contract;
-`quenching-specs-apply/references/execution.md` is the procedure that implements it.
+`assets/references/specs-execute/execution.md` is the procedure that implements it, and
+[plan-git-record.md](plan-git-record.md) is what the resulting commits are recorded as.
 
 ## The precondition: a clean tree
 
@@ -27,7 +28,7 @@ the human's behalf.
 
 ## Verification is declared per spec, never decided mid-implementation
 
-the spec's frontmatter carries `verification`, written at propose time by `specs.py new --verification`:
+The spec's frontmatter carries `verification`, written at creation by `specs.py new --verification`:
 
 | Policy | Runs each task's `verify:` | Fits |
 | --- | --- | --- |
@@ -36,8 +37,8 @@ the spec's frontmatter carries `verification`, written at propose time by `specs
 | `end-of-plan` | once, after the final task | a slow suite, or work that is meaningless until the whole plan lands |
 
 A single global policy would be right for a fast suite and wrong for a slow one, and the spec's
-author is the only party who knows which this repo has. Declaring it at propose time means
-implementation never guesses and never interrupts the human mid-task to ask.
+author is the only party who knows which this repo has. Declaring it up front means execution
+never guesses and never interrupts the human mid-task to ask.
 
 A task with no `verify:` falls back to the spec's `## Validation`, then to the repo's own
 checks. **No verification available at all is reported, never silently passed** — a checkbox must
@@ -67,7 +68,7 @@ returning it to `- [ ]` (`specs.py task --uncheck <id>`) — never merely to ret
 
 ### Why the marker replaced the counter
 
-The earlier contract kept an attempt count in a the spec's frontmatter sidecar and hard-stopped at five. The
+The earlier contract kept an attempt count in a `.specs.json` sidecar and hard-stopped at five. The
 count was machine state a human never saw: a task went quiet after five failures with **no trace of
 why**, and the only way to resume was a `--reset-attempts` incantation that bought five more
 attempts at the same wrong approach.
@@ -77,28 +78,36 @@ survive hand-editing. Both were answered rather than argued away: the regex admi
 explicitly, and a marker a human can read is *more* likely to survive hand-editing than a sidecar
 they never open — because the reason is right there in the line they are already looking at.
 
-## Review splits by cost into two levels
+## Review splits by cost into two levels, owned by two commands
 
-| | Per-task self-review | End-of-plan review |
+| | Per-task self-review | Branch review |
 | --- | --- | --- |
-| Scope | one task's diff | the whole plan's diff |
-| When | before every commit | once, after the last task, **offered** |
+| Scope | one task's diff | the whole branch, `<base>...HEAD` |
+| Owner | `/specs:execute`, inside the task | `/specs:conclude`, step 2 |
+| When | before every commit | once, before the merge |
 | Looks for | reuse · useless defense · obvious comment · dead code | coherence, layering, whether the parts add up |
 
 The four-item check is cheap enough to run every time; a full-diff read is not, and running it per
 task would triple the cost of a three-line change. Only the whole diff can show what no single
 task could — two tasks that solved the same problem differently, an abstraction that wanted
-extracting once the third caller appeared, a declared `## Impact` path nothing ever wrote.
+extracting once the third caller appeared, a declared `## Impact` path nothing ever wrote, a
+standard the diff contradicts.
+
+The second level is a **separate command**, not an offer at the end of the first: it reads a
+different scale of diff, it precedes an irreversible merge, and bolting it onto the build meant a
+run that died after task nine had to redo tasks one through eight to reach it. That it ran is
+recorded as `reviewed`, per [plan-git-record.md](plan-git-record.md).
 
 ## One commit per task
 
 ```
-plan/<plan-name>: <task-id> <task title>
+plan/<slug>: <task-id> <task title>
 ```
 
 `git revert` then undoes exactly one task, `git log` reads as the spec's task list, and a review
 can walk it step by step. N tasks piled into one uncommitted blob gives none of that, and makes
-the branch isolation offered at the start buy nothing.
+the branch isolation offered at the start buy nothing. The sha is written back onto the task line —
+[plan-git-record.md](plan-git-record.md) §The task→commit link is stored, never inscribed.
 
 ### Hard rules
 
@@ -118,19 +127,19 @@ no "just this once":
 A per-task executor sub-agent is permitted when the task **declares `files:`** and **touches no
 `docs/`**, pinned to the session model — never `haiku`, which writes production code here.
 
-The orchestrator keeps, without exception: plan selection, the isolation offer, every
-confirmation, every `specs.py task --check` flip, every attempt record, every `docs/standards/`
+The orchestrator keeps, without exception: spec selection, the isolation offer, every
+confirmation, every `specs.py task --check` flip, every block marker, every `docs/standards/`
 write, the commit, and the decision to pause.
 
 ### This is not `context: fork`, and that rule is untouched
 
-The standing rule forbids `context: fork` **on these skills**, because a forked context cannot
+The standing rule forbids `context: fork` **on these commands**, because a forked context cannot
 present the mid-flow confirmations every sweep depends on — the conversation carrying the human's
 OK would be out of reach.
 
 Dispatching a sub-agent for a bounded, file-scoped unit of work does the opposite: the
-orchestrator **stays in the live conversation**, exactly as `quenching-docs-glossary-backfill` and
-`quenching-docs-import` already dispatch. One moves the decision-maker out of reach; the other
+orchestrator **stays in the live conversation**, exactly as `/docs:glossary-backfill` and
+`/docs:import` already dispatch. One moves the decision-maker out of reach; the other
 sends a worker out and keeps the decision-maker in place. They are different mechanisms about
 different things, and no future sweep may "fix" one into the other.
 
@@ -138,7 +147,7 @@ different things, and no future sweep may "fix" one into the other.
 
 Two tasks run concurrently only when all three hold:
 
-1. a `[P]` marker was set on both **at propose time** — never inferred while applying;
+1. a `[P]` marker was set on both **when the tasks were written** — never inferred while building;
 2. their declared `files:` sets are **provably disjoint**;
 3. neither writes into `docs/`.
 

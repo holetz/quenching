@@ -54,9 +54,9 @@ Ask **"what IS this, relative to us?"**:
   `authority: background` until proven. There is **no separate decision home** — a decision's
   rationale and considered alternatives are captured in a plan's `design.md` while
   the change is active, and its durable outcome lands as a `standard` at archive time.
-- **task vs vision:** a **parked unit of work** is a `task` and does **not** belong in this
-  bundle at all — the backlog lives at `specs/backlog/`, outside it, so route the capture to
-  `/specs:capture`. A **settled direction** with no deadline is a `vision` and stays here. The
+- **spec vs vision:** a **parked unit of work** is a **spec** and does **not** belong in this
+  bundle at all — it lives at `specs/plans/`, outside it, so route the capture to
+  `/specs:create`. A **settled direction** with no deadline is a `vision` and stays here. The
   full `specs/` ↔ `docs/` boundary — which tree answers which question, and why they never
   duplicate content — is owned once by
   [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -104,9 +104,9 @@ maintainer: <owner>
   (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit
   inside the markers.
 
-(The `specs/backlog/index.md` DERIVED zone is **not** part of this OKF insert procedure —
-the backlog lives outside the bundle; its zone spec is owned by the backlog skills, in
-[`specs-capture/backlog-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-capture/backlog-zone.md).)
+(The `specs/plans/index.md` GENERATED zone is **not** part of this OKF insert procedure —
+`specs/` lives outside the bundle; that zone is owned by the `/specs:*` commands, in
+[`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).)
 
 ## Appending to `log.md` (the history)
 

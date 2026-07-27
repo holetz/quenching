@@ -1,11 +1,11 @@
-# Spec-driven facts — the single-file lifecycle, the phase gates, the `specs.py` tool
+# Spec-driven facts — the single-file lifecycle, the gates, the `specs.py` tool
 
-The shared factual reference for the `/specs:*` skills. **This file is the single owner
-of the spec-driven facts** — the `specs/` layout, the spec file's format, the phase gates, the
+The shared factual reference for the `/specs:*` commands. **This file is the single owner
+of the spec-driven facts** — the `specs/` layout, the spec file's format, the gates, the
 derived stages, the executor contract, and the `specs.py` tool surface — and every
-`/specs:*` skill cites these sections instead of restating them. The OKF bridge (what
-durable knowledge crosses from a spec into `docs/` and how) lives with the archive-side skill
-([specs-archive/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-archive/distill.md)).
+`/specs:*` command cites these sections instead of restating them. The OKF bridge (what
+durable knowledge crosses from a spec into `docs/` and how) lives with the close-out command
+([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
 This front is **entirely native** — no external CLI, no Node runtime, no main spec store, no delta
 format. A **spec** writes straight into the OKF `docs/` bundle (a decision into `docs/standards/`,
@@ -19,7 +19,7 @@ same mold as `okf-validate.py`.
 - [Identity: the slug and the filename](#identity-the-slug-and-the-filename)
 - [Frontmatter](#frontmatter)
 - [The thirteen sections](#the-thirteen-sections)
-- [The phase gates and the phase-scoped explicit-none rule](#the-phase-gates-and-the-phase-scoped-explicit-none-rule)
+- [The gates and the stage-scoped explicit-none rule](#the-gates-and-the-stage-scoped-explicit-none-rule)
 - [Derived stages](#derived-stages)
 - [`## Impact` — the one parsed declaration](#-impact--the-one-parsed-declaration)
 - [`## Tasks` and the `[!]` blocked marker](#-tasks-and-the--blocked-marker)
@@ -34,23 +34,27 @@ The front lives at the target repo root (never inside `docs/`):
 
 ```
 specs/
-  backlog/                     # DEFINITION — raw problem through refined, buildable spec
+  plans/                       # a spec's whole active life: captured through executing
     index.md                   # listing with a GENERATED zone, grouped by derived stage
     2026-07-25-session-tokens.md
-  ready/                       # EXECUTION — ready to build, or building
     2026-07-14-rate-limiting.md
   archive/                     # done or abandoned, told apart by `outcome:` frontmatter
     2026-06-30-audit-log.md
 ```
 
-**The folder is the macro-phase, and it is the single truth.** There is no `phase:` frontmatter
-field: two declared sources of one fact will diverge, and a folder cannot lie. The transition is
-`git mv` (performed by `specs.py promote`), so `git log` narrates the lifecycle.
+**The folder is the phase, and it is the single truth.** There is no `phase:` frontmatter field:
+two declared sources of one fact will diverge, and a folder cannot lie. There is exactly **one**
+transition left — `plans/` → `archive/`, a `git mv` performed by `specs.py promote` — so `git log`
+narrates the close-out.
 
-`backlog/` is the definition phase — it is where a spec is captured, proposed, designed and
-refined. It is **not** part of the OKF `docs/` bundle, so `okf-validate.py` does not scan it (it is
+**Why one active folder.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
+reproduces: *a human said go*. Everything else it implied — that the spec is complete enough to
+build — is computable from the sections themselves, and now is (§Derived stages). The human's word
+is `approved:` in frontmatter, so the fact survived and the folder did not.
+
+`plans/` is **not** part of the OKF `docs/` bundle, so `okf-validate.py` does not scan it (it is
 checked with `--listing-root`; see
-[backlog-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-capture/backlog-zone.md)).
+[plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)).
 
 There is **one truth**, not two: a spec does not edit a separate "main spec" store — it writes the
 durable rule directly into `docs/standards/`, honestly `authority`-graded. There is no delta,
@@ -59,8 +63,8 @@ because there is no other copy for a delta to bridge to; isolation-while-buildin
 
 ## Identity: the slug and the filename
 
-**Every spec file is named `YYYY-MM-DD-<slug>.md`, in every folder.** The date prefix records when
-the spec was **born** and is written **once, at capture** — `promote` moves the file and never
+**Every spec file is named `YYYY-MM-DD-<slug>.md`, in both folders.** The date prefix records when
+the spec was **born** and is written **once, at creation** — `promote` moves the file and never
 renames it. The basename is therefore stable for the whole lifecycle, `git log --follow` reads as
 one history, and a plain `ls` of any folder is chronological. That last property is the point: a
 file listing IS the status view this design is built on, and no file listing reads frontmatter.
@@ -69,26 +73,44 @@ file listing IS the status view this design is built on, and no file listing rea
 resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. **Two matches is a
 refusal (exit 2), never a guess.** This is what makes repeated folder moves survivable.
 
-The prefix earns its place in all three folders, not just `archive/`: birth order is the order a
-human wants in every phase — *how long has this sat in `backlog/`? how long has this build been
-open in `ready/`?*
+The prefix earns its place in `plans/` as much as in `archive/`: birth order is the order a human
+wants at every stage — *how long has this sat unproposed? how long has this build been open?*
 
 ## Frontmatter
 
 Write-once, low-churn fields only. Machine state a human never reads does not belong in a spec.
 
-| Key | Required | Meaning |
-| --- | --- | --- |
-| `slug` | always | the identity key every command and cross-reference names |
-| `title` | always | one human-readable line |
-| `verification` | always | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs |
-| `refined` | once refined | `{mode, date}` — written after a real refinement pass |
-| `outcome` | at archive | `done` · `abandoned` — stamped by `promote --to archive` |
+**Frontmatter records human judgments. The filesystem, git and section presence record everything
+else.** That one rule decides what may live here, and every field below passes it by being
+something no derivation can answer.
+
+| Key | Required | Written by | Meaning |
+| --- | --- | --- | --- |
+| `slug` | always | `create` | the identity key every command and cross-reference names |
+| `title` | always | `create` | one human-readable line |
+| `verification` | always | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs |
+| `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec |
+| `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
+| `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
+| `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
+| `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
+| `merge` | once merged | `conclude` | `{strategy, commit}` — the strategy was a choice, the sha is its result |
+| `outcome` | at archive | `conclude` | `done` · `abandoned` — stamped by `promote --to archive` |
+
+Read top to bottom, the optional records **narrate the spec's history**: ranked, interrogated,
+approved, built, reviewed, merged, closed. An absent record is a *not-yet*, never a defect.
+
+`writeOnce: true` (`approved`, `branch`, `merge`, `outcome`) marks an irreversible transition, where
+rewriting the value would falsify something that already happened. `writeOnce: false` (`priority`,
+`refined`, `reviewed`) marks a standing judgment its **owning command** may restamp — which is why
+those three carry their own `date`. In neither case may a command other than the owner touch the
+record. The declared shapes live in `assets/specs/schema.json` under `frontmatter.records`.
 
 **There is no `created` field**: the filename's date prefix IS that fact, and one truth never gets
-two declared sources. `slug` is the deliberate exception — it is the identity key, so a mirror
-inside the file is worth its keep, and `validate` compares it to the filename suffix. A merely
-derived fact earns no such mirror.
+two declared sources. Nor a `phase` field (the folder is that fact), nor a `ready` field (the ten
+gate sections are that fact). `slug` is the deliberate exception — it is the identity key, so a
+mirror inside the file is worth its keep, and `validate` compares it to the filename suffix. A
+merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`. Both are gone.
 
@@ -125,22 +147,27 @@ Two of these sections are load-bearing for machinery, not just for thinking:
 - **`## Validation`** is the fallback for a task with no `verify:` line.
 - **`## Impact`** is machine-parsed (see below). Removing the heading silently disables a check.
 
-## The phase gates and the phase-scoped explicit-none rule
+## The gates and the stage-scoped explicit-none rule
 
 A section is required — and required to carry an explicit `- none — <reason>` when it has nothing
-in it — **only once its own phase gate is reached**. Before its gate, a heading's absence is not an
+in it — **only once its own gate is reached**. Before its gate, a heading's absence is not an
 omission; it is a *not-yet*.
 
 | Gate | Required sections |
 | --- | --- |
-| `new` (capture) | `## Problem` |
-| `promote → ready/` | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
-| `ready/` (warning only) | `## Handoff` non-empty |
+| `new` (creation) | `## Problem` |
+| `ready` (**derived**) | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
+| `ready` (warning only) | `## Handoff` non-empty |
 | `promote → archive/` | `## Outcome` |
 
-`## Tasks` is in the `ready/` gate because **promote-to-`ready/` IS the human OK to build**, and
-nothing may enter the execution phase with nothing to execute. This is the v2 form of the
-guarantee v1 spelled `applyRequires: ["tasks"]`.
+**`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
+what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
+`/specs:execute` reports against — and the tool simply has no task to hand out until the ten are
+filled, which is where the old promote's teeth went. The human's OK to build is a separate fact,
+`approved:`, asked for inline rather than encoded in a folder.
+
+`## Tasks` is in that set because nothing may be built with nothing to execute. This is the current
+form of the guarantee v1 spelled `applyRequires: ["tasks"]`.
 
 Three rules decide whether a section counts as filled:
 
@@ -152,14 +179,13 @@ Three rules decide whether a section counts as filled:
    else — a captured spec is four lines of body, not a thirteen-heading skeleton.
 
 **Why the rule is scoped rather than absolute.** Applied absolutely it would kill the derived
-stage: since `- none — <reason>` counts as filled, a freshly captured spec carrying thirteen
-`- none` sections would derive as `designed` and pass every gate without anyone having thought
-anything. Phase-scoping is the version where both rules survive.
+stage: since `- none — <reason>` counts as filled, a freshly created spec carrying thirteen
+`- none` sections would derive as `designed` and clear the whole ready gate without anyone having
+thought anything. Stage-scoping is the version where both rules survive.
 
-The per-phase sets live in `assets/specs/schema.json` and are read by **both** `promote` and
-`validate` — one source, two consumers. A wrong mapping there fails in one of two silent ways (too
-strict blocks every promote; too loose lets an empty spec through every gate), which is why it is
-declared once and asserted by `validate`.
+The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
+source, two consumers. The ten gate sections in particular are declared in exactly one place, the
+`ready` stage rule marked `gate: true`, because a second copy is the shape that silently diverges.
 
 ## Derived stages
 
@@ -168,15 +194,24 @@ on edit and goes stale; derived state regresses automatically when a section emp
 computation reads **heading presence**, never a three-state body — which is exactly what the
 phase-scoped rule above keeps unambiguous.
 
-| Folder | Stage | Derived from |
-| --- | --- | --- |
-| `backlog/` | `captured` | only `## Problem` filled |
-| `backlog/` | `proposed` | `## Proposal` filled |
-| `backlog/` | `designed` | `## Design` filled |
-| `backlog/` | `refined` | a `refined` record in frontmatter |
-| `ready/` | `executing` | any `[x]` or `[!]` box, or `## Handoff` filled |
+Resolution is **last match wins**, so a spec always reports the most advanced stage it has earned.
 
-`specs.py list` and the `backlog/index.md` GENERATED zone group by these stages.
+| Stage | Derived from |
+| --- | --- |
+| `captured` | only `## Problem` filled |
+| `proposed` | `## Proposal` filled |
+| `designed` | `## Design` filled |
+| `refined` | a `refined` record in frontmatter |
+| `ready` | the ten gate sections filled (`gate: true` — the single source of that set) |
+| `approved` | an `approved` record in frontmatter |
+| `executing` | any `[x]` or `[!]` box, or `## Handoff` filled |
+
+`approved` sorts after `ready` because a human may say go before every section is filled — `execute`
+asks inline and stamps rather than refusing. `executing` sorts last because it dominates all of
+them.
+
+`specs.py list`, `specs.py next --front` and the `plans/index.md` GENERATED zone all group by these
+stages.
 
 ## `## Impact` — the one parsed declaration
 
@@ -200,8 +235,16 @@ nothing and is never flagged — **the check is opt-in by writing the heading**.
 ## `## Tasks` and the `[!]` blocked marker
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
-`files:` / `verify:` / `pattern:` / `[P]` metadata. `specs.py task --check <id>` flips a box
-mechanically — **never by string surgery**.
+`files:` / `verify:` / `pattern:` / `commit:` / `[P]` metadata. `specs.py task --check <id>` flips a
+box mechanically — **never by string surgery**.
+
+`commit:` is written by `task --check --commit <sha>` and records **which commit implemented that
+task**. It lives on the task line rather than as a trailer inside the commit message, which leaves
+the target repo's message format entirely its own; and it cannot go stale, because amending a
+recorded commit and force-pushing are both forbidden
+([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The commit).
+`## Tasks` is the file's churn zone by design — its boxes already flip — so the low-churn doctrine
+that governs frontmatter does not reach it.
 
 A blocked task is a **visible marker, not a hidden counter**:
 
@@ -231,47 +274,48 @@ spec**. The orchestrator applies everything via `specs.py` (`task --check`, `dis
 `section --write`), runs `verify:` itself, and commits: **whoever commits, verifies.** This is also
 what makes one file safe under parallelism — one writer, mechanical writes.
 
-Discoveries are **captured indiscriminately**; whether one is worth acting on is triage's judgment,
-not the executor's. They are born in the origin spec's `## Discoveries` and resolved later, in
-place, to `→ promoted: <new-slug>` or `→ dismissed: <reason>`, so provenance is never lost and the
-human pays the decision cost in batch.
+Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
+not the executor's. They are born in the origin spec's `## Discoveries` and resolved in place by
+`/specs:develop`'s discoveries bank — `promoted: <new-slug>`, `folded: <section>`, or
+`dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
 `## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it after each
-committed task and at every promote. Staleness is this section's failure mode, and an event-bound
-rule is the only cure that survives unattended runs — `validate` warns when a `ready/` spec has an
-empty `## Handoff`.
+committed task. Staleness is this section's failure mode, and an event-bound rule is the only cure
+that survives unattended runs — `validate` warns when a spec past the ready gate has an empty
+`## Handoff`.
 
 ## The `specs.py` tool surface
 
 Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok · **1** findings ·
-**2** refusal. A skill branches on the exit code and the JSON, never on prose.
+**2** refusal. A command branches on the exit code and the JSON, never on prose.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P]` | scaffold `backlog/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
-| `specs.py list [--json]` | every spec, grouped by folder and derived stage |
-| `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress, and the destination phase's outstanding gates |
+| `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
+| `specs.py list [--json]` | every spec, by folder and derived stage |
+| `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded commits, the records, and the outstanding gates |
 | `specs.py section <slug> <heading> [--write]` | deterministic partial read/write of ONE section; `--write` creates the heading in canonical position |
-| `specs.py promote <slug> [--to ready\|archive] [--outcome done\|abandoned] [--force]` | gated transition; **exit 2** with the missing list, else `git mv` |
+| `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
-| `specs.py task --spec <slug> --check ID \| --uncheck ID \| --block ID --reason MSG` | flip or block a checkbox mechanically |
+| `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
+| `specs.py task --spec <slug> --check ID [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically |
 | `specs.py discover <slug> <text>` | append one line to `## Discoveries` |
 | `specs.py parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
-| `specs.py backlog reindex` | regenerate the `backlog/index.md` GENERATED zone, grouped by derived stage |
-| `specs.py validate [--spec <slug>]` | the canonical heading set, the phase-scoped rule, filename conformance, the `sp-*` vocabulary |
-| `specs.py doctor` | workspace shape — three folders, strays, v1 leftovers; remedies **declared** for the skill to apply |
-| `specs.py migrate` | one-way v1 → v2 fold; **exit 2** on an already-v2 target; `specs/archive/**` never touched |
+| `specs.py plans reindex` | regenerate the `plans/index.md` GENERATED zone, grouped by derived stage |
+| `specs.py validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
+| `specs.py doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
+| `specs.py migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
+| `specs.py selftest` | prove the embedded schema and template have not drifted from their asset files |
 
-`promote` is the load-bearing command. Destination is inferred (`backlog`→`ready`→`archive`) or
-forced with `--to`. It checks the destination phase's required-section set from `schema.json`,
-refuses with **exit 2** and the missing list, and otherwise moves the file **without renaming it**.
-`--outcome` applies to the archive hop only, and is the only content a promote ever writes.
+`promote` now has exactly one destination. It checks `archive/`'s required-section set from
+`schema.json`, refuses with **exit 2** and the missing list, and otherwise moves the file **without
+renaming it**. `--outcome` is the only content a promote ever writes.
 
 **Archiving a spec with open tasks refuses.** `--outcome done` with unchecked `- [ ]` boxes exits 2
 and lists them, overridable with `--force`; `--outcome abandoned` is always allowed, because
 closing out a spec that will not be built is exactly the case where open tasks are expected.
 
-There is no `init` (scaffold is an asset copy — the skill's job), no `store`, no `profiles`, no
+There is no `init` (scaffold is an asset copy — the align's job), no `store`, no `profiles`, no
 telemetry, and no delta parser.
 
 Templates live in `assets/specs/templates/spec.md` and are stamped by `specs.py new` — with the
@@ -282,8 +326,8 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 ### Resolving the tool
 
-Each `/specs:*` skill resolves the script by the same fallback the backlog zone uses
-([backlog-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-capture/backlog-zone.md)): the plugin path
+Each `/specs:*` command resolves the script by the same fallback the listing zone uses
+([plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)): the plugin path
 `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then a copy installed into the target's
 `.claude/hooks/specs.py`, and if neither resolves, the declared manual check — do the same rule by
 hand and **say in the report that the check was manual**, never silently skip it. Invoke with
@@ -293,16 +337,17 @@ hand and **say in the report that the check was manual**, never silently skip it
 
 **This section is the single normative owner of the boundary.** Everywhere it comes up —
 `/specs:align`'s conformance codes, `distill.md`'s what-crosses table, `homes.md`'s
-task-vs-vision tie-breaker, the `QUENCHING.md` operator manuals — cites it.
+spec-vs-vision tie-breaker, the `QUENCHING.md` operator manuals — cites it.
 
-- `specs/backlog/` and `specs/ready/` — **the in-flight unit of work**: a spec's problem, design,
-  and task checklist while it is being defined and built. Owned by the `/specs:*` skills;
-  leaves for `archive/` when done.
+- `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
+  while it is being defined and built. Owned by the `/specs:*` commands; leaves for `archive/` when
+  it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/knowledge/` — generic understanding. A spec writes its durable rule **directly** into
-  `docs/standards/` (`authority`-graded), and the archive-time distillation
-  ([distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-archive/distill.md)) routes any remaining
-  by-products (a term, an understanding, a follow-up) — never by bulk copy.
+  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/specs:conclude`
+  routes what the work merely *revealed*
+  ([distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)) — never by bulk
+  copy.
 
 The spec **is** the change: what it proves out lands in `docs/` as it is built, honestly graded
 (`authority: background` for an agreed-but-unproven rule, `current` for one the spec implemented

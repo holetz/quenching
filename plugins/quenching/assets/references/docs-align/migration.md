@@ -22,7 +22,7 @@ Each existing section matches a canonical home **by function**:
 | --- | --- |
 | `docs/arquitetura/`, `docs/architecture-docs/` | `docs/standards/` (or `standards/architecture/` if only that) |
 | `docs/adr/`, `docs/decisions` (ADRs) | `docs/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
-| `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `specs/backlog/` (leaves the bundle — §1e) |
+| `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `specs/` (leaves the bundle — §1e) |
 | `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `docs/vision/` |
 | `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `docs/catalog/` |
 | `docs/normativos/`, `docs/regulamentos/` | `docs/reference/regulations/` (content) |
@@ -87,23 +87,31 @@ untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Comp
 ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
 `Idea` → `Task`, `Developed into` → `Outcome`). The DERIVED
 `<!-- BEGIN/END GENERATED -->` zone is installed/regenerated per
-[`specs-capture/backlog-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-capture/backlog-zone.md);
+[`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md);
 an index that predates the markers gains them without touching the fixed prose around them. A
-legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies at the
-backlog's new home, `specs/backlog/` (§1e).
+legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies **before**
+the hand-off in §1e, while the files are still OKF-stamped task docs.
 
-### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → `specs/backlog/`
+### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → the `specs/` front
 
-OKF v0.13 moved the task inbox out of the `docs/` bundle: a target's existing `docs/backlog/`
-relocates to **`specs/backlog/`** — a **quenching-managed** sibling of the plan folders and
-`specs/archive/`, **outside** the bundle (no longer scanned by `okf-validate.py`, and `type: task`
-leaves the OKF `type` vocabulary). Create `specs/backlog/` — `/specs:align` scaffolds the
-`specs/` workspace if absent, else just create the folder and install the seed `index.md` from
-`${CLAUDE_PLUGIN_ROOT}/assets/specs/backlog/index.md` — then move every `docs/backlog/*.md`
-task across, applying the `idea`→`task` restamp (§1d) at the new path. This is its **own**
-confirmation, blast-radius swept (§3–4): the move rewrites every cross-link into `docs/backlog/`
-(now `/specs/backlog/…`). After the move, the backlog skills
-(`/specs:capture`/`/specs:triage`) own the inbox.
+OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `specs/` front as
+**specs**, not as OKF docs — `okf-validate.py` no longer scans it, and a spec carries no OKF
+`type:` at all.
+
+The move is two hops, and this sweep performs only the first:
+
+1. **`/docs:align` moves the files.** `/specs:align` scaffolds the `specs/` workspace if absent;
+   then every `docs/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
+   applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
+   not a destination — nothing is meant to stay there. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
+   every cross-link into `docs/backlog/`.
+2. **`specs.py migrate` converts them.** That legacy folder is exactly the tool's input: each task
+   file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
+   `complexity` preserved as a line in `## Problem`. Name that second hop in the report and let
+   `/specs:align` run it — **never hand-convert a task into a spec here**, which would be this
+   sweep authoring content.
+
+After both hops, `/specs:create` and `/specs:triage` own that work.
 
 ### 1f. Retired home — `decisions/` → `standards/`
 
@@ -133,7 +141,7 @@ The procedure — **two repo scans for the whole rename set**, one `git grep -n 
 tracked files and one `grep -rn --no-ignore -E "(a|b|c)"` so gitignored-but-live maps are never
 skipped, then classify each hit yourself — is the shared one in
 [`align-all/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)
-§3. Never run a scan per rename.
+§The blast-radius sweep. Never run a scan per rename.
 
 **This front's delta:** a variant *path* is often load-bearing beyond `docs/` in a way a bare
 name is not — path constants, imports, and **docstrings** all embed it — so the alternation is
@@ -151,9 +159,9 @@ Human confirmation and "do not delete without OK" remain in effect. A migration 
 radius reaches **product code**, or is otherwise irreversible, is a **distinct confirmation
 item** with its scope shown — never folded into a bulk "align all" opt-in. A rename that
 resolves to a code constant is a **refactor of the target's product**, not a docs move: alert
-the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked by
-`/docs:align-and-update` under its cycle-authorization contract
-([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align-and-update-all/convergence.md)) replaces only the batch gate
+the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
+`/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
 
 ## 5. Frontmatter migration (field renames)
@@ -164,7 +172,7 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 - `updated:` → `timestamp:`
 - add non-empty `type:` (from the home's vocabulary in [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md))
 - rename the retired type `type: guide` → `type: documentation` (its home moved to `documentation/`)
-- rename the retired type `type: idea` → `type: task` (the backlog item concept was renamed in v0.11 — see §1d; the backlog itself relocates to `specs/backlog/` per §1e)
+- rename the retired type `type: idea` → `type: task` (the backlog item concept was renamed in v0.11 — see §1d; those files then leave the bundle for the `specs/` front per §1e)
 - rename the retired type `type: decision` → `type: standard` (the ADR home was retired in v0.13 — see §1f; stamp `authority: background`, or `current` if implemented)
 - normalize enums to canonical English (`authority: vigente` → `current`; `audience: ambos` → `both`)
 - preserve third-party keys (a legacy `status:`, OKF-consumer keys, site-generator keys)
