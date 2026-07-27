@@ -439,7 +439,7 @@ at task 0.1 rather than trusting either spelling. `SK` is
 
 ### 0. Reconcile the baseline, then decide whether to build this at all
 
-- [ ] 0.1 Re-run the measurement and reconcile the surface against this spec before editing
+- [x] 0.1 Re-run the measurement and reconcile the surface against this spec before editing
       anything. Confirm the skill count, the flat `quenching-specs-*` names, and the 30,705
       baseline. If the applying tree is the nested 30-skill build instead, correct the counts
       in `## Problem` and `## Proposal` before proceeding — do not map them by guess.
@@ -525,3 +525,44 @@ at task 0.1 rather than trusting either spelling. `SK` is
       verify: `$PY $SK --root plugins/claude-quenching lint --json`
 - [ ] 5.3 [P] Confirm the shipped payload is untouched and still conformant.
       verify: `$PY plugins/claude-quenching/assets/hooks/okf-validate.py plugins/claude-quenching/assets/docs && $PY plugins/claude-quenching/assets/hooks/okf-validate.py plugins/claude-quenching/assets/specs/backlog --listing-root`
+
+## Discoveries
+
+**Task 0.2 — the gate: spike result FAIL by the spec's own rule (2 of 3 clean YES).**
+
+Method: `commands/*.md` and `skills/*/SKILL.md` throwaway probes in this plugin, exercised in
+**fresh `claude -p` processes** (a new command is not discoverable mid-session — the registry is
+built at startup, which is itself a finding). All probes reverted; 28 skills / 28 commands
+restored.
+
+| # | Question | Verdict | Evidence |
+| --- | --- | --- | --- |
+| 1 | `${CLAUDE_PLUGIN_ROOT}` substitutes in a `commands/*.md` body | **YES** | A command body containing the placeholder expanded to the absolute plugin root. Reproduced on both invocation paths. |
+| 2 | A command honours `allowed-tools` | **UNPROVEN — but at exact parity with skills** | `allowed-tools: ["Bash(echo:*)"]` failed to block a `Write` in **all four** cells of command × skill by slash-invocation × Skill-tool-invocation. Filesystem-verified, not self-reported. |
+| 3 | A conductor can invoke a command by name via the Skill tool | **YES** | A *command* was invoked by name through the Skill tool and its body expanded with substitution intact — the exact conductor path. Corroborated statically: this session's Skill registry lists `claude-quenching:docs:add` with its wrapper's `description` byte-identical. |
+
+Q2 is the reason the gate fails: the spec requires three clean YES and rules that "an ambiguous
+result is a FAIL". The honest reading is that commands are **not worse** than skills here — but
+"no regression" is not the "YES" the gate asked for, and the collapse is a structural migration
+whose revert is itself a migration.
+
+**Independent finding, larger than this spec.** `allowed-tools` did not restrict tool access for
+**skills** either, in either invocation path. The read-only guarantee that `quenching-docs-status`
+and `quenching-specs-status` state in prose — "writes nothing (no `Write`/`Edit` in
+`allowed-tools`)" — is therefore **aspirational, not enforced**, at least under `claude -p` with
+this machine's permission settings. Scope honestly: not tested interactively, and a permission
+mode may account for it. Worth its own spec; it is not this spec's business.
+
+**Corroborating detail for the collapse spec** (`specs/backlog/2026-07-26-collapse-skills-into-commands.md`):
+- The CLI parses one **unified frontmatter schema** — `user-invocable`, `allowed-tools`,
+  `disallowed-tools`, `argument-hint`, `disable-model-invocation` appear in a single key list in
+  the 2.1.215 binary, corroborating "commands are skills".
+- `hide-from-slash-command-tool: "true"` exists as a frontmatter key (observed in Anthropic's
+  shipped `ralph-wiggum/commands/ralph-loop.md`). This is a **direct answer to the objection in
+  `## Problem`** that dropping `user-invocable: false` would surface duplicate `/` entries.
+- Anthropic ships four `commands/**` files using `${CLAUDE_PLUGIN_ROOT}`, one load-bearingly
+  inside `allowed-tools` itself.
+
+**Environment.** The applying machine is Linux with a real `python3` 3.12.3; the spec's `## Tasks`
+preamble hard-coded a Windows interpreter path (corrected in task 0.1). The live plugin is the
+working tree at `2.0.0`, not the `0.13.0` cache in `~/.claude/plugins/cache/`.
