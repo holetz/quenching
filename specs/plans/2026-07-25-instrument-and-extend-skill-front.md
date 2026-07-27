@@ -229,10 +229,11 @@ one into the two mints' descriptions while tuning (task 1.3).
       files: plugins/quenching/assets/evals/skill/agent/new/
       verify: test -f plugins/quenching/assets/evals/skill/agent/new/evals.json
       commit: 2f0cff3
-- [ ] 1.2 Run `/skill:eval` against `/skill:hook:new` — the declining case is a session-wide
+- [x] 1.2 Run `/skill:eval` against `/skill:hook:new` — the declining case is a session-wide
       hook request that must come back scoped
       files: plugins/quenching/assets/evals/skill/hook/new/
       verify: test -f plugins/quenching/assets/evals/skill/hook/new/evals.json
+      commit: f5b49c7
 - [ ] 1.3 Fold the measured results back: description tuning only on hit rates (eval step
       7), body fixes via `/skill:new`; re-lint after every edit
       files: plugins/quenching/commands/skill/agent/new.md, plugins/quenching/commands/skill/hook/new.md
@@ -294,3 +295,4 @@ one into the two mints' descriptions while tuning (task 1.3).
 - skill/eval step 5 prescribes Task subagents for both arms, but a Task subagent inherits the session plugin registry — so the without-arm still lists the command it is defined by lacking, contradicting evaluation.md 'no path to its body'. Honest isolation needs a sandboxed claude -p with enabledPlugins present/absent, the pattern functional-checks.sh already uses
 - assets/evals/specs/capture/ is stale twice over: the folder mirrors the retired /specs:capture path (now /specs:create) and its benchmark.json names a third retired skill, quenching-specs-backlog-add — eval artifacts do not follow a command rename automatically, which is the one property the mirrored-tree design claimed
 - a trigger probe capped at --max-turns 3 reported two FALSE misses: both arms were still orienting with Bash when the cap cut them off (error_max_turns), and at --max-turns 8 both routed correctly — tuning on the truncated run would have removed a working trigger, which the contract forbids. functional-checks.sh check 3 probes at --max-turns 4 and carries the same risk (task 1.4)
+- skills.py lint reports /skill:new with sk-trigger-position and /skill:eval with BOTH sk-trigger-position and sk-no-boundary — the two commands 1.3 routes body fixes to, and the one that measures routing, are themselves the least routable on the front (task 3.x territory)
