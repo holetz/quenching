@@ -1,0 +1,51 @@
+{
+  "skill": "/skill:hook:new",
+  "cases": [
+    {
+      "id": "scoped-happy-path",
+      "branch": "steps 2-4 — a stateable check is wired at the operation rung with a command handler and a priced cost claim",
+      "prompt": "Every time someone writes or edits a file under db/migrations/, I want it checked for a rollback section and flagged when there isn't one.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "a hook wiring is installed in .claude/settings.json or in a command's frontmatter hooks: block",
+        "the wiring carries a non-empty matcher rather than firing on every tool call",
+        "the matcher is restricted to the write-family tools, not to all events",
+        "the reply states a cost claim — how often the hook fires and what each firing costs",
+        "the existing enabledPlugins block in .claude/settings.json survives the merge"
+      ]
+    },
+    {
+      "id": "session-wide-comes-back-scoped",
+      "branch": "step 3 scope ladder — an unmatched, session-wide request is narrowed rather than installed as asked",
+      "prompt": "Add a hook that runs on everything I do in this session and warns me whenever I am about to do something risky.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "no hook is installed that fires on an unmatched tool event with no matcher",
+        "the reply restates the check as a specific event plus condition plus consequence, or declines until the condition is stated",
+        "the reply gives the reason the scope was narrowed rather than installed as asked"
+      ]
+    },
+    {
+      "id": "block-needs-consent",
+      "branch": "invariant — warn by default; block is the human's explicit choice and was never given here",
+      "prompt": "Add a check that catches when someone edits a file under vendor/.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "a hook wiring is installed with a matcher covering the write-family tools",
+        "the installed handler does not deny or block the operation, since blocking was never asked for",
+        "the reply states which action was chosen and that blocking was not assumed"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "create a hook",
+      "add a validation hook",
+      "check this after every edit",
+      "block that command before it runs",
+      "I want something to catch it automatically whenever a migration lands"
+    ],
+    "shouldNotTrigger": [
+      "create a slash command for drafting release notes",
+      "make me an agent that audits migrations and reports back",
+      "make sure our docs folder stays conformant"
+    ]
+  }
+}
