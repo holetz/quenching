@@ -55,7 +55,13 @@ backlog/
        then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
        (a task with two tags appears under both).
 -->
-**9 specs** · 9 captured
+**10 specs** · 1 designed · 9 captured
+
+### Designed
+
+| Spec | Title | Since |
+| --- | --- | --- |
+| [specs-flow-consolidation](2026-07-27-specs-flow-consolidation.md) | Consolidate the specs/ front around one router, and fold align-and-update into align | 2026-07-27 |
 
 ### Captured
 
