@@ -4,7 +4,7 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-07-26
+timestamp: 2026-07-27
 audience: both
 authority: current
 source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26)
@@ -98,11 +98,28 @@ and a command is reachable by both paths.
 `user-invocable: false` **hides the menu entry; it does not block programmatic invocation.**
 `disable-model-invocation: true` is the only field that does — and it also stops a conductor
 reaching the command by name. Confusing the two is how a command meant to be human-gated ends up
-firing from a description match, or how a conductor ends up running and doing nothing.
+firing from a description match, or how a conductor ends up running and doing nothing. The two
+also differ in what they cost: `disable-model-invocation: true` removes the description from
+always-on context entirely (`budget` counts the command at 0), while `user-invocable: false`
+saves nothing — the description still loads.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 gates on a mid-flow confirmation — a forked context cannot present the plan whose OK the run
-depends on. A command that only reads and reports may fork freely.
+depends on; a fork beside an `AskUserQuestion` grant is `sk-fork-gate`, an error. A command that
+only reads and reports may fork freely, and that is the lever's home: self-contained, noisy,
+summary-out work whose trail would otherwise sit in the main context forever.
+
+## The execution profile
+
+Every further capability a command uses — `context: fork` with `agent`/`background`, a
+`model`/`effort` pin, `paths`, frontmatter `hooks:` — is an **authored, priced decision**: the
+default profile is all levers off, and each departure enters the mint's plan with its stated
+buy. An inline pin invalidates the session's prompt cache (a pin inside a fork or an agent is
+cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
+are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
+lives once in the plugin
+(`plugins/quenching/assets/references/skill-new/capabilities.md`) and is cited, never
+restated.
 
 ### `allowed-tools` is always scoped
 
@@ -125,8 +142,8 @@ refusal, errors setting the exit code and warnings never doing so.
 
 | Subcommand | Decides |
 | --- | --- |
-| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence |
-| `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments |
+| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`) |
+| `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated |
 | `selftest` | that a file parked under `commands/` which is not an entry point fires `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
 | `budget` | what the surface costs before anything fires — see [context-budget.md](context-budget.md) |

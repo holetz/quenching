@@ -36,10 +36,18 @@ sentence, and **link out** rather than explaining in full here.
   `description` of every command, resident in every session's context before anything fires and
   therefore the only surface cost paid whether or not a command runs; measured by
   `skills.py budget` from the parsed value, never the YAML source.
+- [**Approved record**](../standards/workflows/plan-lifecycle.md) — the `approved: {date}`
+  frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
+  `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
+  refusing an unapproved spec.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
   unblocks it.
+- [**Commit record**](../standards/workflows/plan-git-record.md) — the `commit: <sha>` field on a
+  completed task line, written mechanically by `specs.py task --check --commit`, that links the
+  checkbox to the commit implementing it without inscribing anything into the commit message —
+  which stays entirely the target repo's to format.
 - [**Derived stage**](../standards/workflows/plan-artifacts.md) — a spec's
   sub-stage (`captured`/`proposed`/`designed`/`refined`/`executing`), COMPUTED from which
   headings are filled rather than declared in a field, so it regresses on its own when a
@@ -58,6 +66,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task at
   propose time declaring it may run concurrently with its group, honoured only when
   `specs.py parallel` proves the group's `files:` sets disjoint; never inferred while applying.
+- [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
+  verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
+  whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
+  the same programs run again as the closing verification.
 - [**Promote**](../standards/workflows/plan-artifacts.md) — the gated `git mv` that
   moves a spec between phase folders without renaming it; promoting into `ready/` IS the human
   OK to build, which is what replaced v1's computed `applyReady` flag.

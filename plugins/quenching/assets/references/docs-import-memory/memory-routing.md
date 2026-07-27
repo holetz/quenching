@@ -9,7 +9,7 @@ home is chosen, the concept is filed exactly as `/docs:add` would — see
 boundaries.
 
 This skill writes to **only three destinations** — two `docs/` homes, `standards/` and
-`knowledge/`, plus `specs/backlog/` for a **task** (a quenching-managed folder outside the OKF
+`knowledge/`, plus `specs/plans/` for a **unit of work** (a quenching-managed folder outside the OKF
 bundle). `vision/`, `documentation/`, `reference/` (and `catalog/`) are out of
 scope; collapse to the nearest of the three (below) or flag-and-keep.
 
@@ -35,14 +35,14 @@ metadata:
 | Memory `type` | What it holds | Likely OKF home | OKF `type` |
 | --- | --- | --- | --- |
 | `feedback` | how you should work (a correction / confirmed approach, with a why) | a durable working rule → `standards/workflows/` (or `standards/code`, `standards/quality` by subject); a step-by-step *how WE work* → `standards/workflows/`; an explanation of *why* → `knowledge/` | `standard` / `knowledge` |
-| `project` | ongoing work, goals, constraints not derivable from code/git | a **thing to explore or build** → `specs/backlog/` (a `task`, **always untriaged** — inventing a priority the human never stated would violate anti-fabrication); a **binding constraint/rule** or an **agreed-but-unproven** one → `standards/` (`authority: current` / `background`); **direction** (no deadline) → `knowledge/` (this skill emits no `vision/`) | `task` / `standard` / `knowledge` |
+| `project` | ongoing work, goals, constraints not derivable from code/git | a **thing to explore or build** → a spec in `specs/plans/` (**always unranked** — inventing a priority the human never stated would violate anti-fabrication); a **binding constraint/rule** or an **agreed-but-unproven** one → `standards/` (`authority: current` / `background`); **direction** (no deadline) → `knowledge/` (this command emits no `vision/`) | spec / `standard` / `knowledge` |
 | `reference` | pointer to an external resource (URL, dashboard, ticket, tool, lib) | facts about a **named tool/lib/regulation we consume** collapse into `knowledge/` (this skill emits no `reference/` docs) | `knowledge` |
 | `user` | who the user is (role, expertise, preferences) | **usually not repo docs** — personal/session context. Only migrate a **durable, team-relevant** fact (a role convention, an authority) → `knowledge/` or `standards/workflows/`. Otherwise **flag and ask**; never silently delete a `user` memory. | `knowledge` / `standard` |
 
 ### Tie-breakers (three destinations only)
 - "how **WE** do it" proven → `standards/` (`authority: current`); agreed-but-unproven → `standards/` (`authority: background`) — there is no separate decision home.
 - a fact about a **named external** asset we consume → **collapses into `knowledge/`** (no `reference/` output).
-- a **thing to explore or build** → `specs/backlog/` (a `task`, always untriaged); **direction** (no deadline) → `knowledge/` (this skill emits no `vision/`); a **procedure** for how WE work → `standards/workflows/`, else `knowledge/` (no `documentation/` output).
+- a **thing to explore or build** → a spec in `specs/plans/` (always unranked); **direction** (no deadline) → `knowledge/` (this command emits no `vision/`); a **procedure** for how WE work → `standards/workflows/`, else `knowledge/` (no `documentation/` output).
 - If a memory carries **several** facts, split it — one concept per file across the right destinations.
 - Anything that fits **none** of the three → flag-and-keep (do not fabricate an out-of-scope doc).
 

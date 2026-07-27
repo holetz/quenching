@@ -11,10 +11,20 @@ allowed-tools: <only the tools the steps actually use, each SCOPED — e.g. Read
   the turn and is reported as `sk-unscoped-bash`; it is legitimate only for a command running
   the TARGET repo's own toolchain, whose body says so and says why.>
 # effort: <low | medium — omit to inherit the session's. Set it only when the work is
-#   genuinely cheaper or genuinely harder than the default.>
+#   genuinely cheaper or genuinely harder than the default. An inline pin invalidates the
+#   session's prompt cache — price the switch against what it saves.>
 # disable-model-invocation: <true blocks programmatic invocation, so a conductor can no
-#   longer reach this command by name and a spoken trigger can no longer route to it. Use it
-#   only for a command whose cost or blast radius means a human must choose it.>
+#   longer reach this command by name and a spoken trigger can no longer route to it — AND
+#   removes the description from always-on context (`budget` counts it at 0). Use it only
+#   for a command whose cost or blast radius means a human must choose it.>
+# context: <fork runs the body in a forked context — self-contained, noisy, summary-out
+#   work ONLY; never beside a mid-flow gate or an AskUserQuestion grant (`sk-fork-gate`).
+#   `agent:` picks the runner (Explore for read-only); `background: false` waits for the
+#   result.>
+# paths: <glob patterns binding AUTONOMOUS firing to matching files — the natural
+#   reinforcement for a domain-bound command; typed invocation is unaffected.>
+# hooks: <a check tied to THIS command's own workflow, scoped to its lifecycle — the
+#   narrowest rung of the hook ladder. Wired by /skill:hook:new from the hook mold.>
 ---
 
 # /<front>:<verb> — <one-line role>
@@ -83,4 +93,8 @@ exist, exists; every step's criterion held. Report what was written.>
          Its triggers and its `Not for:` boundary are what route a spoken request here; a
          description trimmed to a `/`-menu label routes nothing.
        • never `context: fork` on a command that gates on a mid-flow confirmation — a forked
-         context cannot present the plan whose OK the run depends on. -->
+         context cannot present the plan whose OK the run depends on.
+       • THE EXECUTION PROFILE IS BOUGHT, NEVER COLLECTED. The default is every lever off;
+         each commented field above is opened only with a stated buy, priced in
+         `${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md` and shown in
+         the mint's plan. -->

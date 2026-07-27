@@ -8,20 +8,26 @@ frontmatter parser — no PyYAML), one script installed alone into a target repo
 ONE SPEC IS ONE FILE
 --------------------
 A spec is a single markdown file for its whole lifecycle. Phases enrich it; they
-never split it. The file moves between three phase folders and is never renamed:
+never split it. The file lives in ONE folder until it is closed, and is never renamed:
 
     specs/
-      backlog/                   # DEFINITION — captured -> proposed -> designed -> refined
-        index.md                 # listing with a GENERATED zone (see `backlog reindex`)
-        2026-07-25-<slug>.md
-      ready/                     # EXECUTION — ready to build, or building
-        2026-07-14-<slug>.md
+      plans/                     # ACTIVE — captured -> proposed -> designed -> refined
+        index.md                 # listing with a GENERATED zone (see `plans reindex`)
+        2026-07-25-<slug>.md     #          -> ready -> approved -> executing
       archive/                   # done or abandoned, told apart by `outcome:` frontmatter
         2026-06-30-<slug>.md
 
 THE FOLDER IS THE PHASE, and it is the single truth — there is no `phase:` field,
-because two declared sources of one fact diverge and a folder cannot lie. The
-transition is a `git mv` performed by `promote`, so `git log` narrates the lifecycle.
+because two declared sources of one fact diverge and a folder cannot lie. The one
+remaining transition is a `git mv` performed by `promote`, so `git log` still narrates
+the close-out.
+
+v3 FOLDED `backlog/` AND `ready/` INTO `plans/`. That split bought exactly one fact no
+derivation reproduces — a human said go — and that fact is now `approved:` in
+frontmatter. Everything else it implied is DERIVED: `ready` is a stage over the same ten
+sections that used to be the `ready/` entry gate. Both legacy folders are still READ (so
+a v2 workspace keeps working and `migrate` can fold it), never written; `canonical_phase`
+maps them onto `plans` so every derivation sees one phase.
 
 IDENTITY IS THE SLUG, not the path. Every command names the bare slug; this tool
 resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. Two
@@ -79,18 +85,38 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import difflib
 import json
 import os
 import pathlib
 import re
 import sys
 
-VERSION = "3.0.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.0.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
 
-PHASES = ("backlog", "ready", "archive")
+PHASES = ("plans", "archive")
+
+# v2 folders. READ so an unmigrated workspace keeps working and `migrate` can fold it;
+# NEVER written — `new` and `promote` only ever target a folder in PHASES. Reading them
+# is not politeness: `list` globs the phase folders, so a workspace this tool refused to
+# see would read as EMPTY rather than as out of date, and a skill would conclude there is
+# no work when there is.
+LEGACY_PHASES = ("backlog", "ready")
+PHASE_ALIASES = {"backlog": "plans", "ready": "plans"}
+# scan order — a spec's canonical folder before the legacy ones it may still sit in
+PHASE_DIRS = ("plans", "backlog", "ready", "archive")
+
+
+def canonical_phase(folder: str) -> str:
+    """The schema phase a folder maps to. `plans` for both v2 definition folders, so
+    stage rules, gates and `next` branch on ONE phase and never on where the file
+    happens to sit mid-migration."""
+    return PHASE_ALIASES.get(folder, folder)
+
+
 SPEC_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -99,7 +125,13 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_RE = re.compile(r"^\s+(files|pattern|verify)\s*:\s*(.+?)\s*$", re.IGNORECASE)
+TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|commit)\s*:\s*(.+?)\s*$",
+                          re.IGNORECASE)
+# A recorded sha must survive being written into a one-line grammar and read back, so the
+# only hard requirement is that it carries no whitespace. Length is NOT checked: an
+# abbreviated sha is legitimate and how long git abbreviates to depends on the repo.
+COMMIT_REF_RE = re.compile(r"^\S+$")
+DEFAULT_META_INDENT = "      "
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
 BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
 
@@ -115,8 +147,8 @@ STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]
 
 GEN_BEGIN = "<!-- BEGIN GENERATED"
 GEN_END = "<!-- END GENERATED -->"
-BACKLOG_EMPTY = ("_(no specs captured — this listing is regenerated deterministically "
-                 "from `backlog/*.md`)_")
+PLANS_EMPTY = ("_(no specs captured — this listing is regenerated deterministically "
+               "from `plans/*.md`)_")
 
 # --------------------------------------------------------------------------- #
 # embedded assets (fallbacks when the sibling asset files are absent)
@@ -124,7 +156,7 @@ BACKLOG_EMPTY = ("_(no specs captured — this listing is regenerated determinis
 # --------------------------------------------------------------------------- #
 DEFAULT_SCHEMA: dict = {
     "schema": "spec-lifecycle",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "filename": {
         "pattern": r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
         "groups": ["date", "slug"],
@@ -132,9 +164,26 @@ DEFAULT_SCHEMA: dict = {
     },
     "frontmatter": {
         "required": ["slug", "title", "verification"],
-        "optional": ["refined", "outcome"],
+        "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge",
+                     "outcome"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
+        "records": {
+            "priority": {"fields": ["level", "criticality", "complexity", "date"],
+                         "writtenBy": "triage", "writeOnce": False},
+            "refined": {"fields": ["mode", "date"],
+                        "writtenBy": "develop", "writeOnce": False},
+            "approved": {"fields": ["date"],
+                         "writtenBy": "develop, or execute inline", "writeOnce": True},
+            "branch": {"fields": ["base", "work"],
+                       "writtenBy": "execute", "writeOnce": True},
+            "reviewed": {"fields": ["date"],
+                         "writtenBy": "conclude", "writeOnce": False},
+            "merge": {"fields": ["strategy", "commit"],
+                      "writtenBy": "conclude", "writeOnce": True},
+            "outcome": {"valuesFrom": "frontmatter.outcome",
+                        "writtenBy": "conclude", "writeOnce": True},
+        },
     },
     "sections": [
         {"heading": "Problem", "order": 1, "group": "definition", "audience": "human"},
@@ -157,17 +206,13 @@ DEFAULT_SCHEMA: dict = {
         "pathPrefix": "docs/standards/",
     },
     "phases": [
-        {"id": "backlog", "folder": "backlog", "role": "definition",
+        {"id": "plans", "folder": "plans", "role": "active",
          "entryGate": ["Problem"], "warnWhenEmpty": []},
-        {"id": "ready", "folder": "ready", "role": "execution",
-         "entryGate": ["Problem", "Proposal", "Out of Scope", "Impact", "Validation",
-                       "Design", "Alternatives Considered", "Open Decisions", "Risks", "Tasks"],
-         "warnWhenEmpty": ["Handoff"]},
         {"id": "archive", "folder": "archive", "role": "closed",
          "entryGate": ["Outcome"], "warnWhenEmpty": []},
     ],
     "promote": {
-        "sequence": ["backlog", "ready", "archive"],
+        "sequence": ["plans", "archive"],
         "explicitNone": "- none — <reason>",
         "filledRule": "An explicit none counts as FILLED. A heading present with an empty body "
                       "is malformed and refuses. An absent heading before its own gate is legal.",
@@ -176,16 +221,26 @@ DEFAULT_SCHEMA: dict = {
     "stages": {
         "resolution": "last-match-wins",
         "derived": [
-            {"id": "captured", "phase": "backlog", "when": {"filled": ["Problem"]}},
-            {"id": "proposed", "phase": "backlog", "when": {"filled": ["Proposal"]}},
-            {"id": "designed", "phase": "backlog", "when": {"filled": ["Design"]}},
-            {"id": "refined", "phase": "backlog", "when": {"frontmatter": "refined"}},
-            {"id": "executing", "phase": "ready",
+            {"id": "captured", "phase": "plans", "when": {"filled": ["Problem"]}},
+            {"id": "proposed", "phase": "plans", "when": {"filled": ["Proposal"]}},
+            {"id": "designed", "phase": "plans", "when": {"filled": ["Design"]}},
+            {"id": "refined", "phase": "plans", "when": {"frontmatter": "refined"}},
+            {"id": "ready", "phase": "plans", "gate": True,
+             "when": {"filled": ["Problem", "Proposal", "Out of Scope", "Impact",
+                                 "Validation", "Design", "Alternatives Considered",
+                                 "Open Decisions", "Risks", "Tasks"]},
+             "warnWhenEmpty": ["Handoff"]},
+            {"id": "approved", "phase": "plans", "when": {"frontmatter": "approved"}},
+            {"id": "executing", "phase": "plans",
              "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]}},
         ],
     },
 }
 
+# The FULL template, embedded VERBATIM so an installed copy with no adjacent assets can
+# still stamp a capture AND pull any heading's guidance for `section --write`. It is a
+# byte-for-byte copy of assets/specs/templates/spec.md — `specs.py selftest` proves it, and
+# EDIT BOTH OR NEITHER.
 TEMPLATE_SPEC = """---
 slug: <SLUG>
 title: <TITLE>
@@ -197,28 +252,40 @@ verification: <VERIFICATION>
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a thirteen-heading skeleton. Every other heading is created on first
-     write by `specs.py section <slug> "<Heading>" --write`, which inserts it in canonical
-     position.
+     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
+     first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
+     canonical position with the guidance comment kept here.
 
-     THE PHASE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
-     `- none — <reason>` when it has nothing in it — only once ITS OWN phase gate is reached:
+     THE STAGE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
+     `- none — <reason>` when it has nothing in it — only once ITS OWN gate is reached:
 
        new (capture)        `## Problem`
-       promote -> ready/    the nine definition sections (`## Problem` .. `## Risks`)
+       ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready/  (warn only)  `## Handoff` non-empty
+       ready (warn only)    `## Handoff` non-empty
        promote -> archive/  `## Outcome`
+
+     `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
+     life, and filling those ten sections is what makes it ready. Nothing refuses on that
+     gate — it is a floor `execute` reports against, and the human's go-ahead is the
+     `approved:` frontmatter record, asked for inline.
 
      Before its gate, a heading's absence is NOT an omission — it is a not-yet. After its
      gate, three rules decide whether a section counts as filled:
 
        1. `- none — <reason>` counts as filled. An omission and a null are different facts.
-       2. A heading present with an EMPTY body is malformed and refuses.
+       2. A heading present with an EMPTY body is malformed and refuses. It is neither an
+          answer nor a not-yet.
        3. An absent heading before its gate is legal.
 
-     Headings are a PARSED contract — canonical English, exactly as written. Body prose
-     follows the repo's language. A heading outside this set is a stray. -->
+     Headings are a PARSED contract — canonical English, exactly as written here. Body prose
+     follows the repo's language. A heading outside this set is a stray and validate flags it.
+
+     AUDIENCE. Each section names who reads it. `## Problem`/`## Proposal`/`## Design` are for
+     the human — examples and plain language belong there. `## Handoff`/`## Tasks` are for
+     agents — terse, with `files:`/`verify:`/`pattern:` metadata. An orchestrator never sends
+     the human sections to an executor; that is what lets one file serve both audiences
+     without bloating agent context. -->
 
 ## Problem
 
@@ -226,6 +293,181 @@ verification: <VERIFICATION>
 
      The problem or opportunity this spec answers, and why now. This is the only section a
      freshly captured spec carries — write it even if it is two sentences. -->
+
+## Proposal
+
+<!-- AUDIENCE: human. Gate: ready (derived).
+
+     The change at a high level, in bullet points. What will be true afterwards that is not
+     true now. -->
+
+## Out of Scope
+
+<!-- AUDIENCE: human. Gate: ready (derived).
+
+     What this spec deliberately does NOT do, and why it was ruled out.
+
+     Empty is written `- none — <reason>`. "We drew the boundary and nothing fell outside it"
+     and "nobody ever drew the boundary" are different answers, and an absent section cannot
+     tell them apart. -->
+
+## Impact
+
+<!-- AUDIENCE: human + PARSED. Gate: ready (derived).
+
+     Declared scope for human review. The `### Standards this spec will write into
+     docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
+     `docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
+     validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
+     anchor.
+
+     Example of a parsed bullet:
+       - `docs/standards/naming/command-surface.md` — the bijection rule for wrappers
+
+     The sibling sub-headings are prose for the reader and are deliberately NOT parsed: they
+     name paths the spec never promised to write. A spec with no such sub-heading declares
+     nothing and is never flagged — the check is opt-in by writing the heading. -->
+
+### Standards this spec will write into docs/standards/
+
+- `<docs/standards/subject/concept.md>` — <the rule it states>
+
+### Standards at `authority: background` this spec may resolve
+
+- <path, or `none`>
+
+### Product code this spec expects to touch
+
+- `<path>` — <why>
+
+## Validation
+
+<!-- AUDIENCE: human + agent. Gate: ready (derived).
+
+     How anyone confirms this spec actually worked: the commands to run and the output they
+     must produce, the fixtures to check, the invariants that must still hold afterwards.
+
+     This section is LOAD-BEARING: a `## Tasks` item with no `verify:` line falls back to it.
+
+     Empty is written `- none — <reason>`, which is a claim that the spec is unverifiable by
+     construction. Make it on purpose or fill it in. -->
+
+## Design
+
+<!-- AUDIENCE: human. Gate: ready (derived).
+
+     The choices made and their rationale, plus the background and binding contracts this
+     design must not contradict. For each decision: what was chosen, why, and what was
+     weighed against it.
+
+     Empty is written `- none — <reason>` (e.g. "mechanical change, no design surface"). -->
+
+## Alternatives Considered
+
+<!-- AUDIENCE: human. Gate: ready (derived).
+
+     Whole-shape alternatives rejected at the spec level, each with the reason it lost.
+     Per-decision alternatives can stay inside `## Design`; this section is for the ones that
+     would have changed the spec's shape.
+
+     Empty is written `- none — <reason>` (e.g. "only one viable approach"). -->
+
+## Open Decisions
+
+<!-- AUDIENCE: human. Gate: ready (derived).
+
+     What is deliberately still undecided, and how each will be decided — the evidence or the
+     moment that settles it, not "TBD".
+
+     Empty is written `- none — <reason>`. -->
+
+## Risks
+
+<!-- AUDIENCE: human. Gate: ready (derived).
+
+     What could go wrong, and the mitigation for each. A risk taken knowingly is written
+     `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
+
+     Empty is written `- none — <reason>`. -->
+
+## Handoff
+
+<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+
+     The context an executor needs and cannot derive: the state of play, the conventions in
+     force, what was already tried. Small by construction — it is sent with EVERY task.
+
+     Refresh is bound to EVENTS, not judgment: the orchestrator rewrites this after each
+     committed task. Staleness is this section's failure mode. -->
+
+## Tasks
+
+<!-- AUDIENCE: agent. Gate: ready (derived).
+
+     Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
+     `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
+     `[ ]` / `[x]` character. `--commit <sha>` records what implemented it.
+
+     A checkbox MAY carry indented metadata lines directly beneath it:
+
+       - [ ] 3.2 Add rate limiting to the auth middleware
+             files: src/middleware/auth.ts, src/config/limits.ts (new)
+             pattern: src/middleware/cors.ts
+             verify: pnpm test middleware/
+             commit: a1b2c3d
+
+     files:    the paths this task may touch. Declaring them is what PERMITS the task to be
+               handed to an executor sub-agent, and what makes a `[P]` marker checkable.
+     pattern:  an existing file to imitate — the cheapest context an executor can be given.
+     verify:   the command that proves the task done. WHEN it runs is the `verification`
+               frontmatter policy, not this section's business. With no `verify:` line the
+               task falls back to `## Validation`.
+     commit:   written by `task --check --commit`, never by hand — the commit that
+               implemented this task, so code and spec stay linked without a git trailer.
+
+     `[P]` right after the id marks a task parallel-eligible:
+
+       - [ ] 3.3 [P] Add the rate-limit config loader
+
+     Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
+     marked tasks' `files:` sets are provably disjoint and none writes into `docs/` —
+     `specs.py parallel` checks the disjunction mechanically rather than judging it in prose.
+     Serial execution is the default and needs no marker.
+
+     A BLOCKED task is a visible marker, not a hidden counter:
+
+       - [!] 2.3 Implement the gate check — blocked: the vendor SDK has no hook for it
+
+     Written by the orchestrator when it decides to stop retrying; `next` skips it. There is
+     no attempt budget — an honest written reason serves better than a counter nobody sees. -->
+
+### 1. <Section>
+
+- [ ] 1.1 <first task>
+- [ ] 1.2 <next task>
+
+## Discoveries
+
+<!-- AUDIENCE: triage. No gate — appended during execution.
+
+     One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
+     Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
+     executor's.
+
+     The triage sweep resolves each entry IN PLACE, so provenance is never lost:
+
+       - the rate limiter double-counts retries → promoted: fix-retry-accounting
+       - the config loader is slow on cold start → dismissed: acceptable, runs once -->
+
+## Outcome
+
+<!-- AUDIENCE: archive reader. Gate: promote -> archive/.
+
+     What actually happened, written at archive time: what shipped, what was left out, what
+     the next reader needs to know. `outcome: done | abandoned` is stamped into the
+     frontmatter by `specs.py promote --to archive`; this section is the prose behind it.
+
+     For an abandoned spec, the reason it will not be built is the whole content. -->
 """
 
 
@@ -469,11 +711,19 @@ def find_specs_root(root_arg: str | None) -> str:
 def spec_files(root: str, phase: str | None = None) -> list[dict]:
     """Every conformant spec file across the phase folders, oldest first within each.
 
+    Each row carries BOTH `folder` (where the file actually is, so every message names a
+    real path) and `phase` (what it means, so a v2 file in `backlog/` derives exactly like
+    a v3 file in `plans/`). Passing `phase` filters on the canonical phase, so
+    `phase="plans"` sweeps up the legacy folders too.
+
     A file whose name does not match `YYYY-MM-DD-<slug>.md` is NOT returned — it is a
     finding for `validate`/`doctor` to report, not something to silently half-support."""
     out: list[dict] = []
-    for ph in ([phase] if phase else PHASES):
-        d = os.path.join(root, ph)
+    for folder in PHASE_DIRS:
+        ph = canonical_phase(folder)
+        if phase and ph != phase:
+            continue
+        d = os.path.join(root, folder)
         if not os.path.isdir(d):
             continue
         for name in sorted(os.listdir(d)):
@@ -482,6 +732,8 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
                 continue
             out.append({
                 "phase": ph,
+                "folder": folder,
+                "legacy": folder in LEGACY_PHASES,
                 "file": name,
                 "path": os.path.join(d, name),
                 "date": m.group(1),
@@ -611,8 +863,10 @@ def parse_tasks(text: str) -> list[dict]:
         parallel = bool(PARALLEL_RE.match(rest))
         blocked = BLOCKED_REASON_RE.search(body)
         files: list[str] = []
-        pattern = verify = None
-        for cont in lines[i + 1:]:
+        pattern = verify = commit = None
+        commit_off = last_meta_off = None
+        meta_indent = None
+        for off, cont in enumerate(lines[i + 1:], start=i + 1):
             # the task's block ends at a blank line, a non-indented line, or another
             # checkbox; anything else indented is scanned, so a wrapped prose line between
             # the checkbox and its `verify:` does not hide it.
@@ -622,10 +876,15 @@ def parse_tasks(text: str) -> list[dict]:
             if not mm:
                 continue
             key, val = mm.group(1).lower(), mm.group(2).strip()
+            if meta_indent is None:
+                meta_indent = cont[:len(cont) - len(cont.lstrip())]
+            last_meta_off = off
             if key == "files":
                 files = [p.strip() for p in val.split(",") if p.strip()]
             elif key == "pattern":
                 pattern = val
+            elif key == "commit":
+                commit, commit_off = val, off
             else:
                 verify = val
         out.append({
@@ -642,6 +901,13 @@ def parse_tasks(text: str) -> list[dict]:
             "files": files,
             "pattern": pattern,
             "verify": verify,
+            "commit": commit,
+            # where a `commit:` line is, and where one would go — so `task` upserts it
+            # mechanically instead of the caller doing string surgery on the file.
+            "commitLineno": (base + commit_off) if commit_off is not None else None,
+            "metaInsertAt": base + ((last_meta_off + 1) if last_meta_off is not None
+                                    else i + 1),
+            "metaIndent": meta_indent or DEFAULT_META_INDENT,
         })
     return out
 
@@ -726,26 +992,72 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
     return info, {}
 
 
+def record_keys(schema: dict | None = None) -> list[str]:
+    """The optional frontmatter records, in the schema's declared order.
+
+    Read from the schema rather than listed here, so adding a record is a schema edit and
+    never also a code edit — and so `status` cannot surface a different set than `validate`
+    and the templates describe."""
+    fmspec = (schema or load_schema()).get("frontmatter", {})
+    return [k for k in fmspec.get("records", {}) if k != "note"] \
+        or list(fmspec.get("optional", []))
+
+
+def spec_records(fm: dict, schema: dict | None = None) -> dict:
+    """Every declared record this spec actually carries, `None` where it does not.
+
+    Reading the frontmatter top to bottom narrates the spec's history in order, so the
+    order here is the schema's, not the file's."""
+    return {k: (fm.get(k) or None) for k in record_keys(schema)}
+
+
 def _policy(fm: dict) -> str:
     v = str(fm.get("verification", "")).strip().lower()
     return v if v in VERIFICATION_POLICIES else DEFAULT_VERIFICATION
 
 
-def gate_report(info: dict, phase: str, schema: dict | None = None) -> dict:
-    """What stands between this spec and `phase`: every gate section that is absent or
-    present-but-empty. `- none — <reason>` counts as filled and never appears here."""
-    ph = phase_spec(phase, schema)
+def _gate_over(sections: dict, name: str, entry: list, warn_when_empty: list) -> dict:
+    """Which of `entry` is absent or present-but-empty. `- none — <reason>` counts as
+    filled and never appears here."""
     missing, malformed = [], []
-    for h in ph.get("entryGate", []):
-        st = section_state(info["sections"], h)
+    for h in entry:
+        st = section_state(sections, h)
         if st == "absent":
             missing.append(h)
         elif st == "empty":
             malformed.append(h)
-    warn = [h for h in ph.get("warnWhenEmpty", [])
-            if section_state(info["sections"], h) != "filled"]
-    return {"phase": phase, "missing": missing, "malformed": malformed,
+    warn = [h for h in warn_when_empty if section_state(sections, h) != "filled"]
+    return {"phase": name, "missing": missing, "malformed": malformed,
             "warn": warn, "ok": not missing and not malformed}
+
+
+def gate_report(info: dict, phase: str, schema: dict | None = None) -> dict:
+    """What stands between this spec and `phase` — the entry gate of a real folder."""
+    ph = phase_spec(phase, schema)
+    return _gate_over(info["sections"], phase,
+                      ph.get("entryGate", []), ph.get("warnWhenEmpty", []))
+
+
+def ready_gate(schema: dict | None = None) -> dict:
+    """The ready set, read from the ONE stage rule marked `gate: true`.
+
+    v2 held these ten sections in the `ready/` phase's `entryGate`; v3 has no `ready/`
+    folder, so the same set lives on the derived stage instead. It is read from the schema
+    rather than restated here for the same reason it is not restated in schema.json: two
+    declared sources of one fact diverge."""
+    s = schema or load_schema()
+    for r in s.get("stages", {}).get("derived", []):
+        if r.get("gate"):
+            return {"sections": list(r.get("when", {}).get("filled", [])),
+                    "warnWhenEmpty": list(r.get("warnWhenEmpty", []))}
+    return {"sections": [], "warnWhenEmpty": []}
+
+
+def ready_report(info: dict, schema: dict | None = None) -> dict:
+    """The ready gate applied to one spec. A FLOOR, not a verdict: nothing refuses on it
+    any more — `execute` reports it and asks for the `approved` stamp inline."""
+    g = ready_gate(schema)
+    return _gate_over(info["sections"], "ready", g["sections"], g["warnWhenEmpty"])
 
 
 # --------------------------------------------------------------------------- #
@@ -768,7 +1080,7 @@ def emit_err(as_json: bool, err: dict) -> int:
 # commands
 # --------------------------------------------------------------------------- #
 def cmd_new(args, root: str) -> int:
-    """Scaffold `backlog/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else.
+    """Scaffold `plans/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else.
 
     THE DATE IS STAMPED HERE AND NEVER AGAIN — `promote` moves the file without renaming
     it, so this basename is the spec's identity for its whole lifecycle."""
@@ -782,14 +1094,14 @@ def cmd_new(args, root: str) -> int:
     if matches:
         m = matches[0]
         emit(args.json, {"ok": False, "code": "sp-slug-exists", "slug": slug,
-                         "existing": f"{m['phase']}/{m['file']}",
-                         "message": f"slug '{slug}' already exists at {m['phase']}/{m['file']}"},
-             f"refused: slug '{slug}' already exists at {m['phase']}/{m['file']}")
+                         "existing": f"{m['folder']}/{m['file']}",
+                         "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
+             f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
         return 2
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{today()}-{slug}.md"
-    dest_dir = os.path.join(root, "backlog")
+    dest_dir = os.path.join(root, "plans")
     os.makedirs(dest_dir, exist_ok=True)
     body = (capture_form()
             .replace("<SLUG>", slug)
@@ -799,9 +1111,9 @@ def cmd_new(args, root: str) -> int:
     write_text(path, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
-          "phase": "backlog", "file": name, "stage": "backlog",
+          "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
           "path": os.path.relpath(path, os.path.dirname(root)).replace(os.sep, "/")},
-         f"created backlog/{name}  (slug: {slug} · verification: {policy})\n"
+         f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
          f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
     return 0
 
@@ -816,7 +1128,8 @@ def cmd_list(args, root: str) -> int:
         tasks = parse_tasks(text)
         checked, blocked, total = task_progress(tasks)
         rows.append({
-            "slug": s["slug"], "phase": s["phase"], "file": s["file"], "date": s["date"],
+            "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
+            "legacy": s["legacy"], "file": s["file"], "date": s["date"],
             "title": fm.get("title", titleize(s["slug"])),
             "stage": derive_stage(s, sections, fm, tasks),
             "outcome": fm.get("outcome") or None,
@@ -830,11 +1143,13 @@ def cmd_list(args, root: str) -> int:
         print(f"no specs under {root}")
         return 0
     print(f"specs — {root} ({len(rows)})")
-    for ph in PHASES:
-        group = [r for r in rows if r["phase"] == ph]
+    for folder in PHASE_DIRS:
+        group = [r for r in rows if r["folder"] == folder]
         if not group:
             continue
-        print(f"\n  {ph}/")
+        legacy = " (v2 — `specs.py migrate` folds it into plans/)" \
+            if folder in LEGACY_PHASES else ""
+        print(f"\n  {folder}/{legacy}")
         for r in group:
             prog = (f"  {r['tasks']['checked']}/{r['tasks']['total']}"
                     if r["tasks"]["total"] else "")
@@ -856,26 +1171,33 @@ def cmd_status(args, root: str) -> int:
     checked, blocked, total = task_progress(info["tasks"])
     dest = _next_phase(info["phase"])
     gates = gate_report(info, dest) if dest else None
+    ready = ready_report(info) if info["phase"] == "plans" else None
     sections = [{"heading": h, "state": section_state(info["sections"], h)}
                 for h in canonical_headings()]
+    records = spec_records(info["frontmatter"])
     obj = {
         "ok": True, "slug": info["slug"], "title": info["frontmatter"].get("title", ""),
-        "phase": info["phase"], "stage": info["stage"], "file": info["file"],
+        "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
+        "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],
-        "refined": info["frontmatter"].get("refined") or None,
-        "outcome": info["frontmatter"].get("outcome") or None,
+        # every human-judgment record in one place and in schema order, so `conclude` and
+        # `continue` read state instead of re-parsing the file
+        "records": records,
+        "ready": ready,
         "sections": sections,
         "strays": stray_headings(info["sections"]),
         "tasks": {"checked": checked, "blocked": blocked, "total": total,
                   "blockedTasks": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
-                                   for t in info["tasks"] if t["blocked"]]},
+                                   for t in info["tasks"] if t["blocked"]],
+                  "commits": [{"id": t["id"], "commit": t["commit"]}
+                              for t in info["tasks"] if t["commit"]]},
         "promote": gates,
     }
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
         return 0
     print(f"{info['slug']} — {obj['title']}")
-    print(f"  {info['phase']}/{info['file']}  [{info['stage']}]  "
+    print(f"  {info['folder']}/{info['file']}  [{info['stage']}]  "
           f"verification: {info['verification']}")
     if total:
         print(f"  tasks: {checked}/{total} complete" +
@@ -885,6 +1207,22 @@ def cmd_status(args, root: str) -> int:
         print(f"    {mark} ## {s['heading']}")
     if obj["strays"]:
         print(f"  strays: {', '.join(obj['strays'])}")
+    if ready:
+        if not ready["ok"]:
+            print(f"  ready gate: missing {', '.join(ready['missing'] + ready['malformed'])}")
+        elif not records.get("approved"):
+            print("  ready gate: met — not approved (execute stamps `approved:` inline)")
+        else:
+            print(f"  ready gate: met · approved {records['approved']}")
+    held = [(k, v) for k, v in records.items() if v]
+    if held:
+        print("  records:")
+        for k, v in held:
+            if isinstance(v, dict):
+                v = ", ".join(f"{kk}: {vv}" for kk, vv in v.items())
+            print(f"    {k + ':':<10} {v}")
+    if obj["tasks"]["commits"]:
+        print(f"  commits: {len(obj['tasks']['commits'])} task(s) carry one")
     if gates:
         if gates["ok"]:
             print(f"  promote → {dest}/: ready")
@@ -996,11 +1334,12 @@ def set_frontmatter_key(text: str, key: str, value: str) -> str:
 
 
 def cmd_promote(args, root: str) -> int:
-    """The gated transition — and the human OK made auditable.
+    """The one remaining transition: `plans/` -> `archive/`, closing a spec out.
 
-    Promote to `ready/` IS the authorization to build: one plan, one OK becomes one file
-    move in `git log`. It refuses (exit 2) with the missing list rather than warning,
-    because a gate that warns is not a gate.
+    v3 has a single hop. The `backlog/` -> `ready/` promote is gone with the folders — it
+    recorded that a human said go, and that is now `approved:` in frontmatter, which no
+    file move is needed to express. What is left refuses (exit 2) with the missing list
+    rather than warning, because a gate that warns is not a gate.
 
     The file is MOVED, never renamed: the date prefix was stamped at capture and the
     basename is the spec's identity for its whole lifecycle. Git detects the rename by
@@ -1020,6 +1359,12 @@ def cmd_promote(args, root: str) -> int:
         emit(args.json, {"ok": False, "code": "sp-unknown-phase", "phase": dest,
                          "message": f"'{dest}' is not a phase folder"},
              f"error: '{dest}' is not a phase folder")
+        return 2
+    if dest == info["phase"]:
+        emit(args.json,
+             {"ok": False, "code": "sp-same-phase", "slug": info["slug"], "phase": dest,
+              "message": f"'{info['slug']}' is already in phase {dest}"},
+             f"refused: '{info['slug']}' is already in phase {dest}")
         return 2
 
     gates = gate_report(info, dest)
@@ -1068,10 +1413,10 @@ def cmd_promote(args, root: str) -> int:
     rel = f"{dest}/{info['file']}"
     if args.dry_run:
         emit(args.json,
-             {"ok": True, "dryRun": True, "slug": info["slug"], "from": info["phase"],
+             {"ok": True, "dryRun": True, "slug": info["slug"], "from": info["folder"],
               "to": dest, "outcome": outcome, "dest": rel,
               "warn": gates["warn"]},
-             f"dry-run: would move {info['phase']}/{info['file']} → {rel}" +
+             f"dry-run: would move {info['folder']}/{info['file']} → {rel}" +
              (f"  (outcome: {outcome})" if outcome else ""))
         return 0
     if os.path.exists(dest_path):
@@ -1084,9 +1429,9 @@ def cmd_promote(args, root: str) -> int:
         write_text(info["path"], set_frontmatter_key(info["text"], "outcome", outcome))
     os.rename(info["path"], dest_path)
     emit(args.json,
-         {"ok": True, "slug": info["slug"], "from": info["phase"], "to": dest,
+         {"ok": True, "slug": info["slug"], "from": info["folder"], "to": dest,
           "outcome": outcome, "dest": rel, "warn": gates["warn"]},
-         f"promoted '{info['slug']}': {info['phase']}/ → {rel}" +
+         f"promoted '{info['slug']}': {info['folder']}/ → {rel}" +
          (f"  (outcome: {outcome})" if outcome else "") +
          ("".join(f"\n  warning: ## {h} is empty" for h in gates["warn"])))
     return 0
@@ -1113,6 +1458,20 @@ def cmd_task(args, root: str) -> int:
         emit(args.json, {"ok": False, "code": "sp-no-action",
                          "message": "pass --check, --uncheck or --block"},
              "error: pass --check, --uncheck or --block")
+        return 1
+    # A sha records WHICH COMMIT IMPLEMENTED THIS TASK, so it is meaningful only on the
+    # transition that says the task is done. On --uncheck any recorded sha is dropped
+    # rather than left behind pointing at work the checkbox no longer claims.
+    if args.commit and not args.check:
+        emit(args.json, {"ok": False, "code": "sp-commit-without-check",
+                         "message": "--commit records the commit that implemented a task, "
+                                    "so it goes with --check"},
+             "error: --commit goes with --check")
+        return 1
+    if args.commit and not COMMIT_REF_RE.match(args.commit):
+        emit(args.json, {"ok": False, "code": "sp-bad-commit", "commit": args.commit,
+                         "message": "a commit ref may not contain whitespace"},
+             "error: a commit ref may not contain whitespace")
         return 1
     if args.block and not args.reason:
         emit(args.json, {"ok": False, "code": "sp-no-reason",
@@ -1143,48 +1502,194 @@ def cmd_task(args, root: str) -> int:
     if args.block:
         body = f"{body} — blocked: {args.reason.strip()}"
     lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
+
+    # Upsert the `commit:` metadata line — replace one that is already there, otherwise
+    # append it after the task's last metadata line (or right under the checkbox).
+    commit = None
+    if args.commit:
+        commit = args.commit
+        entry = f"{t['metaIndent']}commit: {commit}\n"
+        if t["commitLineno"] is not None:
+            lines[t["commitLineno"]] = entry
+        else:
+            lines.insert(t["metaInsertAt"], entry)
+    elif args.uncheck and t["commitLineno"] is not None:
+        del lines[t["commitLineno"]]
     write_text(info["path"], "".join(lines))
 
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
     emit(args.json,
          {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
-          "state": mark, "text": body,
+          "state": mark, "text": body, "commit": commit,
           "reason": args.reason if args.block else None},
-         f"task {ident} {verb}: {body}")
+         f"task {ident} {verb}: {body}" + (f"\n  commit: {commit}" if commit else ""))
+    return 0
+
+
+CRITICALITY_RANK = {"critical": 0, "high": 1, "medium": 2, "normal": 2, "low": 3}
+
+
+def _priority_rank(rec) -> tuple[float, str]:
+    """A spec's human-assigned urgency as one comparable number, plus how it was read.
+
+    `level` is the field triage writes and the one that ranks; `criticality` is a coarse
+    fallback so a partially-filled record still ranks instead of silently sorting last.
+    No record at all sorts after every record — never before."""
+    if not isinstance(rec, dict):
+        return (float("inf"), "")
+    lvl = str(rec.get("level", "")).strip()
+    if lvl:
+        try:
+            return (float(lvl), f"priority level {lvl}")
+        except ValueError:
+            pass
+    crit = str(rec.get("criticality", "")).strip().lower()
+    if crit in CRITICALITY_RANK:
+        return (float(CRITICALITY_RANK[crit]), f"criticality {crit}")
+    return (float("inf"), "")
+
+
+def _days_since(date: str) -> int:
+    try:
+        d = datetime.date.fromisoformat(date)
+    except ValueError:
+        return 0
+    return max(0, (datetime.date.fromisoformat(today()) - d).days)
+
+
+def _candidate(s: dict, schema: dict) -> dict:
+    raw = read_text(s["path"]) or ""
+    fm = parse_frontmatter(raw)
+    sections = parse_sections(body_after_frontmatter(raw))
+    tasks = parse_tasks(raw)
+    checked, blocked, total = task_progress(tasks)
+    stage = derive_stage(s, sections, fm, tasks, schema)
+    ready = ready_report({"sections": sections}, schema)
+    prank, pwhy = _priority_rank(fm.get("priority"))
+    progress = (checked / total) if total else 0.0
+    executing = stage == "executing"
+    return {
+        "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": s["date"],
+        "title": fm.get("title", titleize(s["slug"])), "stage": stage,
+        "tasks": {"checked": checked, "blocked": blocked, "total": total},
+        "progress": round(progress, 3),
+        "readyGateMet": ready["ok"],
+        "approved": fm.get("approved") or None,
+        "priority": fm.get("priority") or None,
+        "ageDays": _days_since(s["date"]),
+        "_key": (0 if executing else 1, -progress, prank, s["date"], s["slug"]),
+        "_why": pwhy,
+        "_executing": executing,
+    }
+
+
+def _rank_reason(c: dict) -> str:
+    """Why this candidate sits where it does — the ONE dominant factor, not a formula."""
+    t = c["tasks"]
+    if c["_executing"]:
+        r = f"executing — {t['checked']}/{t['total']} tasks done"
+        if t["blocked"]:
+            r += f", {t['blocked']} blocked"
+        return r
+    if c["_why"]:
+        return f"{c['_why']} — {c['stage']}"
+    if c["readyGateMet"]:
+        return f"ready to build, untouched for {c['ageDays']}d"
+    return f"{c['stage']}, {c['ageDays']}d old"
+
+
+def _next_front(args, root: str) -> int:
+    """The ranked candidate list — THE only place ranking logic lives.
+
+    Four factors, lexicographic and in this order:
+      1. executing first     finish what is already started before opening something new
+      2. closest to done     among those, the one nearest the end
+      3. priority            the human's ranking, when triage has written one
+      4. age                 oldest first, so nothing rots quietly
+
+    Factor 2 is harmless for everything else: a spec with no ticked task scores 0, so the
+    whole non-executing set ties there and falls through to priority — which is exactly the
+    intent, without a special case."""
+    schema = load_schema()
+    cands = [_candidate(s, schema) for s in spec_files(root, "plans")]
+    cands.sort(key=lambda c: c["_key"])
+    ranked = []
+    for c in cands:
+        c = dict(c)
+        c["reason"] = _rank_reason(c)
+        for k in ("_key", "_why", "_executing"):
+            c.pop(k)
+        ranked.append(c)
+
+    # When nothing carries a priority record and nothing is in flight, the order is age
+    # alone — which is an ordering, not a judgment. Say so rather than implying a ranking
+    # that was never made.
+    prioritized = [c for c in ranked if c["priority"]]
+    in_flight = [c for c in ranked if c["stage"] == "executing"]
+    needs_triage = bool(ranked) and not prioritized and not in_flight and len(ranked) > 1
+
+    obj = {"ok": True, "root": root, "count": len(ranked),
+           "top": ranked[0]["slug"] if ranked else None,
+           "needsTriage": needs_triage,
+           "candidates": ranked}
+    if args.json:
+        print(json.dumps(obj, indent=2, ensure_ascii=False))
+        return 0
+    if not ranked:
+        print(f"no active specs under {root} — nothing to continue")
+        return 0
+    print(f"specs front — {len(ranked)} active, ranked")
+    for i, c in enumerate(ranked, 1):
+        print(f"  {i}. {c['slug']:<32} {c['reason']}")
+    if needs_triage:
+        print("\n  nothing is in flight and nothing carries a priority record — this order "
+              "is age alone.\n  `specs.py`-driven triage would give it something to stand on.")
     return 0
 
 
 def cmd_next(args, root: str) -> int:
     """THE single next action, so a skill never infers state from prose.
 
-    In `backlog/` that is the next unfilled promote gate; in `ready/` the next open task.
-    A `[!]` task is SKIPPED — it already has an honest reason recorded and re-offering it
-    forever is what the attempt budget was clumsily trying to prevent."""
+    In `plans/` the ladder is one chain, because the folder no longer splits it: fill the
+    ready gate, then work the tasks, then close out. A `[!]` task is SKIPPED — it already
+    has an honest reason recorded and re-offering it forever is what the attempt budget
+    was clumsily trying to prevent.
+
+    Reaching the ready gate does NOT stop the ladder to demand approval. Refusing here
+    would rebuild the `promote` this fold removed; `execute` asks for the stamp inline,
+    and `approved` rides along in the payload so it can.
+
+    With `--front` the question is the other one — WHICH spec — and that is answered by
+    `_next_front`."""
+    if args.front:
+        return _next_front(args, root)
+    if not args.spec:
+        emit(args.json, {"ok": False, "code": "sp-no-target",
+                         "message": "pass --spec <slug> for one spec's next action, "
+                                    "or --front for the ranked candidate list"},
+             "error: pass --spec <slug>, or --front")
+        return 1
     info, err = load_spec(root, args.spec)
     if err:
         return emit_err(args.json, err)
-    dest = _next_phase(info["phase"])
-    base = {"slug": info["slug"], "phase": info["phase"], "stage": info["stage"],
-            "verification": info["verification"],
+    base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
+            "stage": info["stage"], "verification": info["verification"],
+            "approved": info["frontmatter"].get("approved") or None,
             "blocked": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
                         for t in info["tasks"] if t["blocked"]]}
 
-    if info["phase"] == "backlog":
-        gates = gate_report(info, "ready")
-        if not gates["ok"]:
-            want = (gates["missing"] + gates["malformed"])[0]
+    if info["phase"] == "plans":
+        ready = ready_report(info)
+        if not ready["ok"]:
+            want = (ready["missing"] + ready["malformed"])[0]
+            remaining = len(ready["missing"]) + len(ready["malformed"]) - 1
             obj = {"ok": True, "action": "write_section", "heading": want, **base,
-                   "missing": gates["missing"], "malformed": gates["malformed"],
-                   "message": f"write ## {want} (then {len(gates['missing']) + len(gates['malformed']) - 1} more) "
-                              f"before promoting to ready/"}
+                   "missing": ready["missing"], "malformed": ready["malformed"],
+                   "message": f"write ## {want}"
+                              + (f" (then {remaining} more)" if remaining else "")
+                              + " to reach the ready gate"}
             emit(args.json, obj, obj["message"])
             return 0
-        obj = {"ok": True, "action": "promote", "to": "ready", **base,
-               "message": f"all gates met — `specs.py promote {info['slug']}`"}
-        emit(args.json, obj, obj["message"])
-        return 0
-
-    if info["phase"] == "ready":
         openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
         if openable:
             t = openable[0]
@@ -1385,11 +1890,19 @@ def _migrate_plan(root: str, name: str, dry: bool) -> dict:
         meta = json.loads(meta_txt)
     except json.JSONDecodeError:
         meta = {}
-    slug = slugify(name)
-    date = _birth_date(meta, os.path.join(plan_dir, ".specs.json"))
+    # A v1 folder was normally a bare name, but some carried a `YYYY-MM-DD-` prefix. Left
+    # in, that prefix ends up INSIDE the slug and the date is then prepended again, so the
+    # fold emits `2026-01-05-2026-01-05-thing.md` with a date buried in its identity key.
+    m = re.match(r"^(\d{4}-\d{2}-\d{2})-(.+)$", name)
+    slug = slugify(m.group(2) if m else name)
+    date = m.group(1) if m else _birth_date(meta, os.path.join(plan_dir, ".specs.json"))
     collected = _v1_sections(plan_dir)
-    dest_phase = "ready" if collected.get("Tasks") else "backlog"
-    gate = phase_spec(dest_phase).get("entryGate", [])
+    # v1 sorted a plan by whether it had tasks; v3 has one folder, so what that sorting
+    # decided is now a derived stage. The gate a v1 plan must still satisfy is the ready
+    # set when it carried tasks (it was buildable) and plans/'s own entry gate otherwise.
+    dest_phase = "plans"
+    gate = (ready_gate()["sections"] if collected.get("Tasks")
+            else phase_spec(dest_phase).get("entryGate", []))
 
     fm = [f"slug: {slug}", f"title: {meta.get('title') or titleize(slug)}",
           f"verification: {_policy(meta)}"]
@@ -1449,21 +1962,61 @@ def _migrate_task(root: str, path: str, dry: bool) -> dict:
     out = ["---", f"slug: {slug}", f"title: {fm.get('title') or titleize(slug)}",
            f"verification: {DEFAULT_VERIFICATION}", "---", "",
            f"# {fm.get('title') or titleize(slug)}", "", "## Problem", "", problem, ""]
-    dest = os.path.join(root, "backlog", f"{date}-{slug}.md")
+    dest = os.path.join(root, "plans", f"{date}-{slug}.md")
     rec = {"from": f"backlog/{os.path.basename(path)}", "slug": slug,
-           "to": f"backlog/{date}-{slug}.md", "date": date, "kind": "task"}
+           "to": f"plans/{date}-{slug}.md", "date": date, "kind": "task"}
     if dry:
         return rec
+    os.makedirs(os.path.join(root, "plans"), exist_ok=True)
     write_text(dest, "\n".join(out).rstrip() + "\n")
     os.remove(path)
     return rec
 
 
-def cmd_migrate(args, root: str) -> int:
-    """One-way v1 -> v2. `specs/archive/**` is NEVER touched — it is historical and
-    read-only, and churning it would break every link into it for no gain.
+def _v2_leftovers(root: str) -> list[dict]:
+    """Every spec file still sitting in a v2 folder, in scan order.
 
-    Refuses (exit 2) when there is nothing v1 left, so a second run cannot quietly
+    This is a pure FILE MOVE, not a fold: v2 and v3 spec files are the same format, and
+    the folder was the only thing that changed. So the file is never opened, never
+    reformatted, and never renamed — which is what makes the migration lossless and what
+    lets it work on a file this tool could not parse."""
+    out = []
+    for folder in LEGACY_PHASES:
+        d = os.path.join(root, folder)
+        if not os.path.isdir(d):
+            continue
+        for name in sorted(os.listdir(d)):
+            if SPEC_FILE_RE.match(name) and os.path.isfile(os.path.join(d, name)):
+                out.append({"folder": folder, "file": name,
+                            "path": os.path.join(d, name)})
+    return out
+
+
+def _migrate_v2_file(root: str, item: dict, dry: bool) -> dict:
+    dest_dir = os.path.join(root, "plans")
+    dest = os.path.join(dest_dir, item["file"])
+    rec = {"from": f"{item['folder']}/{item['file']}", "slug": None,
+           "to": f"plans/{item['file']}", "kind": "v2-file"}
+    m = SPEC_FILE_RE.match(item["file"])
+    if m:
+        rec["slug"] = m.group(2)
+    if dry:
+        return rec
+    os.makedirs(dest_dir, exist_ok=True)
+    os.rename(item["path"], dest)
+    return rec
+
+
+def cmd_migrate(args, root: str) -> int:
+    """One-way, to the CURRENT layout. `specs/archive/**` is NEVER touched — it is
+    historical and read-only, and churning it would break every link into it for no gain.
+
+    Two folds, either of which may apply:
+      v1 -> v3   a three-file plan folder (or a v1 backlog task) becomes one spec file
+      v2 -> v3   `backlog/` and `ready/` move into `plans/`, basenames unchanged
+
+    The v2 fold moves files and nothing else: same format, same name, only the folder
+    changed. Refuses (exit 2) when neither fold applies, so a second run cannot quietly
     re-migrate an already-converted workspace."""
     plans = _v1_leftovers(root)
     tasks = []
@@ -1475,18 +2028,55 @@ def cmd_migrate(args, root: str) -> int:
                 continue
             if str(parse_frontmatter(read_text(p) or "").get("type", "")) == "task":
                 tasks.append(p)
-    if not plans and not tasks:
+    v2 = _v2_leftovers(root)
+    if not plans and not tasks and not v2:
         emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
-                         "message": "no v1 plan folders and no v1 backlog tasks — "
-                                    "this workspace is already v2"},
-             "refused: nothing to migrate — this workspace is already v2")
+                         "message": "no v1 plan folders, no v1 backlog tasks and no specs "
+                                    "in backlog/ or ready/ — this workspace is already v3"},
+             "refused: nothing to migrate — this workspace is already v3")
+        return 2
+
+    # A name collision is the one way this could destroy work, so it is checked for the
+    # WHOLE set before a single file moves — a partial migration is worse than none.
+    dest_dir = os.path.join(root, "plans")
+    clashes = []
+    seen: dict[str, str] = {}
+    for it in v2:
+        if os.path.exists(os.path.join(dest_dir, it["file"])):
+            clashes.append(f"{it['folder']}/{it['file']} — plans/{it['file']} already exists")
+        if it["file"] in seen:
+            clashes.append(f"{it['folder']}/{it['file']} — same basename as "
+                           f"{seen[it['file']]}/{it['file']}")
+        seen[it["file"]] = it["folder"]
+    if clashes:
+        emit(args.json, {"ok": False, "code": "sp-migrate-collision", "root": root,
+                         "collisions": clashes,
+                         "message": f"{len(clashes)} destination collision(s) — nothing moved"},
+             f"refused: {len(clashes)} destination collision(s) — nothing moved\n" +
+             "\n".join(f"  {c}" for c in clashes))
         return 2
 
     migrated = [_migrate_plan(root, n, args.dry_run) for n in plans]
     migrated += [_migrate_task(root, p, args.dry_run) for p in tasks]
+    migrated += [_migrate_v2_file(root, it, args.dry_run) for it in v2]
+
+    # An emptied v2 folder is removed; one still holding anything (a customized index.md,
+    # a human's stray note) is KEPT and named, never deleted on a guess.
+    kept_dirs = []
+    if not args.dry_run:
+        for folder in LEGACY_PHASES:
+            d = os.path.join(root, folder)
+            if not os.path.isdir(d):
+                continue
+            try:
+                os.rmdir(d)
+            except OSError:
+                kept_dirs.append(f"{folder}/ ({', '.join(sorted(os.listdir(d))[:4])})")
+
     obj = {"ok": True, "dryRun": bool(args.dry_run), "root": root,
            "migrated": migrated,
            "archiveUntouched": True,
+           "keptFolders": kept_dirs,
            "kept": [m["from"] for m in migrated if m.get("kept")]}
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
@@ -1494,14 +2084,20 @@ def cmd_migrate(args, root: str) -> int:
         verb = "would migrate" if args.dry_run else "migrated"
         print(f"{verb} {len(migrated)} item(s) — specs/archive/** untouched")
         for m in migrated:
-            print(f"  {m['from']:<40} → {m['to']}   (date from {m.get('dateSource', 'timestamp')})")
+            src = m.get("dateSource")
+            print(f"  {m['from']:<40} → {m['to']}" +
+                  (f"   (date from {src})" if src else ""))
             if m.get("strays"):
                 print(f"      kept, still holds: {', '.join(m['strays'])}")
+        for k in kept_dirs:
+            print(f"  kept (not empty): {k}")
+        if not args.dry_run:
+            print("  next: specs.py plans reindex")
     return 0
 
 
 # --------------------------------------------------------------------------- #
-# validate / doctor / backlog reindex
+# validate / doctor / plans reindex
 # --------------------------------------------------------------------------- #
 def _finding(code: str, severity: str, message: str, **extra) -> dict:
     return {"code": code, "severity": severity, "message": message, **extra}
@@ -1513,7 +2109,7 @@ def validate_spec(root: str, s: dict) -> list[dict]:
     The phase-scoped rule is asserted against the schema's per-phase sets — the SAME sets
     `promote` gates on, so the two can never drift into disagreeing about what a phase
     requires."""
-    where = f"{s['phase']}/{s['file']}"
+    where = f"{s['folder']}/{s['file']}"
     text = read_text(s["path"]) or ""
     fm = parse_frontmatter(text)
     sections = parse_sections(body_after_frontmatter(text))
@@ -1561,11 +2157,17 @@ def validate_spec(root: str, s: dict) -> list[dict]:
                                 f"{where}: `## {h}` is present but empty — neither an answer "
                                 f"nor a not-yet", spec=s["slug"], path=where, heading=h,
                                 remedy="fill it, or write `- none — <reason>`"))
-    for h in gates["warn"]:
-        out.append(_finding("sp-handoff-empty", "warn",
-                            f"{where}: `## {h}` is empty in {s['phase']}/ — an executor "
-                            f"gets no context", spec=s["slug"], path=where, heading=h,
-                            remedy="rewrite it after each committed task and at every promote"))
+    # `Handoff` used to be warned on by the ready/ FOLDER. With one folder the same
+    # question is asked of the derived ready gate: a spec nobody could build yet is not
+    # missing an executor's context, and a spec that is buildable is.
+    ready = ready_report({"sections": sections}, schema) if s["phase"] == "plans" else None
+    if ready and ready["ok"]:
+        for h in ready["warn"]:
+            out.append(_finding("sp-handoff-empty", "warn",
+                                f"{where}: `## {h}` is empty in a spec that meets the ready "
+                                f"gate — an executor gets no context", spec=s["slug"],
+                                path=where, heading=h,
+                                remedy="rewrite it after each committed task"))
 
     declared = parse_impact_standards(text, schema)
     if declared:
@@ -1577,15 +2179,14 @@ def validate_spec(root: str, s: dict) -> list[dict]:
                                     f"names it", spec=s["slug"], path=where, standard=p,
                                     remedy="add a task that writes it, or drop the declaration"))
 
-    # Judged against the READY gate, not backlog's: a spec is "unrefined" once it could be
-    # promoted, not the moment it is captured. Warning on every fresh capture would train
-    # the reader to ignore the code.
-    if s["phase"] == "backlog" and not fm.get("refined") \
-            and gate_report({"sections": sections}, "ready", schema)["ok"]:
+    # Judged against the READY gate: a spec is "unrefined" once it could be built, not the
+    # moment it is captured. Warning on every fresh capture would train the reader to
+    # ignore the code.
+    if ready and ready["ok"] and not fm.get("refined"):
         out.append(_finding("sp-unrefined", "warn",
-                            f"{where}: ready to promote, but nobody has interrogated it",
+                            f"{where}: ready to build, but nobody has interrogated it",
                             spec=s["slug"], path=where,
-                            remedy="run a refinement pass, or promote as-is (never gated)"))
+                            remedy="run a refinement pass, or build as-is (never gated)"))
     if s["phase"] == "archive" and not fm.get("outcome"):
         out.append(_finding("sp-no-outcome", "warn",
                             f"{where}: archived with no `outcome:` — done and abandoned "
@@ -1669,12 +2270,101 @@ def _v1_leftovers(root: str) -> list[str]:
         return out
     for name in sorted(os.listdir(root)):
         d = os.path.join(root, name)
-        if not os.path.isdir(d) or name in PHASES or name.startswith("."):
+        if not os.path.isdir(d) or name in PHASE_DIRS or name.startswith("."):
             continue
         if any(os.path.isfile(os.path.join(d, f))
                for f in (".specs.json", "proposal.md", "tasks.md")):
             out.append(name)
     return out
+
+
+def _behavioral(node):
+    """A schema with the prose stripped. `note`/`why` exist for a human reading
+    schema.json; the embedded fallback has never carried them, and they are not what the
+    tool branches on."""
+    if isinstance(node, dict):
+        return {k: _behavioral(v) for k, v in node.items() if k not in ("note", "why")}
+    if isinstance(node, list):
+        return [_behavioral(v) for v in node]
+    return node
+
+
+def cmd_selftest(args, root: str) -> int:
+    """Prove the two duplicated constants have not drifted from their asset files.
+
+    `schema.json` and `templates/spec.md` are each duplicated inside this script, because an
+    installed copy under a target's `.claude/hooks/` has no adjacent assets and must still
+    behave identically. Duplication is the deliberate cost of being one self-contained file
+    — and a duplicate nobody checks is just a bug with a delay on it. This is the check.
+
+    It can only run where the assets are adjacent (the plugin itself); an installed copy has
+    nothing to compare against and says so rather than passing vacuously."""
+    findings: list[dict] = []
+    tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
+    sch_path = os.path.join(ASSET_DIR, "schema.json")
+    disk_tpl = read_text(tpl_path)
+    disk_sch = read_text(sch_path)
+
+    if disk_tpl is None and disk_sch is None:
+        emit(args.json,
+             {"ok": True, "skipped": True, "assetDir": ASSET_DIR, "findings": [],
+              "message": "no adjacent assets — nothing to compare (installed copy)"},
+             "selftest: no adjacent assets — nothing to compare (installed copy)")
+        return 0
+
+    if disk_tpl is None:
+        findings.append(_finding("sp-selftest-no-template", "error",
+                                 f"no template at {tpl_path}", path=tpl_path,
+                                 remedy="restore assets/specs/templates/spec.md"))
+    elif disk_tpl != TEMPLATE_SPEC:
+        d = list(difflib.unified_diff(TEMPLATE_SPEC.splitlines(),
+                                      disk_tpl.splitlines(),
+                                      "specs.py:TEMPLATE_SPEC", "templates/spec.md",
+                                      lineterm="", n=1))
+        findings.append(_finding("sp-template-drift", "error",
+                                 f"TEMPLATE_SPEC and templates/spec.md differ "
+                                 f"({len(d)} diff line(s))", path=tpl_path,
+                                 diff=d[:40],
+                                 remedy="edit both or neither — copy the file into the "
+                                        "TEMPLATE_SPEC constant verbatim"))
+
+    if disk_sch is None:
+        findings.append(_finding("sp-selftest-no-schema", "error",
+                                 f"no schema at {sch_path}", path=sch_path,
+                                 remedy="restore assets/specs/schema.json"))
+    else:
+        try:
+            parsed = json.loads(disk_sch)
+        except json.JSONDecodeError as e:
+            parsed = None
+            findings.append(_finding("sp-schema-unparseable", "error",
+                                     f"{sch_path} is not valid JSON: {e}", path=sch_path,
+                                     remedy="fix the JSON"))
+        if parsed is not None:
+            a, b = _behavioral(parsed), _behavioral(DEFAULT_SCHEMA)
+            for key in sorted(set(a) | set(b)):
+                if a.get(key) != b.get(key):
+                    findings.append(_finding(
+                        "sp-schema-drift", "error",
+                        f"schema.json and DEFAULT_SCHEMA disagree on `{key}`",
+                        path=sch_path, key=key,
+                        remedy="edit both or neither — DEFAULT_SCHEMA is what an installed "
+                               "copy runs on"))
+
+    errors = [f for f in findings if f["severity"] == "error"]
+    if args.json:
+        print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR, "findings": findings},
+                         indent=2, ensure_ascii=False))
+        return 1 if errors else 0
+    print(f"specs selftest — {ASSET_DIR} ({len(errors)} error(s))")
+    for f in findings:
+        print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
+        print(f"          remedy: {f['remedy']}")
+        for line in f.get("diff", [])[:12]:
+            print(f"            {line}")
+    if not findings:
+        print("  OK — the embedded schema and template match their asset files.")
+    return 1 if errors else 0
 
 
 def cmd_doctor(args, root: str) -> int:
@@ -1688,9 +2378,21 @@ def cmd_doctor(args, root: str) -> int:
         if not os.path.isdir(os.path.join(root, ph)):
             findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
                                      path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
-    if not os.path.isfile(os.path.join(root, "backlog", "index.md")):
-        findings.append(_finding("sp-no-backlog-index", "warn", "no backlog/index.md",
-                                 remedy="install assets/specs/backlog/index.md"))
+    if not os.path.isfile(os.path.join(root, "plans", "index.md")):
+        findings.append(_finding("sp-no-plans-index", "warn", "no plans/index.md",
+                                 remedy="install assets/specs/plans/index.md"))
+
+    # A v2 folder that still holds specs is the one shape `list` reads correctly but
+    # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
+    for folder in LEGACY_PHASES:
+        held = [s for s in spec_files(root) if s["folder"] == folder]
+        if held:
+            findings.append(_finding("sp-v2-layout", "error",
+                                     f"`{folder}/` still holds {len(held)} spec(s) — v3 "
+                                     f"folded backlog/ and ready/ into plans/",
+                                     path=folder, count=len(held),
+                                     remedy="specs.py migrate  (moves them into plans/ "
+                                            "unrenamed; specs/archive/** is never touched)"))
 
     leftovers = _v1_leftovers(root)
     for name in leftovers:
@@ -1725,16 +2427,17 @@ def _emit_doctor(args, root: str, findings: list[dict]) -> int:
     return 1 if errors else 0
 
 
-STAGE_ORDER = ("refined", "designed", "proposed", "captured", "backlog")
+STAGE_ORDER = ("executing", "approved", "ready", "refined", "designed", "proposed",
+               "captured", "plans")
 
 
-def render_backlog_zone(rows: list[dict]) -> str:
-    """The GENERATED zone of `backlog/index.md`, grouped by DERIVED stage.
+def render_plans_zone(rows: list[dict]) -> str:
+    """The GENERATED zone of `plans/index.md`, grouped by DERIVED stage.
 
     This tool owns the format — the zone is rebuilt from disk, never hand-edited, so a
     listing can never drift from what the folder actually holds."""
     if not rows:
-        return BACKLOG_EMPTY
+        return PLANS_EMPTY
     counts = {st: sum(1 for r in rows if r["stage"] == st) for st in STAGE_ORDER}
     head = f"**{len(rows)} spec{'s' if len(rows) != 1 else ''}**"
     parts = [f"{counts[st]} {st}" for st in STAGE_ORDER if counts[st]]
@@ -1751,16 +2454,18 @@ def render_backlog_zone(rows: list[dict]) -> str:
     return "\n".join(lines).rstrip()
 
 
-def cmd_backlog(args, root: str) -> int:
-    index = os.path.join(root, "backlog", "index.md")
+def cmd_plans(args, root: str) -> int:
+    index = os.path.join(root, "plans", "index.md")
     text = read_text(index)
     if text is None:
-        emit(args.json, {"ok": False, "code": "sp-no-backlog-index",
-                         "message": "no backlog/index.md to reindex"},
-             "error: no backlog/index.md to reindex")
+        emit(args.json, {"ok": False, "code": "sp-no-plans-index",
+                         "message": "no plans/index.md to reindex"},
+             "error: no plans/index.md to reindex")
         return 1
     rows = []
-    for s in spec_files(root, "backlog"):
+    # The CANONICAL phase, not the folder name — otherwise this filters on a phase that no
+    # longer exists, silently returns nothing, and rewrites the zone as empty.
+    for s in spec_files(root, "plans"):
         raw = read_text(s["path"]) or ""
         fm = parse_frontmatter(raw)
         rows.append({
@@ -1773,8 +2478,8 @@ def cmd_backlog(args, root: str) -> int:
     end = text.find(GEN_END)
     if begin < 0 or end < 0 or end < begin:
         emit(args.json, {"ok": False, "code": "sp-no-generated-zone",
-                         "message": "backlog/index.md has no BEGIN/END GENERATED zone"},
-             "error: backlog/index.md has no BEGIN/END GENERATED zone")
+                         "message": "plans/index.md has no BEGIN/END GENERATED zone"},
+             "error: plans/index.md has no BEGIN/END GENERATED zone")
         return 1
     head_end = text.find("-->", begin)
     if head_end < 0:
@@ -1782,13 +2487,13 @@ def cmd_backlog(args, root: str) -> int:
                          "message": "the BEGIN GENERATED comment is unterminated"},
              "error: the BEGIN GENERATED comment is unterminated")
         return 1
-    new_text = (text[:head_end + 3] + "\n" + render_backlog_zone(rows) + "\n" + text[end:])
+    new_text = (text[:head_end + 3] + "\n" + render_plans_zone(rows) + "\n" + text[end:])
     write_text(index, new_text)
     emit(args.json, {"ok": True, "specs": len(rows),
                      "stages": {st: sum(1 for r in rows if r["stage"] == st)
                                 for st in STAGE_ORDER
                                 if any(r["stage"] == st for r in rows)}},
-         f"reindexed backlog/index.md — {len(rows)} spec(s)")
+         f"reindexed plans/index.md — {len(rows)} spec(s)")
     return 0
 
 
@@ -1806,7 +2511,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
         sp.add_argument("--json", action="store_true", help="machine-readable output")
         return sp
 
-    sp = add_json(sub.add_parser("new", help="capture a spec into backlog/"))
+    sp = add_json(sub.add_parser("new", help="capture a spec into plans/"))
     sp.add_argument("name")
     sp.add_argument("--title")
     sp.add_argument("--verification", choices=list(VERIFICATION_POLICIES),
@@ -1823,7 +2528,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 
-    sp = add_json(sub.add_parser("promote", help="the gated phase transition"))
+    sp = add_json(sub.add_parser("promote", help="the gated close-out: plans/ → archive/"))
     sp.add_argument("spec")
     sp.add_argument("--to", choices=list(PHASES), help="force the destination phase")
     sp.add_argument("--outcome", choices=list(OUTCOMES),
@@ -1838,9 +2543,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--uncheck")
     sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
     sp.add_argument("--reason", help="why the task is blocked — written into the line")
+    sp.add_argument("--commit", help="the commit that implemented the task, recorded as a "
+                                     "`commit:` metadata line (goes with --check)")
 
-    sp = add_json(sub.add_parser("next", help="THE single next action"))
-    sp.add_argument("--spec", required=True)
+    sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
+                                              "ranked candidate list"))
+    sp.add_argument("--spec", help="one spec's next action")
+    sp.add_argument("--front", action="store_true",
+                    help="rank every active spec: executing, closest to done, priority, age")
 
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     sp.add_argument("--spec", required=True)
@@ -1854,10 +2564,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
-    sp = add_json(sub.add_parser("backlog", help="backlog/index.md maintenance"))
-    sp.add_argument("backlog_cmd", choices=["reindex"])
+    add_json(sub.add_parser("selftest", help="prove the embedded schema and template "
+                                             "have not drifted from their asset files"))
 
-    sp = add_json(sub.add_parser("migrate", help="one-way v1 → v2 fold"))
+    sp = add_json(sub.add_parser("plans", help="plans/index.md maintenance"))
+    sp.add_argument("plans_cmd", choices=["reindex"])
+
+    sp = add_json(sub.add_parser("migrate", help="one-way fold to the current layout "
+                                                 "(v1 → v3, and backlog/ + ready/ → plans/)"))
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
 
     return p, sub
@@ -1875,7 +2589,8 @@ DISPATCH: dict = {
     "discover": cmd_discover,
     "validate": cmd_validate,
     "doctor": cmd_doctor,
-    "backlog": cmd_backlog,
+    "selftest": cmd_selftest,
+    "plans": cmd_plans,
     "migrate": cmd_migrate,
 }
 

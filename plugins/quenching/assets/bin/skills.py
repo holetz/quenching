@@ -57,7 +57,9 @@ not — the same split `specs.py doctor` and `validate` already use.
 SUBCOMMANDS
   lint [path]     per-command conformance: the two description caps, trigger position,
                   the `Not for:` boundary, body length, a `**Done when:**` criterion
-                  per numbered step, unscoped `Bash`, invocation-control coherence.
+                  per numbered step, unscoped `Bash`, invocation-control coherence, and
+                  the execution profile's decidable slice (`sk-fork-gate`,
+                  `sk-profile-value`).
                   `path` accepts a command file, a commands/ directory, or a surface
                   root; it defaults to the resolved surface.
   doctor          the surface's shape: every command carries a non-empty `description`,
@@ -65,6 +67,10 @@ SUBCOMMANDS
                   kebab-case. That invariant is what replaced the bijection — with one
                   file per entry point there is no second half to be missing.
                   Every finding carries a `remedy` the sweep applies.
+                  Plus the REPORT-ONLY wider surface: `<root>/agents/*.md` and the hooks
+                  wired in `<root>/settings*.json` (`sk-agent-no-description`,
+                  `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`) —
+                  routed to their mints, never migrated by the sweep.
   registry reindex [--registry PATH]
                   regenerate the registry's GENERATED zone from the surface's own
                   command frontmatter, preserving every line of curated prose
@@ -100,7 +106,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "3.0.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
+VERSION = "4.0.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
@@ -129,6 +135,9 @@ TRIGGER_SENTENCE_MAX = 2        # triggers live by the second sentence, so trunc
 BOUNDARY_MARKER = "Not for:"
 DONE_WHEN_MARKER = "**Done when:**"
 UNSCOPED_TOOLS = ("Bash",)      # granting the whole shell for the turn
+EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
+TOOL_EVENTS = ("PreToolUse", "PostToolUse")   # the per-tool-call hook events
+LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an inference per firing
 
 # The surface-wide always-on ceiling. Set to this plugin's own measured total — every
 # command's description, taken on parsed values — so the number is one a run produced
@@ -538,6 +547,36 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                            "runs, or state the reason in the body", tool=bare, **where))
 
     out.extend(_lint_invocation(fm, where))
+    out.extend(_lint_profile(fm, where))
+    return out
+
+
+def _lint_profile(fm: dict, where: dict) -> list[dict]:
+    """The execution profile's mechanically decidable slice. `context: fork` runs the
+    command in a forked context that CANNOT present a mid-flow question, so a fork beside
+    an `AskUserQuestion` grant is incoherent by construction — the one profile combination
+    that is an error rather than a judgment. Unparseable `context`/`effort` values are
+    warned: Claude Code reads them as unset, so the command silently runs without the
+    profile its author thought it had."""
+    out: list[dict] = []
+    context = str(fm.get("context", "")).strip().lower()
+    if context and context != "fork":
+        out.append(finding("sk-profile-value", "warn",
+                           f"`context: {fm['context']}` is not a value Claude Code reads — "
+                           "the only supported value is `fork`", **where))
+    effort = str(fm.get("effort", "")).strip().lower()
+    if effort and effort not in EFFORT_VALUES:
+        out.append(finding("sk-profile-value", "warn",
+                           f"`effort: {fm['effort']}` is not one of "
+                           f"{'/'.join(EFFORT_VALUES)} — Claude Code reads it as unset",
+                           **where))
+    if context == "fork":
+        tools = _split_tools(str(fm.get("allowed-tools", "")))
+        if any(t == "AskUserQuestion" or t.startswith("AskUserQuestion(") for t in tools):
+            out.append(finding("sk-fork-gate", "error",
+                               "`context: fork` beside an `AskUserQuestion` grant — a forked "
+                               "context cannot present a mid-flow question, so one of the two "
+                               "is a lie", **where))
     return out
 
 
@@ -654,6 +693,71 @@ def _doctor_findings(surface: dict) -> list[dict]:
                                     f"{c['command']} collides with {clash} on a case-insensitive "
                                     "filesystem", **where,
                                     remedy="rename one of the two commands"))
+
+    findings.extend(_wider_findings(surface["root"]))
+    return findings
+
+
+def _wider_findings(root: str) -> list[dict]:
+    """REPORT-ONLY inventory of the surfaces beside commands/: subagent definitions
+    (`<root>/agents/*.md`) and the hooks wired in `<root>/settings*.json`. The sweep never
+    renames or rewrites anything here — each finding names the mint that owns the fix
+    (/skill:agent:new, /skill:hook:new), so the confirmed plan's write set stays exactly
+    the command surface's."""
+    findings: list[dict] = []
+
+    agents_dir = os.path.join(root, "agents")
+    if os.path.isdir(agents_dir):
+        for fn in sorted(os.listdir(agents_dir)):
+            if not fn.endswith(".md"):
+                continue
+            fm = parse_frontmatter(read_text(os.path.join(agents_dir, fn)) or "")
+            if not str(fm.get("description", "")).strip():
+                findings.append(finding(
+                    "sk-agent-no-description", "error",
+                    f"agents/{fn} has no `description` — the agent can never be delegated to",
+                    command=f"agents/{fn}", path=f"agents/{fn}",
+                    remedy="add a description stating what it does and when to invoke it "
+                           "(/skill:agent:new)"))
+
+    for settings_name in ("settings.json", "settings.local.json"):
+        text = read_text(os.path.join(root, settings_name))
+        if text is None:
+            continue
+        try:
+            hooks = json.loads(text).get("hooks", {})
+        except (json.JSONDecodeError, AttributeError):
+            findings.append(finding(
+                "sk-hook-unparseable", "error",
+                f"{settings_name} is not valid JSON — every hook wired in it is dead",
+                command=settings_name, path=settings_name,
+                remedy="repair the JSON (`python3 -m json.tool` names the position)"))
+            continue
+        if not isinstance(hooks, dict):
+            continue
+        for event in TOOL_EVENTS:
+            for entry in hooks.get(event) or []:
+                if not isinstance(entry, dict):
+                    continue
+                where = {"command": settings_name, "path": settings_name, "event": event}
+                if str(entry.get("matcher", "")).strip() in ("", "*"):
+                    findings.append(finding(
+                        "sk-hook-unmatched", "warn",
+                        f"a {event} hook in {settings_name} has no matcher — it fires on "
+                        "every tool call, and every iteration in the repo pays it",
+                        **where,
+                        remedy="add a matcher, or state where it is wired why nothing "
+                               "narrower suffices (/skill:hook:new owns the scope ladder)"))
+                for h in entry.get("hooks") or []:
+                    if isinstance(h, dict) and str(h.get("type", "")).strip() in LLM_HANDLERS:
+                        findings.append(finding(
+                            "sk-hook-llm-frequent", "warn",
+                            f"a `{h.get('type')}` handler on {event} in {settings_name} "
+                            "runs an inference per matched tool call",
+                            **where,
+                            remedy="decide the deterministic path with a command handler "
+                                   "and keep the inference for the judgment tail "
+                                   "(/skill:hook:new owns the handler ladder)"))
     return findings
 
 
@@ -698,11 +802,25 @@ FIXTURE = {
     "docs/Bad_Name.md": "---\ndescription: something\n---\n\nbody\n",
 }
 
+# the wider surface, root-relative — report-only, so every code here must be one the
+# sweep ROUTES rather than fixes
+WIDER_FIXTURE = {
+    # a conformant agent — the control; it must NOT be flagged
+    "agents/good.md": "---\ndescription: Verifies X after Y\n---\n\nYou are…\n",
+    # an agent no delegation can ever reach
+    "agents/hollow.md": "---\nname: hollow\n---\n\nYou are…\n",
+    # one PreToolUse entry that is both unmatched AND runs an inference per call
+    "settings.json": '{"hooks": {"PreToolUse": [{"matcher": "*", "hooks": '
+                     '[{"type": "prompt", "prompt": "safe?"}]}]}}\n',
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
     # carries a description, so only the naming check fires — the two are independent
     "/docs:Bad_Name": {"sk-non-canonical-name"},
+    "agents/hollow.md": {"sk-agent-no-description"},
+    "settings.json": {"sk-hook-unmatched", "sk-hook-llm-frequent"},
 }
 
 
@@ -712,6 +830,10 @@ def cmd_selftest(args, root: str) -> int:
     with tempfile.TemporaryDirectory() as tmp:
         for relpath, text in FIXTURE.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+        for relpath, text in WIDER_FIXTURE.items():
+            path = os.path.join(tmp, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
 
@@ -730,6 +852,9 @@ def cmd_selftest(args, root: str) -> int:
             failures.append(f"{command}: expected {sorted(codes)}, got {sorted(got.get(command, []))}")
     if got.get("/docs:add"):
         failures.append(f"/docs:add: the conformant control was flagged {sorted(got['/docs:add'])}")
+    if got.get("agents/good.md"):
+        failures.append(f"agents/good.md: the conformant control was flagged "
+                        f"{sorted(got['agents/good.md'])}")
 
     if args.json:
         print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + 1,
@@ -862,12 +987,19 @@ def budget_rows(surface: dict) -> list[dict]:
     `when_to_use` is gone with the skill half — it was a Claude-Code-only extension
     restating the description's first clause, and one file has one description.
     `argument-hint` is still deliberately excluded: it totals a few dozen characters
-    across a whole surface and is not carried in the listing."""
+    across a whole surface and is not carried in the listing.
+
+    A `disable-model-invocation: true` command counts 0: Claude Code drops its
+    description from context entirely (the command is reachable only by typing it), so
+    charging it to the always-on total would report a cost the model never pays. The row
+    stays in the table, marked, so the surface's full inventory is still visible."""
     rows = []
     for c in surface["commands"]:
         description = len(str(c["frontmatter"].get("description", "")))
+        hidden = str(c["frontmatter"].get("disable-model-invocation", "")).strip().lower() == "true"
         rows.append({"command": c["command"], "description": description,
-                     "total": description})
+                     "total": 0 if hidden else description,
+                     **({"alwaysOn": False} if hidden else {})})
     return sorted(rows, key=lambda r: (-r["total"], r["command"]))
 
 

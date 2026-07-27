@@ -40,8 +40,8 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 - **Plan first, execute on one confirmation.** Read every harness file, classify every unit, and
   present **ONE** table — file → unit → verdict → destination. A single OK executes the batch; an
   edit whose blast radius reaches **product code** is its own confirmation item. **Exception —
-  cycle-authorized runs:** invoked by `/docs:align-and-update` under its cycle-authorization contract
-  ([align-and-update-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-and-update-all/convergence.md)), the plan is
+  cycle-authorized runs:** invoked as a stage of `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  ([align-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)), the plan is
   presented as narration, not a gate; a product-code edit still confirms on its own, always. The
   cycle may hand this skill a **pre-collected steps 1–4 table** (gathered read-only while
   `/docs:import-memory` ran — cycle.md §Parallel prep); before writing, re-verify any unit

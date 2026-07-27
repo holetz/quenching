@@ -1,159 +1,178 @@
-# Authoring the three plan artifacts
+# Authoring a spec's sections
 
-The per-artifact authoring doctrine `/specs:develop` applies when it writes each
-file. The **layout, the artifact graph, the formats, and the `specs.py` surface** live once in
-[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are cited, never restated here — this file is only the
-*writing* guidance: what belongs in each artifact, when `## Design` is warranted, and how to
-shape `## Tasks` (including the items that write standards into `docs/`).
+The per-section authoring doctrine every `/specs:*` command applies when it writes into a spec. The
+**layout, the thirteen sections, the gates, the derived stages and the `specs.py` surface** live
+once in
+[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
+cited, never restated here — this file is only the *writing* guidance: what belongs under each
+heading, how to write an honest explicit none, and how to shape `## Tasks`.
 
-There is **no delta spec and no sync**. A plan proves its durable rules straight into
-`docs/standards/` while it is built (`/specs:apply`); the proposal *declares* that
-scope. Two things in these files are machine contracts — the `## Tasks` checkboxes and the one
-parsed sub-heading of `## Impact` — and everything else is prose for a human reviewer.
+There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
+while it is built (`/specs:execute`), and `## Impact` is where it *declares* that scope. Two things
+in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed sub-heading of
+`## Impact` — and everything else is prose for a human reviewer.
 
 ## Contents
 
 - [The explicit-none rule](#the-explicit-none-rule)
-- [`## Problem`/`## Proposal` — required, no dependencies](#proposalmd--required-no-dependencies)
-- [`## Design` — required-with-explicit-fallback, depends on `proposal`](#designmd--required-with-explicit-fallback-depends-on-proposal)
-- [`## Tasks` — required, depends on `proposal`](#tasksmd--required-depends-on-proposal)
+- [The nine definition sections](#the-nine-definition-sections)
+- [`## Impact` — the parsed sub-heading](#-impact--the-parsed-sub-heading)
+- [`## Handoff` — small, and refreshed on events](#-handoff--small-and-refreshed-on-events)
+- [`## Tasks`](#-tasks)
+- [Execution metadata — optional, indented, additive](#execution-metadata--optional-indented-additive)
+- [`## Discoveries` and `## Outcome`](#-discoveries-and--outcome)
 
 ## The explicit-none rule
 
-Every section of `## Problem`/`## Proposal` and `## Design` is **required-with-explicit-fallback**: the heading
-always exists, and a section with nothing in it is answered `- none` (in `## Design`, `- none —
-<reason>`). Never delete the heading, and never pad it with restated text from another section.
+A section with nothing in it is answered `- none — <reason>`. Never delete the heading, and never
+pad it with restated text from another section.
 
 An omission and a null are different facts. "We drew the boundary and nothing fell outside it" and
 "nobody ever drew the boundary" read identically when the section is missing, and only one of them
 is safe to build on. An explicit null is strictly more information than an absent heading, and it
 costs one line.
 
-`specs.py new <name>` stamps each file from `assets/specs/templates/{proposal,design,tasks}.md`.
-Fill the template's sections — do not invent new top-level headings, and never paste this
-doctrine into the artifact.
+Three rules follow, and the scoping is what keeps them from contradicting the derived stage:
 
-## `## Problem`/`## Proposal` — required, no dependencies
+1. **`- none — <reason>` counts as filled.**
+2. **A present-but-empty heading is malformed.** It is neither an answer nor a not-yet.
+3. **An absent heading before its own gate is legal** — a *not-yet*, not an omission.
 
-Five sections; keep it tight enough to read in one sitting.
+**Never invent the explicit none.** `- none — <reason>` is an *answer*; writing one the human never
+gave is worse than leaving the heading absent, because it looks decided. And never write thirteen
+of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
+without anyone having thought anything.
 
-- **`## Why`** — the problem or opportunity, in the repo's own terms (use
-  `docs/knowledge/glossary.md` vocabulary). One or two paragraphs. If a `specs/backlog/` task
-  seeded the plan, its gist is the germ of this section — sharpen it, do not just paste it.
-- **`## What Changes`** — the change in behavior or capability, as a short bulleted list of
-  outcomes (WHAT, not HOW — the how is `## Design`/the code). Each bullet is something a
-  reviewer could later check was delivered.
-- **`## Out of Scope`** — what the plan deliberately does NOT do, and why each was ruled out.
-  This is where a rejected adjacent idea goes so it stops being re-proposed, and where a
-  deferred piece is recorded as deferred rather than forgotten. `- none` when nothing was
-  excluded.
-- **`## Validation`** — how anyone confirms the plan worked: the commands and the output they
-  must produce, the fixtures, the invariants that must still hold. `- none` is a claim that the
-  plan is unverifiable by construction — make it deliberately or fill the section in.
-- **`## Impact`** — declared scope for human review, and the plan's **one parsed contract**.
+`specs.py new <slug>` stamps the frontmatter and `## Problem` alone, from
+`assets/specs/templates/spec.md`. Every other heading is created on first write by
+`specs.py section <slug> "<Heading>" --write`, in canonical position. Do not invent new top-level
+headings — one outside the canonical thirteen is a stray and `validate` flags it — and never paste
+this doctrine into the spec.
 
-### `## Impact` — the parsed sub-heading
+## The nine definition sections
 
-`## Impact` carries three sub-headings, and exactly one of them is machine-checked:
+`## Problem` … `## Risks`, all gated on `ready`. Keep the set tight enough to read in one sitting.
+
+- **`## Problem`** — the problem or opportunity and **why now**, in the repo's own terms (use
+  `docs/knowledge/glossary.md` vocabulary). One or two paragraphs. This is the only section a
+  freshly created spec carries.
+- **`## Proposal`** — the change as a short bulleted list of outcomes: WHAT will be true afterwards
+  that is not true now, never HOW. Each bullet is something a reviewer could later check was
+  delivered.
+- **`## Out of Scope`** — what the spec deliberately does NOT do, and why each was ruled out. This
+  is where a rejected adjacent idea goes so it stops being re-proposed, and where a deferred piece
+  is recorded as deferred rather than forgotten.
+- **`## Impact`** — declared scope for human review, and the spec's **one parsed contract** (below).
+- **`## Validation`** — how anyone confirms the spec worked: the commands and the output they must
+  produce, the fixtures, the invariants that must still hold. **Load-bearing**: a `## Tasks` item
+  with no `verify:` line falls back to it. `- none — <reason>` here is a claim that the spec is
+  unverifiable by construction — make it deliberately or fill the section in.
+- **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
+  contracts the design must not contradict (the relevant `docs/standards/`, the existing code
+  shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
+  material `/specs:conclude` later distils.
+- **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
+  the reason it lost. Per-decision alternatives stay inside `## Design`; this section is for the
+  ones that would have changed the spec's shape. **The rejected ones and why they lost are the
+  point** — the next person with the same idea reads why it was already turned down.
+- **`## Open Decisions`** — what is deliberately still undecided, and **how each gets decided** —
+  the evidence or the moment that settles it, never a bare "TBD". A task may be written to close
+  one (`- [ ] 6.5 Decide per ## Open Decisions whether …`).
+- **`## Risks`** — what could go wrong and the mitigation for each. A risk taken knowingly is
+  written `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
+
+## `## Impact` — the parsed sub-heading
+
+Three sub-headings, and exactly one is machine-checked:
 
 ```markdown
-### Standards this plan will write into docs/standards/
+### Standards this spec will write into docs/standards/
 
 - `docs/standards/auth/session-tokens.md` — how a session token is minted and revoked
 
-### Standards at `authority: background` this plan may resolve
+### Standards at `authority: background` this spec may resolve
 
 - `docs/standards/auth/rotation.md` — proves out, promote to `current` if it holds
 
-### Product code this plan expects to touch
+### Product code this spec expects to touch
 
 - `src/auth/session.ts` — the mint/revoke path
 ```
 
 `specs.py validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
 `sp-impact-uncovered` (warn) for any `docs/standards/**.md` path bulleted there that no `## Tasks`
-item names. Keep the heading text verbatim — it is the anchor; a `**Standards this plan will write
-into ...**` bold line is accepted too, for plans written before this format.
+item names. Keep the heading text verbatim — it is the anchor.
 
-The other two sub-headings are deliberately **not** parsed: they name paths the plan does not
-promise to write, and checking them would flag a plan for not delivering a doc it never claimed.
-A proposal with no such sub-heading declares nothing and is never flagged — the check is opt-in by
-writing the heading. An unfilled `<placeholder>` declares nothing either.
+The other two are deliberately **not** parsed: they name paths the spec does not promise to write,
+and checking them would flag a spec for not delivering a doc it never claimed. A spec with no such
+sub-heading declares nothing and is never flagged — **the check is opt-in by writing the heading**.
+An unfilled `<placeholder>` declares nothing either.
 
-## `## Design` — required-with-explicit-fallback, depends on `proposal`
+This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
+by a task is written during execution; anything the work merely reveals is one `specs.py discover`
+line and is written at conclude
+([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
+versus emergent `docs/`).
 
-**The file always exists.** Do not delete it to signal "no design was needed": an absent
-`## Design` cannot distinguish *we weighed the alternatives and there were none* from *nobody ever
-thought about it*, and those are opposite facts. Answer an empty section `- none — <reason>`.
+## `## Handoff` — small, and refreshed on events
 
-`## Design` is required as a **section set**, never as a **dependency** — `applyRequires` stays
-`["tasks"]`, so a bare scaffold does not block apply. It is reported instead: `specs.py validate`
-emits `sp-design-scaffold` (warn) for a file that is still the shipped scaffold, and `specs.py
-next` names it as the artifact to write while `## Tasks` is still unwritten.
+The context an executor needs and cannot derive: the state of play, the conventions in force, what
+was already tried. **Small by construction** — it is sent with every task, and it does not carry
+the human sections.
 
-Five sections:
+It is warned on (not gated) once the ready gate is met, and it is rewritten after **each committed
+task** rather than when someone judges it stale. Staleness is this section's only failure mode, and
+an event-bound rule is the one cure that survives an unattended run.
 
-- **`## Context`** — the constraints in play: relevant `docs/standards/` contracts (the design
-  must not contradict them), existing code shape, external limits.
-- **`## Decisions`** — each decision with the alternatives weighed and why this one. This is the
-  material that later distills into a `docs/standards/` or `docs/knowledge/` doc, so state it as
-  a durable rule, not a diary entry.
-- **`## Alternatives Considered`** — whole-shape alternatives rejected at the plan level, each
-  with the reason it lost. Per-decision alternatives stay inside `## Decisions`; this section is
-  for the ones that would have changed the plan's shape.
-- **`## Open Decisions`** — what is deliberately still undecided, and **how each gets decided** —
-  the evidence or the moment that settles it, never a bare "TBD". A task may be written to close
-  one (`- [ ] 6.5 Decide per ## Design §Open Decisions whether …`).
-- **`## Risks`** — what could go wrong and the mitigation for each.
+## `## Tasks`
 
-## `## Tasks` — required, depends on `proposal`
+The implementation checklist `specs.py` parses: checkboxes `- [ ] <id> <text>` grouped under
+`### N. <Section>` headings. `specs.py task --spec <slug> --check <id>` flips a box mechanically —
+never hand-edit the checkbox character.
 
-The implementation checklist `specs.py` parses. Format (owned by
-[spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §Artifact formats): checkboxes `- [ ] <id> <text>` grouped
-under `## N. <Section>` headings. `specs.py task --spec <slug> --check <id>` flips a box
-mechanically — never hand-edit the checkbox character.
+Shape it so `/specs:execute` can walk it top to bottom:
 
-Shape it so `/specs:apply` can walk it top to bottom:
-
-- **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests →
-  docs). Each item is one reviewable unit of work — small enough to check off honestly, large
-  enough not to be noise.
-- **The standards-writing items are explicit tasks, not an afterthought.** Every
-  `docs/standards/` path declared under `## Impact`'s parsed sub-heading gets its own checkbox —
-  e.g. `- [ ] 4.1 Write docs/standards/auth/session-tokens.md (authority: current once proved)`.
-  Applying the plan *is* proving the rule, so writing the standard is part of the work, honestly
-  `authority`-graded when it lands ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §Boundary). This is the
-  pairing `sp-impact-uncovered` checks: name the path in the task text so the match is findable.
-- **Verification belongs in the list** — a task whose completion is "tests pass" / "the standard
+- **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → docs).
+  Each item is one reviewable unit of work — small enough to check off honestly, large enough not
+  to be noise. Each is also **one commit**, so a section is what a `verification: per-section` spec
+  verifies after.
+- **The standards-writing items are explicit tasks, not an afterthought.** Every `docs/standards/`
+  path declared under `## Impact`'s parsed sub-heading gets its own checkbox — e.g.
+  `- [ ] 4.1 Write docs/standards/auth/session-tokens.md (authority: current once proved)`.
+  Building the spec *is* proving the rule, so writing the standard is part of the work, honestly
+  `authority`-graded when it lands. This is the pairing `sp-impact-uncovered` checks: **name the
+  path in the task text** so the match is findable.
+- **Verification belongs in the list** — a task whose completion is "tests pass" or "the standard
   is written and self-checks clean" is a task, not an implicit hope.
 
 Do not put `docs/knowledge/` captures or glossary terms in `## Tasks` as durable content — those
-route through `/docs:learn`/`/docs:define` at apply time; a task may *name* the
-capture ("- [ ] 5.2 Capture the retry-budget gotcha via /docs:learn") but the knowledge itself
-lives in its OKF home, never in the checklist.
+route through `/docs:learn` / `/docs:define`; a task may *name* the capture
+(`- [ ] 5.2 Capture the retry-budget gotcha via /docs:learn`) but the knowledge itself lives in its
+OKF home, never in the checklist.
 
-### Execution metadata — optional, indented, additive
+## Execution metadata — optional, indented, additive
 
-A checkbox MAY carry indented metadata lines directly beneath it. `specs.py` parses them and
-`/specs:apply` consumes them; `CHECKBOX_RE` is untouched, so every `## Tasks`
-written before this format parses identically and simply reports empty metadata.
+A checkbox MAY carry indented metadata lines directly beneath it:
 
 ```markdown
 - [ ] 3.2 Add rate limiting to the auth middleware
       files: src/middleware/auth.ts, src/config/limits.ts (new)
       pattern: src/middleware/cors.ts
       verify: pnpm test middleware/
+      commit: a1b2c3d
 ```
 
-| Key | What it carries | Why apply wants it |
+| Key | What it carries | Why execute wants it |
 | --- | --- | --- |
 | `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
-| `verify:` | the command that proves the task done | apply runs it under the plan's `verification` policy; a task with no `verify:` falls back to the proposal's `## Validation` |
+| `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation` |
+| `commit:` | the commit that implemented this task | **written by the tool, never by hand** (`task --check --commit`), so code and spec stay linked without a trailer inside the commit message |
 
-Write them where they earn their place — a task touching three known files with an obvious test
-command deserves all three; a one-line doc edit deserves none. Metadata that restates the task
-text is noise.
+Write the first three where they earn their place — a task touching three known files with an
+obvious test command deserves all three; a one-line doc edit deserves none. Metadata that restates
+the task text is noise. `commit:` is not written by an author at all; it appears when the task is
+ticked.
 
 **`[P]` marks a task parallel-eligible**, written right after the id:
 
@@ -162,14 +181,34 @@ text is noise.
       files: src/config/limits.ts
 ```
 
-Set it **here, at propose time** — apply never infers it. It is honoured only when the marked
-tasks' `files:` sets are provably disjoint and none writes into `docs/`, which `specs.py parallel`
-checks mechanically. Serial is the default and needs no marker: without proven disjunction,
-parallel execution trades wall-clock for merge conflicts and loses on both.
+Set it **here, at definition time** — execution never infers it. It is honoured only when the
+marked tasks' `files:` sets are provably disjoint and none writes into `docs/`, which
+`specs.py parallel` checks mechanically. Serial is the default and needs no marker: without proven
+disjunction, parallel execution trades wall-clock for merge conflicts and loses on both.
 
-### The verification policy is the plan's, not the task's
+**A blocked task is a visible marker, not a hidden counter** —
+`- [!] 2.3 <title> — blocked: <reason>`, written by `task --block --reason`, skipped by `next`.
 
-`per-task` / `per-section` (default) / `end-of-plan`, recorded in the spec's frontmatter by
-`specs.py new --verification` at propose time. It answers *when* the checks run; `verify:` answers
-*what* runs. Deciding it here is what keeps `/specs:apply` from having to guess, or
-from stopping mid-implementation to ask.
+### The verification policy is the spec's, not the task's
+
+`per-task` / `per-section` (default) / `end-of-plan`, recorded in frontmatter. It answers *when* the
+checks run; `verify:` answers *what* runs. Declaring it during definition is what keeps
+`/specs:execute` from having to guess, or from stopping mid-build to ask.
+
+## `## Discoveries` and `## Outcome`
+
+**`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
+`specs.py discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
+later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
+inconvenient. Each line is resolved **in place** by `/specs:develop`'s discoveries bank, so
+provenance is never lost:
+
+```markdown
+- the rate limiter double-counts retries -> promoted: fix-retry-accounting
+- the config loader is slow on cold start -> dismissed: acceptable, runs once
+```
+
+**`## Outcome`** is the archive gate, written at close-out: what shipped, what was left out, what
+the next reader needs to know — **including the merge strategy**, since a squash changes what a
+future reader can resolve from a `commit:` field. For an abandoned spec, the reason it will not be
+built is the whole content.

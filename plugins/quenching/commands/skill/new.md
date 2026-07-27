@@ -1,5 +1,5 @@
 ---
-description: Mint or edit ONE command in this repo's .claude surface — one file per entry point
+description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Not for: a subagent definition → /skill:agent:new; a hook → /skill:hook:new; measuring a command → /skill:eval.
 argument-hint: [skill-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
@@ -14,8 +14,11 @@ runs. Claude Code merged commands into skills, so there is no `SKILL.md` half an
 mirror: the command's path IS its identity, and the surface stays predictable because that path
 tells where the command acts. The axis, naming, and registry format live in
 [skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md); how the
-body itself is written lives in [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md) —
-this skill owns both, and `/skill:align` cites them. Molds live at
+body itself is written lives in [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md);
+what a command may strategically use — fork, pins, hooks, the invocation controls — and what
+each lever costs lives in
+[skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md) —
+this skill owns all three, and `/skill:align` cites them. Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
 
 ## Doctrine
@@ -74,7 +77,19 @@ procedure lives outside it and is cited by absolute path, because a file parked 
 as a phantom command (`sk-no-description`). **Done when:** the path to be written is fixed,
 collision-free or resolved as an edit.
 
-### 4. Draft under the doctrine
+### 4. Choose the execution profile
+Walk [skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md):
+the default profile is **all levers off**, and each departure needs a stated buy — `context:
+fork` (+ `agent`, `background`) only for a self-contained, noisy, summary-out run with **no
+mid-flow gate**; an `effort`/`model` pin only for genuinely mechanical work, priced against
+the cache it invalidates inline; `paths` to bind a domain-bound command's autonomous firing
+to its folder; `disable-model-invocation` only for a human-must-choose command (it also
+removes the description from the always-on budget); frontmatter `hooks:` only for a check
+tied to this command's own workflow. For an **edit**, re-derive the profile and flag any
+lever whose original buy no longer holds. **Done when:** each non-default lever is listed
+with its one-line reason — or the profile is stated as default.
+
+### 5. Draft under the doctrine
 Fill `automation/command.md` per
 [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md): description front-loads the leading
 concept, one verbatim trigger per branch in the second sentence, `Not for:` boundary;
@@ -85,16 +100,17 @@ route a spoken request here, so a description trimmed to a `/`-menu label routes
 (sediment, sprawl, negation, …), keep the rest. **Done when:** the draft passes the
 doctrine's failure-mode table read top to bottom.
 
-### 5. Present ONE plan → gate on the OK
-Show: axis value + bound folder, the command path, every file (the command, rule if planned,
+### 6. Present ONE plan → gate on the OK
+Show: axis value + bound folder, the command path, **the execution profile** (each
+non-default lever with its reason, or "default"), every file (the command, rule if planned,
 registry create-or-regenerate, log), and the tail steps. Wait for the single confirmation.
 **Done when:** the user has answered; declined → report "nothing written" and stop.
 
-### 6. Write
+### 7. Write
 Write the command file from `automation/command.md` — frontmatter and body in the one file;
 write the rule if planned. **Done when:** every planned file exists with its planned content.
 
-### 7. OKF tail (bundle present)
+### 8. OKF tail (bundle present)
 Create `docs/documentation/reference/automation.md` from `automation/registry.md` first if it is
 absent (it was in the plan) — `registry reindex` refuses a missing doc (`sk-no-registry`) or a
 doc with no markers (`sk-no-zone`) rather than placing a table at a guessed anchor in curated
@@ -108,12 +124,12 @@ Update `documentation/reference/`'s `index.md` and append to `log.md`
 command coined a new repo-specific term, **offer** ONE `knowledge/glossary.md` entry — the user
 decides. **Done when:** `registry reindex` exits 0, the index is honest, and the log is appended.
 
-### 8. Self-check
+### 9. Self-check
 Ask the tool, do not read for it:
 ```bash
 skills.py lint <command-file> --json   # this command's conformance
 skills.py doctor --json                # the surface invariant it just changed
-skills.py registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 7
+skills.py registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 8
 ```
 `lint` decides the description caps, trigger position, the `Not for:` boundary, body length, the
 per-step criteria, unscoped `Bash`, and invocation coherence; `doctor` decides that every command

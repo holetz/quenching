@@ -25,12 +25,12 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   ONE table — every memory → its target home + doc path + whether it will be deleted. Execute the
   whole batch on a single OK. This is invasive (it writes docs **and** deletes memory); the user
   sees the full blast radius before anything moves. **Exception — cycle-authorized runs:**
-  invoked by `/docs:align-and-update` under its cycle-authorization contract
-  ([align-and-update-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-and-update-all/convergence.md)), the plan is
+  invoked as a stage of `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  ([align-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
 - **Three destinations only.** This skill writes into exactly two `docs/` homes — `standards/`
-  and `knowledge/` — plus `specs/backlog/` for a **task** (a quenching-managed folder outside
-  the OKF bundle). A memory whose natural fit is a
+  and `knowledge/` — plus `specs/plans/` for a **unit of work** (a quenching-managed folder
+  outside the OKF bundle). A memory whose natural fit is a
   `vision`, `documentation`, or `reference` doc is **re-routed to the nearest of the three** per the routing
   table ([docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md)); a memory that fits none of
   them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
@@ -121,12 +121,12 @@ for h in standards knowledge; do
   echo "== docs/$h =="; cat "docs/$h/index.md" 2>/dev/null
   find "docs/$h" -maxdepth 2 -name index.md 2>/dev/null
 done
-echo "== specs/backlog =="; cat "specs/backlog/index.md" 2>/dev/null
+echo "== specs/plans =="; cat "specs/plans/index.md" 2>/dev/null
 ```
 
 Then apply [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md): map by content (type is a
 hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
-`knowledge/` (in `docs/`) plus `specs/backlog/` (a `task`); a memory whose natural fit is `vision`,
+`knowledge/` (in `docs/`) plus `specs/plans/` (a spec); a memory whose natural fit is `vision`,
 `documentation`, or `reference` is **re-routed to the nearest of the three** per the routing table, and a
 memory that fits none is flagged. Split multi-fact memories. Mark `user` memories and any
 unroutable fact as **KEEP (ask)** — not for deletion.
@@ -145,11 +145,14 @@ stamp → index → log → glossary → self-check (against
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
   line is `**Creation**: [<title>](/docs/<path>.md) — migrated from project memory`.
-- A **task** row instead follows the `/specs:capture` capture path: stamp the `task.md` mold
-  into `specs/backlog/<slug>.md`, regenerate its DERIVED zone, and run the on-write self-check
-  per [specs-capture/backlog-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-capture/backlog-zone.md)
-  (the OKF hook does not cover the backlog); the bundle-log line is
-  `**Creation**: [<title>](/specs/backlog/<slug>.md) — migrated from project memory`.
+- A **unit of work** row instead follows the `/specs:create` path: run `specs.py new <slug>` and
+  write the memory's content into `## Problem` and nothing else, regenerate the listing zone with
+  `specs.py plans reindex`, and run the on-write self-check per
+  [specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+  (the OKF hook does not cover `specs/`); the bundle-log line is
+  `**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — migrated from project memory`.
+  **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
+  `priority`: an unranked spec is `/specs:triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` and prune its `- [..](..)` line
   from `MEMORY.md`. A failed write leaves that memory untouched — write-then-verify-then-delete,
   and a per-slice executor sub-agent honors the same contract (never deleting ahead of a landed,
@@ -169,8 +172,8 @@ if it ends empty. If the `okf-validate.py` hook is wired, it machine-verifies ea
 - Never skip the single up-front plan+confirmation — this writes docs and deletes memory. A
   cycle-authorized run (convergence.md §contract) replaces the gate with narration; the plan is still
   presented in full and write-then-verify-then-delete still holds.
-- Never write outside the three destinations (`standards/` + `knowledge/` in `docs/`, or a task
-  in `specs/backlog/`) — re-route to the nearest, or flag-and-keep; never fabricate a
+- Never write outside the three destinations (`standards/` + `knowledge/` in `docs/`, or a spec
+  in `specs/plans/`) — re-route to the nearest, or flag-and-keep; never fabricate a
   `vision`/`documentation`/`reference`/`catalog` doc from a memory.
 - Fan-out never fractures the single up-front plan, never skips a memory, and never lets a
   sub-agent delete ahead of a landed, self-checked doc.

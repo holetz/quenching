@@ -43,8 +43,8 @@ procedure live with `/docs:add`
 - **An unlinked entry is a valid, permanent state** — not a gap to chase, no escalation.
 - **Plan first, one confirmation.** Merge every slice into ONE consolidated list before any
   write (mirrors `/docs:align`/`/docs:import-memory`'s posture). **Exception —
-  cycle-authorized runs:** invoked by `/docs:align-and-update` under its cycle-authorization contract
-  ([align-and-update-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-and-update-all/convergence.md)), the
+  cycle-authorized runs:** invoked as a stage of `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  ([align-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)), the
   consolidated plan is presented as narration, not a gate — this skill has no code-coupled
   items, so cycle-authorized means zero pauses.
 - **MERGE, never clobber; keep it sorted; skip what's already listed** — identical contract

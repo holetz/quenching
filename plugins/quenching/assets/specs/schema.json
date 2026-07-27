@@ -1,6 +1,6 @@
 {
   "schema": "spec-lifecycle",
-  "version": "2.0.0",
+  "version": "3.0.0",
 
   "filename": {
     "pattern": "^(\\d{4}-\\d{2}-\\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
@@ -11,10 +11,57 @@
 
   "frontmatter": {
     "required": ["slug", "title", "verification"],
-    "optional": ["refined", "outcome"],
+    "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge", "outcome"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
-    "note": "No `created` field — the filename's date prefix is that fact. No `phase` field — the folder is that fact."
+
+    "records": {
+      "priority": {
+        "fields": ["level", "criticality", "complexity", "date"],
+        "writtenBy": "triage",
+        "writeOnce": false,
+        "why": "a human's ranking of this spec against every other one — nothing in the file, the filesystem or git can compute it"
+      },
+      "refined": {
+        "fields": ["mode", "date"],
+        "writtenBy": "develop",
+        "writeOnce": false,
+        "why": "that a real interrogation happened, and in which mode — an unrefined spec looks identical to a refined one from its sections alone"
+      },
+      "approved": {
+        "fields": ["date"],
+        "writtenBy": "develop, or execute inline",
+        "writeOnce": true,
+        "why": "that a human said go. The one fact the backlog/ -> ready/ git mv carried; an agent can satisfy every section itself, so section completeness cannot stand in for it"
+      },
+      "branch": {
+        "fields": ["base", "work"],
+        "writtenBy": "execute",
+        "writeOnce": true,
+        "why": "after a merge, git cannot say what the base was"
+      },
+      "reviewed": {
+        "fields": ["date"],
+        "writtenBy": "conclude",
+        "writeOnce": false,
+        "why": "that a human read the whole branch diff — restamped if the diff changes and is read again"
+      },
+      "merge": {
+        "fields": ["strategy", "commit"],
+        "writtenBy": "conclude",
+        "writeOnce": true,
+        "why": "the strategy was a choice and the sha is its result; under a squash the per-task commit: shas survive only on the branch, which is why the strategy is recorded rather than inferred"
+      },
+      "outcome": {
+        "valuesFrom": "frontmatter.outcome",
+        "writtenBy": "conclude",
+        "writeOnce": true,
+        "why": "a human's verdict on whether the work was completed or dropped"
+      },
+      "note": "Every record here is a human judgment no derivation can reproduce — that is the whole admission test, and it is why there is no `created`, no `phase`, no `ready` and no attempt counter. Read top to bottom in `optional` order, the records narrate the spec's history: ranked, interrogated, approved, built, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition, where rewriting the value would falsify a fact that already happened. `writeOnce: false` marks a standing judgment its OWNING command may restamp — a triage sweep re-ranks, a second interrogation records a new mode, a re-read diff is reviewed again — which is why those three carry their own `date`. In neither case may a command other than `writtenBy` touch the record."
+    },
+
+    "note": "Frontmatter records human judgments; the filesystem, git and section presence record everything else. No `created` field — the filename's date prefix is that fact. No `phase` field — the folder is that fact. No `ready` field — the ten gate sections are that fact (stages.derived.ready). See `records` for what each optional key holds and why it earns its place."
   },
 
   "sections": [
@@ -44,30 +91,12 @@
 
   "phases": [
     {
-      "id": "backlog",
-      "folder": "backlog",
-      "role": "definition",
+      "id": "plans",
+      "folder": "plans",
+      "role": "active",
       "entryGate": ["Problem"],
-      "warnWhenEmpty": []
-    },
-    {
-      "id": "ready",
-      "folder": "ready",
-      "role": "execution",
-      "entryGate": [
-        "Problem",
-        "Proposal",
-        "Out of Scope",
-        "Impact",
-        "Validation",
-        "Design",
-        "Alternatives Considered",
-        "Open Decisions",
-        "Risks",
-        "Tasks"
-      ],
-      "warnWhenEmpty": ["Handoff"],
-      "note": "Promote to ready/ IS the human OK to build. `Tasks` is in the gate because nothing may enter the execution phase with nothing to execute — the v2 form of v1's applyRequires:[tasks]."
+      "warnWhenEmpty": [],
+      "note": "ONE folder for a spec's whole pre-archive life. v3 folded backlog/ + ready/ into it: that split bought exactly one fact no derivation reproduces — a human said go — and that fact is now `approved` in frontmatter. Everything the split implied about completeness is derived (stages.derived.ready)."
     },
     {
       "id": "archive",
@@ -75,12 +104,12 @@
       "role": "closed",
       "entryGate": ["Outcome"],
       "warnWhenEmpty": [],
-      "note": "Only `Outcome` is gated: an abandoned spec may be promoted straight from backlog/, where the ready set was never reached."
+      "note": "Only `Outcome` is gated: an abandoned spec may be promoted straight from plans/, where the ready stage was never reached."
     }
   ],
 
   "promote": {
-    "sequence": ["backlog", "ready", "archive"],
+    "sequence": ["plans", "archive"],
     "explicitNone": "- none — <reason>",
     "filledRule": "An explicit none counts as FILLED. A heading present with an empty body is malformed and refuses. An absent heading before its own gate is legal.",
     "openTasks": {
@@ -88,18 +117,21 @@
       "abandoned": "allow",
       "forceFlag": "--force",
       "note": "Promoting to archive with outcome `done` while `- [ ]` boxes remain exits 2 and lists them, overridable with --force. Outcome `abandoned` is always allowed — open tasks are expected when closing out a spec that will not be built."
-    }
+    },
+    "note": "One hop, plans/ -> archive/. The backlog/ -> ready/ hop is gone: with one folder there is nothing to move, and the human OK it recorded is now `approved` in frontmatter."
   },
 
   "stages": {
     "resolution": "last-match-wins",
     "derived": [
-      { "id": "captured",  "phase": "backlog", "when": { "filled": ["Problem"] } },
-      { "id": "proposed",  "phase": "backlog", "when": { "filled": ["Proposal"] } },
-      { "id": "designed",  "phase": "backlog", "when": { "filled": ["Design"] } },
-      { "id": "refined",   "phase": "backlog", "when": { "frontmatter": "refined" } },
-      { "id": "executing", "phase": "ready",   "when": { "anyOf": [{ "taskState": ["x", "!"] }, { "filled": ["Handoff"] }] } }
+      { "id": "captured",  "phase": "plans", "when": { "filled": ["Problem"] } },
+      { "id": "proposed",  "phase": "plans", "when": { "filled": ["Proposal"] } },
+      { "id": "designed",  "phase": "plans", "when": { "filled": ["Design"] } },
+      { "id": "refined",   "phase": "plans", "when": { "frontmatter": "refined" } },
+      { "id": "ready",     "phase": "plans", "when": { "filled": ["Problem", "Proposal", "Out of Scope", "Impact", "Validation", "Design", "Alternatives Considered", "Open Decisions", "Risks", "Tasks"] }, "warnWhenEmpty": ["Handoff"], "gate": true },
+      { "id": "approved",  "phase": "plans", "when": { "frontmatter": "approved" } },
+      { "id": "executing", "phase": "plans", "when": { "anyOf": [{ "taskState": ["x", "!"] }, { "filled": ["Handoff"] }] } }
     ],
-    "note": "Stages are DERIVED from heading presence and frontmatter, never declared. Declared state is forgotten on edit; derived state regresses automatically when a section empties."
+    "note": "Stages are DERIVED from heading presence and frontmatter, never declared. Declared state is forgotten on edit; derived state regresses automatically when a section empties. `ready` is the v3 replacement for the ready/ folder — the SAME ten sections that were its entryGate, resolved by computation instead of a git mv. It carries `gate: true`, which marks it as the one stage rule that is also a gate: it is the single source of the ready set, so nothing may restate those ten sections elsewhere in this file. It no longer refuses anything — a gate that moves no file is a floor `execute` reports against. `approved` sorts after it because a human may say go before every section is filled (execute asks inline and stamps rather than refusing), and `executing` sorts last because it dominates all of them."
   }
 }

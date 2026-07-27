@@ -12,8 +12,10 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 
 | Doc | Covers |
 | --- | --- |
-| [plan-artifacts.md](plan-artifacts.md) | The required sections of a plan's artifacts, the parsed `## Impact` declaration, the refinement record, and what `applyReady` does and does not guarantee |
-| [task-execution.md](task-execution.md) | How a plan's task is executed — verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation + `[P]` disjunction rules |
+| [plan-artifacts.md](plan-artifacts.md) | The one-file spec, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed `## Impact` sub-heading, the duplicated template, and how to read a v1 plan in `specs/archive/` |
+| [plan-git-record.md](plan-git-record.md) | How a plan's work is recorded in git — the per-task commit field, the branch and merge frontmatter records, the squash caveat, and the read-if-present contract for a target's own docs/standards/git/ |
+| [plan-lifecycle.md](plan-lifecycle.md) | The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, and the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else |
+| [task-execution.md](task-execution.md) | How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split and the commands that own each level, and the delegation + `[P]` disjunction rules |
 
 ## Candidate sub-standards
 

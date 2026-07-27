@@ -27,7 +27,10 @@ restates the number, so the rule and its checker cannot drift apart.
 | Every numbered step has a criterion | `lint` | `sk-step-criterion` |
 | `allowed-tools` is scoped | `lint` | `sk-unscoped-bash` |
 | Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value` |
+| `context: fork` never beside a mid-flow gate | `lint` | `sk-fork-gate` (error) |
+| `effort`/`context` values Claude Code can parse | `lint` | `sk-profile-value` |
 | **The no-op test, sediment, sprawl, positive prescription** | **a reader** | — |
+| **Every non-default lever carries a stated buy** | **a reader** | — |
 
 The last row is the boundary. Each of those needs a claim about how an agent would *behave*, and
 no parser makes one. They are why this file exists, and why a clean `lint` is a floor rather than
@@ -89,6 +92,15 @@ State the target behavior, not the prohibition: "name the file after the folder 
 forbidden, which is the opposite of predictability. Negation is reserved for **hard
 invariants** whose violation is irreversible or costly (a deletion, a clobber, an unguarded
 write), stated once, with the consequence attached.
+
+## The execution profile
+
+The writing rules above govern what a command **says**; which capabilities it **uses** —
+`context: fork`, a model or effort pin, a subagent, a hook, the invocation-surface controls,
+dynamic context — is a second authored decision set with its own doctrine, owned by
+[skill-new/capabilities.md](capabilities.md). The default profile is empty; every departure
+is priced there and enters the mint's plan with its stated reason. A lever whose buy nobody
+can state is the **sediment** failure mode wearing frontmatter.
 
 ## Named failure modes
 

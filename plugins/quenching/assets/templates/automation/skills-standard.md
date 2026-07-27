@@ -49,10 +49,24 @@ Chosen at mint, never defaulted into:
 - `user-invocable: false` **hides the `/` menu entry**; it does **not** block programmatic
   invocation. With no wrapper left to hide behind, it now hides the entry point itself.
 - `disable-model-invocation: true` is the **only** field that blocks programmatic invocation.
-  It also stops a conductor reaching the command by name and a spoken trigger routing to it.
+  It also stops a conductor reaching the command by name and a spoken trigger routing to it —
+  and removes the description from always-on context, so `budget` counts the command at 0.
 - Both at once leaves **no caller** — reported as `sk-unreachable`, an error.
 - `context: fork` is forbidden on any command that gates on a mid-flow confirmation: a forked
-  context cannot present the plan whose OK the run depends on.
+  context cannot present the plan whose OK the run depends on (`sk-fork-gate` beside an
+  `AskUserQuestion` grant).
+
+## The execution profile
+
+Beyond invocation, every capability a command uses — `context: fork` (+ `agent`,
+`background`), a `model`/`effort` pin, `paths`, frontmatter `hooks:` — is an **authored,
+priced decision**: the default profile is all levers off, and each departure enters the
+mint's plan with its stated buy. A fork fits self-contained, noisy, summary-out work only;
+an inline pin invalidates the session's prompt cache; `paths` binds a domain-bound command's
+autonomous firing to its folder. Subagents are governed by
+[agents.md](agents.md) and hooks by [hooks.md](hooks.md); the full pricing doctrine lives in
+the plugin (`${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md`) and is
+cited, never restated.
 
 ## `allowed-tools` is always scoped
 
@@ -66,8 +80,11 @@ a command may hold an unscoped grant **provided its body states the reason**.
 
 `skills.py` decides everything mechanical on this surface: `lint` (the caps, trigger position,
 the `Not for:` boundary, body length, a `**Done when:**` per step, tool scoping, invocation
-coherence), `doctor` (a non-empty description on every command, no two resolving to the same
-`/` path, kebab-case segments), `registry reindex`, and `budget` (what the surface costs before
+coherence, and the profile's decidable slice — `sk-fork-gate`, `sk-profile-value`), `doctor`
+(a non-empty description on every command, no two resolving to the same `/` path, kebab-case
+segments — plus the **report-only** wider surface: `agents/*.md` and wired hooks, as
+`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`,
+`sk-hook-unparseable`), `registry reindex`, and `budget` (what the surface costs before
 anything fires). Uniform `--json`; exit **0** ok · **1** findings ·
 **2** refusal, with errors setting the exit code and warnings never doing so. Findings are named
 by their `sk-*` code.

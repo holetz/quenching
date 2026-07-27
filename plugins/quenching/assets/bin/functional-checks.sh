@@ -46,6 +46,10 @@ echo
 #
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
+#
+# It also covers re-homed references for free: /specs:status cites a reference directory that
+# the specs-flow-consolidation fold renamed, so a stale citation fails here rather than silently
+# reading nothing.
 # --------------------------------------------------------------------------- #
 echo "1. a collapsed command loads and cites its re-homed reference"
 ( cd "$REPO" && claude -p "/quenching:specs:status
@@ -68,7 +72,19 @@ check "$r" "read nothing under a skills/ tree"
 echo "2. a conductor invokes its stage by registry name"
 mkdir -p "$WORK/sandbox/.claude"
 ( cd "$WORK/sandbox" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )
-printf '{ "enabledPlugins": { "quenching@quenching": true } }\n' > "$WORK/sandbox/.claude/settings.json"
+
+# The sandbox must enable the plugin exactly the way THIS repo does. The marketplace name is
+# whatever `claude plugin marketplace add` registered it under — usually the checkout's directory
+# name, NOT the `name` inside marketplace.json — so hardcoding it here pins the script to one
+# machine and silently reports `Unknown command` as a routing failure. Copy the repo's own keys.
+python3 -c '
+import json,sys
+try: fm = json.load(open(sys.argv[1])).get("enabledPlugins") or {}
+except Exception: fm = {}
+json.dump({"enabledPlugins": fm}, open(sys.argv[2], "w"))
+sys.exit(0 if fm else 1)
+' "$REPO/.claude/settings.json" "$WORK/sandbox/.claude/settings.json" \
+  || { emit "FAIL" "$REPO/.claude/settings.json declares no enabledPlugins — check 2 cannot run"; FAIL=$((FAIL+1)); }
 ( cd "$WORK/sandbox" && claude -p "/quenching:align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
@@ -93,8 +109,8 @@ probe () {
   if grep -q "\"$3\"" <<<"$(tools Skill "$WORK/3$1.jsonl")"; then r=yes; else r=no; fi
   check "$r" "\"$2\" -> $3"
 }
-probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching:specs:capture"
-probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching:specs:capture"
+probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching:specs:create"
+probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching:specs:create"
 probe c "add a standard: we always use snake_case for database columns"                       "quenching:docs:add"
 
 echo

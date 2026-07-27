@@ -13,14 +13,19 @@ verification: <VERIFICATION>
      first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
-     THE PHASE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
-     `- none — <reason>` when it has nothing in it — only once ITS OWN phase gate is reached:
+     THE STAGE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
+     `- none — <reason>` when it has nothing in it — only once ITS OWN gate is reached:
 
        new (capture)        `## Problem`
-       promote -> ready/    the nine definition sections (`## Problem` .. `## Risks`)
+       ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready/  (warn only)  `## Handoff` non-empty
+       ready (warn only)    `## Handoff` non-empty
        promote -> archive/  `## Outcome`
+
+     `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
+     life, and filling those ten sections is what makes it ready. Nothing refuses on that
+     gate — it is a floor `execute` reports against, and the human's go-ahead is the
+     `approved:` frontmatter record, asked for inline.
 
      Before its gate, a heading's absence is NOT an omission — it is a not-yet. After its
      gate, three rules decide whether a section counts as filled:
@@ -48,14 +53,14 @@ verification: <VERIFICATION>
 
 ## Proposal
 
-<!-- AUDIENCE: human. Gate: promote -> ready/.
+<!-- AUDIENCE: human. Gate: ready (derived).
 
      The change at a high level, in bullet points. What will be true afterwards that is not
      true now. -->
 
 ## Out of Scope
 
-<!-- AUDIENCE: human. Gate: promote -> ready/.
+<!-- AUDIENCE: human. Gate: ready (derived).
 
      What this spec deliberately does NOT do, and why it was ruled out.
 
@@ -65,7 +70,7 @@ verification: <VERIFICATION>
 
 ## Impact
 
-<!-- AUDIENCE: human + PARSED. Gate: promote -> ready/.
+<!-- AUDIENCE: human + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
      docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
@@ -94,7 +99,7 @@ verification: <VERIFICATION>
 
 ## Validation
 
-<!-- AUDIENCE: human + agent. Gate: promote -> ready/.
+<!-- AUDIENCE: human + agent. Gate: ready (derived).
 
      How anyone confirms this spec actually worked: the commands to run and the output they
      must produce, the fixtures to check, the invariants that must still hold afterwards.
@@ -106,7 +111,7 @@ verification: <VERIFICATION>
 
 ## Design
 
-<!-- AUDIENCE: human. Gate: promote -> ready/.
+<!-- AUDIENCE: human. Gate: ready (derived).
 
      The choices made and their rationale, plus the background and binding contracts this
      design must not contradict. For each decision: what was chosen, why, and what was
@@ -116,7 +121,7 @@ verification: <VERIFICATION>
 
 ## Alternatives Considered
 
-<!-- AUDIENCE: human. Gate: promote -> ready/.
+<!-- AUDIENCE: human. Gate: ready (derived).
 
      Whole-shape alternatives rejected at the spec level, each with the reason it lost.
      Per-decision alternatives can stay inside `## Design`; this section is for the ones that
@@ -126,7 +131,7 @@ verification: <VERIFICATION>
 
 ## Open Decisions
 
-<!-- AUDIENCE: human. Gate: promote -> ready/.
+<!-- AUDIENCE: human. Gate: ready (derived).
 
      What is deliberately still undecided, and how each will be decided — the evidence or the
      moment that settles it, not "TBD".
@@ -135,7 +140,7 @@ verification: <VERIFICATION>
 
 ## Risks
 
-<!-- AUDIENCE: human. Gate: promote -> ready/.
+<!-- AUDIENCE: human. Gate: ready (derived).
 
      What could go wrong, and the mitigation for each. A risk taken knowingly is written
      `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
@@ -144,21 +149,21 @@ verification: <VERIFICATION>
 
 ## Handoff
 
-<!-- AUDIENCE: agent. Warned on when empty in ready/.
+<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
 
      The context an executor needs and cannot derive: the state of play, the conventions in
      force, what was already tried. Small by construction — it is sent with EVERY task.
 
      Refresh is bound to EVENTS, not judgment: the orchestrator rewrites this after each
-     committed task and at every promote. Staleness is this section's failure mode. -->
+     committed task. Staleness is this section's failure mode. -->
 
 ## Tasks
 
-<!-- AUDIENCE: agent. Gate: promote -> ready/.
+<!-- AUDIENCE: agent. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
-     `[ ]` / `[x]` character.
+     `[ ]` / `[x]` character. `--commit <sha>` records what implemented it.
 
      A checkbox MAY carry indented metadata lines directly beneath it:
 
@@ -166,6 +171,7 @@ verification: <VERIFICATION>
              files: src/middleware/auth.ts, src/config/limits.ts (new)
              pattern: src/middleware/cors.ts
              verify: pnpm test middleware/
+             commit: a1b2c3d
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
@@ -173,6 +179,8 @@ verification: <VERIFICATION>
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
                task falls back to `## Validation`.
+     commit:   written by `task --check --commit`, never by hand — the commit that
+               implemented this task, so code and spec stay linked without a git trailer.
 
      `[P]` right after the id marks a task parallel-eligible:
 
@@ -185,7 +193,7 @@ verification: <VERIFICATION>
 
      A BLOCKED task is a visible marker, not a hidden counter:
 
-       - [!] 2.3 Implement the gate check — blocked: schema.json has no `ready` set yet
+       - [!] 2.3 Implement the gate check — blocked: the vendor SDK has no hook for it
 
      Written by the orchestrator when it decides to stop retrying; `next` skips it. There is
      no attempt budget — an honest written reason serves better than a counter nobody sees. -->
