@@ -1,5 +1,6 @@
 {
   "enabledPlugins": {
-    "quenching@quenching": true
+    "quenching@quenching": true,
+    "quenching@claude-quenching": true
   }
 }
