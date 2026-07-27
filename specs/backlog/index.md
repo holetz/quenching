@@ -55,7 +55,7 @@ backlog/
        then "By theme": alphabetical bullets `**<tag>** (n): [task-a](task-a.md), …`
        (a task with two tags appears under both).
 -->
-**6 specs** · 6 captured
+**8 specs** · 8 captured
 
 ### Captured
 
@@ -67,6 +67,8 @@ backlog/
 | [decide-sp-unrefined-severity](2026-07-25-decide-sp-unrefined-severity.md) | Decide whether sp-unrefined should escalate to error | 2026-07-25 |
 | [expose-finding-advisory-as-data](2026-07-25-expose-finding-advisory-as-data.md) | Expose a finding's advisory/blocking status as data in okf-validate --json | 2026-07-25 |
 | [split-specs-py-backlog-renderer](2026-07-25-split-specs-py-backlog-renderer.md) | Split the backlog-zone renderer out of specs.py | 2026-07-25 |
+| [collapse-skills-into-commands](2026-07-26-collapse-skills-into-commands.md) | Collapse the 28 skill+wrapper pairs into one command file per entry point | 2026-07-26 |
+| [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
 <!-- END GENERATED -->
 
 ## Completed ledger
