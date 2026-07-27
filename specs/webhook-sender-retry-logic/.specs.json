@@ -1,0 +1,7 @@
+{
+  "schema": "spec-driven",
+  "name": "webhook-sender-retry-logic",
+  "title": "Retry logic on the webhook sender",
+  "created": "2026-07-26T23:58:02",
+  "backlogTask": null
+}

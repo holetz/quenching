@@ -40,28 +40,37 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
        | --- | --- |
        | [imports.md](code/imports.md) | <the doc's description:> |
 -->
+### architecture/
+
+| Doc | Covers |
+| --- | --- |
+| [plugin-layout.md](architecture/plugin-layout.md) | commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path |
+
 ### automation/
 
 | Doc | Covers |
 | --- | --- |
-| [skills.md](automation/skills.md) | How the plugin's skills are classified, authored, named, mirrored as commands, and swept into conformance |
+| [context-budget.md](automation/context-budget.md) | What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling |
+| [skill-evaluation.md](automation/skill-evaluation.md) | What it takes to claim a skill works — with/without runs in isolated agents, assertions graded on quoted evidence, and a reported delta |
+| [skills.md](automation/skills.md) | How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point |
 
 ### naming/
 
 | Doc | Covers |
 | --- | --- |
-| [command-surface.md](naming/command-surface.md) | How the plugin's skills and command wrappers are named, namespaced, and paired one-to-one |
+| [command-surface.md](naming/command-surface.md) | How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity |
 
 ### quality/
 
 | Doc | Covers |
 | --- | --- |
 | [bundle-verification.md](quality/bundle-verification.md) | What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, and the resource glob-set format |
+| [surface-verification.md](quality/surface-verification.md) | How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, and the three preconditions a functional check must satisfy to measure what it claims |
 
 ### workflows/
 
 | Doc | Covers |
 | --- | --- |
-| [plan-artifacts.md](workflows/plan-artifacts.md) | The required sections of a plan's artifacts, the parsed Impact declaration, the refinement record, and what applyReady does and does not guarantee |
-| [task-execution.md](workflows/task-execution.md) | How a plan's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and `[P]` disjunction rules |
+| [plan-artifacts.md](workflows/plan-artifacts.md) | The one-file spec, its thirteen canonical sections, the phase gates and the phase-scoped explicit-none rule, promote-as-the-human-OK, and how to read a v1 plan in specs/archive/ |
+| [task-execution.md](workflows/task-execution.md) | How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules |
 <!-- END GENERATED -->

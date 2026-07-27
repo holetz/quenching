@@ -1,27 +1,28 @@
 ---
 type: standard
 title: Always-on context budget
-description: What a skill surface costs before anything fires — the two description caps, what when_to_use may carry, and the per-surface ceiling
-resource: plugins/claude-quenching/skills/*/SKILL.md, plugins/claude-quenching/commands/**
-tags: [automation, skills, context, budget, performance]
-timestamp: 2026-07-25
+description: What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling
+resource: plugins/claude-quenching/commands/**
+tags: [automation, commands, context, budget, performance]
+timestamp: 2026-07-26
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan — measured on this plugin's own 28-skill surface
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands (2026-07-26) — measured on this plugin's own 28-command surface
 maintainer: claude-quenching
 ---
 
 # Always-on context budget
 
-A skill's body loads only when the skill fires. Its **metadata never stops loading**: the
-`description` and `when_to_use` of every skill, plus the `description` of every command wrapper,
-are in context on every session before a single skill is selected. That is the budget this
-standard governs. The mechanical rules live in [skills.md](skills.md) §The verifier and are
-implemented by `skills.py`; this file owns the numbers and what may occupy them.
+A command's body loads only when the command fires. Its **`description` never stops loading**: the
+description of every command is in context on every session before a single command is selected.
+That is the budget this standard governs. The mechanical rules live in [skills.md](skills.md)
+§The verifier and are implemented by `skills.py`; this file owns the numbers and what may occupy
+them.
 
 Born `authority: background`: the ceiling below is **one surface's measurement**, not a proven
 threshold. It graduates to `current` once `skills.py budget` has run on this plugin plus at least
-two adopting repos.
+two adopting repos. The collapse supplied one much larger measurement on one surface, which is not
+that condition — a bigger number from the same repo is still one repo.
 
 ## Count the parsed value, never the YAML source
 
@@ -39,48 +40,43 @@ removes before Claude Code ever sees the field.
 
 This is not pedantry. Counting the source lines instead inflates a description by roughly two
 characters per line, which was enough to invent two cap violations on this plugin's own surface
-that the model never paid for: the two skills reported at 1,568 and 1,559 measure 1,497 and 1,444
+that the model never paid for: the two skills reported at 1,568 and 1,559 measured 1,497 and 1,444
 parsed, against a 1,536 cap. `skills.py` counts parsed, and any measurement offered against this
 standard must say which it used.
 
-## The two caps, per skill
+## The two caps, per command
 
 | Cap | Applies to | Code | Severity |
 | --- | --- | --- | --- |
-| **1,536** | `description` + `when_to_use` together | `sk-metadata-cap` | error — Claude Code truncates past it |
-| **1,024** | `description` alone | `sk-description-portable` | warning — the Agent Skills standard's hard limit |
+| **1,536** | `description` | `sk-metadata-cap` | error — Claude Code truncates past it |
+| **1,024** | `description` | `sk-description-portable` | warning — the Agent Skills standard's hard limit |
 
-They are different limits for different reasons and both apply.
+Both apply to the same field now. `when_to_use` was a Claude-Code-only extension carried by the
+skill half of a pair; with one file per entry point there is one description and nothing to add to
+it.
 
 **1,536** is what Claude Code will hold. What truncation eats is the **tail**, which is exactly
 where the `Not for:` routing boundary lives — so a description that overflows loses the part that
 tells the reader when *not* to fire it.
 
-**1,024** is the Agent Skills standard. `when_to_use` is a Claude-Code-only extension; a surface
-that relies on it is not portable to any other host, and a description over 1,024 is not portable
-at all. This is a warning rather than an error because portability is a goal a repo may
-legitimately decline — but it should decline it on purpose.
+**1,024** is the Agent Skills standard, and a description over it is not portable to any other
+host. This is a warning rather than an error because portability is a goal a repo may legitimately
+decline — but it should decline it on purpose.
 
-## What each field may carry
+## What the description may carry
 
-**`description`** — three things, in this order, and nothing else:
+Three things, in this order, and nothing else:
 
-1. the leading concept: what the skill does and to what, in its own vocabulary;
+1. the leading concept: what the command does and to what, in its own vocabulary;
 2. the trigger phrases, quoted verbatim, one per distinct way a user asks — in the **second
    sentence**, so truncation cannot reach them (`sk-trigger-position`);
-3. the boundary: `Not for: <adjacent job> → <owning skill>` (`sk-no-boundary`).
+3. the boundary: `Not for: <adjacent job> → <owning command>` (`sk-no-boundary`).
 
-**`when_to_use`** — the job the skill is for, in one clause. It may add a relation the description
-does not state. It may **not** restate the `Not for:` boundary: that is the same routing
-information paid for twice inside one budget, and it is the doctrine's own **Duplication** failure
-mode. Trimming exactly this from 28 skills on this surface recovered 2,944 characters and lost
-nothing.
-
-**What belongs in neither** — how the skill works. The step order, the tool calls, the checks it
-runs: a reader who needs those has already fired the skill and loaded the body. A description's
-job is to let a reader predict **when it fires and what will exist when it finishes**, not how.
-Cutting exactly this prose from 17 over-limit descriptions on this surface recovered 2,605
-characters without touching a single trigger phrase.
+**What belongs in none of them** — how the command works. The step order, the tool calls, the
+checks it runs: a reader who needs those has already fired the command and loaded the body. A
+description's job is to let a reader predict **when it fires and what will exist when it
+finishes**, not how. Cutting exactly this prose from 17 over-limit descriptions on the
+pre-collapse surface recovered 2,605 characters without touching a single trigger phrase.
 
 ## The per-surface ceiling
 
@@ -91,25 +87,53 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **36,503 characters** — this plugin's measured baseline before the diet,
-across 28 skills and 28 wrappers. It is a number a run produced, not one somebody picked, and it
+The current default is **2,083 characters** — this plugin's measured total across its 28 commands
+after the collapse, on 2026-07-26. It is a number a run produced, not one somebody picked, and it
 is **revised only from a measurement**.
 
-`budget` **reports; it never refuses.** Over the ceiling exits 1 and lists the skills sorted by
-cost; exit 2 is unreachable from it. A surface may legitimately be large, and the decision to cut
-is a human's.
+**This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
+the 29th command crosses it on the day it is minted. Under §*A new command is not free* below,
+that is the signal working: `budget` **reports, it never refuses**, so crossing it prompts a human
+to re-measure and re-set rather than blocking anything. The previous default (36,503) was a
+pre-diet baseline the surface then sat 5,798 characters under, which meant it could never fire and
+therefore told nobody anything.
 
-Two things follow from the ceiling being per-surface rather than per-skill:
+`budget` over the ceiling exits 1 and lists the commands sorted by cost; exit 2 is unreachable from
+it. A surface may legitimately be large, and the decision to cut is a human's.
 
-- **A new skill is not free.** Minting one adds its metadata plus its wrapper's to every session
-  in the repo, forever. That is the honest cost to weigh against what the skill saves.
+Two things follow from the ceiling being per-surface rather than per-command:
+
+- **A new command is not free.** Minting one adds its description to every session in the repo,
+  forever. That is the honest cost to weigh against what the command saves.
 - **Trimming is bounded by discovery.** Where a description cannot shrink without dropping a
   trigger phrase, it is **reported, not trimmed** — which triggers earn their place is decided on
   measured should-trigger / should-not-trigger hit rates, not by whoever is editing that day.
 
+## What the collapse measured
+
+Collapsing 28 skill+wrapper pairs into 28 command files took the surface from **30,705** characters
+to **2,083** — a **93% cut**, ~7,676 to ~521 approximate tokens, off every session in every repo
+that installs the plugin.
+
+The saving is the *deletion of one of two descriptions*, not the compression of either. That
+distinction matters for what it cost: the deleted skill description is where the quoted trigger
+phrases and the `Not for:` boundary lived, so every command now reports `sk-trigger-position` and
+`sk-no-boundary` against a description written as a `/`-menu label. Both are warnings, so the
+budget looks clean while the routing information the two sections above call mandatory is absent.
+
+**Spoken routing was measured afterwards and survived** — three natural phrases each reached their
+command by description alone in a fresh process (see
+[../naming/command-surface.md](../naming/command-surface.md) §Why there is no longer a wrapper).
+So the number above is not hiding a broken surface. It is still true that **this number cannot
+tell you whether a surface routes** — cheapness and routability are independent, and only a
+should-trigger / should-not-trigger measurement decides the second. Read the two together.
+
+The collapse also left **real headroom**: at 2,083 against a former 30,705, restoring explicit
+triggers and boundaries to the surviving descriptions is affordable in a way it never was before.
+That is a decision for measured hit rates, not for the next person who happens to be editing.
+
 ## Rough conversion
 
 `budget` reports `approxTokens` as characters ÷ 4. It is a rule of thumb for the report, not a
-tokenizer count, and no decision should turn on the last digit. On this surface the diet moved
-~9,126 approximate tokens to ~7,738 — the useful signal is the direction and the order of
-magnitude.
+tokenizer count, and no decision should turn on the last digit. The useful signal is the direction
+and the order of magnitude.

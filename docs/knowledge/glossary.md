@@ -32,6 +32,10 @@ sentence, and **link out** rather than explaining in full here.
 
 ## Terms
 
+- [**Always-on metadata**](../standards/automation/context-budget.md) — the frontmatter
+  `description` of every command, resident in every session's context before anything fires and
+  therefore the only surface cost paid whether or not a command runs; measured by
+  `skills.py budget` from the parsed value, never the YAML source.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
@@ -40,6 +44,13 @@ sentence, and **link out** rather than explaining in full here.
   sub-stage (`captured`/`proposed`/`designed`/`refined`/`executing`), COMPUTED from which
   headings are filled rather than declared in a field, so it regresses on its own when a
   section empties instead of going stale.
+- [**Entry point**](../standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
+  path IS its identity (`commands/docs/add.md` → `/docs:add`); since Claude Code merged commands
+  into skills there is no second file to mirror, so there is nothing an entry point can drift from.
+- [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
+  under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
+  the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
+  `assets/`.
 - [**Phase gate**](../standards/workflows/plan-artifacts.md) — the set of
   sections a spec must have filled to ENTER a phase folder; `promote` refuses with exit 2 and
   the missing list rather than warning, and the per-phase sets live once in `schema.json`,

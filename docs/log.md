@@ -4,7 +4,21 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 `## YYYY-MM-DD` heading and prefixed `**Creation**` / `**Update**` / `**Deprecation**`.
 `quenching-docs-align` and `quenching-docs-add` append here whenever they scaffold, migrate, or insert.
 
+## 2026-07-27
+
+**Creation**: [Retire the skill vocabulary left behind by the collapse](/specs/backlog/2026-07-27-retire-skill-vocabulary.md) — distilled from the archived `collapse-skills-into-commands` spec: the noun "skill" where "command" is meant, in the 28 bodies, the 22 reference files, and four stale spots in `docs/` the spec did not record.
+
+**Creation**: [Rewrite README.md for the collapsed command surface](/specs/backlog/2026-07-27-rewrite-readme-for-collapsed-surface.md) — distilled from the archived `collapse-skills-into-commands` spec: task 5.3 rewrote §Cost model, leaving ~131 lines describing the deleted two-file architecture.
+
+**Update**: [Glossary](/docs/knowledge/glossary.md) — gained Always-on metadata, Entry point and Phantom command, the three terms `collapse-skills-into-commands` made load-bearing.
+
+**Creation**: [Surface verification](/docs/standards/quality/surface-verification.md) — distilled from the archived `collapse-skills-into-commands` spec: a change under `commands/**` is not testable in the session that writes it, so it is proven in a fresh `claude -p` asserting on captured `tool_use` rather than prose, under three preconditions (stdin redirected, an invasive check sandboxed with its own `enabledPlugins`, and the command's own preconditions satisfied or the check measures the precondition).
+
+**Update**: [specs/](/specs/archive/2026-07-26-collapse-skills-into-commands.md) — archived `collapse-skills-into-commands` (outcome: done) at 35/35 tasks: 28 skill+wrapper pairs collapsed to one command file per entry point, always-on metadata 30,705 → 2,083 characters, shipped as plugin 3.0.0.
+
 ## 2026-07-26
+
+**Update**: [Claude Code skill and command loading mechanics](/docs/reference/tools/claude-code-skill-command-mechanics.md) — gained §What has been relied upon, and by whom (rows 1, 2 and 4 are load-bearing for `collapse-skills-into-commands`; row 6 explicitly declined) and §Re-measurements recording the 2026-07-26 re-check against Claude Code 2.1.215.
 
 **Creation**: [Claude Code skill and command loading mechanics](/docs/reference/tools/claude-code-skill-command-mechanics.md) — distilled from the abandoned `skill-description-tiering` spec: `${CLAUDE_PLUGIN_ROOT}` substitutes in command bodies, commands are Skill-tool invocable, discovery is at startup, and one frontmatter schema serves both.
 

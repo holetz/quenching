@@ -2,7 +2,7 @@
 type: standard
 title: Task execution contract
 description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
-resource: plugins/claude-quenching/skills/quenching-specs-apply/, plugins/claude-quenching/assets/bin/specs.py, plugins/claude-quenching/assets/specs/templates/spec.md
+resource: plugins/claude-quenching/commands/specs/apply.md, plugins/claude-quenching/assets/bin/specs.py, plugins/claude-quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation]
 timestamp: 2026-07-26
 audience: both

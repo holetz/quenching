@@ -576,61 +576,74 @@ release adds no new lockstep item.
 
 The plugin keeps its context and token footprint predictable on three levels:
 
-1. **Always-on metadata (shared cap).** Every skill's `description` + `when_to_use` is
-   loaded into context each session, and Claude Code truncates each skill at **1,536
-   combined characters** — a budget shared with every other installed plugin. All thirty
-   skills fit under the cap and carry their verbatim trigger phrases in the **second**
-   sentence, so truncation can never eat them.
-2. **Body on invocation.** A `SKILL.md` body loads only when the skill runs; every body
-   stays well under 500 lines. Shared procedure lives once, in its owners —
-   [`quenching-docs-add/references/homes.md`](skills/quenching-docs-add/references/homes.md)
-   (the insert procedure) and
-   [`quenching-docs-align/references/conformance.md`](skills/quenching-docs-align/references/conformance.md)
-   (the checks) — and the other skills cite it, never restate it.
-3. **References on demand.** `references/*.md` files are read only when a step needs them.
+1. **Always-on metadata (shared cap).** Every command's `description` is loaded into context
+   each session, and Claude Code truncates at **1,536 characters** per command — a budget
+   shared with every other installed plugin. Collapsing the 28 skill+wrapper pairs into one
+   file per entry point took the surface's always-on total from **30,705 characters to 2,083**
+   (~7,676 → ~521 approximate tokens), a **93% cut**, measured by `skills.py budget`.
+
+   **What that saving cost, stated plainly:** the deleted skill description is where the quoted
+   trigger phrases and the `Not for:` boundary lived, so every command now reports
+   `sk-trigger-position` and `sk-no-boundary` against a description written as a `/`-menu label.
+   Both are warnings, so the budget looks clean while the routing information is absent — see
+   `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
+2. **Body on invocation.** A command's body loads only when it runs; every body stays well
+   under 500 lines. Shared procedure lives once, in its owners —
+   [`docs-add/homes.md`](assets/references/docs-add/homes.md) (the insert procedure) and
+   [`docs-align/conformance.md`](assets/references/docs-align/conformance.md) (the checks) —
+   and the other commands cite it by `${CLAUDE_PLUGIN_ROOT}` absolute path, never restate it.
+3. **References on demand.** `assets/references/**/*.md` files are read only when a step needs
+   them. They sit under `assets/` rather than beside a command because `commands/**` is the only
+   tree Claude Code registers — `docs/standards/architecture/plugin-layout.md`.
+
+Because the command registry is built at **session start**, none of that is testable in the session
+that changes it. `assets/bin/functional-checks.sh` is the only check that proves the surface loads:
+it spawns fresh `claude -p` processes and asserts on captured tool calls that
+`${CLAUDE_PLUGIN_ROOT}` substitutes in a command body, that a conductor reaches its stage by
+registry name, and that a spoken phrase still routes by description alone.
 
 **Model policy** (conservative — judgment is never downgraded):
 
 | Surface | Policy |
 | --- | --- |
-| `quenching-docs-define` | `effort: low`; no model pin (mechanical single-entry edit) |
-| `quenching-specs-capture` | `effort: low`; no model pin (mechanical single-task capture; zero interrogation, no sub-agents) |
-| `quenching-specs-triage` | no pin, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the session model exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
-| `quenching-specs-status` | `effort: low`; no model pin, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `specs.py status` is scoped to full-progress plans rather than run per plan |
-| `quenching-specs-archive` | no pin, no sub-agents — the reason, the confirmation, and the harvest are all judgment; there is nothing mechanical here to downgrade |
-| `quenching-docs-glossary-backfill` | `effort: medium`; slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) |
-| `quenching-docs-import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion) |
-| `quenching-docs-align` / `quenching-docs-harness` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. **Exception:** under `quenching-docs-align-and-update`'s parallel prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
-| `quenching-docs-align-and-update` | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
-| `quenching-align-all` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
-| `quenching-specs-align-and-update` | no pin, **no sub-agents** — `specs.py` answers the whole assessment in one call and a backlog is small by nature, so the orchestrator reads everything itself; the archive gate is human judgment and must never be delegated |
-| `quenching-skill-align-and-update` | no pin, no sub-agents — the doctrine audit is exactly the judgment the session model exists for, and the surface is small enough to read directly |
-| `quenching-align-and-update-all` | no pin, no sub-agents — it only probes and delegates; the cost sits in the three front conductors, each with its own row |
-| `quenching-specs-align` | no pin; **two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](skills/quenching-align-all/references/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
-| `quenching-docs-import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md`/`log.md` honest and resolves cross-slice dedup |
-| `quenching-docs-add` / `quenching-docs-learn` | no pin — they inherit the session model (they classify, route, and gate operations) |
-| `quenching-docs-documentation-build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain |
-| `quenching-skill-new` / `quenching-skill-align` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
-| `quenching-specs-refine` | no pin, no sub-agents — the whole skill *is* judgment: generating the questions a plan never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the skill exists to replace. Cost is bounded by the mode's declared stop condition, not by a model tier |
-| the six plan-authoring `quenching-specs-*` skills (`explore`, `plan-propose`, `plan-update`, `plan-from-claude`, `plan-archive`, and `plan-refine`'s row above) | no pin, and **no sub-agents at all** — they run on the session model (they author artifacts, offer branch/worktree isolation, and gate the OKF distillation). The expensive steps are the git and `specs.py` calls, not tokens. (`quenching-specs-apply`, `quenching-specs-align`, `quenching-specs-align-and-update`, `quenching-specs-status`, `quenching-specs-archive`, and `quenching-specs-capture`/`-triage` have their own rows.) |
-| `quenching-specs-apply` | no pin. **Amended:** a per-task **executor sub-agent is now permitted** when the task declares `files:` and touches no `docs/` — pinned to the **session model, never `haiku`** (it writes production code, the same rationale that protects `quenching-docs-import-memory`'s executors). The orchestrator keeps plan selection, every confirmation, every `specs.py task --check`/`--attempt`, every `docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `specs.py parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`skills/quenching-specs-apply/references/execution.md` §This is not `context: fork`) |
+| `/docs:define` | `effort: low`; no model pin (mechanical single-entry edit) |
+| `/specs:capture` | `effort: low`; no model pin (mechanical single-task capture; zero interrogation, no sub-agents) |
+| `/specs:triage` | no pin, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the session model exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
+| `/specs:status` | `effort: low`; no model pin, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `specs.py status` is scoped to full-progress plans rather than run per plan |
+| `/specs:archive` | no pin, no sub-agents — the reason, the confirmation, and the harvest are all judgment; there is nothing mechanical here to downgrade |
+| `/docs:glossary-backfill` | `effort: medium`; slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) |
+| `/docs:import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion) |
+| `/docs:align` / `/docs:harness` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. **Exception:** under `/docs:align-and-update`'s parallel prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
+| `/docs:align-and-update` | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
+| `/align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
+| `/specs:align-and-update` | no pin, **no sub-agents** — `specs.py` answers the whole assessment in one call and a backlog is small by nature, so the orchestrator reads everything itself; the archive gate is human judgment and must never be delegated |
+| `/skill:align-and-update` | no pin, no sub-agents — the doctrine audit is exactly the judgment the session model exists for, and the surface is small enough to read directly |
+| `/align-and-update` | no pin, no sub-agents — it only probes and delegates; the cost sits in the three front conductors, each with its own row |
+| `/specs:align` | no pin; **two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align-all/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
+| `/docs:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md`/`log.md` honest and resolves cross-slice dedup |
+| `/docs:add` / `/docs:learn` | no pin — they inherit the session model (they classify, route, and gate operations) |
+| `/docs:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain |
+| `/skill:new` / `/skill:align` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
+| `/specs:refine` | no pin, no sub-agents — the whole skill *is* judgment: generating the questions a plan never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the skill exists to replace. Cost is bounded by the mode's declared stop condition, not by a model tier |
+| the six plan-authoring `quenching-specs-*` skills (`explore`, `plan-propose`, `plan-update`, `plan-from-claude`, `plan-archive`, and `plan-refine`'s row above) | no pin, and **no sub-agents at all** — they run on the session model (they author artifacts, offer branch/worktree isolation, and gate the OKF distillation). The expensive steps are the git and `specs.py` calls, not tokens. (`/specs:apply`, `/specs:align`, `/specs:align-and-update`, `/specs:status`, `/specs:archive`, and `/specs:capture`/`-triage` have their own rows.) |
+| `/specs:apply` | no pin. **Amended:** a per-task **executor sub-agent is now permitted** when the task declares `files:` and touches no `docs/` — pinned to the **session model, never `haiku`** (it writes production code, the same rationale that protects `/docs:import-memory`'s executors). The orchestrator keeps plan selection, every confirmation, every `specs.py task --check`/`--attempt`, every `docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `specs.py parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-apply/execution.md` §This is not `context: fork`) |
 
 Two rules are deliberate and must survive any future "optimization":
 
 - **Never add `context: fork` to these skills.** Every sweep skill gates on a mid-flow
   confirmation (one plan → one OK) when run standalone — and even a cycle-authorized run
-  ([`quenching-align-and-update-all/references/convergence.md`](skills/quenching-align-and-update-all/references/convergence.md)
+  ([`/align-and-update/references/convergence.md`](assets/references/align-and-update-all/convergence.md)
   §cycle-authorization) must still surface code-coupled confirmations mid-flow, which a forked
   context cannot present.
 - **Never downgrade classification or executor agents to haiku** in
-  `quenching-docs-import-memory` — a misclassification becomes a wrong memory deletion.
+  `/docs:import-memory` — a misclassification becomes a wrong memory deletion.
 
 **Enforcement hook cost.** The `Stop` sweep is **dirty-gated** by default
 (`stopScan: "dirty"`): a turn that edits no `docs/**` file costs one stat (<5 ms); a dirty
 turn triggers ONE single-pass read of the bundle (each `.md` read exactly once), bounded by
 `deadlineMs` checked inside the walk. `stopScan: "always"` restores the unconditional
 every-turn sweep. The installed script is versioned (`okf-validate.py --version`, lockstep
-with `VERSION`), and `quenching-docs-align` step 6 offers the **upgrade** — overwrite the script
+with `VERSION`), and `/docs:align` step 6 offers the **upgrade** — overwrite the script
 only, preserving the target's `hooks-config.json`. Details:
 [`assets/hooks/README.md`](assets/hooks/README.md).
 
