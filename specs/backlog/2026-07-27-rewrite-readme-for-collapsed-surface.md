@@ -41,7 +41,7 @@ verification: per-section
 
 ## Problem
 
-`plugins/claude-quenching/README.md` still documents the two-file architecture the
+`plugins/quenching/README.md` still documents the two-file architecture the
 `collapse-skills-into-commands` spec deleted. That spec's task 5.3 scoped only to §Cost model,
 which was rewritten; **the other ~131 lines were not** — §The thirty skills, the `.claude/skills/`
 layout, the `skills/*/references/` citation paths, and the wrapper prose all describe a shape the

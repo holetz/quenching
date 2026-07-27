@@ -2,18 +2,18 @@
 type: standard
 title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity
-resource: plugins/claude-quenching/commands/**
+resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
 timestamp: 2026-07-26
 audience: both
 authority: current
 source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26)
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Command surface naming
 
-How the `claude-quenching` plugin names its commands.
+How the `quenching` plugin names its commands.
 
 ## The path IS the identity
 
@@ -21,7 +21,7 @@ How the `claude-quenching` plugin names its commands.
 `commands/<front>/[<object>/]<verb>.md` carries both the description that routes to it and the
 body that runs. It is invocable as `/<front>:[<object>:]<verb>` — the `:` separator, one per path
 segment — and by that same name through the Skill tool, prefixed by the plugin
-(`claude-quenching:docs:align`).
+(`quenching:docs:align`).
 
 - `commands/docs/add.md` → `/docs:add`
 - `commands/specs/develop.md` → `/specs:develop`

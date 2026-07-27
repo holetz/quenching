@@ -39,4 +39,4 @@ manual installed beside this listing. This `index.md` says **what** is here; tha
 **how** it is worked.
 
 The bundle's change history is in [log.md](log.md). The full contract (homes, types,
-migration doctrine, conformance) lives in the `claude-quenching` skills' `references/`.
+migration doctrine, conformance) lives in the `quenching` skills' `references/`.

@@ -48,7 +48,7 @@ fires, but every skill's `description` + `when_to_use`, plus every command wrapp
 `description`, sit in context on every session before anything is selected.
 
 Measured on this working tree with the repo's own instrument
-(`skills.py --root plugins/claude-quenching budget`, which counts the **parsed** frontmatter
+(`skills.py --root plugins/quenching budget`, which counts the **parsed** frontmatter
 value as [context-budget.md](../../docs/standards/automation/context-budget.md) requires):
 
 | | chars | ~tokens |
@@ -208,13 +208,13 @@ which spec should run, so **task 0.2 spikes the premise first** and branches:
 
 ### Tooling that must change with it (not standards — no doc promised)
 
-- `plugins/claude-quenching/assets/bin/skills.py` — `sk-trigger-position` and `sk-no-boundary`
+- `plugins/quenching/assets/bin/skills.py` — `sk-trigger-position` and `sk-no-boundary`
   are `warn` findings that fire when a description quotes no trigger phrase or omits
   `Not for:`. Both are **true of every Tier B stub by design**, so without tier-awareness this
   spec lands 56 new warnings and makes `lint` useless. The linter must learn the tier and
   scope both checks to `inferred`. `DEFAULT_CEILING` (36,503) is also revised — from the
   post-change measurement, per the standard's own "revised only from a measurement" rule.
-- `plugins/claude-quenching/assets/templates/automation/skill.md` — the mold that teaches a
+- `plugins/quenching/assets/templates/automation/skill.md` — the mold that teaches a
   new skill's frontmatter; it must teach the tier declaration.
 
 ### Skills whose doctrine teaches the old rule
@@ -226,8 +226,8 @@ which spec should run, so **task 0.2 spikes the premise first** and branches:
 
 ### Surface edited but owning no contract
 
-- 28 × `plugins/claude-quenching/skills/*/SKILL.md` — frontmatter only.
-- `plugins/claude-quenching/README.md` §Cost model — states the thirty fit under the cap; must
+- 28 × `plugins/quenching/skills/*/SKILL.md` — frontmatter only.
+- `plugins/quenching/README.md` §Cost model — states the thirty fit under the cap; must
   speak of the **sum** and of the tiers, and its skill count is stale.
 
 ## Validation
@@ -238,10 +238,10 @@ Every claim in this spec is mechanically checkable; none of it rests on reading 
   resolves `${CLAUDE_PLUGIN_ROOT}`, carries `allowed-tools`, and can be invoked by a conductor.
   A partial or ambiguous result counts as FAIL and this spec continues; the collapse spec does
   not open on a maybe.
-- **The saving is real** — `skills.py --root plugins/claude-quenching budget --json` before and
+- **The saving is real** — `skills.py --root plugins/quenching budget --json` before and
   after. Baseline is 30,705 characters / ~7,676 tokens; the target is ≤ 4,300 total always-on.
   The instrument counts parsed frontmatter, which is the standard's own requirement.
-- **Nothing became non-conformant** — `skills.py --root plugins/claude-quenching lint` exits 0
+- **Nothing became non-conformant** — `skills.py --root plugins/quenching lint` exits 0
   with no new finding code. Specifically `sk-trigger-position` and `sk-no-boundary` must not
   fire on a Tier B stub, and `sk-no-description` must not fire at all.
 - **The wrapper invariant holds** — for all 28 skills, the skill `description` equals its
@@ -436,7 +436,7 @@ below is whatever real interpreter the applying machine has — `python3` on Lin
 `C:/Users/holet/AppData/Local/Programs/Python/Python312/python.exe` on the Windows box where
 this spec was authored, since there `python3`/`py` are the Windows Store stub. Resolve it once
 at task 0.1 rather than trusting either spelling. `SK` is
-`plugins/claude-quenching/assets/bin/skills.py`, `--root` is `plugins/claude-quenching`.
+`plugins/quenching/assets/bin/skills.py`, `--root` is `plugins/quenching`.
 
 ### 0. Reconcile the baseline, then decide whether to build this at all
 
@@ -444,7 +444,7 @@ at task 0.1 rather than trusting either spelling. `SK` is
       anything. Confirm the skill count, the flat `quenching-specs-*` names, and the 30,705
       baseline. If the applying tree is the nested 30-skill build instead, correct the counts
       in `## Problem` and `## Proposal` before proceeding — do not map them by guess.
-      verify: `$PY $SK --root plugins/claude-quenching budget --json`
+      verify: `$PY $SK --root plugins/quenching budget --json`
 - [x] 0.2 **The gate.** Spike the three questions in `## Design` §The spike and its branch
       against one throwaway command file: does `${CLAUDE_PLUGIN_ROOT}` substitute in a
       `commands/*.md` body, does a command honour `allowed-tools`, can a conductor invoke a
@@ -457,32 +457,32 @@ at task 0.1 rather than trusting either spelling. `SK` is
 - [ ] 1.1 Delete `when_to_use` from all 28 `SKILL.md` frontmatters. It is a Claude-Code-only
       extension and its content restates the description's first clause; the standard already
       forbids it carrying the boundary. Recovers 2,761 characters on its own.
-      files: plugins/claude-quenching/skills/*/SKILL.md
-      verify: `$PY $SK --root plugins/claude-quenching lint --json`
+      files: plugins/quenching/skills/*/SKILL.md
+      verify: `$PY $SK --root plugins/quenching lint --json`
 - [ ] 1.2 Cut procedure prose from every description that still carries it — the step order,
       the tool calls, the checks. This enforces the *existing* standard, which already says a
       description may not say how the skill works; several drifted back since the last diet. No
       trigger phrase and no `Not for:` is touched in this task.
-      files: plugins/claude-quenching/skills/*/SKILL.md
-      verify: `$PY $SK --root plugins/claude-quenching budget --json`
+      files: plugins/quenching/skills/*/SKILL.md
+      verify: `$PY $SK --root plugins/quenching budget --json`
 
 ### 2. The tier declaration and the linter
 
 - [ ] 2.1 Add the `routing: direct | inferred` field to the skill schema and the mold, with
       absent defaulting to `inferred` so every existing repo keeps today's behavior.
-      files: plugins/claude-quenching/assets/templates/automation/skill.md
+      files: plugins/quenching/assets/templates/automation/skill.md
 - [ ] 2.2 Teach `skills.py` the tier: parse `routing`, and scope `sk-trigger-position` and
       `sk-no-boundary` to `inferred` skills only. Without this, task 3 lands 56 warnings and
       makes `lint` useless.
-      files: plugins/claude-quenching/assets/bin/skills.py
-      verify: `$PY $SK --root plugins/claude-quenching lint --json`
+      files: plugins/quenching/assets/bin/skills.py
+      verify: `$PY $SK --root plugins/quenching lint --json`
 - [ ] 2.3 Add `sk-wrapper-drift` (warn): a `routing: direct` skill whose `description` differs
       from its wrapper's. This makes the Tier B invariant mechanical instead of aspirational.
-      files: plugins/claude-quenching/assets/bin/skills.py
-      verify: `$PY $SK --root plugins/claude-quenching lint --json`
+      files: plugins/quenching/assets/bin/skills.py
+      verify: `$PY $SK --root plugins/quenching lint --json`
 - [ ] 2.4 Version lockstep per `CLAUDE.md` §Releasing — `skills.py` changed, so `VERSION`,
       `plugin.json`, the marketplace manifest, and the other shipped scripts move together.
-      files: plugins/claude-quenching/VERSION, plugins/claude-quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json
+      files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json
 
 ### 3. Tier B — all 28 stubs
 
@@ -490,8 +490,8 @@ at task 0.1 rather than trusting either spelling. `SK` is
       command wrapper's `description`, copied verbatim (not paraphrased, so 2.3 can check it).
       This includes the five capture tools, which no longer hold an exemption. Expected
       25,875 -> 2,069 characters.
-      files: plugins/claude-quenching/skills/*/SKILL.md
-      verify: `$PY $SK --root plugins/claude-quenching lint --json`
+      files: plugins/quenching/skills/*/SKILL.md
+      verify: `$PY $SK --root plugins/quenching lint --json`
 
 ### 4. The doctrine that teaches it
 
@@ -503,29 +503,29 @@ at task 0.1 rather than trusting either spelling. `SK` is
       files: docs/standards/automation/context-budget.md
 - [ ] 4.2 Update the new `DEFAULT_CEILING` in `skills.py` from the measurement task 5.1
       produces — never from this spec's ~4,100 projection.
-      files: plugins/claude-quenching/assets/bin/skills.py
+      files: plugins/quenching/assets/bin/skills.py
 - [ ] 4.3 [P] Rewrite `README.md` §Cost model: it claims the thirty fit under the cap, which
       optimizes per-skill height instead of the sum, and its skill count is stale.
-      files: plugins/claude-quenching/README.md
+      files: plugins/quenching/README.md
 - [ ] 4.4 [P] Teach the tier in `quenching-skill-new` and its `references/doctrine.md`, which
       today tells every author to put triggers in the second sentence against truncation —
       right for `inferred`, wrong for `direct`. Minting a skill must now ask which tier it is.
-      files: plugins/claude-quenching/skills/quenching-skill-new/SKILL.md, plugins/claude-quenching/skills/quenching-skill-new/references/doctrine.md
+      files: plugins/quenching/skills/quenching-skill-new/SKILL.md, plugins/quenching/skills/quenching-skill-new/references/doctrine.md
 - [ ] 4.5 [P] Teach the tier to the two sweeps that judge descriptions against that doctrine —
       `quenching-skill-align` (the migration) and `quenching-skill-align-and-update` (the body
       audit). Neither may report a Tier B stub as a defect.
-      files: plugins/claude-quenching/skills/quenching-skill-align/SKILL.md, plugins/claude-quenching/skills/quenching-skill-align-and-update/SKILL.md
+      files: plugins/quenching/skills/quenching-skill-align/SKILL.md, plugins/quenching/skills/quenching-skill-align-and-update/SKILL.md
 
 ### 5. Prove it
 
 - [ ] 5.1 Measure the result and confirm the target: `lint` exits 0 with no new code, `budget`
       reports total always-on at or under 4,300 characters against the revised ceiling.
-      verify: `$PY $SK --root plugins/claude-quenching lint --json && $PY $SK --root plugins/claude-quenching budget --json`
+      verify: `$PY $SK --root plugins/quenching lint --json && $PY $SK --root plugins/quenching budget --json`
 - [ ] 5.2 Script-check the Tier B invariant: for all 28, skill `description` equals wrapper
       `description` byte-for-byte. By script, never by eye.
-      verify: `$PY $SK --root plugins/claude-quenching lint --json`
+      verify: `$PY $SK --root plugins/quenching lint --json`
 - [ ] 5.3 [P] Confirm the shipped payload is untouched and still conformant.
-      verify: `$PY plugins/claude-quenching/assets/hooks/okf-validate.py plugins/claude-quenching/assets/docs && $PY plugins/claude-quenching/assets/hooks/okf-validate.py plugins/claude-quenching/assets/specs/backlog --listing-root`
+      verify: `$PY plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs && $PY plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/specs/backlog --listing-root`
 
 ## Discoveries
 
@@ -540,7 +540,7 @@ restored.
 | --- | --- | --- | --- |
 | 1 | `${CLAUDE_PLUGIN_ROOT}` substitutes in a `commands/*.md` body | **YES** | A command body containing the placeholder expanded to the absolute plugin root. Reproduced on both invocation paths. |
 | 2 | A command honours `allowed-tools` | **UNPROVEN — but at exact parity with skills** | `allowed-tools: ["Bash(echo:*)"]` failed to block a `Write` in **all four** cells of command × skill by slash-invocation × Skill-tool-invocation. Filesystem-verified, not self-reported. |
-| 3 | A conductor can invoke a command by name via the Skill tool | **YES** | A *command* was invoked by name through the Skill tool and its body expanded with substitution intact — the exact conductor path. Corroborated statically: this session's Skill registry lists `claude-quenching:docs:add` with its wrapper's `description` byte-identical. |
+| 3 | A conductor can invoke a command by name via the Skill tool | **YES** | A *command* was invoked by name through the Skill tool and its body expanded with substitution intact — the exact conductor path. Corroborated statically: this session's Skill registry lists `quenching:docs:add` with its wrapper's `description` byte-identical. |
 
 Q2 is the reason the gate fails: the spec requires three clean YES and rules that "an ambiguous
 result is a FAIL". The honest reading is that commands are **not worse** than skills here — but

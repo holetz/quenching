@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-A **Claude Code plugin marketplace** with a single plugin, `claude-quenching`
-(source: [plugins/claude-quenching/](plugins/claude-quenching/)). The plugin forces a *target*
+A **Claude Code plugin marketplace** with a single plugin, `quenching`
+(source: [plugins/quenching/](plugins/quenching/)). The plugin forces a *target*
 repository's **three fronts** — the `docs/` **Open Knowledge Format (OKF v0.1)** bundle, the
 native `specs/` spec-driven workspace, and the `.claude/` command surface — into one
 canonical shape and keeps them conformant, via twenty-eight commands under `/docs`, `/specs`,
@@ -16,7 +16,7 @@ command-surface verifier `skills.py`).
 **ONE FILE PER ENTRY POINT.** Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs.
 There is no `skills/` tree and no wrapper: **a command's path is its whole identity**
-(`commands/docs/add.md` → `/docs:add` → `claude-quenching:docs:add` through the Skill tool).
+(`commands/docs/add.md` → `/docs:add` → `quenching:docs:add` through the Skill tool).
 
 **The whole surface is one 2×4 matrix.** Every front has exactly two entry points, and two more
 span all three:
@@ -43,7 +43,7 @@ matters as much as correctness in a normal codebase.
 
 ```
 .claude-plugin/marketplace.json        # marketplace manifest, lists the one plugin
-plugins/claude-quenching/
+plugins/quenching/
   .claude-plugin/plugin.json           # plugin manifest (name, version, keywords)
   VERSION                              # plugin version, kept in lockstep with plugin.json
   commands/                            # THE SURFACE — the only tree Claude Code registers
@@ -107,7 +107,7 @@ them.
 | `/skill:align` | The sweep counterpart: read-only inventory of the existing command surface, ONE migration plan (**collapsing any surviving skill+wrapper pair into one file**, renames, rule + registry from the molds when missing; keep-and-report unroutables; deletion only on human word), one OK (code-coupled renames individually), post-apply verification. Cites the sibling's references. |
 | `/docs:align-and-update` | The `docs`-front conductor: runs `align` → `import-memory` → `harness` → `glossary-backfill` as a dependency pipeline, pass after pass, until a fixpoint (nothing changes and the validator is clean) or a pass cap. (`import` and `/docs:documentation:build` are on-demand tools, not loop stages.) |
 | `/skill:align-and-update` | The `.claude`-front conductor: Stage 1 `/skill:align`, Stage 2 a **read-only doctrine audit of every command body** — the one thing the align is forbidden to touch — reported with the `/skill:new` that fixes it, never rewritten. No out-of-band store to drain, so it converges in 1–2 passes and says so. |
-| `/align` | The **structural** cross-front conductor: one read-only probe of the three fronts, ONE OK, then `claude-quenching:docs:align` → `claude-quenching:specs:align` → `claude-quenching:skill:align` in dependency order (docs first — the other two write OKF artifacts into it; specs before skills — it clears the CLI shadow copies the skill sweep would otherwise inventory). One pass, not a fixpoint; conducts, never reimplements. |
+| `/align` | The **structural** cross-front conductor: one read-only probe of the three fronts, ONE OK, then `quenching:docs:align` → `quenching:specs:align` → `quenching:skill:align` in dependency order (docs first — the other two write OKF artifacts into it; specs before skills — it clears the CLI shadow copies the skill sweep would otherwise inventory). One pass, not a fixpoint; conducts, never reimplements. |
 | `/align-and-update` | The **looping** cross-front conductor: invokes the three FRONT CONDUCTORS in the same order and loops across fronts, because they feed each other (an archive's distillation is glossary work; the skill front's registry is a `docs/` listing). Authorization **nests one level** — the human confirms once for the whole repo. Owns `references/convergence.md`, the contract every conductor cites. Cross-front pass cap 3. |
 | `/specs:align-and-update` | The `specs/`-front conductor: `/specs:align` → `/specs:archive` (each complete spec, **its own confirmation**) → `/specs:triage`, looped. A **3-stage** pipeline — there is no sync stage, because a spec writes its rule straight into `docs/standards/`. Drives exactly the cycle actions `/specs:align` only reports. Never proposes, never implements, never infers completion. Owns `references/cycle.md`. |
 | `/specs:align` | The `specs/`-front align + installer (quenching-native): scaffolds `specs/` by copying `assets/specs/`, installs `specs.py` into `.claude/hooks/`, runs `specs.py doctor`/`validate` and applies their declared remedies, normalizes spec + archive names, seeds/stamps the `backlog/` inbox and regenerates its zone via `specs.py backlog reindex`, **migrates a legacy `openspec/` workspace** to `specs/`. Cycle actions are REPORTED, never driven. Owns `references/conformance.md`. |
@@ -126,30 +126,30 @@ other-command" boundary — read the target command's frontmatter before assumin
 task. Shared procedure lives once in its owner and other commands cite it by **absolute path**
 (`${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md`) rather than restating it:
 the insert procedure in
-[`docs-add/homes.md`](plugins/claude-quenching/assets/references/docs-add/homes.md),
+[`docs-add/homes.md`](plugins/quenching/assets/references/docs-add/homes.md),
 the checks in
-[`docs-align/conformance.md`](plugins/claude-quenching/assets/references/docs-align/conformance.md),
+[`docs-align/conformance.md`](plugins/quenching/assets/references/docs-align/conformance.md),
 the spec-driven facts (the three phase folders, the thirteen canonical sections, the phase gates,
 the `specs.py` surface, the `specs/`↔`docs/` boundary) in
-[`specs-develop/spec-driven.md`](plugins/claude-quenching/assets/references/specs-develop/spec-driven.md),
+[`specs-develop/spec-driven.md`](plugins/quenching/assets/references/specs-develop/spec-driven.md),
 the per-section authoring doctrine in
-[`specs-develop/artifacts.md`](plugins/claude-quenching/assets/references/specs-develop/artifacts.md),
+[`specs-develop/artifacts.md`](plugins/quenching/assets/references/specs-develop/artifacts.md),
 the `specs/` workspace conformance contract in
-[`specs-align/conformance.md`](plugins/claude-quenching/assets/references/specs-align/conformance.md),
+[`specs-align/conformance.md`](plugins/quenching/assets/references/specs-align/conformance.md),
 the cycle-authorization + convergence contract shared by **all five** conductors in
-[`align-and-update-all/convergence.md`](plugins/claude-quenching/assets/references/align-and-update-all/convergence.md)
+[`align-and-update-all/convergence.md`](plugins/quenching/assets/references/align-and-update-all/convergence.md)
 (each front conductor's own `cycle.md` holds **only** that front's pipeline and routing table —
 never the contract),
 the **sweep contract shared by all three aligns** — convergence over accommodation, one plan →
 one OK with code-coupled items gating individually, the two-scan blast-radius procedure,
 MERGE-never-clobber, never-delete-on-a-guess, align-conformance-report-the-cycle — in
-[`align-all/sweep-doctrine.md`](plugins/claude-quenching/assets/references/align-all/sweep-doctrine.md)
+[`align-all/sweep-doctrine.md`](plugins/quenching/assets/references/align-all/sweep-doctrine.md)
 (each align's `## Doctrine` cites it and states **only** its own front's deltas),
 the OKF distillation doctrine in
-[`specs-archive/distill.md`](plugins/claude-quenching/assets/references/specs-archive/distill.md),
+[`specs-archive/distill.md`](plugins/quenching/assets/references/specs-archive/distill.md),
 and the command-writing doctrine + automation taxonomy in
-[`skill-new/doctrine.md`](plugins/claude-quenching/assets/references/skill-new/doctrine.md)
-and [`skill-new/taxonomy.md`](plugins/claude-quenching/assets/references/skill-new/taxonomy.md)
+[`skill-new/doctrine.md`](plugins/quenching/assets/references/skill-new/doctrine.md)
+and [`skill-new/taxonomy.md`](plugins/quenching/assets/references/skill-new/taxonomy.md)
 (cited by `/skill:align`, never restated).
 
 ### The `specs/` front ↔ OKF relation
@@ -170,7 +170,7 @@ merge, history, and reversion. The **OKF bridge** is a single pass at archive ti
 read as context going in (standards, glossary), and the by-products the spec did not already
 commit to `docs/` are distilled out at archive (never bulk-copied). `specs/` and `docs/` never
 duplicate content — the boundary is owned once by
-[`spec-driven.md`](plugins/claude-quenching/assets/references/specs-develop/spec-driven.md) §Boundary.
+[`spec-driven.md`](plugins/quenching/assets/references/specs-develop/spec-driven.md) §Boundary.
 
 Of the eleven `/specs:*` commands, **two** are stages of the front's 3-stage pipeline when
 `/specs:align-and-update` conducts it — `/specs:archive` and `/specs:triage`; the per-spec
@@ -233,7 +233,7 @@ a turn touching no `docs/**` file costs one stat. **`--listing-root`** points th
 at a quenching-managed tree that is not an OKF bundle root — today `specs/backlog/`, which the
 hook's `docsDir` never reaches: the scanned `index.md` is held to the plain-listing rule instead
 of the bundle-root one, and `bundle-no-index` is dropped. `--version` is kept in lockstep with
-`plugins/claude-quenching/VERSION`; `/docs:align` step 6 offers to install or upgrade it
+`plugins/quenching/VERSION`; `/docs:align` step 6 offers to install or upgrade it
 into a target's `.claude/hooks/`.
 
 ## The spec-cycle tool (`assets/bin/specs.py`)
@@ -268,10 +268,10 @@ fires `sk-no-description` — the layout rule's evidence). `/skill:align` instal
 ## Verifying changes
 
 There is no test suite. To verify the plugin's own shipped skeleton is still conformant
-after touching anything under `plugins/claude-quenching/`:
+after touching anything under `plugins/quenching/`:
 
 ```bash
-cd plugins/claude-quenching
+cd plugins/quenching
 # version lockstep — VERSION and all three shipped scripts must agree
 cat VERSION
 python3 assets/bin/specs.py --version
@@ -296,7 +296,7 @@ their own fresh `claude -p` and assert on captured tool calls rather than on wha
 ```
 
 It proves `${CLAUDE_PLUGIN_ROOT}` still substitutes inside a command body, that a conductor reaches
-its stage by registry name (`claude-quenching:docs:align`), and that a spoken phrase still routes by
+its stage by registry name (`quenching:docs:align`), and that a spoken phrase still routes by
 description alone. **Run it after any change to `commands/**`, to a citation path, or to a
 conductor's stage names** — those are the three things it is the only check for.
 
@@ -317,13 +317,13 @@ owning `assets/references/<name>/*.md` instead of restating it in every command 
 - **Never downgrade classification or executor sub-agents to `haiku` in
   `/docs:import-memory`.** A misclassification there becomes a wrong memory deletion —
   see the model-policy table in
-  [plugins/claude-quenching/README.md](plugins/claude-quenching/README.md#cost-model) for
+  [plugins/quenching/README.md](plugins/quenching/README.md#cost-model) for
   which sub-agent calls in the other commands are safe to run on cheaper models/effort.
 
 ## Releasing
 
-Bump `version` in `plugins/claude-quenching/.claude-plugin/plugin.json` **and**
-`plugins/claude-quenching/VERSION` together — that pair is what Claude Code uses to detect
+Bump `version` in `plugins/quenching/.claude-plugin/plugin.json` **and**
+`plugins/quenching/VERSION` together — that pair is what Claude Code uses to detect
 and apply an upgrade. Keep the `VERSION` constant in **all three** shipped scripts in lockstep
 with that pair — `assets/hooks/okf-validate.py`, `assets/bin/specs.py` **and**
 `assets/bin/skills.py` — since each one's `--version` is what its installing align

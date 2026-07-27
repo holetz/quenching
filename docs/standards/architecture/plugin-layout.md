@@ -2,13 +2,13 @@
 type: standard
 title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: plugins/claude-quenching/commands/**, plugins/claude-quenching/assets/**
+resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-07-26
 audience: both
 authority: current
 source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Plugin layout — what may live under `commands/`

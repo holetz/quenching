@@ -2,13 +2,13 @@
 type: standard
 title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, and the three preconditions a functional check must satisfy to measure what it claims
-resource: plugins/claude-quenching/assets/bin/functional-checks.sh, plugins/claude-quenching/commands/**
+resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests]
 timestamp: 2026-07-27
 audience: both
 authority: current
 source: collapse-skills-into-commands spec (tasks 7.1-7.3)
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Surface verification
@@ -41,7 +41,7 @@ therefore pass while the entire surface is unreachable:
 
 Each check reads `tool_use` events out of `--output-format stream-json --verbose` and asserts on
 their inputs — a `Read` whose path lands under `assets/references/`, a `Skill` whose name is
-`claude-quenching:docs:align`. It never greps the assistant's prose.
+`quenching:docs:align`. It never greps the assistant's prose.
 
 This is the difference between a functional test and a self-report. A model asked *"did you read
 your reference file?"* will answer yes on the strength of having intended to, and a check built on
@@ -66,7 +66,7 @@ claimed:
    and it makes an otherwise correct check hang.
 2. **An invasive check runs in a throwaway repo with its own `enabledPlugins`.** A `git init`
    scratch dir carrying
-   `{"enabledPlugins": {"claude-quenching@claude-quenching": true}}` gets the real surface —
+   `{"enabledPlugins": {"quenching@quenching": true}}` gets the real surface —
    the plugin loads from the marketplace path — while anything the command writes lands in the
    scratch dir.
 3. **Satisfy the command's own preconditions, or you measure the precondition.** A spoken-routing

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """okf-validate.py — self-contained OKF v0.1 conformance checker for a docs/ bundle.
 
-Payload of the `claude-quenching` plugin. Generic, portable, ZERO dependencies
+Payload of the `quenching` plugin. Generic, portable, ZERO dependencies
 (a minimal frontmatter parser — no PyYAML). It is the **executable enforcement**
 that keeps a target repo's `docs/` bundle aligned to the Open Knowledge Format
 after `quenching-docs-align` has installed it: the skills call it, the verification step calls
@@ -98,7 +98,7 @@ TAG = "okf"
 RESERVED = ("index.md", "log.md")
 # Navigation/payload files — never OKF concepts, never required to carry a `type`.
 # `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness; `QUENCHING.md`
-# is the operator manual the `claude-quenching` aligns install beside each front they
+# is the operator manual the `quenching` aligns install beside each front they
 # own (`docs/`, `specs/`, `.claude/`). Skip all three.
 EXEMPT = ("CLAUDE.md", "AGENTS.md", "QUENCHING.md")
 RECOMMENDED = ("title", "description", "resource", "timestamp")

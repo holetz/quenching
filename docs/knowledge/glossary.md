@@ -7,7 +7,7 @@ tags: [glossary, vocabulary, terminology]
 timestamp: 2026-07-26
 audience: both
 authority: current
-source: claude-quenching skeleton
+source: quenching skeleton
 maintainer: <the team>
 ---
 
@@ -73,7 +73,7 @@ sentence, and **link out** rather than explaining in full here.
 Add a term whenever a repo-specific word, acronym, or piece of jargon surfaces that a
 newcomer would not know. Three ways in:
 
-- **Automatically, as a tail of a capture.** The `claude-quenching` knowledge skills
+- **Automatically, as a tail of a capture.** The `quenching` knowledge skills
   (`quenching-docs-learn`, `quenching-docs-add`, `quenching-docs-import-memory`) each check, at
   the end of a capture, whether the new concept introduced a term that belongs here, and
   add or update the entry — linking it to the concept doc just written.

@@ -2,13 +2,13 @@
 type: standard
 title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling
-resource: plugins/claude-quenching/commands/**
+resource: plugins/quenching/commands/**
 tags: [automation, commands, context, budget, performance]
 timestamp: 2026-07-26
 audience: both
 authority: background
 source: instrument-and-extend-skill-front plan + collapse-skills-into-commands (2026-07-26) — measured on this plugin's own 28-command surface
-maintainer: claude-quenching
+maintainer: quenching
 ---
 
 # Always-on context budget

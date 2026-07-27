@@ -156,10 +156,10 @@ unscoped grant for the turn — while the `specs/` front scopes every one of its
 
 ### Product code this plan expects to touch
 
-- `plugins/claude-quenching/assets/bin/skills.py` — new, the front's tool.
-- `plugins/claude-quenching/assets/templates/automation/{skill,command,registry,skills-standard}.md`
+- `plugins/quenching/assets/bin/skills.py` — new, the front's tool.
+- `plugins/quenching/assets/templates/automation/{skill,command,registry,skills-standard}.md`
   — the molds, for invocation control and the registry zone the tool now owns.
-- `plugins/claude-quenching/skills/quenching-skill-new/` (`SKILL.md`, `references/doctrine.md`,
+- `plugins/quenching/skills/quenching-skill-new/` (`SKILL.md`, `references/doctrine.md`,
   `references/taxonomy.md`), `quenching-skill-align/SKILL.md`,
   `quenching-skill-align-and-update/SKILL.md`.
 - New: `skills/quenching-skill-eval/`, `skills/quenching-skill-agent-new/`,
@@ -171,7 +171,7 @@ unscoped grant for the turn — while the `specs/` front scopes every one of its
 - Release lockstep: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
   `assets/bin/specs.py`, `assets/hooks/okf-validate.py`.
 - The three operator manuals (`assets/docs/QUENCHING.md`, `assets/specs/QUENCHING.md`,
-  `assets/claude/QUENCHING.md`), `plugins/claude-quenching/README.md` (cost model), and the root
+  `assets/claude/QUENCHING.md`), `plugins/quenching/README.md` (cost model), and the root
   `CLAUDE.md` (the 2×4 matrix, the skill count, the tool inventory).
 
 ## Validation
@@ -180,7 +180,7 @@ unscoped grant for the turn — while the `specs/` front scopes every one of its
   `VERSION`, `.claude-plugin/plugin.json`, and `.claude-plugin/marketplace.json` all agree.
 - `python assets/hooks/okf-validate.py assets/docs` → `0 error(s), 0 warning(s)`, and
   `assets/specs/backlog --listing-root` likewise.
-- **Dogfood:** `python assets/bin/skills.py lint plugins/claude-quenching/skills --json` exits 0
+- **Dogfood:** `python assets/bin/skills.py lint plugins/quenching/skills --json` exits 0
   against this plugin's own 31 skills, with no `sk-metadata-cap` and no `sk-description-portable`
   finding. (Exit 0 is the no-**error** condition; warnings are reported and never set the exit
   code, so "zero findings" is not the bar — naming the two codes is.)
@@ -353,7 +353,7 @@ the field. The distinction is not academic: counted as source, three of these sk
 
 Sections are ordered so each is independently shippable: stopping after any section leaves the
 plugin in a coherent, releasable state (design.md §Decisions 10, §Risks "The plan is large").
-All paths are relative to `plugins/claude-quenching/` unless stated otherwise.
+All paths are relative to `plugins/quenching/` unless stated otherwise.
 
 ### 1. Build the front's tool
 
@@ -531,7 +531,7 @@ All paths are relative to `plugins/claude-quenching/` unless stated otherwise.
 - [ ] 8.2 Bring `assets/docs/QUENCHING.md` and `assets/specs/QUENCHING.md` to the new command
       surface — both enumerate it
       files: assets/docs/QUENCHING.md, assets/specs/QUENCHING.md
-- [ ] 8.3 Update `plugins/claude-quenching/README.md` — the cost model rows for the three new
+- [ ] 8.3 Update `plugins/quenching/README.md` — the cost model rows for the three new
       skills and for the eval subagent fan-out
       files: README.md
 - [ ] 8.4 Update the root `CLAUDE.md` — the skill count (28 → 31), the three new rows, `skills.py`

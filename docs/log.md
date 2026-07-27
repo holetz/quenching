@@ -122,5 +122,5 @@ a tail step, by `quenching-docs-add` / `quenching-docs-learn` / `quenching-docs-
 **Creation**: [`knowledge/`](/docs/knowledge/index.md) home added — generic knowledge we hold
 (concepts, explanations, learnings; `type: knowledge`), filled by `quenching-docs-learn`.
 
-**Creation**: OKF bundle skeleton installed by `claude-quenching` (`quenching-docs-align`) —
+**Creation**: OKF bundle skeleton installed by `quenching` (`quenching-docs-align`) —
 homes scaffolded, `index.md` listings established, `okf_version: "0.1"` set at the root.
