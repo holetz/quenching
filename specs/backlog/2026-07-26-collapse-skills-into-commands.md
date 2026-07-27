@@ -54,23 +54,44 @@ Claude Code's invocation table where the description is permanently resident *an
 cannot type the skill — which is exactly why the wrappers exist. Once the wrappers *are* the
 skills, `disable-model-invocation: true` becomes available as a further lever.
 
-**Gated on the spike at `skill-description-tiering` task 0.2**, which must answer three
-questions YES before this is worth building:
+### The gate is resolved — this spec is live
 
-1. Does `${CLAUDE_PLUGIN_ROOT}` substitute inside a `commands/*.md` body? The docs grant
-   substitution to "Skill and agent content" and state that commands are now skills, but do
-   not name `commands/**` in the substitution table. This is load-bearing: all 28 skills cite
-   at least one `references/*.md`, so without a portable absolute path a command file cannot
-   replace a skill.
-2. Does a command file honour `allowed-tools` frontmatter?
-3. Can a conductor invoke a command by name via the Skill tool, the way it invokes a stage
-   skill today? Five conductors depend on this.
+`skill-description-tiering` task 0.2 ran the spike on **2026-07-26** and the human took this
+branch; that spec is now
+[archived as abandoned](/specs/archive/2026-07-26-skill-description-tiering.md). Method: throwaway
+command and skill probes exercised in fresh `claude -p` processes against Claude Code 2.1.215, all
+reverted. Full facts in
+[reference/tools/claude-code-skill-command-mechanics.md](/docs/reference/tools/claude-code-skill-command-mechanics.md).
 
-If the spike passes, `skill-description-tiering` is abandoned in favour of this spec. If it
-fails, this spec is abandoned and that one proceeds. The two are mutually exclusive.
+| # | Question | Result |
+| --- | --- | --- |
+| 1 | `${CLAUDE_PLUGIN_ROOT}` substitutes in a `commands/*.md` body | **YES** — resolved to the absolute plugin root on both invocation paths. The load-bearing unknown is cleared: a command file *can* cite a bundled `references/*.md`. |
+| 2 | A command honours `allowed-tools` | **Parity, not proof** — the allowlist failed to block a `Write` in all four cells of command × skill by slash × Skill-tool invocation. Commands are no worse than skills, so the collapse loses nothing; but nobody should claim it as enforcement. Tracked separately as `verify-allowed-tools-enforcement`. |
+| 3 | A conductor invokes a command by name via the Skill tool | **YES** — a command was invoked by name through the Skill tool with substitution intact, the exact path a conductor uses. |
 
-Rough shape if it proceeds: 28 skill directories become 28 command files; every cross-skill
+Q2 is why this was a judgement call rather than an automatic pass: the gate's letter demanded
+three clean YES. It was taken on the reading that "no regression" suffices, since the guarantee
+turns out to be absent from skills too.
+
+**Two findings the spike added, both easing this spec:**
+
+- **`hide-from-slash-command-tool: "true"` exists** as a frontmatter key, observed in Anthropic's
+  shipped `ralph-wiggum/commands/ralph-loop.md`. This answers the objection that made
+  `skill-description-tiering` defer `disable-model-invocation: true` — that dropping
+  `user-invocable: false` floods the `/` menu with duplicates. Worth confirming it behaves as the
+  name suggests before designing around it.
+- **One unified frontmatter schema.** The 2.1.215 binary parses `user-invocable`, `allowed-tools`,
+  `disallowed-tools`, `argument-hint`, and `disable-model-invocation` from a single key list,
+  corroborating the merge rather than resting on the changelog sentence.
+- **Precedent exists in the wild.** Anthropic ships four `commands/**` files using
+  `${CLAUDE_PLUGIN_ROOT}`, one load-bearingly inside `allowed-tools` itself.
+
+One operational note for whoever builds this: **the command/skill registry is built at session
+start**, so no change to `commands/**` is testable in the session that makes it. Every verification
+step needs a fresh process.
+
+Rough shape now that it proceeds: 28 skill directories become 28 command files; every cross-skill
 citation is rewritten to an absolute plugin-root path; the 17 `references/` directories are
 re-homed; five conductors are re-plumbed; `skills.py` is re-pointed at `commands/**`; and all
 three `QUENCHING.md` operator manuals plus `CLAUDE.md` are rewritten. Reverting is a migration,
-not a `git revert` — which is why this is separate from `skill-description-tiering`.
+not a `git revert` — which is why this was kept separate from `skill-description-tiering`.

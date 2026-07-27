@@ -3,6 +3,7 @@ slug: skill-description-tiering
 title: "Two-tier skill description policy: cut always-on metadata by 87%"
 verification: per-section
 refined: {mode: interview, date: 2026-07-26}
+outcome: abandoned
 ---
 
 # Two-tier skill description policy: cut always-on metadata by 87%
@@ -566,3 +567,46 @@ mode may account for it. Worth its own spec; it is not this spec's business.
 **Environment.** The applying machine is Linux with a real `python3` 3.12.3; the spec's `## Tasks`
 preamble hard-coded a Windows interpreter path (corrected in task 0.1). The live plugin is the
 working tree at `2.0.0`, not the `0.13.0` cache in `~/.claude/plugins/cache/`.
+
+## Outcome
+
+**Abandoned** at task 0.2 — the spec's own gate — in favour of
+`collapse-skills-into-commands`. Not a failure of the analysis: the measurement,
+the tier design, and the compression recipe all held up. The spec was built to
+ask one question before spending itself, and the answer came back against it.
+
+**What settled it.** Task 0.2 spiked the three `## Design` questions against
+throwaway command and skill probes in fresh `claude -p` processes (a new command
+is not discoverable mid-session — the registry is built at startup). The two
+load-bearing unknowns passed decisively: `${CLAUDE_PLUGIN_ROOT}` **does**
+substitute inside a `commands/*.md` body, and a conductor **can** invoke a command
+by name through the Skill tool. Both are what a command file needs in order to
+replace a skill.
+
+The third question — whether a command honours `allowed-tools` — came back
+unproven rather than negative: the declared allowlist failed to block a `Write` in
+all four cells of command × skill by slash × Skill-tool invocation. Commands are
+not worse than skills; the guarantee simply is not enforced for either. By the
+gate's letter that is a FAIL, and the spec would have continued at 1.1. The human
+read it as parity — the collapse loses nothing — and chose the collapse, which is
+strictly better where it works: always-on falls to 2,069 characters instead of
+4,138, and the `wrapper == skill` duplication is **deleted** rather than made
+mechanical by a new lint check.
+
+**What was built:** tasks 0.1 (baseline reconciled at 30,705 chars / 28 flat-named
+skills) and 0.2 (the gate). **What was not:** tasks 1.1–5.3. No stub was ever
+written and no description was cut — which is precisely what running the spike
+before the first edit was designed to buy. The cost of the abandonment is two
+commits and one reverted throwaway file, against the 28 edits it avoided.
+
+**Ceded to the collapse spec**, which inherits three findings this one produced:
+`hide-from-slash-command-tool` exists as a frontmatter key, answering the
+duplicate-`/`-entry objection that made this spec defer
+`disable-model-invocation`; the CLI parses one unified frontmatter schema; and
+Anthropic ships four `commands/**` files using `${CLAUDE_PLUGIN_ROOT}`, one
+load-bearingly inside `allowed-tools`.
+
+**Left behind for someone else:** `allowed-tools` appears unenforced for skills
+too, so the read-only guarantee `quenching-docs-status` and
+`quenching-specs-status` state in prose is aspirational. Observed under
+`claude -p` on one machine, never tested interactively — a lead, not a verdict.
