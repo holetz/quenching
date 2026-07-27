@@ -69,4 +69,4 @@ model; and the enforcement hook's `Stop` sweep is dirty-gated — a turn that to
 
 ## License
 
-[MIT](LICENSE) © Eloy Sekonell.
+[MIT](LICENSE) © Israel Holetz.
