@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**11 specs** · 2 executing · 9 captured
+**16 specs** · 2 executing · 14 captured
 
 ### Executing
 
@@ -101,6 +101,11 @@ closing out unbuilt work looks like.
 | [expose-finding-advisory-as-data](2026-07-25-expose-finding-advisory-as-data.md) | Expose a finding's advisory/blocking status as data in okf-validate --json | 2026-07-25 |
 | [split-specs-py-backlog-renderer](2026-07-25-split-specs-py-backlog-renderer.md) | Split the backlog-zone renderer out of specs.py | 2026-07-25 |
 | [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
+| [add-specs-py-record-writer](2026-07-27-add-specs-py-record-writer.md) | Give the frontmatter records a mechanical writer in specs.py | 2026-07-27 |
+| [dedupe-specs-py-spec-reader](2026-07-27-dedupe-specs-py-spec-reader.md) | Fold the four copies of read-parse-derive in specs.py into one helper | 2026-07-27 |
+| [fix-skills-py-description-truncation](2026-07-27-fix-skills-py-description-truncation.md) | skills.py silently truncates a description at the first ' | 2026-07-27 |
+| [isolate-functional-checks-probes](2026-07-27-isolate-functional-checks-probes.md) | functional-checks.sh check 3 creates real specs in the repo it probes | 2026-07-27 |
+| [name-the-scaffolded-stage](2026-07-27-name-the-scaffolded-stage.md) | Decide whether a spec with an unwritten Problem gets a named stage | 2026-07-27 |
 | [retire-skill-vocabulary](2026-07-27-retire-skill-vocabulary.md) | Retire the skill vocabulary left behind by the collapse | 2026-07-27 |
 | [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
 <!-- END GENERATED -->
