@@ -48,10 +48,11 @@ sentence, and **link out** rather than explaining in full here.
   completed task line, written mechanically by `specs.py task --check --commit`, that links the
   checkbox to the commit implementing it without inscribing anything into the commit message —
   which stays entirely the target repo's to format.
-- [**Derived stage**](../standards/workflows/plan-artifacts.md) — a spec's
-  sub-stage (`captured`/`proposed`/`designed`/`refined`/`executing`), COMPUTED from which
-  headings are filled rather than declared in a field, so it regresses on its own when a
-  section empties instead of going stale.
+- [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
+  (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
+  COMPUTED from which headings are filled and which records frontmatter carries rather than
+  declared in a field, so it regresses on its own when a section empties instead of going stale;
+  resolution is last-match-wins, which is why `executing` sorts last.
 - [**Entry point**](../standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
   path IS its identity (`commands/docs/add.md` → `/docs:add`); since Claude Code merged commands
   into skills there is no second file to mirror, so there is nothing an entry point can drift from.
@@ -59,26 +60,30 @@ sentence, and **link out** rather than explaining in full here.
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
   `assets/`.
-- [**Phase gate**](../standards/workflows/plan-artifacts.md) — the set of
-  sections a spec must have filled to ENTER a phase folder; `promote` refuses with exit 2 and
-  the missing list rather than warning, and the per-phase sets live once in `schema.json`,
-  read by both `promote` and `validate`.
-- [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task at
-  propose time declaring it may run concurrently with its group, honoured only when
-  `specs.py parallel` proves the group's `files:` sets disjoint; never inferred while applying.
+- [**Phase gate**](../standards/workflows/plan-artifacts.md) — the set of sections a spec must have
+  filled before a heading counts as required, which is what makes the explicit-none rule
+  stage-scoped rather than absolute. Two gates move a file (`new` into `plans/`, `promote` into
+  `archive/`) and refuse with exit 2 and the missing list rather than warning; the `ready` gate is
+  a derived stage that refuses nothing. All of them live once in `schema.json`, read by both
+  `promote` and `validate`.
+- [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task when
+  the tasks are written, declaring it may run concurrently with its group; honoured only when
+  `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
   the same programs run again as the closing verification.
-- [**Promote**](../standards/workflows/plan-artifacts.md) — the gated `git mv` that
-  moves a spec between phase folders without renaming it; promoting into `ready/` IS the human
-  OK to build, which is what replaced v1's computed `applyReady` flag.
+- [**Promote**](../standards/workflows/plan-lifecycle.md) — the gated `git mv` that moves a spec
+  from `plans/` to `archive/` without renaming it, stamping `outcome: done | abandoned`. Under v3
+  it is the ONE hop a spec ever makes: the `backlog/` → `ready/` promote is retired, and the human
+  OK it used to carry is the **Approved record** instead. Promoting as `done` refuses
+  while `- [ ]` boxes remain unless forced; `abandoned` is always allowed.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
-- [**Verification policy**](../standards/workflows/task-execution.md) — the per-plan declaration
-  (`per-task`, `per-section`, `end-of-plan`) written at propose time that decides when a task's
-  `verify:` command runs, so implementation never guesses and never asks mid-task.
+- [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
+  (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
+  `verify:` command runs, so execution never guesses and never asks mid-task.
 
 ## How to enrich
 
