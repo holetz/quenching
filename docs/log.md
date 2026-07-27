@@ -6,6 +6,12 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-26
 
+**Creation**: [Claude Code skill and command loading mechanics](/docs/reference/tools/claude-code-skill-command-mechanics.md) — distilled from the abandoned `skill-description-tiering` spec: `${CLAUDE_PLUGIN_ROOT}` substitutes in command bodies, commands are Skill-tool invocable, discovery is at startup, and one frontmatter schema serves both.
+
+**Update**: [specs/](/specs/archive/2026-07-26-skill-description-tiering.md) — archived `skill-description-tiering` (outcome: abandoned) at its own task 0.2 gate, in favour of the collapse spec. Two of three spike questions passed; the third proved parity rather than a YES.
+
+**Creation**: [Collapse the 28 skill+wrapper pairs into one command file per entry point](/specs/backlog/2026-07-26-collapse-skills-into-commands.md) — captured as the mutually-exclusive alternative to `skill-description-tiering`, gated on that spec's task 0.2 spike.
+
 **Update**: [specs/](/specs/archive/2026-07-25-specs-front-v2.md) — archived `specs-front-v2` (outcome: done): the `specs/` front is v2 (one file per spec, three phase
 folders, gated promote), shipped as plugin 2.0.0. Glossary gains Derived stage, Phase gate,
 and Promote.
