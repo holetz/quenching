@@ -244,9 +244,10 @@ with `plugins/quenching/VERSION` (§Releasing).
 
 ### 1. The rule, agreed before it is proved
 
-- [ ] 1.1 Write `docs/standards/code/frontmatter-parsing.md` at `authority: background`: the YAML subset the three tools read, the comment rule, the canonical case list, and the three-copy lockstep obligation
+- [x] 1.1 Write `docs/standards/code/frontmatter-parsing.md` at `authority: background`: the YAML subset the three tools read, the comment rule, the canonical case list, and the three-copy lockstep obligation
       pattern: docs/standards/quality/surface-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/fix-skills-py-description-truncation: 1.1 the parsing standard
 
 ### 2. The three tools
 
