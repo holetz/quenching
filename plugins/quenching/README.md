@@ -524,11 +524,30 @@ All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 ## Upgrade
 
 Bump `version` in `.claude-plugin/plugin.json` and `VERSION` on each release; that is
-the key Claude Code uses to detect and apply an upgrade. Keep the `VERSION` constant in **both**
-shipped scripts — `assets/hooks/okf-validate.py` and `assets/bin/specs.py` — in lockstep with that
-pair, since each one's `--version` is what its installing align compares against an already-installed
-copy in a target repo.
+the key Claude Code uses to detect and apply an upgrade. Mirror it in the marketplace manifest's
+plugin entry (`.claude-plugin/marketplace.json`) too, and keep the `VERSION` constant in **all
+three** shipped scripts — `assets/hooks/okf-validate.py`, `assets/bin/specs.py` and
+`assets/bin/skills.py` — in lockstep with that pair, since each one's `--version` is what its
+installing align compares against an already-installed copy in a target repo (`/docs:align` for
+the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`). Six sources, one number.
 
+- **4.1.0:** **the capability layer got proved, applied and closed.** Both new mints were measured
+  by `/skill:eval` — `/skill:agent:new` at +0.364 pass rate for 182,367 fewer tokens,
+  `/skill:hook:new` at +0.5 for 52.5% cheaper — and each gained an intent-shaped trigger plus a
+  sandboxed routing probe, taking `functional-checks.sh` to **9 assertions across 7 sandboxed
+  sessions**. `skills.py` closed its two blind spots: `lint` now reads a **frontmatter `hooks:`
+  block** (the scope ladder's narrowest rung, the mold's shape only, fail-open via
+  `sk-hook-unparseable`) and serves both rungs from one implementation, and `budget` counts
+  `agents/*.md` descriptions as its own breakdown line; the ceiling was re-measured and re-set to
+  **11,565** from a run. The profile doctrine was then applied to its own author: five inline
+  `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on `/specs:align`,
+  `/docs:harness` and `/docs:glossary-backfill` and priced in the body of the two that keep it,
+  frontmatter `hooks:` blocks on `/docs:add`/`/docs:learn`/`/docs:define`, and a collection-only
+  `Task` for `/skill:align`'s doctrine audit — `sk-unscoped-bash` 8 → 5, every survivor stating
+  its reason. `docs/standards/automation/hooks.md` graduated to `authority: current` on that
+  adopting surface; `agents.md` stayed `background` because there is no `.claude/agents/` anywhere
+  to follow it. `/skill:package` was **dismissed on a real packaging run**: four mechanical
+  operations, then six fields that came back requiring a human. Still twenty-four commands.
 - **1.0.0:** **the middle front went fully native — the external OpenSpec CLI is gone.** The
   `openspec/` workspace this plugin used to *drive* (`@fission-ai/openspec`, `openspec init`,
   `config.yaml`, a main-spec store, delta specs) is replaced by a **native `specs/` front** the
