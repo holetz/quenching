@@ -159,7 +159,7 @@ A checkbox MAY carry indented metadata lines directly beneath it:
       files: src/middleware/auth.ts, src/config/limits.ts (new)
       pattern: src/middleware/cors.ts
       verify: pnpm test middleware/
-      commit: a1b2c3d
+      subject: plan/session-tokens: 3.2 Add rate limiting to the auth middleware
 ```
 
 | Key | What it carries | Why execute wants it |
@@ -167,11 +167,11 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 | `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
 | `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation` |
-| `commit:` | the commit that implemented this task | **written by the tool, never by hand** (`task --check --commit`), so code and spec stay linked without a trailer inside the commit message |
+| `subject:` | the SUBJECT of the commit that implements this task | **written by the tool, never by hand** (`task --check --subject`), so code and spec stay linked without a trailer inside the commit message. Known before the commit exists, which is what lets the box travel inside it |
 
 Write the first three where they earn their place — a task touching three known files with an
 obvious test command deserves all three; a one-line doc edit deserves none. Metadata that restates
-the task text is noise. `commit:` is not written by an author at all; it appears when the task is
+the task text is noise. `subject:` is not written by an author at all; it appears when the task is
 ticked.
 
 **`[P]` marks a task parallel-eligible**, written right after the id:
@@ -210,5 +210,5 @@ provenance is never lost:
 
 **`## Outcome`** is the archive gate, written at close-out: what shipped, what was left out, what
 the next reader needs to know — **including the merge strategy**, since a squash changes what a
-future reader can resolve from a `commit:` field. For an abandoned spec, the reason it will not be
+future reader can resolve from a `subject:` field. For an abandoned spec, the reason it will not be
 built is the whole content.

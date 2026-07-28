@@ -8,7 +8,7 @@ A **Claude Code plugin marketplace** with a single plugin, `quenching`
 (source: [plugins/quenching/](plugins/quenching/)). The plugin forces a *target*
 repository's **three fronts** — the `docs/` **Open Knowledge Format (OKF v0.1)** bundle, the
 native `specs/` spec-driven workspace, and the `.claude/` command surface — into one
-canonical shape and keeps them conformant, via twenty-four commands under `/docs`, `/specs`,
+canonical shape and keeps them conformant, via twenty-five commands under `/docs`, `/specs`,
 `/skill` and the root `/align`, plus three self-contained stdlib Python
 tools (the OKF enforcement hook `okf-validate.py`, the spec-cycle CLI `specs.py`, and the
 command-surface verifier `skills.py`).
@@ -51,7 +51,7 @@ plugins/quenching/
   VERSION                              # plugin version, kept in lockstep with plugin.json
   commands/                            # THE SURFACE — the only tree Claude Code registers
     align.md                           # /align — three fronts, one OK, looped across them
-    specs/*.md                         # /specs:* — the eight specs-front commands (FLAT)
+    specs/*.md                         # /specs:* — the nine specs-front commands (FLAT)
     docs/*.md                          # /docs:* — the ten OKF-bundle commands
     docs/documentation/build.md        # /docs:documentation:build — the one docs-nested command (acts on ONE home)
     skill/*.md                         # /skill:* — the five .claude-automation commands
@@ -86,12 +86,12 @@ Every command keeps **default invocation** — typable at `/`, and reachable by 
 or a spoken trigger. No `user-invocable: false`, no `disable-model-invocation`. The surface splits
 by front: `/docs:*` are the ten that act on the OKF `docs/` bundle (one nested a level deeper
 as `/docs:documentation:build`, because it acts on a single **home**, not the bundle); `/specs:*`
-the eight that act on the native `specs/` workspace; `/skill:*` the five that act on the target's
+the nine that act on the native `specs/` workspace; `/skill:*` the five that act on the target's
 `.claude/` automation surface (two nested — `/skill:agent:new`, `/skill:hook:new` — because they
 mint a different artifact); and the **root `/align`** the one that spans all three fronts —
 deliberately outside the three namespaces, because it is what crosses them.
 
-## The twenty-four commands and how they relate
+## The twenty-five commands and how they relate
 
 | Command | Role |
 | --- | --- |
@@ -114,9 +114,10 @@ deliberately outside the three namespaces, because it is what crosses them.
 | `/specs:align` | The `specs/`-front align + installer (quenching-native), probe-first (`specs.py doctor` + `validate`, so a clean workspace costs two calls and stops): scaffolds `specs/` by copying `assets/specs/`, installs `specs.py` into `.claude/hooks/`, applies the tools' declared remedies, normalizes spec + archive names, stamps missing frontmatter, regenerates the listing zone via `specs.py plans reindex`, **folds an older `backlog/`+`ready/` layout or a v1 three-file one into `plans/`** (`specs.py migrate`), and **migrates a legacy `openspec/` workspace**. Authoring and cycle actions are REPORTED with the command that closes each, never driven. Owns `references/conformance.md`. |
 | `/specs:create` | Creates ONE spec in `specs/plans/` — effort proportional to input, never an interrogation: a sentence becomes `## Problem` and nothing else, in seconds; a Claude Code plan file (`~/.claude/plans/*.md`, or a given path) becomes every section it actually supports, mapped and never invented. Dedupes, regenerates the listing zone, logs. |
 | `/specs:develop` | Develops ONE spec by asking about it — one question at a time with an inline recommendation, the question bank chosen by the spec's own derived stage: raw → generative shaping; `proposed` → adversarial (alternatives, premortem, critique); `designed` → the gate's gaps (`## Impact`, `## Validation`, the `verification` policy); open `## Discoveries` → resolve each; gate met → offer the `approved: {date}` stamp. Answers land in ONE confirmed edit per bank; a real interrogation records `refined: {mode, date}`, clearing `sp-unrefined` (never gating). NEVER edits code. Owns `references/artifacts.md` + `references/spec-driven.md`. |
-| `/specs:execute` | Builds ONE spec's `## Tasks` and **proves** each task — refuses to start on a dirty tree, offers branch/worktree isolation and records it as `branch: {base, work}`, then per task: writes the code, runs its `verify:` under the spec's declared policy, self-reviews the diff on four items, commits it alone (the target's `docs/standards/git/**` governs when declared, read-if-present and never installed; default subject `plan/<slug>: <id> <title>`), and ticks the box with its sha via `specs.py task --check --commit`. Writes ONLY the `docs/standards/` doc a task explicitly names; everything else the work reveals is one `specs.py discover` line. A task that stops converging is written `- [!] … — blocked: <reason>`. May delegate a file-scoped executor sub-agent (never `context: fork`). **Stops at the last commit** — review, merge and archive are `/specs:conclude`. Owns `references/execution.md` + `references/git.md`. |
-| `/specs:conclude` | Closes ONE spec out, resumable from its records: reviews the whole branch (`reviewed: {date}`), writes the emergent `docs/` the work revealed, merges (strategy offered, recorded as `merge: {strategy, commit}`; a squash offers to keep the branch, where the per-task shas live), then archives with `outcome: done` (REFUSES while boxes are open unless forced) or `outcome: abandoned` (always allowed; distils at most a background note) and offers ONE OKF distillation pass. The outcome is never inferred — not by staleness, not by any sweep. Owns `references/distill.md`. |
+| `/specs:execute` | Builds ONE spec's `## Tasks` and **proves** each task — refuses to start on a dirty tree, delegates isolation to `/specs:isolate`, then per task: writes the code, runs its `verify:` under the spec's declared policy, self-reviews the diff on four items, commits it alone (the target's `docs/standards/git/**` governs when declared, read-if-present and never installed; default subject `plan/<slug>: <id> <title>`), and ticks the box **before** the commit with that commit's subject (`specs.py task --check --subject`), so code and box land in ONE commit per task and no bookkeeping commit follows. Writes ONLY the `docs/standards/` doc a task explicitly names; everything else the work reveals is one `specs.py discover` line. A task that stops converging is written `- [!] … — blocked: <reason>`. May delegate a file-scoped executor sub-agent (never `context: fork`). **Stops at the last commit** — review, merge and archive are `/specs:conclude`. Owns `references/execution.md`. |
+| `/specs:conclude` | Closes ONE spec out, resumable from its records, with the **merge as its last action**: reviews the whole branch (`reviewed: {date}`), writes the emergent `docs/` the work revealed, archives with `outcome: done` (REFUSES while boxes are open unless forced) or `outcome: abandoned` (always allowed; distils at most a background note), runs ONE OKF distillation pass and stamps `merge: {strategy, subject}` — all on the work branch — and only then merges. One merge carries the code, the emergent docs, the archived spec and the distillation, and **nothing is committed to the base after it**; a squash offers to keep the branch, where the per-task commits live. The outcome is never inferred — not by staleness, not by any sweep. Owns `references/distill.md`. |
 | `/specs:continue` | The router: one `specs.py next --front` call ranks every candidate (executing, closest to done, priority, age) with a reason per row, and hands off to the one command that fits — never builds, edits, or closes anything itself. Suggests `/specs:triage` when the ranking has nothing to stand on. |
+| `/specs:isolate` | Takes **or reports** git isolation for ONE spec at ANY stage — created, being developed, or about to be built: the `plan/<slug>` branch or a worktree beside the repo, the `branch: {base, work}` stamp (write-once, `base` captured while it is still derivable), and moving an uncommitted spec file onto the branch so the base keeps no trace. Reporting is a complete use of it. `/specs:execute` delegates here; `create` and `develop` name it on request. **Never merges** — that keeps `conclude`'s review and archive gates. Owns `references/git.md`. |
 | `/specs:status` | The front's only **read-only** view: specs by derived stage with task progress, each spec's frontmatter records as the history they narrate (ranked, interrogated, approved, built, reviewed, merged, closed), the `specs.py doctor`/`validate` results — split into what `/specs:align` would fix, what a cycle command closes, and what neither closes. Reports in the sweep's own `sp-*` vocabulary, so it doubles as an honest dry run before the OK. Near-free by construction: no sub-agents, no per-spec fan-out. Writes nothing. |
 | `/specs:triage` | The prioritization sweep: reads every spec's frontmatter and derived stage directly (no sub-agents), proposes ONE ordered table with a one-line reason per row, applies on one OK, writing `priority: {level, criticality, complexity, date}` and nothing else — merging, never clobbering a human's ranking. Its output is what `continue` stands on. Never removes a spec, never infers completion, never treats staleness as abandonment. |
 
@@ -139,7 +140,7 @@ the execution mechanics (clean tree, the validation loop, the per-task commit an
 sha, delegation bounds) in
 [`specs-execute/execution.md`](plugins/quenching/assets/references/specs-execute/execution.md)
 and the git defaults + read-if-present rule in
-[`specs-execute/git.md`](plugins/quenching/assets/references/specs-execute/git.md),
+[`specs-isolate/git.md`](plugins/quenching/assets/references/specs-isolate/git.md),
 the cycle-authorization + cross-front convergence contract in
 [`align-all/convergence.md`](plugins/quenching/assets/references/align-all/convergence.md)
 (cited by `/align`; never restated by a front align),
@@ -178,15 +179,15 @@ everything else**: `ready` is a *derived* stage (the ten gate sections), and the
 `priority`, `refined`, `approved`, `branch`, `reviewed`, `merge`, `outcome` — each hold a fact no
 derivation can reproduce (`docs/standards/workflows/plan-lifecycle.md`). There is no separate
 spec store to bridge to, so the old delta (a branch reimplemented in markdown) is gone:
-isolation-while-building is a real git **branch or worktree** (offered by `/specs:execute`, which
-records `branch:` and each task's `commit:` sha), with merge, history, and reversion. The **OKF
+isolation is a real git **branch or worktree** (taken by `/specs:isolate` at any stage, which
+records `branch:`; each task records its commit's `subject:`), with merge, history, and reversion. The **OKF
 bridge** splits on declared vs emergent: `docs/` is read as context going in (standards,
 glossary); `execute` writes the standards a task explicitly names; `conclude` writes what the
 work revealed and distils the rest at archive (never bulk-copied). `specs/` and `docs/` never
 duplicate content — the boundary is owned once by
 [`spec-driven.md`](plugins/quenching/assets/references/specs-develop/spec-driven.md) §Boundary.
 
-The eight `/specs:*` commands split by grain: four work ONE spec through its life (`create` →
+The nine `/specs:*` commands split by grain: four work ONE spec through its life (`create` →
 `develop` → `execute` → `conclude`), two read or rank the whole front (`status`, `triage`),
 `continue` routes between all of them, and `align` is the front's own aligner *and* installer (it
 scaffolds `specs/`, installs `specs.py`, folds older layouts, and **migrates a legacy `openspec/`
@@ -233,7 +234,9 @@ The four-branch refresh rule is owned **once**, by `commands/docs/align.md` §4 
 install · older banner → overwrite · same-or-newer → leave · banner removed by a human → keep
 and report); the other two aligns **cite** it. The banner's `<VERSION>` placeholder is filled
 from the `VERSION` file at copy time, so a release adds no lockstep item — but a command rename
-or a new command **does** mean editing all three manuals, since they enumerate the command surface.
+or a new command **does** mean editing **the manual of the front that command belongs to**, since
+each manual enumerates its own front's surface and only that. Adding `/specs:isolate` needed
+`assets/specs/QUENCHING.md` alone; touching the other two would have been churn.
 
 ## The enforcement hook (`assets/hooks/okf-validate.py`)
 
@@ -305,7 +308,7 @@ python3 assets/hooks/okf-validate.py --version
 python3 assets/hooks/okf-validate.py assets/docs                          # 0 error(s), 0 warning(s)
 python3 assets/hooks/okf-validate.py assets/specs/plans --listing-root    # 0 error(s), 0 warning(s)
 # the command surface
-python3 assets/bin/skills.py --root . doctor --json                       # 24 commands, no findings
+python3 assets/bin/skills.py --root . doctor --json                       # 25 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings are reported, not fatal)
 python3 assets/bin/skills.py selftest                                     # the layout rule's fixture
 ```
@@ -355,5 +358,5 @@ with that pair — `assets/hooks/okf-validate.py`, `assets/bin/specs.py` **and**
 (`/docs:align` for the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`)
 compares against an already-installed copy in a target repo. Mirror the plugin `version` in the
 marketplace manifest's plugin entry (`.claude-plugin/marketplace.json`) too. A command rename or
-a new command also means editing all three `QUENCHING.md` operator manuals, since they enumerate
-the command surface.
+a new command also means editing the `QUENCHING.md` operator manual of **that command's own
+front** — each manual enumerates only its own front's surface, so the other two stay untouched.

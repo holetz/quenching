@@ -51,10 +51,25 @@ sentence, and **link out** rather than explaining in full here.
   frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
   `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
   refusing an unapproved spec.
+- [**Anchorless strategy**](../standards/workflows/plan-git-record.md) — a merge strategy that
+  produces **no merge commit** — `fast-forward` and `rebase` — so the **Merge record** has nothing
+  to name and carries an explicit none instead of a fabricated pointer. Under both, the per-task
+  commits land on the base directly and their subjects resolve there, which is why a merge pointer
+  would add nothing rather than being merely unavailable. `specs.py validate` reports the mismatch
+  in **both** directions (`sp-bad-merge`): an anchorless strategy carrying a real subject, and a
+  merge-producing strategy carrying an explicit none.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
   unblocks it.
+- [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
+  frontmatter entry stamped by `/specs:isolate` at the moment isolation is taken, write-once.
+  `work` is derivable while the branch is checked out; **`base` is not** — after the merge, git
+  cannot say what the branch was cut from, which is the whole reason the record exists and why it
+  is captured while still true. Work done in place stamps nothing, because a record whose `base`
+  equals its `work` states no fact. **The record is never the signal**: anything asking whether a
+  spec is in flight asks git for a live `plan/<slug>` ref, since a human may cut a branch with no
+  record and a record outlives the branch it names.
 - [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/docs:status`
   prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
   which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
@@ -66,10 +81,16 @@ sentence, and **link out** rather than explaining in full here.
   session's prompt-cache key, so changing it makes the next request recompute every input token.
   A sub-agent's pin is cache-safe because it carries its own context; an orchestrator's is not,
   which is why five `effort: low`/`medium` pins were dropped rather than kept for their tier.
-- [**Commit record**](../standards/workflows/plan-git-record.md) — the `commit: <sha>` field on a
-  completed task line, written mechanically by `specs.py task --check --commit`, that links the
-  checkbox to the commit implementing it without inscribing anything into the commit message —
-  which stays entirely the target repo's to format.
+- [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
+  completed task line, written mechanically by `specs.py task --check --subject`, that links the
+  checkbox to the commit implementing it by naming that commit's **subject** and resolving with
+  `git log --grep --fixed-strings`. Because a subject is known *before* the commit exists, the box
+  is ticked into the commit it describes and no bookkeeping commit follows it — the same inversion
+  that lets `merge: {strategy, subject}` be stamped on the work branch and the merge be the last
+  action of `/specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
+  subject is whatever the target repo's own convention produced. A spec built before this change
+  carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
+  backfilled.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -83,6 +104,12 @@ sentence, and **link out** rather than explaining in full here.
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
   is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Climbed only when the rung
   below cannot express the check.
+- [**Merge record**](../standards/workflows/plan-git-record.md) — the `merge: {strategy, subject}`
+  frontmatter entry stamped by `/specs:conclude`, write-once, **on the work branch before the
+  merge** — which is what makes the merge that command's last action and leaves nothing to be
+  committed to the base after it. The strategy was a human choice and the subject names the merge
+  commit it is about to produce; recording both is what tells a future reader whether the per-task
+  subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
 - [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under

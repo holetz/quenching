@@ -92,7 +92,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.1.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.2.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -125,12 +125,13 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|commit)\s*:\s*(.+?)\s*$",
+TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|subject|commit)\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
-# A recorded sha must survive being written into a one-line grammar and read back, so the
-# only hard requirement is that it carries no whitespace. Length is NOT checked: an
-# abbreviated sha is legitimate and how long git abbreviates to depends on the repo.
-COMMIT_REF_RE = re.compile(r"^\S+$")
+# The anchor is written into a one-line grammar and read back, so the only hard requirement
+# is that it holds text and stays on its line. `commit:` is the older form of the same
+# field — still READ from specs written before the anchor became the subject, never written
+# again, and never rewritten in place.
+SUBJECT_RE = re.compile(r"^[^\r\n]+$")
 DEFAULT_META_INDENT = "      "
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
 BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
@@ -138,6 +139,12 @@ BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
 VERIFICATION_POLICIES = ("per-task", "per-section", "end-of-plan")
 DEFAULT_VERIFICATION = "per-section"
 OUTCOMES = ("done", "abandoned")
+# The four strategies `/specs:conclude` offers. Two of them create no merge commit, so the
+# record has no subject to name and carries an explicit none instead — a fact about the
+# strategy, not a gap in the record.
+MERGE_STRATEGIES = ("merge-commit", "squash", "rebase", "fast-forward")
+MERGE_ANCHORLESS_STRATEGIES = ("rebase", "fast-forward")
+RECORD_NONE_RE = re.compile(r"^none\b", re.IGNORECASE)
 
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -179,7 +186,9 @@ DEFAULT_SCHEMA: dict = {
                        "writtenBy": "execute", "writeOnce": True},
             "reviewed": {"fields": ["date"],
                          "writtenBy": "conclude", "writeOnce": False},
-            "merge": {"fields": ["strategy", "commit"],
+            "merge": {"fields": ["strategy", "subject"],
+                      "strategies": list(MERGE_STRATEGIES),
+                      "anchorless": list(MERGE_ANCHORLESS_STRATEGIES),
                       "writtenBy": "conclude", "writeOnce": True},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
@@ -406,7 +415,7 @@ verification: <VERIFICATION>
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
-     `[ ]` / `[x]` character. `--commit <sha>` records what implemented it.
+     `[ ]` / `[x]` character. `--subject <line>` records the commit that implements it.
 
      A checkbox MAY carry indented metadata lines directly beneath it:
 
@@ -414,7 +423,7 @@ verification: <VERIFICATION>
              files: src/middleware/auth.ts, src/config/limits.ts (new)
              pattern: src/middleware/cors.ts
              verify: pnpm test middleware/
-             commit: a1b2c3d
+             subject: plan/<slug>: 3.2 Add rate limiting to the auth middleware
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
@@ -422,8 +431,11 @@ verification: <VERIFICATION>
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
                task falls back to `## Validation`.
-     commit:   written by `task --check --commit`, never by hand — the commit that
-               implemented this task, so code and spec stay linked without a git trailer.
+     subject:  written by `task --check --subject`, never by hand — the SUBJECT of the commit
+               that implements this task, resolved by `git log --grep --fixed-strings`. It is
+               known BEFORE the commit, so the box is ticked INTO the task's own commit
+               instead of a bookkeeping commit that follows it. A spec built before this
+               change carries `commit: <sha>`; both forms are read, neither is backfilled.
 
      `[P]` right after the id marks a task parallel-eligible:
 
@@ -513,6 +525,31 @@ def parse_frontmatter(text: str) -> dict:
                 k += 1
             if items:
                 fm[key] = items
+                j = k
+                continue
+            # A block mapping. Flow (`{a: b, c: d}`) splits on commas, so a record value
+            # that contains one — or is long enough to wrap — can only be written this way.
+            # Indent decides, exactly as YAML does it: a line deeper than the record's keys
+            # continues the value above it rather than starting a new key, which is what
+            # lets an explicit-none reason run past one line.
+            rec, last, base_indent = {}, None, None
+            k = j + 1
+            while k < len(body) and body[k][:1] in (" ", "\t") and body[k].strip():
+                indent = len(body[k]) - len(body[k].lstrip())
+                cur = body[k].strip()
+                if base_indent is None:
+                    base_indent = indent
+                if indent > base_indent and last is not None:
+                    rec[last] = f"{rec[last]} {cur}".strip()
+                elif indent == base_indent and ":" in cur:
+                    k2, _, v2 = cur.partition(":")
+                    last = k2.strip()
+                    rec[last] = v2.strip().strip("'\"")
+                else:
+                    break
+                k += 1
+            if rec:
+                fm[key] = rec
                 j = k
                 continue
             fm[key] = ""
@@ -863,8 +900,8 @@ def parse_tasks(text: str) -> list[dict]:
         parallel = bool(PARALLEL_RE.match(rest))
         blocked = BLOCKED_REASON_RE.search(body)
         files: list[str] = []
-        pattern = verify = commit = None
-        commit_off = last_meta_off = None
+        pattern = verify = subject = commit = None
+        subject_off = commit_off = last_meta_off = None
         meta_indent = None
         for off, cont in enumerate(lines[i + 1:], start=i + 1):
             # the task's block ends at a blank line, a non-indented line, or another
@@ -883,6 +920,8 @@ def parse_tasks(text: str) -> list[dict]:
                 files = [p.strip() for p in val.split(",") if p.strip()]
             elif key == "pattern":
                 pattern = val
+            elif key == "subject":
+                subject, subject_off = val, off
             elif key == "commit":
                 commit, commit_off = val, off
             else:
@@ -901,9 +940,14 @@ def parse_tasks(text: str) -> list[dict]:
             "files": files,
             "pattern": pattern,
             "verify": verify,
+            "subject": subject,
             "commit": commit,
-            # where a `commit:` line is, and where one would go — so `task` upserts it
-            # mechanically instead of the caller doing string surgery on the file.
+            # where the anchor line is, and where one would go — so `task` upserts it
+            # mechanically instead of the caller doing string surgery on the file. Both
+            # forms are tracked because both are read: nothing writes `commit:` any more,
+            # but a spec written before the change carries one and `--uncheck` must still
+            # be able to drop it.
+            "subjectLineno": (base + subject_off) if subject_off is not None else None,
             "commitLineno": (base + commit_off) if commit_off is not None else None,
             "metaInsertAt": base + ((last_meta_off + 1) if last_meta_off is not None
                                     else i + 1),
@@ -1189,6 +1233,8 @@ def cmd_status(args, root: str) -> int:
         "tasks": {"checked": checked, "blocked": blocked, "total": total,
                   "blockedTasks": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
                                    for t in info["tasks"] if t["blocked"]],
+                  "subjects": [{"id": t["id"], "subject": t["subject"]}
+                               for t in info["tasks"] if t["subject"]],
                   "commits": [{"id": t["id"], "commit": t["commit"]}
                               for t in info["tasks"] if t["commit"]]},
         "promote": gates,
@@ -1221,8 +1267,10 @@ def cmd_status(args, root: str) -> int:
             if isinstance(v, dict):
                 v = ", ".join(f"{kk}: {vv}" for kk, vv in v.items())
             print(f"    {k + ':':<10} {v}")
+    if obj["tasks"]["subjects"]:
+        print(f"  subjects: {len(obj['tasks']['subjects'])} task(s) carry one")
     if obj["tasks"]["commits"]:
-        print(f"  commits: {len(obj['tasks']['commits'])} task(s) carry one")
+        print(f"  commits: {len(obj['tasks']['commits'])} task(s) carry an older sha")
     if gates:
         if gates["ok"]:
             print(f"  promote → {dest}/: ready")
@@ -1459,19 +1507,19 @@ def cmd_task(args, root: str) -> int:
                          "message": "pass --check, --uncheck or --block"},
              "error: pass --check, --uncheck or --block")
         return 1
-    # A sha records WHICH COMMIT IMPLEMENTED THIS TASK, so it is meaningful only on the
-    # transition that says the task is done. On --uncheck any recorded sha is dropped
+    # The subject names WHICH COMMIT IMPLEMENTS THIS TASK, so it is meaningful only on the
+    # transition that says the task is done. On --uncheck any recorded anchor is dropped
     # rather than left behind pointing at work the checkbox no longer claims.
-    if args.commit and not args.check:
-        emit(args.json, {"ok": False, "code": "sp-commit-without-check",
-                         "message": "--commit records the commit that implemented a task, "
+    if args.subject and not args.check:
+        emit(args.json, {"ok": False, "code": "sp-subject-without-check",
+                         "message": "--subject records the commit that implements a task, "
                                     "so it goes with --check"},
-             "error: --commit goes with --check")
+             "error: --subject goes with --check")
         return 1
-    if args.commit and not COMMIT_REF_RE.match(args.commit):
-        emit(args.json, {"ok": False, "code": "sp-bad-commit", "commit": args.commit,
-                         "message": "a commit ref may not contain whitespace"},
-             "error: a commit ref may not contain whitespace")
+    if args.subject is not None and not SUBJECT_RE.match(args.subject.strip()):
+        emit(args.json, {"ok": False, "code": "sp-bad-subject", "subject": args.subject,
+                         "message": "a commit subject must be one non-empty line"},
+             "error: a commit subject must be one non-empty line")
         return 1
     if args.block and not args.reason:
         emit(args.json, {"ok": False, "code": "sp-no-reason",
@@ -1503,26 +1551,31 @@ def cmd_task(args, root: str) -> int:
         body = f"{body} — blocked: {args.reason.strip()}"
     lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
 
-    # Upsert the `commit:` metadata line — replace one that is already there, otherwise
+    # Upsert the `subject:` metadata line — replace one that is already there, otherwise
     # append it after the task's last metadata line (or right under the checkbox).
-    commit = None
-    if args.commit:
-        commit = args.commit
-        entry = f"{t['metaIndent']}commit: {commit}\n"
-        if t["commitLineno"] is not None:
-            lines[t["commitLineno"]] = entry
+    subject = None
+    if args.subject:
+        subject = args.subject.strip()
+        entry = f"{t['metaIndent']}subject: {subject}\n"
+        if t["subjectLineno"] is not None:
+            lines[t["subjectLineno"]] = entry
         else:
             lines.insert(t["metaInsertAt"], entry)
-    elif args.uncheck and t["commitLineno"] is not None:
-        del lines[t["commitLineno"]]
+    elif args.uncheck:
+        # Drop whichever anchor the line carries — `subject:` now, `commit:` on a spec
+        # written before the anchor changed form. Highest offset first, so deleting one
+        # cannot shift the index of the other.
+        for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
+                           if o is not None), reverse=True):
+            del lines[off]
     write_text(info["path"], "".join(lines))
 
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
     emit(args.json,
          {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
-          "state": mark, "text": body, "commit": commit,
+          "state": mark, "text": body, "subject": subject,
           "reason": args.reason if args.block else None},
-         f"task {ident} {verb}: {body}" + (f"\n  commit: {commit}" if commit else ""))
+         f"task {ident} {verb}: {body}" + (f"\n  subject: {subject}" if subject else ""))
     return 0
 
 
@@ -1557,7 +1610,43 @@ def _days_since(date: str) -> int:
     return max(0, (datetime.date.fromisoformat(today()) - d).days)
 
 
-def _candidate(s: dict, schema: dict) -> dict:
+def _git(cwd: str, *argv: str) -> str:
+    """Stdout of one git command, or "" for every way it can fail — no git on PATH, not a
+    repo, a nonzero exit. Every caller treats absence as "this repo has no git facts",
+    which is a real state and never an error."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", *argv], capture_output=True, text=True, timeout=10,
+                             cwd=cwd if os.path.isdir(cwd) else ".")
+        return out.stdout if out.returncode == 0 else ""
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return ""
+
+
+def _git_refs(root: str) -> tuple[set[str], str | None]:
+    """Every local branch, and the one checked out. Two calls for the WHOLE front, never
+    one per spec — ranking twenty specs must not cost forty subprocesses.
+
+    No git, or no repo → an empty set and no current branch, which ranks exactly as today."""
+    heads = {l.strip() for l in
+             _git(root, "for-each-ref", "--format=%(refname:short)",
+                  "refs/heads").splitlines() if l.strip()}
+    current = _git(root, "rev-parse", "--abbrev-ref", "HEAD").strip() or None
+    return heads, (current if current and current != "HEAD" else None)
+
+
+def _work_ref(fm: dict, slug: str) -> str:
+    """The branch this spec's work would live on.
+
+    The `branch:` record when one was stamped, else the default `plan/<slug>` — because a
+    human may have cut the branch by hand, with no record at all. The record alone is NEVER
+    the signal: what counts is whether the ref is alive."""
+    rec = fm.get("branch")
+    work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
+    return work or f"plan/{slug}"
+
+
+def _candidate(s: dict, schema: dict, heads: set[str], current: str | None) -> dict:
     raw = read_text(s["path"]) or ""
     fm = parse_frontmatter(raw)
     sections = parse_sections(body_after_frontmatter(raw))
@@ -1568,6 +1657,12 @@ def _candidate(s: dict, schema: dict) -> dict:
     prank, pwhy = _priority_rank(fm.get("priority"))
     progress = (checked / total) if total else 0.0
     executing = stage == "executing"
+    work = _work_ref(fm, s["slug"])
+    live = work in heads
+    # A record whose ref is gone stops counting: the branch was merged or deleted, so the
+    # spec is no more "in flight" than one that never had a branch at all.
+    on_it = live and work == current
+    branch_rank = 0 if on_it else (2 if live else 1)
     return {
         "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": s["date"],
         "title": fm.get("title", titleize(s["slug"])), "stage": stage,
@@ -1577,7 +1672,9 @@ def _candidate(s: dict, schema: dict) -> dict:
         "approved": fm.get("approved") or None,
         "priority": fm.get("priority") or None,
         "ageDays": _days_since(s["date"]),
-        "_key": (0 if executing else 1, -progress, prank, s["date"], s["slug"]),
+        "branch": {"work": work, "live": live, "current": on_it},
+        "_key": (branch_rank, 0 if executing else 1, -progress, prank,
+                 s["date"], s["slug"]),
         "_why": pwhy,
         "_executing": executing,
     }
@@ -1586,6 +1683,10 @@ def _candidate(s: dict, schema: dict) -> dict:
 def _rank_reason(c: dict) -> str:
     """Why this candidate sits where it does — the ONE dominant factor, not a formula."""
     t = c["tasks"]
+    if c["branch"]["current"]:
+        return f"you are on this branch ({c['branch']['work']})"
+    if c["branch"]["live"]:
+        return f"in flight on `{c['branch']['work']}` — check it out to continue"
     if c["_executing"]:
         r = f"executing — {t['checked']}/{t['total']} tasks done"
         if t["blocked"]:
@@ -1609,9 +1710,16 @@ def _next_front(args, root: str) -> int:
 
     Factor 2 is harmless for everything else: a spec with no ticked task scores 0, so the
     whole non-executing set ties there and falls through to priority — which is exactly the
-    intent, without a special case."""
+    intent, without a special case.
+
+    A LIVE `plan/<slug>` ref outranks all four, in both directions: the branch you are
+    standing on goes to the top, and one alive but not checked out is demoted below the
+    untouched specs — offering it would send a second run at work already under way
+    somewhere else. The signal is the ref, never the `branch:` record: a human may cut a
+    branch with no record, and a record outlives the branch it names."""
     schema = load_schema()
-    cands = [_candidate(s, schema) for s in spec_files(root, "plans")]
+    heads, current = _git_refs(root)
+    cands = [_candidate(s, schema, heads, current) for s in spec_files(root, "plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
     for c in cands:
@@ -1625,7 +1733,9 @@ def _next_front(args, root: str) -> int:
     # alone — which is an ordering, not a judgment. Say so rather than implying a ranking
     # that was never made.
     prioritized = [c for c in ranked if c["priority"]]
-    in_flight = [c for c in ranked if c["stage"] == "executing"]
+    # A live branch IS in flight, whether or not any task has been ticked yet — and it has
+    # already reordered the list, so claiming the order is age alone would be false.
+    in_flight = [c for c in ranked if c["stage"] == "executing" or c["branch"]["live"]]
     needs_triage = bool(ranked) and not prioritized and not in_flight and len(ranked) > 1
 
     obj = {"ok": True, "root": root, "count": len(ranked),
@@ -1830,17 +1940,11 @@ def _git_first_commit_date(path: str) -> str | None:
 
     A birth date is never INVENTED: this walks git history for the real one, and the caller
     falls back to the file's mtime rather than to today."""
-    import subprocess
-    try:
-        out = subprocess.run(
-            ["git", "log", "--diff-filter=A", "--follow", "--format=%ad",
-             "--date=short", "--", path],
-            capture_output=True, text=True, timeout=10,
-            cwd=os.path.dirname(os.path.abspath(path)) or ".")
-        lines = [l.strip() for l in out.stdout.splitlines() if l.strip()]
-        return lines[-1] if lines else None
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return None
+    out = _git(os.path.dirname(os.path.abspath(path)),
+               "log", "--diff-filter=A", "--follow", "--format=%ad", "--date=short",
+               "--", path)
+    lines = [l.strip() for l in out.splitlines() if l.strip()]
+    return lines[-1] if lines else None
 
 
 def _birth_date(meta: dict, path: str) -> str:
@@ -2192,7 +2296,54 @@ def validate_spec(root: str, s: dict) -> list[dict]:
                             f"{where}: archived with no `outcome:` — done and abandoned "
                             f"read alike", spec=s["slug"], path=where,
                             remedy="stamp `outcome: done` or `outcome: abandoned`"))
+    merge_finding = merge_record_finding(fm, where, s["slug"])
+    if merge_finding:
+        out.append(merge_finding)
     return out
+
+
+def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
+    """Whether a `merge:` record still says which commit carries the merge.
+
+    TWO forms are legal and both are read forever: the current `{strategy, subject}`, and
+    `{strategy, commit}` on a spec archived before the anchor became the subject. The older
+    one is never rewritten — a recorded sha describes a commit that exists, and editing an
+    archived spec to "fix" it would be a lie about when the record was made."""
+    rec = fm.get("merge")
+    if not rec:
+        return None
+    remedy = ("stamp `merge: {strategy: <one of " + ", ".join(MERGE_STRATEGIES) +
+              ">, subject: <the merge commit's subject>}`")
+    if not isinstance(rec, dict):
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `merge:` is not a {{strategy, subject}} record",
+                        spec=slug, path=where, remedy=remedy)
+    strategy = str(rec.get("strategy", "")).strip().lower()
+    subject = str(rec.get("subject", "")).strip()
+    if strategy not in MERGE_STRATEGIES:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: merge strategy `{strategy or '(unset)'}` is not one of "
+                        f"{', '.join(MERGE_STRATEGIES)}", spec=slug, path=where,
+                        remedy=remedy)
+    if not subject:
+        if str(rec.get("commit", "")).strip():
+            return None          # the older form, read and left exactly as it was written
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `merge:` names a strategy but nothing to resolve the "
+                        f"merge by", spec=slug, path=where, remedy=remedy)
+    anchorless = strategy in MERGE_ANCHORLESS_STRATEGIES
+    explicit_none = bool(RECORD_NONE_RE.match(subject))
+    if anchorless and not explicit_none:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `{strategy}` creates no merge commit, so `subject:` has "
+                        f"nothing to point at", spec=slug, path=where,
+                        remedy="write `subject: none — <why>`")
+    if not anchorless and explicit_none:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `{strategy}` creates a merge commit, so `subject:` must "
+                        f"name it rather than be an explicit none", spec=slug, path=where,
+                        remedy=remedy)
+    return None
 
 
 def cmd_validate(args, root: str) -> int:
@@ -2543,8 +2694,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--uncheck")
     sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
     sp.add_argument("--reason", help="why the task is blocked — written into the line")
-    sp.add_argument("--commit", help="the commit that implemented the task, recorded as a "
-                                     "`commit:` metadata line (goes with --check)")
+    sp.add_argument("--subject", help="the subject of the commit that implements the task, "
+                                      "recorded as a `subject:` metadata line "
+                                      "(goes with --check)")
 
     sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
                                               "ranked candidate list"))

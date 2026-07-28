@@ -1,16 +1,23 @@
 ---
-description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, merge, archive, distil. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Resumable: the reviewed, merge and outcome records plus git say which stages already ran, so a second call picks up where the first stopped instead of redoing it. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome, and never treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; ranking the whole front → /specs:triage.
+description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome, and never treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 ---
 
-# /specs:conclude — review, merge, archive, distil
+# /specs:conclude — review, archive, distil, merge
 
 **Input**: `$ARGUMENTS` — the spec slug, and optionally its outcome.
 
 Closes ONE spec out. Four things happen, in this order, and each is a separate decision: the whole
-branch is **reviewed**, the `docs/` the work *revealed* is **written**, the branch is **merged**,
-and the spec is **archived and distilled** into the OKF bundle.
+branch is **reviewed**, the `docs/` the work *revealed* is **written**, the spec is **archived and
+distilled** into the OKF bundle, and only then is the branch **merged**.
+
+**The merge is the last action, without exception.** Everything above it happens on the work
+branch, so a single merge carries the code, the emergent docs, the archived spec and the
+distillation together — and reverting that merge reverts the spec's whole footprint. What used to
+make this impossible was the `merge:` record itself: a merge sha exists only *after* the merge, so
+the stamp and the distillation were stranded on the base branch behind it. Recording the merge
+**subject** instead — known before the merge — leaves nothing that must be written afterwards.
 
 **Why this is not part of `/specs:execute`.** Every step here is a different scale of judgment from
 building a task: the branch review reads the whole diff rather than one task's, the merge is
@@ -26,7 +33,7 @@ The distillation doctrine — what crosses into `docs/`, what stays, and how it 
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md).
 The merge strategies, the squash caveat and the **read-if-present** rule for a target's
 `docs/standards/git/**` live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md).
 The layout, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 All three are cited, never restated.
@@ -76,9 +83,15 @@ is already set is **reported and skipped**, not repeated:
 | --- | --- | --- |
 | review | `reviewed: {date}` in frontmatter | skip; offer a re-read only if the diff grew since |
 | emergent `docs/` | it rides with the review — same stage, same commit | skipped with the review |
-| merge | `merge: {strategy, commit}`, or `git branch --merged` lists the work branch | skip; never merge twice |
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
+| merge stamp | `merge: {strategy, subject}` in frontmatter | skip the stamp; the merge itself may still be pending |
+| merge | `git branch --merged` lists the work branch | skip; never merge twice |
+
+The last two rows are **separate signals** now that the stamp precedes the merge: a run interrupted
+between them leaves `merge:` recorded and the branch unmerged, which is recoverable — re-read the
+recorded subject and perform the merge with it. The reverse (merged but unstamped) can only come
+from a merge this command did not make, and is a finding to report.
 
 `reviewed` is `writeOnce: false` on purpose: a diff that changed and was read again is a new fact.
 `merge` and `outcome` are `writeOnce: true` — if either is already set and reality disagrees, that
@@ -136,7 +149,17 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 **Done when:** the emergent docs are written and committed, or the offer was declined, or there is
 no bundle.
 
-### 4. Write `## Outcome` and archive
+### 4. Choose the merge strategy, then write `## Outcome` and archive
+For `done` with a `branch` record, offer the strategies in
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Merge strategies with
+**AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
+delete the branch** — a squash collapses every per-task commit, so each task's recorded `subject:`
+resolves only while the branch survives. Say that plainly rather than deleting and discovering it
+later.
+
+The choice comes **before** `## Outcome` because the Outcome has to state it, and before the
+`merge:` stamp in step 5 because that stamp records it. Nothing is merged yet.
+
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
 ```bash
 specs.py section "<slug>" Outcome --write     # body on stdin
@@ -148,27 +171,16 @@ it will not be built is the whole content.
 
 A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
 let the human decide; **never pass `--force` on your own initiative.** Commit the move on the
-branch, so one merge carries the code, the docs and the closed spec together.
-**Done when:** the file is in `archive/` with its `outcome:` stamped and committed, or the run
-stopped at a refusal the human declined to override.
+branch.
+**Done when:** the strategy is chosen, the file is in `archive/` with its `outcome:` stamped and
+committed, or the run stopped at a refusal the human declined to override.
 
-### 5. Merge — the strategy is offered, and the squash caveat is honoured
-For `done` with a `branch` record, offer the strategies in
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
-**AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
-delete the branch** — a squash collapses every per-task commit, so the `commit:` sha on each task
-line resolves only while the branch survives. Say that plainly rather than deleting and discovering
-it later.
+### 5. Distil, and stamp the merge record — both on the work branch
+This is the last writing step, and everything it writes lands on the **work branch**, before any
+merge. Two things happen here, in this order.
 
-Merge, then stamp `merge: {strategy, commit}` into the archived spec on the base branch and commit
-that bookkeeping. Re-run whatever the repo's `## Validation` names, on the merged base.
-
-For `abandoned`, do not merge. Offer to keep the branch (default) or delete it, and record the
-choice in the report.
-**Done when:** the merge landed and `merge` is stamped, or the run recorded why nothing was merged.
-
-### 6. Offer ONE distillation pass — the single bridge
-Per [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md), **branching on
+**First, the distillation pass** — the single bridge into `docs/`, per
+[distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md), **branching on
 the outcome**:
 
 - **`done`** — the full pass over what is *left*: a decision still sitting in `## Design`, a generic
@@ -180,13 +192,52 @@ the outcome**:
 
 One plan, one OK. Every write goes through
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). No bundle → skip
-silently.
-**Done when:** the offer was made, and either applied or declined.
+silently. Commit what it writes **on the work branch**.
+
+**Then stamp the merge record**, still on the branch, naming the subject the merge commit is about
+to carry:
+
+```yaml
+merge: {strategy: <chosen in step 4>, subject: "plan/<slug>: merge (<strategy>)"}
+```
+
+Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
+none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §When there is no
+merge commit to name. `specs.py validate` reports a record that gets this backwards either way
+(`sp-bad-merge`).
+
+The archived spec now lives in `archive/`, so stamping it is the one edit this command makes to a
+file already there — permitted because it is *this* spec, closing *this* run, and because the
+alternative is a write on the base after the merge. Commit it on the branch.
+
+For `abandoned` nothing is merged, so nothing is stamped; the distillation above still runs.
+**Done when:** the distillation offer was made and applied or declined, and `merge` is stamped for
+a `done` outcome — all committed on the work branch.
+
+### 6. Merge — the last action of this command
+Nothing after this point writes anything. Perform the merge the human chose in step 4, using
+exactly the subject recorded in step 5:
+
+```bash
+git checkout <base> && git merge --no-ff plan/<slug> -m "plan/<slug>: merge (merge-commit)"
+```
+
+Then, **reading only**: re-run whatever the repo's `## Validation` names on the merged base, and
+compare `git log -1 --format=%s` against the recorded subject. A mismatch, or a failing check, is
+**reported as a finding** — never repaired with another commit, because a commit on the base after
+the merge is the exact thing this ordering exists to prevent. If something must be fixed, say so
+and let the human start a new change.
+
+For `abandoned`, do not merge. Offer to keep the branch (default) or delete it, and record the
+choice in the report.
+**Done when:** the merge landed and the post-merge checks were reported, or the run recorded why
+nothing was merged.
 
 ### 7. Report
 The archived path, the outcome, task progress at close, `reviewed` / `merge` / `branch` as they now
-stand, what the review found and what was done about it, the docs written in step 3 and step 6, and
-— for an abandonment — that nothing was adopted and what became of the branch.
+stand, what the review found and what was done about it, the docs written in step 3 and step 5, the
+result of the post-merge checks, and — for an abandonment — that nothing was adopted and what
+became of the branch.
 
 Name any `## Discoveries` line still unresolved: those are `/specs:develop`'s discoveries bank to
 close, and they are easiest to lose at exactly this moment.
@@ -198,8 +249,10 @@ close, and they are easiest to lose at exactly this moment.
 - Never treat staleness as evidence of abandonment.
 - Never pass `--force` unprompted — a refusal is information, not an obstacle.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
-- Never delete a branch after a **squash** without saying what it costs: the per-task `commit:`
-  shas stop resolving.
+- **Never write anything after the merge.** The merge is the last action; a post-merge check that
+  fails is a finding to report, not a commit on the base.
+- Never delete a branch after a **squash** without saying what it costs: each task's recorded
+  `subject:` stops resolving.
 - Never overwrite a `writeOnce` record (`merge`, `outcome`) to make reality fit — report the
   disagreement instead.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
@@ -207,7 +260,8 @@ close, and they are easiest to lose at exactly this moment.
   syncs nothing.
 - Never bulk-copy a spec into `docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
-- Never edit or delete anything already in `archive/`, and never touch a spec other than the one
-  being closed.
+- Never edit or delete anything already in `archive/`, with exactly one exception: the `merge:`
+  stamp this run writes onto the spec it is closing, in step 5. Never touch a spec other than that
+  one, and never revise an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.

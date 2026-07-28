@@ -4,7 +4,7 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
 source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26)
@@ -40,9 +40,16 @@ The surface is partitioned by the artifact each command touches:
 - **`/docs:`** — the OKF `docs/` bundle.
 - **`/specs:`** — the native spec-driven workspace.
 - **`/skill:`** — the target repo's `.claude/` automation surface.
-- **root `/align` and `/align-and-update`** — deliberately outside the three namespaces, because
-  they are the two commands that span all three fronts. Under the old rule these were exceptions
-  the linter had to be told about; now they are simply two commands at the top of the tree.
+- **root `/align`** — deliberately outside the three namespaces, because it is the one command that
+  spans all three fronts. Under the old rule it was an exception the linter had to be told about;
+  now it is simply a command at the top of the tree.
+
+This clause named a second root, `/align-and-update`, until the specs-flow-consolidation spec
+deleted it from all four fronts — see
+[../architecture/align-surface.md](../architecture/align-surface.md), which has said the surface is
+a 1×4 column since. Two `authority: current` standards disagreeing about what exists is worse than
+either being merely out of date, which is why a rename's blast-radius sweep below has to reach the
+standards and not only the code.
 
 A command's namespace MUST match what it touches: a command that mints commands lives under
 `/skill:`, never `/docs:`; a command that reads or writes the bundle lives under `/docs:`.

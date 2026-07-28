@@ -4,6 +4,11 @@ title: Make the merge the last action of /specs:conclude
 verification: per-section
 priority: {level: 1, criticality: high, complexity: 16, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
+approved: {date: 2026-07-28}
+branch: {base: main, work: plan/move-conclude-merge-last}
+reviewed: {date: 2026-07-28}
+merge: {strategy: merge-commit, subject: "plan/move-conclude-merge-last: merge (merge-commit)"}
+outcome: done
 ---
 
 # Make the merge the last action of /specs:conclude
@@ -372,79 +377,198 @@ aceito — specs não são renomeadas.
 - Prosa em pt-BR nesta spec; headings, caminhos e chaves em inglês canônico.
 - `archive/**` é intocável.
 
+Estado com as seis seções construídas (worktree
+`../claude-quenching-move-conclude-merge-last`, branch
+`plan/move-conclude-merge-last`, plugin em **4.2.0**):
+
+- **Tudo commitado; nada mergeado.** O próximo passo é `/specs:conclude`, que
+  agora revisa, arquiva, destila e carimba `merge:` **na branch**, e só então
+  mergeia. Este build já seguiu essa ordem: caixa marcada com `--subject` antes
+  do commit, código + caixa no mesmo commit, zero commits de bookkeeping por
+  task.
+- O vocabulário do registro `merge` mora em TRÊS cópias em lockstep:
+  `DEFAULT_SCHEMA` em `specs.py`, `assets/specs/schema.json` (que **shadowa** a
+  constante via `load_schema()`) e `assets/specs/templates/spec.md`.
+- `parse_frontmatter` lê block mappings (indentação decide, como em YAML); flow
+  continua splitando em vírgula, então valor com vírgula só em block.
+- `functional-checks.sh` **não é confiável neste ambiente** e não gateia nada:
+  linha 32 lê stream-json em cp1252 e morre, então asserções falham por falta de
+  evidência. Medido três vezes; o baseline pristino `96f6657` falha as mesmas
+  cinco. Ver `## Discoveries`.
+- `conclude-order-check.sh` é novo e passa 8/8 — é a única checagem que enxerga
+  a afirmação central.
+- **Dívida conhecida para o `conclude`:** `okf-validate docs` sai 0 mas com 9
+  warnings, das quais **sete** são docs que esta branch deixou stale sem
+  nenhuma task declará-los. São material do passo 3 (docs emergentes), não de
+  uma task. Ver `## Discoveries`.
+
 ## Tasks
 
 ### 1. As rails em `specs.py`
 
-- [ ] 1.1 `task --check` aceita `--subject` no lugar de `--commit`, escrevendo `subject:` na linha da task; linhas antigas com `commit:` continuam sendo lidas
+- [x] 1.1 `task --check` aceita `--subject` no lugar de `--commit`, escrevendo `subject:` na linha da task; linhas antigas com `commit:` continuam sendo lidas
       files: plugins/quenching/assets/bin/specs.py
       verify: workspace descartável — `specs.py new x` → `task --check 1.1 --subject "..."` → `status --spec x --json` mostra o subject
-- [ ] 1.2 O registro `merge` aceita `{strategy, subject}`, incluindo a forma explicit-none de `fast-forward`/`rebase`; `status` e `validate` reportam
+      subject: plan/move-conclude-merge-last: 1.1 task --check accepts --subject in place of --commit
+- [x] 1.2 O registro `merge` aceita `{strategy, subject}`, incluindo a forma explicit-none de `fast-forward`/`rebase`; `status` e `validate` reportam
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py validate
-- [ ] 1.3 `next --front` fica ciente de branch conforme `## Design` §O sinal de "já está em andamento"
+      subject: plan/move-conclude-merge-last: 1.2 the merge record carries {strategy, subject}
+- [x] 1.3 `next --front` fica ciente de branch conforme `## Design` §O sinal de "já está em andamento"
       files: plugins/quenching/assets/bin/specs.py
       verify: workspace descartável com duas specs, uma com `plan/<slug>` viva
-- [ ] 1.4 Atualizar os templates e as constantes duplicadas em `specs.py` em lockstep
+      subject: plan/move-conclude-merge-last: 1.3 next --front ranks on the live plan/<slug> ref
+- [x] 1.4 Atualizar os templates e as constantes duplicadas em `specs.py` em lockstep
       files: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/plans/index.md
       verify: python3 assets/hooks/okf-validate.py assets/specs/plans --listing-root
+      subject: plan/move-conclude-merge-last: 1.4 templates and duplicated constants in lockstep
 
 ### 2. O comando `/specs:isolate`
 
-- [ ] 2.1 Mover `assets/references/specs-execute/git.md` para `assets/references/specs-isolate/git.md` e reescrever: âncora por subject, isolamento em qualquer estágio, defaults de branch, estratégias de merge, ressalva do squash, regra read-if-present
+- [x] 2.1 Mover `assets/references/specs-execute/git.md` para `assets/references/specs-isolate/git.md` e reescrever: âncora por subject, isolamento em qualquer estágio, defaults de branch, estratégias de merge, ressalva do squash, regra read-if-present
       files: plugins/quenching/assets/references/specs-isolate/git.md
-- [ ] 2.2 Escrever `commands/specs/isolate.md` — verb-first; toma ou reporta isolamento para UMA spec em qualquer estágio, grava `branch: {base, work}`, move para a branch uma spec já escrita em `plans/`
+      subject: plan/move-conclude-merge-last: 2.1 move git.md to specs-isolate and rewrite it
+- [x] 2.2 Escrever `commands/specs/isolate.md` — verb-first; toma ou reporta isolamento para UMA spec em qualquer estágio, grava `branch: {base, work}`, move para a branch uma spec já escrita em `plans/`
       files: plugins/quenching/commands/specs/isolate.md
       verify: python3 assets/bin/skills.py --root . lint --json
-- [ ] 2.3 Corrigir toda citação por caminho absoluto à referência movida
+      subject: plan/move-conclude-merge-last: 2.2 add /specs:isolate
+- [x] 2.3 Corrigir toda citação por caminho absoluto à referência movida
       verify: ./assets/bin/functional-checks.sh
+      subject: plan/move-conclude-merge-last: 2.3 repoint every citation of the moved reference
 
 ### 3. Os comandos existentes
 
-- [ ] 3.1 `execute.md`: delegar isolamento a `/specs:isolate`; marcar a caixa antes do commit para que ela entre nele; asserção pós-commit comparando o subject real com o gravado, reportada como finding
+- [x] 3.1 `execute.md`: delegar isolamento a `/specs:isolate`; marcar a caixa antes do commit para que ela entre nele; asserção pós-commit comparando o subject real com o gravado, reportada como finding
       files: plugins/quenching/commands/specs/execute.md
-- [ ] 3.2 `conclude.md`: destilação passa para a branch, antes do merge; `merge: {strategy, subject}` gravado na branch; merge vira a última ação
+      subject: plan/move-conclude-merge-last: 3.1 execute delegates isolation and ticks before committing
+- [x] 3.2 `conclude.md`: destilação passa para a branch, antes do merge; `merge: {strategy, subject}` gravado na branch; merge vira a última ação
       files: plugins/quenching/commands/specs/conclude.md
-- [ ] 3.3 `continue.md`: refletir o ranking ciente de branch na descrição e no corpo
+      subject: plan/move-conclude-merge-last: 3.2 conclude distils on the branch and merges last
+- [x] 3.3 `continue.md`: refletir o ranking ciente de branch na descrição e no corpo
       files: plugins/quenching/commands/specs/continue.md
-- [ ] 3.4 `create.md` e `develop.md`: encaminhar para `/specs:isolate` quando pedido, sem oferta ativa (ver `## Open Decisions`)
+      subject: plan/move-conclude-merge-last: 3.3 continue reports the branch-aware ranking
+- [x] 3.4 `create.md` e `develop.md`: encaminhar para `/specs:isolate` quando pedido, sem oferta ativa (ver `## Open Decisions`)
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/develop.md
-- [ ] 3.5 Rodar as checagens da superfície
+      subject: plan/move-conclude-merge-last: 3.4 create and develop forward to /specs:isolate
+- [x] 3.5 Rodar as checagens da superfície
       verify: python3 assets/bin/skills.py --root . doctor --json && ./assets/bin/functional-checks.sh
+      subject: plan/move-conclude-merge-last: 3.5 run the surface checks for section 3
 
 ### 4. As referências
 
-- [ ] 4.1 [P] `specs-conclude/distill.md` §Two moments: os dois momentos passam a cair na branch
+- [x] 4.1 [P] `specs-conclude/distill.md` §Two moments: os dois momentos passam a cair na branch
       files: plugins/quenching/assets/references/specs-conclude/distill.md
-- [ ] 4.2 [P] `specs-execute/execution.md`: a marcação entra no commit da task; commits de bookkeeping deixam de existir
+      subject: plan/move-conclude-merge-last: 4.1 both distillation moments land on the work branch
+- [x] 4.2 [P] `specs-execute/execution.md`: a marcação entra no commit da task; commits de bookkeeping deixam de existir
       files: plugins/quenching/assets/references/specs-execute/execution.md
-- [ ] 4.3 [P] `specs-develop/artifacts.md`: a linha `commit:` da tabela de metadados vira `subject:`
+      subject: plan/move-conclude-merge-last: 4.2 execution.md — the box enters the task commit
+- [x] 4.3 [P] `specs-develop/artifacts.md`: a linha `commit:` da tabela de metadados vira `subject:`
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
-- [ ] 4.4 [P] `specs-develop/spec-driven.md`: o vocabulário de registros
+      subject: plan/move-conclude-merge-last: 4.3 artifacts.md — the task metadata row is subject:
+- [x] 4.4 [P] `specs-develop/spec-driven.md`: o vocabulário de registros
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
+      subject: plan/move-conclude-merge-last: 4.4 spec-driven.md — the record vocabulary
 
 ### 5. Os standards e o glossário
 
-- [ ] 5.1 Reescrever docs/standards/workflows/plan-git-record.md — o vínculo é inscrito na mensagem; renomear a seção "The task→commit link is stored, never inscribed"; os dois registros; a tabela do squash; a coexistência das duas formas no arquivo (authority: current)
+- [x] 5.1 Reescrever docs/standards/workflows/plan-git-record.md — o vínculo é inscrito na mensagem; renomear a seção "The task→commit link is stored, never inscribed"; os dois registros; a tabela do squash; a coexistência das duas formas no arquivo (authority: current)
       files: docs/standards/workflows/plan-git-record.md
-- [ ] 5.2 Atualizar docs/standards/workflows/plan-lifecycle.md — a linha `merge: {strategy, subject}`
+      subject: plan/move-conclude-merge-last: 5.1 rewrite plan-git-record.md around the subject anchor
+- [x] 5.2 Atualizar docs/standards/workflows/plan-lifecycle.md — a linha `merge: {strategy, subject}`
       files: docs/standards/workflows/plan-lifecycle.md
-- [ ] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
+      subject: plan/move-conclude-merge-last: 5.2 plan-lifecycle.md — the merge record and branch owner
+- [x] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
       files: docs/standards/workflows/task-execution.md
-- [ ] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
+      subject: plan/move-conclude-merge-last: 5.3 task-execution.md — one commit per task, literally
+- [x] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
       files: docs/knowledge/glossary.md
-- [ ] 5.5 Verificar o bundle
+      subject: plan/move-conclude-merge-last: 5.4 redefine Commit record in the glossary
+- [x] 5.5 Verificar o bundle
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/move-conclude-merge-last: 5.5 verify the bundle
 
 ### 6. A verificação e a superfície
 
-- [ ] 6.1 Escrever `assets/bin/conclude-order-check.sh` com as três asserções de `## Validation`
+- [x] 6.1 Escrever `assets/bin/conclude-order-check.sh` com as três asserções de `## Validation`
       files: plugins/quenching/assets/bin/conclude-order-check.sh
       pattern: plugins/quenching/assets/bin/functional-checks.sh
       verify: ./assets/bin/conclude-order-check.sh
-- [ ] 6.2 Atualizar os três `QUENCHING.md`, `CLAUDE.md` e `plugins/quenching/README.md` para o comando novo e a contagem
+      subject: plan/move-conclude-merge-last: 6.1 add conclude-order-check.sh
+- [x] 6.2 Atualizar os três `QUENCHING.md`, `CLAUDE.md` e `plugins/quenching/README.md` para o comando novo e a contagem
       files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md, CLAUDE.md, plugins/quenching/README.md
-- [ ] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
+      subject: plan/move-conclude-merge-last: 6.2 update the manuals, the counts and the budget
+- [x] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
-- [ ] 6.4 Rodar a suíte inteira de `## Validation`
+      subject: plan/move-conclude-merge-last: 6.3 bump to 4.2.0 in lockstep
+- [x] 6.4 Rodar a suíte inteira de `## Validation`
       verify: ./assets/bin/functional-checks.sh && ./assets/bin/conclude-order-check.sh
+      subject: plan/move-conclude-merge-last: 6.4 run the whole Validation suite
+
+## Discoveries
+
+- docs/standards/naming/command-surface.md §Namespaces still names a root '/align-and-update' that the specs-flow-consolidation spec removed — stale, unrelated to this spec
+- task 1.2 had to touch assets/specs/schema.json, which no task declares under files: — schema.json shadows the DEFAULT_SCHEMA constant via load_schema(), so the record vocabulary is a THIRD lockstep copy alongside specs.py and the templates
+- conclude's --outcome abandoned path distils onto the work branch and then offers to DELETE it, so a background note can be harvested and thrown away in the same run; pre-existing and left untouched here because ## Out of Scope freezes the abandoned path
+- functional-checks.sh:32 reads its stream-json evidence with a bare open(), so on Windows it decodes cp1252 and dies with UnicodeDecodeError; tools() then emits nothing and the assertion fails for LACK OF EVIDENCE rather than reaching a verdict. Measured 2026-07-28: pristine 96f6657 scores 3 passed/6 failed, this branch 4 passed/5 failed, the five check-3 failures identical in both
+- check 1 of functional-checks.sh is FLAKY, not deterministic: 'Read a file under assets/references/ (placeholder substituted)' failed on pristine 96f6657 and passed on this branch, with nothing between them that touches placeholder substitution
+- third measurement of functional-checks check 1a across identical script runs: FAIL on pristine 96f6657, PASS on this branch at task 2.3, FAIL again at task 3.4 — nondeterministic, so its verdict cannot gate anything until the cp1252 read at line 32 is fixed
+- this branch takes okf-validate's stale-doc warnings from 1 to 9. Only task-execution.md and plan-lifecycle.md are declared under ## Impact; the other seven — plugin-layout, command-surface, surface-verification, plan-artifacts, automation/{context-budget,skills}, reference/tools/claude-code-skill-command-mechanics — went stale because their resource covers commands/**, specs.py, the templates or schema.json. Each needs a re-read and a timestamp, which is conclude step 3's emergent-docs pass, not a task's
+- python print() writes CRLF to stdout on Windows, so any shell pipeline reading a value out of an embedded python heredoc gets a trailing CR — it silently broke conclude-order-check's git log --grep assertion until tr -d '\r' was added. Same family as functional-checks.sh:32's cp1252 read
+- CLAUDE.md's release rule says a new command means editing all THREE QUENCHING.md manuals, but only the front's own manual enumerates its commands — adding /specs:isolate needed assets/specs/QUENCHING.md alone, and touching the other two would have been churn. The rule should say 'the manual of the front the command belongs to'
+- the skills.py budget ceiling is a zero-headroom ratchet whose own comment predicted 'the 25th command crosses it on the day it is minted' — it did, and revising it is a skills.py edit no task declares, sitting in lockstep with README's recorded figure
+
+## Outcome
+
+Entregue e mergeado com **merge commit** (`--no-ff`), 25/25 tasks, plugin em
+**4.2.0**. O vÃ­nculo specâ†’git deixou de ser o sha e passou a ser o **subject**
+da mensagem: como o subject Ã© conhecido *antes* do commit, todo registro passa a
+ser escrito antes daquilo que descreve.
+
+O que mudou, por comando:
+
+- **`/specs:execute`** â€” a caixa Ã© marcada antes do commit e entra nele. Uma task
+  Ã© exatamente um commit, com cÃ³digo e caixa juntos; os commits de bookkeeping
+  por task deixaram de existir. Se o commit falhar, a marcaÃ§Ã£o Ã© desfeita.
+- **`/specs:conclude`** â€” review â†’ docs emergentes â†’ arquivamento â†’ destilaÃ§Ã£o +
+  `merge: {strategy, subject}`, tudo **na branch**, e sÃ³ entÃ£o o merge. O merge Ã©
+  a Ãºltima aÃ§Ã£o, sem exceÃ§Ã£o.
+- **`/specs:isolate`** â€” comando novo (o 25Âº). Toma *ou reporta* isolamento para
+  UMA spec em qualquer estÃ¡gio, e passa a ser o dono do registro `branch:`.
+  `execute` delega; `create` e `develop` encaminham. Nunca mergeia.
+- **`/specs:continue`** â€” ranqueia olhando para o ref vivo `plan/<slug>`, nÃ£o para
+  o registro: a branch em que vocÃª estÃ¡ sobe ao topo, uma branch viva em outro
+  lugar desce abaixo das specs intocadas.
+
+**EstratÃ©gia de merge: merge commit.** Os 25 commits por task permanecem na
+`main` e todo `subject:` gravado resolve por
+`git log --grep=<subject> --fixed-strings` a partir dela, indefinidamente. A
+branch pode ser apagada sem custo â€” a ressalva do squash nÃ£o se aplica aqui.
+
+**A base tinha andado.** `main` recebeu um `/specs:triage` (que gravou
+`priority:` nesta prÃ³pria spec) e o fechamento de `docs-verification-layer`. A
+`main` foi mergeada *para dentro* da branch antes do fechamento; os trÃªs
+conflitos eram aditivos (duas entradas de log sob o mesmo `## 2026-07-28`, mais o
+frontmatter) e os cinco registros sobreviveram.
+
+Fora do escopo, deliberadamente: specs arquivadas com `commit: <sha>` **nÃ£o**
+foram convertidas â€” as duas formas sÃ£o lidas para sempre e nada Ã© backfillado; o
+caminho `--outcome abandoned` nÃ£o mudou; e o menu de estratÃ©gias continua o
+mesmo, sÃ³ mudou o que se grava sobre a escolha.
+
+O que o prÃ³ximo leitor precisa saber:
+
+- O vocabulÃ¡rio do registro vive em **trÃªs** cÃ³pias em lockstep â€” `DEFAULT_SCHEMA`
+  em `specs.py`, `assets/specs/schema.json` (que **shadowa** a constante via
+  `load_schema()`) e `assets/specs/templates/spec.md`. EstÃ¡ registrado em
+  `docs/standards/workflows/plan-artifacts.md`.
+- `conclude-order-check.sh` (8/8) Ã© a **Ãºnica** checagem que enxerga a afirmaÃ§Ã£o
+  central: ela roda um ciclo real num repo descartÃ¡vel e pergunta ao git, nÃ£o ao
+  run.
+- `functional-checks.sh` **nÃ£o gateou nada aqui** e nÃ£o podia: ele lÃª o
+  stream-json em cp1252 no Windows e morre, entÃ£o as asserÃ§Ãµes falham por falta
+  de evidÃªncia, nÃ£o por veredito. Medido trÃªs vezes; a `main` pristina falha as
+  mesmas cinco. A quarta prÃ©-condiÃ§Ã£o em
+  `docs/standards/quality/surface-verification.md` agora diz isso.
+- O teto do `skills.py budget` disparou exatamente como previsto ao minar o 25Âº
+  comando (11.565 â†’ 12.726). Ã‰ o desenho funcionando, e o preÃ§o dele estÃ¡ escrito
+  em `docs/standards/automation/context-budget.md`.
