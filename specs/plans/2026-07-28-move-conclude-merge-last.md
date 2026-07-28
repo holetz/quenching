@@ -421,8 +421,9 @@ branch `plan/move-conclude-merge-last`):
       files: plugins/quenching/commands/specs/isolate.md
       verify: python3 assets/bin/skills.py --root . lint --json
       subject: plan/move-conclude-merge-last: 2.2 add /specs:isolate
-- [ ] 2.3 Corrigir toda citação por caminho absoluto à referência movida
+- [x] 2.3 Corrigir toda citação por caminho absoluto à referência movida
       verify: ./assets/bin/functional-checks.sh
+      subject: plan/move-conclude-merge-last: 2.3 repoint every citation of the moved reference
 
 ### 3. Os comandos existentes
 
@@ -478,3 +479,6 @@ branch `plan/move-conclude-merge-last`):
 
 - docs/standards/naming/command-surface.md §Namespaces still names a root '/align-and-update' that the specs-flow-consolidation spec removed — stale, unrelated to this spec
 - task 1.2 had to touch assets/specs/schema.json, which no task declares under files: — schema.json shadows the DEFAULT_SCHEMA constant via load_schema(), so the record vocabulary is a THIRD lockstep copy alongside specs.py and the templates
+- conclude's --outcome abandoned path distils onto the work branch and then offers to DELETE it, so a background note can be harvested and thrown away in the same run; pre-existing and left untouched here because ## Out of Scope freezes the abandoned path
+- functional-checks.sh:32 reads its stream-json evidence with a bare open(), so on Windows it decodes cp1252 and dies with UnicodeDecodeError; tools() then emits nothing and the assertion fails for LACK OF EVIDENCE rather than reaching a verdict. Measured 2026-07-28: pristine 96f6657 scores 3 passed/6 failed, this branch 4 passed/5 failed, the five check-3 failures identical in both
+- check 1 of functional-checks.sh is FLAKY, not deterministic: 'Read a file under assets/references/ (placeholder substituted)' failed on pristine 96f6657 and passed on this branch, with nothing between them that touches placeholder substitution

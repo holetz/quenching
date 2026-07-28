@@ -139,7 +139,7 @@ the execution mechanics (clean tree, the validation loop, the per-task commit an
 sha, delegation bounds) in
 [`specs-execute/execution.md`](plugins/quenching/assets/references/specs-execute/execution.md)
 and the git defaults + read-if-present rule in
-[`specs-execute/git.md`](plugins/quenching/assets/references/specs-execute/git.md),
+[`specs-isolate/git.md`](plugins/quenching/assets/references/specs-isolate/git.md),
 the cycle-authorization + cross-front convergence contract in
 [`align-all/convergence.md`](plugins/quenching/assets/references/align-all/convergence.md)
 (cited by `/align`; never restated by a front align),

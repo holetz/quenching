@@ -26,7 +26,7 @@ The distillation doctrine — what crosses into `docs/`, what stays, and how it 
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md).
 The merge strategies, the squash caveat and the **read-if-present** rule for a target's
 `docs/standards/git/**` live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md).
 The layout, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 All three are cited, never restated.
@@ -154,7 +154,7 @@ stopped at a refusal the human declined to override.
 
 ### 5. Merge — the strategy is offered, and the squash caveat is honoured
 For `done` with a `branch` record, offer the strategies in
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
 delete the branch** — a squash collapses every per-task commit, so the `commit:` sha on each task
 line resolves only while the branch survives. Say that plainly rather than deleting and discovering

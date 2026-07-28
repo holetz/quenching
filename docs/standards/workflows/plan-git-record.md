@@ -2,7 +2,7 @@
 type: standard
 title: Plan git record contract
 description: How a plan's work is recorded in git — the per-task commit field, the branch and merge frontmatter records, the squash caveat, and the read-if-present contract for a target's own docs/standards/git/
-resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+resource: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-07-27
 audience: both
@@ -15,7 +15,7 @@ maintainer: quenching
 
 What links a plan's checkboxes to the commits that implemented them, which git facts are recorded
 in the spec, and whose conventions govern the commits themselves. The procedures implementing this
-live in `assets/references/specs-execute/git.md` and `.../execution.md`; this standard is the
+live in `assets/references/specs-isolate/git.md` and `.../execution.md`; this standard is the
 contract they answer to.
 
 ## The task→commit link is stored, never inscribed
