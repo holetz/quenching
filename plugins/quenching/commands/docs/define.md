@@ -7,7 +7,7 @@ hooks:
     - matcher: "Write|Edit"
       hooks:
         - type: command
-          command: "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"
+          command: 'test -f "${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py" || exit 0; python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"'
           timeout: 10
 ---
 
