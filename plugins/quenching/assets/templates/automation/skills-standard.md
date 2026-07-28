@@ -76,6 +76,12 @@ the turn (`sk-unscoped-bash`). The one exception is a command running **this rep
 toolchain** (its build, tests, linters), which cannot enumerate those commands in advance; such
 a command may hold an unscoped grant **provided its body states the reason**.
 
+**Treat the grant as a declaration, and never claim it enforces anything.** What scoping reliably
+buys is the `skills.py lint` check above; whether a declared set also *restricts* what a command
+can reach at runtime is a separate question this standard does not answer — so a command that must
+guarantee it never writes carries that guarantee in its own numbered steps, not in its
+`allowed-tools` line.
+
 ## The verifier
 
 `skills.py` decides everything mechanical on this surface: `lint` (the caps, trigger position,
