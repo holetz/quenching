@@ -2,6 +2,8 @@
 slug: docs-verification-layer
 title: Verification layer for the docs/ front
 verification: per-section
+priority: {level: 2, criticality: high, complexity: 2, date: 2026-07-28}
+outcome: done
 ---
 
 # Verification layer for the docs/ front
@@ -371,3 +373,42 @@ One authority per concern is the rule that made the rest of this plugin coherent
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py <fixture> --json
 - [x] 7.4 Version lockstep and the wrapper bijection both hold
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py --version
+
+## Outcome
+
+Shipped, in full â€” all 26 tasks, verified present at v4.1.0.
+
+**What landed.** Four validator codes in `okf-validate.py`: `resource-unresolved` and
+`resource-self` (WARN, must-fix in a command's verify gate), `glossary-broken-link` (WARN,
+must-fix), and `stale-doc` (WARN, advisory and CLI-only, skipped silently outside a git checkout).
+The comma-separated glob-set `resource` parser â€” `*`/`**` segment-wise only, anything else
+classified `unknown` and never reported as a violation â€” and the bundle-aggregate exemption that
+lets `knowledge/glossary.md` keep `resource: docs/**` honestly. The read-only `/docs:status` with
+its density table carrying no finding code. `docs/standards/quality/bundle-verification.md` at
+`authority: current`.
+
+**No branch, no merge.** The work predates the `branch:` record, so it was built in place on
+`main`. There are no per-task `commit:` shas to resolve â€” the history is in `main`'s log, not in
+this file.
+
+**What a later reader must know before trusting the paths written here.** Every
+`plugins/quenching/skills/quenching-docs-*/SKILL.md` path in this spec is dead. The skill+wrapper
+pair was collapsed into one `commands/**` file, `/docs:align-and-update` was folded into
+`/docs:align`, `specs/backlog/` folded into `specs/plans/`, and the three-file spec (`design.md`)
+became one. The four codes and their contract survived every move intact; the contract now lives at
+`plugins/quenching/assets/references/docs-align/conformance.md`.
+
+**One task was superseded rather than completed as written.** Task 6.2 set out to correct the
+`27 â†” 27` skill/wrapper bijection to its true count. The bijection was later retired outright â€”
+`docs/standards/naming/command-surface.md` replaced it with an invariant, and cites this exact
+staleness ("this standard once said '27 skills, 27 wrappers'") as the evidence that a count-based
+rule was the wrong shape. The intent was served; the number never was.
+
+**Left open, deliberately.** Both `## Open Decisions` entries stand. The empty-home question has
+n=1 evidence â€” this repo, which is the pathological case, having authored the mold â€” and still
+needs two or three adopting repos before the sharper form ("installed, empty, *and* the repo
+contains code that subject governs") can be specified without guessing. The glob-syntax question
+waits on the first target repo to write a brace or character-class glob. Neither blocks anything.
+
+**Deferred as promised.** Both items parked as their own specs:
+`2026-07-25-add-import-provenance` and `2026-07-25-decide-agents-md-harness-default`.

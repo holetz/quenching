@@ -2,6 +2,7 @@
 slug: retire-skill-vocabulary
 title: Retire the skill vocabulary left behind by the collapse
 verification: per-section
+priority: {level: 16, criticality: low, date: 2026-07-28}
 ---
 
 # Retire the skill vocabulary left behind by the collapse
