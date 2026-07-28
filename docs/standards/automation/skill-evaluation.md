@@ -4,7 +4,7 @@ title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated agents, assertions graded on quoted evidence, and a reported delta
 resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/skill/eval.md
 tags: [automation, skills, evaluation, testing, benchmark]
-timestamp: 2026-07-26
+timestamp: 2026-07-27
 audience: both
 authority: background
 source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator

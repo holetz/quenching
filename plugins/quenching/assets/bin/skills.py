@@ -836,13 +836,13 @@ def _wider_findings(root: str) -> list[dict]:
     findings: list[dict] = []
 
     for fn, fm in agent_definitions(root):
-            if not str(fm.get("description", "")).strip():
-                findings.append(finding(
-                    "sk-agent-no-description", "error",
-                    f"agents/{fn} has no `description` — the agent can never be delegated to",
-                    command=f"agents/{fn}", path=f"agents/{fn}",
-                    remedy="add a description stating what it does and when to invoke it "
-                           "(/skill:agent:new)"))
+        if not str(fm.get("description", "")).strip():
+            findings.append(finding(
+                "sk-agent-no-description", "error",
+                f"agents/{fn} has no `description` — the agent can never be delegated to",
+                command=f"agents/{fn}", path=f"agents/{fn}",
+                remedy="add a description stating what it does and when to invoke it "
+                       "(/skill:agent:new)"))
 
     for settings_name in ("settings.json", "settings.local.json"):
         text = read_text(os.path.join(root, settings_name))

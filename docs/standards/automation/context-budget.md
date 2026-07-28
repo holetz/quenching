@@ -118,11 +118,15 @@ it. A surface may legitimately be large, and the decision to cut is a human's.
 
 ### The total includes the agent surface
 
-`budget` charges **every `agents/*.md` description** to the same total, and reports the split:
+`budget` charges **every `agents/*.md` description** to the same total, and reports the split. This
+repo's own surface defines no agents, so its second line reads zero:
 
 ```json
-"breakdown": { "commands": 11565, "agents": 87 }
+"breakdown": { "commands": 11565, "agents": 0 }
 ```
+
+A repo that defines three agents averaging a 300-character description carries `"agents": 900` on
+that line, and its total — the number the ceiling is compared against — is 900 higher.
 
 An agent definition's description is always-on context by exactly the same mechanism as a
 command's — it is carried so the model can decide whether to delegate, and it is paid whether or

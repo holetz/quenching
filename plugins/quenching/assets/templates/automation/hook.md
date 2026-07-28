@@ -17,9 +17,15 @@ hooks:
     - matcher: "Write|Edit"
       hooks:
         - type: command
-          command: "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.py"
+          command: 'test -f "${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.py" || exit 0; python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.py"'
           timeout: 10
 ```
+
+The `test -f … || exit 0` guard is **not optional** when the script is one another command merely
+*offers* to install: `python3 <missing-file>` exits 2, which the hook protocol reads as an error,
+so an unguarded handler reports a failure on every matched call in any repo that never installed
+it. Drop the guard only when the script ships with the hook and cannot be absent
+([capabilities.md](../../references/skill-new/capabilities.md) §Hooks).
 
 ## Shape 2 — operation-scoped (settings.json, event + matcher)
 
