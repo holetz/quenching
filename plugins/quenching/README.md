@@ -438,14 +438,22 @@ The plugin keeps its context and token footprint predictable on three levels:
 1. **Always-on metadata (shared cap).** Every command's `description` is loaded into context
    each session, and Claude Code truncates at **1,536 characters** per command — a budget
    shared with every other installed plugin. Collapsing the 28 skill+wrapper pairs into one
-   file per entry point took the surface's always-on total from **30,705 characters to 2,083**
-   (~7,676 → ~521 approximate tokens), a **93% cut**, measured by `skills.py budget`.
+   file per entry point first took the surface's always-on total from **30,705 characters to
+   2,083**, measured by `skills.py budget`.
 
    **What that saving cost, stated plainly:** the deleted skill description is where the quoted
-   trigger phrases and the `Not for:` boundary lived, so every command now reports
+   trigger phrases and the `Not for:` boundary lived, so every command reported
    `sk-trigger-position` and `sk-no-boundary` against a description written as a `/`-menu label.
-   Both are warnings, so the budget looks clean while the routing information is absent — see
+   Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
+
+   **Where it stands now: 11,565 characters** (~2,891 approximate tokens) across 24 commands and
+   0 agent definitions, measured 2026-07-27. Most of the difference between 2,083 and that figure
+   is the routing information being bought back deliberately — the triggers and boundaries the
+   collapse had dropped. That measurement is also the current default ceiling, which has **no
+   headroom by construction**: it equals the surface's total, so the 25th command crosses it the
+   day it is minted. The rule and the revision procedure live in
+   [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md).
 2. **Body on invocation.** A command's body loads only when it runs; every body stays well
    under 500 lines. Shared procedure lives once, in its owners —
    [`docs-add/homes.md`](assets/references/docs-add/homes.md) (the insert procedure) and

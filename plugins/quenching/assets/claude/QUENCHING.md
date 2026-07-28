@@ -145,14 +145,18 @@ taste.
 
 ---
 
-## 4. The two OKF artifacts
+## 4. The OKF artifacts
 
-The pair maintains two documents inside the `docs/` bundle — the automation surface is knowledge
-about this repo, so it is recorded where knowledge lives:
+The commands maintain these documents inside the `docs/` bundle — the automation surface is
+knowledge about this repo, so it is recorded where knowledge lives. Each standard is born
+`authority: background` and becomes `current` once the surface actually follows it:
 
 | Artifact | Path | Role |
 | --- | --- | --- |
-| **The rule** | `docs/standards/automation/skills.md` | `type: standard`. The taxonomy this repo binds itself to. Born `authority: background`; it becomes `current` once the surface actually follows it. |
+| **The rule** | `docs/standards/automation/skills.md` | `type: standard`. The taxonomy this repo binds itself to. |
+| **The agent rule** | `docs/standards/automation/agents.md` | `type: standard`. Installed by `/skill:agent:new`: when work becomes a subagent, the definition contract, the verifier shape. |
+| **The hook rule** | `docs/standards/automation/hooks.md` | `type: standard`. Installed by `/skill:hook:new`: the scope ladder, the handler ladder, the policy defaults. |
+| **The budget rule** | `docs/standards/automation/context-budget.md` | `type: standard`. What the surface costs before anything fires, and the per-surface ceiling `budget` compares against. |
 | **The registry** | `docs/documentation/reference/automation.md` | `type: documentation`. The authoritative listing of the local surface. |
 
 The registry's `<!-- GENERATED:BEGIN -->` … `<!-- GENERATED:END -->` zone holds one table —
@@ -183,10 +187,34 @@ The full doctrine lives in the plugin; these are the parts you feel every day.
 - **Apply the no-op test.** If a step could be skipped without changing the outcome, delete it.
 - **State each boundary explicitly** — "not for X → other-skill" — so routing lands on the right
   one instead of the first plausible match.
+- **Every capability is bought, never collected.** A new command starts with **all levers off**:
+  no `context: fork`, no `model`/`effort` pin, no `hooks`, `allowed-tools` scoped to what its
+  steps run, and default invocation. Each departure enters the mint's plan with what it buys,
+  because each has a standing cost — an inline `model`/`effort` pin is part of the session's
+  prompt-cache key and makes the next request recompute every input token, and `context: fork`
+  cannot present a plan or ask a question, so a fork beside an `AskUserQuestion` grant is an
+  error (`sk-fork-gate`). A lever whose buy nobody can state is bloat wearing a feature's name.
 
 ---
 
 ## 6. Hooks and settings
+
+A hook charges **other people's operations** — it fires on events the command that installed it
+does not own — so `/skill:hook:new` installs every hook at the **narrowest scope that still
+catches what it exists to catch**, and climbs only with evidence:
+
+1. **A command's own frontmatter `hooks:` block** — fires only while that command runs, and costs
+   nothing to any other operation. The default home for a check tied to one workflow.
+2. **A `settings.json` hook with an event + `matcher`** — fires only on the matched tool calls.
+3. **A gated wide event** — a `Stop`/`UserPromptSubmit` hook made cheap by construction, like
+   `okf-validate.py`'s dirty gate below.
+4. **An unmatched session-wide hook** — the top of the ladder, and a finding
+   (`sk-hook-unmatched`) unless the reason nothing narrower suffices is stated where it is wired.
+
+Handlers ladder the same way — a deterministic `command` script costs zero tokens on no-match, a
+`prompt` handler costs one cheap judgment per firing, and an `agent` handler on a per-tool-call
+event is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Warn by default; block
+only on your word.
 
 `hooks/okf-validate.py` keeps `docs/` conformant after every edit. Full behavior, every config
 knob, and the finding codes are in `../docs/QUENCHING.md` §5 and §7.

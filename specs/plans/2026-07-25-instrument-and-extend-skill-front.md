@@ -296,11 +296,12 @@ nested `branch:` record reads back as null in `status --json` while being presen
       commit: a27e19a
       for real: mint the command from what the run required, or record the dismissal in
       this spec's Discoveries with the observed reason
-- [ ] 4.2 Graduate `docs/standards/automation/agents.md` + `docs/standards/automation/hooks.md` to `current`
+- [x] 4.2 Graduate `docs/standards/automation/agents.md` + `docs/standards/automation/hooks.md` to `current`
       when an adopting surface follows them — or record what the first real surface
       contradicted and amend
       files: docs/standards/automation/agents.md, docs/standards/automation/hooks.md
       verify: python3 assets/hooks/okf-validate.py ../../docs
+      commit: e5103bd
 
 ### 5. Release
 
