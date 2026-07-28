@@ -478,10 +478,11 @@ branch `plan/move-conclude-merge-last`):
 
 ### 6. A verificação e a superfície
 
-- [ ] 6.1 Escrever `assets/bin/conclude-order-check.sh` com as três asserções de `## Validation`
+- [x] 6.1 Escrever `assets/bin/conclude-order-check.sh` com as três asserções de `## Validation`
       files: plugins/quenching/assets/bin/conclude-order-check.sh
       pattern: plugins/quenching/assets/bin/functional-checks.sh
       verify: ./assets/bin/conclude-order-check.sh
+      subject: plan/move-conclude-merge-last: 6.1 add conclude-order-check.sh
 - [ ] 6.2 Atualizar os três `QUENCHING.md`, `CLAUDE.md` e `plugins/quenching/README.md` para o comando novo e a contagem
       files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md, CLAUDE.md, plugins/quenching/README.md
 - [ ] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
@@ -498,3 +499,4 @@ branch `plan/move-conclude-merge-last`):
 - check 1 of functional-checks.sh is FLAKY, not deterministic: 'Read a file under assets/references/ (placeholder substituted)' failed on pristine 96f6657 and passed on this branch, with nothing between them that touches placeholder substitution
 - third measurement of functional-checks check 1a across identical script runs: FAIL on pristine 96f6657, PASS on this branch at task 2.3, FAIL again at task 3.4 — nondeterministic, so its verdict cannot gate anything until the cp1252 read at line 32 is fixed
 - this branch takes okf-validate's stale-doc warnings from 1 to 9. Only task-execution.md and plan-lifecycle.md are declared under ## Impact; the other seven — plugin-layout, command-surface, surface-verification, plan-artifacts, automation/{context-budget,skills}, reference/tools/claude-code-skill-command-mechanics — went stale because their resource covers commands/**, specs.py, the templates or schema.json. Each needs a re-read and a timestamp, which is conclude step 3's emergent-docs pass, not a task's
+- python print() writes CRLF to stdout on Windows, so any shell pipeline reading a value out of an embedded python heredoc gets a trailing CR — it silently broke conclude-order-check's git log --grep assertion until tr -d '\r' was added. Same family as functional-checks.sh:32's cp1252 read
