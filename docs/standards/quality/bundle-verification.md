@@ -4,7 +4,7 @@ title: Bundle verification
 description: What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, and the resource glob-set format
 resource: plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/commands/docs/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
 source: docs-verification-layer plan (sections 2-4)

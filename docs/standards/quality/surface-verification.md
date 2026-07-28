@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Surface verification
-description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, and the three preconditions a functional check must satisfy to measure what it claims
-resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/commands/**
+description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the four preconditions a functional check must satisfy to measure what it claims, and how an ordering property is verified by running a real cycle
+resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/assets/bin/conclude-order-check.sh, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3)
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28)
 maintainer: quenching
 ---
 
@@ -57,7 +57,7 @@ Two consequences worth keeping:
   did not" — no `Read` under a `skills/` tree, no `Skill` matching a `quenching-*` name. A missed
   rewrite and a wrong one fail differently, and only the pair catches both.
 
-## The three preconditions a check must satisfy
+## The four preconditions a check must satisfy
 
 Each was learned by a check that would otherwise have measured something other than what it
 claimed:
@@ -74,6 +74,17 @@ claimed:
    bundle to add to. That reads as a routing failure and is not one. Re-run against a real bundle,
    it routed immediately. A check on a surface whose commands have preconditions must meet them
    before its result means anything.
+4. **Read the evidence encoding-safely, or the check fails for lack of evidence.** The stream-json
+   capture is UTF-8; a bare `open()` decodes it in the platform default, which on Windows is cp1252
+   and raises on the first non-ASCII byte. The extractor then yields no events and every assertion
+   fails — **not because the surface broke, but because nothing could be read.** Those two outcomes
+   are indistinguishable in the output, which is what makes this a precondition rather than a bug.
+   Measured three times on 2026-07-28: pristine `main` scored *worse* than the branch under test,
+   and one check flipped verdict across identical runs. Open the capture with an explicit
+   `encoding="utf-8"`, and treat a zero-event stream as **inconclusive**, never as a failure.
+
+**A check that can fail for lack of evidence cannot gate anything** until it can tell that state
+apart from a real verdict. Say so in the report rather than quoting its pass count.
 
 **Rules 2 and 3 pull against each other, and the tension is real.** A routing probe needs a
 populated repo to satisfy rule 3; a command that *writes* then writes there for real. Check 3's
@@ -81,6 +92,23 @@ capture probes ran against the live repo and left two captured specs behind, com
 `5f31d19` — and in the v1 shape, because a stale `.claude/hooks/specs.py` resolved ahead of the
 plugin's copy. **A probe that reaches a writing command produces real artifacts. Either sandbox it
 with the preconditions reproduced, or expect residue and clean it up in the same commit.**
+
+## An ordering property is verified by running the cycle, not by reading the commands
+
+Some claims are about **when** something happens, not about what any one file says. *"Nothing is
+written to the base branch after the merge"* is true or false of a run; no linter, and no reading of
+`conclude.md`, can observe it. `assets/bin/conclude-order-check.sh` is the pattern: a throwaway
+`git init` repo where a spec is created, a task executed and the spec concluded end to end, then
+assertions on **real git state** — `HEAD` on the base *is* the merge commit, the task's commit lists
+both the code file and the ticked spec file, each recorded subject resolves to exactly one commit.
+
+It shares this standard's two rules — a separate process, and assertions on artifacts rather than
+prose — and adds a third worth naming: **assert on what git can be asked, not on what the run
+reported.** `git rev-parse`, `git show --stat` and `git log --grep` are answers a passing run cannot
+fake. A cycle that claimed success while leaving a commit on the base fails on the first of them.
+
+Prefer this shape whenever a rule is phrased as an ordering, a boundary, or a "never after" — those
+are the rules most likely to be quietly violated by a future edit that reads correctly.
 
 ## What this does not cover
 

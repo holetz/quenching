@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Spec file contract
-description: The one-file spec, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template, and how to read a v1 plan in specs/archive/
+description: The one-file spec, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
 source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan
@@ -173,6 +173,19 @@ sweep never blocks on a judgment call. **A spec may always be built unrefined.**
 `assets/specs/templates/spec.md` is the source, and the identical content is embedded in `specs.py`
 as a fallback constant — because an installed copy under a target's `.claude/hooks/` has no adjacent
 assets and must still stamp the same file. **Edit both or neither.**
+
+### There is a THIRD copy, and it shadows rather than falls back
+
+`assets/specs/schema.json` holds the same record vocabulary as `specs.py`'s `DEFAULT_SCHEMA`, and
+`load_schema()` prefers the file when it is adjacent. So the constant is **not** the authority when
+the assets are present — the JSON silently wins, and a change made only to the constant is invisible
+in exactly the layout the plugin ships. That is the opposite failure from the template's, where the
+constant is a fallback that only ever applies once installed.
+
+Any change to the record vocabulary is therefore a **three-file lockstep edit**: `DEFAULT_SCHEMA` in
+`specs.py`, `assets/specs/schema.json`, and the guidance in `assets/specs/templates/spec.md`. This
+was found by a task that declared only the first under `files:` and produced a tool that reported
+the old vocabulary from the new code.
 
 The template holds all thirteen headings with their guidance; `new` stamps only the **capture
 form** (everything up to the second `## ` heading), and `section --write` pulls one heading's
