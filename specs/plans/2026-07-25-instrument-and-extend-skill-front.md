@@ -190,15 +190,23 @@ New with the capability layer:
 
 ## Handoff
 
-State of play (2026-07-27, after task 4.1): **sections 1, 2 and 3 are done and green, and
-`/skill:package` is decided.** `specs-flow-consolidation` has landed (archived `outcome: done`,
-merged to `main`), so 5.1's sequencing dependency is satisfied and nothing here is blocked on
-another session. Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The
-doctrine's single owner is `plugins/quenching/assets/references/skill-new/capabilities.md`; the
-standards are `docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
-`budget` reads 11,565 chars against the re-set ceiling of 11,565 (`9c1e42c`); `lint`, `doctor`,
-`selftest` and `budget` all exit 0, and `okf-validate.py ../../docs` exits 0 (two advisory
-`stale-doc` WARNs, on files this spec never touched).
+State of play (2026-07-27, after task 5.2): **all 14 tasks are checked, 0 blocked, and the
+build is finished.** What remains is `/specs:conclude` — the whole-branch review, the emergent
+`docs/`, the merge and the archive; nothing in this file is waiting on another session. Work is
+on branch `plan/instrument-and-extend-skill-front`, cut from `main`, one commit per task with each
+sha on its line. The doctrine's single owner is
+`plugins/quenching/assets/references/skill-new/capabilities.md`; the standards are
+`docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
+
+**The Validation gate, as measured after the last commit** — `lint`, `doctor` (24 commands, 0
+findings), `selftest` and `budget` all exit 0; `budget` reads 11,565 against the ceiling of 11,565;
+`okf-validate.py ../../docs` exits 0 (two advisory `stale-doc` WARNs on files this spec never
+touched), and both shipped skeletons conform. All six version sources read **4.1.0**. Both mints
+carry committed `evals.json` + `grading.json` + `benchmark.json` with non-zero stated deltas.
+**`functional-checks.sh` was re-run after task 5.2 because 3.2 changed `commands/**`** — the one
+check that proves the surface actually LOADS, since the registry is built at session start:
+**9 passed, 0 failed, exit 0**, including probes d and e, so the two mints' triggers survived the
+profile pass and the three new frontmatter `hooks:` blocks did not break loading.
 
 **Section 3 applied five of the audit's six rows** (`7ad7d9b`, README rows `4edbd94`): the five
 inline `effort:` pins dropped for the cache trap; `Bash` scoped on `/specs:align`,
@@ -206,6 +214,12 @@ inline `effort:` pins dropped for the cache trap; `Bash` scoped on `/specs:align
 (`/docs:documentation:build`, `/docs:import-memory`) priced in their bodies; frontmatter `hooks:`
 blocks on `/docs:add`/`/docs:learn`/`/docs:define`; and `/skill:align` §7's collection-only `Task`.
 `sk-unscoped-bash` went 8 → 5, and all five survivors now state their reason.
+
+**Two things `/specs:conclude` should weigh before merging**, both recorded in Discoveries and
+neither a task's failure: README's fourteen per-command section headings still carry the retired
+`quenching-docs-*` / `quenching-skill-*` names, which was too large to fix under 5.1's
+"residue only"; and the release history under `## Upgrade` has no entry for 2.0.0, 3.0.0 or 4.0.0,
+so the 4.1.0 entry 5.2 added sits directly above 1.0.0.
 
 **The one row still open, and why it is held.** `/specs:continue` would render
 `specs.py next --front --json` at render time, converting its only tool call into text — held on
@@ -310,9 +324,10 @@ nested `branch:` record reads back as null in `status --json` while being presen
       fix residue only
       files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md
       commit: 8bdaf2f
-- [ ] 5.2 Bump the version lockstep — `VERSION`, both manifests, and the `VERSION` constant
+- [x] 5.2 Bump the version lockstep — `VERSION`, both manifests, and the `VERSION` constant
       in all three scripts
       verify: python3 assets/bin/skills.py --version && python3 assets/bin/specs.py --version && python3 assets/hooks/okf-validate.py --version && cat VERSION
+      commit: db6af7d
 
 ## Discoveries
 
