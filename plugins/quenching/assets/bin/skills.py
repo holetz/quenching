@@ -140,15 +140,24 @@ TOOL_EVENTS = ("PreToolUse", "PostToolUse")   # the per-tool-call hook events
 LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an inference per firing
 
 # The surface-wide always-on ceiling. Set to this plugin's own measured total — every
-# command's description, taken on parsed values — so the number is one a run produced
-# rather than one somebody picked. It is REVISED, never guessed: raise it only from a
-# measurement, and `--ceiling` overrides it for a surface with its own budget.
+# command description plus every agent description, taken on parsed values — so the number
+# is one a run produced rather than one somebody picked. It is REVISED, never guessed:
+# move it only from a measurement, and `--ceiling` overrides it for a surface with its own
+# budget.
 #
-# It EQUALS the current total, so it has no headroom and the 29th command crosses it on
+# It EQUALS the current total, so it has no headroom and the 25th command crosses it on
 # the day it is minted. That is deliberate: `budget` reports and never refuses, so the
-# crossing prompts a re-measure rather than blocking anything. The previous 36503 was a
-# pre-diet baseline the surface then sat 5,798 under, which meant it could never fire.
-DEFAULT_CEILING = 2083
+# crossing prompts a re-measure rather than blocking anything. The pre-diet 36503 was a
+# baseline the surface then sat 5,798 under, which meant it could never fire.
+#
+# 2026-07-27: re-measured at 11565 over 24 commands (0 agents), replacing 2083. The old
+# number was NOT a smaller surface being honest — it was taken on 2026-07-26 against
+# descriptions written as bare `/`-menu labels, immediately after the collapse deleted the
+# half that carried triggers and boundaries. Restoring those (and the evals' two measured
+# trigger additions) is what the surface now costs, and the two numbers are measurements of
+# different surfaces rather than growth to be alarmed by. A ceiling set mid-shrink could
+# never fire honestly, which is why this waited for the fold to land.
+DEFAULT_CEILING = 11565
 CHARS_PER_TOKEN = 4             # a rule of thumb for the report, never a tokenizer count
 
 # the registry's derived zone — markers, cells, and location, per the automation mold
