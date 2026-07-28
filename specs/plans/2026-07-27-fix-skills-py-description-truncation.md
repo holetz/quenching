@@ -291,9 +291,10 @@ with 2 warnings, both pre-existing and in files this spec does not touch â€�
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
       subject: plan/fix-skills-py-description-truncation: 2.1 the rule in skills.py
-- [ ] 2.2 [P] specs.py: the same rule and sidecar, emit `sp-frontmatter-unparsed` from `validate`, and add the canonical cases to `selftest`
+- [x] 2.2 [P] specs.py: the same rule and sidecar, emit `sp-frontmatter-unparsed` from `validate`, and add the canonical cases to `selftest`
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/fix-skills-py-description-truncation: 2.2 the rule in specs.py
 - [ ] 2.3 [P] okf-validate.py: add the comment rule it has never had, the sidecar, an `okf-frontmatter-unparsed` finding, and a `selftest` subcommand it does not have today
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest
