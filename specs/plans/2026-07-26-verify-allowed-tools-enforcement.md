@@ -264,9 +264,10 @@ deliberately left alone â€” do not "fix" them.
       files: docs/standards/automation/skills.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/verify-allowed-tools-enforcement: 2.1 Record in skills.md that an allowed-tools grant is a declaration lint checks, not a restriction
-- [ ] 2.2 Add the rule-only caveat â€” a rule about what may be claimed, no assertion about Claude Code â€” to the mold
+- [x] 2.2 Add the rule-only caveat â€” a rule about what may be claimed, no assertion about Claude Code â€” to the mold
       files: plugins/quenching/assets/templates/automation/skills-standard.md
       pattern: docs/standards/automation/skills.md
+      subject: plan/verify-allowed-tools-enforcement: 2.2 Add the rule-only allowed-tools caveat to the skills-standard mold
 
 ### 3. Record the episode where row 6's readers will find it
 
