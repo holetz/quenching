@@ -2,6 +2,7 @@
 slug: decide-agents-md-harness-default
 title: Decide whether AGENTS.md becomes the default harness target
 verification: per-section
+priority: {level: 18, criticality: medium, date: 2026-07-28}
 ---
 
 # Decide whether AGENTS.md becomes the default harness target
