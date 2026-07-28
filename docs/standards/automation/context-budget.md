@@ -4,7 +4,7 @@ title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling
 resource: plugins/quenching/commands/**
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: background
 source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27)
@@ -87,16 +87,31 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **11,565 characters** — this plugin's measured total across its 24 commands
-and 0 agent definitions, on 2026-07-27. It is a number a run produced, not one somebody picked, and
+The current default is **12,726 characters** — this plugin's measured total across its 25 commands
+and 0 agent definitions, on 2026-07-28. It is a number a run produced, not one somebody picked, and
 it is **revised only from a measurement**.
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
-the 25th command crosses it on the day it is minted. Under §*A new command is not free* below,
+the next command crosses it on the day it is minted. Under §*A new command is not free* below,
 that is the signal working: `budget` **reports, it never refuses**, so crossing it prompts a human
 to re-measure and re-set rather than blocking anything. The pre-diet default (36,503) was a
 baseline the surface then sat 5,798 characters under, which meant it could never fire and
 therefore told nobody anything.
+
+### The ratchet fired exactly as predicted, and that is the evidence it works
+
+This section previously read *"the 25th command crosses it on the day it is minted"* against a
+ceiling of 11,565 over 24 commands. `/specs:isolate` was the 25th, and it did — the total went to
+12,726, `budget` exited 1 naming the cost, and a human re-measured and re-set. The prediction and
+the outcome are recorded together because a zero-headroom ceiling is easy to mistake for a
+misconfiguration when it fires; it is the design working, and the design has now been observed
+working once.
+
+What the firing also showed is the cost of the shape: the re-set is a `skills.py` edit that **no
+task declares**, sitting in lockstep with the figure this standard and the README both transcribe.
+A ratchet with no headroom converts every new command into a three-file bookkeeping change. That is
+a real price for a signal that cannot go quiet, and it is the trade this standard is choosing —
+stated so the next person to find it annoying knows it was chosen rather than overlooked.
 
 ### Why the ceiling went 2,083 → 11,565
 
@@ -122,7 +137,7 @@ it. A surface may legitimately be large, and the decision to cut is a human's.
 repo's own surface defines no agents, so its second line reads zero:
 
 ```json
-"breakdown": { "commands": 11565, "agents": 0 }
+"breakdown": { "commands": 12726, "agents": 0 }
 ```
 
 A repo that defines three agents averaging a 300-character description carries `"agents": 900` on

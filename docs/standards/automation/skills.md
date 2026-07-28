@@ -4,7 +4,7 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
 source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26)

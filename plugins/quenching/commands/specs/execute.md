@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, commit, tick. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers branch or worktree isolation and records it; verifies under the spec's own declared policy; commits each task alone and records its sha on the task line. Writes the docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /specs:develop; creating one → /specs:create; reviewing the branch, merging and archiving → /specs:conclude; being told which spec to build next → /specs:continue.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; delegates isolation to /specs:isolate; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:isolate; reviewing the branch, merging and archiving → /specs:conclude; being told which spec to build next → /specs:continue.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 ---
@@ -10,13 +10,12 @@ allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 auto-select when exactly one spec is under way; vague or ambiguous → you MUST prompt.
 
 Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spec's declared
-policy, reviewing its diff, and committing it alone with its sha recorded on the task line.
+policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
 **reviewed**, and it is **committed**. The mechanics of that — the clean-tree precondition, the
-`branch` record, the verification policy, the validation loop, the four-item diff self-review, the
-per-task commit and its sha, the declared-versus-emergent `docs/` line, and the rules for
-delegating an executor — live in
+verification policy, the validation loop, the four-item diff self-review, the one commit per task,
+the declared-versus-emergent `docs/` line, and the rules for delegating an executor — live in
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
 which this body cites and never restates.
 
@@ -26,9 +25,10 @@ review is a different scale of judgment, the merge is a separate irreversible de
 own confirmation, and a run that dies after task nine must be resumable without redoing tasks one
 through eight.
 
-The git conventions — the commit subject, the branch name, the merge strategies, and the
-**read-if-present** rule for a target's `docs/standards/git/**` — live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
+The git conventions — the commit subject, the branch name, the `branch` record, the subject as the
+task→commit anchor, and the **read-if-present** rule for a target's `docs/standards/git/**` — live
+in [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md), whose
+command is `/specs:isolate`.
 
 The spec-driven facts — the layout, the thirteen canonical sections, the derived stages, the
 `specs.py` surface, the `specs/`↔`docs/` boundary — live in
@@ -57,31 +57,31 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 "Building spec: `<slug>`" and how to override.
 **Done when:** one spec in `plans/` is resolved.
 
-### 2. Require a clean tree, then offer to isolate — and record it
+### 2. Require a clean tree, then delegate the isolation
 **The precondition comes first.** `git status --porcelain` non-empty → **refuse to start**, per
 [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
 precondition. Offer to commit or stash. The human may override; then the first commit carries the
 pre-existing changes and the report says so.
 
-Then offer isolation with **AskUserQuestion** — recommended, never imposed:
+Then **hand isolation to `/specs:isolate`** (the `Skill` tool) rather than reimplementing it: it
+owns the branch and worktree forms, the `plan/<slug>` name, the `branch: {base, work}` stamp and
+its write-once rule. It is not exclusive to building — a spec may already have been isolated at
+creation or during development, in which case that command reports the existing branch and stamps
+nothing new.
 
-- **Branch** (default) — `git checkout -b plan/<slug>` off the current branch;
-- **Worktree** — `git worktree add ../<repo>-<slug> -b plan/<slug>` for a separate checkout;
-- **In place** — the human declines isolation.
-
-Stamp the choice into frontmatter before the first task, per §Recording the isolation — which also
-says when **not** to stamp, and what to do with a record that already exists.
+Read the result before the first task: a spec whose branch is **alive but checked out elsewhere**
+is being built somewhere else, and starting here would fork the work. Say so and stop.
 
 Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
-**Done when:** the tree is clean (or the override is on the record), and the isolation is chosen
-and stamped.
+**Done when:** the tree is clean (or the override is on the record), and isolation has been taken,
+reported as already held, or declined.
 
 ### 3. Read the spec's state, and settle the approval
 ```bash
 specs.py status --spec "<slug>" --json
 ```
-Read the derived stage, the section states, task progress, the blocked tasks, the recorded commits,
+Read the derived stage, the section states, task progress, the blocked tasks, the recorded subjects,
 and **`verification`** — the spec's declared policy, which decides when the suite runs so this
 command never has to.
 
@@ -143,13 +143,32 @@ d. **Verify, per the spec's declared policy** (§The validation loop). On a fail
 e. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
    dead code — and fix what it finds *before* committing.
 
-f. **Commit that task alone**, staging its declared files, under the subject format in
-   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages.
-
-g. **Tick the box with its sha**, mechanically and never by string surgery:
+f. **Decide the subject, then tick the box with it** — mechanically, never by string surgery. The
+   subject follows [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+   §Commit messages, or the target's own convention where it declares one:
    ```bash
-   specs.py task --spec "<slug>" --check <id> --commit "$(git rev-parse --short HEAD)"
+   specs.py task --spec "<slug>" --check <id> --subject "plan/<slug>: <id> <title>"
    ```
+   The subject is known **before** the commit, which is the whole reason it is the anchor: ticking
+   first means the box travels *inside* the commit it describes, and the per-task bookkeeping
+   commit disappears.
+
+g. **Commit that task alone**, staging its declared files **and the spec file**, under exactly the
+   subject just recorded. One task is one commit, carrying the code and its ticked box together.
+
+h. **Assert the subject survived**, and report rather than repair:
+   ```bash
+   git log -1 --format=%s        # must equal what step f recorded
+   ```
+   A `commit-msg` hook that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
+   recorded subject resolvable as a substring — that is fine and needs nothing. A hook that
+   **replaces** the subject breaks the link: **report it as a finding and write nothing.** Editing
+   the record now would put a write after the commit again, which is exactly what this ordering
+   removed.
+
+   If the commit itself fails — a failing hook, nothing staged — **undo the tick**
+   (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist,
+   then report the failure. Never `--no-verify` your way past it.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
@@ -165,8 +184,8 @@ binding the refresh to the commit is what stops it going stale.
 
 ### 7. Report, and hand off
 Show the spec, the isolation and its `branch` record, tasks completed this session, overall
-progress, the commits and their shas, the blocked tasks with their reasons, the standards written,
-and the discoveries recorded.
+progress, each task's commit and the subject recorded for it, any subject that drifted, the blocked
+tasks with their reasons, the standards written, and the discoveries recorded.
 
 **At 100%**, offer to chain straight into `/specs:conclude` (the `Skill` tool): the branch review,
 the emergent `docs/`, the merge, and the archive-time distillation. Offer it once; declined → name
@@ -182,8 +201,8 @@ Task 3/7 — 3.2 <task title>
   files: src/middleware/auth.ts, src/config/limits.ts
 ✓ verify: pnpm test middleware/ — passed
 ✓ self-review: clean
-✓ committed a1b2c3d
-✓ checked 3.2 (commit: a1b2c3d)
+✓ checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
+✓ committed a1b2c3d — subject matches
 ```
 
 ## Hard rules — no exceptions, and no "just this once"
@@ -195,21 +214,26 @@ front of you before the loop starts:
 
 - **Never edit the `verify:` command, the test, or the assertion** so it stops failing — and never
   disable, skip, `xfail` or delete a test. Change the code, or report the task blocked.
-- **Never amend or rewrite an earlier task's commit**, and never force-push. A recorded `commit:`
-  sha depends on both, and a rewritten history makes every earlier record a lie at once.
-- **Never tick a checkbox for work that was not verified.** If nothing could verify it, say so in
-  the report rather than implying the task was proved.
+- **Never amend or rewrite an earlier task's commit**, and never force-push. A rewritten history
+  makes every earlier record a lie at once.
+- **Never tick a checkbox for work that was not verified.** The box is ticked before the commit but
+  only ever *after* the task verified and self-reviewed — the commit boundary moved, the proof did
+  not. If nothing could verify it, say so in the report rather than implying the task was proved.
 
 ## Invariants to never violate
 
-- Require a clean tree before the first code change; offer isolation, recommend it, never impose it.
+- Require a clean tree before the first code change; delegate isolation to `/specs:isolate`,
+  recommend it, never impose it, and never reimplement it here.
 - Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
   human to decide it then.
-- Tick each box **after** the task verified, self-reviewed and committed — with its sha.
+- Tick each box **after** the task verified and self-reviewed, and **before** its commit — with the
+  subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
+- Never write a record after the commit it describes. A subject that drifted is reported, not
+  corrected.
 - Never refuse over a missing `approved`; ask inline and stamp it.
-- Never rewrite a `branch` record, and never stamp one for work done in place.
+- Never stamp or rewrite a `branch` record here — that record belongs to `/specs:isolate`.
 - Write **only** the `docs/` a task explicitly names. Emergent findings are one `specs.py discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under §Delegating an executor (declares `files:`, touches no `docs/`,

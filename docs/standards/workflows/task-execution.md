@@ -2,19 +2,19 @@
 type: standard
 title: Task execution contract
 description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3)
 maintainer: quenching
 ---
 
 # Task execution contract
 
 A task is not done when the code is written. It is done when it **ran**, its diff was
-**reviewed**, and it is **committed on its own**. This standard is the contract;
+**reviewed**, and it is **committed on its own, with its own checkbox inside that commit**. This standard is the contract;
 `assets/references/specs-execute/execution.md` is the procedure that implements it, and
 [plan-git-record.md](plan-git-record.md) is what the resulting commits are recorded as.
 
@@ -98,16 +98,33 @@ different scale of diff, it precedes an irreversible merge, and bolting it onto 
 run that died after task nine had to redo tasks one through eight to reach it. That it ran is
 recorded as `reviewed`, per [plan-git-record.md](plan-git-record.md).
 
-## One commit per task
+## One commit per task — literally one
 
 ```
 plan/<slug>: <task-id> <task title>
 ```
 
-`git revert` then undoes exactly one task, `git log` reads as the spec's task list, and a review
-can walk it step by step. N tasks piled into one uncommitted blob gives none of that, and makes
-the branch isolation offered at the start buy nothing. The sha is written back onto the task line —
-[plan-git-record.md](plan-git-record.md) §The task→commit link is stored, never inscribed.
+`git revert` then undoes exactly one task, `git log` reads as the spec's task list, and a review can
+walk it step by step. N tasks piled into one uncommitted blob gives none of that, and makes the
+isolation taken at the start buy nothing.
+
+The heading is now literally true. The anchor written back onto the task line is the commit's
+**subject**, not its sha — [plan-git-record.md](plan-git-record.md) §The task→commit link is the
+commit's own subject — and a subject is known *before* the commit exists. So the box is ticked
+first and the commit carries it:
+
+```bash
+specs.py task --spec <slug> --check <id> --subject "<subject>"
+git add <the task's files> <the spec file> && git commit -m "<subject>"
+```
+
+Under the sha anchor this was impossible: the tick had to follow the commit it recorded, so every
+task cost a second, bookkeeping commit and "one commit per task" was an aspiration the mechanism
+contradicted. Those commits no longer exist.
+
+If the commit fails, **undo the tick** so no box claims a commit that does not exist. If a
+`commit-msg` hook *replaced* the subject, report the drift as a finding and write nothing —
+repairing the record after the commit is the ordering this contract exists to prevent.
 
 ### Hard rules
 

@@ -1,5 +1,5 @@
 ---
-description: Answer "which spec now, and which command?" — read the whole plans/ front, show the ordering, and hand off. Triggers on "what should I work on", "what is next", "continue", "pick up where I left off", "which spec now", "what is in flight", "where were we", "resume the plan". One tool call, no sub-agents, no file reads: the ranking, the reason each spec sits where it does, and the one command to run next. Suggests ranking the front first when nothing has been started and nothing carries a priority. Hands off; never builds, edits, or closes anything itself. Not for: building a spec → /specs:execute; sharpening one → /specs:develop; closing one out → /specs:conclude; the full conformance view of the workspace → /specs:status.
+description: Answer "which spec now, and which command?" — read the whole plans/ front, show the ordering, and hand off. Triggers on "what should I work on", "what is next", "continue", "pick up where I left off", "which spec now", "what is in flight", "where were we", "resume the plan". One tool call, no sub-agents, no file reads: the ranking, the reason each spec sits where it does, and the one command to run next. Branch-aware — the spec whose plan/<slug> branch you are standing on comes back first, and one alive but checked out elsewhere is demoted rather than offered twice. Suggests ranking the front first when nothing has been started and nothing carries a priority. Hands off; never builds, edits, or closes anything itself. Not for: building a spec → /specs:execute; sharpening one → /specs:develop; taking a branch or worktree → /specs:isolate; closing one out → /specs:conclude; the full conformance view of the workspace → /specs:status.
 argument-hint: [slug]
 allowed-tools: Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 ---
@@ -30,9 +30,18 @@ never on prose.
 ## Doctrine
 
 - **The tool ranks; this command reports and routes.** `specs.py next --front` is the only place
-  the ordering lives — four factors, lexicographic: what is already executing, then closest to
-  done, then the human's `priority`, then age. Never re-sort its output, never add a factor of your
-  own, and never argue with the top candidate.
+  the ordering lives — a live `plan/<slug>` ref first, then four lexicographic factors: what is
+  already executing, then closest to done, then the human's `priority`, then age. Never re-sort its
+  output, never add a factor of your own, and never argue with the top candidate.
+- **A live branch is the strongest signal there is, in both directions.** Each candidate carries
+  `branch: {work, live, current}`. Standing on `plan/<slug>` puts that spec at the top — you are
+  already there. A branch alive but checked out *elsewhere* pushes its spec **below** the untouched
+  ones: offering it would start a second run at work already under way, and the fix is to check the
+  branch out, not to build it twice. Report the branch either way, because "why is this first?"
+  and "why is this last?" have the same answer.
+- **The ref is the signal, never the `branch:` record.** The tool reads git, so a branch cut by hand
+  with no record still counts and a record whose ref is gone stops counting. Never infer that a spec
+  is in flight from frontmatter alone.
 - **Show the reason, not just the winner.** Each candidate carries a `reason` naming the one
   dominant factor. A recommendation whose grounds are visible can be overruled in one word; a bare
   answer has to be trusted or re-derived.
@@ -75,6 +84,14 @@ For **the front**, take `top` as the recommendation, then read that spec's own `
 table. `count` is 0 → say the front is empty and name `/specs:create`. `needsTriage` is true → say
 the ordering rests on age alone and offer `/specs:triage` before anything else.
 
+The top candidate's `branch` changes the hand-off, not the ranking:
+
+| `branch` on the recommended spec | What to say |
+| --- | --- |
+| `current: true` | you are already on `<work>`; hand off to the `action`'s command as usual |
+| `live: true`, `current: false` | it is in flight on `<work>` — offer to check it out (or `/specs:isolate` to add a worktree) **before** building, rather than routing straight into `execute` |
+| `live: false` | nothing to say; route on the `action` alone |
+
 Two things the payload does not decide, and which are named rather than routed around: a spec whose
 `approved` is null still builds (`execute` asks inline), and unresolved `## Discoveries` lines are
 `/specs:develop`'s discoveries bank.
@@ -95,12 +112,13 @@ tool. Declined → name the command and its argument in one line and stop.
 ```
 ## The specs front — 6 specs in plans/
 
-→ session-tokens · executing · 5/9 tasks · executing — 5/9 tasks done
+→ session-tokens · executing · 5/9 tasks · you are on this branch (plan/session-tokens)
     next: /specs:execute session-tokens  (task 3.2, verify: pnpm test auth/)
 
   rate-limit-api      · ready     · 0/12  · ready to build, untouched for 9d
   webhook-retries     · proposed  · —     · proposed, 21d old
-  … 3 more
+  … 2 more
+  export-csv-timeout  · ready     · 2/8   · in flight on `plan/export-csv-timeout` — check it out to continue
 ```
 
 ## Invariants to never violate
@@ -112,6 +130,10 @@ tool. Declined → name the command and its argument in one line and stop.
   judgment.
 - Never present an age-only ordering as a ranking. When `needsTriage` is true, say so and offer
   `/specs:triage`.
+- Never route straight into building a spec whose branch is alive somewhere else — say where it is
+  and let the human check it out first.
+- Never read git yourself to decide what is in flight. `next --front` already did, and ranking lives
+  in one place.
 - Never refuse over a missing `approved` or an unmet gate — both are somebody else's to handle, and
   naming the command that handles them is this one's whole job.
 - Never invoke a hand-off the human did not take.
