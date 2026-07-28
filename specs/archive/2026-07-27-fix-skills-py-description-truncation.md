@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/fix-skills-py-description-truncation}
 reviewed: {date: 2026-07-28}
+merge: {strategy: merge-commit, subject: "plan/fix-skills-py-description-truncation: merge (merge-commit)"}
 outcome: done
 ---
 
