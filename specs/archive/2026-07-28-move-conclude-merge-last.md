@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/move-conclude-merge-last}
 reviewed: {date: 2026-07-28}
+merge: {strategy: merge-commit, subject: "plan/move-conclude-merge-last: merge (merge-commit)"}
 outcome: done
 ---
 
