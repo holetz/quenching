@@ -7,7 +7,7 @@ tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-07-28
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28)
 maintainer: quenching
 ---
 
@@ -68,6 +68,20 @@ Relative paths are not merely inconvenient here, they are **wrong**: a relative 
 depth of the *citing* file, so `commands/docs/documentation/build.md` and `commands/align.md`
 would need different strings for the same target. The absolute form is one string everywhere,
 which is what makes the citation set mechanically rewritable and mechanically checkable.
+
+### A mold cites nothing it does not also install
+
+The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves.
+Anything under `assets/templates/**` is the opposite case: a mold is copied **into a target repo**,
+which has none of this repository's `docs/`. A cross-reference to
+`quality/surface-verification.md` is correct in the plugin's own bundle and dangles in every repo
+cut from the mold.
+
+So **a template states its caveat self-contained**, citing only what the same align installs
+alongside it. This is why a mold and the plugin's own copy of the same standard legitimately differ
+in wording: `skills.md` may point at the measurement behind a rule, while
+`skills-standard.md` states the rule and stops. That difference is the rule being obeyed, not
+drift — do not "reconcile" them.
 
 ## The layout rule needs no check of its own
 

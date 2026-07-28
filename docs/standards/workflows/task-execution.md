@@ -7,7 +7,7 @@ tags: [workflows, specs, execution, verification, commits, delegation]
 timestamp: 2026-07-28
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28)
 maintainer: quenching
 ---
 
@@ -43,6 +43,26 @@ never guesses and never interrupts the human mid-task to ask.
 A task with no `verify:` falls back to the spec's `## Validation`, then to the repo's own
 checks. **No verification available at all is reported, never silently passed** — a checkbox must
 not imply a proof that never happened.
+
+### A `verify:` that cannot fail proves nothing when it passes
+
+A declared check is a claim about what it would catch, and that claim is itself unverified until
+someone runs it against the tree **before** the fix. Run it there first: it must **exit non-zero**.
+Only then does its later exit 0 mean the task did something.
+
+The failure is not hypothetical and does not look like a failure. A task declared
+`verify: ! grep -rn "is the enforcement" …` to prove three sentences were deleted. Two of the three
+lived in files where the phrase wraps across a line break, and `grep` matches within a line — so
+against the pre-fix tree the pattern found **1 of 3**, and the task would have ticked green with two
+of its three targets untouched. Replaced with a multiline check, proven to exit 1 before the fix and
+0 after.
+
+This is the sibling of [../quality/parse-honesty.md](../quality/parse-honesty.md) from the other
+side: there, a tool misread its input and reported a confident finding about a string it never held.
+Here nothing is misread — the matcher simply cannot express the thing being proven, and a check that
+cannot express its claim reports success indistinguishable from the real one. **Falsify the check
+before trusting it**, and treat "it passed" as evidence only once "it failed on purpose" is on the
+record.
 
 ## A blocked task is a visible marker, not a hidden counter
 
