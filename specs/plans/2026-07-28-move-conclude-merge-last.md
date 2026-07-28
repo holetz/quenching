@@ -460,8 +460,9 @@ branch `plan/move-conclude-merge-last`):
 
 ### 5. Os standards e o glossário
 
-- [ ] 5.1 Reescrever docs/standards/workflows/plan-git-record.md — o vínculo é inscrito na mensagem; renomear a seção "The task→commit link is stored, never inscribed"; os dois registros; a tabela do squash; a coexistência das duas formas no arquivo (authority: current)
+- [x] 5.1 Reescrever docs/standards/workflows/plan-git-record.md — o vínculo é inscrito na mensagem; renomear a seção "The task→commit link is stored, never inscribed"; os dois registros; a tabela do squash; a coexistência das duas formas no arquivo (authority: current)
       files: docs/standards/workflows/plan-git-record.md
+      subject: plan/move-conclude-merge-last: 5.1 rewrite plan-git-record.md around the subject anchor
 - [ ] 5.2 Atualizar docs/standards/workflows/plan-lifecycle.md — a linha `merge: {strategy, subject}`
       files: docs/standards/workflows/plan-lifecycle.md
 - [ ] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
