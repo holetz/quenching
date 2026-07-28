@@ -135,9 +135,10 @@ whose whole premise is that a claim carries the evidence for it.
 ## Validation
 
 ```bash
-# 1. zero surviving instances of the claim
-grep -rn "is the enforcement\|enforcement rather than a promise" --include='*.md' plugins/ docs/
-#    expect: no matches
+# 1. zero surviving instances of the claim — the check must be MULTILINE: the phrase wraps
+#    across a line break in both command bodies, and a line-based grep finds only the README
+python3 -c "import re,sys,pathlib; p=re.compile(r'is the\s+enforcement|enforcement\s+rather than a promise'); h=[str(f) for d in ('plugins','docs') for f in pathlib.Path(d).rglob('*.md') if p.search(f.read_text(encoding='utf-8',errors='replace'))]; print(*h,sep='\n'); sys.exit(1 if h else 0)"
+#    expect: no matches, exit 0
 
 # 2. the command surface's conformance is unchanged
 cd plugins/quenching
@@ -278,12 +279,13 @@ deliberately left alone â€” do not "fix" them.
 
 ### 4. Prove it
 
-- [ ] 4.1 Prove zero surviving instances of the claim across plugins/ and docs/
-      verify: ! grep -rn "is the enforcement\|enforcement rather than a promise" --include='*.md' plugins/ docs/
+- [x] 4.1 Prove zero surviving instances of the claim across plugins/ and docs/
+      verify: python3 -c "import re,sys,pathlib; p=re.compile(r'is the\s+enforcement|enforcement\s+rather than a promise'); h=[str(f) for d in ('plugins','docs') for f in pathlib.Path(d).rglob('*.md') if p.search(f.read_text(encoding='utf-8',errors='replace'))]; print(*h,sep='\n'); sys.exit(1 if h else 0)"
+      subject: plan/verify-allowed-tools-enforcement: 4.1 Prove zero surviving instances of the claim across plugins/ and docs/
 - [ ] 4.2 Run the surface's functional checks and revert any check-3 residue in the same commit
       verify: ./plugins/quenching/assets/bin/functional-checks.sh && python3 plugins/quenching/assets/bin/specs.py validate
 
 ## Discoveries
 
-- Task 4.1's verify: grep pattern 'is the enforcement' cannot match commands/docs/status.md or commands/specs/status.md — the phrase wraps across a line break there ('that is the' / 'enforcement, not a promise'), and grep is line-based. As written the check passes vacuously and would report zero instances even with both sentences intact. A multiline-capable check (grep -Pzo, or ripgrep -U) is needed for 4.1 to prove its claim.
+- Task 4.1's verify: grep pattern 'is the enforcement' cannot match commands/docs/status.md or commands/specs/status.md — the phrase wraps across a line break there ('that is the' / 'enforcement, not a promise'), and grep is line-based. Measured against main with all three sentences intact, the declared pattern found 1 of 3 (only the README, whose clause happens to sit on one line) — so the task would have passed with both command bodies unfixed. RESOLVED during execution: 4.1's verify and ## Validation check 1 both replaced with a multiline python3 check, proven to exit 1 against main and 0 against HEAD.
 - The spec's ## Handoff and ## Validation baselines are stale, measured before this branch: skills.py reports 25 commands not 24; lint exits 0 with 35 warnings not 5, and 2 of them ARE in commands/docs/status.md (sk-trigger-position, sk-no-boundary, both about the frontmatter description, neither touched by this spec); okf-validate.py docs reports 0 errors and 2 warnings not 0/0 (resource-unresolved on standards/automation/agents.md, stale-doc on standards/automation/hooks.md), both pre-existing and proved so by a stash test. Exit codes are 0 throughout, so every task verify still passes — only the stated figures were wrong.
