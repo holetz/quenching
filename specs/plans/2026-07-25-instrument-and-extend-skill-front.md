@@ -197,9 +197,21 @@ Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The
 single owner is `plugins/quenching/assets/references/skill-new/capabilities.md`; the standards
 are `docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
 
-**Task 1.1 is done** (commit `2f0cff3`): `/skill:agent:new` measured at +0.364 pass rate for
-182,367 FEWER tokens, trigger routing 5/5 and 3/3, no description edit warranted. Artifacts in
-`assets/evals/skill/agent/new/`.
+**Section 1 is done and its verification point is green** — `functional-checks.sh` reports
+9 passed, 0 failed. `/skill:agent:new` measured +0.364 pass rate for 182,367 fewer tokens
+(`2f0cff3`); `/skill:hook:new` +0.5 for 1,886,243 fewer — 52.5% cheaper (`f5b49c7`); both mints
+now carry an intent-shaped trigger (`69ace04`, `c959ec5`) and a sandboxed routing probe.
+
+**Two things a later task must not undo.** Task 1.4 discovered that `/skill:agent:new`'s
+intent-phrased routing was BORROWED from the target repo — without
+`docs/standards/automation/agents.md` present, the phrase routed to `/skill:new` instead. The
+trigger now on the description is what earns it, and probes d and e in `functional-checks.sh`
+are the regression guard for both mints. Do not "shorten" either description in task 3.2
+without re-running the suite.
+
+**Task 2.1 is done**: `skills.py` gained `parse_frontmatter_hooks()` (the mold's shape only,
+fail-open via `sk-hook-unparseable`) and `hook_ladder_findings()`, which now serves BOTH rungs —
+`settings.json` and a command's frontmatter — from one implementation. `selftest` is 8 cases.
 
 **The eval harness task 1.2 should reuse** (it is in the scratchpad, not the repo — rebuild or
 re-derive it): both arms are sandboxed `claude -p` runs over an identical throwaway git fixture,
@@ -239,10 +251,11 @@ one into the two mints' descriptions while tuning (task 1.3).
       files: plugins/quenching/commands/skill/agent/new.md, plugins/quenching/commands/skill/hook/new.md
       verify: python3 assets/bin/skills.py lint commands/skill --json
       commit: 69ace04
-- [ ] 1.4 After consolidation 4.5 passes, add one sandboxed routing probe per new mint to
+- [x] 1.4 After consolidation 4.5 passes, add one sandboxed routing probe per new mint to
       the functional checks (Handoff: the two recorded failure modes)
       files: plugins/quenching/assets/bin/functional-checks.sh
       verify: cd plugins/quenching && ./assets/bin/functional-checks.sh
+      commit: c959ec5
 
 ### 2. Close the mechanical blind spots
 
