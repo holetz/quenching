@@ -6,6 +6,7 @@ approved: 2026-07-27
 branch:
   base: main
   work: plan/instrument-and-extend-skill-front
+reviewed: 2026-07-27
 ---
 
 # Capacidades estrategicas no front .claude/

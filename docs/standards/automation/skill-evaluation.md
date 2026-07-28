@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Skill evaluation
-description: What it takes to claim a skill works — with/without runs in isolated agents, assertions graded on quoted evidence, and a reported delta
+description: What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero
 resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/skill/eval.md
 tags: [automation, skills, evaluation, testing, benchmark]
 timestamp: 2026-07-27
 audience: both
-authority: background
-source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator
+authority: current
+source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /skill:agent:new and /skill:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)
 maintainer: quenching
 ---
 
@@ -19,9 +19,11 @@ criterion does not end early, that a body under the cap still teaches. `skills.p
 that a skill is *shaped* correctly. Nothing checks that the shape *works*. This standard is what
 "works" has to mean before anyone says it.
 
-Born `authority: background`: the contract is written, and `quenching-skill-eval` implements it,
-but no skill in this repo has yet been measured against it. It graduates to `current` when at
-least one committed benchmark exists.
+Born `authority: background` and **graduated to `current` on 2026-07-27**, on its own stated gate:
+`/skill:eval` implements the contract, and two commands have now been measured against it with the
+artifacts committed — `/skill:agent:new` and `/skill:hook:new`, each with a non-zero stated delta.
+The gate was *at least one committed benchmark*, and every rule below was either exercised by those
+two runs or written from what they measured.
 
 ## The claim a run is allowed to make
 
@@ -38,9 +40,18 @@ A with-only run measures the model, not the skill. Most cases a skill is written
 capable model can already half-do, so a with-only run reports a high pass rate whether or not the
 skill contributed anything. The comparison *is* the measurement.
 
-Both arms run in **isolated agents**, and neither is the conversation that authored the cases:
-that context has already read the skill, so any arm it runs is contaminated by exactly the text
-the without-arm is defined by lacking.
+Both arms run in **isolation**, and neither is the conversation that authored the cases: that
+context has already read the skill, so any arm it runs is contaminated by exactly the text the
+without-arm is defined by lacking.
+
+**Isolation is a property of the process, not of the agent.** A sub-agent gets a fresh context but
+**inherits the session's plugin registry**, so a without-arm dispatched that way is still listed
+the command it is defined by lacking — it merely has not read the body. That is a weaker claim than
+"no path to it", and the delta it produces understates the skill by whatever the description alone
+taught. The honest without-arm is a **separate process** the skill cannot reach: a fresh `claude -p`
+whose settings carry `enabledPlugins` for the with-arm and omit it for the without-arm, the pattern
+`functional-checks.sh` already uses. When a run cannot achieve that, it says so and downgrades its
+claim; it does not report the number as if it had.
 
 Both arms run on the **same model**. A delta between arms on different models measures the models.
 Never a cheaper model for one arm, and never for the grader.
@@ -83,6 +94,28 @@ checked" into "somebody checked and it passed".
 A benchmark measures one skill against **its own case set**. Two skills' numbers are not
 comparable and are never tabled side by side.
 
+## A measured rate is conditional on its fixture
+
+A routing rate is not a property of the description alone — it is a property of the description
+**in the repo the probe ran in**, because an intent-shaped phrase names a subject the session looks
+for before it routes.
+
+Measured while building these two evals: `/skill:agent:new`'s phrase *"set up something that audits
+our migrations and reports back"* routed 5/5 in a fixture that shipped
+`docs/standards/automation/agents.md` — and the identical phrase in a bare repo routed to
+`/skill:new` instead. Single variable, both runs healthy. The 5/5 was **fixture-assisted**: the
+description was borrowing routing the target repo supplied.
+
+Two rules follow:
+
+- **Report the fixture with the rate.** A number cited without what the repo contained is not
+  reproducible, and a later run in a different fixture will read as a regression that never
+  happened.
+- **A probe grades the fixture unless the fixture contains the subject the phrase names.** A phrase
+  about migrations needs a migration; a phrase whose command wants an OKF bundle needs one, or the
+  probe spends its budget discovering the subject is missing. Seed the smallest repo in which every
+  phrase can be answered without exploring.
+
 ## Description tuning is the one edit measurement authorizes
 
 Routing is the single skill property a run can count directly, so it is the only one this front
@@ -91,6 +124,11 @@ routes where.
 
 - A trigger is **removed only on a measured miss** — never to shorten a description. Cutting a
   trigger for length is how a skill quietly stops firing for the user who worded it differently.
+- **A truncated run is not a miss.** A probe that hits its turn cap while still orienting reports a
+  FALSE miss, and a false miss argues for deleting a trigger that works. Measured here: at
+  `--max-turns 3` two working triggers reported as misses (`error_max_turns`), and at 8 both routed
+  correctly. A run that ends on the cap is recorded **inconclusive** and graded as nothing — never
+  as evidence in either direction.
 - A `shouldNotTrigger` prompt that fires sharpens the `Not for:` boundary, not the triggers.
 - After any edit, `skills.py lint` runs again: the caps and the trigger position still hold, and
   tuning must not trade one finding for another.
@@ -102,8 +140,15 @@ Rewriting a body is authoring, and authoring needs the human whose intent the sk
 
 `evals/evals.json` beside the skill, and a timestamped run directory holding `grading.json` and
 `benchmark.json`. The shapes are adopted verbatim from Anthropic's `skill-creator` and owned by
-`quenching-skill-eval/references/evaluation.md`; this standard states what they must contain, not
-how they are keyed.
+[`skill-eval/evaluation.md`](/plugins/quenching/assets/references/skill-eval/evaluation.md); this
+standard states what they must contain, not how they are keyed.
 
 The case set is **committed and reviewed in the same diff as the body it tests** — a case set that
 lives elsewhere stops matching the skill within two edits.
+
+**A rename carries its eval tree.** The artifacts mirror the command's path, so renaming the
+command orphans them silently — nothing errors, and the stale tree keeps answering to a name that
+no longer routes. `assets/evals/specs/capture/` is the standing example: the folder still mirrors
+the retired `/specs:capture` (now `/specs:create`) and its `benchmark.json` names a *third* retired
+skill. Move the tree in the same commit as the rename, or the mirroring the design depends on is
+the one property it does not have.
