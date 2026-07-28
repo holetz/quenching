@@ -826,12 +826,7 @@ def _wider_findings(root: str) -> list[dict]:
     the command surface's."""
     findings: list[dict] = []
 
-    agents_dir = os.path.join(root, "agents")
-    if os.path.isdir(agents_dir):
-        for fn in sorted(os.listdir(agents_dir)):
-            if not fn.endswith(".md"):
-                continue
-            fm = parse_frontmatter(read_text(os.path.join(agents_dir, fn)) or "")
+    for fn, fm in agent_definitions(root):
             if not str(fm.get("description", "")).strip():
                 findings.append(finding(
                     "sk-agent-no-description", "error",
@@ -1168,6 +1163,34 @@ register("registry",
 # refuses — a surface may legitimately be large, and the decision to cut is the
 # human's, so exit 2 is never reached from here.
 # --------------------------------------------------------------------------- #
+def agent_definitions(root: str) -> list[tuple[str, dict]]:
+    """`(filename, frontmatter)` for every `<root>/agents/*.md`, sorted.
+
+    Shared by `doctor` (which checks each definition is reachable) and `budget` (which
+    charges each description to the always-on total) so the two can never disagree about
+    what the agent surface contains."""
+    agents_dir = os.path.join(root, "agents")
+    if not os.path.isdir(agents_dir):
+        return []
+    return [(fn, parse_frontmatter(read_text(os.path.join(agents_dir, fn)) or ""))
+            for fn in sorted(os.listdir(agents_dir)) if fn.endswith(".md")]
+
+
+def agent_budget_rows(root: str) -> list[dict]:
+    """Per agent definition: the `description` that listing it costs every session.
+
+    An agent's description is always-on context by exactly the same mechanism as a
+    command's — it is carried so the model can decide whether to delegate, and it is paid
+    whether or not any delegation happens. Charging commands for that and exempting agents
+    understated the surface by however many agents a repo had defined."""
+    return sorted(
+        ({"agent": f"agents/{fn}",
+          "description": len(str(fm.get("description", ""))),
+          "total": len(str(fm.get("description", "")))}
+         for fn, fm in agent_definitions(root)),
+        key=lambda r: (-r["total"], r["agent"]))
+
+
 def budget_rows(surface: dict) -> list[dict]:
     """Per command: the `description` that listing it costs every session.
 
@@ -1193,7 +1216,10 @@ def budget_rows(surface: dict) -> list[dict]:
 def cmd_budget(args, root: str) -> int:
     surface = load_surface(root)
     rows = budget_rows(surface)
-    total = sum(r["total"] for r in rows)
+    agents = agent_budget_rows(root)
+    commands_total = sum(r["total"] for r in rows)
+    agents_total = sum(r["total"] for r in agents)
+    total = commands_total + agents_total
     ceiling = args.ceiling if args.ceiling is not None else DEFAULT_CEILING
     findings = []
     if total > ceiling:
@@ -1204,18 +1230,23 @@ def cmd_budget(args, root: str) -> int:
                                 command=SURFACE_MISSING))
     payload = {"root": root, "total": total, "ceiling": ceiling,
                "approxTokens": round(total / CHARS_PER_TOKEN),
-               "breakdown": {"commands": total},
-               "commands": rows}
+               "breakdown": {"commands": commands_total, "agents": agents_total},
+               "commands": rows, "agents": agents}
     if args.json:
         print(json.dumps({"ok": not findings, **payload, "findings": findings},
                          indent=2, ensure_ascii=False))
         return exit_for(findings)
-    print(f"skills budget — {root} ({plural(len(rows), 'command')})")
+    print(f"skills budget — {root} ({plural(len(rows), 'command')}, "
+          f"{plural(len(agents), 'agent')})")
     print(f"  {'chars':>6}  command")
     for r in rows:
         print(f"  {r['total']:>6}  {r['command']}")
+    for r in agents:
+        print(f"  {r['total']:>6}  {r['agent']}")
     print(f"\n  {total} characters always on (~{payload['approxTokens']} tokens), "
           f"ceiling {ceiling}")
+    if agents:
+        print(f"  commands {commands_total} + agents {agents_total}")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
     return exit_for(findings)

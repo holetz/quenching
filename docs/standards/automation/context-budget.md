@@ -4,10 +4,10 @@ title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling
 resource: plugins/quenching/commands/**
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-07-26
+timestamp: 2026-07-27
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan + collapse-skills-into-commands (2026-07-26) — measured on this plugin's own 28-command surface
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27)
 maintainer: quenching
 ---
 
@@ -100,6 +100,25 @@ therefore told nobody anything.
 
 `budget` over the ceiling exits 1 and lists the commands sorted by cost; exit 2 is unreachable from
 it. A surface may legitimately be large, and the decision to cut is a human's.
+
+### The total includes the agent surface
+
+`budget` charges **every `agents/*.md` description** to the same total, and reports the split:
+
+```json
+"breakdown": { "commands": 11565, "agents": 87 }
+```
+
+An agent definition's description is always-on context by exactly the same mechanism as a
+command's — it is carried so the model can decide whether to delegate, and it is paid whether or
+not any delegation ever happens. Counting commands and exempting agents understated a surface by
+however many agents it had defined, and it did so **invisibly**: the exempted cost never appeared
+in any row, so a repo could add ten agents and watch its budget report stay flat.
+
+The same discipline therefore applies to an agent's description as to a command's: it states what
+the agent does **and when to invoke it**, and nothing about how it works. `/skill:agent:new` prices
+that cost in its plan; `doctor` and `budget` read the agent surface through one shared enumeration,
+so the two can never disagree about what it contains.
 
 Two things follow from the ceiling being per-surface rather than per-command:
 
