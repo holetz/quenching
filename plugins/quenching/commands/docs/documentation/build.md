@@ -78,6 +78,12 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-ci-absent` | no `.github/workflows/docs.yml` | **REPORT**; install only on request (own confirmation — platform-specific) |
 | `site-build-failed` | `mkdocs build --strict` exits non-zero | **FIX** only what is site-layer; anything page-level is **REPORTED** |
 
+**Why `Bash` is unrestricted here.** This command drives an external toolchain the plugin does
+not own — `mkdocs build --strict` is the verification, and the environment reaching it may be
+`pip`, `uv`, or a bare `python -m`. A prefix grant would have to enumerate every installer a
+target might use, and would fail closed on the one it did not. Its read-only siblings are scoped
+to `python3`/`py`.
+
 ## Workflow
 
 ### 1. Preflight — the bundle and the home
