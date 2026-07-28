@@ -31,8 +31,7 @@ point.
 
 - **Zero writes, no exceptions.** No stamp, no zone regeneration, no `docs/log.md` entry, not even
   a marker file. A status read that changed the thing it read would break its own contract and make
-  the preview a lie. The `allowed-tools` above carry no `Write` and no `Edit` — that is the
-  enforcement, not a promise.
+  the preview a lie.
 - **Report in the sweep's vocabulary.** Every finding carries the `sp-*` code
   [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md) defines and
   the command that closes it. Never invent a code, never soften one, and never report a finding the

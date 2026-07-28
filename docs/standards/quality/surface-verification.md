@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Surface verification
-description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the four preconditions a functional check must satisfy to measure what it claims, and how an ordering property is verified by running a real cycle
+description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, and how an ordering property is verified by running a real cycle
 resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/assets/bin/conclude-order-check.sh, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests]
 timestamp: 2026-07-28
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28)
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28)
 maintainer: quenching
 ---
 
@@ -57,7 +57,7 @@ Two consequences worth keeping:
   did not" — no `Read` under a `skills/` tree, no `Skill` matching a `quenching-*` name. A missed
   rewrite and a wrong one fail differently, and only the pair catches both.
 
-## The four preconditions a check must satisfy
+## The five preconditions a check must satisfy
 
 Each was learned by a check that would otherwise have measured something other than what it
 claimed:
@@ -83,8 +83,25 @@ claimed:
    and one check flipped verdict across identical runs. Open the capture with an explicit
    `encoding="utf-8"`, and treat a zero-event stream as **inconclusive**, never as a failure.
 
+5. **The harness grades the checkout the marketplace points at, never your branch.**
+   `${CLAUDE_PLUGIN_ROOT}` resolves through the marketplace's `directory` source, pinned to one
+   clone in `~/.claude/plugins/known_marketplaces.json`. Every probe therefore loads *that* clone's
+   `commands/**` whatever tree `claude -p` was launched from. Measured 2026-07-28 from a worktree:
+   check 1's probe read the **main** checkout's reference file. This is precondition 2's mechanism
+   seen from the other side — the same pinning that hands a throwaway sandbox the real surface is
+   what makes a branch's edits invisible.
+
 **A check that can fail for lack of evidence cannot gate anything** until it can tell that state
 apart from a real verdict. Say so in the report rather than quoting its pass count.
+
+**Precondition 5 has a consequence for the whole cycle.** A spec that isolates before editing
+`commands/**` — which `/specs:isolate` makes the ordinary case — cannot prove its own change from
+the branch: a green run there graded the base, and a red one indicted code the probe never loaded.
+So the harness runs on the base **after the merge**, and a pre-merge run is read as measuring
+nothing about the branch. A task whose `verify:` is the harness therefore will not converge while
+isolated; that is the tool's shape, not the task's failure, and it is written `- [!] … blocked`
+rather than retried. This narrows the standing rule above: the harness remains the only check for a
+`commands/**` change, but the moment it can run is after the merge, not before it.
 
 **Rules 2 and 3 pull against each other, and the tension is real.** A routing probe needs a
 populated repo to satisfy rule 3; a command that *writes* then writes there for real. Check 3's
