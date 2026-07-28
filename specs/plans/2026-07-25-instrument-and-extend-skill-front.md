@@ -190,42 +190,40 @@ New with the capability layer:
 
 ## Handoff
 
-State of play (2026-07-27, after task 3.1): **sections 1 and 2 are done and green.**
-`specs-flow-consolidation` has landed (archived `outcome: done`, merged to `main`), so the
-sequencing dependencies in 3.3 and 5.1 are satisfied and nothing here is blocked on another
-session. Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The
+State of play (2026-07-27, after task 4.1): **sections 1, 2 and 3 are done and green, and
+`/skill:package` is decided.** `specs-flow-consolidation` has landed (archived `outcome: done`,
+merged to `main`), so 5.1's sequencing dependency is satisfied and nothing here is blocked on
+another session. Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The
 doctrine's single owner is `plugins/quenching/assets/references/skill-new/capabilities.md`; the
 standards are `docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
-`budget` now reads 11,565 chars against the re-set ceiling of 11,565 (`9c1e42c`).
+`budget` reads 11,565 chars against the re-set ceiling of 11,565 (`9c1e42c`); `lint`, `doctor`,
+`selftest` and `budget` all exit 0, and `okf-validate.py ../../docs` exits 0 (two advisory
+`stale-doc` WARNs, on files this spec never touched).
 
-**The six rows task 3.2 stands on**, from 3.1's audit — blast-radius order, each with its buy:
+**Section 3 applied five of the audit's six rows** (`7ad7d9b`, README rows `4edbd94`): the five
+inline `effort:` pins dropped for the cache trap; `Bash` scoped on `/specs:align`,
+`/docs:harness` and `/docs:glossary-backfill`; the two grants that genuinely need it
+(`/docs:documentation:build`, `/docs:import-memory`) priced in their bodies; frontmatter `hooks:`
+blocks on `/docs:add`/`/docs:learn`/`/docs:define`; and `/skill:align` §7's collection-only `Task`.
+`sk-unscoped-bash` went 8 → 5, and all five survivors now state their reason.
 
-1. `/specs:align` grants bare `Bash` *alongside* `Bash(python3:*)`/`Bash(py:*)`, so the scoped
-   grants are dead weight. Scope it, or state the reason.
-2. Four bare-`Bash` grants state no reason: `/docs:documentation:build`,
-   `/docs:glossary-backfill`, `/docs:harness`, `/docs:import-memory`.
-3. Five **inline** `effort:` pins (`/docs:define`, `/docs:status`, `/specs:status`,
-   `/specs:create` = `low`; `/docs:glossary-backfill` = `medium`) were never priced against
-   `capabilities.md` §The cache trap — an inline pin invalidates the whole session prompt cache.
-   Drop them, or write the cost into README's model-policy table.
-4. Frontmatter `hooks:` running `okf-validate.py` on `/docs:add`, `/docs:learn`, `/docs:define`
-   — scope-ladder rung 1, and the surface currently has **zero** instances of the block task
-   2.1 taught `lint` to read.
-5. `/specs:continue` renders `specs.py next --front --json` at render time, converting its only
-   tool call into text. **Blocked on an unproven fact**: `functional-checks.sh` proves
-   `${CLAUDE_PLUGIN_ROOT}` substitutes in a *body*, never in a `!` line — prove that first, and
-   the same block is why the three aligns' probes stay on hold.
-6. `/skill:align` §7 gains a **collection-only** read-only `Task` (not granted today); every
-   doctrine verdict stays with the orchestrator.
+**The one row still open, and why it is held.** `/specs:continue` would render
+`specs.py next --front --json` at render time, converting its only tool call into text — held on
+an unproven fact: `functional-checks.sh` proves `${CLAUDE_PLUGIN_ROOT}` substitutes in a *body*,
+never in a `` !`…` `` line. The same block holds the three aligns' probes. The asymmetry that let
+the `hooks:` blocks ship while this waits: a `hooks:` block that fails to fire changes nothing,
+while a `!` line that fails to substitute injects an error into every render.
 
-**Nothing is fork-eligible** — all 24 commands either gate mid-flow or must land their report
-where the OK follows, and `/docs:status` + `/specs:status` say so in their own bodies.
-`disable-model-invocation`/`user-invocable` are forbidden by CLAUDE.md's default-invocation rule;
-`paths:` does not apply because every command is generic-axis, not domain-bound.
+**Never re-litigate without new evidence.** *Nothing on this surface is fork-eligible* — all 24
+commands either gate mid-flow or must land their report where the OK follows, and `/docs:status`
++ `/specs:status` forbid it in their own bodies. `disable-model-invocation`/`user-invocable` are
+forbidden by CLAUDE.md's default-invocation rule; `paths:` does not apply because every command is
+generic-axis, not domain-bound. `/skill:package` is dismissed on a real run — see Discoveries for
+the four operations it turned out to be and the six fields that came back requiring a human.
 
-**Two things 3.2 must not undo.** `/skill:agent:new`'s intent-phrased routing was BORROWED from
-the target repo — without `docs/standards/automation/agents.md` present, the phrase routed to
-`/skill:new`. The trigger now on the description is what earns it, and probes d and e in
+**Two things a later task must not undo.** `/skill:agent:new`'s intent-phrased routing was
+BORROWED from the target repo — without `docs/standards/automation/agents.md` present, the phrase
+routed to `/skill:new`. The trigger now on the description is what earns it, and probes d and e in
 `functional-checks.sh` guard both mints: do not "shorten" either description without re-running
 the suite. A `#` inside a frontmatter description is read as a YAML comment and silently
 truncates it.
@@ -288,8 +286,9 @@ nested `branch:` record reads back as null in `status --json` while being presen
       files: plugins/quenching/commands/
       verify: python3 assets/bin/skills.py --root . lint --json
       commit: 7ad7d9b
-- [ ] 3.3 After consolidation 5.5, update the README model-policy rows for what 3.2 changed
+- [x] 3.3 After consolidation 5.5, update the README model-policy rows for what 3.2 changed
       files: plugins/quenching/README.md
+      commit: 4edbd94
 
 ### 4. Resolve the original tail
 
@@ -324,3 +323,5 @@ nested `branch:` record reads back as null in `status --json` while being presen
 - /skill:agent:new's intent-phrased routing is borrowed, not earned: 'set up something that audits our migrations and reports back' routes to skill:agent:new only when the target repo already carries docs/standards/automation/agents.md — without it the same phrase routes to /skill:new (single-variable test, both runs subtype success). Task 1.1 measured that trigger 5/5 in a fixture that shipped agents.md, so the rate was fixture-assisted; every trigger the description carries names an artifact, none is intent-shaped, which is the gap 1.3 closed for /skill:hook:new
 - sk-unscoped-bash's message offers 'or state the reason in the body' but the check never reads the body — /specs:execute, /specs:conclude and /docs:align each carry a 'Why Bash is unrestricted here' section and are warned anyway, so the finding cannot distinguish a priced grant from an unpriced one (5 of the 8 warned commands state nothing)
 - README.md §Cost model still states the surface's always-on total as '30,705 characters to 2,083 (~7,676 to ~521 tokens), a 93% cut' — task 2.3 re-set the ceiling to 11,565 after the fold, so both the figure and the percentage are stale residue for task 5.1; a ceiling re-measurement has no checker that notices its own prose citations going out of date
+- /skill:package DISMISSED on a real packaging run (task 4.1). Two readings, both negative: packaging this repo's literal .claude/ surface yields an EMPTY plugin (0 commands, 0 agents; the only content is 3 hook files, 2 of them stale installed copies), and packaging the 24-command surface that does exist took four mechanical operations — cp commands/, write VERSION, write plugin.json, write marketplace.json — after which doctor still reported 24 commands / 0 findings. Every remaining field came back REQUIRES-A-HUMAN: plugin name, both descriptions (duplicated across plugin.json and marketplace.json and required to stay in lockstep), author, license, category, keywords. The command would be a wrapper around cp plus an interview, which is the exact shape capabilities.md calls a lever whose buy nobody can state; and the one genuinely error-prone part, the version lockstep, wants a verifier rather than a packager
+- this repo's own .claude/hooks/ carries specs.py and okf-validate.py at version 1.0.0 while the plugin ships 4.0.0 — the installed-copy upgrade path (/docs:align step 6, /specs:align's install) is offer-only and nothing notices the drift until an align is run, so the repo that authors the tools has been running three-major-versions-old copies of two of them
