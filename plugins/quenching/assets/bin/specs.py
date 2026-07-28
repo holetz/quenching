@@ -139,6 +139,12 @@ BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
 VERIFICATION_POLICIES = ("per-task", "per-section", "end-of-plan")
 DEFAULT_VERIFICATION = "per-section"
 OUTCOMES = ("done", "abandoned")
+# The four strategies `/specs:conclude` offers. Two of them create no merge commit, so the
+# record has no subject to name and carries an explicit none instead — a fact about the
+# strategy, not a gap in the record.
+MERGE_STRATEGIES = ("merge-commit", "squash", "rebase", "fast-forward")
+MERGE_ANCHORLESS_STRATEGIES = ("rebase", "fast-forward")
+RECORD_NONE_RE = re.compile(r"^none\b", re.IGNORECASE)
 
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -180,7 +186,9 @@ DEFAULT_SCHEMA: dict = {
                        "writtenBy": "execute", "writeOnce": True},
             "reviewed": {"fields": ["date"],
                          "writtenBy": "conclude", "writeOnce": False},
-            "merge": {"fields": ["strategy", "commit"],
+            "merge": {"fields": ["strategy", "subject"],
+                      "strategies": list(MERGE_STRATEGIES),
+                      "anchorless": list(MERGE_ANCHORLESS_STRATEGIES),
                       "writtenBy": "conclude", "writeOnce": True},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
@@ -514,6 +522,31 @@ def parse_frontmatter(text: str) -> dict:
                 k += 1
             if items:
                 fm[key] = items
+                j = k
+                continue
+            # A block mapping. Flow (`{a: b, c: d}`) splits on commas, so a record value
+            # that contains one — or is long enough to wrap — can only be written this way.
+            # Indent decides, exactly as YAML does it: a line deeper than the record's keys
+            # continues the value above it rather than starting a new key, which is what
+            # lets an explicit-none reason run past one line.
+            rec, last, base_indent = {}, None, None
+            k = j + 1
+            while k < len(body) and body[k][:1] in (" ", "\t") and body[k].strip():
+                indent = len(body[k]) - len(body[k].lstrip())
+                cur = body[k].strip()
+                if base_indent is None:
+                    base_indent = indent
+                if indent > base_indent and last is not None:
+                    rec[last] = f"{rec[last]} {cur}".strip()
+                elif indent == base_indent and ":" in cur:
+                    k2, _, v2 = cur.partition(":")
+                    last = k2.strip()
+                    rec[last] = v2.strip().strip("'\"")
+                else:
+                    break
+                k += 1
+            if rec:
+                fm[key] = rec
                 j = k
                 continue
             fm[key] = ""
@@ -2209,7 +2242,54 @@ def validate_spec(root: str, s: dict) -> list[dict]:
                             f"{where}: archived with no `outcome:` — done and abandoned "
                             f"read alike", spec=s["slug"], path=where,
                             remedy="stamp `outcome: done` or `outcome: abandoned`"))
+    merge_finding = merge_record_finding(fm, where, s["slug"])
+    if merge_finding:
+        out.append(merge_finding)
     return out
+
+
+def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
+    """Whether a `merge:` record still says which commit carries the merge.
+
+    TWO forms are legal and both are read forever: the current `{strategy, subject}`, and
+    `{strategy, commit}` on a spec archived before the anchor became the subject. The older
+    one is never rewritten — a recorded sha describes a commit that exists, and editing an
+    archived spec to "fix" it would be a lie about when the record was made."""
+    rec = fm.get("merge")
+    if not rec:
+        return None
+    remedy = ("stamp `merge: {strategy: <one of " + ", ".join(MERGE_STRATEGIES) +
+              ">, subject: <the merge commit's subject>}`")
+    if not isinstance(rec, dict):
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `merge:` is not a {{strategy, subject}} record",
+                        spec=slug, path=where, remedy=remedy)
+    strategy = str(rec.get("strategy", "")).strip().lower()
+    subject = str(rec.get("subject", "")).strip()
+    if strategy not in MERGE_STRATEGIES:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: merge strategy `{strategy or '(unset)'}` is not one of "
+                        f"{', '.join(MERGE_STRATEGIES)}", spec=slug, path=where,
+                        remedy=remedy)
+    if not subject:
+        if str(rec.get("commit", "")).strip():
+            return None          # the older form, read and left exactly as it was written
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `merge:` names a strategy but nothing to resolve the "
+                        f"merge by", spec=slug, path=where, remedy=remedy)
+    anchorless = strategy in MERGE_ANCHORLESS_STRATEGIES
+    explicit_none = bool(RECORD_NONE_RE.match(subject))
+    if anchorless and not explicit_none:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `{strategy}` creates no merge commit, so `subject:` has "
+                        f"nothing to point at", spec=slug, path=where,
+                        remedy="write `subject: none — <why>`")
+    if not anchorless and explicit_none:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `{strategy}` creates a merge commit, so `subject:` must "
+                        f"name it rather than be an explicit none", spec=slug, path=where,
+                        remedy=remedy)
+    return None
 
 
 def cmd_validate(args, root: str) -> int:
