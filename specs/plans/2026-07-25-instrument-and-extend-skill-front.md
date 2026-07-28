@@ -305,10 +305,11 @@ nested `branch:` record reads back as null in `status --json` while being presen
 
 ### 5. Release
 
-- [ ] 5.1 After consolidation 5.4/5.5, verify the three `QUENCHING.md` manuals, `CLAUDE.md`
+- [x] 5.1 After consolidation 5.4/5.5, verify the three `QUENCHING.md` manuals, `CLAUDE.md`
       and `README.md` enumerate the two mints, `capabilities.md`, and the new `sk-*` codes;
       fix residue only
       files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md
+      commit: 8bdaf2f
 - [ ] 5.2 Bump the version lockstep — `VERSION`, both manifests, and the `VERSION` constant
       in all three scripts
       verify: python3 assets/bin/skills.py --version && python3 assets/bin/specs.py --version && python3 assets/hooks/okf-validate.py --version && cat VERSION
@@ -329,3 +330,5 @@ nested `branch:` record reads back as null in `status --json` while being presen
 - this repo's own .claude/hooks/ carries specs.py and okf-validate.py at version 1.0.0 while the plugin ships 4.0.0 — the installed-copy upgrade path (/docs:align step 6, /specs:align's install) is offer-only and nothing notices the drift until an align is run, so the repo that authors the tools has been running three-major-versions-old copies of two of them
 - agents.md could NOT graduate at 4.2 and nothing contradicted it — there is simply no adopting surface: skills.py budget reports agents: 0, this repo has no .claude/agents/ at all, and /skill:agent:new's eval built its agents in a throwaway sandbox rather than keeping one. The standard stays authority: background until a definition is actually kept somewhere, which is the honest reading of 'graduate on evidence, not on time passing'
 - the three frontmatter hooks: blocks 3.2 added parse clean and lint reports zero hook findings, but nothing has observed one FIRE — the command registry is built at session start, so a block written in a session is inert in it. functional-checks.sh is the only harness that spawns a fresh process, and it has no probe asserting a rung-1 frontmatter hook actually runs; that probe is what would turn the hooks.md graduation from verified-by-parser into verified-by-execution
+- README's release history under ## Upgrade stops at 1.0.0 while VERSION reads 4.x — the 2.0.0, 3.0.0 and 4.0.0 bumps shipped with no changelog entry at all, and the same section's lockstep instruction still named only two shipped scripts (skills.py missing) until 5.2 fixed it, so the procedure that governs the bump was itself three sources out of date
+- README's per-command sections (lines ~68-278) still carry the retired quenching-docs-* / quenching-skill-* skill names as their headings while the same file's newer sections use /specs:triage and /specs:align — the consolidation rename reached the enumerations 5.1 checked but not the fourteen section headings, which is too large to be 'residue only' and needs its own pass before the next release is announced anywhere
