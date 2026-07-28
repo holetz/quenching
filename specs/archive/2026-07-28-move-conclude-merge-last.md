@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/move-conclude-merge-last}
 reviewed: {date: 2026-07-28}
+outcome: done
 ---
 
 # Make the merge the last action of /specs:conclude
@@ -514,3 +515,59 @@ Estado com as seis seções construídas (worktree
 - python print() writes CRLF to stdout on Windows, so any shell pipeline reading a value out of an embedded python heredoc gets a trailing CR — it silently broke conclude-order-check's git log --grep assertion until tr -d '\r' was added. Same family as functional-checks.sh:32's cp1252 read
 - CLAUDE.md's release rule says a new command means editing all THREE QUENCHING.md manuals, but only the front's own manual enumerates its commands — adding /specs:isolate needed assets/specs/QUENCHING.md alone, and touching the other two would have been churn. The rule should say 'the manual of the front the command belongs to'
 - the skills.py budget ceiling is a zero-headroom ratchet whose own comment predicted 'the 25th command crosses it on the day it is minted' — it did, and revising it is a skills.py edit no task declares, sitting in lockstep with README's recorded figure
+
+## Outcome
+
+Entregue e mergeado com **merge commit** (`--no-ff`), 25/25 tasks, plugin em
+**4.2.0**. O vÃ­nculo specâ†’git deixou de ser o sha e passou a ser o **subject**
+da mensagem: como o subject Ã© conhecido *antes* do commit, todo registro passa a
+ser escrito antes daquilo que descreve.
+
+O que mudou, por comando:
+
+- **`/specs:execute`** â€” a caixa Ã© marcada antes do commit e entra nele. Uma task
+  Ã© exatamente um commit, com cÃ³digo e caixa juntos; os commits de bookkeeping
+  por task deixaram de existir. Se o commit falhar, a marcaÃ§Ã£o Ã© desfeita.
+- **`/specs:conclude`** â€” review â†’ docs emergentes â†’ arquivamento â†’ destilaÃ§Ã£o +
+  `merge: {strategy, subject}`, tudo **na branch**, e sÃ³ entÃ£o o merge. O merge Ã©
+  a Ãºltima aÃ§Ã£o, sem exceÃ§Ã£o.
+- **`/specs:isolate`** â€” comando novo (o 25Âº). Toma *ou reporta* isolamento para
+  UMA spec em qualquer estÃ¡gio, e passa a ser o dono do registro `branch:`.
+  `execute` delega; `create` e `develop` encaminham. Nunca mergeia.
+- **`/specs:continue`** â€” ranqueia olhando para o ref vivo `plan/<slug>`, nÃ£o para
+  o registro: a branch em que vocÃª estÃ¡ sobe ao topo, uma branch viva em outro
+  lugar desce abaixo das specs intocadas.
+
+**EstratÃ©gia de merge: merge commit.** Os 25 commits por task permanecem na
+`main` e todo `subject:` gravado resolve por
+`git log --grep=<subject> --fixed-strings` a partir dela, indefinidamente. A
+branch pode ser apagada sem custo â€” a ressalva do squash nÃ£o se aplica aqui.
+
+**A base tinha andado.** `main` recebeu um `/specs:triage` (que gravou
+`priority:` nesta prÃ³pria spec) e o fechamento de `docs-verification-layer`. A
+`main` foi mergeada *para dentro* da branch antes do fechamento; os trÃªs
+conflitos eram aditivos (duas entradas de log sob o mesmo `## 2026-07-28`, mais o
+frontmatter) e os cinco registros sobreviveram.
+
+Fora do escopo, deliberadamente: specs arquivadas com `commit: <sha>` **nÃ£o**
+foram convertidas â€” as duas formas sÃ£o lidas para sempre e nada Ã© backfillado; o
+caminho `--outcome abandoned` nÃ£o mudou; e o menu de estratÃ©gias continua o
+mesmo, sÃ³ mudou o que se grava sobre a escolha.
+
+O que o prÃ³ximo leitor precisa saber:
+
+- O vocabulÃ¡rio do registro vive em **trÃªs** cÃ³pias em lockstep â€” `DEFAULT_SCHEMA`
+  em `specs.py`, `assets/specs/schema.json` (que **shadowa** a constante via
+  `load_schema()`) e `assets/specs/templates/spec.md`. EstÃ¡ registrado em
+  `docs/standards/workflows/plan-artifacts.md`.
+- `conclude-order-check.sh` (8/8) Ã© a **Ãºnica** checagem que enxerga a afirmaÃ§Ã£o
+  central: ela roda um ciclo real num repo descartÃ¡vel e pergunta ao git, nÃ£o ao
+  run.
+- `functional-checks.sh` **nÃ£o gateou nada aqui** e nÃ£o podia: ele lÃª o
+  stream-json em cp1252 no Windows e morre, entÃ£o as asserÃ§Ãµes falham por falta
+  de evidÃªncia, nÃ£o por veredito. Medido trÃªs vezes; a `main` pristina falha as
+  mesmas cinco. A quarta prÃ©-condiÃ§Ã£o em
+  `docs/standards/quality/surface-verification.md` agora diz isso.
+- O teto do `skills.py budget` disparou exatamente como previsto ao minar o 25Âº
+  comando (11.565 â†’ 12.726). Ã‰ o desenho funcionando, e o preÃ§o dele estÃ¡ escrito
+  em `docs/standards/automation/context-budget.md`.
