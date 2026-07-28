@@ -283,10 +283,11 @@ nested `branch:` record reads back as null in `status --json` while being presen
 - [x] 3.1 Read-only profile audit of every plugin command under `capabilities.md` — one
       commit: 88eae15
       report: command · lever · stated buy · verdict (apply / leave / forbidden-by-invariant)
-- [ ] 3.2 Apply the confirmed levers in one pass, one plan → one OK; the two standing
+- [x] 3.2 Apply the confirmed levers in one pass, one plan → one OK; the two standing
       never-rules are untouchable
       files: plugins/quenching/commands/
       verify: python3 assets/bin/skills.py --root . lint --json
+      commit: 7ad7d9b
 - [ ] 3.3 After consolidation 5.5, update the README model-policy rows for what 3.2 changed
       files: plugins/quenching/README.md
 
@@ -322,3 +323,4 @@ nested `branch:` record reads back as null in `status --json` while being presen
 - an intent-shaped routing probe grades the FIXTURE unless the fixture contains the subject the phrase names: 'audits our migrations' did not route in a bare scratch repo (the session challenged the premise — 'There are no migrations to audit' — and ended in success, not truncation), while the identical phrase routed twice in the eval fixture that carried a migration file
 - /skill:agent:new's intent-phrased routing is borrowed, not earned: 'set up something that audits our migrations and reports back' routes to skill:agent:new only when the target repo already carries docs/standards/automation/agents.md — without it the same phrase routes to /skill:new (single-variable test, both runs subtype success). Task 1.1 measured that trigger 5/5 in a fixture that shipped agents.md, so the rate was fixture-assisted; every trigger the description carries names an artifact, none is intent-shaped, which is the gap 1.3 closed for /skill:hook:new
 - sk-unscoped-bash's message offers 'or state the reason in the body' but the check never reads the body — /specs:execute, /specs:conclude and /docs:align each carry a 'Why Bash is unrestricted here' section and are warned anyway, so the finding cannot distinguish a priced grant from an unpriced one (5 of the 8 warned commands state nothing)
+- README.md §Cost model still states the surface's always-on total as '30,705 characters to 2,083 (~7,676 to ~521 tokens), a 93% cut' — task 2.3 re-set the ceiling to 11,565 after the fold, so both the figure and the percentage are stale residue for task 5.1; a ceiling re-measurement has no checker that notices its own prose citations going out of date
