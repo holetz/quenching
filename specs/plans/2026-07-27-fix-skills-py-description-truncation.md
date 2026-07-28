@@ -6,6 +6,7 @@ priority: {level: 4, criticality: high, complexity: 3, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/fix-skills-py-description-truncation}
+reviewed: {date: 2026-07-28}
 ---
 
 # skills.py silently truncates a description at the first '#'
@@ -244,7 +245,7 @@ with `plugins/quenching/VERSION` (§Releasing).
 
 All seven tasks are built, verified and committed on `plan/fix-skills-py-description-truncation`
 (seven commits, `6aaa8bc` through `5edd488`). Nothing is left to build; what remains is
-`/specs:conclude` â€” the branch review, the emergent `docs/`, the merge and the archive-time
+`/specs:conclude` — the branch review, the emergent `docs/`, the merge and the archive-time
 distillation.
 
 **The state of the tree.** All three tools share four identically-bodied helpers
@@ -268,7 +269,7 @@ behaviour change is confined to inputs this repository does not contain. No func
 the `okf-frontmatter-unparsed` code is the only tool-prefixed code in a file whose other codes carry
 no prefix (implemented as the spec declared it); `## Validation` says 24 commands where there are 25;
 and `## Out of Scope` reasons about a bump "off 4.1.0" when everything is already at 4.2.0. The
-propagation argument in `## Out of Scope` still holds â€” an installed copy is overwritten only when
+propagation argument in `## Out of Scope` still holds — an installed copy is overwritten only when
 the plugin is newer, so **no already-aligned target gets this fix until a release ships**, which
 remains deliberately out of scope.
 ## Tasks
@@ -313,7 +314,7 @@ remains deliberately out of scope.
 
 ## Discoveries
 
-- The spec's ## Validation expects `skills.py doctor` to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25, and the spec's stated figure is stale rather than a finding.
-- The spec's ## Validation expects skills.py doctor to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25 — the spec's figure is stale, not a finding.
-- The spec's ## Out of Scope reasons about a version bump 'off 4.1.0', but VERSION and all three scripts are already at 4.2.0. The propagation argument holds; the number is stale.
-- okf-validate.py's other finding codes carry no tool prefix (missing-type, resource-unresolved, index-orphan), so the spec-declared okf-frontmatter-unparsed is the only prefixed code in that file. Implemented as declared; whether to rename it to frontmatter-unparsed is a naming call for conclude.
+- The spec's ## Validation expects `skills.py doctor` to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25, and the spec's stated figure is stale rather than a finding. RESOLVED at conclude: left as written. A spec records what was believed when it was written, and 4.1 verified against 25.
+- The spec's ## Out of Scope reasons about a version bump 'off 4.1.0', but VERSION and all three scripts are already at 4.2.0. The propagation argument holds; the number is stale. RESOLVED at conclude: left as written, same reason — and the propagation argument is unaffected, so no already-aligned target gets this fix until a release ships.
+- okf-validate.py's other finding codes carry no tool prefix (missing-type, resource-unresolved, index-orphan), so the spec-declared okf-frontmatter-unparsed is the only prefixed code in that file. Implemented as declared; whether to rename it to frontmatter-unparsed is a naming call for conclude. RESOLVED at conclude: KEPT as `okf-frontmatter-unparsed`. The `sk-`/`sp-`/`okf-` triad is the cross-tool symmetry this spec exists to create, and it reads as one rule in three tools rather than three unrelated findings. Nothing outside this branch references the codes, so the choice was free either way; local consistency inside one file lost to the symmetry across three.
+- The branch review found the standard's own opening rule unmet: `specs.py` and `okf-validate.py` do not read block scalars (the table says so) but returned the bare `|`/`>` indicator as the value and named nothing — `description: |` read as the literal `"|"`. Pre-existing, not a regression, and invisible to the emptiness test because a block scalar is the one unread form that does not come back empty. RESOLVED at conclude: fixed on the branch, detected on the indicator; `skills.py` unchanged because it genuinely reads them.
