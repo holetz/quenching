@@ -27,7 +27,10 @@ The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/
 - [docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md) — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
 The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
-(`python3 okf-validate.py <docs-dir>` → exit 0 = conforms).
+(`python3 okf-validate.py <docs-dir>` → exit 0 = conforms). Invoke it by its **literal quoted
+path** on every call, never through a shell variable holding the interpreter plus the path —
+[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+§Write the resolved path literally on every invocation.
 
 **Why `Bash` is unrestricted here.** The checker is invoked through `python3`, but a bundle-root
 detection, a two-scan blast radius (`git grep` / `grep --no-ignore`), and a `.claude/settings.json`

@@ -48,6 +48,13 @@ Resolve `skills.py` the way the `specs/` front resolves `specs.py`:
 else the declared **manual** fallback (**say in the report that the check was manual**). Invoke
 with `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`.
 
+**Invoke it by its literal resolved path**, never through a shell variable holding the interpreter
+plus the path — that idiom word-splits on bash and silently fails on zsh, so it passes where it is
+written and breaks in the target repo. The rule, the measured evidence and the one correct
+abbreviation are
+[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+§Write the resolved path literally on every invocation.
+
 **Input**: optionally a skill name. If omitted, infer from context; if more than one is plausible,
 ask with **AskUserQuestion** — never guess which skill is being measured.
 
