@@ -1607,7 +1607,43 @@ def _days_since(date: str) -> int:
     return max(0, (datetime.date.fromisoformat(today()) - d).days)
 
 
-def _candidate(s: dict, schema: dict) -> dict:
+def _git(cwd: str, *argv: str) -> str:
+    """Stdout of one git command, or "" for every way it can fail — no git on PATH, not a
+    repo, a nonzero exit. Every caller treats absence as "this repo has no git facts",
+    which is a real state and never an error."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", *argv], capture_output=True, text=True, timeout=10,
+                             cwd=cwd if os.path.isdir(cwd) else ".")
+        return out.stdout if out.returncode == 0 else ""
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return ""
+
+
+def _git_refs(root: str) -> tuple[set[str], str | None]:
+    """Every local branch, and the one checked out. Two calls for the WHOLE front, never
+    one per spec — ranking twenty specs must not cost forty subprocesses.
+
+    No git, or no repo → an empty set and no current branch, which ranks exactly as today."""
+    heads = {l.strip() for l in
+             _git(root, "for-each-ref", "--format=%(refname:short)",
+                  "refs/heads").splitlines() if l.strip()}
+    current = _git(root, "rev-parse", "--abbrev-ref", "HEAD").strip() or None
+    return heads, (current if current and current != "HEAD" else None)
+
+
+def _work_ref(fm: dict, slug: str) -> str:
+    """The branch this spec's work would live on.
+
+    The `branch:` record when one was stamped, else the default `plan/<slug>` — because a
+    human may have cut the branch by hand, with no record at all. The record alone is NEVER
+    the signal: what counts is whether the ref is alive."""
+    rec = fm.get("branch")
+    work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
+    return work or f"plan/{slug}"
+
+
+def _candidate(s: dict, schema: dict, heads: set[str], current: str | None) -> dict:
     raw = read_text(s["path"]) or ""
     fm = parse_frontmatter(raw)
     sections = parse_sections(body_after_frontmatter(raw))
@@ -1618,6 +1654,12 @@ def _candidate(s: dict, schema: dict) -> dict:
     prank, pwhy = _priority_rank(fm.get("priority"))
     progress = (checked / total) if total else 0.0
     executing = stage == "executing"
+    work = _work_ref(fm, s["slug"])
+    live = work in heads
+    # A record whose ref is gone stops counting: the branch was merged or deleted, so the
+    # spec is no more "in flight" than one that never had a branch at all.
+    on_it = live and work == current
+    branch_rank = 0 if on_it else (2 if live else 1)
     return {
         "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": s["date"],
         "title": fm.get("title", titleize(s["slug"])), "stage": stage,
@@ -1627,7 +1669,9 @@ def _candidate(s: dict, schema: dict) -> dict:
         "approved": fm.get("approved") or None,
         "priority": fm.get("priority") or None,
         "ageDays": _days_since(s["date"]),
-        "_key": (0 if executing else 1, -progress, prank, s["date"], s["slug"]),
+        "branch": {"work": work, "live": live, "current": on_it},
+        "_key": (branch_rank, 0 if executing else 1, -progress, prank,
+                 s["date"], s["slug"]),
         "_why": pwhy,
         "_executing": executing,
     }
@@ -1636,6 +1680,10 @@ def _candidate(s: dict, schema: dict) -> dict:
 def _rank_reason(c: dict) -> str:
     """Why this candidate sits where it does — the ONE dominant factor, not a formula."""
     t = c["tasks"]
+    if c["branch"]["current"]:
+        return f"you are on this branch ({c['branch']['work']})"
+    if c["branch"]["live"]:
+        return f"in flight on `{c['branch']['work']}` — check it out to continue"
     if c["_executing"]:
         r = f"executing — {t['checked']}/{t['total']} tasks done"
         if t["blocked"]:
@@ -1659,9 +1707,16 @@ def _next_front(args, root: str) -> int:
 
     Factor 2 is harmless for everything else: a spec with no ticked task scores 0, so the
     whole non-executing set ties there and falls through to priority — which is exactly the
-    intent, without a special case."""
+    intent, without a special case.
+
+    A LIVE `plan/<slug>` ref outranks all four, in both directions: the branch you are
+    standing on goes to the top, and one alive but not checked out is demoted below the
+    untouched specs — offering it would send a second run at work already under way
+    somewhere else. The signal is the ref, never the `branch:` record: a human may cut a
+    branch with no record, and a record outlives the branch it names."""
     schema = load_schema()
-    cands = [_candidate(s, schema) for s in spec_files(root, "plans")]
+    heads, current = _git_refs(root)
+    cands = [_candidate(s, schema, heads, current) for s in spec_files(root, "plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
     for c in cands:
@@ -1675,7 +1730,9 @@ def _next_front(args, root: str) -> int:
     # alone — which is an ordering, not a judgment. Say so rather than implying a ranking
     # that was never made.
     prioritized = [c for c in ranked if c["priority"]]
-    in_flight = [c for c in ranked if c["stage"] == "executing"]
+    # A live branch IS in flight, whether or not any task has been ticked yet — and it has
+    # already reordered the list, so claiming the order is age alone would be false.
+    in_flight = [c for c in ranked if c["stage"] == "executing" or c["branch"]["live"]]
     needs_triage = bool(ranked) and not prioritized and not in_flight and len(ranked) > 1
 
     obj = {"ok": True, "root": root, "count": len(ranked),
@@ -1880,17 +1937,11 @@ def _git_first_commit_date(path: str) -> str | None:
 
     A birth date is never INVENTED: this walks git history for the real one, and the caller
     falls back to the file's mtime rather than to today."""
-    import subprocess
-    try:
-        out = subprocess.run(
-            ["git", "log", "--diff-filter=A", "--follow", "--format=%ad",
-             "--date=short", "--", path],
-            capture_output=True, text=True, timeout=10,
-            cwd=os.path.dirname(os.path.abspath(path)) or ".")
-        lines = [l.strip() for l in out.stdout.splitlines() if l.strip()]
-        return lines[-1] if lines else None
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return None
+    out = _git(os.path.dirname(os.path.abspath(path)),
+               "log", "--diff-filter=A", "--follow", "--format=%ad", "--date=short",
+               "--", path)
+    lines = [l.strip() for l in out.splitlines() if l.strip()]
+    return lines[-1] if lines else None
 
 
 def _birth_date(meta: dict, path: str) -> str:
