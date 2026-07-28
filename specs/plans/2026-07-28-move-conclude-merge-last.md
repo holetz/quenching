@@ -451,8 +451,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 4.2 [P] `specs-execute/execution.md`: a marcação entra no commit da task; commits de bookkeeping deixam de existir
       files: plugins/quenching/assets/references/specs-execute/execution.md
       subject: plan/move-conclude-merge-last: 4.2 execution.md — the box enters the task commit
-- [ ] 4.3 [P] `specs-develop/artifacts.md`: a linha `commit:` da tabela de metadados vira `subject:`
+- [x] 4.3 [P] `specs-develop/artifacts.md`: a linha `commit:` da tabela de metadados vira `subject:`
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
+      subject: plan/move-conclude-merge-last: 4.3 artifacts.md — the task metadata row is subject:
 - [ ] 4.4 [P] `specs-develop/spec-driven.md`: o vocabulário de registros
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
 
