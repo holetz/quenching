@@ -234,10 +234,11 @@ one into the two mints' descriptions while tuning (task 1.3).
       files: plugins/quenching/assets/evals/skill/hook/new/
       verify: test -f plugins/quenching/assets/evals/skill/hook/new/evals.json
       commit: f5b49c7
-- [ ] 1.3 Fold the measured results back: description tuning only on hit rates (eval step
+- [x] 1.3 Fold the measured results back: description tuning only on hit rates (eval step
       7), body fixes via `/skill:new`; re-lint after every edit
       files: plugins/quenching/commands/skill/agent/new.md, plugins/quenching/commands/skill/hook/new.md
       verify: python3 assets/bin/skills.py lint commands/skill --json
+      commit: 69ace04
 - [ ] 1.4 After consolidation 4.5 passes, add one sandboxed routing probe per new mint to
       the functional checks (Handoff: the two recorded failure modes)
       files: plugins/quenching/assets/bin/functional-checks.sh
@@ -296,3 +297,6 @@ one into the two mints' descriptions while tuning (task 1.3).
 - assets/evals/specs/capture/ is stale twice over: the folder mirrors the retired /specs:capture path (now /specs:create) and its benchmark.json names a third retired skill, quenching-specs-backlog-add — eval artifacts do not follow a command rename automatically, which is the one property the mirrored-tree design claimed
 - a trigger probe capped at --max-turns 3 reported two FALSE misses: both arms were still orienting with Bash when the cap cut them off (error_max_turns), and at --max-turns 8 both routed correctly — tuning on the truncated run would have removed a working trigger, which the contract forbids. functional-checks.sh check 3 probes at --max-turns 4 and carries the same risk (task 1.4)
 - skills.py lint reports /skill:new with sk-trigger-position and /skill:eval with BOTH sk-trigger-position and sk-no-boundary — the two commands 1.3 routes body fixes to, and the one that measures routing, are themselves the least routable on the front (task 3.x territory)
+- CLAUDE.md documents functional-checks.sh as '~5 min, 7 assertions'; task 1.4 took it to 9 assertions across 7 sandboxed sessions, so both numbers are now residue for task 5.1 to correct
+- an intent-shaped routing probe grades the FIXTURE unless the fixture contains the subject the phrase names: 'audits our migrations' did not route in a bare scratch repo (the session challenged the premise — 'There are no migrations to audit' — and ended in success, not truncation), while the identical phrase routed twice in the eval fixture that carried a migration file
+- /skill:agent:new's intent-phrased routing is borrowed, not earned: 'set up something that audits our migrations and reports back' routes to skill:agent:new only when the target repo already carries docs/standards/automation/agents.md — without it the same phrase routes to /skill:new (single-variable test, both runs subtype success). Task 1.1 measured that trigger 5/5 in a fixture that shipped agents.md, so the rate was fixture-assisted; every trigger the description carries names an artifact, none is intent-shaped, which is the gap 1.3 closed for /skill:hook:new
