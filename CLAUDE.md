@@ -151,9 +151,14 @@ align-conformance-report-the-cycle — in
 (each align's `## Doctrine` cites it and states **only** its own front's deltas),
 the OKF distillation doctrine in
 [`specs-conclude/distill.md`](plugins/quenching/assets/references/specs-conclude/distill.md),
-and the command-writing doctrine + automation taxonomy in
+the command-writing doctrine + automation taxonomy in
 [`skill-new/doctrine.md`](plugins/quenching/assets/references/skill-new/doctrine.md)
-and [`skill-new/taxonomy.md`](plugins/quenching/assets/references/skill-new/taxonomy.md)
+and [`skill-new/taxonomy.md`](plugins/quenching/assets/references/skill-new/taxonomy.md),
+and the **execution profile** — every Claude Code lever a command, agent or hook may use, each
+stated as what it buys, what it costs and the default (`context: fork`, model/effort pins and
+their cache trap, the delegation test, the hook scope and handler ladders, the
+invocation-surface budget controls) — in
+[`skill-new/capabilities.md`](plugins/quenching/assets/references/skill-new/capabilities.md)
 (cited by `/skill:align`, never restated).
 
 ### The `specs/` front ↔ OKF relation
@@ -311,7 +316,7 @@ entirely green while every command body is unreachable. The three checks that ca
 their own fresh `claude -p` and assert on captured tool calls rather than on what the process claims:
 
 ```bash
-./assets/bin/functional-checks.sh        # ~5 min, 7 assertions, exit 0 = all passed
+./assets/bin/functional-checks.sh        # 9 assertions across 7 sandboxed sessions, exit 0 = all passed
 ```
 
 It proves `${CLAUDE_PLUGIN_ROOT}` still substitutes inside a command body, that a conductor reaches
