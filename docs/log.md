@@ -6,6 +6,8 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-27
 
+**Creation**: [Rename the /skill namespace to /claude and separate the skill, agent and hook contexts](/specs/plans/2026-07-27-restructure-claude-front-namespace.md) — `skill` names both the whole `.claude/` front and one artifact kind inside it, and `assets/` cites commands without the `quenching:` prefix.
+
 **Update**: [Glossary](/docs/knowledge/glossary.md) — distilled from spec `specs-flow-consolidation`: **Derived stage**, **Phase gate** and **Promote** still defined the retired v2 contract (promote-into-`ready/` as the human OK, a stage list with no `ready`/`approved`, gates that only ever moved a file) and now describe v3; **`[P]` marker** and **Verification policy** lost the retired propose/apply verbs.
 
 **Creation**: five follow-up specs distilled from `specs-flow-consolidation`'s `## Discoveries`, none of which any task owned — [a mechanical writer for the frontmatter records](/specs/plans/2026-07-27-add-specs-py-record-writer.md) (the one part of the contract `specs.py` does not own, so `writeOnce` is enforced by nothing), [skills.py's silent description truncation at `#`](/specs/plans/2026-07-27-fix-skills-py-description-truncation.md) (reported as absence, not as a parse failure), [functional-checks.sh creating real specs in the repo it probes](/specs/plans/2026-07-27-isolate-functional-checks-probes.md), [the four copies of read-parse-derive in specs.py](/specs/plans/2026-07-27-dedupe-specs-py-spec-reader.md), and [the unnamed scaffolded stage](/specs/plans/2026-07-27-name-the-scaffolded-stage.md).
