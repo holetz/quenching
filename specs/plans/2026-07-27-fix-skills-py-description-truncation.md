@@ -242,40 +242,35 @@ with `plugins/quenching/VERSION` (§Releasing).
 
 ## Handoff
 
-The rule and the canonical twelve-case list are settled and committed in
-`docs/standards/code/frontmatter-parsing.md` (task 1.1). Tasks 2.1-2.3 implement that table; read it
-first, and treat it as the spec for what each `selftest` must assert.
+Sections 1 and 2 are committed. All three tools now share four helpers with identical bodies â€”
+`_frontmatter_body`, `_indented_run`, `_quote_end`, `_split_comment` â€” plus `frontmatter_anomalies`,
+`CANONICAL_CASES` and `canonical_case_failures`. **The case list is byte-identical in all three; edit
+all three or none.**
 
-**The two lines to fix**, both `val.split("#", 1)[0]`: `skills.py:328` (after `val.strip()`, before
-`_unquote`) and `specs.py:519` (fused with the strip). `okf-validate.py:257` strips no comment at
-all â€” it gains the rule and the diagnostic together, never the rule alone.
+**What section 3 still owes.** 3.1 writes `docs/standards/quality/parse-honesty.md` at
+`authority: current`. 3.2 promotes `code/frontmatter-parsing.md` from `background` to `current` and
+should, while it is open, turn its plain-text pointer to `quality/parse-honesty.md` into a real
+markdown link â€” the link was deliberately left unwritten at task 1.1 because the target did not yet
+exist, and no commit was to ship a dead one.
 
-**Exemptions found by scanning the repo, and why row 12 will not fire on real files.** Three
-commands carry a `hooks:` block that `parse_frontmatter` reads as `""` â€” `commands/docs/add.md`,
-`define.md`, `learn.md` â€” but `skills.py` reads it by another route (`parse_frontmatter_hooks`), so
-`indented-continuation` MUST exempt `hooks:` there or lint gains three false warnings. One archived
-spec (`2026-07-25-instrument-and-extend-skill-front.md`) writes `branch:` and `merge:` as block
-mappings, which `specs.py` genuinely reads (specs.py:530-554), so no anomaly is owed. Each tool
-exempts what it actually reads; the case list is the floor.
+**Proof already in hand, so section 4 is a sweep and not a discovery.** Each tool's output was
+diffed against its `ec0a631` copy on every real tree: `skills.py lint` and `doctor` byte-identical
+(25 commands, 0 findings), `specs.py validate` byte-identical, and `okf-validate.py` byte-identical
+on `docs`, `assets/docs` and `assets/specs/plans --listing-root`. The three selftests exit 0 on the
+same 12 cases. `okf-validate.py docs` takes ~570 ms before and after. The self-demonstrating check
+passes: `specs.py status --spec fix-skills-py-description-truncation --json` now returns the title
+whole, `skills.py silently truncates a description at the first '#'`.
 
-**The whole-repo scan that says the new warn stays quiet.** Across `docs/`, `specs/`,
-`plugins/quenching/{commands,assets}`: exactly ONE frontmatter value contains a `#` â€” this spec's
-own `title:`, as `'#'`, preceded by a quote and therefore kept whole by the new rule. Zero values
-have a `#` after whitespace, and zero files have a duplicate top-level key. So `comment-stripped`
-and `duplicate-key` fire nowhere today, and task 4.1's clean-run expectation holds.
+Each new finding was also proved to fire end to end, not just in the sidecar:
+`sp-frontmatter-unparsed` on a throwaway workspace, and `okf-frontmatter-unparsed` on a throwaway
+bundle where `type: standard # tentative` now parses as `standard` and the strip is named â€” the
+paired behaviour change `## Risks` predicted for the always-on hook. Hook-mode dispatch
+(`hook_event_name` on stdin) is unchanged.
 
-**`specs.py selftest` returns early on an installed copy** (no adjacent assets â€” specs.py:2459) and
-would skip the new parser cases with it. Put the canonical cases BEFORE that early return: they are
-self-contained and must run everywhere, unlike the asset-drift comparison.
-
-**`okf-validate.py` has no subcommand dispatch** â€” `run_cli` takes `paths[0]` as the target
-directory (okf-validate.py:976). `selftest` must be intercepted before that, or it is read as a
-directory name.
-
-**Baseline for task 4.1**, measured on this branch before task 2.1: `okf-validate.py docs` exits 0
-with 2 warnings, both pre-existing and in files this spec does not touch â€” `agents.md`
-(`resource-unresolved`) and `hooks.md` (`stale-doc`). A third warning means the change caused it.
-
+**Two figures in this spec are stale and are recorded in `## Discoveries`, not fixed here:**
+`## Validation` expects 24 commands where the surface has 25, and `## Out of Scope` reasons about a
+bump "off 4.1.0" where everything is already at 4.2.0. Task 4.1 should read 25 and ignore the 4.1.0
+wording; the propagation argument itself still holds.
 ## Tasks
 
 ### 1. The rule, agreed before it is proved
@@ -302,9 +297,10 @@ with 2 warnings, both pre-existing and in files this spec does not touch â€�
 
 ### 3. The honesty rule, once proved
 
-- [ ] 3.1 Write `docs/standards/quality/parse-honesty.md` at `authority: current`: a verifier names its own parse failure rather than reporting a content gap, at warn severity
+- [x] 3.1 Write `docs/standards/quality/parse-honesty.md` at `authority: current`: a verifier names its own parse failure rather than reporting a content gap, at warn severity
       pattern: docs/standards/quality/surface-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/fix-skills-py-description-truncation: 3.1 the honesty rule
 - [ ] 3.2 Promote `docs/standards/code/frontmatter-parsing.md` to `authority: current` — the three selftests are what proved it
       files: docs/standards/code/frontmatter-parsing.md
 
