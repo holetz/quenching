@@ -438,14 +438,22 @@ The plugin keeps its context and token footprint predictable on three levels:
 1. **Always-on metadata (shared cap).** Every command's `description` is loaded into context
    each session, and Claude Code truncates at **1,536 characters** per command — a budget
    shared with every other installed plugin. Collapsing the 28 skill+wrapper pairs into one
-   file per entry point took the surface's always-on total from **30,705 characters to 2,083**
-   (~7,676 → ~521 approximate tokens), a **93% cut**, measured by `skills.py budget`.
+   file per entry point first took the surface's always-on total from **30,705 characters to
+   2,083**, measured by `skills.py budget`.
 
    **What that saving cost, stated plainly:** the deleted skill description is where the quoted
-   trigger phrases and the `Not for:` boundary lived, so every command now reports
+   trigger phrases and the `Not for:` boundary lived, so every command reported
    `sk-trigger-position` and `sk-no-boundary` against a description written as a `/`-menu label.
-   Both are warnings, so the budget looks clean while the routing information is absent — see
+   Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
+
+   **Where it stands now: 11,565 characters** (~2,891 approximate tokens) across 24 commands and
+   0 agent definitions, measured 2026-07-27. Most of the difference between 2,083 and that figure
+   is the routing information being bought back deliberately — the triggers and boundaries the
+   collapse had dropped. That measurement is also the current default ceiling, which has **no
+   headroom by construction**: it equals the surface's total, so the 25th command crosses it the
+   day it is minted. The rule and the revision procedure live in
+   [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md).
 2. **Body on invocation.** A command's body loads only when it runs; every body stays well
    under 500 lines. Shared procedure lives once, in its owners —
    [`docs-add/homes.md`](assets/references/docs-add/homes.md) (the insert procedure) and
@@ -465,21 +473,23 @@ registry name, and that a spoken phrase still routes by description alone.
 
 | Surface | Policy |
 | --- | --- |
-| `/docs:define` | `effort: low`; no model pin (mechanical single-entry edit) |
-| `/specs:create` | `effort: low`; no model pin (mechanical capture, effort proportional to input; zero interrogation, no sub-agents) |
+| `/docs:define` | **no pin** — the edit is mechanical, but an inline `effort: low` is part of the session's prompt-cache key, so it recomputes every input token on the next request ([`capabilities.md`](assets/references/skill-new/capabilities.md) §The cache trap). A single-entry edit does not buy that back. Carries a frontmatter `hooks:` block instead — `okf-validate.py` on its own `Write`/`Edit`, the scope ladder's narrowest rung, costing nothing to any other operation |
+| `/specs:create` | **no pin** — same cache-trap reasoning; the capture is mechanical and effort-proportional, and its cost was never the model tier. Zero interrogation, no sub-agents |
 | `/specs:triage` | no pin, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the session model exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
-| `/specs:status` | `effort: low`; no model pin, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `specs.py status` is scoped to full-progress plans rather than run per plan |
+| `/specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `specs.py status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
+| `/docs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — the `docs` counterpart of the row above, and its `effort: low` was dropped for the same reason. Both bodies also forbid `context: fork` by name: each doubles as a sweep's preview, and the report has to land in the conversation where the OK will be given |
 | `/specs:conclude` | no pin, no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade |
-| `/docs:glossary-backfill` | `effort: medium`; slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) |
-| `/docs:import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion) |
-| `/docs:align` / `/docs:harness` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. **Exception:** under `/docs:align`'s parallel content prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
+| `/docs:glossary-backfill` | **no pin** on the orchestrator (the former inline `effort: medium` charged the cache trap); slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) — a sub-agent's pin is cache-safe, it has its own context. `Bash` scoped to `python3`/`py`: its reading is `Grep`/`Glob`/`Task`, and the checker is the only shell it runs |
+| `/docs:import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion). `Bash` stays unrestricted **and is now priced in the body**: step 1 derives the memory directory as one compound shell expression, which no prefix grant can match |
+| `/docs:align` / `/docs:harness` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. `/docs:harness`'s `Bash` is scoped to `git grep` / `git check-ignore` / `grep` / `python3` / `py` — the two-scan sweep, the build-artifact check, the checker, and nothing else; `/docs:align` keeps the unrestricted grant its body prices. **Exception:** under `/docs:align`'s parallel content prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
 | `/docs:align` (content passes) | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
 | `/align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
-| `/specs:align` | no pin; **two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align-all/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
+| `/specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align-all/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
 | `/docs:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md`/`log.md` honest and resolves cross-slice dedup |
-| `/docs:add` / `/docs:learn` | no pin — they inherit the session model (they classify, route, and gate operations) |
-| `/docs:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain |
-| `/skill:new` / `/skill:align` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
+| `/docs:add` / `/docs:learn` | no pin — they inherit the session model (they classify, route, and gate operations). Both carry a frontmatter `hooks:` block running `okf-validate.py` on their own `Write`/`Edit` — rung 1 of the scope ladder and rung 1 of the handler ladder, firing only while the command runs |
+| `/docs:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
+| `/skill:new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
+| `/skill:align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
 | `/specs:develop` | no pin, no sub-agents — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each bank's declared stop condition, not by a model tier |
 | `/specs:continue` | no pin, no sub-agents — one `specs.py next --front` call and a hand-off; the ranking logic lives in the tool, not the model |
 | `/specs:execute` | no pin. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `docs/` — pinned to the **session model, never `haiku`** (it writes production code, the same rationale that protects `/docs:import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `specs.py task --check`/`--block`, every `docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `specs.py parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
@@ -514,11 +524,30 @@ All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 ## Upgrade
 
 Bump `version` in `.claude-plugin/plugin.json` and `VERSION` on each release; that is
-the key Claude Code uses to detect and apply an upgrade. Keep the `VERSION` constant in **both**
-shipped scripts — `assets/hooks/okf-validate.py` and `assets/bin/specs.py` — in lockstep with that
-pair, since each one's `--version` is what its installing align compares against an already-installed
-copy in a target repo.
+the key Claude Code uses to detect and apply an upgrade. Mirror it in the marketplace manifest's
+plugin entry (`.claude-plugin/marketplace.json`) too, and keep the `VERSION` constant in **all
+three** shipped scripts — `assets/hooks/okf-validate.py`, `assets/bin/specs.py` and
+`assets/bin/skills.py` — in lockstep with that pair, since each one's `--version` is what its
+installing align compares against an already-installed copy in a target repo (`/docs:align` for
+the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`). Six sources, one number.
 
+- **4.1.0:** **the capability layer got proved, applied and closed.** Both new mints were measured
+  by `/skill:eval` — `/skill:agent:new` at +0.364 pass rate for 182,367 fewer tokens,
+  `/skill:hook:new` at +0.5 for 52.5% cheaper — and each gained an intent-shaped trigger plus a
+  sandboxed routing probe, taking `functional-checks.sh` to **9 assertions across 7 sandboxed
+  sessions**. `skills.py` closed its two blind spots: `lint` now reads a **frontmatter `hooks:`
+  block** (the scope ladder's narrowest rung, the mold's shape only, fail-open via
+  `sk-hook-unparseable`) and serves both rungs from one implementation, and `budget` counts
+  `agents/*.md` descriptions as its own breakdown line; the ceiling was re-measured and re-set to
+  **11,565** from a run. The profile doctrine was then applied to its own author: five inline
+  `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on `/specs:align`,
+  `/docs:harness` and `/docs:glossary-backfill` and priced in the body of the two that keep it,
+  frontmatter `hooks:` blocks on `/docs:add`/`/docs:learn`/`/docs:define`, and a collection-only
+  `Task` for `/skill:align`'s doctrine audit — `sk-unscoped-bash` 8 → 5, every survivor stating
+  its reason. `docs/standards/automation/hooks.md` graduated to `authority: current` on that
+  adopting surface; `agents.md` stayed `background` because there is no `.claude/agents/` anywhere
+  to follow it. `/skill:package` was **dismissed on a real packaging run**: four mechanical
+  operations, then six fields that came back requiring a human. Still twenty-four commands.
 - **1.0.0:** **the middle front went fully native — the external OpenSpec CLI is gone.** The
   `openspec/` workspace this plugin used to *drive* (`@fission-ai/openspec`, `openspec init`,
   `config.yaml`, a main-spec store, delta specs) is replaced by a **native `specs/` front** the

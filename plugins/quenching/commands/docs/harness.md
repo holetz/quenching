@@ -1,7 +1,7 @@
 ---
 description: Refactor CLAUDE.md/AGENTS.md into thin pointers over the docs/ bundle
 argument-hint: [optional-harness-file]
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
+allowed-tools: Read, Grep, Glob, Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---
 
 # /docs:harness — make CLAUDE.md a thin, honest pointer into the bundle

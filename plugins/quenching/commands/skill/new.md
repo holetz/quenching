@@ -51,6 +51,13 @@ and **say in the report that the check was manual**, never silently skip it. Inv
 never on prose. Findings carry `sk-*` codes: an `error` is fixed, a `warn` is reported with its
 code.
 
+**Invoke it by its literal resolved path**, never through a shell variable holding the interpreter
+plus the path — that idiom word-splits on bash and silently fails on zsh, so it passes where it is
+written and breaks in the target repo. The rule, the measured evidence and the one correct
+abbreviation are
+[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+§Write the resolved path literally on every invocation.
+
 ## Workflow
 
 ### 1. Read the rule

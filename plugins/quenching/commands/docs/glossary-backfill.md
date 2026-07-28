@@ -1,8 +1,7 @@
 ---
 description: Sweep the whole bundle to backfill knowledge/glossary.md with missing terms
 argument-hint: [optional-home-scope]
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
-effort: medium
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---
 
 # /docs:glossary-backfill — backfill the glossary from the whole bundle

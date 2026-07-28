@@ -85,6 +85,11 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   `knowledge/glossary.md` (the fixed A–Z lookup) as the tail of that memory's insert — the same
   step `/docs:add`/`/docs:learn` run — so the term is resolvable once the doc lands.
 
+**Why `Bash` is unrestricted here.** Step 1 derives the memory directory from the working
+directory itself — a compound of `pwd`, `sed`, a fallback glob and a loop, evaluated as one
+shell expression. A prefix grant matches the command a line *starts* with, so it cannot express
+`enc="$(pwd | sed …)"; ls -la "$dir"`. Its scoped siblings never leave `python3`/`py`.
+
 ## Workflow
 
 ### 1. Locate the memory dir

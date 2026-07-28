@@ -4,10 +4,10 @@ title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling
 resource: plugins/quenching/commands/**
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-07-26
+timestamp: 2026-07-27
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan + collapse-skills-into-commands (2026-07-26) — measured on this plugin's own 28-command surface
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27)
 maintainer: quenching
 ---
 
@@ -87,19 +87,57 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **2,083 characters** — this plugin's measured total across its 28 commands
-after the collapse, on 2026-07-26. It is a number a run produced, not one somebody picked, and it
-is **revised only from a measurement**.
+The current default is **11,565 characters** — this plugin's measured total across its 24 commands
+and 0 agent definitions, on 2026-07-27. It is a number a run produced, not one somebody picked, and
+it is **revised only from a measurement**.
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
-the 29th command crosses it on the day it is minted. Under §*A new command is not free* below,
+the 25th command crosses it on the day it is minted. Under §*A new command is not free* below,
 that is the signal working: `budget` **reports, it never refuses**, so crossing it prompts a human
-to re-measure and re-set rather than blocking anything. The previous default (36,503) was a
-pre-diet baseline the surface then sat 5,798 characters under, which meant it could never fire and
+to re-measure and re-set rather than blocking anything. The pre-diet default (36,503) was a
+baseline the surface then sat 5,798 characters under, which meant it could never fire and
 therefore told nobody anything.
+
+### Why the ceiling went 2,083 → 11,565
+
+Not growth to be alarmed by — **the two numbers measure different surfaces.** The 2,083 was taken
+on 2026-07-26, immediately after the collapse deleted the half of each pair that carried the quoted
+trigger phrases and the `Not for:` boundary, leaving descriptions that were bare `/`-menu labels.
+§*What the collapse measured* below says exactly that, and calls the restoration affordable. It has
+since been restored on the commands that route by description, plus two trigger additions that
+[skill-evaluation.md](skill-evaluation.md)'s measured hit rates argued for. The surface is not
+carrying more prose about *how* commands work; it is carrying the routing information this standard
+calls mandatory.
+
+The re-measure deliberately **waited for the surface to stop moving**. A ceiling set while a fold
+was still removing commands can never fire honestly, because every measurement during the shrink
+describes a surface that no longer exists by the time the number lands.
 
 `budget` over the ceiling exits 1 and lists the commands sorted by cost; exit 2 is unreachable from
 it. A surface may legitimately be large, and the decision to cut is a human's.
+
+### The total includes the agent surface
+
+`budget` charges **every `agents/*.md` description** to the same total, and reports the split. This
+repo's own surface defines no agents, so its second line reads zero:
+
+```json
+"breakdown": { "commands": 11565, "agents": 0 }
+```
+
+A repo that defines three agents averaging a 300-character description carries `"agents": 900` on
+that line, and its total — the number the ceiling is compared against — is 900 higher.
+
+An agent definition's description is always-on context by exactly the same mechanism as a
+command's — it is carried so the model can decide whether to delegate, and it is paid whether or
+not any delegation ever happens. Counting commands and exempting agents understated a surface by
+however many agents it had defined, and it did so **invisibly**: the exempted cost never appeared
+in any row, so a repo could add ten agents and watch its budget report stay flat.
+
+The same discipline therefore applies to an agent's description as to a command's: it states what
+the agent does **and when to invoke it**, and nothing about how it works. `/skill:agent:new` prices
+that cost in its plan; `doctor` and `budget` read the agent surface through one shared enumeration,
+so the two can never disagree about what it contains.
 
 Two things follow from the ceiling being per-surface rather than per-command:
 
