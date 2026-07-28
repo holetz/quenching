@@ -3,6 +3,8 @@ slug: move-conclude-merge-last
 title: Make the merge the last action of /specs:conclude
 verification: per-section
 refined: {mode: gate, date: 2026-07-28}
+approved: {date: 2026-07-28}
+branch: {base: main, work: plan/move-conclude-merge-last}
 ---
 
 # Make the merge the last action of /specs:conclude
@@ -447,3 +449,7 @@ aceito — specs não são renomeadas.
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
 - [ ] 6.4 Rodar a suíte inteira de `## Validation`
       verify: ./assets/bin/functional-checks.sh && ./assets/bin/conclude-order-check.sh
+
+## Discoveries
+
+- docs/standards/naming/command-surface.md §Namespaces still names a root '/align-and-update' that the specs-flow-consolidation spec removed — stale, unrelated to this spec
