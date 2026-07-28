@@ -469,8 +469,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
       files: docs/standards/workflows/task-execution.md
       subject: plan/move-conclude-merge-last: 5.3 task-execution.md — one commit per task, literally
-- [ ] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
+- [x] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
       files: docs/knowledge/glossary.md
+      subject: plan/move-conclude-merge-last: 5.4 redefine Commit record in the glossary
 - [ ] 5.5 Verificar o bundle
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
 

@@ -54,10 +54,16 @@ sentence, and **link out** rather than explaining in full here.
   session's prompt-cache key, so changing it makes the next request recompute every input token.
   A sub-agent's pin is cache-safe because it carries its own context; an orchestrator's is not,
   which is why five `effort: low`/`medium` pins were dropped rather than kept for their tier.
-- [**Commit record**](../standards/workflows/plan-git-record.md) — the `commit: <sha>` field on a
-  completed task line, written mechanically by `specs.py task --check --commit`, that links the
-  checkbox to the commit implementing it without inscribing anything into the commit message —
-  which stays entirely the target repo's to format.
+- [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
+  completed task line, written mechanically by `specs.py task --check --subject`, that links the
+  checkbox to the commit implementing it by naming that commit's **subject** and resolving with
+  `git log --grep --fixed-strings`. Because a subject is known *before* the commit exists, the box
+  is ticked into the commit it describes and no bookkeeping commit follows it — the same inversion
+  that lets `merge: {strategy, subject}` be stamped on the work branch and the merge be the last
+  action of `/specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
+  subject is whatever the target repo's own convention produced. A spec built before this change
+  carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
+  backfilled.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
