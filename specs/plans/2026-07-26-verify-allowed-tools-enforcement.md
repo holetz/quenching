@@ -260,9 +260,10 @@ deliberately left alone â€” do not "fix" them.
 
 ### 2. Close the authoring gap that produced it
 
-- [ ] 2.1 Add to docs/standards/automation/skills.md Â§`allowed-tools` is always scoped: the grant is a declaration lint checks, not a restriction â€” cross-referencing quality/surface-verification.md
+- [x] 2.1 Add to docs/standards/automation/skills.md Â§`allowed-tools` is always scoped: the grant is a declaration lint checks, not a restriction â€” cross-referencing quality/surface-verification.md
       files: docs/standards/automation/skills.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/verify-allowed-tools-enforcement: 2.1 Record in skills.md that an allowed-tools grant is a declaration lint checks, not a restriction
 - [ ] 2.2 Add the rule-only caveat â€” a rule about what may be claimed, no assertion about Claude Code â€” to the mold
       files: plugins/quenching/assets/templates/automation/skills-standard.md
       pattern: docs/standards/automation/skills.md
@@ -283,3 +284,4 @@ deliberately left alone â€” do not "fix" them.
 ## Discoveries
 
 - Task 4.1's verify: grep pattern 'is the enforcement' cannot match commands/docs/status.md or commands/specs/status.md — the phrase wraps across a line break there ('that is the' / 'enforcement, not a promise'), and grep is line-based. As written the check passes vacuously and would report zero instances even with both sentences intact. A multiline-capable check (grep -Pzo, or ripgrep -U) is needed for 4.1 to prove its claim.
+- The spec's ## Handoff and ## Validation baselines are stale, measured before this branch: skills.py reports 25 commands not 24; lint exits 0 with 35 warnings not 5, and 2 of them ARE in commands/docs/status.md (sk-trigger-position, sk-no-boundary, both about the frontmatter description, neither touched by this spec); okf-validate.py docs reports 0 errors and 2 warnings not 0/0 (resource-unresolved on standards/automation/agents.md, stale-doc on standards/automation/hooks.md), both pre-existing and proved so by a stash test. Exit codes are 0 throughout, so every task verify still passes — only the stated figures were wrong.
