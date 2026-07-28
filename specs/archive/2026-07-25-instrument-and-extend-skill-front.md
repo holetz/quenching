@@ -7,6 +7,7 @@ branch:
   base: main
   work: plan/instrument-and-extend-skill-front
 reviewed: 2026-07-27
+outcome: done
 ---
 
 # Capacidades estrategicas no front .claude/
@@ -348,3 +349,65 @@ nested `branch:` record reads back as null in `status --json` while being presen
 - the three frontmatter hooks: blocks 3.2 added parse clean and lint reports zero hook findings, but nothing has observed one FIRE — the command registry is built at session start, so a block written in a session is inert in it. functional-checks.sh is the only harness that spawns a fresh process, and it has no probe asserting a rung-1 frontmatter hook actually runs; that probe is what would turn the hooks.md graduation from verified-by-parser into verified-by-execution
 - README's release history under ## Upgrade stops at 1.0.0 while VERSION reads 4.x — the 2.0.0, 3.0.0 and 4.0.0 bumps shipped with no changelog entry at all, and the same section's lockstep instruction still named only two shipped scripts (skills.py missing) until 5.2 fixed it, so the procedure that governs the bump was itself three sources out of date
 - README's per-command sections (lines ~68-278) still carry the retired quenching-docs-* / quenching-skill-* skill names as their headings while the same file's newer sections use /specs:triage and /specs:align — the consolidation rename reached the enumerations 5.1 checked but not the fourteen section headings, which is too large to be 'residue only' and needs its own pass before the next release is announced anywhere
+
+## Outcome
+
+Shipped, merged into `main` with a **`--no-ff` merge commit** — chosen so all fourteen `commit:`
+shas on the task lines keep resolving on the base branch. A future reader can follow any task line
+straight to the commit that implemented it.
+
+**What shipped.** The capability layer stopped being a hypothesis. Both new mints were measured by
+`/skill:eval` and their artifacts committed — `/skill:agent:new` at +0.364 pass rate for 182,367
+fewer tokens, `/skill:hook:new` at +0.5 for 52.5% cheaper — and each gained an intent-shaped trigger
+plus a sandboxed routing probe, taking `functional-checks.sh` to nine assertions across seven
+sandboxed sessions. `skills.py` closed both blind spots: `lint` reads a frontmatter `hooks:` block
+(the scope ladder's narrowest rung, fail-open via `sk-hook-unparseable`) and serves both rungs from
+one implementation, and `budget` charges `agents/*.md` descriptions to the same total. The ceiling
+was re-measured from a run and re-set to 11,565. The profile doctrine was then applied to its own
+author: five inline `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on three
+commands and priced in the body of the two that keep it, frontmatter `hooks:` blocks on
+`/docs:add`/`/docs:learn`/`/docs:define`, a collection-only `Task` for `/skill:align` §7 —
+`sk-unscoped-bash` 8 → 5, every survivor stating its reason. `hooks.md` graduated to
+`authority: current` on that adopting surface; `agents.md` did not, and the honest reason is
+recorded. `/skill:package` was dismissed on a real packaging run. Version lockstep landed at 4.1.0
+across all six sources.
+
+**What the conclude pass added, and why it is not task work.** The whole-branch review found four
+things no single task's diff could show, fixed in `62ce940`:
+
+- The three new frontmatter `hooks:` blocks pointed at an `okf-validate.py` that `/docs:align`
+  step 6 only *offers* to install. `python3 <missing-file>` exits **2**, which the hook protocol
+  reads as an error — so the three commands most likely to be run before any align reported a hook
+  failure on every `Write`/`Edit` in any repo that declined the offer. Each block now leads with
+  `test -f … || exit 0`, keeping the checker's own exit code so a **missing** handler is a no-op
+  while a **failing** one still reports. The rule landed in its owner (`capabilities.md` §Hooks),
+  its repo-side projection (`hooks.md`) and the mold `/skill:hook:new` emits from.
+- `skills.py` `_wider_findings` kept a 12-space body under a 4-space `for` after its `os.path.isdir`
+  wrapper was folded into `agent_definitions()`.
+- Five standards whose `resource` this branch changed still read `timestamp: 2026-07-26`.
+- `context-budget.md`'s breakdown example totalled 11,652 against a stated total of 11,565 across
+  zero agents.
+
+Then `2f82af7` wrote what the work *revealed*: `skill-evaluation.md` **graduated to
+`authority: current`** on its own stated gate — which tasks 1.1 and 1.2 had already satisfied with
+two committed benchmarks while nobody bumped it — and gained the four rules those runs measured.
+The load-bearing one is that **isolation is a property of the process, not of the agent**: a
+sub-agent inherits the session's plugin registry, so a without-arm dispatched that way is still
+listed the command it is defined by lacking. Every delta this spec reports was measured that way,
+which is why the numbers above are stated as *this case set's* and not as the doctrine's.
+
+**What was left out, deliberately.** README's fourteen per-command section headings still carry the
+retired `quenching-docs-*` / `quenching-skill-*` names, and `## Upgrade` has no entry for 2.0.0,
+3.0.0 or 4.0.0 — both too large for task 5.1's "residue only" and both left to their own pass. The
+same retired names survive in `docs/log.md`'s header and in `docs/standards/CLAUDE.md`, which makes
+this a bundle-wide sweep rather than a README edit. Nothing observed a frontmatter `hooks:` block
+actually FIRE — the registry is built at session start, so a block written in a session is inert in
+it, and `functional-checks.sh` has no probe asserting one runs. That is what would turn the
+`hooks.md` graduation from verified-by-parser into verified-by-execution.
+
+**What a reader inherits.** `agents.md` stays `authority: background` and `okf-validate` reports
+`resource-unresolved` on its `.claude/agents/**` — that WARN is the evidence, not a defect, and
+removing it would erase the reason. `specs.py` cannot read its own nested frontmatter records
+(`status --json` reported this spec's `branch:` as null throughout), `sk-unscoped-bash` still cannot
+tell a priced grant from an unpriced one, and this repo's own `.claude/hooks/` runs `specs.py` and
+`okf-validate.py` at **1.0.0** against a plugin shipping 4.1.0. Each has a follow-up spec.
