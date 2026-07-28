@@ -1,7 +1,7 @@
 ---
 description: Drain the project's Claude Code memory into the OKF bundle, then clear it
 argument-hint: [optional-scope]
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task
 ---
 
 # /docs:import-memory — drain project memory into the OKF bundle
@@ -84,28 +84,71 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
 - **Feed the glossary.** When a migrated memory introduces a repo-specific term, add its entry to
   `knowledge/glossary.md` (the fixed A–Z lookup) as the tail of that memory's insert — the same
   step `/docs:add`/`/docs:learn` run — so the term is resolvable once the doc lands.
+- **One resolver, both platforms.** The memory directory is derived from the **native** working
+  directory, so it is resolved in Python — the runtime this plugin already requires — and never
+  from shell string-munging. `pwd` under Windows Git Bash reports the MSYS form (`/c/Users/…`),
+  which encodes to a directory name that does **not** exist, while the real one is keyed to
+  `c:\Users\…`; a POSIX-only recipe therefore misses on every Windows target and silently reports
+  "no memory". Resolution is by data — an exact match, then the nearest ancestor, then the
+  candidate list — never by a guess, and it is **case-insensitive** because the drive letter's
+  case is not stable.
 
-**Why `Bash` is unrestricted here.** Step 1 derives the memory directory from the working
-directory itself — a compound of `pwd`, `sed`, a fallback glob and a loop, evaluated as one
-shell expression. A prefix grant matches the command a line *starts* with, so it cannot express
-`enc="$(pwd | sed …)"; ls -la "$dir"`. Its scoped siblings never leave `python3`/`py`.
+**Why `Bash` is scoped here.** `python3`/`py` runs the Step 1 resolver and the two checkers
+(`specs.py`, `okf-validate.py`); `rm` deletes a memory file once its doc has landed and
+self-checked. Nothing else in this command needs a shell — the reconnaissance is `Read`/`Glob`
+and the edits are `Write`/`Edit`.
 
 ## Workflow
 
 ### 1. Locate the memory dir
-The project's memory lives at `~/.claude/projects/<encoded-cwd>/memory/`, where `<encoded-cwd>`
-is the absolute working directory with `/` and `.` replaced by `-`. Compute and verify it, e.g.:
+The project's memory lives at `~/.claude/projects/<encoded-cwd>/memory/`, where `<encoded-cwd>` is
+the **native** absolute working directory with every `\`, `/`, `:` and `.` replaced by `-`
+(`c:\repos\app` → `c--repos-app`; `/home/me/repos/app` → `-home-me-repos-app`). Run the resolver
+below **as-is** — it is the same on Linux, macOS and Windows, and it also covers the worktree and
+ambiguity cases that used to need a second pass:
 
 ```bash
-enc="$(pwd | sed 's#[/.]#-#g')"; dir="$HOME/.claude/projects/$enc/memory"
-ls -la "$dir" 2>/dev/null || ls -d "$HOME"/.claude/projects/*/memory 2>/dev/null
+python3 - <<'PY'
+import sys
+from pathlib import Path
+# Claude Code replaces \ / : . with '-'. chr(92) IS the backslash, spelled this way so no
+# quoting layer can eat the escape; Path.cwd() reports the native path on every platform.
+PUNCT = set(chr(92) + "/:.")
+enc = lambda p: "".join("-" if c in PUNCT else c for c in str(p))
+cwd = Path.cwd().resolve()
+# .lower(): a Windows drive letter's case is not stable (c:\ vs C:\), the rest is exact.
+have = {d.name.lower(): d for d in (Path.home() / ".claude" / "projects").glob("*")
+        if (d / "memory").is_dir()}
+hit = None
+for p in (cwd, *cwd.parents):   # nearest first: a worktree or subdir falls back to its checkout
+    if enc(p).lower() in have:
+        hit = (have[enc(p).lower()], "exact" if p == cwd else "ancestor " + str(p))
+        break
+if hit is None:
+    print("NO MATCH for", enc(cwd))
+    for k in sorted(have):
+        print("  candidate:", have[k])
+    sys.exit(1)
+mem = hit[0] / "memory"
+files = sorted(f.name for f in mem.glob("*.md"))
+print("dir:", mem, "| matched:", hit[1], "| memories:", len(files))
+for f in files:
+    print("  ", f)
+PY
 ```
 
-If the exact match is absent, list the candidates and pick the one whose de-encoded name is the
-current repo (or ask). If there is no memory dir or it is empty, report that and stop.
-**In a git worktree** `pwd` encodes the worktree path, but memory is keyed to the **main
-checkout** — the computed path will miss; fall back to the candidate whose de-encoded name is the
-repo (drop any `.worktrees/...` suffix).
+Use `py - <<'PY'` where `python3` is not on PATH (common on Windows). Branch on what it printed,
+never on a guess:
+- **`matched: exact`** — proceed.
+- **`matched: ancestor <path>`** — the cwd is a git **worktree** or a subdirectory; memory is keyed
+  to the main checkout, which is what the walk found. Confirm the path names this repo before any
+  deletion, since a parent directory could carry unrelated memory.
+- **`NO MATCH`** — pick the candidate whose de-encoded name is this repo, or ask. Never invent one.
+- **`memories: 0`** or no directory at all — report that and stop.
+
+**Do not** derive the path with `pwd`: under Windows Git Bash it reports the MSYS form
+(`/c/Users/…`), which encodes to a name that does not exist, and the run misreports an empty
+memory on a target that has one.
 
 ### 2. Take inventory (metadata-first)
 Read `MEMORY.md` (the index) and, for each memory `.md`, its **frontmatter** (`name`,
@@ -118,16 +161,14 @@ inline (small dir) or by the per-slice sub-agent (large dir) — never all at on
 orchestrator.
 
 ### 3. Classify each → destination + `type` + mold
-First **orient, bounded**: read the two target `docs/` homes' listings and the backlog index —
-never enumerate the whole tree (`catalog/` and `reference/repositories/` will overflow the session):
+First **orient, bounded** — three `Read`s and two `Glob`s, no shell, so it behaves identically on
+every platform. Never enumerate the whole tree (`catalog/` and `reference/repositories/` will
+overflow the session):
 
-```bash
-for h in standards knowledge; do
-  echo "== docs/$h =="; cat "docs/$h/index.md" 2>/dev/null
-  find "docs/$h" -maxdepth 2 -name index.md 2>/dev/null
-done
-echo "== specs/plans =="; cat "specs/plans/index.md" 2>/dev/null
-```
+- `Read` — `docs/standards/index.md`, `docs/knowledge/index.md`, `specs/plans/index.md` (the
+  honest listings; a missing file just means that home is empty).
+- `Glob` — `docs/standards/*/index.md` and `docs/knowledge/*/index.md` for the existing subject
+  folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
 Then apply [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md): map by content (type is a
 hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
@@ -158,8 +199,10 @@ with this skill's deltas kept inline:
   `**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — migrated from project memory`.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/specs:triage`'s to place.
-- **Only after the self-check passes:** delete the memory `.md` and prune its `- [..](..)` line
-  from `MEMORY.md`. A failed write leaves that memory untouched — write-then-verify-then-delete,
+- **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
+  this command runs, and the only reason `Bash(rm:*)` is granted) and prune its `- [..](..)` line
+  from `MEMORY.md` with `Edit`. Pass the path the Step 1 resolver printed, quoted, so a Windows
+  path with spaces survives. A failed write leaves that memory untouched — write-then-verify-then-delete,
   and a per-slice executor sub-agent honors the same contract (never deleting ahead of a landed,
   self-checked doc).
 

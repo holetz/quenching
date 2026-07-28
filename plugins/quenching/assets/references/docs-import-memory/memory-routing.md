@@ -18,6 +18,20 @@ scope; collapse to the nearest of the three (below) or flag-and-keep.
 A Claude Code project memory lives under
 `~/.claude/projects/<encoded-cwd>/memory/` as one fact per `.md` file with frontmatter:
 
+`<encoded-cwd>` is the **native** absolute working directory — the path the OS reports, not a
+shell's mount view — with every `\`, `/`, `:` and `.` replaced by `-`:
+
+| Native cwd | Encoded directory |
+| --- | --- |
+| `/home/me/repos/app` | `-home-me-repos-app` |
+| `/Users/me/src/app.v2` | `-Users-me-src-app-v2` |
+| `c:\Users\me\repos\app` | `c--Users-me-repos-app` |
+
+The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable, so
+match case-insensitively. This is why the path is resolved in Python rather than from `pwd`, which
+under Windows Git Bash reports `/c/Users/…` and encodes to a directory that does not exist —
+`/docs:import-memory` §1 owns the resolver.
+
 ```yaml
 ---
 name: <kebab-slug>
