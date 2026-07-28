@@ -7,6 +7,9 @@ branch:
   base: main
   work: plan/instrument-and-extend-skill-front
 reviewed: 2026-07-27
+merge:
+  strategy: merge-commit
+  commit: 4421185
 outcome: done
 ---
 

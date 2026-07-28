@@ -4,7 +4,7 @@ title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, and the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
 source: specs-flow-consolidation plan (sections 1-2)
