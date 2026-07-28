@@ -454,8 +454,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 4.3 [P] `specs-develop/artifacts.md`: a linha `commit:` da tabela de metadados vira `subject:`
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
       subject: plan/move-conclude-merge-last: 4.3 artifacts.md — the task metadata row is subject:
-- [ ] 4.4 [P] `specs-develop/spec-driven.md`: o vocabulário de registros
+- [x] 4.4 [P] `specs-develop/spec-driven.md`: o vocabulário de registros
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
+      subject: plan/move-conclude-merge-last: 4.4 spec-driven.md — the record vocabulary
 
 ### 5. Os standards e o glossário
 

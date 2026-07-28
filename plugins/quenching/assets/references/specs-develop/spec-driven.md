@@ -94,7 +94,7 @@ something no derivation can answer.
 | `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
-| `merge` | once merged | `conclude` | `{strategy, commit}` — the strategy was a choice, the sha is its result |
+| `merge` | once merged | `conclude` | `{strategy, subject}` — the strategy was a choice, the subject names the merge it produced. Known BEFORE the merge, so the stamp lands on the work branch and the merge is the last action. `rebase`/`fast-forward` create no merge commit, so the subject is an explicit none |
 | `outcome` | at archive | `conclude` | `done` · `abandoned` — stamped by `promote --to archive` |
 
 Read top to bottom, the optional records **narrate the spec's history**: ranked, interrogated,
@@ -235,14 +235,18 @@ nothing and is never flagged — **the check is opt-in by writing the heading**.
 ## `## Tasks` and the `[!]` blocked marker
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
-`files:` / `verify:` / `pattern:` / `commit:` / `[P]` metadata. `specs.py task --check <id>` flips a
+`files:` / `verify:` / `pattern:` / `subject:` / `[P]` metadata. `specs.py task --check <id>` flips a
 box mechanically — **never by string surgery**.
 
-`commit:` is written by `task --check --commit <sha>` and records **which commit implemented that
-task**. It lives on the task line rather than as a trailer inside the commit message, which leaves
-the target repo's message format entirely its own; and it cannot go stale, because amending a
-recorded commit and force-pushing are both forbidden
+`subject:` is written by `task --check --subject <line>` and records **the subject of the commit
+that implements that task**, resolved with `git log --grep --fixed-strings`. It lives on the task
+line rather than as a trailer inside the commit message, which leaves the target repo's message
+format entirely its own. Because the subject is known BEFORE the commit, the box is ticked into
+that commit and there is no per-task bookkeeping commit; and it cannot go stale, because amending
+a recorded commit and force-pushing are both forbidden
 ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The commit).
+A spec built before this change carries `commit: <sha>`; both forms are read and neither is
+backfilled.
 `## Tasks` is the file's churn zone by design — its boxes already flip — so the low-churn doctrine
 that governs frontmatter does not reach it.
 
@@ -293,12 +297,12 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | --- | --- |
 | `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
-| `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded commits, the records, and the outstanding gates |
+| `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
 | `specs.py section <slug> <heading> [--write]` | deterministic partial read/write of ONE section; `--write` creates the heading in canonical position |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
-| `specs.py task --spec <slug> --check ID [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically |
+| `specs.py task --spec <slug> --check ID [--subject LINE] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically |
 | `specs.py discover <slug> <text>` | append one line to `## Discoveries` |
 | `specs.py parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
 | `specs.py plans reindex` | regenerate the `plans/index.md` GENERATED zone, grouped by derived stage |
