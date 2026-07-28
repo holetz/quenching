@@ -2,9 +2,9 @@
   "enabledPlugins": {
     "quenching@quenching": true,
     "quenching@claude-quenching": true,
-    "agent-sdk-dev@claude-code-plugins": true,
-    "feature-dev@claude-code-plugins": true,
-    "plugin-dev@claude-code-plugins": true,
+    "agent-sdk-dev@claude-code-plugins": false,
+    "feature-dev@claude-code-plugins": false,
+    "plugin-dev@claude-code-plugins": false,
     "context7@context7-marketplace": true
   }
 }

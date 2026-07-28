@@ -6,6 +6,10 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-28
 
+**Update**: [Glossary](/docs/knowledge/glossary.md) — distilled from spec `instrument-and-extend-skill-front`: four terms the capability layer made load-bearing and none of them resolvable, two of which `skills.py`'s own finding messages already name — **Scope ladder**, **Handler ladder**, **Cache trap** and **Always-on ceiling**.
+
+**Creation**: four follow-up specs distilled from `instrument-and-extend-skill-front`'s `## Discoveries`, none of which any task owned — [routing information never restored on nine `/docs:*` descriptions](/specs/plans/2026-07-28-restore-routing-info-on-docs-commands.md) (and the zero-headroom ceiling it collides with), [`sk-unscoped-bash` cannot read the body its own remedy points at](/specs/plans/2026-07-28-make-sk-unscoped-bash-read-the-body.md), [nothing notices an installed tool copy falling behind](/specs/plans/2026-07-28-notice-installed-tool-version-drift.md) (this repo ran `specs.py` 1.0.0 against a 4.1.0 plugin), and [no probe observes a frontmatter `hooks:` block firing](/specs/plans/2026-07-28-probe-a-frontmatter-hook-firing.md).
+
 **Update**: [Skill evaluation](/docs/standards/automation/skill-evaluation.md) — **graduated to `authority: current`** on its own stated gate (two committed benchmarks, `/skill:agent:new` and `/skill:hook:new`), and gained the four rules `instrument-and-extend-skill-front`'s runs measured: isolation is a property of the **process**, not of the agent (a sub-agent inherits the plugin registry, so its without-arm still lists the command); a routing rate is **conditional on its fixture** (5/5 in a repo shipping `agents.md`, a miss in a bare one); a **truncated run is inconclusive**, never a measured miss; and a rename must **carry its eval tree**.
 
 **Update**: [Scoped hooks](/docs/standards/automation/hooks.md) — a handler whose script may not be installed **guards its own absence**: `python3 <missing-file>` exits 2, which the hook protocol reads as an error, so an unguarded handler reported a failure on every matched call in any repo that declined the optional install.

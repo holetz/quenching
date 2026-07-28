@@ -32,6 +32,11 @@ sentence, and **link out** rather than explaining in full here.
 
 ## Terms
 
+- [**Always-on ceiling**](../standards/automation/context-budget.md) — the per-surface character
+  total `skills.py budget` compares the summed descriptions against, commands **and** agent
+  definitions alike; set from a measurement and never guessed, and deliberately kept EQUAL to the
+  current total so it has no headroom and the next command crosses it the day it is minted.
+  `budget` reports and never refuses — crossing it prompts a re-measure, not a block.
 - [**Always-on metadata**](../standards/automation/context-budget.md) — the frontmatter
   `description` of every command, resident in every session's context before anything fires and
   therefore the only surface cost paid whether or not a command runs; measured by
@@ -44,6 +49,11 @@ sentence, and **link out** rather than explaining in full here.
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
   unblocks it.
+- [**Cache trap**](/plugins/quenching/assets/references/skill-new/capabilities.md) — the standing
+  cost of an inline `model:`/`effort:` pin in a command's frontmatter: the pin is part of the
+  session's prompt-cache key, so changing it makes the next request recompute every input token.
+  A sub-agent's pin is cache-safe because it carries its own context; an orchestrator's is not,
+  which is why five `effort: low`/`medium` pins were dropped rather than kept for their tier.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `commit: <sha>` field on a
   completed task line, written mechanically by `specs.py task --check --commit`, that links the
   checkbox to the commit implementing it without inscribing anything into the commit message —
@@ -56,6 +66,11 @@ sentence, and **link out** rather than explaining in full here.
 - [**Entry point**](../standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
   path IS its identity (`commands/docs/add.md` → `/docs:add`); since Claude Code merged commands
   into skills there is no second file to mirror, so there is nothing an entry point can drift from.
+- [**Handler ladder**](../standards/automation/hooks.md) — the ordering a hook's handler is chosen
+  from, cheapest first: a deterministic `command` script (zero tokens on no-match), then a `prompt`
+  handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
+  is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Climbed only when the rung
+  below cannot express the check.
 - [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
@@ -81,6 +96,12 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Scope ladder**](../standards/automation/hooks.md) — the four rungs a hook may be installed at,
+  narrowest first: a command's own frontmatter `hooks:` block (fires only while that command runs),
+  a `settings.json` hook with an event + `matcher`, a gated wide event, and an unmatched
+  session-wide hook — the top rung, and a finding (`sk-hook-unmatched`) unless the reason nothing
+  narrower suffices is stated where it is wired. `skills.py` holds rung 1 and rung 2 to the same
+  checks from one implementation.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
