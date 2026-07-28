@@ -430,8 +430,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 3.1 `execute.md`: delegar isolamento a `/specs:isolate`; marcar a caixa antes do commit para que ela entre nele; asserção pós-commit comparando o subject real com o gravado, reportada como finding
       files: plugins/quenching/commands/specs/execute.md
       subject: plan/move-conclude-merge-last: 3.1 execute delegates isolation and ticks before committing
-- [ ] 3.2 `conclude.md`: destilação passa para a branch, antes do merge; `merge: {strategy, subject}` gravado na branch; merge vira a última ação
+- [x] 3.2 `conclude.md`: destilação passa para a branch, antes do merge; `merge: {strategy, subject}` gravado na branch; merge vira a última ação
       files: plugins/quenching/commands/specs/conclude.md
+      subject: plan/move-conclude-merge-last: 3.2 conclude distils on the branch and merges last
 - [ ] 3.3 `continue.md`: refletir o ranking ciente de branch na descrição e no corpo
       files: plugins/quenching/commands/specs/continue.md
 - [ ] 3.4 `create.md` e `develop.md`: encaminhar para `/specs:isolate` quando pedido, sem oferta ativa (ver `## Open Decisions`)
