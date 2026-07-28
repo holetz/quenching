@@ -271,9 +271,10 @@ deliberately left alone â€” do not "fix" them.
 
 ### 3. Record the episode where row 6's readers will find it
 
-- [ ] 3.1 Record in docs/reference/tools/claude-code-skill-command-mechanics.md Â§What has been relied upon that three artifacts asserted row 6's contrary until this spec removed them
+- [x] 3.1 Record in docs/reference/tools/claude-code-skill-command-mechanics.md Â§What has been relied upon that three artifacts asserted row 6's contrary until this spec removed them
       files: docs/reference/tools/claude-code-skill-command-mechanics.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/verify-allowed-tools-enforcement: 3.1 Record in the mechanics reference that three artifacts asserted row 6's contrary
 
 ### 4. Prove it
 

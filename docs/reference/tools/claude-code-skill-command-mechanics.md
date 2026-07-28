@@ -96,10 +96,20 @@ records who ignored that advice and who did not.
 | 2 — a command is invocable by name through the Skill tool | `collapse-skills-into-commands` (2026-07-26) | **Total.** All five conductors invoke their stages this way (`quenching:docs:align`). If false, a conductor runs and does nothing. |
 | 4 — the registry is built at session start | `collapse-skills-into-commands` (2026-07-26) | **Methodological.** It is why that spec's `verification` is `per-section` and why its three functional checks each need a fresh `claude -p`: nothing it wrote was testable in the session that wrote it. |
 | 3, 5 | — | Corroborating only. Neither was re-measured for the collapse. |
-| 6 — `allowed-tools` did not restrict tools | — | **Explicitly declined.** The collapse needed only *parity* between commands and skills, and its `## Out of Scope` says so. Nobody has relied on this row, and nobody should until it is measured properly. |
+| 6 — `allowed-tools` did not restrict tools | `verify-allowed-tools-enforcement` (2026-07-28) — its **contrary**, never the row itself | **Explicitly declined, then contradicted.** The collapse needed only *parity* between commands and skills, and its `## Out of Scope` says so. Nobody has relied on the row as measured — but three artifacts asserted the opposite of it (see below). Nobody should rely on this row either way until it is measured properly. |
 
 Rows 1, 2 and 4 were re-measured against **Claude Code 2.1.215** immediately before that
 migration moved its first file — see below.
+
+**Row 6 was contradicted before it was ever relied upon.** Three artifacts asserted that a scoped
+`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/docs:status` and
+`/specs:status` doctrine bullets, and the plugin `README.md`'s `/docs:status` paragraph — which is
+the contrary of what row 6 observed, claimed without measuring anything.
+`verify-allowed-tools-enforcement` (2026-07-28) deleted all three, and closed the gap that produced
+them: `standards/automation/skills.md` §`allowed-tools` is always scoped and the
+`skills-standard.md` mold every aligned repo is cut from now both say the grant is a declaration
+`skills.py lint` checks. Worth recording as its own failure mode — an unmeasured row invites its
+opposite, because a reader who finds no measured claim will supply one.
 
 ## Re-measurements
 
