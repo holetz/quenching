@@ -227,25 +227,35 @@ item and claims no enforcement.
 
 ## Handoff
 
-**The three sentences, located.**
+**State: 6 of 7 tasks done, 4.2 blocked.** All three sentences are deleted, both authoring gaps are
+closed, and the episode is recorded. Isolated on `plan/verify-allowed-tools-enforcement`, a worktree
+at `../claude-quenching-verify-allowed-tools-enforcement`, cut from `main`. Nothing is merged.
 
-- `plugins/quenching/commands/docs/status.md` line 34-35 â€” *"The `allowed-tools` above carry no
-  `Write` or `Edit` â€” that is the enforcement, not a promise."*
-- `plugins/quenching/commands/specs/status.md` line 34-35 â€” the same, worded *"no `Write` and no
-  `Edit`"*.
-- `plugins/quenching/README.md` line 207-208 â€” *"`allowed-tools` carries no `Write` or `Edit`, which
-  is the enforcement rather than a promise"*. This one is mid-sentence: deleting it needs the clause
-  re-joined, e.g. *"It writes nothing, and owns no contract, citing â€¦"*.
+**What is left.** Only 4.2, blocked on failures this branch did not cause — read its `- [!]` reason
+in `## Tasks`. It needs a decision, not a retry: the two failing checks are properties of `main`.
 
-**Baseline before any edit,** to compare the verify runs against: `skills.py doctor` â€” 24 commands,
-0 error(s), 0 warning(s). `skills.py lint` â€” exit 0 with five warnings (`sk-no-boundary`,
-`sk-step-criterion`, `sk-trigger-position`, and two `sk-unscoped-bash`), **none of them in the files
-this spec edits**. A sixth warning appearing means the edit broke something.
+**Measured baselines on this branch** (the ones written at definition were stale, see
+`## Discoveries`): `skills.py doctor` â€” **25** commands, 0 error(s), 0 warning(s). `skills.py lint`
+â€” exit 0 with **35** warnings, of which **two are in `commands/docs/status.md`**
+(`sk-trigger-position`, `sk-no-boundary`); both concern that file's frontmatter description, which
+this spec never touched, and both are present on `main`. `okf-validate.py docs` â€” 0 error(s),
+**2** warning(s) (`resource-unresolved` on `standards/automation/agents.md`, `stale-doc` on
+`standards/automation/hooks.md`), both pre-existing and proved so by a stash test. Every one of
+these exits 0; only the figures recorded at definition were wrong.
 
-**Already swept during definition.** Every `allowed-tools` mention in the repository was read; the
-three above are the only enforcement claims. `README.md` lines 479-480 (the cost-model rows) and
-`assets/claude/QUENCHING.md` line 191 state the grant as a cost, claim nothing, and are
-deliberately left alone â€” do not "fix" them.
+**The claim-sweep must be multiline.** A line-based grep finds only the README, because the phrase
+wraps across a line break in both command bodies. 4.2's predecessor 4.1 now carries a `python3`
+check proven to exit 1 against `main` and 0 against `HEAD` â€” do not "simplify" it back to `grep`.
+
+**`functional-checks.sh` cannot see this branch.** The plugin resolves through a marketplace
+`directory` source pinned to the main checkout, so `${CLAUDE_PLUGIN_ROOT}` points there whatever
+tree `claude -p` runs in (measured â€” see `## Discoveries`). Re-running the harness from this
+worktree will never grade these edits; it must run on `main` after the merge.
+
+**Already swept during definition, and still true.** Every `allowed-tools` mention in the repository
+was read; the three now deleted were the only enforcement claims. `README.md` lines 479-480 (the
+cost-model rows) and `assets/claude/QUENCHING.md` line 191 state the grant as a cost, claim nothing,
+and are deliberately left alone â€” do not "fix" them.
 
 ## Tasks
 
@@ -282,10 +292,12 @@ deliberately left alone â€” do not "fix" them.
 - [x] 4.1 Prove zero surviving instances of the claim across plugins/ and docs/
       verify: python3 -c "import re,sys,pathlib; p=re.compile(r'is the\s+enforcement|enforcement\s+rather than a promise'); h=[str(f) for d in ('plugins','docs') for f in pathlib.Path(d).rglob('*.md') if p.search(f.read_text(encoding='utf-8',errors='replace'))]; print(*h,sep='\n'); sys.exit(1 if h else 0)"
       subject: plan/verify-allowed-tools-enforcement: 4.1 Prove zero surviving instances of the claim across plugins/ and docs/
-- [ ] 4.2 Run the surface's functional checks and revert any check-3 residue in the same commit
+- [!] 4.2 Run the surface's functional checks and revert any check-3 residue in the same commit — blocked: verify exits 1 for two pre-existing reasons, neither caused by this branch. (a) functional-checks.sh: 5 passed, 3 failed, 1 inconclusive — all in check 3, spoken-trigger routing for specs:create x2, skill:hook:new, and skill:agent:new (turn cap). Check 3 grades routing by DESCRIPTION alone; this branch changes no frontmatter line in commands/** and touches none of those four commands (2 files, 2 insertions, 4 deletions, all inside doctrine bullets). The harness also loads the main checkout regardless of cwd, so it never saw this branch. Checks 1 and 2 passed 4/4. (b) specs.py validate: sp-handoff-empty on the sibling spec fix-skills-py-description-truncation, present before this run began. Neither converges within this spec's scope. No check-3 residue: the probes now sandbox into their own repos, and the tree was clean after the run.
       verify: ./plugins/quenching/assets/bin/functional-checks.sh && python3 plugins/quenching/assets/bin/specs.py validate
 
 ## Discoveries
 
 - Task 4.1's verify: grep pattern 'is the enforcement' cannot match commands/docs/status.md or commands/specs/status.md — the phrase wraps across a line break there ('that is the' / 'enforcement, not a promise'), and grep is line-based. Measured against main with all three sentences intact, the declared pattern found 1 of 3 (only the README, whose clause happens to sit on one line) — so the task would have passed with both command bodies unfixed. RESOLVED during execution: 4.1's verify and ## Validation check 1 both replaced with a multiline python3 check, proven to exit 1 against main and 0 against HEAD.
 - The spec's ## Handoff and ## Validation baselines are stale, measured before this branch: skills.py reports 25 commands not 24; lint exits 0 with 35 warnings not 5, and 2 of them ARE in commands/docs/status.md (sk-trigger-position, sk-no-boundary, both about the frontmatter description, neither touched by this spec); okf-validate.py docs reports 0 errors and 2 warnings not 0/0 (resource-unresolved on standards/automation/agents.md, stale-doc on standards/automation/hooks.md), both pre-existing and proved so by a stash test. Exit codes are 0 throughout, so every task verify still passes — only the stated figures were wrong.
+- functional-checks.sh cannot validate commands/** edits made on a BRANCH or WORKTREE. The plugin resolves through the marketplace, a 'directory' source pinned to the main checkout (~/.claude/plugins/known_marketplaces.json -> C:\Users\holet\repos\claude-quenching), so ${CLAUDE_PLUGIN_ROOT} substitutes to the main checkout no matter which tree claude -p is launched from. Measured: check 1's probe run from this worktree Read C:/Users/holet/repos/claude-quenching/plugins/quenching/assets/references/specs-develop/spec-driven.md. This defeats the rationale in this spec's ## Validation and, more broadly, the standing rule in docs/standards/quality/surface-verification.md that the harness is the only check for a commands/** change — on every spec that isolates before editing commands/**, the harness grades the base, not the work. Also noted: installed_plugins.json lists an installPath cache at .../cache/claude-quenching/quenching/4.1.0 that does not exist on disk.
+- functional-checks.sh check 1 crashes mid-stream on Windows and can report a FALSE PASS. Its tools() helper does open(sys.argv[2]) with no encoding, so Python uses cp1252 and dies with UnicodeDecodeError at the first non-cp1252 byte (observed: byte 0x9d at position 5555 of the stream-json log). Stdout keeps whatever lines printed before the crash, so the first assertion passed on a real match, but the second — 'read nothing under a skills/ tree' — asserts ABSENCE over truncated input, and any Read after the crash point is invisible to it. Fix: open(..., encoding='utf-8', errors='replace'). Same family as this spec's own 4.1 defect: a check that reports a verdict on data it could not read.
