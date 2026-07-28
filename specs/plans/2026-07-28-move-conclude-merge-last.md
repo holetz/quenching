@@ -377,9 +377,10 @@ aceito — specs não são renomeadas.
 
 ### 1. As rails em `specs.py`
 
-- [ ] 1.1 `task --check` aceita `--subject` no lugar de `--commit`, escrevendo `subject:` na linha da task; linhas antigas com `commit:` continuam sendo lidas
+- [x] 1.1 `task --check` aceita `--subject` no lugar de `--commit`, escrevendo `subject:` na linha da task; linhas antigas com `commit:` continuam sendo lidas
       files: plugins/quenching/assets/bin/specs.py
       verify: workspace descartável — `specs.py new x` → `task --check 1.1 --subject "..."` → `status --spec x --json` mostra o subject
+      subject: plan/move-conclude-merge-last: 1.1 task --check accepts --subject in place of --commit
 - [ ] 1.2 O registro `merge` aceita `{strategy, subject}`, incluindo a forma explicit-none de `fast-forward`/`rebase`; `status` e `validate` reportam
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py validate

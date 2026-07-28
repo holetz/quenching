@@ -125,12 +125,13 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|commit)\s*:\s*(.+?)\s*$",
+TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|subject|commit)\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
-# A recorded sha must survive being written into a one-line grammar and read back, so the
-# only hard requirement is that it carries no whitespace. Length is NOT checked: an
-# abbreviated sha is legitimate and how long git abbreviates to depends on the repo.
-COMMIT_REF_RE = re.compile(r"^\S+$")
+# The anchor is written into a one-line grammar and read back, so the only hard requirement
+# is that it holds text and stays on its line. `commit:` is the older form of the same
+# field — still READ from specs written before the anchor became the subject, never written
+# again, and never rewritten in place.
+SUBJECT_RE = re.compile(r"^[^\r\n]+$")
 DEFAULT_META_INDENT = "      "
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
 BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
@@ -863,8 +864,8 @@ def parse_tasks(text: str) -> list[dict]:
         parallel = bool(PARALLEL_RE.match(rest))
         blocked = BLOCKED_REASON_RE.search(body)
         files: list[str] = []
-        pattern = verify = commit = None
-        commit_off = last_meta_off = None
+        pattern = verify = subject = commit = None
+        subject_off = commit_off = last_meta_off = None
         meta_indent = None
         for off, cont in enumerate(lines[i + 1:], start=i + 1):
             # the task's block ends at a blank line, a non-indented line, or another
@@ -883,6 +884,8 @@ def parse_tasks(text: str) -> list[dict]:
                 files = [p.strip() for p in val.split(",") if p.strip()]
             elif key == "pattern":
                 pattern = val
+            elif key == "subject":
+                subject, subject_off = val, off
             elif key == "commit":
                 commit, commit_off = val, off
             else:
@@ -901,9 +904,14 @@ def parse_tasks(text: str) -> list[dict]:
             "files": files,
             "pattern": pattern,
             "verify": verify,
+            "subject": subject,
             "commit": commit,
-            # where a `commit:` line is, and where one would go — so `task` upserts it
-            # mechanically instead of the caller doing string surgery on the file.
+            # where the anchor line is, and where one would go — so `task` upserts it
+            # mechanically instead of the caller doing string surgery on the file. Both
+            # forms are tracked because both are read: nothing writes `commit:` any more,
+            # but a spec written before the change carries one and `--uncheck` must still
+            # be able to drop it.
+            "subjectLineno": (base + subject_off) if subject_off is not None else None,
             "commitLineno": (base + commit_off) if commit_off is not None else None,
             "metaInsertAt": base + ((last_meta_off + 1) if last_meta_off is not None
                                     else i + 1),
@@ -1189,6 +1197,8 @@ def cmd_status(args, root: str) -> int:
         "tasks": {"checked": checked, "blocked": blocked, "total": total,
                   "blockedTasks": [{"id": t["id"], "text": t["text"], "reason": t["reason"]}
                                    for t in info["tasks"] if t["blocked"]],
+                  "subjects": [{"id": t["id"], "subject": t["subject"]}
+                               for t in info["tasks"] if t["subject"]],
                   "commits": [{"id": t["id"], "commit": t["commit"]}
                               for t in info["tasks"] if t["commit"]]},
         "promote": gates,
@@ -1221,8 +1231,10 @@ def cmd_status(args, root: str) -> int:
             if isinstance(v, dict):
                 v = ", ".join(f"{kk}: {vv}" for kk, vv in v.items())
             print(f"    {k + ':':<10} {v}")
+    if obj["tasks"]["subjects"]:
+        print(f"  subjects: {len(obj['tasks']['subjects'])} task(s) carry one")
     if obj["tasks"]["commits"]:
-        print(f"  commits: {len(obj['tasks']['commits'])} task(s) carry one")
+        print(f"  commits: {len(obj['tasks']['commits'])} task(s) carry an older sha")
     if gates:
         if gates["ok"]:
             print(f"  promote → {dest}/: ready")
@@ -1459,19 +1471,19 @@ def cmd_task(args, root: str) -> int:
                          "message": "pass --check, --uncheck or --block"},
              "error: pass --check, --uncheck or --block")
         return 1
-    # A sha records WHICH COMMIT IMPLEMENTED THIS TASK, so it is meaningful only on the
-    # transition that says the task is done. On --uncheck any recorded sha is dropped
+    # The subject names WHICH COMMIT IMPLEMENTS THIS TASK, so it is meaningful only on the
+    # transition that says the task is done. On --uncheck any recorded anchor is dropped
     # rather than left behind pointing at work the checkbox no longer claims.
-    if args.commit and not args.check:
-        emit(args.json, {"ok": False, "code": "sp-commit-without-check",
-                         "message": "--commit records the commit that implemented a task, "
+    if args.subject and not args.check:
+        emit(args.json, {"ok": False, "code": "sp-subject-without-check",
+                         "message": "--subject records the commit that implements a task, "
                                     "so it goes with --check"},
-             "error: --commit goes with --check")
+             "error: --subject goes with --check")
         return 1
-    if args.commit and not COMMIT_REF_RE.match(args.commit):
-        emit(args.json, {"ok": False, "code": "sp-bad-commit", "commit": args.commit,
-                         "message": "a commit ref may not contain whitespace"},
-             "error: a commit ref may not contain whitespace")
+    if args.subject is not None and not SUBJECT_RE.match(args.subject.strip()):
+        emit(args.json, {"ok": False, "code": "sp-bad-subject", "subject": args.subject,
+                         "message": "a commit subject must be one non-empty line"},
+             "error: a commit subject must be one non-empty line")
         return 1
     if args.block and not args.reason:
         emit(args.json, {"ok": False, "code": "sp-no-reason",
@@ -1503,26 +1515,31 @@ def cmd_task(args, root: str) -> int:
         body = f"{body} — blocked: {args.reason.strip()}"
     lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
 
-    # Upsert the `commit:` metadata line — replace one that is already there, otherwise
+    # Upsert the `subject:` metadata line — replace one that is already there, otherwise
     # append it after the task's last metadata line (or right under the checkbox).
-    commit = None
-    if args.commit:
-        commit = args.commit
-        entry = f"{t['metaIndent']}commit: {commit}\n"
-        if t["commitLineno"] is not None:
-            lines[t["commitLineno"]] = entry
+    subject = None
+    if args.subject:
+        subject = args.subject.strip()
+        entry = f"{t['metaIndent']}subject: {subject}\n"
+        if t["subjectLineno"] is not None:
+            lines[t["subjectLineno"]] = entry
         else:
             lines.insert(t["metaInsertAt"], entry)
-    elif args.uncheck and t["commitLineno"] is not None:
-        del lines[t["commitLineno"]]
+    elif args.uncheck:
+        # Drop whichever anchor the line carries — `subject:` now, `commit:` on a spec
+        # written before the anchor changed form. Highest offset first, so deleting one
+        # cannot shift the index of the other.
+        for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
+                           if o is not None), reverse=True):
+            del lines[off]
     write_text(info["path"], "".join(lines))
 
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
     emit(args.json,
          {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
-          "state": mark, "text": body, "commit": commit,
+          "state": mark, "text": body, "subject": subject,
           "reason": args.reason if args.block else None},
-         f"task {ident} {verb}: {body}" + (f"\n  commit: {commit}" if commit else ""))
+         f"task {ident} {verb}: {body}" + (f"\n  subject: {subject}" if subject else ""))
     return 0
 
 
@@ -2543,8 +2560,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--uncheck")
     sp.add_argument("--block", help="mark TASK blocked (requires --reason)")
     sp.add_argument("--reason", help="why the task is blocked — written into the line")
-    sp.add_argument("--commit", help="the commit that implemented the task, recorded as a "
-                                     "`commit:` metadata line (goes with --check)")
+    sp.add_argument("--subject", help="the subject of the commit that implements the task, "
+                                      "recorded as a `subject:` metadata line "
+                                      "(goes with --check)")
 
     sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
                                               "ranked candidate list"))
