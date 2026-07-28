@@ -2,6 +2,7 @@
 slug: restore-routing-info-on-docs-commands
 title: Restore trigger phrases and boundaries on the nine bare /docs:* descriptions
 verification: per-section
+priority: {level: 5, criticality: high, complexity: 4, date: 2026-07-28}
 ---
 
 # Restore trigger phrases and boundaries on the nine bare /docs:* descriptions

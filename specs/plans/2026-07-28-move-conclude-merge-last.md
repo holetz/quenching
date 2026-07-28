@@ -2,6 +2,7 @@
 slug: move-conclude-merge-last
 title: Make the merge the last action of /specs:conclude
 verification: per-section
+priority: {level: 1, criticality: high, complexity: 16, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 ---
 

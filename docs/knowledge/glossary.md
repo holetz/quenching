@@ -32,6 +32,12 @@ sentence, and **link out** rather than explaining in full here.
 
 ## Terms
 
+- [**Advisory finding**](../standards/quality/bundle-verification.md) — a WARN the commands' verify
+  gate does **not** treat as blocking, reported so a human can look and never so a run stops;
+  `stale-doc` is the only one, against the WARN-but-must-fix set (`dir-no-index`,
+  `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
+  `resource-self`). The category has to stay small — a check that cannot tell "wrong" from "worth a
+  look" belongs here or nowhere, and folding one into must-fix makes that set unusable.
 - [**Always-on ceiling**](../standards/automation/context-budget.md) — the per-surface character
   total `skills.py budget` compares the summed descriptions against, commands **and** agent
   definitions alike; set from a measurement and never guessed, and deliberately kept EQUAL to the
@@ -49,6 +55,12 @@ sentence, and **link out** rather than explaining in full here.
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
   unblocks it.
+- [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/docs:status`
+  prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
+  which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
+  would make permanent noise of a repo that legitimately has no `mlops/`, omitting them would hide
+  a bundle passing every check while knowing nothing. A figure informs without accumulating as a
+  defect to chase.
 - [**Cache trap**](/plugins/quenching/assets/references/skill-new/capabilities.md) — the standing
   cost of an inline `model:`/`effort:` pin in a command's frontmatter: the pin is part of the
   session's prompt-cache key, so changing it makes the next request recompute every input token.
@@ -96,6 +108,14 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Resource glob set**](../standards/quality/bundle-verification.md) — the format of an OKF
+  doc's `resource:`, a plugin convention rather than an OKF rule: a **comma-separated** list of
+  repo-root-relative paths and globs using `*`/`**` **only**, matched **segment-wise everywhere**
+  including the `:(glob)` pathspec handed to `git log`, since plain `fnmatch` and git's default
+  wildmatch both let `*` cross a `/` and would silently widen every shallow scope. Anything else
+  (braces, character classes, `?`) is classified `unknown` and never reported as a violation. It
+  says what the doc *governs* — which is why it replaced the `file:line` anchor doctrine once
+  named, and why it is also the input `stale-doc` needs.
 - [**Scope ladder**](../standards/automation/hooks.md) — the four rungs a hook may be installed at,
   narrowest first: a command's own frontmatter `hooks:` block (fires only while that command runs),
   a `settings.json` hook with an event + `matcher`, a gated wide event, and an unmatched

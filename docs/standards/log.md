@@ -3,6 +3,10 @@
 History of the standards bundle, most recent first. Each entry is grouped under a
 `## YYYY-MM-DD` heading and prefixed `**Creation**` / `**Update**` / `**Deprecation**`.
 
+## 2026-07-28
+
+**Creation**: [Read-only views are their own command](/docs/standards/architecture/read-only-views.md) — distilled from spec `docs-verification-layer`, whose `## Design` argued it and whose build proved it: `allowed-tools` is granted per command, not per invocation, so a `--dry-run` mode inside an align would be enforced by prose while the `Write`/`Edit` grant stayed open the whole run. Splitting the command moves the guarantee into the tool grant. `authority: current` — `/specs:status` set the shape and `/docs:status` mirrored it, both carrying `Read, Grep, Glob, Bash(python3:*), Bash(py:*)` and owning no contract.
+
 ## 2026-07-27
 
 **Update**: [Spec file contract](/docs/standards/workflows/plan-artifacts.md) and [Task execution contract](/docs/standards/workflows/task-execution.md) — reconciled with what the `specs-flow-consolidation` branch shipped, found by its branch review. `plan-artifacts.md` was retitled from "Spec lifecycle contract" and its superseded v2 lifecycle claims (folder-is-the-phase, promote-as-the-human-OK, the five-key frontmatter list, the `backlog/`/`ready/` sub-stages) are now pointers into [plan-lifecycle.md](/docs/standards/workflows/plan-lifecycle.md); the explicit-none gate table names the derived `ready` stage. `task-execution.md`'s `resource` pointed at the deleted `commands/specs/apply.md` (`resource-unresolved`) and is repointed at `execute.md` + `conclude.md`, and §Review splits now names the two commands that own the two levels. Two `authority: current` docs no longer assert the contract the branch deleted.
