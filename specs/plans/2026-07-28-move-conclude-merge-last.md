@@ -483,8 +483,9 @@ branch `plan/move-conclude-merge-last`):
       pattern: plugins/quenching/assets/bin/functional-checks.sh
       verify: ./assets/bin/conclude-order-check.sh
       subject: plan/move-conclude-merge-last: 6.1 add conclude-order-check.sh
-- [ ] 6.2 Atualizar os três `QUENCHING.md`, `CLAUDE.md` e `plugins/quenching/README.md` para o comando novo e a contagem
+- [x] 6.2 Atualizar os três `QUENCHING.md`, `CLAUDE.md` e `plugins/quenching/README.md` para o comando novo e a contagem
       files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md, CLAUDE.md, plugins/quenching/README.md
+      subject: plan/move-conclude-merge-last: 6.2 update the manuals, the counts and the budget
 - [ ] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
 - [ ] 6.4 Rodar a suíte inteira de `## Validation`
@@ -500,3 +501,5 @@ branch `plan/move-conclude-merge-last`):
 - third measurement of functional-checks check 1a across identical script runs: FAIL on pristine 96f6657, PASS on this branch at task 2.3, FAIL again at task 3.4 — nondeterministic, so its verdict cannot gate anything until the cp1252 read at line 32 is fixed
 - this branch takes okf-validate's stale-doc warnings from 1 to 9. Only task-execution.md and plan-lifecycle.md are declared under ## Impact; the other seven — plugin-layout, command-surface, surface-verification, plan-artifacts, automation/{context-budget,skills}, reference/tools/claude-code-skill-command-mechanics — went stale because their resource covers commands/**, specs.py, the templates or schema.json. Each needs a re-read and a timestamp, which is conclude step 3's emergent-docs pass, not a task's
 - python print() writes CRLF to stdout on Windows, so any shell pipeline reading a value out of an embedded python heredoc gets a trailing CR — it silently broke conclude-order-check's git log --grep assertion until tr -d '\r' was added. Same family as functional-checks.sh:32's cp1252 read
+- CLAUDE.md's release rule says a new command means editing all THREE QUENCHING.md manuals, but only the front's own manual enumerates its commands — adding /specs:isolate needed assets/specs/QUENCHING.md alone, and touching the other two would have been churn. The rule should say 'the manual of the front the command belongs to'
+- the skills.py budget ceiling is a zero-headroom ratchet whose own comment predicted 'the 25th command crosses it on the day it is minted' — it did, and revising it is a skills.py edit no task declares, sitting in lockstep with README's recorded figure

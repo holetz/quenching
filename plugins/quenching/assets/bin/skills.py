@@ -145,7 +145,7 @@ LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an infere
 # move it only from a measurement, and `--ceiling` overrides it for a surface with its own
 # budget.
 #
-# It EQUALS the current total, so it has no headroom and the 25th command crosses it on
+# It EQUALS the current total, so it has no headroom and the next command minted crosses it on
 # the day it is minted. That is deliberate: `budget` reports and never refuses, so the
 # crossing prompts a re-measure rather than blocking anything. The pre-diet 36503 was a
 # baseline the surface then sat 5,798 under, which meant it could never fire.
@@ -157,7 +157,13 @@ LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an infere
 # trigger additions) is what the surface now costs, and the two numbers are measurements of
 # different surfaces rather than growth to be alarmed by. A ceiling set mid-shrink could
 # never fire honestly, which is why this waited for the fold to land.
-DEFAULT_CEILING = 11565
+#
+# 2026-07-28: re-measured at 12726 over 25 commands (0 agents), replacing 11565. The
+# mechanism worked exactly as the paragraph above predicted: `move-conclude-merge-last`
+# minted the 25th command (`/specs:isolate`) and the ceiling fired the same day. The
+# +1161 is that command's own description plus the boundary clauses five siblings grew to
+# name it. Revised from the measurement `budget` printed, never estimated.
+DEFAULT_CEILING = 12726
 CHARS_PER_TOKEN = 4             # a rule of thumb for the report, never a tokenizer count
 
 # the registry's derived zone — markers, cells, and location, per the automation mold

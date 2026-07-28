@@ -7,7 +7,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: a **fully native** `specs/` front (the eight `/specs:*` commands)
+**spec-driven plan cycle**: a **fully native** `specs/` front (the nine `/specs:*` commands)
 with the OKF bundle as its knowledge substrate — no external
 CLI, driven by the bundled stdlib `specs.py`.
 
@@ -50,13 +50,13 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align-all/convergence.md`](assets/references/align-all/convergence.md).
 
-## The twenty-four commands
+## The twenty-five commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
-there is no `skills/` tree and no wrapper. The twenty-four split by front: `/docs:*` for the ten
+there is no `skills/` tree and no wrapper. The twenty-five split by front: `/docs:*` for the ten
 that act on the OKF `docs/` bundle (one nested a level deeper at `/docs:documentation:build`),
-`/specs:*` for the eight that act on the native `specs/` workspace, `/skill:*` for the five that
+`/specs:*` for the nine that act on the native `specs/` workspace, `/skill:*` for the five that
 act on the target's `.claude/` automation surface (two nested: `/skill:agent:new`,
 `/skill:hook:new`), and the root `/align` for the one that spans all three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
@@ -299,7 +299,7 @@ never acts on a front's reported residue — it names the residue and the comman
 Triggers: *"align everything"*, *"align the whole repo"*, *"run all the aligns"*, *"normalize
 this repo"*, *"install quenching in this repo"*, *"set the repo up end to end"*.
 
-## The `specs/` flow — the eight `/specs:*` commands
+## The `specs/` flow — the nine `/specs:*` commands
 
 The plugin's **spec-driven plan cycle**, and it is **entirely native**: no `npm i -g`, no Node
 runtime, no `config.yaml`, no main-spec store, and no delta format. The deterministic rails are
@@ -316,17 +316,18 @@ its whole pre-archive life in one folder and moving exactly once, to `specs/arch
 — `ready` is a *derived* stage, and the OK to build is the `approved: {date}` stamp. Because a
 spec writes its durable rule **directly into `docs/standards/`** (honestly `authority`-graded),
 there is no second store to bridge to: isolation-while-building is a real git **branch or
-worktree** (offered by `/specs:execute`, recorded as `branch: {base, work}`, each task committed
+worktree** (taken by `/specs:isolate` at any stage, recorded as `branch: {base, work}`, each task committed
 alone with its sha on the task line).
 
 | Command | Role |
 | --- | --- |
 | `/specs:continue` | The router: one `specs.py next --front` call ranks every candidate with a reason per row and hands off to the one command that fits. Never builds, edits, or closes anything itself. |
+| `/specs:isolate` | Takes **or reports** git isolation for ONE spec at any stage: the `plan/<slug>` branch or a worktree beside the repo, and the write-once `branch: {base, work}` stamp. Reporting is a complete use of it. `execute` delegates here; `create` and `develop` name it on request. Never merges — that keeps `conclude`'s gates. |
 | `/specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results — split into what `/specs:align` would fix, what a cycle command closes, and what neither closes. |
 | `/specs:create` | ONE spec in `plans/` — effort proportional to input, never an interrogation. A sentence becomes `## Problem` alone; a Claude Code plan file becomes every section it actually supports, mapped and never invented. |
 | `/specs:develop` | One question at a time with an inline recommendation, the bank chosen by the spec's derived stage — generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
-| `/specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered and recorded, `verify:` run under the spec's declared policy, four-item diff self-review, the box ticked with its sha via `specs.py task --check --commit`. Writes only the `docs/standards/` a task explicitly names; everything else is one `specs.py discover` line. Stops at the last commit. |
-| `/specs:conclude` | Closes a spec out, resumable: whole-branch review (`reviewed:`), the emergent `docs/`, the merge (strategy offered, recorded; a squash offers to keep the branch), the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), and ONE distillation pass. |
+| `/specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation delegated to `/specs:isolate`, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`specs.py task --check --subject`) so code and box land in ONE commit. Writes only the `docs/standards/` a task explicitly names; everything else is one `specs.py discover` line. Stops at the last commit. |
+| `/specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass and the `merge: {strategy, subject}` stamp — all on the work branch — and only then the merge. Nothing is committed to the base after it. |
 | `/specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/specs:align` | The front's align + installer — see below. |
 
@@ -419,7 +420,7 @@ and identical in every adopting repo:
 | Manual | Installed by | Covers |
 | --- | --- | --- |
 | `docs/QUENCHING.md` | `/docs:align` | the "I want to → run this" table, the homes and `type` vocabulary, the ten `/docs:*` commands, the shared operating model (probe first, one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
-| `specs/QUENCHING.md` | `/specs:align` | the single-folder layout, the create → develop → approve → execute → conclude lifecycle, the eight `/specs:*` commands, the frontmatter record vocabulary, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, and the older-workspace migrations |
+| `specs/QUENCHING.md` | `/specs:align` | the single-folder layout, the create → develop → approve → execute → conclude lifecycle, the nine `/specs:*` commands, the frontmatter record vocabulary, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, and the older-workspace migrations |
 | `.claude/QUENCHING.md` | `/skill:align` | the single taxonomy axis, one file per entry point, the five `/skill:*` commands, the rule + registry artifacts, hook/settings hygiene |
 
 They complement, never duplicate, the reserved listings: `docs/index.md` says **what** is in the
@@ -447,8 +448,9 @@ The plugin keeps its context and token footprint predictable on three levels:
    Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
 
-   **Where it stands now: 11,565 characters** (~2,891 approximate tokens) across 24 commands and
-   0 agent definitions, measured 2026-07-27. Most of the difference between 2,083 and that figure
+   **Where it stands now: 12,726 characters** (~3,182 approximate tokens) across 25 commands and
+   0 agent definitions, measured 2026-07-28 — the ceiling fired the day `/specs:isolate` was
+   minted, exactly as a zero-headroom ratchet is meant to, and was revised from that measurement. Most of the difference between 2,083 and that figure
    is the routing information being bought back deliberately — the triggers and boundaries the
    collapse had dropped. That measurement is also the current default ceiling, which has **no
    headroom by construction**: it equals the surface's total, so the 25th command crosses it the
@@ -476,6 +478,7 @@ registry name, and that a spoken phrase still routes by description alone.
 | `/docs:define` | **no pin** — the edit is mechanical, but an inline `effort: low` is part of the session's prompt-cache key, so it recomputes every input token on the next request ([`capabilities.md`](assets/references/skill-new/capabilities.md) §The cache trap). A single-entry edit does not buy that back. Carries a frontmatter `hooks:` block instead — `okf-validate.py` on its own `Write`/`Edit`, the scope ladder's narrowest rung, costing nothing to any other operation |
 | `/specs:create` | **no pin** — same cache-trap reasoning; the capture is mechanical and effort-proportional, and its cost was never the model tier. Zero interrogation, no sub-agents |
 | `/specs:triage` | no pin, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the session model exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
+| `/specs:isolate` | no pin, no sub-agents — a handful of `git` reads, one branch or worktree creation, and one frontmatter stamp. `Bash` is scoped to `git`/`python3`/`py`; the whole command is a decision the human makes and a record it writes |
 | `/specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `specs.py status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
 | `/docs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — the `docs` counterpart of the row above, and its `effort: low` was dropped for the same reason. Both bodies also forbid `context: fork` by name: each doubles as a sweep's preview, and the report has to land in the conversation where the OK will be given |
 | `/specs:conclude` | no pin, no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade |

@@ -34,8 +34,9 @@ python3 --version           # or `py --version` on Windows
 | See where everything stands, changing nothing | `/specs:status` |
 | Park an idea — or bring in a Claude Code plan file | `/specs:create` |
 | Think it through, fill it out, argue with it, or approve it | `/specs:develop` |
+| Take a branch or worktree for it — at any stage | `/specs:isolate` |
 | Build it, one verified commit per task | `/specs:execute` |
-| Close it out — review the branch, merge, archive, distil | `/specs:conclude` |
+| Close it out — review, archive, distil, then merge | `/specs:conclude` |
 | Rank everything that is parked | `/specs:triage` |
 | Fix the workspace itself — scaffold, filenames, the v2/v1 fold | `/specs:align` |
 | Align **every** front (`docs/`, `specs/`, `.claude/`) | `/align` |
@@ -104,11 +105,11 @@ One file, one move, and a frontmatter that narrates the history.
       ▼                        ▼                            ▼                 ▼                  ▼
   plans/2026-07-25-<slug>.md ──────────────────────────────────────────────────────►  archive/…-<slug>.md
       │   ## Problem           derived stages:            approved: {date}   branch: {base,work}   │
-      │      ↓ ## Proposal     captured → proposed →      (develop offers    per-task commit: sha  │
+      │      ↓ ## Proposal     captured → proposed →      (develop offers    per-task subject: …   │
       │      ↓ ## Design       designed → refined →        it at the gate;   blocked → - [!] …     │
       │      ↓ refined:        ready (the ten gate         execute asks      reviewed: {date}      │
       │                        sections, computed)         inline)           merge: {strategy,     │
-      │                                                                      commit}              │
+      │                                                                      subject}             │
       │  a spec that will NOT be built goes straight to conclude             outcome: done │ abandoned
       └──────────────────────────────────────────────────────────────────────────────┐
                                                                                      ▼
@@ -186,6 +187,25 @@ rule you already agreed on. A real interrogation records `refined: {mode, date}`
 the `sp-unrefined` warning — a warning, never a gate: **a spec may always be built unrefined.**
 It never edits code, and it never invents an explicit none on your behalf.
 
+### `/specs:isolate` — take a branch, at any stage
+
+Isolation is not a privilege of building. Creating and developing a spec also write into
+`plans/` and dirty your tree, and sometimes a spec should be born on the branch that will carry
+its work — so this command takes **or reports** isolation for one spec whenever you want it.
+
+It offers a **branch** (`plan/<slug>`, the default) or a **worktree** beside the repo, commits an
+uncommitted spec file onto the new branch so the base keeps no trace of it, and stamps
+`branch: {base, work}`. `base` is captured while it is still true: after a merge, git cannot say
+what the branch was cut from.
+
+**Asking is a complete use of it.** "Am I isolated?" costs a few `git` reads and writes nothing.
+A spec whose branch is already alive is never given a second one — you are offered a checkout or
+a worktree over the existing branch instead.
+
+`/specs:execute` delegates here rather than reimplementing it; `/specs:create` and
+`/specs:develop` name it when you ask, and never volunteer it. **It never merges** — the merge
+stays inside `/specs:conclude`, behind that command's review and archive gates.
+
 ### `/specs:execute` — build it, prove it, commit it
 
 **It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
@@ -194,9 +214,11 @@ a worktree — and records the choice as `branch: {base, work}`, because after t
 say what the base was.
 
 Per task it writes the code, runs that task's `verify:` under the spec's declared policy,
-self-reviews the diff (reuse · useless defense · obvious comment · dead code), commits it alone,
-and only then ticks the box — `specs.py task --check <id> --commit <sha>`, which writes the
-implementing commit onto the task line. Your repo's own commit conventions govern when declared
+self-reviews the diff (reuse · useless defense · obvious comment · dead code), **ticks the box
+with the subject of the commit it is about to make** — `specs.py task --check <id> --subject
+"<line>"` — and then commits the code and the ticked box together. One task is exactly one commit,
+and no bookkeeping commit follows it: a subject is known before its commit, so the box can ride
+inside it. Your repo's own commit conventions govern when declared
 (`docs/standards/git/**`, read if present, **never installed**); otherwise the plugin's default
 subject is `plan/<slug>: <id> <title>`.
 
@@ -229,13 +251,15 @@ ran, so a second call picks up where the first stopped:
    two tasks solving the same problem differently. Records `reviewed: {date}`.
 2. **Write the emergent `docs/`** — the standards and knowledge the work *revealed* (resolved
    from `## Discoveries`), as opposed to the declared docs `execute` already wrote.
-3. **Merge** — strategy offered, never chosen for you: merge commit (default), squash, rebase, or
-   fast-forward. Records `merge: {strategy, commit}`. **On a squash it offers to keep the
-   branch**, because the per-task `commit:` shas survive only there.
-4. **Archive + distil** — `outcome: done` refuses while boxes are open (`--force` if you know
+3. **Archive + distil** — `outcome: done` refuses while boxes are open (`--force` if you know
    why); `abandoned` is always allowed and distils **nothing as adopted** — at most a narrow
    `authority: background` note. The outcome is **your word**, never inferred from progress or
-   staleness.
+   staleness. Both the archive move and the distillation land on the **work branch**.
+4. **Merge — the last action, without exception.** Strategy offered, never chosen for you: merge
+   commit (default), squash, rebase, or fast-forward. `merge: {strategy, subject}` is stamped on
+   the branch *before* the merge, so **nothing is ever committed to the base after it** and one
+   merge carries the code, the emergent docs, the archived spec and the distillation together.
+   **On a squash it offers to keep the branch**, because the per-task commits survive only there.
 
 ### `/specs:triage` — rank the whole front
 
