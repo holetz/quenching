@@ -242,35 +242,35 @@ with `plugins/quenching/VERSION` (§Releasing).
 
 ## Handoff
 
-Sections 1 and 2 are committed. All three tools now share four helpers with identical bodies â€”
-`_frontmatter_body`, `_indented_run`, `_quote_end`, `_split_comment` â€” plus `frontmatter_anomalies`,
+All seven tasks are built, verified and committed on `plan/fix-skills-py-description-truncation`
+(seven commits, `6aaa8bc` through `5edd488`). Nothing is left to build; what remains is
+`/specs:conclude` â€” the branch review, the emergent `docs/`, the merge and the archive-time
+distillation.
+
+**The state of the tree.** All three tools share four identically-bodied helpers
+(`_frontmatter_body`, `_indented_run`, `_quote_end`, `_split_comment`) plus `frontmatter_anomalies`,
 `CANONICAL_CASES` and `canonical_case_failures`. **The case list is byte-identical in all three; edit
-all three or none.**
+all three or none.** Two standards are `authority: current`:
+`docs/standards/code/frontmatter-parsing.md` (the mechanics) and
+`docs/standards/quality/parse-honesty.md` (the obligation).
 
-**What section 3 still owes.** 3.1 writes `docs/standards/quality/parse-honesty.md` at
-`authority: current`. 3.2 promotes `code/frontmatter-parsing.md` from `background` to `current` and
-should, while it is open, turn its plain-text pointer to `quality/parse-honesty.md` into a real
-markdown link â€” the link was deliberately left unwritten at task 1.1 because the target did not yet
-exist, and no commit was to ship a dead one.
+**Everything the sweep proved, so a reviewer need not re-run it.** Version lockstep holds at 4.2.0
+across `VERSION`, `plugin.json` and all three scripts. `assets/docs` and
+`assets/specs/plans --listing-root` are 0/0. `skills.py doctor` reports 25 commands and 0 findings;
+`lint` exits 0. All three selftests exit 0 on the same twelve cases. `specs validate` and
+`specs doctor` are 0/0; `okf-validate.py docs` is 0 errors with the same two warnings that predate
+this branch (`agents.md` `resource-unresolved`, `hooks.md` `stale-doc`). Each tool's output was also
+diffed against its `ec0a631` copy on every real tree and came back **byte-identical**, so the
+behaviour change is confined to inputs this repository does not contain. No functional check is owed:
+`git diff --name-only main...HEAD -- plugins/quenching/commands/` is empty.
 
-**Proof already in hand, so section 4 is a sweep and not a discovery.** Each tool's output was
-diffed against its `ec0a631` copy on every real tree: `skills.py lint` and `doctor` byte-identical
-(25 commands, 0 findings), `specs.py validate` byte-identical, and `okf-validate.py` byte-identical
-on `docs`, `assets/docs` and `assets/specs/plans --listing-root`. The three selftests exit 0 on the
-same 12 cases. `okf-validate.py docs` takes ~570 ms before and after. The self-demonstrating check
-passes: `specs.py status --spec fix-skills-py-description-truncation --json` now returns the title
-whole, `skills.py silently truncates a description at the first '#'`.
-
-Each new finding was also proved to fire end to end, not just in the sidecar:
-`sp-frontmatter-unparsed` on a throwaway workspace, and `okf-frontmatter-unparsed` on a throwaway
-bundle where `type: standard # tentative` now parses as `standard` and the strip is named â€” the
-paired behaviour change `## Risks` predicted for the always-on hook. Hook-mode dispatch
-(`hook_event_name` on stdin) is unchanged.
-
-**Two figures in this spec are stale and are recorded in `## Discoveries`, not fixed here:**
-`## Validation` expects 24 commands where the surface has 25, and `## Out of Scope` reasons about a
-bump "off 4.1.0" where everything is already at 4.2.0. Task 4.1 should read 25 and ignore the 4.1.0
-wording; the propagation argument itself still holds.
+**Three things for the reviewer to decide, none of them blocking.** `## Discoveries` holds all three:
+the `okf-frontmatter-unparsed` code is the only tool-prefixed code in a file whose other codes carry
+no prefix (implemented as the spec declared it); `## Validation` says 24 commands where there are 25;
+and `## Out of Scope` reasons about a bump "off 4.1.0" when everything is already at 4.2.0. The
+propagation argument in `## Out of Scope` still holds â€” an installed copy is overwritten only when
+the plugin is newer, so **no already-aligned target gets this fix until a release ships**, which
+remains deliberately out of scope.
 ## Tasks
 
 ### 1. The rule, agreed before it is proved
