@@ -100,6 +100,14 @@ makes it common ground.
 reads block records; `skills.py` reads block scalars), and must then *not* raise
 `indented-continuation` for the form it genuinely read. What no tool may do is disagree with a row.
 
+The converse binds harder, because it is the rule at the top of this file applied to itself: a form
+a tool does **not** read must be *named*, and a block scalar is the one unread form that does not
+come back empty. `specs.py` and `okf-validate.py` keep the bare `|`/`>` indicator as the value —
+`description: |` reads as the literal `"|"` — so an emptiness test never sees it and it must be
+detected on the indicator. This cannot become a canonical row: `skills.py` reads block scalars and
+the other two do not, so the three would have to disagree on it, which is exactly what row 12
+avoids by using a bare wrapped line as common ground.
+
 ## The anomaly set
 
 `frontmatter_anomalies(text)` is a **sidecar**: it re-reads the block and reports what the parse
