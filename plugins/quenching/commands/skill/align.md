@@ -72,6 +72,13 @@ and **say in the report that the check was manual**, never silently skip it. Inv
 `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
+**Invoke it by its literal resolved path**, never through a shell variable holding the interpreter
+plus the path — that idiom word-splits on bash and silently fails on zsh, so it passes where it is
+written and breaks in the target repo. The rule, the measured evidence and the one correct
+abbreviation are
+[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+§Write the resolved path literally on every invocation.
+
 **This sweep also installs it** (§5), so the repo keeps its verifier after the run ends —
 one align per front, each installing its own front's tool.
 
