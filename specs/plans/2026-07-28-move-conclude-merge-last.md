@@ -373,23 +373,30 @@ aceito — specs não são renomeadas.
 - Prosa em pt-BR nesta spec; headings, caminhos e chaves em inglês canônico.
 - `archive/**` é intocável.
 
-Estado após a seção 1 (worktree `../claude-quenching-move-conclude-merge-last`,
-branch `plan/move-conclude-merge-last`):
+Estado com as seis seções construídas (worktree
+`../claude-quenching-move-conclude-merge-last`, branch
+`plan/move-conclude-merge-last`, plugin em **4.2.0**):
 
-- `specs.py` já grava `subject:`. **`--commit` não existe mais** — este próprio
-  build marca a caixa ANTES do commit, com `--subject`, e código + caixa entram
-  no mesmo commit. Não há commits de bookkeeping por task.
+- **Tudo commitado; nada mergeado.** O próximo passo é `/specs:conclude`, que
+  agora revisa, arquiva, destila e carimba `merge:` **na branch**, e só então
+  mergeia. Este build já seguiu essa ordem: caixa marcada com `--subject` antes
+  do commit, código + caixa no mesmo commit, zero commits de bookkeeping por
+  task.
 - O vocabulário do registro `merge` mora em TRÊS cópias em lockstep:
   `DEFAULT_SCHEMA` em `specs.py`, `assets/specs/schema.json` (que **shadowa** a
-  constante via `load_schema()`) e `assets/specs/templates/spec.md`. Nenhuma
-  task declara `schema.json` em `files:` — ver `## Discoveries`.
-- `parse_frontmatter` passou a ler block mappings (indentação decide, como em
-  YAML); flow continua splitando em vírgula, então valor com vírgula só em
-  block.
-- `next --front` ranqueia pela ref viva; candidatos expõem
-  `branch: {work, live, current}`.
-- Falta a seção 2 em diante. `specs-execute/git.md` ainda NÃO foi movido, então
-  toda citação por caminho absoluto a ele continua válida até 2.1/2.3.
+  constante via `load_schema()`) e `assets/specs/templates/spec.md`.
+- `parse_frontmatter` lê block mappings (indentação decide, como em YAML); flow
+  continua splitando em vírgula, então valor com vírgula só em block.
+- `functional-checks.sh` **não é confiável neste ambiente** e não gateia nada:
+  linha 32 lê stream-json em cp1252 e morre, então asserções falham por falta de
+  evidência. Medido três vezes; o baseline pristino `96f6657` falha as mesmas
+  cinco. Ver `## Discoveries`.
+- `conclude-order-check.sh` é novo e passa 8/8 — é a única checagem que enxerga
+  a afirmação central.
+- **Dívida conhecida para o `conclude`:** `okf-validate docs` sai 0 mas com 9
+  warnings, das quais **sete** são docs que esta branch deixou stale sem
+  nenhuma task declará-los. São material do passo 3 (docs emergentes), não de
+  uma task. Ver `## Discoveries`.
 
 ## Tasks
 
@@ -489,8 +496,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
       subject: plan/move-conclude-merge-last: 6.3 bump to 4.2.0 in lockstep
-- [ ] 6.4 Rodar a suíte inteira de `## Validation`
+- [x] 6.4 Rodar a suíte inteira de `## Validation`
       verify: ./assets/bin/functional-checks.sh && ./assets/bin/conclude-order-check.sh
+      subject: plan/move-conclude-merge-last: 6.4 run the whole Validation suite
 
 ## Discoveries
 
