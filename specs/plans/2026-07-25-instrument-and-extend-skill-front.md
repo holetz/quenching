@@ -190,47 +190,51 @@ New with the capability layer:
 
 ## Handoff
 
-State of play (2026-07-27, after task 1.1): **`specs-flow-consolidation` has landed** — it is
-archived `outcome: done` and merged to `main`, so the sequencing dependencies in tasks 1.4,
-2.3, 3.3 and 5.1 are all satisfied and nothing in this spec is blocked on another session.
-Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The doctrine's
-single owner is `plugins/quenching/assets/references/skill-new/capabilities.md`; the standards
-are `docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
+State of play (2026-07-27, after task 3.1): **sections 1 and 2 are done and green.**
+`specs-flow-consolidation` has landed (archived `outcome: done`, merged to `main`), so the
+sequencing dependencies in 3.3 and 5.1 are satisfied and nothing here is blocked on another
+session. Work is on branch `plan/instrument-and-extend-skill-front`, cut from `main`. The
+doctrine's single owner is `plugins/quenching/assets/references/skill-new/capabilities.md`; the
+standards are `docs/standards/automation/{skills,agents,hooks,context-budget}.md`.
+`budget` now reads 11,565 chars against the re-set ceiling of 11,565 (`9c1e42c`).
 
-**Section 1 is done and its verification point is green** — `functional-checks.sh` reports
-9 passed, 0 failed. `/skill:agent:new` measured +0.364 pass rate for 182,367 fewer tokens
-(`2f0cff3`); `/skill:hook:new` +0.5 for 1,886,243 fewer — 52.5% cheaper (`f5b49c7`); both mints
-now carry an intent-shaped trigger (`69ace04`, `c959ec5`) and a sandboxed routing probe.
+**The six rows task 3.2 stands on**, from 3.1's audit — blast-radius order, each with its buy:
 
-**Two things a later task must not undo.** Task 1.4 discovered that `/skill:agent:new`'s
-intent-phrased routing was BORROWED from the target repo — without
-`docs/standards/automation/agents.md` present, the phrase routed to `/skill:new` instead. The
-trigger now on the description is what earns it, and probes d and e in `functional-checks.sh`
-are the regression guard for both mints. Do not "shorten" either description in task 3.2
-without re-running the suite.
+1. `/specs:align` grants bare `Bash` *alongside* `Bash(python3:*)`/`Bash(py:*)`, so the scoped
+   grants are dead weight. Scope it, or state the reason.
+2. Four bare-`Bash` grants state no reason: `/docs:documentation:build`,
+   `/docs:glossary-backfill`, `/docs:harness`, `/docs:import-memory`.
+3. Five **inline** `effort:` pins (`/docs:define`, `/docs:status`, `/specs:status`,
+   `/specs:create` = `low`; `/docs:glossary-backfill` = `medium`) were never priced against
+   `capabilities.md` §The cache trap — an inline pin invalidates the whole session prompt cache.
+   Drop them, or write the cost into README's model-policy table.
+4. Frontmatter `hooks:` running `okf-validate.py` on `/docs:add`, `/docs:learn`, `/docs:define`
+   — scope-ladder rung 1, and the surface currently has **zero** instances of the block task
+   2.1 taught `lint` to read.
+5. `/specs:continue` renders `specs.py next --front --json` at render time, converting its only
+   tool call into text. **Blocked on an unproven fact**: `functional-checks.sh` proves
+   `${CLAUDE_PLUGIN_ROOT}` substitutes in a *body*, never in a `!` line — prove that first, and
+   the same block is why the three aligns' probes stay on hold.
+6. `/skill:align` §7 gains a **collection-only** read-only `Task` (not granted today); every
+   doctrine verdict stays with the orchestrator.
 
-**Task 2.1 is done**: `skills.py` gained `parse_frontmatter_hooks()` (the mold's shape only,
-fail-open via `sk-hook-unparseable`) and `hook_ladder_findings()`, which now serves BOTH rungs —
-`settings.json` and a command's frontmatter — from one implementation. `selftest` is 8 cases.
+**Nothing is fork-eligible** — all 24 commands either gate mid-flow or must land their report
+where the OK follows, and `/docs:status` + `/specs:status` say so in their own bodies.
+`disable-model-invocation`/`user-invocable` are forbidden by CLAUDE.md's default-invocation rule;
+`paths:` does not apply because every command is generic-axis, not domain-bound.
 
-**The eval harness task 1.2 should reuse** (it is in the scratchpad, not the repo — rebuild or
-re-derive it): both arms are sandboxed `claude -p` runs over an identical throwaway git fixture,
-and the ONLY difference is whether `.claude/settings.json` carries the two `quenching@*`
-`enabledPlugins` keys. **Do not use `Task` subagents as arms** — they inherit the session
-registry, so the without-arm would still list the command it is defined by lacking. Both arms
-need an identical authorization suffix in the prompt, or the with-arm stalls at its plan gate
-and writes nothing. Grade from `tool_use` events and the fixture tree, never from prose.
+**Two things 3.2 must not undo.** `/skill:agent:new`'s intent-phrased routing was BORROWED from
+the target repo — without `docs/standards/automation/agents.md` present, the phrase routed to
+`/skill:new`. The trigger now on the description is what earns it, and probes d and e in
+`functional-checks.sh` guard both mints: do not "shorten" either description without re-running
+the suite. A `#` inside a frontmatter description is read as a YAML comment and silently
+truncates it.
 
-Facts an executor cannot derive: `budget` currently reads 9,868 chars against ceiling 2,083
-(stale by design — see task 2.3's dependency). `functional-checks.sh` has two recorded
-failure modes: the sandbox needs the repo's own `enabledPlugins` copied in, and check 3's
-probes create real specs in the live workspace unless sandboxed — task 1.4 must not
-reintroduce either, and must also raise check 3's `--max-turns 4`, which is low enough to
-produce false routing misses (see Discoveries). `skills.py parse_frontmatter` ignores indented
-lines, which is WHY frontmatter `hooks:` blocks are invisible today (task 2.1) — `specs.py`
-has the identical defect, so its own nested `branch:` record reads back as null. A `#` inside a
-frontmatter description is read as a YAML comment and silently truncates it — never write
-one into the two mints' descriptions while tuning (task 1.3).
+Facts an executor cannot derive: `functional-checks.sh` has two recorded failure modes — the
+sandbox needs the repo's own `enabledPlugins` copied in, and check 3's probes create real specs
+in the live workspace unless sandboxed. `skills.py parse_frontmatter` ignores indented lines
+outside the `hooks:` case 2.1 added; `specs.py` has the identical defect, so this spec's own
+nested `branch:` record reads back as null in `status --json` while being present in the file.
 
 ## Tasks
 
@@ -316,3 +320,4 @@ one into the two mints' descriptions while tuning (task 1.3).
 - CLAUDE.md documents functional-checks.sh as '~5 min, 7 assertions'; task 1.4 took it to 9 assertions across 7 sandboxed sessions, so both numbers are now residue for task 5.1 to correct
 - an intent-shaped routing probe grades the FIXTURE unless the fixture contains the subject the phrase names: 'audits our migrations' did not route in a bare scratch repo (the session challenged the premise — 'There are no migrations to audit' — and ended in success, not truncation), while the identical phrase routed twice in the eval fixture that carried a migration file
 - /skill:agent:new's intent-phrased routing is borrowed, not earned: 'set up something that audits our migrations and reports back' routes to skill:agent:new only when the target repo already carries docs/standards/automation/agents.md — without it the same phrase routes to /skill:new (single-variable test, both runs subtype success). Task 1.1 measured that trigger 5/5 in a fixture that shipped agents.md, so the rate was fixture-assisted; every trigger the description carries names an artifact, none is intent-shaped, which is the gap 1.3 closed for /skill:hook:new
+- sk-unscoped-bash's message offers 'or state the reason in the body' but the check never reads the body — /specs:execute, /specs:conclude and /docs:align each carry a 'Why Bash is unrestricted here' section and are warned anyway, so the finding cannot distinguish a priced grant from an unpriced one (5 of the 8 warned commands state nothing)
