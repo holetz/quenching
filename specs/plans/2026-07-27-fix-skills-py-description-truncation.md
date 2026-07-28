@@ -307,8 +307,9 @@ wording; the propagation argument itself still holds.
 
 ### 4. Verification sweep
 
-- [ ] 4.1 Run the `CLAUDE.md` §Verifying changes block and the self-demonstrating title check; every line clean
+- [x] 4.1 Run the `CLAUDE.md` §Verifying changes block and the self-demonstrating title check; every line clean
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/fix-skills-py-description-truncation: 4.1 the verification sweep
 
 ## Discoveries
 
