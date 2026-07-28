@@ -463,8 +463,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 5.1 Reescrever docs/standards/workflows/plan-git-record.md — o vínculo é inscrito na mensagem; renomear a seção "The task→commit link is stored, never inscribed"; os dois registros; a tabela do squash; a coexistência das duas formas no arquivo (authority: current)
       files: docs/standards/workflows/plan-git-record.md
       subject: plan/move-conclude-merge-last: 5.1 rewrite plan-git-record.md around the subject anchor
-- [ ] 5.2 Atualizar docs/standards/workflows/plan-lifecycle.md — a linha `merge: {strategy, subject}`
+- [x] 5.2 Atualizar docs/standards/workflows/plan-lifecycle.md — a linha `merge: {strategy, subject}`
       files: docs/standards/workflows/plan-lifecycle.md
+      subject: plan/move-conclude-merge-last: 5.2 plan-lifecycle.md — the merge record and branch owner
 - [ ] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
       files: docs/standards/workflows/task-execution.md
 - [ ] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
@@ -493,3 +494,4 @@ branch `plan/move-conclude-merge-last`):
 - functional-checks.sh:32 reads its stream-json evidence with a bare open(), so on Windows it decodes cp1252 and dies with UnicodeDecodeError; tools() then emits nothing and the assertion fails for LACK OF EVIDENCE rather than reaching a verdict. Measured 2026-07-28: pristine 96f6657 scores 3 passed/6 failed, this branch 4 passed/5 failed, the five check-3 failures identical in both
 - check 1 of functional-checks.sh is FLAKY, not deterministic: 'Read a file under assets/references/ (placeholder substituted)' failed on pristine 96f6657 and passed on this branch, with nothing between them that touches placeholder substitution
 - third measurement of functional-checks check 1a across identical script runs: FAIL on pristine 96f6657, PASS on this branch at task 2.3, FAIL again at task 3.4 — nondeterministic, so its verdict cannot gate anything until the cp1252 read at line 32 is fixed
+- this branch takes okf-validate's stale-doc warnings from 1 to 9. Only task-execution.md and plan-lifecycle.md are declared under ## Impact; the other seven — plugin-layout, command-surface, surface-verification, plan-artifacts, automation/{context-budget,skills}, reference/tools/claude-code-skill-command-mechanics — went stale because their resource covers commands/**, specs.py, the templates or schema.json. Each needs a re-read and a timestamp, which is conclude step 3's emergent-docs pass, not a task's
