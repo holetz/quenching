@@ -240,6 +240,42 @@ with `plugins/quenching/VERSION` (§Releasing).
   only when the plugin is newer, and the version bump is out of scope. ACCEPTED — recorded in
   `## Out of Scope` with the propagation cost stated, so it is deferred rather than forgotten.
 
+## Handoff
+
+The rule and the canonical twelve-case list are settled and committed in
+`docs/standards/code/frontmatter-parsing.md` (task 1.1). Tasks 2.1-2.3 implement that table; read it
+first, and treat it as the spec for what each `selftest` must assert.
+
+**The two lines to fix**, both `val.split("#", 1)[0]`: `skills.py:328` (after `val.strip()`, before
+`_unquote`) and `specs.py:519` (fused with the strip). `okf-validate.py:257` strips no comment at
+all â€” it gains the rule and the diagnostic together, never the rule alone.
+
+**Exemptions found by scanning the repo, and why row 12 will not fire on real files.** Three
+commands carry a `hooks:` block that `parse_frontmatter` reads as `""` â€” `commands/docs/add.md`,
+`define.md`, `learn.md` â€” but `skills.py` reads it by another route (`parse_frontmatter_hooks`), so
+`indented-continuation` MUST exempt `hooks:` there or lint gains three false warnings. One archived
+spec (`2026-07-25-instrument-and-extend-skill-front.md`) writes `branch:` and `merge:` as block
+mappings, which `specs.py` genuinely reads (specs.py:530-554), so no anomaly is owed. Each tool
+exempts what it actually reads; the case list is the floor.
+
+**The whole-repo scan that says the new warn stays quiet.** Across `docs/`, `specs/`,
+`plugins/quenching/{commands,assets}`: exactly ONE frontmatter value contains a `#` â€” this spec's
+own `title:`, as `'#'`, preceded by a quote and therefore kept whole by the new rule. Zero values
+have a `#` after whitespace, and zero files have a duplicate top-level key. So `comment-stripped`
+and `duplicate-key` fire nowhere today, and task 4.1's clean-run expectation holds.
+
+**`specs.py selftest` returns early on an installed copy** (no adjacent assets â€” specs.py:2459) and
+would skip the new parser cases with it. Put the canonical cases BEFORE that early return: they are
+self-contained and must run everywhere, unlike the asset-drift comparison.
+
+**`okf-validate.py` has no subcommand dispatch** â€” `run_cli` takes `paths[0]` as the target
+directory (okf-validate.py:976). `selftest` must be intercepted before that, or it is read as a
+directory name.
+
+**Baseline for task 4.1**, measured on this branch before task 2.1: `okf-validate.py docs` exits 0
+with 2 warnings, both pre-existing and in files this spec does not touch â€” `agents.md`
+(`resource-unresolved`) and `hooks.md` (`stale-doc`). A third warning means the change caused it.
+
 ## Tasks
 
 ### 1. The rule, agreed before it is proved
@@ -251,9 +287,10 @@ with `plugins/quenching/VERSION` (§Releasing).
 
 ### 2. The three tools
 
-- [ ] 2.1 [P] skills.py: correct the comment rule, add `frontmatter_anomalies`, emit `sk-frontmatter-unparsed` from `lint`, and add the canonical cases to `selftest`
+- [x] 2.1 [P] skills.py: correct the comment rule, add `frontmatter_anomalies`, emit `sk-frontmatter-unparsed` from `lint`, and add the canonical cases to `selftest`
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
+      subject: plan/fix-skills-py-description-truncation: 2.1 the rule in skills.py
 - [ ] 2.2 [P] specs.py: the same rule and sidecar, emit `sp-frontmatter-unparsed` from `validate`, and add the canonical cases to `selftest`
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
@@ -273,3 +310,9 @@ with `plugins/quenching/VERSION` (§Releasing).
 
 - [ ] 4.1 Run the `CLAUDE.md` §Verifying changes block and the self-demonstrating title check; every line clean
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+
+## Discoveries
+
+- The spec's ## Validation expects `skills.py doctor` to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25, and the spec's stated figure is stale rather than a finding.
+- The spec's ## Validation expects skills.py doctor to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25 — the spec's figure is stale, not a finding.
+- The spec's ## Out of Scope reasons about a version bump 'off 4.1.0', but VERSION and all three scripts are already at 4.2.0. The propagation argument holds; the number is stale.
