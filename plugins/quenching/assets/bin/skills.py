@@ -175,25 +175,124 @@ DONE_WHEN_RE = re.compile(re.escape(DONE_WHEN_MARKER))
 # parser that skipped them would read the field as the literal string ">-" and
 # report a 2-character description on every skill in the surface.
 # --------------------------------------------------------------------------- #
+def _frontmatter_body(text: str) -> list[str] | None:
+    """The lines between the leading `---` fences, or None when there is no block."""
+    if not text.startswith(FRONTMATTER_FENCE):
+        return None
+    lines = text.splitlines()
+    if lines[0].strip() != FRONTMATTER_FENCE:
+        return None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == FRONTMATTER_FENCE:
+            return lines[1:i]
+    return None
+
+
+def _unquote(val: str) -> str:
+    val = val.strip()
+    if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
+        return val[1:-1]
+    return val
+
+
+def parse_frontmatter_hooks(text: str) -> tuple[dict, bool]:
+    """The frontmatter `hooks:` block — the scope ladder's NARROWEST rung, and the one
+    `parse_frontmatter` structurally cannot see: it keeps top-level pairs only, so a
+    nested block reads back as `""` and the rung was invisible to `lint` entirely.
+
+    Returns `({event: [{"matcher": str, "hooks": [{...}]}]}, understood)`, shaped to
+    match the `hooks` object in `settings.json` so the SAME ladder checks run over both
+    without a second implementation.
+
+    This grows ONE case, not a YAML implementation. It reads exactly what
+    `assets/templates/automation/hook.md` shape 1 emits:
+
+        hooks:
+          PostToolUse:
+            - matcher: "Write|Edit"
+              hooks:
+                - type: command
+                  command: "python3 ..."
+                  timeout: 10
+
+    Anything else sets `understood` False and the caller WARNS rather than guessing —
+    fail-open, because a parser that silently misreads a hook is worse than one that
+    admits it cannot read it."""
+    body = _frontmatter_body(text)
+    if body is None:
+        return {}, True
+    start = None
+    for i, ln in enumerate(body):
+        if ln[:1] not in (" ", "\t") and ln.strip() == "hooks:":
+            start = i + 1
+            break
+    if start is None:
+        return {}, True
+
+    run = []
+    j = start
+    while j < len(body) and (not body[j].strip() or body[j][:1] in (" ", "\t")):
+        run.append(body[j])
+        j += 1
+    while run and not run[-1].strip():
+        run.pop()
+    if not run:
+        return {}, False
+
+    base = min(len(ln) - len(ln.lstrip()) for ln in run if ln.strip())
+    events: dict = {}
+    understood = True
+    event = entry = None
+    handlers_indent = None
+
+    for ln in run:
+        if not ln.strip():
+            continue
+        indent, s = len(ln) - len(ln.lstrip()), ln.strip()
+        if indent == base:                                    # an event key
+            if s.startswith("-") or not s.endswith(":"):
+                understood = False
+                continue
+            event, entry, handlers_indent = s[:-1].strip(), None, None
+            events.setdefault(event, [])
+            continue
+        if event is None:
+            understood = False
+            continue
+        key, _, val = (s[2:] if s.startswith("- ") else s).partition(":")
+        key = key.strip()
+        if s.startswith("- "):
+            if handlers_indent is not None and indent > handlers_indent:
+                entry["hooks"].append({key: _unquote(val)})   # a handler mapping
+                continue
+            entry, handlers_indent = {"matcher": "", "hooks": []}, None
+            events[event].append(entry)
+        if entry is None:
+            understood = False
+            continue
+        if key == "matcher":
+            entry["matcher"] = _unquote(val)
+        elif key == "hooks":
+            handlers_indent = indent
+        elif key in ("type", "command", "prompt", "timeout", "once"):
+            if entry["hooks"]:
+                entry["hooks"][-1][key] = _unquote(val)
+            else:
+                understood = False
+        elif key:
+            understood = False
+    return events, understood
+
+
 def parse_frontmatter(text: str) -> dict:
     """Top-level `key: value` pairs of a leading `---` block. Block scalars are folded
     (`>`: lines joined with spaces, blank line = paragraph break) or kept literal
     (`|`), list values are returned as Python lists for inline `[a, b]` and block
     `- item` forms, and scalars as strings with surrounding quotes stripped. Empty
     dict when there is no block."""
-    if not text.startswith(FRONTMATTER_FENCE):
+    body = _frontmatter_body(text)
+    if body is None:
         return {}
-    lines = text.splitlines()
-    if lines[0].strip() != FRONTMATTER_FENCE:
-        return {}
-    close = None
-    for i in range(1, len(lines)):
-        if lines[i].strip() == FRONTMATTER_FENCE:
-            close = i
-            break
-    if close is None:
-        return {}
-    body = lines[1:close]
     fm: dict = {}
     j = 0
     while j < len(body):
@@ -229,9 +328,7 @@ def parse_frontmatter(text: str) -> dict:
             inner = val[1:-1].strip()
             fm[key] = [x.strip().strip("'\"") for x in inner.split(",") if x.strip()] if inner else []
         else:
-            if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
-                val = val[1:-1]
-            fm[key] = val
+            fm[key] = _unquote(val)
         j += 1
     return fm
 
@@ -348,11 +445,14 @@ def discover_commands(commands_dir: str) -> list[dict]:
             relpath = rel(path, commands_dir)
             text = read_text(path) or ""
             body = body_after_frontmatter(text)
+            hooks, hooks_parsed = parse_frontmatter_hooks(text)
             out.append({
                 "command": command_invocation(relpath),
                 "path": path,
                 "relpath": relpath,
                 "frontmatter": parse_frontmatter(text),
+                "hooks": hooks,
+                "hooksParsed": hooks_parsed,
                 "body": body,
                 "bodyLines": len(body.splitlines()),
             })
@@ -547,6 +647,7 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                            "runs, or state the reason in the body", tool=bare, **where))
 
     out.extend(_lint_invocation(fm, where))
+    out.extend(_lint_frontmatter_hooks(cmd, where))
     out.extend(_lint_profile(fm, where))
     return out
 
@@ -601,6 +702,25 @@ def _lint_invocation(fm: dict, where: dict) -> list[dict]:
                            "`user-invocable: false` with `disable-model-invocation: true` leaves "
                            "no way to invoke the command — neither the menu nor the model",
                            **where))
+
+    return out
+
+
+def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
+    """The scope ladder's narrowest rung. A frontmatter hook fires only while this command
+    runs, which is why it is the default rung — but "narrow" is about SCOPE, not about cost:
+    an unmatched matcher here still taxes every tool call the command makes, so the same two
+    ladder codes apply, from the same implementation `settings.json` uses."""
+    out: list[dict] = []
+    if not cmd.get("hooksParsed", True):
+        out.append(finding("sk-hook-unparseable", "warn",
+                           "the frontmatter `hooks:` block does not match the mold's shape, so "
+                           "the ladder checks could not read it — it is NOT reported as clean",
+                           **where,
+                           remedy="rewrite it in the shape of "
+                                  "assets/templates/automation/hook.md shape 1 (/skill:hook:new)"))
+    out.extend(hook_ladder_findings(cmd.get("hooks") or {},
+                                    where_in=f"{where['path']} frontmatter", where=where))
     return out
 
 
@@ -735,30 +855,46 @@ def _wider_findings(root: str) -> list[dict]:
             continue
         if not isinstance(hooks, dict):
             continue
-        for event in TOOL_EVENTS:
-            for entry in hooks.get(event) or []:
-                if not isinstance(entry, dict):
-                    continue
-                where = {"command": settings_name, "path": settings_name, "event": event}
-                if str(entry.get("matcher", "")).strip() in ("", "*"):
-                    findings.append(finding(
-                        "sk-hook-unmatched", "warn",
-                        f"a {event} hook in {settings_name} has no matcher — it fires on "
-                        "every tool call, and every iteration in the repo pays it",
-                        **where,
-                        remedy="add a matcher, or state where it is wired why nothing "
-                               "narrower suffices (/skill:hook:new owns the scope ladder)"))
-                for h in entry.get("hooks") or []:
-                    if isinstance(h, dict) and str(h.get("type", "")).strip() in LLM_HANDLERS:
-                        findings.append(finding(
-                            "sk-hook-llm-frequent", "warn",
-                            f"a `{h.get('type')}` handler on {event} in {settings_name} "
-                            "runs an inference per matched tool call",
-                            **where,
-                            remedy="decide the deterministic path with a command handler "
-                                   "and keep the inference for the judgment tail "
-                                   "(/skill:hook:new owns the handler ladder)"))
+        findings.extend(hook_ladder_findings(
+            hooks, where_in=settings_name,
+            where={"command": settings_name, "path": settings_name}))
     return findings
+
+
+def hook_ladder_findings(hooks: dict, where_in: str, where: dict) -> list[dict]:
+    """The scope- and handler-ladder checks over a `hooks` object.
+
+    Written once and run over BOTH rungs — the `settings.json` wiring and a command's
+    frontmatter block — because the economics are identical: an unmatched tool-event
+    hook taxes every tool call, and an inference handler charges a model call per
+    firing, wherever the wiring happens to be declared."""
+    out: list[dict] = []
+    if not isinstance(hooks, dict):
+        return out
+    for event in TOOL_EVENTS:
+        for entry in hooks.get(event) or []:
+            if not isinstance(entry, dict):
+                continue
+            at = {**where, "event": event}
+            if str(entry.get("matcher", "")).strip() in ("", "*"):
+                out.append(finding(
+                    "sk-hook-unmatched", "warn",
+                    f"a {event} hook in {where_in} has no matcher — it fires on "
+                    "every tool call, and every iteration in the repo pays it",
+                    **at,
+                    remedy="add a matcher, or state where it is wired why nothing "
+                           "narrower suffices (/skill:hook:new owns the scope ladder)"))
+            for h in entry.get("hooks") or []:
+                if isinstance(h, dict) and str(h.get("type", "")).strip() in LLM_HANDLERS:
+                    out.append(finding(
+                        "sk-hook-llm-frequent", "warn",
+                        f"a `{h.get('type')}` handler on {event} in {where_in} "
+                        "runs an inference per matched tool call",
+                        **at,
+                        remedy="decide the deterministic path with a command handler "
+                               "and keep the inference for the judgment tail "
+                               "(/skill:hook:new owns the handler ladder)"))
+    return out
 
 
 def cmd_doctor(args, root: str) -> int:
@@ -814,6 +950,41 @@ WIDER_FIXTURE = {
                      '[{"type": "prompt", "prompt": "safe?"}]}]}}\n',
 }
 
+# The scope ladder's narrowest rung, which `parse_frontmatter` cannot see at all. One
+# COVERED case (a real matcher and a command handler — must stay clean) and one UNCOVERED
+# (a `*` matcher with an inference handler — must fire both ladder codes). Together they
+# prove the rung is visible to `lint` and held to the same economics as `settings.json`.
+HOOK_FIXTURE = {
+    "docs/hooked-ok.md":
+        '---\ndescription: Covered rung. Use when you "run the covered case".\n'
+        'Not for: anything else -> /docs:add.\n'
+        'hooks:\n'
+        '  PostToolUse:\n'
+        '    - matcher: "Write|Edit"\n'
+        '      hooks:\n'
+        '        - type: command\n'
+        '          command: "python3 check.py"\n'
+        '          timeout: 10\n'
+        '---\n\n# Covered\n\nBody.\n',
+    "docs/hooked-wide.md":
+        '---\ndescription: Uncovered rung. Use when you "run the uncovered case".\n'
+        'Not for: anything else -> /docs:add.\n'
+        'hooks:\n'
+        '  PreToolUse:\n'
+        '    - matcher: "*"\n'
+        '      hooks:\n'
+        '        - type: prompt\n'
+        '          prompt: "is this safe?"\n'
+        '---\n\n# Uncovered\n\nBody.\n',
+}
+
+# Only the hook codes are asserted: these two fixtures exist to exercise the rung, and
+# holding them to every unrelated lint rule would make the case set about something else.
+EXPECTED_HOOKS = {
+    "/docs:hooked-ok": set(),
+    "/docs:hooked-wide": {"sk-hook-unmatched", "sk-hook-llm-frequent"},
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -828,7 +999,7 @@ def cmd_selftest(args, root: str) -> int:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
-        for relpath, text in FIXTURE.items():
+        for relpath, text in {**FIXTURE, **HOOK_FIXTURE}.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
@@ -846,10 +1017,23 @@ def cmd_selftest(args, root: str) -> int:
         for f in findings:
             got.setdefault(f["command"], set()).add(f["code"])
 
+        # doctor never reads a command body, so the frontmatter rung is lint's to catch.
+        hook_got: dict = {c: set() for c in EXPECTED_HOOKS}
+        for c in surface["commands"]:
+            if c["command"] not in EXPECTED_HOOKS:
+                continue
+            for f in lint_command(c, tmp):
+                if f["code"].startswith("sk-hook-"):
+                    hook_got[c["command"]].add(f["code"])
+
     failures = []
     for command, codes in EXPECTED.items():
         if got.get(command) != codes:
             failures.append(f"{command}: expected {sorted(codes)}, got {sorted(got.get(command, []))}")
+    for command, codes in EXPECTED_HOOKS.items():
+        if hook_got.get(command) != codes:
+            failures.append(f"{command}: expected {sorted(codes)}, "
+                            f"got {sorted(hook_got.get(command, []))}")
     if got.get("/docs:add"):
         failures.append(f"/docs:add: the conformant control was flagged {sorted(got['/docs:add'])}")
     if got.get("agents/good.md"):
@@ -857,12 +1041,15 @@ def cmd_selftest(args, root: str) -> int:
                         f"{sorted(got['agents/good.md'])}")
 
     if args.json:
-        print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + 1,
+        print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + len(EXPECTED_HOOKS) + 1,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
-        print(f"skills selftest — {len(EXPECTED) + 1} cases")
+        print(f"skills selftest — {len(EXPECTED) + len(EXPECTED_HOOKS) + 1} cases")
         for command in sorted(got):
-            print(f"  {command:<28} {', '.join(sorted(got[command])) or '(clean)'}")
+            # the hook fixtures are graded by lint, not doctor; showing doctor's empty row
+            # for them would print "(clean)" for the case that must fire two codes
+            codes = hook_got[command] if command in hook_got else got[command]
+            print(f"  {command:<28} {', '.join(sorted(codes)) or '(clean)'}")
         for f in failures:
             print(f"  FAIL {f}")
         print(f"\n  {'PASS' if not failures else str(len(failures)) + ' FAILED'}")
