@@ -472,8 +472,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
       files: docs/knowledge/glossary.md
       subject: plan/move-conclude-merge-last: 5.4 redefine Commit record in the glossary
-- [ ] 5.5 Verificar o bundle
+- [x] 5.5 Verificar o bundle
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/move-conclude-merge-last: 5.5 verify the bundle
 
 ### 6. A verificação e a superfície
 
