@@ -234,7 +234,9 @@ The four-branch refresh rule is owned **once**, by `commands/docs/align.md` §4 
 install · older banner → overwrite · same-or-newer → leave · banner removed by a human → keep
 and report); the other two aligns **cite** it. The banner's `<VERSION>` placeholder is filled
 from the `VERSION` file at copy time, so a release adds no lockstep item — but a command rename
-or a new command **does** mean editing all three manuals, since they enumerate the command surface.
+or a new command **does** mean editing **the manual of the front that command belongs to**, since
+each manual enumerates its own front's surface and only that. Adding `/specs:isolate` needed
+`assets/specs/QUENCHING.md` alone; touching the other two would have been churn.
 
 ## The enforcement hook (`assets/hooks/okf-validate.py`)
 
@@ -356,5 +358,5 @@ with that pair — `assets/hooks/okf-validate.py`, `assets/bin/specs.py` **and**
 (`/docs:align` for the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`)
 compares against an already-installed copy in a target repo. Mirror the plugin `version` in the
 marketplace manifest's plugin entry (`.claude-plugin/marketplace.json`) too. A command rename or
-a new command also means editing all three `QUENCHING.md` operator manuals, since they enumerate
-the command surface.
+a new command also means editing the `QUENCHING.md` operator manual of **that command's own
+front** — each manual enumerates only its own front's surface, so the other two stay untouched.
