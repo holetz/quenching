@@ -3,6 +3,8 @@ slug: verify-allowed-tools-enforcement
 title: Verify Allowed Tools Enforcement
 verification: per-section
 priority: {level: 3, criticality: critical, date: 2026-07-28}
+refined: {mode: gate, date: 2026-07-28}
+approved: {date: 2026-07-28}
 ---
 
 # Verify Allowed Tools Enforcement
@@ -106,6 +108,54 @@ whose whole premise is that a claim carries the evidence for it.
   no `Write`/`Edit`, which is a true statement about what the surface costs. They assert no
   enforcement and are left alone.
 
+## Impact
+
+### Standards this spec will write into docs/standards/
+
+- `docs/standards/automation/skills.md` â€” Â§`allowed-tools` is always scoped gains the rule that a
+  grant is a declaration `skills.py lint` checks, never a restriction, cross-referencing
+  `quality/surface-verification.md` for the measurement behind it
+
+### Standards at `authority: background` this spec may resolve
+
+- none â€” row 6 of `reference/tools/claude-code-skill-command-mechanics.md` stays
+  `authority: background` and unmeasured, per `## Out of Scope`
+
+### Product code this spec expects to touch
+
+- `plugins/quenching/commands/docs/status.md` â€” the doctrine bullet's last sentence
+- `plugins/quenching/commands/specs/status.md` â€” the same sentence
+- `plugins/quenching/README.md` â€” the `/docs:status` paragraph's same clause
+- `plugins/quenching/assets/templates/automation/skills-standard.md` â€” the mold gains the rule-only
+  caveat
+- `docs/reference/tools/claude-code-skill-command-mechanics.md` â€” Â§What has been relied upon records
+  the episode
+
+## Validation
+
+```bash
+# 1. zero surviving instances of the claim
+grep -rn "is the enforcement\|enforcement rather than a promise" --include='*.md' plugins/ docs/
+#    expect: no matches
+
+# 2. the command surface's conformance is unchanged
+cd plugins/quenching
+python3 assets/bin/skills.py --root . doctor    # 24 commands, 0 error(s), 0 warning(s)
+python3 assets/bin/skills.py --root . lint      # exit 0, the same five pre-existing warnings
+
+# 3. both edited OKF docs stay conformant
+python3 plugins/quenching/assets/hooks/okf-validate.py docs   # 0 error(s), 0 warning(s)
+
+# 4. the surface still LOADS â€” the only check for a commands/** change
+./plugins/quenching/assets/bin/functional-checks.sh           # 9/9 assertions, exit 0
+python3 plugins/quenching/assets/bin/specs.py validate        # 0/0 â€” no check-3 residue survived
+```
+
+Check 4 is required by `docs/standards/quality/surface-verification.md`, `authority: current`:
+nothing under `commands/**` is testable in the session that writes it, and check 1 of the harness
+invokes `/quenching:specs:status` â€” one of the two bodies this spec edits â€” so a botched edit fails
+there and nowhere else.
+
 ## Design
 
 **Delete the sentence rather than correct it.** The doctrine bullet's enumerated list â€” no stamp,
@@ -148,3 +198,81 @@ item and claims no enforcement.
 | **Measure first, then act on the result** â€” probe interactive Ã— each permission mode Ã— both invocation paths, update row 6, reword on what it says. | The deletion is required either way (see `## Design`), so the measurement cannot change the action â€” it only delays it behind a probe harness two sibling specs are already contending over. |
 | **Enforce the read-only property independently** â€” a `PreToolUse` hook, or an audit proving no numbered step writes. | Builds a guarantee to replace a claim nobody has shown is needed: no incident exists, and all three commands are written not to write. A permanent surface cost for a hypothetical. |
 | **Aim at the surface-wide scoping** â€” treat the twelve `Bash(python3:*)` grants as the real target. | Genuinely the larger exposure, but there is no false statement there to remove â€” only an unmeasured assumption, which is the shape ruled out above. |
+
+## Open Decisions
+
+- none â€” the measurement was ruled OUT in `## Out of Scope` rather than deferred, and the
+  prose-only-rule tradeoff is an accepted risk rather than an open one. Nothing this spec depends on
+  is awaiting evidence.
+
+## Risks
+
+- **The rule has no mechanical check.** `skills.py` cannot flag a fourth instance, because the only
+  signature is wording. **ACCEPTED** â€” a lint code keyed on prose would fire on every body
+  legitimately discussing the caveat, including the corrected ones. `## Design` names this as a
+  deliberate strain on `skills.md` Â§The verifier's *"a rule whose only check is a sentence decays"*.
+- **The mold's caveat reaches repos nobody measured.** `/skill:align` cuts a target repo's own
+  `skills.md` from the template. Mitigated by construction: the template states a rule about what
+  may be *claimed* and asserts nothing about Claude Code's behaviour, so no target inherits a fact
+  that could be false for its version.
+- **Deleting the sentence deletes the reasoning with it.** A future reader asks what backs "Zero
+  writes, no exceptions" and re-adds a mechanism claim. Mitigated by tasks 2.1 and 2.2 â€” the answer
+  moves to where authors read rather than disappearing.
+- **`functional-checks.sh` residue is committed.** Check 3 fires capture probes into the real
+  `specs/plans/` (sibling spec `isolate-functional-checks-probes` owns the fix). Mitigated: task
+  4.2's `verify:` chains `specs.py validate` after the harness, so surviving residue fails the task
+  instead of being noticed later.
+
+## Handoff
+
+**The three sentences, located.**
+
+- `plugins/quenching/commands/docs/status.md` line 34-35 â€” *"The `allowed-tools` above carry no
+  `Write` or `Edit` â€” that is the enforcement, not a promise."*
+- `plugins/quenching/commands/specs/status.md` line 34-35 â€” the same, worded *"no `Write` and no
+  `Edit`"*.
+- `plugins/quenching/README.md` line 207-208 â€” *"`allowed-tools` carries no `Write` or `Edit`, which
+  is the enforcement rather than a promise"*. This one is mid-sentence: deleting it needs the clause
+  re-joined, e.g. *"It writes nothing, and owns no contract, citing â€¦"*.
+
+**Baseline before any edit,** to compare the verify runs against: `skills.py doctor` â€” 24 commands,
+0 error(s), 0 warning(s). `skills.py lint` â€” exit 0 with five warnings (`sk-no-boundary`,
+`sk-step-criterion`, `sk-trigger-position`, and two `sk-unscoped-bash`), **none of them in the files
+this spec edits**. A sixth warning appearing means the edit broke something.
+
+**Already swept during definition.** Every `allowed-tools` mention in the repository was read; the
+three above are the only enforcement claims. `README.md` lines 479-480 (the cost-model rows) and
+`assets/claude/QUENCHING.md` line 191 state the grant as a cost, claim nothing, and are
+deliberately left alone â€” do not "fix" them.
+
+## Tasks
+
+### 1. Remove the claim
+
+- [ ] 1.1 Delete the enforcement sentence from the /docs:status and /specs:status doctrine bullets
+      files: plugins/quenching/commands/docs/status.md, plugins/quenching/commands/specs/status.md
+      verify: cd plugins/quenching && python3 assets/bin/skills.py --root . doctor && python3 assets/bin/skills.py --root . lint
+- [ ] 1.2 Delete the same clause from the plugin README's /docs:status paragraph, re-joining the sentence
+      files: plugins/quenching/README.md
+
+### 2. Close the authoring gap that produced it
+
+- [ ] 2.1 Add to docs/standards/automation/skills.md Â§`allowed-tools` is always scoped: the grant is a declaration lint checks, not a restriction â€” cross-referencing quality/surface-verification.md
+      files: docs/standards/automation/skills.md
+      verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+- [ ] 2.2 Add the rule-only caveat â€” a rule about what may be claimed, no assertion about Claude Code â€” to the mold
+      files: plugins/quenching/assets/templates/automation/skills-standard.md
+      pattern: docs/standards/automation/skills.md
+
+### 3. Record the episode where row 6's readers will find it
+
+- [ ] 3.1 Record in docs/reference/tools/claude-code-skill-command-mechanics.md Â§What has been relied upon that three artifacts asserted row 6's contrary until this spec removed them
+      files: docs/reference/tools/claude-code-skill-command-mechanics.md
+      verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+
+### 4. Prove it
+
+- [ ] 4.1 Prove zero surviving instances of the claim across plugins/ and docs/
+      verify: ! grep -rn "is the enforcement\|enforcement rather than a promise" --include='*.md' plugins/ docs/
+- [ ] 4.2 Run the surface's functional checks and revert any check-3 residue in the same commit
+      verify: ./plugins/quenching/assets/bin/functional-checks.sh && python3 plugins/quenching/assets/bin/specs.py validate
