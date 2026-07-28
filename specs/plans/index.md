@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**26 specs** · 2 executing · 1 approved · 1 designed · 22 captured
+**22 specs** · 2 executing · 1 designed · 19 captured
 
 ### Executing
 
@@ -89,12 +89,6 @@ closing out unbuilt work looks like.
 | --- | --- | --- |
 | [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
 | [restore-routing-info-on-docs-commands](2026-07-28-restore-routing-info-on-docs-commands.md) | Restore trigger phrases and boundaries on the nine bare /docs:* descriptions | 2026-07-28 |
-
-### Approved
-
-| Spec | Title | Since |
-| --- | --- | --- |
-| [fix-skills-py-description-truncation](2026-07-27-fix-skills-py-description-truncation.md) | skills.py silently truncates a description at the first ' | 2026-07-27 |
 
 ### Designed
 
@@ -119,15 +113,12 @@ closing out unbuilt work looks like.
 | [retire-skill-vocabulary](2026-07-27-retire-skill-vocabulary.md) | Retire the skill vocabulary left behind by the collapse | 2026-07-27 |
 | [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
 | [add-eli5-section-to-specs](2026-07-28-add-eli5-section-to-specs.md) | Add an ELI5 section that makes a spec comprehensible to a human | 2026-07-28 |
-| [add-specs-cycle-run-modes](2026-07-28-add-specs-cycle-run-modes.md) | Add customizable run modes to the specs cycle commands | 2026-07-28 |
-| [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's body language in docs/standards so every command reads it for free | 2026-07-28 |
 | [fix-conclude-abandoned-branch-harvest](2026-07-28-fix-conclude-abandoned-branch-harvest.md) | conclude --outcome abandoned can harvest a note and delete it in the same run | 2026-07-28 |
 | [fix-functional-checks-encoding](2026-07-28-fix-functional-checks-encoding.md) | functional-checks.sh fails for lack of evidence, not by verdict | 2026-07-28 |
 | [improve-command-from-session](2026-07-28-improve-command-from-session.md) | Mine a session for improvements to the command that started it | 2026-07-28 |
 | [make-sk-unscoped-bash-read-the-body](2026-07-28-make-sk-unscoped-bash-read-the-body.md) | sk-unscoped-bash cannot read the body its own remedy points at | 2026-07-28 |
 | [notice-installed-tool-version-drift](2026-07-28-notice-installed-tool-version-drift.md) | Nothing notices an installed tool copy falling behind the plugin | 2026-07-28 |
 | [probe-a-frontmatter-hook-firing](2026-07-28-probe-a-frontmatter-hook-firing.md) | No probe observes a frontmatter hooks: block actually fire | 2026-07-28 |
-| [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
 <!-- END GENERATED -->
 
 ## Frontmatter

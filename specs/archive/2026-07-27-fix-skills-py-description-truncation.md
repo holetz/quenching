@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/fix-skills-py-description-truncation}
 reviewed: {date: 2026-07-28}
+outcome: done
 ---
 
 # skills.py silently truncates a description at the first '#'
@@ -318,3 +319,45 @@ remains deliberately out of scope.
 - The spec's ## Out of Scope reasons about a version bump 'off 4.1.0', but VERSION and all three scripts are already at 4.2.0. The propagation argument holds; the number is stale. RESOLVED at conclude: left as written, same reason — and the propagation argument is unaffected, so no already-aligned target gets this fix until a release ships.
 - okf-validate.py's other finding codes carry no tool prefix (missing-type, resource-unresolved, index-orphan), so the spec-declared okf-frontmatter-unparsed is the only prefixed code in that file. Implemented as declared; whether to rename it to frontmatter-unparsed is a naming call for conclude. RESOLVED at conclude: KEPT as `okf-frontmatter-unparsed`. The `sk-`/`sp-`/`okf-` triad is the cross-tool symmetry this spec exists to create, and it reads as one rule in three tools rather than three unrelated findings. Nothing outside this branch references the codes, so the choice was free either way; local consistency inside one file lost to the symmetry across three.
 - The branch review found the standard's own opening rule unmet: `specs.py` and `okf-validate.py` do not read block scalars (the table says so) but returned the bare `|`/`>` indicator as the value and named nothing — `description: |` read as the literal `"|"`. Pre-existing, not a regression, and invisible to the emptiness test because a block scalar is the one unread form that does not come back empty. RESOLVED at conclude: fixed on the branch, detected on the indicator; `skills.py` unchanged because it genuinely reads them.
+
+## Outcome
+
+Shipped. All three tools â€” `skills.py`, `specs.py` and `okf-validate.py` â€” apply one YAML comment
+rule (`#` opens a comment only at the start of a value or after whitespace, never inside a quoted
+scalar) and each carries a `frontmatter_anomalies` sidecar that names what its parse could not
+represent. `lint`, `validate` and the OKF checker report those as `sk-`/`sp-`/`okf-frontmatter-unparsed`
+at **warn**, emitted *before* the content checks they used to be mistaken for. `parse_frontmatter`
+kept its signature in all three, so none of the nine call sites changed and no cycle command
+changed behaviour mid-build.
+
+Two standards carry it: `docs/standards/code/frontmatter-parsing.md` (the YAML subset each tool
+reads, the comment rule, the twelve canonical cases and the three-copy lockstep obligation) and
+`docs/standards/quality/parse-honesty.md` (a verifier names its own parse failure rather than
+reporting it as a content gap). Both are `authority: current` â€” the parsing standard was written at
+`background` in task 1.1 before anything implemented it and promoted in task 3.2 once all three
+selftests passed the same twelve cases.
+
+**What the branch review added.** The standard's own opening rule â€” a form out of contract must be
+*named*, not guessed at â€” was unmet by two of the three tools. `specs.py` and `okf-validate.py` do
+not read block scalars, but returned the bare `|`/`>` indicator as the value and reported nothing:
+`description: |` read as the literal `"|"`. Pre-existing rather than a regression, and invisible to
+the emptiness test because a block scalar is the one unread form that does not come back empty, so
+it is now detected on the indicator. `skills.py` is unchanged and stays silent, because it genuinely
+reads them. This is deliberately **not** a thirteenth canonical case and cannot become one: the
+three legitimately differ here, which is why row 12 uses a bare wrapped line as common ground.
+
+**What was left out, deliberately.** No shared frontmatter module and no cross-tool import â€” each
+tool installs standalone into a target's `.claude/hooks/`, so the duplication is the mold, not an
+accident. Nothing learned to read a form it does not read; the diagnostic names it instead. And no
+version bump: all three aligns overwrite an installed copy only when the plugin is newer, so
+**no already-aligned target repo gets this fix until a release ships**. That is deferred to whatever
+ships the release, not forgotten.
+
+**What the next reader needs.** `CANONICAL_CASES` is duplicated byte-identically in all three tools
+and **is the lockstep unit â€” edit all three or none**; a drifted parser fails its own selftest on a
+row the other two still pass. Everything below that list is per-tool by design, because each reads a
+different subset: `frontmatter_anomalies` legitimately differs in all three, and each docstring says
+why. The three selftests are the standing guard and are now named in `CLAUDE.md` Â§Verifying changes.
+
+Merged with a **merge commit** (`--no-ff`), so every per-task commit stays on `main` and all seven
+recorded `subject:` fields resolve from it.
