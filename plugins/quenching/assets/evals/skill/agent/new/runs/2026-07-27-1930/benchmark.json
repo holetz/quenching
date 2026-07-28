@@ -1,0 +1,67 @@
+{
+  "skill": "/skill:agent:new",
+  "run": "2026-07-27-1930",
+  "cases": 3,
+  "arms": 6,
+  "assertions": 11,
+  "with":    { "passRate": 1.0,   "tokens": 1475149, "durationMs": 463397 },
+  "without": { "passRate": 0.636, "tokens": 1657516, "durationMs": 336022 },
+  "delta":   { "passRate": 0.364, "tokens": -182367, "durationMs": 127375 },
+  "unknown": 0,
+  "errors": 0,
+  "citable": true,
+  "citableWith": "Two of eleven assertions must be excluded from any teaching-value claim: declines-hook-request assertion 3 is tautological (it names an entry point the without-arm cannot have). Excluding it, the delta is 0.30 over 10 assertions and the direction is unchanged.",
+  "verdict": {
+    "passRate": "POSITIVE delta of 0.364 (1.0 with, 0.636 without) over 11 assertions, and it is carried almost entirely by ONE case. delegation-test-reroute separated the arms completely (1.0 vs 0.0): both arms inspected the same empty repo and both noticed the target key did not exist, but only the with-arm applied the delegation test and refused to mint. The without-arm shipped an edits-only agent whose tools are Grep, Glob, Read, Edit while quoting, in the same reply, the repo standard that says an agent 'reports and never edits'. That is the command's teaching value in one observation: not that the model cannot write a good agent definition, but that it does not ask whether the agent should exist.",
+    "zeroDelta": "verifier-happy-path returned ZERO delta and the cause is the case set, not the command. Both arms produced a well-scoped verifier (tools: Read, Grep, Glob; an explicit never-edits statement) unaided. The arms did differ observably — the with-arm ran the OKF tail, modifying docs/log.md and docs/standards/automation/index.md; the without-arm modified neither — but no assertion covers the tail, so the grade cannot see it. Per the evaluation contract a zero delta has two causes the numbers cannot separate; this one has a third, identified and recorded: the assertions were too weak. Do not read this zero as 'the command taught nothing on the happy path'.",
+    "cost": "The command was CHEAPER, not more expensive: the with-arm spent 182,367 FEWER tokens (-11.0%) across the three cases. The saving is concentrated in declines-hook-request, where the without-arm burned 1,266,028 tokens against 800,510 to reach a comparable answer by deriving the scope ladder from first principles. Wall clock ran the other way — the with-arm took 127s longer in total (463s vs 336s), because refusing well and running the OKF tail are both work the without-arm simply skipped. Buying 0.364 pass rate while spending fewer tokens is an unusually clean result and rests on 3 cases; it is a hint to test the remaining branches, not a settled number.",
+    "routing": "Both declining cases reached the command in the with-arm — delegation-test-reroute and declines-hook-request each invoked it via the Skill tool from a prompt that said 'Create an agent'. The description routes on the artifact word, and the body then does the rerouting. That split is working as designed."
+  },
+  "triggers": {
+    "method": "one fresh session per prompt in a throwaway fixture with the plugin enabled; routing is read from the Skill tool_use event, never from the prose. Probes capped at --max-turns 8.",
+    "shouldTrigger": {
+      "hit": 5,
+      "of": 5,
+      "rate": 1.0,
+      "results": [
+        { "prompt": "create an agent", "routed": "quenching:skill:agent:new" },
+        { "prompt": "add a subagent", "routed": "quenching:skill:agent:new" },
+        { "prompt": "make a verifier agent", "routed": "quenching:skill:agent:new" },
+        { "prompt": "delegate this to an agent", "routed": "quenching:skill:agent:new" },
+        { "prompt": "set up something that audits our migrations and reports back", "routed": "quenching:skill:agent:new" }
+      ]
+    },
+    "shouldNotTrigger": {
+      "correctlyRejected": 3,
+      "of": 3,
+      "rate": 1.0,
+      "results": [
+        { "prompt": "create a slash command for drafting release notes", "routed": "quenching:skill:new" },
+        { "prompt": "add a hook that runs after every edit", "routed": "quenching:skill:hook:new" },
+        { "prompt": "make this command run in its own isolated context", "routed": "(none)" }
+      ]
+    },
+    "edit": "NONE APPLIED AT THE TIME. Every trigger in the description was reached by a hitting prompt, so nothing was sediment; no shouldNotTrigger prompt fired. The contract removes a trigger only on a measured miss, and this run recorded none. See fixtureAssistedRate below — that reading did not survive task 1.4.",
+    "fixtureAssistedRate": {
+      "finding": "the 5/5 above is NOT a property of the description alone. The intent-shaped prompt 'set up something that audits our migrations and reports back' routes to this command only when the target repo already carries docs/standards/automation/agents.md. This eval's fixture shipped that file, so the trigger measured as a hit on borrowed evidence.",
+      "isolatedTest": "same box, single variable, both runs subtype success — WITHOUT agents.md the phrase routed to quenching:skill:new (the wrong mint); WITH it, to quenching:skill:agent:new.",
+      "surfacedBy": "task 1.4, when the same phrase became a functional-checks probe running in a lean sandbox rather than in this fixture.",
+      "fix": "task 1.4 added the phrase to the description verbatim, the same treatment task 1.3 gave /skill:hook:new. Re-tested in the box that had routed WRONG: it now routes to quenching:skill:agent:new with the description as the only change, and the probe passes in the suite (9 passed, 0 failed).",
+      "lesson": "a trigger measured in a rich fixture can be reading the repo rather than the description. An intent-shaped prompt needs the LEANEST fixture that still makes its subject exist, or the rate is not about the command."
+    },
+    "note": "The two neighbour rejections did not merely fail to fire — they routed to the correct sibling (/skill:new, /skill:hook:new), which is the three-entry-point split in Design decision 6 working as intended. Also measured: the intent-phrased prompt ('audits our migrations and reports back'), which names no artifact, still routed correctly.",
+    "methodWarning": "An earlier pass at --max-turns 3 reported 'delegate this to an agent' and the intent-phrased prompt as MISSES. Both were false: the sessions hit error_max_turns while still orienting with Bash. Tuning on that pass would have deleted a working trigger. Never grade a routing probe that ended in error_max_turns."
+  },
+  "untestedSurface": [
+    "no-bundle-skips-tail — doctrine §2: definition only, tail skipped silently, /docs:align suggested once",
+    "rule-absent-offers-standard — step 1: agents.md absent + bundle present, the rule offered and born authority: background",
+    "merge-never-clobber — step 3: an existing .claude/agents/<name>.md is a MERGE target and a hand-written body survives",
+    "context-fork reroute — the third Not for: clause, isolating one command's own run, is untested"
+  ],
+  "nextRun": [
+    "Add an OKF-tail assertion to verifier-happy-path: 'docs/log.md gains an entry naming the agent'. That is the difference the arms actually showed and the one this run could not grade.",
+    "Rewrite declines-hook-request assertion 3 so it is not tautological — assert the request is routed to a DIFFERENT artifact's entry point without naming a plugin-specific command, or drop the assertion and rely on the two that separated honestly.",
+    "Run the three untested branches above; merge-never-clobber is the highest value of them, since MERGE-never-clobber is an invariant and nothing has exercised it.",
+    "delegation-test-reroute's fixture accidentally made the key absent from the repo, so both arms spent effort on 'there is nothing to rename'. Seed the key into a few files so the case tests the delegation judgment alone."
+  ]
+}

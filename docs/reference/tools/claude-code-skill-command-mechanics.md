@@ -4,7 +4,7 @@ title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, and the unified frontmatter schema
 resource: plugins/quenching/commands/**
 tags: [claude-code, plugins, skills, commands, frontmatter, tooling]
-timestamp: 2026-07-26
+timestamp: 2026-07-27
 audience: both
 authority: background
 source: skill-description-tiering spec, task 0.2 gate spike — measured on Claude Code 2.1.215

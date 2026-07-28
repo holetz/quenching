@@ -81,14 +81,19 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**16 specs** · 2 executing · 14 captured
+**16 specs** · 1 executing · 1 designed · 14 captured
 
 ### Executing
 
 | Spec | Title | Since |
 | --- | --- | --- |
 | [docs-verification-layer](2026-07-25-docs-verification-layer.md) | Verification layer for the docs/ front | 2026-07-25 |
-| [instrument-and-extend-skill-front](2026-07-25-instrument-and-extend-skill-front.md) | Capacidades estrategicas no front .claude/ | 2026-07-25 |
+
+### Designed
+
+| Spec | Title | Since |
+| --- | --- | --- |
+| [restructure-claude-front-namespace](2026-07-27-restructure-claude-front-namespace.md) | Rename the /skill namespace to /automation and split it into artifact contexts | 2026-07-27 |
 
 ### Captured
 

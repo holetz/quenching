@@ -195,6 +195,20 @@ same matcher for the judgment tail keeps the expensive rung off the common path.
 how often it fires in this repo × what the handler costs per firing × the fast-path cost on
 no-match*. A hook that cannot state that line is not ready to install.
 
+**A handler whose script may not be installed guards its own absence.** `python3 <missing-file>`
+exits **2**, and exit 2 is the hook protocol's *error* code — on `PostToolUse` it feeds stderr
+back as a failure. So a hook pointing at a tool some other command merely *offers* to install
+turns every matched tool call into a reported error in exactly the repos that declined the offer,
+and it does so where nobody wired it. Lead with the guard, and keep the checker's own exit code
+rather than swallowing it:
+
+```yaml
+command: 'test -f "<path>" || exit 0; python3 "<path>"'
+```
+
+`… || true` is the wrong shape — it hides the handler's real failures alongside its absence. The
+rule is one-directional: a **missing** handler is a no-op, a **failing** one still reports.
+
 ## Invocation-surface controls — the budget levers
 
 The invocation/permission decision table lives in `docs/standards/automation/skills.md` and
