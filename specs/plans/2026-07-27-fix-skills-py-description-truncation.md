@@ -295,9 +295,10 @@ with 2 warnings, both pre-existing and in files this spec does not touch â€�
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
       subject: plan/fix-skills-py-description-truncation: 2.2 the rule in specs.py
-- [ ] 2.3 [P] okf-validate.py: add the comment rule it has never had, the sidecar, an `okf-frontmatter-unparsed` finding, and a `selftest` subcommand it does not have today
+- [x] 2.3 [P] okf-validate.py: add the comment rule it has never had, the sidecar, an `okf-frontmatter-unparsed` finding, and a `selftest` subcommand it does not have today
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest
+      subject: plan/fix-skills-py-description-truncation: 2.3 the rule in okf-validate.py
 
 ### 3. The honesty rule, once proved
 
@@ -317,3 +318,4 @@ with 2 warnings, both pre-existing and in files this spec does not touch â€�
 - The spec's ## Validation expects `skills.py doctor` to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25, and the spec's stated figure is stale rather than a finding.
 - The spec's ## Validation expects skills.py doctor to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25 — the spec's figure is stale, not a finding.
 - The spec's ## Out of Scope reasons about a version bump 'off 4.1.0', but VERSION and all three scripts are already at 4.2.0. The propagation argument holds; the number is stale.
+- okf-validate.py's other finding codes carry no tool prefix (missing-type, resource-unresolved, index-orphan), so the spec-declared okf-frontmatter-unparsed is the only prefixed code in that file. Implemented as declared; whether to rename it to frontmatter-unparsed is a naming call for conclude.
