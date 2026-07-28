@@ -6,6 +6,10 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-28
 
+**Creation**: [Mine a session for improvements to the command that started it](/specs/plans/2026-07-28-improve-command-from-session.md) — a command's body is only ever revised from taste; the transcript that ran it holds the evidence of what it costs, repeats, gets wrong or leaves unresolved, and it is thrown away when the session ends.
+
+**Creation**: [Make the merge the last action of /specs:conclude](/specs/plans/2026-07-28-move-conclude-merge-last.md) — conclude merges before distilling, so the emergent docs and the distillation land as loose commits on `main` instead of inside the spec's branch.
+
 **Update**: [Glossary](/docs/knowledge/glossary.md) — distilled from spec `instrument-and-extend-skill-front`: four terms the capability layer made load-bearing and none of them resolvable, two of which `skills.py`'s own finding messages already name — **Scope ladder**, **Handler ladder**, **Cache trap** and **Always-on ceiling**.
 
 **Creation**: four follow-up specs distilled from `instrument-and-extend-skill-front`'s `## Discoveries`, none of which any task owned — [routing information never restored on nine `/docs:*` descriptions](/specs/plans/2026-07-28-restore-routing-info-on-docs-commands.md) (and the zero-headroom ceiling it collides with), [`sk-unscoped-bash` cannot read the body its own remedy points at](/specs/plans/2026-07-28-make-sk-unscoped-bash-read-the-body.md), [nothing notices an installed tool copy falling behind](/specs/plans/2026-07-28-notice-installed-tool-version-drift.md) (this repo ran `specs.py` 1.0.0 against a 4.1.0 plugin), and [no probe observes a frontmatter `hooks:` block firing](/specs/plans/2026-07-28-probe-a-frontmatter-hook-firing.md).
