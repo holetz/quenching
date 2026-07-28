@@ -210,6 +210,72 @@ def _unquote(val: str) -> str:
     return val
 
 
+# --------------------------------------------------------------------------- #
+# The YAML comment rule — one rule, three copies
+#
+# `docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
+# list and the lockstep obligation. `specs.py` and `okf-validate.py` carry the same
+# two functions; each installs standalone into a target's `.claude/hooks/`, so none
+# may import the others. EDIT ALL THREE, OR NONE — `CANONICAL_CASES` below is what
+# makes a drifted parser fail its OWN selftest on a row the other two still pass.
+# --------------------------------------------------------------------------- #
+def _indented_run(body: list[str], start: int) -> tuple[list[str], int]:
+    """The blank-or-indented lines beginning at `start` with trailing blanks dropped,
+    and the index of the first line that is neither — i.e. everything belonging to
+    the value above, and where the next top-level key begins."""
+    run: list[str] = []
+    j = start
+    while j < len(body) and (not body[j].strip() or body[j][:1] in (" ", "\t")):
+        run.append(body[j])
+        j += 1
+    while run and not run[-1].strip():
+        run.pop()
+    return run, j
+
+
+def _quote_end(val: str) -> int | None:
+    """Index just past the closing quote of a quoted scalar; `0` when the value is
+    not quoted, `None` when the quote never closes.
+
+    A quote opens a scalar only in the first position — mid-value it is an ordinary
+    character, which is why `at the first '#'` is a plain scalar and its `#` is not
+    inside quotes."""
+    if not val or val[0] not in ("'", '"'):
+        return 0
+    quote, i = val[0], 1
+    while i < len(val):
+        if quote == '"' and val[i] == "\\":
+            i += 2
+            continue
+        if val[i] == quote:
+            if quote == "'" and val[i + 1:i + 2] == "'":   # YAML doubles a literal '
+                i += 2
+                continue
+            return i + 1
+        i += 1
+    return None
+
+
+def _split_comment(val: str) -> tuple[str, str]:
+    """Split a scalar into (value, comment).
+
+    A `#` opens a comment only when it is the first character of the value or is
+    preceded by whitespace, and never inside a quoted scalar. The `val.split("#")[0]`
+    this replaced honoured none of the three, so it cut every value at its first `#`
+    — including a title reading `truncates at the first '#'`.
+
+    An unterminated quote strips nothing: the scalar's extent is unknowable, so the
+    value is kept verbatim and `frontmatter_anomalies` reports it rather than the
+    parser guessing a boundary."""
+    start = _quote_end(val)
+    if start is None:
+        return val, ""
+    for i in range(start, len(val)):
+        if val[i] == "#" and (i == 0 or val[i - 1] in " \t"):
+            return val[:i].rstrip(), val[i:]
+    return val, ""
+
+
 def parse_frontmatter_hooks(text: str) -> tuple[dict, bool]:
     """The frontmatter `hooks:` block — the scope ladder's NARROWEST rung, and the one
     `parse_frontmatter` structurally cannot see: it keeps top-level pairs only, so a
@@ -244,13 +310,7 @@ def parse_frontmatter_hooks(text: str) -> tuple[dict, bool]:
     if start is None:
         return {}, True
 
-    run = []
-    j = start
-    while j < len(body) and (not body[j].strip() or body[j][:1] in (" ", "\t")):
-        run.append(body[j])
-        j += 1
-    while run and not run[-1].strip():
-        run.pop()
+    run, _ = _indented_run(body, start)
     if not run:
         return {}, False
 
@@ -325,7 +385,7 @@ def parse_frontmatter(text: str) -> dict:
         if block:
             fm[key], j = _read_block_scalar(body, j + 1, block.group(1))
             continue
-        val = val.split("#", 1)[0].strip() if "#" in val else val
+        val = _split_comment(val)[0]
         if val == "":
             items = []
             k = j + 1
@@ -354,13 +414,7 @@ def _read_block_scalar(body: list[str], start: int, style: str) -> tuple[str, in
     `>` folds: consecutive non-empty lines join with a single space and a blank line
     becomes a newline — which is what Claude Code ultimately reads, so a character
     count taken here is the count the model pays for. `|` keeps the newlines."""
-    raw: list[str] = []
-    j = start
-    while j < len(body) and (not body[j].strip() or body[j][:1] in (" ", "\t")):
-        raw.append(body[j])
-        j += 1
-    while raw and not raw[-1].strip():
-        raw.pop()
+    raw, j = _indented_run(body, start)
     if not raw:
         return "", j
     indent = min(len(ln) - len(ln.lstrip()) for ln in raw if ln.strip())
@@ -376,6 +430,105 @@ def _read_block_scalar(body: list[str], start: int, style: str) -> tuple[str, in
         else:
             out.append(ln.rstrip())
     return "".join(out).strip(), j
+
+
+# `hooks:` is read by `parse_frontmatter_hooks`, so it is represented — just not by
+# `parse_frontmatter`. Without this exemption every hook-carrying command gains a
+# warning for a block the tool reads perfectly well.
+ANOMALY_EXEMPT_KEYS = {"hooks"}
+
+
+def frontmatter_anomalies(text: str) -> list[dict]:
+    """What the frontmatter parse could not represent faithfully.
+
+    A SIDECAR: `parse_frontmatter` keeps returning a bare dict, so none of its call
+    sites change. This exists because a parse failure used to surface as a content
+    finding — a truncated `description` was reported as `sk-no-description`, naming a
+    missing part rather than the truncation that removed it.
+
+    Every entry is a suspicion the tool cannot resolve, never a proven violation: a
+    stripped comment and lost prose are byte-identical, and nothing here guarantees
+    Claude Code's own loader resolves a duplicate key the way this one does. Callers
+    surface them at WARN — see `docs/standards/quality/parse-honesty.md`."""
+    body = _frontmatter_body(text)
+    if body is None:
+        return []
+    out: list[dict] = []
+    seen: set[str] = set()
+    j = 0
+    while j < len(body):
+        raw = body[j]
+        if (not raw.strip() or raw.lstrip().startswith("#")
+                or raw[:1] in (" ", "\t") or ":" not in raw):
+            j += 1
+            continue
+        key, _, val = raw.partition(":")
+        key, val = key.strip(), val.strip()
+
+        run, k = _indented_run(body, j + 1)
+
+        if key in seen:
+            out.append(_anomaly(key, "duplicate-key",
+                                f"`{key}` is set more than once and the last one silently wins; "
+                                "nothing guarantees another parser resolves it the same way"))
+        seen.add(key)
+
+        if not BLOCK_SCALAR_RE.match(val):     # a block scalar takes no comment
+            value, comment = _split_comment(val)
+            if comment:
+                out.append(_anomaly(key, "comment-stripped",
+                                    f"`{comment}` was read as a comment and removed from `{key}` "
+                                    "— a stripped comment and lost prose are byte-identical"))
+            elif _quote_end(val) is None:
+                out.append(_anomaly(key, "unterminated-quote",
+                                    f"`{key}` opens a quote that never closes, so the scalar's "
+                                    "extent is unknowable; nothing was stripped"))
+            if (value == "" and run and key not in ANOMALY_EXEMPT_KEYS
+                    and not all(ln.lstrip().startswith("- ") for ln in run if ln.strip())):
+                out.append(_anomaly(key, "indented-continuation",
+                                    f"`{key}` has no inline value and the lines beneath it are in "
+                                    "no form this parser reads — it was read as empty"))
+        j = k
+    return out
+
+
+def _anomaly(key: str, kind: str, detail: str) -> dict:
+    return {"key": key, "kind": kind, "detail": detail}
+
+
+# The canonical case list from `docs/standards/code/frontmatter-parsing.md`. It is
+# duplicated VERBATIM in specs.py and okf-validate.py and is the lockstep unit for
+# all three: adding a row means adding it in three places, and a parser that drifts
+# fails here on a row the other two still pass.
+#   (label, frontmatter body, expected `title`, expected anomaly kinds)
+CANONICAL_CASES = [
+    ("plain",                 "title: a plain value",              "a plain value",              ()),
+    ("comment-after-space",   "title: a value # a note",           "a value",                    ("comment-stripped",)),
+    ("hash-after-quote-char", "title: truncates at the first '#'", "truncates at the first '#'", ()),
+    ("hash-in-backticks",     "title: the `#` character",          "the `#` character",          ()),
+    ("hash-no-space",         "title: C#",                         "C#",                         ()),
+    ("double-quoted-hash",    'title: "quoted # inside"',          "quoted # inside",            ()),
+    ("single-quoted-hash",    "title: 'single # inside'",          "single # inside",            ()),
+    ("quoted-then-comment",   'title: "quoted" # a note',          "quoted",                     ("comment-stripped",)),
+    ("comment-only",          "title: # a note",                   "",                           ("comment-stripped",)),
+    ("unterminated-quote",    'title: "unterminated',              '"unterminated',              ("unterminated-quote",)),
+    ("duplicate-key",         "title: first\ntitle: second",       "second",                     ("duplicate-key",)),
+    ("indented-continuation", "title:\n  a wrapped prose line",    "",                           ("indented-continuation",)),
+]
+
+
+def canonical_case_failures() -> list[str]:
+    """Run `CANONICAL_CASES` against this tool's own parser and sidecar."""
+    out = []
+    for label, fm, want_value, want_kinds in CANONICAL_CASES:
+        text = f"---\n{fm}\n---\n\nbody\n"
+        got_value = parse_frontmatter(text).get("title", "<missing>")
+        got_kinds = tuple(sorted(a["kind"] for a in frontmatter_anomalies(text)))
+        if got_value != want_value:
+            out.append(f"{label}: title expected {want_value!r}, got {got_value!r}")
+        if got_kinds != tuple(sorted(want_kinds)):
+            out.append(f"{label}: anomalies expected {sorted(want_kinds)}, got {list(got_kinds)}")
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -466,6 +619,7 @@ def discover_commands(commands_dir: str) -> list[dict]:
                 "path": path,
                 "relpath": relpath,
                 "frontmatter": parse_frontmatter(text),
+                "anomalies": frontmatter_anomalies(text),
                 "hooks": hooks,
                 "hooksParsed": hooks_parsed,
                 "body": body,
@@ -603,6 +757,13 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                         "the command file has no YAML frontmatter — Claude Code cannot load it",
                         **where)]
     out: list[dict] = []
+
+    # BEFORE any content check, so a parse failure is never presented as a content
+    # gap. A `description` truncated at a `#` used to surface as `sk-no-description`,
+    # which names a missing part rather than the truncation that removed it.
+    for a in cmd.get("anomalies", []):
+        out.append(finding("sk-frontmatter-unparsed", "warn",
+                           f"`{a['key']}`: {a['detail']}", kind=a["kind"], key=a["key"], **where))
 
     # `name` is not checked: the command's path IS its name, so there is no second
     # spelling that could disagree with it. `sk-no-name` and `sk-name-mismatch` are
@@ -1036,7 +1197,7 @@ def cmd_selftest(args, root: str) -> int:
                 if f["code"].startswith("sk-hook-"):
                     hook_got[c["command"]].add(f["code"])
 
-    failures = []
+    failures = canonical_case_failures()
     for command, codes in EXPECTED.items():
         if got.get(command) != codes:
             failures.append(f"{command}: expected {sorted(codes)}, got {sorted(got.get(command, []))}")
@@ -1051,10 +1212,10 @@ def cmd_selftest(args, root: str) -> int:
                         f"{sorted(got['agents/good.md'])}")
 
     if args.json:
-        print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + len(EXPECTED_HOOKS) + 1,
+        print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES) + 1,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
-        print(f"skills selftest — {len(EXPECTED) + len(EXPECTED_HOOKS) + 1} cases")
+        print(f"skills selftest — {len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES) + 1} cases")
         for command in sorted(got):
             # the hook fixtures are graded by lint, not doctor; showing doctor's empty row
             # for them would print "(clean)" for the case that must fire two codes
