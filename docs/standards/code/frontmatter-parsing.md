@@ -6,8 +6,8 @@ resource: plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/s
 tags: [code, parsing, yaml, frontmatter, tools, lockstep]
 timestamp: 2026-07-28
 audience: both
-authority: background
-source: fix-skills-py-description-truncation spec (task 1.1), written before the three tools implement it — promoted to current once their selftests prove it
+authority: current
+source: fix-skills-py-description-truncation spec — written at task 1.1 before anything implemented it, promoted at task 3.2 once all three tools passed the canonical case list in their own selftests
 maintainer: quenching
 ---
 
@@ -20,7 +20,8 @@ shared module to hold the rule. This standard is what holds it instead.
 
 It governs the **subset of YAML** those parsers claim to read, and — just as importantly — what
 they must be able to say when they have read something they could not represent. That second half
-is `quality/parse-honesty.md`'s rule; this file supplies the mechanics it applies to.
+is [../quality/parse-honesty.md](../quality/parse-honesty.md)'s rule; this file supplies the
+mechanics it applies to.
 
 ## Why there are three copies and not one module
 
@@ -114,7 +115,7 @@ site changes.
 
 Each is reported at **warn**, never error: the tool is stating a suspicion it cannot resolve, not a
 violation it has proved. Severity and the reasoning behind it belong to
-`quality/parse-honesty.md`.
+[../quality/parse-honesty.md](../quality/parse-honesty.md).
 
 Why a sidecar rather than a `(fm, understood)` tuple, which would have mirrored the 3-tuple
 `okf-validate.py` already returns: nine call sites would change, and each `specs.py` caller —

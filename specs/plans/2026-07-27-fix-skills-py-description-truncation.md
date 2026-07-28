@@ -301,8 +301,9 @@ wording; the propagation argument itself still holds.
       pattern: docs/standards/quality/surface-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/fix-skills-py-description-truncation: 3.1 the honesty rule
-- [ ] 3.2 Promote `docs/standards/code/frontmatter-parsing.md` to `authority: current` — the three selftests are what proved it
+- [x] 3.2 Promote `docs/standards/code/frontmatter-parsing.md` to `authority: current` — the three selftests are what proved it
       files: docs/standards/code/frontmatter-parsing.md
+      subject: plan/fix-skills-py-description-truncation: 3.2 promote the parsing standard
 
 ### 4. Verification sweep
 
