@@ -389,9 +389,10 @@ aceito — specs não são renomeadas.
       files: plugins/quenching/assets/bin/specs.py
       verify: workspace descartável com duas specs, uma com `plan/<slug>` viva
       subject: plan/move-conclude-merge-last: 1.3 next --front ranks on the live plan/<slug> ref
-- [ ] 1.4 Atualizar os templates e as constantes duplicadas em `specs.py` em lockstep
+- [x] 1.4 Atualizar os templates e as constantes duplicadas em `specs.py` em lockstep
       files: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/plans/index.md
       verify: python3 assets/hooks/okf-validate.py assets/specs/plans --listing-root
+      subject: plan/move-conclude-merge-last: 1.4 templates and duplicated constants in lockstep
 
 ### 2. O comando `/specs:isolate`
 

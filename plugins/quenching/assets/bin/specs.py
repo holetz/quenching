@@ -415,7 +415,7 @@ verification: <VERIFICATION>
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
-     `[ ]` / `[x]` character. `--commit <sha>` records what implemented it.
+     `[ ]` / `[x]` character. `--subject <line>` records the commit that implements it.
 
      A checkbox MAY carry indented metadata lines directly beneath it:
 
@@ -423,7 +423,7 @@ verification: <VERIFICATION>
              files: src/middleware/auth.ts, src/config/limits.ts (new)
              pattern: src/middleware/cors.ts
              verify: pnpm test middleware/
-             commit: a1b2c3d
+             subject: plan/<slug>: 3.2 Add rate limiting to the auth middleware
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
@@ -431,8 +431,11 @@ verification: <VERIFICATION>
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
                task falls back to `## Validation`.
-     commit:   written by `task --check --commit`, never by hand — the commit that
-               implemented this task, so code and spec stay linked without a git trailer.
+     subject:  written by `task --check --subject`, never by hand — the SUBJECT of the commit
+               that implements this task, resolved by `git log --grep --fixed-strings`. It is
+               known BEFORE the commit, so the box is ticked INTO the task's own commit
+               instead of a bookkeeping commit that follows it. A spec built before this
+               change carries `commit: <sha>`; both forms are read, neither is backfilled.
 
      `[P]` right after the id marks a task parallel-eligible:
 

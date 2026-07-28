@@ -99,7 +99,7 @@ refined: {mode: premortem, date: 2026-07-25}
 approved: {date: 2026-07-26}
 branch: {base: main, work: plan/<slug>}
 reviewed: {date: 2026-07-28}
-merge: {strategy: squash, commit: abc1234}
+merge: {strategy: squash, subject: plan/<slug>: merge (squash)}
 ---
 ```
 
