@@ -534,6 +534,22 @@ three** shipped scripts — `assets/hooks/okf-validate.py`, `assets/bin/specs.py
 installing align compares against an already-installed copy in a target repo (`/docs:align` for
 the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`). Six sources, one number.
 
+- **4.2.0:** **nothing is written after the thing it describes, so the merge is last.** The
+  task→commit anchor inverted from the commit's **sha** to its **subject** — known *before* the
+  commit exists — which let two writes move ahead of the events they record. `/specs:execute` now
+  ticks the box with `specs.py task --check --subject` and commits code and box together, so one
+  task is literally one commit and the per-task bookkeeping commit is gone. `/specs:conclude`
+  reordered: the branch review, the emergent `docs/`, the archive, the distillation and the
+  `merge: {strategy, subject}` stamp all land on the work branch, and **the merge is its last
+  action** — one merge carries the spec's whole footprint and nothing is committed to the base
+  after it. Rebase stops destroying the record, since a subject survives a rewrite; the squash
+  caveat stands. A **25th command**, `/specs:isolate`, extracts the git *action* — branch or
+  worktree, at **any** stage rather than only at build time — and `specs.py next --front` became
+  branch-aware, so `/specs:continue` returns the spec whose branch you are standing on and demotes
+  one alive elsewhere. `parse_frontmatter` learned block mappings (indent-scoped), which is what
+  lets an explicit-none merge record wrap or carry a comma. New `assets/bin/conclude-order-check.sh`
+  asserts the ordering on a real history — the one claim no in-process check can see. The budget
+  ceiling fired on the 25th command exactly as designed and was re-measured to **12,726**.
 - **4.1.0:** **the capability layer got proved, applied and closed.** Both new mints were measured
   by `/skill:eval` — `/skill:agent:new` at +0.364 pass rate for 182,367 fewer tokens,
   `/skill:hook:new` at +0.5 for 52.5% cheaper — and each gained an intent-shaped trigger plus a

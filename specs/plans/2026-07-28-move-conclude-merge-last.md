@@ -486,8 +486,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 6.2 Atualizar os três `QUENCHING.md`, `CLAUDE.md` e `plugins/quenching/README.md` para o comando novo e a contagem
       files: plugins/quenching/assets/docs/QUENCHING.md, plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md, CLAUDE.md, plugins/quenching/README.md
       subject: plan/move-conclude-merge-last: 6.2 update the manuals, the counts and the budget
-- [ ] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
+- [x] 6.3 Bump em lockstep: `VERSION`, `plugin.json`, `marketplace.json` e a constante `VERSION` nos três scripts
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
+      subject: plan/move-conclude-merge-last: 6.3 bump to 4.2.0 in lockstep
 - [ ] 6.4 Rodar a suíte inteira de `## Validation`
       verify: ./assets/bin/functional-checks.sh && ./assets/bin/conclude-order-check.sh
 
