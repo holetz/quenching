@@ -2,6 +2,7 @@
 slug: fix-skills-py-description-truncation
 title: skills.py silently truncates a description at the first '#'
 verification: per-section
+priority: {level: 4, criticality: high, complexity: 3, date: 2026-07-28}
 ---
 
 # skills.py silently truncates a description at the first '#'

@@ -2,6 +2,7 @@
 slug: add-import-provenance
 title: Add provenance and idempotent re-ingestion to quenching-docs-import
 verification: per-section
+priority: {level: 19, criticality: medium, date: 2026-07-28}
 ---
 
 # Add provenance and idempotent re-ingestion to quenching-docs-import

@@ -46,6 +46,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | --- | --- |
 | [align-surface.md](architecture/align-surface.md) | The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, and the probe-before-inventory rule that makes a no-op align cost a couple of tool calls |
 | [plugin-layout.md](architecture/plugin-layout.md) | commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path |
+| [read-only-views.md](architecture/read-only-views.md) | A front's read-only view is a separate command holding no write tools, never a dry-run mode on the command that writes — because allowed-tools is granted per command |
 
 ### automation/
 
