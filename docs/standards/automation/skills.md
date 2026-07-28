@@ -134,13 +134,13 @@ provided its body says so and says why. `/specs:apply` is the standing example. 
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
 
-**The grant is a declaration `skills.py lint` checks, never a restriction.** What scoping reliably
-buys is that lint: a bare grant is reported, and a reader can see at a glance which tools a command
-expects to reach. It has never been observed to stop a command from using a tool it did not
-declare — [../quality/surface-verification.md](../quality/surface-verification.md) §What this does
-not cover records that, and forbids claiming the enforcement anywhere until it is measured. So a
-command that must guarantee it writes nothing carries that guarantee in its own numbered steps and
-its doctrine, never in its `allowed-tools` line.
+**The grant is a declaration `skills.py lint` checks; whether it also restricts is unmeasured.**
+What scoping reliably buys is that lint: a bare grant is reported, and a reader can see at a glance
+which tools a command expects to reach. It has never been observed to stop a command from using a
+tool it did not declare — [../quality/surface-verification.md](../quality/surface-verification.md)
+§What this does not cover records that, and forbids claiming the enforcement anywhere until it is
+measured, in either direction. So a command that must guarantee it writes nothing carries that
+guarantee in its own numbered steps and its doctrine, never in its `allowed-tools` line.
 
 ## The verifier
 
