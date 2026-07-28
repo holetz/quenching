@@ -73,6 +73,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | Doc | Covers |
 | --- | --- |
 | [bundle-verification.md](quality/bundle-verification.md) | What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, and the resource glob-set format |
+| [parse-honesty.md](quality/parse-honesty.md) | A verifier names its own parse failure instead of reporting it as a content gap — the sidecar shape that adds the signal without changing a return type, why the finding is a warn, and why a lossy transform never ships without its diagnostic |
 | [surface-verification.md](quality/surface-verification.md) | How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, and the three preconditions a functional check must satisfy to measure what it claims |
 
 ### workflows/
