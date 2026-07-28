@@ -436,8 +436,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 3.3 `continue.md`: refletir o ranking ciente de branch na descrição e no corpo
       files: plugins/quenching/commands/specs/continue.md
       subject: plan/move-conclude-merge-last: 3.3 continue reports the branch-aware ranking
-- [ ] 3.4 `create.md` e `develop.md`: encaminhar para `/specs:isolate` quando pedido, sem oferta ativa (ver `## Open Decisions`)
+- [x] 3.4 `create.md` e `develop.md`: encaminhar para `/specs:isolate` quando pedido, sem oferta ativa (ver `## Open Decisions`)
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/develop.md
+      subject: plan/move-conclude-merge-last: 3.4 create and develop forward to /specs:isolate
 - [ ] 3.5 Rodar as checagens da superfície
       verify: python3 assets/bin/skills.py --root . doctor --json && ./assets/bin/functional-checks.sh
 
