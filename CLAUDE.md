@@ -249,7 +249,11 @@ doc). The `Stop` sweep is dirty-gated by default (`stopScan: "dirty"`) via a mar
 a turn touching no `docs/**` file costs one stat. **`--listing-root`** points the same checker
 at a quenching-managed tree that is not an OKF bundle root — today `specs/plans/`, which the
 hook's `docsDir` never reaches: the scanned `index.md` is held to the plain-listing rule instead
-of the bundle-root one, and `bundle-no-index` is dropped. `--version` is kept in lockstep with
+of the bundle-root one, and `bundle-no-index` is dropped. A `selftest` subcommand proves it
+implements the shared frontmatter rule — the canonical case list of
+`docs/standards/code/frontmatter-parsing.md`, byte-identical in all three tools, which is the
+lockstep unit that makes a drifted parser fail its own selftest on a row the other two still pass.
+`--version` is kept in lockstep with
 `plugins/quenching/VERSION`; `/docs:align` step 6 offers to install or upgrade it
 into a target's `.claude/hooks/`.
 
@@ -310,8 +314,16 @@ python3 assets/hooks/okf-validate.py assets/specs/plans --listing-root    # 0 er
 # the command surface
 python3 assets/bin/skills.py --root . doctor --json                       # 25 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings are reported, not fatal)
-python3 assets/bin/skills.py selftest                                     # the layout rule's fixture
+# each tool proves the shared frontmatter rule against the SAME canonical case list
+python3 assets/bin/skills.py selftest                                     # + the layout rule's fixture
+python3 assets/bin/specs.py selftest
+python3 assets/hooks/okf-validate.py selftest
 ```
+
+The three selftests are the standing guard on
+[docs/standards/code/frontmatter-parsing.md](docs/standards/code/frontmatter-parsing.md): the
+tools may not import each other (each installs standalone into a target's `.claude/hooks/`), so
+`CANONICAL_CASES` is duplicated verbatim in all three and **must be edited in all three or none**.
 
 **Nothing above tests that the surface actually LOADS.** The command registry is built at session
 start, so no change under `commands/**` is testable in the session that writes it — a run can look

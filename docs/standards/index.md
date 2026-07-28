@@ -56,6 +56,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [skill-evaluation.md](automation/skill-evaluation.md) | What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero |
 | [skills.md](automation/skills.md) | How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point |
 
+### code/
+
+| Doc | Covers |
+| --- | --- |
+| [frontmatter-parsing.md](code/frontmatter-parsing.md) | The YAML subset the three shipped tools read — the comment rule, the canonical case list all three must decide identically, the anomaly set each must be able to name, and the three-copy lockstep obligation |
+
 ### naming/
 
 | Doc | Covers |
@@ -67,6 +73,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | Doc | Covers |
 | --- | --- |
 | [bundle-verification.md](quality/bundle-verification.md) | What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, and the resource glob-set format |
+| [parse-honesty.md](quality/parse-honesty.md) | A verifier names its own parse failure instead of reporting it as a content gap — the sidecar shape that adds the signal without changing a return type, why the finding is a warn, and why a lossy transform never ships without its diagnostic |
 | [surface-verification.md](quality/surface-verification.md) | How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, and the three preconditions a functional check must satisfy to measure what it claims |
 
 ### workflows/
