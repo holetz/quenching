@@ -644,6 +644,11 @@ def parse_frontmatter(text: str) -> dict:
     return fm
 
 
+# The block-scalar indicator. `skills.py` compiles the same pattern to READ these;
+# this parser does not read them, so it uses the pattern to NAME them instead.
+BLOCK_SCALAR_RE = re.compile(r"^([|>])(?:[+-]?)(?:\d*)\s*$")
+
+
 def frontmatter_anomalies(text: str) -> list[dict]:
     """What the frontmatter parse could not represent faithfully.
 
@@ -688,10 +693,21 @@ def frontmatter_anomalies(text: str) -> list[dict]:
             out.append(_anomaly(key, "unterminated-quote",
                                 f"`{key}` opens a quote that never closes, so the scalar's "
                                 "extent is unknowable; nothing was stripped"))
+        # A block scalar is an indented form this parser does not read, and the one it
+        # fails at WITHOUT reading empty: `parse_frontmatter` keeps the bare `|`/`>`
+        # indicator as the value, which is a guess rather than a read, so the truthiness
+        # test below would never see it. `skills.py` DOES read block scalars and stays
+        # silent — the per-tool carve-out the standard allows (§The canonical case list,
+        # "a tool may read more than the table requires"), not a disagreement on a row.
+        if BLOCK_SCALAR_RE.match(value) and run:
+            out.append(_anomaly(key, "indented-continuation",
+                                f"`{key}` opens a block scalar this parser does not read — the "
+                                f"`{value}` indicator was kept as the value and the lines beneath "
+                                "it were dropped"))
         # The parse result is the test, not a re-derivation of it: a block list or a
         # block record comes back truthy because this parser genuinely reads both, so
         # only a form it read as nothing is reported.
-        if value == "" and run and not fm.get(key):
+        elif value == "" and run and not fm.get(key):
             out.append(_anomaly(key, "indented-continuation",
                                 f"`{key}` has no inline value and the lines beneath it are in "
                                 "no form this parser reads — it was read as empty"))
