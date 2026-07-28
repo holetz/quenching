@@ -414,8 +414,9 @@ branch `plan/move-conclude-merge-last`):
 
 ### 2. O comando `/specs:isolate`
 
-- [ ] 2.1 Mover `assets/references/specs-execute/git.md` para `assets/references/specs-isolate/git.md` e reescrever: âncora por subject, isolamento em qualquer estágio, defaults de branch, estratégias de merge, ressalva do squash, regra read-if-present
+- [x] 2.1 Mover `assets/references/specs-execute/git.md` para `assets/references/specs-isolate/git.md` e reescrever: âncora por subject, isolamento em qualquer estágio, defaults de branch, estratégias de merge, ressalva do squash, regra read-if-present
       files: plugins/quenching/assets/references/specs-isolate/git.md
+      subject: plan/move-conclude-merge-last: 2.1 move git.md to specs-isolate and rewrite it
 - [ ] 2.2 Escrever `commands/specs/isolate.md` — verb-first; toma ou reporta isolamento para UMA spec em qualquer estágio, grava `branch: {base, work}`, move para a branch uma spec já escrita em `plans/`
       files: plugins/quenching/commands/specs/isolate.md
       verify: python3 assets/bin/skills.py --root . lint --json
