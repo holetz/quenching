@@ -381,9 +381,10 @@ aceito — specs não são renomeadas.
       files: plugins/quenching/assets/bin/specs.py
       verify: workspace descartável — `specs.py new x` → `task --check 1.1 --subject "..."` → `status --spec x --json` mostra o subject
       subject: plan/move-conclude-merge-last: 1.1 task --check accepts --subject in place of --commit
-- [ ] 1.2 O registro `merge` aceita `{strategy, subject}`, incluindo a forma explicit-none de `fast-forward`/`rebase`; `status` e `validate` reportam
+- [x] 1.2 O registro `merge` aceita `{strategy, subject}`, incluindo a forma explicit-none de `fast-forward`/`rebase`; `status` e `validate` reportam
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py validate
+      subject: plan/move-conclude-merge-last: 1.2 the merge record carries {strategy, subject}
 - [ ] 1.3 `next --front` fica ciente de branch conforme `## Design` §O sinal de "já está em andamento"
       files: plugins/quenching/assets/bin/specs.py
       verify: workspace descartável com duas specs, uma com `plan/<slug>` viva
@@ -454,3 +455,4 @@ aceito — specs não são renomeadas.
 ## Discoveries
 
 - docs/standards/naming/command-surface.md §Namespaces still names a root '/align-and-update' that the specs-flow-consolidation spec removed — stale, unrelated to this spec
+- task 1.2 had to touch assets/specs/schema.json, which no task declares under files: — schema.json shadows the DEFAULT_SCHEMA constant via load_schema(), so the record vocabulary is a THIRD lockstep copy alongside specs.py and the templates
