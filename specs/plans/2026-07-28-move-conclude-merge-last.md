@@ -445,8 +445,9 @@ branch `plan/move-conclude-merge-last`):
 
 ### 4. As referências
 
-- [ ] 4.1 [P] `specs-conclude/distill.md` §Two moments: os dois momentos passam a cair na branch
+- [x] 4.1 [P] `specs-conclude/distill.md` §Two moments: os dois momentos passam a cair na branch
       files: plugins/quenching/assets/references/specs-conclude/distill.md
+      subject: plan/move-conclude-merge-last: 4.1 both distillation moments land on the work branch
 - [ ] 4.2 [P] `specs-execute/execution.md`: a marcação entra no commit da task; commits de bookkeeping deixam de existir
       files: plugins/quenching/assets/references/specs-execute/execution.md
 - [ ] 4.3 [P] `specs-develop/artifacts.md`: a linha `commit:` da tabela de metadados vira `subject:`

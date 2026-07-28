@@ -43,12 +43,21 @@ that differ only in when the doc has to exist:
 
 | Moment | What it catches | Where it lands |
 | --- | --- | --- |
-| **emergent** — before the merge | a rule the work *revealed*: a `## Discoveries` line worth a doc, something the branch review surfaced | on the **work branch**, in its own commit, so the rule ships with the code that proved it |
-| **distillation** — after the archive move | the by-products that outlive the spec: a decision still in `## Design`, an understanding, a term, a follow-up | on the **base branch**, after the merge |
+| **emergent** — right after the branch review | a rule the work *revealed*: a `## Discoveries` line worth a doc, something the branch review surfaced | on the **work branch**, in its own commit, so the rule ships with the code that proved it |
+| **distillation** — right after the archive move | the by-products that outlive the spec: a decision still in `## Design`, an understanding, a term, a follow-up | on the **work branch** too, still before the merge |
 
-A rule the code demonstrates belongs beside that code in history; a by-product of the *thinking*
-has no code to ship with and is cheapest to harvest once the spec is closed. Both take one plan and
-one confirmation, and neither ever fabricates a candidate to have something to write.
+A rule the code demonstrates belongs beside that code in history; a by-product of the *thinking* has
+no code to ship with, and is cheapest to harvest once the spec is **closed** — which happens at the
+archive move, in step 4, **on the branch**. Both take one plan and one confirmation, and neither
+ever fabricates a candidate to have something to write.
+
+**Both moments land on the work branch, so one merge carries everything.** This file used to put
+the second one "on the base branch, after the merge", reasoning that a by-product is cheapest to
+harvest once the spec is closed. The reasoning was right and the placement did not follow from it:
+**closing and merging were being conflated.** A spec is closed when `## Outcome` is written and the
+file moves to `archive/` — both of which happen on the branch, before anything is merged. Harvesting
+there satisfies the same argument and leaves nothing to write on the base afterwards, so reverting
+the merge reverts the spec's whole footprint, distilled docs included.
 
 ## The procedure (one confirmation)
 
