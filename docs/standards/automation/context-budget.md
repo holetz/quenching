@@ -87,16 +87,31 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **2,083 characters** — this plugin's measured total across its 28 commands
-after the collapse, on 2026-07-26. It is a number a run produced, not one somebody picked, and it
-is **revised only from a measurement**.
+The current default is **11,565 characters** — this plugin's measured total across its 24 commands
+and 0 agent definitions, on 2026-07-27. It is a number a run produced, not one somebody picked, and
+it is **revised only from a measurement**.
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
-the 29th command crosses it on the day it is minted. Under §*A new command is not free* below,
+the 25th command crosses it on the day it is minted. Under §*A new command is not free* below,
 that is the signal working: `budget` **reports, it never refuses**, so crossing it prompts a human
-to re-measure and re-set rather than blocking anything. The previous default (36,503) was a
-pre-diet baseline the surface then sat 5,798 characters under, which meant it could never fire and
+to re-measure and re-set rather than blocking anything. The pre-diet default (36,503) was a
+baseline the surface then sat 5,798 characters under, which meant it could never fire and
 therefore told nobody anything.
+
+### Why the ceiling went 2,083 → 11,565
+
+Not growth to be alarmed by — **the two numbers measure different surfaces.** The 2,083 was taken
+on 2026-07-26, immediately after the collapse deleted the half of each pair that carried the quoted
+trigger phrases and the `Not for:` boundary, leaving descriptions that were bare `/`-menu labels.
+§*What the collapse measured* below says exactly that, and calls the restoration affordable. It has
+since been restored on the commands that route by description, plus two trigger additions that
+[skill-evaluation.md](skill-evaluation.md)'s measured hit rates argued for. The surface is not
+carrying more prose about *how* commands work; it is carrying the routing information this standard
+calls mandatory.
+
+The re-measure deliberately **waited for the surface to stop moving**. A ceiling set while a fold
+was still removing commands can never fire honestly, because every measurement during the shrink
+describes a surface that no longer exists by the time the number lands.
 
 `budget` over the ceiling exits 1 and lists the commands sorted by cost; exit 2 is unreachable from
 it. A surface may legitimately be large, and the decision to cut is a human's.
