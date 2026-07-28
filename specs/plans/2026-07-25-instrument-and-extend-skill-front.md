@@ -259,17 +259,20 @@ one into the two mints' descriptions while tuning (task 1.3).
 
 ### 2. Close the mechanical blind spots
 
-- [ ] 2.1 Teach `skills.py lint` to read a frontmatter `hooks:` block (the mold's shape
+- [x] 2.1 Teach `skills.py lint` to read a frontmatter `hooks:` block (the mold's shape
       only) and apply the ladder codes to it; extend `selftest` with a covered and an
       uncovered case
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
-- [ ] 2.2 Count `agents/*.md` descriptions in `budget` and record it in `docs/standards/automation/context-budget.md`
+      commit: b1bd9b9
+- [x] 2.2 Count `agents/*.md` descriptions in `budget` and record it in `docs/standards/automation/context-budget.md`
       files: plugins/quenching/assets/bin/skills.py, docs/standards/automation/context-budget.md
       verify: python3 assets/bin/skills.py --root . budget --json
-- [ ] 2.3 Post-fold, re-measure and re-set `DEFAULT_CEILING` + `docs/standards/automation/context-budget.md` §ceiling
+      commit: eae7e43
+- [x] 2.3 Post-fold, re-measure and re-set `DEFAULT_CEILING` + `docs/standards/automation/context-budget.md` §ceiling
       files: plugins/quenching/assets/bin/skills.py, docs/standards/automation/context-budget.md
       verify: python3 assets/bin/skills.py --root . budget --json
+      commit: 9c1e42c
 
 ### 3. Apply the doctrine to its own author
 
