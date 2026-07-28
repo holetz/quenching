@@ -81,13 +81,25 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**22 specs** · 2 designed · 20 captured
+**26 specs** · 2 executing · 1 approved · 1 designed · 22 captured
+
+### Executing
+
+| Spec | Title | Since |
+| --- | --- | --- |
+| [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
+| [restore-routing-info-on-docs-commands](2026-07-28-restore-routing-info-on-docs-commands.md) | Restore trigger phrases and boundaries on the nine bare /docs:* descriptions | 2026-07-28 |
+
+### Approved
+
+| Spec | Title | Since |
+| --- | --- | --- |
+| [fix-skills-py-description-truncation](2026-07-27-fix-skills-py-description-truncation.md) | skills.py silently truncates a description at the first ' | 2026-07-27 |
 
 ### Designed
 
 | Spec | Title | Since |
 | --- | --- | --- |
-| [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
 | [restructure-claude-front-namespace](2026-07-27-restructure-claude-front-namespace.md) | Rename the /skill namespace to /automation and split it into artifact contexts | 2026-07-27 |
 
 ### Captured
@@ -102,18 +114,20 @@ closing out unbuilt work looks like.
 | [split-specs-py-backlog-renderer](2026-07-25-split-specs-py-backlog-renderer.md) | Split the backlog-zone renderer out of specs.py | 2026-07-25 |
 | [add-specs-py-record-writer](2026-07-27-add-specs-py-record-writer.md) | Give the frontmatter records a mechanical writer in specs.py | 2026-07-27 |
 | [dedupe-specs-py-spec-reader](2026-07-27-dedupe-specs-py-spec-reader.md) | Fold the four copies of read-parse-derive in specs.py into one helper | 2026-07-27 |
-| [fix-skills-py-description-truncation](2026-07-27-fix-skills-py-description-truncation.md) | skills.py silently truncates a description at the first ' | 2026-07-27 |
 | [isolate-functional-checks-probes](2026-07-27-isolate-functional-checks-probes.md) | functional-checks.sh check 3 creates real specs in the repo it probes | 2026-07-27 |
 | [name-the-scaffolded-stage](2026-07-27-name-the-scaffolded-stage.md) | Decide whether a spec with an unwritten Problem gets a named stage | 2026-07-27 |
 | [retire-skill-vocabulary](2026-07-27-retire-skill-vocabulary.md) | Retire the skill vocabulary left behind by the collapse | 2026-07-27 |
 | [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
+| [add-eli5-section-to-specs](2026-07-28-add-eli5-section-to-specs.md) | Add an ELI5 section that makes a spec comprehensible to a human | 2026-07-28 |
+| [add-specs-cycle-run-modes](2026-07-28-add-specs-cycle-run-modes.md) | Add customizable run modes to the specs cycle commands | 2026-07-28 |
+| [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's body language in docs/standards so every command reads it for free | 2026-07-28 |
 | [fix-conclude-abandoned-branch-harvest](2026-07-28-fix-conclude-abandoned-branch-harvest.md) | conclude --outcome abandoned can harvest a note and delete it in the same run | 2026-07-28 |
 | [fix-functional-checks-encoding](2026-07-28-fix-functional-checks-encoding.md) | functional-checks.sh fails for lack of evidence, not by verdict | 2026-07-28 |
 | [improve-command-from-session](2026-07-28-improve-command-from-session.md) | Mine a session for improvements to the command that started it | 2026-07-28 |
 | [make-sk-unscoped-bash-read-the-body](2026-07-28-make-sk-unscoped-bash-read-the-body.md) | sk-unscoped-bash cannot read the body its own remedy points at | 2026-07-28 |
 | [notice-installed-tool-version-drift](2026-07-28-notice-installed-tool-version-drift.md) | Nothing notices an installed tool copy falling behind the plugin | 2026-07-28 |
 | [probe-a-frontmatter-hook-firing](2026-07-28-probe-a-frontmatter-hook-firing.md) | No probe observes a frontmatter hooks: block actually fire | 2026-07-28 |
-| [restore-routing-info-on-docs-commands](2026-07-28-restore-routing-info-on-docs-commands.md) | Restore trigger phrases and boundaries on the nine bare /docs:* descriptions | 2026-07-28 |
+| [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
 <!-- END GENERATED -->
 
 ## Frontmatter
