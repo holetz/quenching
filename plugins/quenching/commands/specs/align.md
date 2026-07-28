@@ -1,7 +1,7 @@
 ---
 description: Force a repo's specs/ workspace into the canonical shape — probe first, so a clean one costs two tool calls. Triggers on "align specs", "set up the specs workspace", "install the spec front", "migrate openspec", "fix the specs folder", "is my specs workspace conformant", "scaffold specs". Scaffolds when absent, installs specs.py and the operator manual, folds an older backlog/ plus ready/ layout or a v1 three-file one into plans/, normalizes filenames and slugs, stamps missing frontmatter, and regenerates the listing zone. One plan, one OK, with code-coupled renames gating individually. Authoring and cycle actions are reported with the command that closes each, never performed. Not for: creating a spec → /specs:create; building one → /specs:execute; ranking the front → /specs:triage; the read-only view of what is here → /specs:status.
 argument-hint: [optional-scope]
-allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash, Write, Edit, Task
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(git mv:*), Bash(rm:*), Write, Edit, Task
 ---
 
 # /specs:align — force the `specs/` workspace into shape

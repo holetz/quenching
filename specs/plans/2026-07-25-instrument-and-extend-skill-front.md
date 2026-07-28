@@ -280,7 +280,8 @@ nested `branch:` record reads back as null in `status --json` while being presen
 
 ### 3. Apply the doctrine to its own author
 
-- [ ] 3.1 Read-only profile audit of every plugin command under `capabilities.md` — one
+- [x] 3.1 Read-only profile audit of every plugin command under `capabilities.md` — one
+      commit: 88eae15
       report: command · lever · stated buy · verdict (apply / leave / forbidden-by-invariant)
 - [ ] 3.2 Apply the confirmed levers in one pass, one plan → one OK; the two standing
       never-rules are untouchable

@@ -1,7 +1,7 @@
 ---
 description: Migrate this repo's whole .claude command surface AND audit every body against the writing doctrine — collapse pairs, one file per entry point. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "converge the automation surface". Probes with skills.py doctor and lint before reading anything, so a conformant surface costs two calls and stops. Otherwise: inventory, ONE plan, one OK, apply the migration, collapse each pair to one file, then read every body against the doctrine — reported with the /skill:new that fixes it, never rewritten, because authoring needs the human whose intent the command encodes. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring whether a command teaches anything → /skill:eval; the docs/ or specs/ front → /docs:align, /specs:align.
 argument-hint: [optional-scope]
-allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Read, Grep, Glob, Write, Edit
+allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Read, Grep, Glob, Write, Edit, Task
 ---
 
 # /skill:align — force the automation surface onto the taxonomy
@@ -239,6 +239,13 @@ Two kinds of evidence, kept apart in the report because they are not the same cl
   positive prescription, and whether shared procedure is **cited rather than restated**
   ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md)). A read names a
   **claim about behaviour**, and no parser makes one.
+
+**Collection may be delegated; judgment may not.** On a surface large enough that reading every
+body would bury the conversation, dispatch read-only `Task` collectors — one per slice — that
+report *what each body contains* (which levers its frontmatter carries, what it cites, where its
+numbered steps end) and nothing else. Every verdict above stays with the orchestrator: a
+collector reports text, never a doctrine finding, because "this body has no positive prescription"
+is a claim about behaviour and the same read that makes it must also weigh the fix.
 
 Report each finding as `command · violated rule · one-line evidence · the /skill:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —

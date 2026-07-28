@@ -2,7 +2,13 @@
 description: Add or refine ONE entry in the fixed glossary (knowledge/glossary.md)
 argument-hint: [term]
 allowed-tools: Read, Grep, Glob, Write, Edit
-effort: low
+hooks:
+  PostToolUse:
+    - matcher: "Write|Edit"
+      hooks:
+        - type: command
+          command: "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"
+          timeout: 10
 ---
 
 # /docs:define — add/refine one glossary term

@@ -2,7 +2,6 @@
 description: Read the whole docs/ front and report where the OKF bundle stands — writes nothing
 argument-hint: [optional-home-or-path]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
-effort: low
 ---
 
 # /docs:status — read the bundle, change nothing
