@@ -2,12 +2,12 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, .claude/hooks/**, plugins/quenching/assets/hooks/**
+resource: .claude/settings.json, .claude/hooks/**, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, hooks, performance, budget]
 timestamp: 2026-07-27
 audience: both
-authority: background
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent
+authority: current
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface: /docs:add, /docs:learn and /docs:define carry rung-1 frontmatter `hooks:` blocks on the rung-1 `command` handler, and skills.py enforces both rungs from one implementation (8 selftest cases)
 maintainer: quenching
 ---
 
@@ -55,6 +55,15 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
   output; two hooks that need an order are one hook.
 - **Every hook states its cost claim** at mint: event × frequency × handler cost × fast-path
   cost on no-match.
+
+## What this repo's own surface does under it
+
+Three commands that write into the bundle — `/docs:add`, `/docs:learn`, `/docs:define` — carry
+a rung-1 frontmatter `hooks:` block running `okf-validate.py` on their own `Write`/`Edit`, on the
+rung-1 `command` handler with a `timeout` sized to the event. Nothing else on the surface wires a
+hook, and the shipped `stopScan: "dirty"` gate is the rung-3 example above. `skills.py` reads
+both rungs from one implementation, so a `settings.json` hook and a frontmatter one are held to
+the same ladder.
 
 The full pricing doctrine lives once, in
 [capabilities.md](/plugins/quenching/assets/references/skill-new/capabilities.md) §Hooks;
