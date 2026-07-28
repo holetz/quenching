@@ -5,6 +5,7 @@ verification: per-section
 priority: {level: 4, criticality: high, complexity: 3, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+branch: {base: main, work: plan/fix-skills-py-description-truncation}
 ---
 
 # skills.py silently truncates a description at the first '#'
