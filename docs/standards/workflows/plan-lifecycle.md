@@ -7,7 +7,7 @@ tags: [workflows, specs, lifecycle, stages, frontmatter, records]
 timestamp: 2026-07-28
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2)
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2)
 maintainer: quenching
 ---
 
@@ -54,9 +54,9 @@ the declared identity (`slug`, `title`, `verification`), every optional key is o
 | `priority: {level, criticality, complexity, date}` | `triage` | no | this spec's rank against every other one |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
 | `approved: {date}` | `develop`, or `execute` inline | yes | that a human said go |
-| `branch: {base, work}` | `execute` | yes | after a merge, git cannot say what the base was |
+| `branch: {base, work}` | `isolate` | yes | after a merge, git cannot say what the base was |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
-| `merge: {strategy, commit}` | `conclude` | yes | the strategy was a choice; the sha is its result |
+| `merge: {strategy, subject}` | `conclude` | yes | the strategy was a choice; the subject names the merge it produced |
 | `outcome: done \| abandoned` | `conclude` | yes | the verdict on whether the work completed |
 
 Read top to bottom, the records narrate the spec's history in order: ranked, interrogated,
