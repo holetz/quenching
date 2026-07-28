@@ -6,6 +6,8 @@ priority: {level: 3, criticality: critical, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/verify-allowed-tools-enforcement}
+reviewed: {date: 2026-07-28}
+outcome: done
 ---
 
 # Verify Allowed Tools Enforcement
@@ -301,3 +303,39 @@ and are deliberately left alone â€” do not "fix" them.
 - The spec's ## Handoff and ## Validation baselines are stale, measured before this branch: skills.py reports 25 commands not 24; lint exits 0 with 35 warnings not 5, and 2 of them ARE in commands/docs/status.md (sk-trigger-position, sk-no-boundary, both about the frontmatter description, neither touched by this spec); okf-validate.py docs reports 0 errors and 2 warnings not 0/0 (resource-unresolved on standards/automation/agents.md, stale-doc on standards/automation/hooks.md), both pre-existing and proved so by a stash test. Exit codes are 0 throughout, so every task verify still passes — only the stated figures were wrong.
 - functional-checks.sh cannot validate commands/** edits made on a BRANCH or WORKTREE. The plugin resolves through the marketplace, a 'directory' source pinned to the main checkout (~/.claude/plugins/known_marketplaces.json -> C:\Users\holet\repos\claude-quenching), so ${CLAUDE_PLUGIN_ROOT} substitutes to the main checkout no matter which tree claude -p is launched from. Measured: check 1's probe run from this worktree Read C:/Users/holet/repos/claude-quenching/plugins/quenching/assets/references/specs-develop/spec-driven.md. This defeats the rationale in this spec's ## Validation and, more broadly, the standing rule in docs/standards/quality/surface-verification.md that the harness is the only check for a commands/** change — on every spec that isolates before editing commands/**, the harness grades the base, not the work. Also noted: installed_plugins.json lists an installPath cache at .../cache/claude-quenching/quenching/4.1.0 that does not exist on disk.
 - functional-checks.sh check 1 crashes mid-stream on Windows and can report a FALSE PASS. Its tools() helper does open(sys.argv[2]) with no encoding, so Python uses cp1252 and dies with UnicodeDecodeError at the first non-cp1252 byte (observed: byte 0x9d at position 5555 of the stream-json log). Stdout keeps whatever lines printed before the crash, so the first assertion passed on a real match, but the second — 'read nothing under a skills/ tree' — asserts ABSENCE over truncated input, and any Read after the crash point is invisible to it. Fix: open(..., encoding='utf-8', errors='replace'). Same family as this spec's own 4.1 defect: a check that reports a verdict on data it could not read.
+
+## Outcome
+
+Shipped as specified. All three enforcement claims are deleted â€” the `/docs:status` and
+`/specs:status` doctrine bullets and the plugin `README.md`'s `/docs:status` paragraph â€” and the
+authoring gap that produced them is closed in both places a future author actually reads:
+`docs/standards/automation/skills.md` Â§`allowed-tools` is always scoped, and the
+`skills-standard.md` mold every aligned repo's copy is cut from. The episode is recorded against
+row 6 of `reference/tools/claude-code-skill-command-mechanics.md`, where that row's readers will
+find it. `surface-verification.md`'s *"not to be claimed anywhere until it is measured"* now has
+zero violations in the repo.
+
+**Merged as a merge commit**, so every per-task `subject:` in `## Tasks` resolves from `main` and
+the branch is not load-bearing.
+
+**Task 4.2 is `[!]` blocked, not done â€” closing as `done` was the human's explicit call.** Its
+`verify:` is `functional-checks.sh`, and this spec measured why that can never converge from a
+branch: the harness resolves `${CLAUDE_PLUGIN_ROOT}` through the marketplace's pinned clone, so it
+grades the base checkout whatever tree `claude -p` runs in. That is now **precondition 5** of
+`docs/standards/quality/surface-verification.md`, written during conclude. The harness's own
+failures â€” check 3's spoken-trigger routing for `specs:create` Ã—2, `skill:hook:new` and
+`skill:agent:new` â€” are properties of `main`, on four commands this branch never touched, and the
+post-merge run reported them unchanged.
+
+**The branch review changed one thing.** The paragraph task 2.1 added to `skills.md` opened with
+*"never a restriction"* â€” this spec's own defect reproduced by the fix meant to remove it. Hedged
+to *"whether it also restricts is unmeasured"*, matching the mold task 2.2 wrote and the
+paragraph's own next sentence.
+
+**What the next reader needs.** The measurement ruled out in `## Out of Scope` is still not done:
+nobody knows whether `allowed-tools` restricts anything, row 6 stays `authority: background`, and
+this spec removed a claim rather than the gap behind it. Two siblings still in `plans/` own the
+harness defects this one only recorded â€” `fix-functional-checks-encoding` (check 1's cp1252 false
+pass) and `isolate-functional-checks-probes` (check 3's residue). The twelve commands scoping
+`Bash` to `python3`/`py` remain unmeasured too, and deliberately so: no body claims those grants
+restrict anything, so there is no false statement there to remove.
