@@ -5,6 +5,7 @@ verification: per-section
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 branch: {base: main, work: plan/move-conclude-merge-last}
+reviewed: {date: 2026-07-28}
 ---
 
 # Make the merge the last action of /specs:conclude
