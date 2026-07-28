@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**27 specs** · 2 executing · 1 approved · 1 designed · 23 captured
+**26 specs** · 2 executing · 1 designed · 23 captured
 
 ### Executing
 
@@ -89,12 +89,6 @@ closing out unbuilt work looks like.
 | --- | --- | --- |
 | [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
 | [restore-routing-info-on-docs-commands](2026-07-28-restore-routing-info-on-docs-commands.md) | Restore trigger phrases and boundaries on the nine bare /docs:* descriptions | 2026-07-28 |
-
-### Approved
-
-| Spec | Title | Since |
-| --- | --- | --- |
-| [fix-skills-py-description-truncation](2026-07-27-fix-skills-py-description-truncation.md) | skills.py silently truncates a description at the first ' | 2026-07-27 |
 
 ### Designed
 

@@ -487,23 +487,93 @@ verification: <VERIFICATION>
 # minimal frontmatter parser (deliberately duplicated from okf-validate.py so
 # each script stays self-contained — ~40 lines, no shared module)
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# The YAML comment rule — one rule, three copies
+#
+# `docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
+# list and the lockstep obligation. `skills.py` and `okf-validate.py` carry the same
+# functions; each installs standalone into a target's `.claude/hooks/`, so none may
+# import the others. EDIT ALL THREE, OR NONE — `CANONICAL_CASES` below is what makes
+# a drifted parser fail its OWN selftest on a row the other two still pass.
+# --------------------------------------------------------------------------- #
+def _frontmatter_body(text: str) -> list[str] | None:
+    """The lines between the leading `---` fences; `None` when there is no closed
+    block."""
+    if not text.startswith("---"):
+        return None
+    lines = text.splitlines()
+    if lines[0].strip() != "---":
+        return None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return lines[1:i]
+    return None
+
+
+def _indented_run(body: list[str], start: int) -> tuple[list[str], int]:
+    """The blank-or-indented lines beginning at `start` with trailing blanks dropped,
+    and the index of the first line that is neither — i.e. everything belonging to
+    the value above, and where the next top-level key begins."""
+    run: list[str] = []
+    j = start
+    while j < len(body) and (not body[j].strip() or body[j][:1] in (" ", "\t")):
+        run.append(body[j])
+        j += 1
+    while run and not run[-1].strip():
+        run.pop()
+    return run, j
+
+
+def _quote_end(val: str) -> int | None:
+    """Index just past the closing quote of a quoted scalar; `0` when the value is
+    not quoted, `None` when the quote never closes.
+
+    A quote opens a scalar only in the first position — mid-value it is an ordinary
+    character, which is why `at the first '#'` is a plain scalar and its `#` is not
+    inside quotes."""
+    if not val or val[0] not in ("'", '"'):
+        return 0
+    quote, i = val[0], 1
+    while i < len(val):
+        if quote == '"' and val[i] == "\\":
+            i += 2
+            continue
+        if val[i] == quote:
+            if quote == "'" and val[i + 1:i + 2] == "'":   # YAML doubles a literal '
+                i += 2
+                continue
+            return i + 1
+        i += 1
+    return None
+
+
+def _split_comment(val: str) -> tuple[str, str]:
+    """Split a scalar into (value, comment).
+
+    A `#` opens a comment only when it is the first character of the value or is
+    preceded by whitespace, and never inside a quoted scalar. The `val.split("#")[0]`
+    this replaced honoured none of the three, so it cut every value at its first `#`
+    — including this workspace's own spec titles, in every `status --json` call.
+
+    An unterminated quote strips nothing: the scalar's extent is unknowable, so the
+    value is kept verbatim and `frontmatter_anomalies` reports it rather than the
+    parser guessing a boundary."""
+    start = _quote_end(val)
+    if start is None:
+        return val, ""
+    for i in range(start, len(val)):
+        if val[i] == "#" and (i == 0 or val[i - 1] in " \t"):
+            return val[:i].rstrip(), val[i:]
+    return val, ""
+
+
 def parse_frontmatter(text: str) -> dict:
     """Top-level `key: value` pairs of a leading `---` block. List values are
     returned as Python lists for inline `[a, b]` and block `- item` forms; scalars
     as strings with surrounding quotes stripped. Empty dict when there is no block."""
-    if not text.startswith("---"):
+    body = _frontmatter_body(text)
+    if body is None:
         return {}
-    lines = text.splitlines()
-    if lines[0].strip() != "---":
-        return {}
-    close = None
-    for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
-            close = i
-            break
-    if close is None:
-        return {}
-    body = lines[1:close]
     fm: dict = {}
     j = 0
     while j < len(body):
@@ -516,7 +586,7 @@ def parse_frontmatter(text: str) -> dict:
             continue
         key, _, val = raw.partition(":")
         key = key.strip()
-        val = val.split("#", 1)[0].strip() if "#" in val else val.strip()
+        val = _split_comment(val.strip())[0]
         if val == "":
             items = []
             k = j + 1
@@ -572,6 +642,116 @@ def parse_frontmatter(text: str) -> dict:
             fm[key] = val
         j += 1
     return fm
+
+
+# The block-scalar indicator. `skills.py` compiles the same pattern to READ these;
+# this parser does not read them, so it uses the pattern to NAME them instead.
+BLOCK_SCALAR_RE = re.compile(r"^([|>])(?:[+-]?)(?:\d*)\s*$")
+
+
+def frontmatter_anomalies(text: str) -> list[dict]:
+    """What the frontmatter parse could not represent faithfully.
+
+    A SIDECAR: `parse_frontmatter` keeps returning a bare dict, so none of its call
+    sites change — `status`, `next` and `triage` never have to decide mid-cycle what
+    an un-understood frontmatter means, which would be a behaviour change in commands
+    that today refuse nothing.
+
+    Every entry is a suspicion the tool cannot resolve, never a proven violation: a
+    stripped comment and lost prose are byte-identical, and nothing here guarantees
+    Claude Code's own loader resolves a duplicate key the way this one does. Callers
+    surface them at WARN — see `docs/standards/quality/parse-honesty.md`."""
+    body = _frontmatter_body(text)
+    if body is None:
+        return []
+    fm = parse_frontmatter(text)
+    out: list[dict] = []
+    seen: set[str] = set()
+    j = 0
+    while j < len(body):
+        raw = body[j]
+        if (not raw.strip() or raw.lstrip().startswith("#")
+                or raw[:1] in (" ", "\t") or ":" not in raw):
+            j += 1
+            continue
+        key, _, val = raw.partition(":")
+        key, val = key.strip(), val.strip()
+        run, k = _indented_run(body, j + 1)
+
+        if key in seen:
+            out.append(_anomaly(key, "duplicate-key",
+                                f"`{key}` is set more than once and the last one silently wins; "
+                                "nothing guarantees another parser resolves it the same way"))
+        seen.add(key)
+
+        value, comment = _split_comment(val)
+        if comment:
+            out.append(_anomaly(key, "comment-stripped",
+                                f"`{comment}` was read as a comment and removed from `{key}` — "
+                                "a stripped comment and lost prose are byte-identical"))
+        elif _quote_end(val) is None:
+            out.append(_anomaly(key, "unterminated-quote",
+                                f"`{key}` opens a quote that never closes, so the scalar's "
+                                "extent is unknowable; nothing was stripped"))
+        # A block scalar is an indented form this parser does not read, and the one it
+        # fails at WITHOUT reading empty: `parse_frontmatter` keeps the bare `|`/`>`
+        # indicator as the value, which is a guess rather than a read, so the truthiness
+        # test below would never see it. `skills.py` DOES read block scalars and stays
+        # silent — the per-tool carve-out the standard allows (§The canonical case list,
+        # "a tool may read more than the table requires"), not a disagreement on a row.
+        if BLOCK_SCALAR_RE.match(value) and run:
+            out.append(_anomaly(key, "indented-continuation",
+                                f"`{key}` opens a block scalar this parser does not read — the "
+                                f"`{value}` indicator was kept as the value and the lines beneath "
+                                "it were dropped"))
+        # The parse result is the test, not a re-derivation of it: a block list or a
+        # block record comes back truthy because this parser genuinely reads both, so
+        # only a form it read as nothing is reported.
+        elif value == "" and run and not fm.get(key):
+            out.append(_anomaly(key, "indented-continuation",
+                                f"`{key}` has no inline value and the lines beneath it are in "
+                                "no form this parser reads — it was read as empty"))
+        j = k
+    return out
+
+
+def _anomaly(key: str, kind: str, detail: str) -> dict:
+    return {"key": key, "kind": kind, "detail": detail}
+
+
+# The canonical case list from `docs/standards/code/frontmatter-parsing.md`. It is
+# duplicated VERBATIM in skills.py and okf-validate.py and is the lockstep unit for
+# all three: adding a row means adding it in three places, and a parser that drifts
+# fails here on a row the other two still pass.
+#   (label, frontmatter body, expected `title`, expected anomaly kinds)
+CANONICAL_CASES = [
+    ("plain",                 "title: a plain value",              "a plain value",              ()),
+    ("comment-after-space",   "title: a value # a note",           "a value",                    ("comment-stripped",)),
+    ("hash-after-quote-char", "title: truncates at the first '#'", "truncates at the first '#'", ()),
+    ("hash-in-backticks",     "title: the `#` character",          "the `#` character",          ()),
+    ("hash-no-space",         "title: C#",                         "C#",                         ()),
+    ("double-quoted-hash",    'title: "quoted # inside"',          "quoted # inside",            ()),
+    ("single-quoted-hash",    "title: 'single # inside'",          "single # inside",            ()),
+    ("quoted-then-comment",   'title: "quoted" # a note',          "quoted",                     ("comment-stripped",)),
+    ("comment-only",          "title: # a note",                   "",                           ("comment-stripped",)),
+    ("unterminated-quote",    'title: "unterminated',              '"unterminated',              ("unterminated-quote",)),
+    ("duplicate-key",         "title: first\ntitle: second",       "second",                     ("duplicate-key",)),
+    ("indented-continuation", "title:\n  a wrapped prose line",    "",                           ("indented-continuation",)),
+]
+
+
+def canonical_case_failures() -> list[str]:
+    """Run `CANONICAL_CASES` against this tool's own parser and sidecar."""
+    out = []
+    for label, fm, want_value, want_kinds in CANONICAL_CASES:
+        text = f"---\n{fm}\n---\n\nbody\n"
+        got_value = parse_frontmatter(text).get("title", "<missing>")
+        got_kinds = tuple(sorted(a["kind"] for a in frontmatter_anomalies(text)))
+        if got_value != want_value:
+            out.append(f"{label}: title expected {want_value!r}, got {got_value!r}")
+        if got_kinds != tuple(sorted(want_kinds)):
+            out.append(f"{label}: anomalies expected {sorted(want_kinds)}, got {list(got_kinds)}")
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -2220,6 +2400,16 @@ def validate_spec(root: str, s: dict) -> list[dict]:
     tasks = parse_tasks(text)
     out: list[dict] = []
 
+    # BEFORE the required-key checks, so a parse failure is never presented as a
+    # content gap — a value this parser could not represent used to surface as a
+    # missing `title`, naming the absence rather than the misread that caused it.
+    for a in frontmatter_anomalies(text):
+        out.append(_finding("sp-frontmatter-unparsed", "warn",
+                            f"{where}: `{a['key']}`: {a['detail']}", spec=s["slug"], path=where,
+                            kind=a["kind"], key=a["key"],
+                            remedy="quote the value, or write the comment on its own line — "
+                                   "see docs/standards/code/frontmatter-parsing.md"))
+
     schema = load_schema()
     for key in schema.get("frontmatter", {}).get("required", []):
         if not str(fm.get(key, "")).strip():
@@ -2449,8 +2639,19 @@ def cmd_selftest(args, root: str) -> int:
     — and a duplicate nobody checks is just a bug with a delay on it. This is the check.
 
     It can only run where the assets are adjacent (the plugin itself); an installed copy has
-    nothing to compare against and says so rather than passing vacuously."""
+    nothing to compare against and says so rather than passing vacuously.
+
+    The canonical frontmatter cases are NOT part of that caveat — they are self-contained and
+    must run everywhere, which is why they are checked before the early return: an installed
+    copy is exactly where a drifted parser would otherwise go unnoticed."""
     findings: list[dict] = []
+    for failure in canonical_case_failures():
+        findings.append(_finding("sp-frontmatter-case", "error",
+                                 f"canonical frontmatter case — {failure}",
+                                 remedy="this parser disagrees with the case list in "
+                                        "docs/standards/code/frontmatter-parsing.md; the three "
+                                        "tools move together or not at all"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
@@ -2458,10 +2659,13 @@ def cmd_selftest(args, root: str) -> int:
 
     if disk_tpl is None and disk_sch is None:
         emit(args.json,
-             {"ok": True, "skipped": True, "assetDir": ASSET_DIR, "findings": [],
-              "message": "no adjacent assets — nothing to compare (installed copy)"},
-             "selftest: no adjacent assets — nothing to compare (installed copy)")
-        return 0
+             {"ok": not findings, "skipped": True, "assetDir": ASSET_DIR, "findings": findings,
+              "cases": len(CANONICAL_CASES),
+              "message": f"{len(CANONICAL_CASES)} canonical frontmatter case(s) run; "
+                         "no adjacent assets to compare (installed copy)"},
+             f"selftest: {len(CANONICAL_CASES)} canonical frontmatter case(s) run; "
+             "no adjacent assets to compare (installed copy)")
+        return 1 if findings else 0
 
     if disk_tpl is None:
         findings.append(_finding("sp-selftest-no-template", "error",
@@ -2504,17 +2708,20 @@ def cmd_selftest(args, root: str) -> int:
 
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
-        print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR, "findings": findings},
+        print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
+                          "cases": len(CANONICAL_CASES), "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
-    print(f"specs selftest — {ASSET_DIR} ({len(errors)} error(s))")
+    print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} canonical case(s), "
+          f"{len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
         print(f"          remedy: {f['remedy']}")
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print("  OK — the embedded schema and template match their asset files.")
+        print("  OK — the canonical frontmatter cases pass, and the embedded schema and "
+              "template match their asset files.")
     return 1 if errors else 0
 
 

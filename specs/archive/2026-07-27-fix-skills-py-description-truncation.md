@@ -5,6 +5,10 @@ verification: per-section
 priority: {level: 4, criticality: high, complexity: 3, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+branch: {base: main, work: plan/fix-skills-py-description-truncation}
+reviewed: {date: 2026-07-28}
+merge: {strategy: merge-commit, subject: "plan/fix-skills-py-description-truncation: merge (merge-commit)"}
+outcome: done
 ---
 
 # skills.py silently truncates a description at the first '#'
@@ -239,35 +243,122 @@ with `plugins/quenching/VERSION` (§Releasing).
   only when the plugin is newer, and the version bump is out of scope. ACCEPTED — recorded in
   `## Out of Scope` with the propagation cost stated, so it is deferred rather than forgotten.
 
+## Handoff
+
+All seven tasks are built, verified and committed on `plan/fix-skills-py-description-truncation`
+(seven commits, `6aaa8bc` through `5edd488`). Nothing is left to build; what remains is
+`/specs:conclude` — the branch review, the emergent `docs/`, the merge and the archive-time
+distillation.
+
+**The state of the tree.** All three tools share four identically-bodied helpers
+(`_frontmatter_body`, `_indented_run`, `_quote_end`, `_split_comment`) plus `frontmatter_anomalies`,
+`CANONICAL_CASES` and `canonical_case_failures`. **The case list is byte-identical in all three; edit
+all three or none.** Two standards are `authority: current`:
+`docs/standards/code/frontmatter-parsing.md` (the mechanics) and
+`docs/standards/quality/parse-honesty.md` (the obligation).
+
+**Everything the sweep proved, so a reviewer need not re-run it.** Version lockstep holds at 4.2.0
+across `VERSION`, `plugin.json` and all three scripts. `assets/docs` and
+`assets/specs/plans --listing-root` are 0/0. `skills.py doctor` reports 25 commands and 0 findings;
+`lint` exits 0. All three selftests exit 0 on the same twelve cases. `specs validate` and
+`specs doctor` are 0/0; `okf-validate.py docs` is 0 errors with the same two warnings that predate
+this branch (`agents.md` `resource-unresolved`, `hooks.md` `stale-doc`). Each tool's output was also
+diffed against its `ec0a631` copy on every real tree and came back **byte-identical**, so the
+behaviour change is confined to inputs this repository does not contain. No functional check is owed:
+`git diff --name-only main...HEAD -- plugins/quenching/commands/` is empty.
+
+**Three things for the reviewer to decide, none of them blocking.** `## Discoveries` holds all three:
+the `okf-frontmatter-unparsed` code is the only tool-prefixed code in a file whose other codes carry
+no prefix (implemented as the spec declared it); `## Validation` says 24 commands where there are 25;
+and `## Out of Scope` reasons about a bump "off 4.1.0" when everything is already at 4.2.0. The
+propagation argument in `## Out of Scope` still holds — an installed copy is overwritten only when
+the plugin is newer, so **no already-aligned target gets this fix until a release ships**, which
+remains deliberately out of scope.
 ## Tasks
 
 ### 1. The rule, agreed before it is proved
 
-- [ ] 1.1 Write `docs/standards/code/frontmatter-parsing.md` at `authority: background`: the YAML subset the three tools read, the comment rule, the canonical case list, and the three-copy lockstep obligation
+- [x] 1.1 Write `docs/standards/code/frontmatter-parsing.md` at `authority: background`: the YAML subset the three tools read, the comment rule, the canonical case list, and the three-copy lockstep obligation
       pattern: docs/standards/quality/surface-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/fix-skills-py-description-truncation: 1.1 the parsing standard
 
 ### 2. The three tools
 
-- [ ] 2.1 [P] skills.py: correct the comment rule, add `frontmatter_anomalies`, emit `sk-frontmatter-unparsed` from `lint`, and add the canonical cases to `selftest`
+- [x] 2.1 [P] skills.py: correct the comment rule, add `frontmatter_anomalies`, emit `sk-frontmatter-unparsed` from `lint`, and add the canonical cases to `selftest`
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
-- [ ] 2.2 [P] specs.py: the same rule and sidecar, emit `sp-frontmatter-unparsed` from `validate`, and add the canonical cases to `selftest`
+      subject: plan/fix-skills-py-description-truncation: 2.1 the rule in skills.py
+- [x] 2.2 [P] specs.py: the same rule and sidecar, emit `sp-frontmatter-unparsed` from `validate`, and add the canonical cases to `selftest`
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
-- [ ] 2.3 [P] okf-validate.py: add the comment rule it has never had, the sidecar, an `okf-frontmatter-unparsed` finding, and a `selftest` subcommand it does not have today
+      subject: plan/fix-skills-py-description-truncation: 2.2 the rule in specs.py
+- [x] 2.3 [P] okf-validate.py: add the comment rule it has never had, the sidecar, an `okf-frontmatter-unparsed` finding, and a `selftest` subcommand it does not have today
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest
+      subject: plan/fix-skills-py-description-truncation: 2.3 the rule in okf-validate.py
 
 ### 3. The honesty rule, once proved
 
-- [ ] 3.1 Write `docs/standards/quality/parse-honesty.md` at `authority: current`: a verifier names its own parse failure rather than reporting a content gap, at warn severity
+- [x] 3.1 Write `docs/standards/quality/parse-honesty.md` at `authority: current`: a verifier names its own parse failure rather than reporting a content gap, at warn severity
       pattern: docs/standards/quality/surface-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
-- [ ] 3.2 Promote `docs/standards/code/frontmatter-parsing.md` to `authority: current` — the three selftests are what proved it
+      subject: plan/fix-skills-py-description-truncation: 3.1 the honesty rule
+- [x] 3.2 Promote `docs/standards/code/frontmatter-parsing.md` to `authority: current` — the three selftests are what proved it
       files: docs/standards/code/frontmatter-parsing.md
+      subject: plan/fix-skills-py-description-truncation: 3.2 promote the parsing standard
 
 ### 4. Verification sweep
 
-- [ ] 4.1 Run the `CLAUDE.md` §Verifying changes block and the self-demonstrating title check; every line clean
+- [x] 4.1 Run the `CLAUDE.md` §Verifying changes block and the self-demonstrating title check; every line clean
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/fix-skills-py-description-truncation: 4.1 the verification sweep
+
+## Discoveries
+
+- The spec's ## Validation expects `skills.py doctor` to report 24 commands; the surface has 25 since /specs:isolate landed. Task 4.1 must read 25, and the spec's stated figure is stale rather than a finding. RESOLVED at conclude: left as written. A spec records what was believed when it was written, and 4.1 verified against 25.
+- The spec's ## Out of Scope reasons about a version bump 'off 4.1.0', but VERSION and all three scripts are already at 4.2.0. The propagation argument holds; the number is stale. RESOLVED at conclude: left as written, same reason — and the propagation argument is unaffected, so no already-aligned target gets this fix until a release ships.
+- okf-validate.py's other finding codes carry no tool prefix (missing-type, resource-unresolved, index-orphan), so the spec-declared okf-frontmatter-unparsed is the only prefixed code in that file. Implemented as declared; whether to rename it to frontmatter-unparsed is a naming call for conclude. RESOLVED at conclude: KEPT as `okf-frontmatter-unparsed`. The `sk-`/`sp-`/`okf-` triad is the cross-tool symmetry this spec exists to create, and it reads as one rule in three tools rather than three unrelated findings. Nothing outside this branch references the codes, so the choice was free either way; local consistency inside one file lost to the symmetry across three.
+- The branch review found the standard's own opening rule unmet: `specs.py` and `okf-validate.py` do not read block scalars (the table says so) but returned the bare `|`/`>` indicator as the value and named nothing — `description: |` read as the literal `"|"`. Pre-existing, not a regression, and invisible to the emptiness test because a block scalar is the one unread form that does not come back empty. RESOLVED at conclude: fixed on the branch, detected on the indicator; `skills.py` unchanged because it genuinely reads them.
+
+## Outcome
+
+Shipped. All three tools â€” `skills.py`, `specs.py` and `okf-validate.py` â€” apply one YAML comment
+rule (`#` opens a comment only at the start of a value or after whitespace, never inside a quoted
+scalar) and each carries a `frontmatter_anomalies` sidecar that names what its parse could not
+represent. `lint`, `validate` and the OKF checker report those as `sk-`/`sp-`/`okf-frontmatter-unparsed`
+at **warn**, emitted *before* the content checks they used to be mistaken for. `parse_frontmatter`
+kept its signature in all three, so none of the nine call sites changed and no cycle command
+changed behaviour mid-build.
+
+Two standards carry it: `docs/standards/code/frontmatter-parsing.md` (the YAML subset each tool
+reads, the comment rule, the twelve canonical cases and the three-copy lockstep obligation) and
+`docs/standards/quality/parse-honesty.md` (a verifier names its own parse failure rather than
+reporting it as a content gap). Both are `authority: current` â€” the parsing standard was written at
+`background` in task 1.1 before anything implemented it and promoted in task 3.2 once all three
+selftests passed the same twelve cases.
+
+**What the branch review added.** The standard's own opening rule â€” a form out of contract must be
+*named*, not guessed at â€” was unmet by two of the three tools. `specs.py` and `okf-validate.py` do
+not read block scalars, but returned the bare `|`/`>` indicator as the value and reported nothing:
+`description: |` read as the literal `"|"`. Pre-existing rather than a regression, and invisible to
+the emptiness test because a block scalar is the one unread form that does not come back empty, so
+it is now detected on the indicator. `skills.py` is unchanged and stays silent, because it genuinely
+reads them. This is deliberately **not** a thirteenth canonical case and cannot become one: the
+three legitimately differ here, which is why row 12 uses a bare wrapped line as common ground.
+
+**What was left out, deliberately.** No shared frontmatter module and no cross-tool import â€” each
+tool installs standalone into a target's `.claude/hooks/`, so the duplication is the mold, not an
+accident. Nothing learned to read a form it does not read; the diagnostic names it instead. And no
+version bump: all three aligns overwrite an installed copy only when the plugin is newer, so
+**no already-aligned target repo gets this fix until a release ships**. That is deferred to whatever
+ships the release, not forgotten.
+
+**What the next reader needs.** `CANONICAL_CASES` is duplicated byte-identically in all three tools
+and **is the lockstep unit â€” edit all three or none**; a drifted parser fails its own selftest on a
+row the other two still pass. Everything below that list is per-tool by design, because each reads a
+different subset: `frontmatter_anomalies` legitimately differs in all three, and each docstring says
+why. The three selftests are the standing guard and are now named in `CLAUDE.md` Â§Verifying changes.
+
+Merged with a **merge commit** (`--no-ff`), so every per-task commit stays on `main` and all seven
+recorded `subject:` fields resolve from it.

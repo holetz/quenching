@@ -47,10 +47,6 @@ sentence, and **link out** rather than explaining in full here.
   `description` of every command, resident in every session's context before anything fires and
   therefore the only surface cost paid whether or not a command runs; measured by
   `skills.py budget` from the parsed value, never the YAML source.
-- [**Approved record**](../standards/workflows/plan-lifecycle.md) — the `approved: {date}`
-  frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
-  `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
-  refusing an unapproved spec.
 - [**Anchorless strategy**](../standards/workflows/plan-git-record.md) — a merge strategy that
   produces **no merge commit** — `fast-forward` and `rebase` — so the **Merge record** has nothing
   to name and carries an explicit none instead of a fabricated pointer. Under both, the per-task
@@ -58,6 +54,19 @@ sentence, and **link out** rather than explaining in full here.
   would add nothing rather than being merely unavailable. `specs.py validate` reports the mismatch
   in **both** directions (`sp-bad-merge`): an anchorless strategy carrying a real subject, and a
   merge-producing strategy carrying an explicit none.
+- [**Anomaly sidecar**](../standards/quality/parse-honesty.md) — a *second* function reporting what
+  a parse could not represent faithfully, placed beside the parser rather than folded into its
+  return. `frontmatter_anomalies(text)` re-reads the frontmatter block and names each unfaithful
+  read — a stripped comment, an unterminated quote, an indented form the tool does not read, a
+  last-winning duplicate key — while `parse_frontmatter` keeps returning a bare dict. The shape is
+  the whole point: a `(value, understood)` return would force all nine call sites to decide what an
+  un-understood input means, including mid-cycle ones (`status`, `next`, `triage`) that today refuse
+  nothing. Every entry is a suspicion the tool **cannot** resolve, never a proven violation, which
+  is why callers surface them at warn.
+- [**Approved record**](../standards/workflows/plan-lifecycle.md) — the `approved: {date}`
+  frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
+  `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
+  refusing an unapproved spec.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
@@ -81,6 +90,16 @@ sentence, and **link out** rather than explaining in full here.
   session's prompt-cache key, so changing it makes the next request recompute every input token.
   A sub-agent's pin is cache-safe because it carries its own context; an orchestrator's is not,
   which is why five `effort: low`/`medium` pins were dropped rather than kept for their tier.
+- [**Canonical case list**](../standards/code/frontmatter-parsing.md) — the twelve frontmatter rows
+  that `skills.py`, `specs.py` and `okf-validate.py` must all decide **identically**, duplicated
+  byte-identically as each tool's `CANONICAL_CASES` and run by each tool's own `selftest`. It is the
+  **lockstep unit** standing in for the shared module the three cannot have — each installs
+  standalone into a target's `.claude/hooks/`, so none may import the others — and it works by
+  localising a break: a parser that drifts fails its OWN selftest on a row the other two still pass.
+  A tool may read *more* than the list requires and must then not report the form it genuinely read,
+  so a form a tool does **not** read can never become a row; that asymmetry is named per-tool
+  instead, which is why a block scalar is diagnosed by two of the three and by neither the list nor
+  the third.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `specs.py task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with
@@ -110,6 +129,15 @@ sentence, and **link out** rather than explaining in full here.
   committed to the base after it. The strategy was a human choice and the subject names the merge
   commit it is about to produce; recording both is what tells a future reader whether the per-task
   subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
+- [**Parse honesty**](../standards/quality/parse-honesty.md) — the obligation that a verifier names
+  its own parse failure rather than reporting it as a content gap. The episode that earned it: a
+  command `description` truncated at a `#` surfaced as `sk-no-description` — a statement true of the
+  string `lint` held and false of the file on disk — so the author either distrusts the checker or
+  edits prose that was never wrong. Three consequences bind: the diagnostic ships **with** the lossy
+  transform and never after it, it runs **before** the content checks it would otherwise be mistaken
+  for, and a tool that cannot prove it implements the rule does not get the rule. Severity is
+  **warn**, because a deliberate comment and lost prose are byte-identical — the tool states a
+  suspicion it cannot resolve. Delivered by an **anomaly sidecar**.
 - [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
