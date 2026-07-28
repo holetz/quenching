@@ -439,8 +439,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 3.4 `create.md` e `develop.md`: encaminhar para `/specs:isolate` quando pedido, sem oferta ativa (ver `## Open Decisions`)
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/develop.md
       subject: plan/move-conclude-merge-last: 3.4 create and develop forward to /specs:isolate
-- [ ] 3.5 Rodar as checagens da superfície
+- [x] 3.5 Rodar as checagens da superfície
       verify: python3 assets/bin/skills.py --root . doctor --json && ./assets/bin/functional-checks.sh
+      subject: plan/move-conclude-merge-last: 3.5 run the surface checks for section 3
 
 ### 4. As referências
 
@@ -486,3 +487,4 @@ branch `plan/move-conclude-merge-last`):
 - conclude's --outcome abandoned path distils onto the work branch and then offers to DELETE it, so a background note can be harvested and thrown away in the same run; pre-existing and left untouched here because ## Out of Scope freezes the abandoned path
 - functional-checks.sh:32 reads its stream-json evidence with a bare open(), so on Windows it decodes cp1252 and dies with UnicodeDecodeError; tools() then emits nothing and the assertion fails for LACK OF EVIDENCE rather than reaching a verdict. Measured 2026-07-28: pristine 96f6657 scores 3 passed/6 failed, this branch 4 passed/5 failed, the five check-3 failures identical in both
 - check 1 of functional-checks.sh is FLAKY, not deterministic: 'Read a file under assets/references/ (placeholder substituted)' failed on pristine 96f6657 and passed on this branch, with nothing between them that touches placeholder substitution
+- third measurement of functional-checks check 1a across identical script runs: FAIL on pristine 96f6657, PASS on this branch at task 2.3, FAIL again at task 3.4 — nondeterministic, so its verdict cannot gate anything until the cp1252 read at line 32 is fixed
