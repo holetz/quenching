@@ -254,8 +254,9 @@ deliberately left alone â€” do not "fix" them.
       files: plugins/quenching/commands/docs/status.md, plugins/quenching/commands/specs/status.md
       verify: cd plugins/quenching && python3 assets/bin/skills.py --root . doctor && python3 assets/bin/skills.py --root . lint
       subject: plan/verify-allowed-tools-enforcement: 1.1 Delete the enforcement sentence from the /docs:status and /specs:status doctrine bullets
-- [ ] 1.2 Delete the same clause from the plugin README's /docs:status paragraph, re-joining the sentence
+- [x] 1.2 Delete the same clause from the plugin README's /docs:status paragraph, re-joining the sentence
       files: plugins/quenching/README.md
+      subject: plan/verify-allowed-tools-enforcement: 1.2 Delete the same clause from the plugin README's /docs:status paragraph, re-joining the sentence
 
 ### 2. Close the authoring gap that produced it
 
