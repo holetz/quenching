@@ -5,6 +5,7 @@ verification: per-section
 priority: {level: 3, criticality: critical, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+branch: {base: main, work: plan/verify-allowed-tools-enforcement}
 ---
 
 # Verify Allowed Tools Enforcement
