@@ -81,19 +81,13 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**22 specs** · 2 executing · 1 designed · 19 captured
-
-### Executing
-
-| Spec | Title | Since |
-| --- | --- | --- |
-| [docs-verification-layer](2026-07-25-docs-verification-layer.md) | Verification layer for the docs/ front | 2026-07-25 |
-| [move-conclude-merge-last](2026-07-28-move-conclude-merge-last.md) | Make the merge the last action of /specs:conclude | 2026-07-28 |
+**20 specs** · 2 designed · 18 captured
 
 ### Designed
 
 | Spec | Title | Since |
 | --- | --- | --- |
+| [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
 | [restructure-claude-front-namespace](2026-07-27-restructure-claude-front-namespace.md) | Rename the /skill namespace to /automation and split it into artifact contexts | 2026-07-27 |
 
 ### Captured
@@ -106,7 +100,6 @@ closing out unbuilt work looks like.
 | [decide-sp-unrefined-severity](2026-07-25-decide-sp-unrefined-severity.md) | Decide whether sp-unrefined should escalate to error | 2026-07-25 |
 | [expose-finding-advisory-as-data](2026-07-25-expose-finding-advisory-as-data.md) | Expose a finding's advisory/blocking status as data in okf-validate --json | 2026-07-25 |
 | [split-specs-py-backlog-renderer](2026-07-25-split-specs-py-backlog-renderer.md) | Split the backlog-zone renderer out of specs.py | 2026-07-25 |
-| [verify-allowed-tools-enforcement](2026-07-26-verify-allowed-tools-enforcement.md) | Verify Allowed Tools Enforcement | 2026-07-26 |
 | [add-specs-py-record-writer](2026-07-27-add-specs-py-record-writer.md) | Give the frontmatter records a mechanical writer in specs.py | 2026-07-27 |
 | [dedupe-specs-py-spec-reader](2026-07-27-dedupe-specs-py-spec-reader.md) | Fold the four copies of read-parse-derive in specs.py into one helper | 2026-07-27 |
 | [fix-skills-py-description-truncation](2026-07-27-fix-skills-py-description-truncation.md) | skills.py silently truncates a description at the first ' | 2026-07-27 |
