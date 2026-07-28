@@ -6,6 +6,8 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-28
 
+**Creation**: [Reassess whether specs/plans/index.md is needed](/specs/plans/2026-07-28-decide-plans-index-need.md) — captures the ask to re-examine the `specs/plans/index.md` listing: whether its GENERATED zone still earns the reindex call every creating, promoting and ranking command pays, given `specs.py list`/`status` derive the same view from disk.
+
 **Creation**: [Prefer worktrees for spec isolation and remove them after a successful merge](/specs/plans/2026-07-28-prefer-worktree-isolation.md) — captures two asks about isolation: make the worktree the preferred path in `/specs:isolate` rather than the branch, and have `/specs:conclude` remove the worktree once its merge succeeds instead of leaving it on disk pointing at an integrated branch.
 
 **Creation**: [Revise the fixed docs/standards subject folders](/specs/plans/2026-07-28-revise-standards-subject-folders.md) — captures the ask to revisit the canonical `docs/standards/` subject folders, starting with `mlops`, which names a far narrower arm than its siblings and lands empty in nearly every target.
