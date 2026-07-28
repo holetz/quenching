@@ -373,6 +373,24 @@ aceito — specs não são renomeadas.
 - Prosa em pt-BR nesta spec; headings, caminhos e chaves em inglês canônico.
 - `archive/**` é intocável.
 
+Estado após a seção 1 (worktree `../claude-quenching-move-conclude-merge-last`,
+branch `plan/move-conclude-merge-last`):
+
+- `specs.py` já grava `subject:`. **`--commit` não existe mais** — este próprio
+  build marca a caixa ANTES do commit, com `--subject`, e código + caixa entram
+  no mesmo commit. Não há commits de bookkeeping por task.
+- O vocabulário do registro `merge` mora em TRÊS cópias em lockstep:
+  `DEFAULT_SCHEMA` em `specs.py`, `assets/specs/schema.json` (que **shadowa** a
+  constante via `load_schema()`) e `assets/specs/templates/spec.md`. Nenhuma
+  task declara `schema.json` em `files:` — ver `## Discoveries`.
+- `parse_frontmatter` passou a ler block mappings (indentação decide, como em
+  YAML); flow continua splitando em vírgula, então valor com vírgula só em
+  block.
+- `next --front` ranqueia pela ref viva; candidatos expõem
+  `branch: {work, live, current}`.
+- Falta a seção 2 em diante. `specs-execute/git.md` ainda NÃO foi movido, então
+  toda citação por caminho absoluto a ele continua válida até 2.1/2.3.
+
 ## Tasks
 
 ### 1. As rails em `specs.py`
