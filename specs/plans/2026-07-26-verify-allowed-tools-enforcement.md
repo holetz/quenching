@@ -250,9 +250,10 @@ deliberately left alone â€” do not "fix" them.
 
 ### 1. Remove the claim
 
-- [ ] 1.1 Delete the enforcement sentence from the /docs:status and /specs:status doctrine bullets
+- [x] 1.1 Delete the enforcement sentence from the /docs:status and /specs:status doctrine bullets
       files: plugins/quenching/commands/docs/status.md, plugins/quenching/commands/specs/status.md
       verify: cd plugins/quenching && python3 assets/bin/skills.py --root . doctor && python3 assets/bin/skills.py --root . lint
+      subject: plan/verify-allowed-tools-enforcement: 1.1 Delete the enforcement sentence from the /docs:status and /specs:status doctrine bullets
 - [ ] 1.2 Delete the same clause from the plugin README's /docs:status paragraph, re-joining the sentence
       files: plugins/quenching/README.md
 
@@ -277,3 +278,7 @@ deliberately left alone â€” do not "fix" them.
       verify: ! grep -rn "is the enforcement\|enforcement rather than a promise" --include='*.md' plugins/ docs/
 - [ ] 4.2 Run the surface's functional checks and revert any check-3 residue in the same commit
       verify: ./plugins/quenching/assets/bin/functional-checks.sh && python3 plugins/quenching/assets/bin/specs.py validate
+
+## Discoveries
+
+- Task 4.1's verify: grep pattern 'is the enforcement' cannot match commands/docs/status.md or commands/specs/status.md — the phrase wraps across a line break there ('that is the' / 'enforcement, not a promise'), and grep is line-based. As written the check passes vacuously and would report zero instances even with both sentences intact. A multiline-capable check (grep -Pzo, or ripgrep -U) is needed for 4.1 to prove its claim.
