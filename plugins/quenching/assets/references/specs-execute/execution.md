@@ -16,11 +16,11 @@ never reaches past the loop.
 ## Contents
 
 - [The precondition: a clean tree](#the-precondition-a-clean-tree)
-- [Recording the isolation](#recording-the-isolation)
+- [Isolation is somebody else's job](#isolation-is-somebody-elses-job)
 - [The verification policy](#the-verification-policy)
 - [The validation loop](#the-validation-loop)
 - [The diff self-review — four items, before every commit](#the-diff-self-review--four-items-before-every-commit)
-- [The commit — one per task](#the-commit--one-per-task)
+- [The commit — one per task, carrying its own ticked box](#the-commit--one-per-task-carrying-its-own-ticked-box)
 - [Declared versus emergent `docs/`](#declared-versus-emergent-docs)
 - [Delegating an executor — permitted, and bounded](#delegating-an-executor--permitted-and-bounded)
 
@@ -35,29 +35,22 @@ report must say so.
 Not a git repo → no isolation, no commits. Say that once, run the rest of the loop normally, and
 never `git init` a repo on the human's behalf.
 
-## Recording the isolation
+## Isolation is somebody else's job
 
-When the human takes a branch or a worktree, stamp it into frontmatter **once**, before the first
-task:
+Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all belong to
+**`/specs:isolate`** and its reference,
+[../specs-isolate/git.md](../specs-isolate/git.md) §Recording the isolation. `/specs:execute`
+delegates to that command and never reimplements it, because isolation is not a privilege of
+building: a spec can be isolated at creation or during development just as legitimately.
 
-```yaml
-branch:
-  base: main
-  work: plan/session-tokens
-```
+Two things the loop below still needs from it:
 
-`work` is derivable from `git branch --show-current` while the branch is checked out; `base` is
-not — **after the merge, git cannot say what the branch was cut from.** That is the whole reason
-the record exists, and it is why `base` is captured at the moment it is still true rather than
-reconstructed at `conclude`.
+- **A spec whose `plan/<slug>` ref is alive but checked out somewhere else is already being built
+  there.** Starting a second run against it forks the work; say where it is and stop.
+- **Work done in place carries no `branch` record**, so there is nothing to merge later and the
+  report says so.
 
-Stamp nothing when the human declines isolation and works in place. There is no branch, nothing
-will be merged, and a record whose `base` equals its `work` states no fact. Say in the report that
-the spec carries no `branch` record and why.
-
-The record is `writeOnce: true`. A second `execute` run on the same spec **reads** it rather than
-rewriting it — and if the current branch disagrees with `work`, that is a finding to report, not a
-value to correct.
+Nothing in this file stamps that record, reads it as authoritative, or corrects it.
 
 ## The verification policy
 
@@ -130,21 +123,34 @@ Fix what it finds **before** committing, so the commit is the reviewed version. 
 deliberately *not* a full code review: it runs per task, and a three-line change must not cost a
 full-diff read. The whole-branch review runs once, and it belongs to `/specs:conclude`.
 
-## The commit — one per task
+## The commit — one per task, carrying its own ticked box
 
-After the self-review passes, commit that task alone. Stage the task's declared `files:` rather
-than sweeping the tree — `git add -A` also picks up whatever an editor or a tool wrote while the
-task ran, which is the same contamination §The precondition refuses at the start:
+After the self-review passes, **decide the subject, tick the box with it, then commit**. That order
+is the point: the subject is known before the commit exists, so the checkbox travels *inside* the
+commit that implements it.
 
 ```bash
-git add <the task's files> && git commit -m "<subject>"
+specs.py task --spec "<slug>" --check <id> --subject "<subject>"
+git add <the task's files> <the spec file> && git commit -m "<subject>"
 ```
 
+Stage the task's declared `files:` **and the spec file**, never the whole tree — `git add -A` also
+picks up whatever an editor or a tool wrote while the task ran, which is the same contamination
+§The precondition refuses at the start.
+
+**There is no per-task bookkeeping commit any more.** It existed only because a sha cannot be known
+before the commit that carries it, so the tick had to follow the commit and could not join it. One
+task is now exactly one commit: code, docs the task named, and the ticked box.
+
+If the commit **fails** — a rejecting hook, nothing staged — undo the tick
+(`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist, and
+report the failure. Never route around it with `--no-verify`.
+
 The **subject line format** is the target repo's to declare. Read
-[git.md](git.md) §Commit messages: a repo with `docs/standards/git/**` owns the format outright and
-this contract defers to it; with nothing declared, the plugin's default is
-`plan/<slug>: <task-id> <task title>`. Never install a git standard into a target to create the
-answer.
+[../specs-isolate/git.md](../specs-isolate/git.md) §Commit messages: a repo with
+`docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
+declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
+standard into a target to create the answer.
 
 One commit per task is what makes the branch worth having: `git revert` undoes exactly one task,
 `git log` reads as the spec's task list, and a review can walk it step by step. N tasks piled into
@@ -161,25 +167,30 @@ one uncommitted blob gives none of that, and the isolation offer buys nothing.
 - **Never amend or rewrite an earlier task's commit**, and never force-push.
 - If the repo has no git, skip committing entirely and say so once.
 
-Then, and only then, tick the box **with the sha that implemented it**:
+Then **assert the subject survived**, and report rather than repair:
 
 ```bash
-specs.py task --spec "<slug>" --check <id> --commit "$(git rev-parse --short HEAD)"
+git log -1 --format=%s        # must equal what was recorded
 ```
 
-The sha lands on the task line as `commit: <sha>`, in the indented metadata grammar `files:` and
-`verify:` already use. It is what links a checkbox to the code without a trailer inside the commit
-message, leaving the target repo's message format entirely its own. It cannot go stale: the two
-rules above forbid amending an earlier task's commit and forbid force-push, so a recorded sha
-stays resolvable for the life of the branch.
+The subject lands on the task line as `subject: <line>`, in the indented metadata grammar `files:`
+and `verify:` already use, and resolves with `git log --grep=<subject> --fixed-strings`. A
+`commit-msg` hook that only *adds* — a ticket prefix, a `Change-Id`, a sign-off — leaves it
+matching as a substring and needs nothing. A hook that **replaces** the subject outright breaks the
+link: **report it as a finding and write nothing.** Correcting the record here would put a write
+after the commit again, which is the whole thing this ordering removes.
 
-**Squash is the one caveat, and `conclude` owns it.** A squashed merge leaves every per-task sha
-reachable only from the branch — which is why `/specs:conclude` records `merge: {strategy, commit}`
-and, on a squash, offers to keep the branch. Nothing in this loop needs to know; recording the sha
-honestly is the whole job here.
+The record cannot go stale: the rules above forbid amending an earlier task's commit and forbid
+force-push. Unlike a sha it also **survives a rebase**, so the one merge strategy that used to
+destroy every recorded link no longer does.
 
-With no git in the repo there is no sha: tick the box without `--commit` and say so once in the
-report, rather than inventing a placeholder.
+**Squash is the one caveat, and `conclude` owns it.** A squashed merge leaves the per-task commits
+reachable only from the branch — which is why `/specs:conclude` records `merge: {strategy, subject}`
+and, on a squash, offers to keep the branch. Nothing in this loop needs to know; recording the
+subject honestly is the whole job here.
+
+With no git in the repo there is nothing to anchor to: tick the box without `--subject` and say so
+once in the report, rather than inventing a placeholder.
 
 ## Declared versus emergent `docs/`
 
