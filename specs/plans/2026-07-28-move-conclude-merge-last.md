@@ -466,8 +466,9 @@ branch `plan/move-conclude-merge-last`):
 - [x] 5.2 Atualizar docs/standards/workflows/plan-lifecycle.md — a linha `merge: {strategy, subject}`
       files: docs/standards/workflows/plan-lifecycle.md
       subject: plan/move-conclude-merge-last: 5.2 plan-lifecycle.md — the merge record and branch owner
-- [ ] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
+- [x] 5.3 Atualizar docs/standards/workflows/task-execution.md — a citação nominal à seção renomeada e §One commit per task
       files: docs/standards/workflows/task-execution.md
+      subject: plan/move-conclude-merge-last: 5.3 task-execution.md — one commit per task, literally
 - [ ] 5.4 Redefinir "Commit record" no glossário via `/docs:define`
       files: docs/knowledge/glossary.md
 - [ ] 5.5 Verificar o bundle
