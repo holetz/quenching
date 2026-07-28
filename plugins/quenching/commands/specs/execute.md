@@ -28,7 +28,7 @@ through eight.
 
 The git conventions — the commit subject, the branch name, the merge strategies, and the
 **read-if-present** rule for a target's `docs/standards/git/**` — live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md).
 
 The spec-driven facts — the layout, the thirteen canonical sections, the derived stages, the
 `specs.py` surface, the `specs/`↔`docs/` boundary — live in
@@ -144,7 +144,7 @@ e. **Self-review the task's diff** on the four items — reuse · useless defens
    dead code — and fix what it finds *before* committing.
 
 f. **Commit that task alone**, staging its declared files, under the subject format in
-   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages.
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Commit messages.
 
 g. **Tick the box with its sha**, mechanically and never by string surgery:
    ```bash

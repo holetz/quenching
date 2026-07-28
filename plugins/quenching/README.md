@@ -336,7 +336,7 @@ vocabulary, the `specs.py` surface, and the `specs/`↔`docs/` boundary in
 the execution mechanics in
 [`specs-execute/execution.md`](assets/references/specs-execute/execution.md),
 the git defaults (read-if-present, never installed) in
-[`specs-execute/git.md`](assets/references/specs-execute/git.md),
+[`specs-isolate/git.md`](assets/references/specs-isolate/git.md),
 the distillation doctrine in
 [`specs-conclude/distill.md`](assets/references/specs-conclude/distill.md).
 The per-spec commands are never conducted by any sweep, because each needs fresh human intent a
