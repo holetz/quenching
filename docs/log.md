@@ -6,6 +6,8 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-28
 
+**Update**: [Plan git record contract](/docs/standards/workflows/plan-git-record.md) — rewritten around the commit **subject** as the task→commit anchor: a subject is known before the commit exists, so every record is now written before the thing it describes, the box travels inside its own task commit, and `merge: {strategy, subject}` is stamped on the work branch — which is what lets the merge be the last action of `/specs:conclude`. Rebase stops destroying the record; the squash caveat stands.
+
 **Creation**: [Mine a session for improvements to the command that started it](/specs/plans/2026-07-28-improve-command-from-session.md) — a command's body is only ever revised from taste; the transcript that ran it holds the evidence of what it costs, repeats, gets wrong or leaves unresolved, and it is thrown away when the session ends.
 
 **Creation**: [Make the merge the last action of /specs:conclude](/specs/plans/2026-07-28-move-conclude-merge-last.md) — conclude merges before distilling, so the emergent docs and the distillation land as loose commits on `main` instead of inside the spec's branch.

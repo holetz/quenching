@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the per-task commit field, the branch and merge frontmatter records, the squash caveat, and the read-if-present contract for a target's own docs/standards/git/
-resource: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+description: How a plan's work is recorded in git — the commit subject as the task→commit anchor, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, and the read-if-present contract for a target's own docs/standards/git/
+resource: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 2-3)
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1)
 maintainer: quenching
 ---
 
@@ -15,61 +15,107 @@ maintainer: quenching
 
 What links a plan's checkboxes to the commits that implemented them, which git facts are recorded
 in the spec, and whose conventions govern the commits themselves. The procedures implementing this
-live in `assets/references/specs-isolate/git.md` and `.../execution.md`; this standard is the
-contract they answer to.
+live in `assets/references/specs-isolate/git.md` and `.../specs-execute/execution.md`; this
+standard is the contract they answer to.
 
-## The task→commit link is stored, never inscribed
+## Every record is written before the thing it describes
 
-Each completed task line carries its implementing sha, in the metadata grammar `files:` and
-`verify:` already use:
+This is the rule the rest of the file follows from. A record pointing at a commit can only be
+written *after* that commit if it names something the commit alone can produce — and a sha is
+exactly that. Naming the **subject** instead inverts the dependency, because the subject is chosen
+by whoever is about to commit.
+
+Two consequences, and they are why the anchor changed:
+
+- **`/specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
+  that implements it. One task is exactly one commit, and the per-task bookkeeping commit is gone.
+- **`/specs:conclude` stamps `merge:` on the work branch**, so the merge is the last action of the
+  run and **nothing is ever committed to the base branch after it**. One merge carries the code,
+  the emergent docs, the archived spec and the distillation; reverting it reverts the spec's whole
+  footprint.
+
+A record that cannot be written beforehand is a record that forces a write afterwards, and a write
+after the merge lands where the spec's own branch cannot account for it.
+
+## The task→commit link is the commit's own subject
+
+Each completed task line carries the subject of the commit that implements it, in the metadata
+grammar `files:` and `verify:` already use:
 
 ```markdown
-- [x] 3.2 Validate the token — files: src/auth.py — verify: pytest tests/auth — commit: abc1234
+- [x] 3.2 Validate the token
+      files: src/auth.py
+      verify: pytest tests/auth
+      subject: plan/session-tokens: 3.2 Validate the token
 ```
 
-Written mechanically by `specs.py task --check <id> --commit <sha>` — never by string surgery —
-and only **after** the task verified, self-reviewed, and committed. The link lives on the task
-line rather than as a trailer or anchor inside the commit message, which leaves the message format
-**entirely the target repo's to decide**: Conventional Commits, ticket prefixes, and required
-sign-offs all keep working, and the link still resolves.
+Written mechanically by `specs.py task --check <id> --subject <line>` — never by string surgery —
+and only **after** the task verified and self-reviewed, **before** its commit. It resolves by
+substring match:
 
-The record cannot go stale by construction: amending an earlier task's commit and force-pushing
-are both forbidden (see [task-execution.md](task-execution.md) §Hard rules), so a recorded sha
-stays resolvable for the life of the branch. The one thing that can narrow it is a squash merge —
-§The squash caveat below.
+```bash
+git log --grep="<the recorded subject>" --fixed-strings
+```
+
+The link is still **not a trailer and not a machine-readable anchor bolted into the message**. It is
+the subject the target repo's own convention produced, recorded verbatim: Conventional Commits,
+ticket prefixes and required sign-offs all keep working, and the link still resolves. What changed
+is only *which* fact about the commit is stored — never who decides the message.
+
+**Two forms are read, forever.** A spec built before this change carries `commit: <sha>` and
+resolves by sha. Neither form is backfilled and neither is an error: a recorded sha describes a
+commit that exists, and rewriting an archived spec to modernise it would falsify when the record
+was made. Tools read both; only `subject:` is ever written.
+
+### Where the subject can fail
+
+A `commit-msg` hook that **replaces** the subject outright breaks the link. Substring matching
+survives every hook that merely *adds*, which is nearly all of them. `/specs:execute` compares
+`git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding, writing
+nothing** — correcting it after the commit would restore the ordering this contract removed.
 
 ## Two frontmatter records carry the underivable git facts
 
 Both belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the same
 admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `execute`, write-once, at the moment isolation is taken.
-  `work` is derivable while the branch is checked out; `base` is not — **after the merge, git
-  cannot say what the branch was cut from**, which is the whole reason the record exists and why
-  it is captured while still true. Work done in place stamps nothing: a record whose `base` equals
-  its `work` states no fact. A later run reads the record; a current branch that disagrees with
-  `work` is a finding to report, never a value to correct.
-- **`merge: {strategy, commit}`** — stamped by `conclude`, write-once. The strategy was a human
-  choice and the sha is its result; recording both is what tells a future reader whether the
-  per-task shas still resolve from the base branch.
+- **`branch: {base, work}`** — stamped by `/specs:isolate`, write-once, at the moment isolation is
+  taken. `work` is derivable while the branch is checked out; `base` is not — **after the merge,
+  git cannot say what the branch was cut from**, which is the whole reason the record exists and
+  why it is captured while still true. Work done in place stamps nothing: a record whose `base`
+  equals its `work` states no fact. A later run reads the record; a current branch that disagrees
+  with `work` is a finding to report, never a value to correct.
+- **`merge: {strategy, subject}`** — stamped by `conclude`, write-once, **on the work branch before
+  the merge**. The strategy was a human choice and the subject names the merge it will produce.
+  Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none;
+  `specs.py validate` reports a record that gets this backwards either way, as `sp-bad-merge`.
 
-## The squash caveat
+**The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
+record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
+live ref — which is what `specs.py next --front` does, and why `/specs:continue` demotes a spec
+whose branch is alive but checked out elsewhere.
 
-The four merge strategies differ in exactly one dimension that matters here — what happens to the
-recorded shas:
+## The squash caveat, and what rebase no longer costs
 
-| Strategy | The per-task `commit:` shas |
+The four merge strategies differ in one dimension that matters here — what happens to the commits
+the recorded subjects resolve against:
+
+| Strategy | The per-task subjects |
 | --- | --- |
-| merge commit *(default)* | stay on the base branch, resolve forever |
+| merge commit *(default)* | resolve from the base branch forever |
 | fast-forward | unchanged — nothing rewritten, nothing added |
-| squash | **survive only on the branch** — deleting it strands every record |
-| rebase | **rewritten** — every recorded sha points at a commit that no longer exists |
+| squash | **resolve only from the branch** — deleting it strands every record |
+| rebase | **survive**: the rewrite carries the message, so every record still resolves |
 
-A squash is a common house style and is not argued against — but its consequence is said out
-loud: when squash is chosen, `conclude` records it in `merge:`, states it in `## Outcome`, and
-offers **not** to delete the branch, the only way the archived spec's `commit:` fields stay live.
-Rebase is offered only when asked for by name, with the plain statement that it makes the record
-worse rather than narrower.
+A squash is a common house style and is not argued against — but its consequence is said out loud:
+when squash is chosen, `conclude` records it in `merge:`, states it in `## Outcome`, and offers
+**not** to delete the branch, the only way the archived spec's `subject:` fields stay resolvable.
+
+**Rebase is no longer the strategy that destroys the record.** Under the sha anchor it rewrote every
+recorded commit and left the archived spec pointing at commits that no longer existed — the one
+strategy that made the record strictly worse rather than merely narrower. A subject is carried by
+the rewrite, so rebase now sits on the same footing as the others. The old warning applies only to
+specs still carrying the sha form.
 
 ## The target's git conventions win — read if present, never installed
 
@@ -78,11 +124,11 @@ governs verbatim; partial coverage splits (the target's docs for what they cover
 defaults for the rest); an `authority: background` git standard still wins over the defaults. The
 report states which one governed.
 
-With nothing declared, the plugin's defaults apply — branch `plan/<slug>`, one commit per task
-with the subject `plan/<slug>: <id> <title>`, and bookkeeping commits (a ticked box, a stamped
-record, a regenerated listing) as `plan/<slug>: record …`. Bookkeeping commits exist because the
-spec file is edited *after* a task's commit is made, and folding that edit into the task's own
-commit would mean amending it.
+With nothing declared, the plugin's defaults apply — branch `plan/<slug>`, one commit per task with
+the subject `plan/<slug>: <id> <title>`, `plan/<slug>: merge (<strategy>)` for a merge, and
+`plan/<slug>: record …` for the bookkeeping that remains. That bookkeeping is now only what a
+commit genuinely cannot carry ahead of itself — `## Handoff`, which describes the tree *after* the
+last commit — and no longer includes a ticked box or a stamped `merge:` record.
 
 **Never install `docs/standards/git/**` into a target.** A default written into the repo stops
 being a default: it converts an offer into a rule the repo now declares, which then wins forever
