@@ -10,6 +10,13 @@ modules / variables), fold it into a subfolder (`symbol-naming/{classes,function
 its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standard carries
 `type: standard` + a derived `resource:`; add each to [../index.md](../index.md).
 
+## Current docs
+
+* [frontmatter-parsing.md](frontmatter-parsing.md) — the YAML subset the three shipped tools read:
+  the comment rule, the canonical case list all three must decide identically, the anomaly set each
+  must be able to name, and the three-copy lockstep obligation that stands in for the shared module
+  they cannot have.
+
 ## Candidate sub-standards
 
 Break this subject **one concept per file**. The method evaluates each candidate against
@@ -22,4 +29,11 @@ records the rest below as deferrals (never a silent skip):
 Per-subject ledger the verify gate reads. A subject is "done" only when every candidate is
 **present or listed here** with a one-line why.
 
-- _(none yet — fill on population)_
+- `imports` · `format-lint` · `typing` · `symbol-naming` · `dependencies-pins` · `error-handling` ·
+  `logging` · `docstrings` — **deferred, not yet needed.** The repo's only code is three
+  zero-dependency stdlib scripts written in one house style; none of these has been contested.
+- `testing-conventions` — **deferred, covered elsewhere for now.** There is no test framework here;
+  what stands in for one is each tool's own `selftest` and
+  [../quality/surface-verification.md](../quality/surface-verification.md).
+- **Present:** `frontmatter-parsing` — not on the candidate list above, because it is a contract
+  *between* the three scripts rather than a convention within one.

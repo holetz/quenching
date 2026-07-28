@@ -56,6 +56,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [skill-evaluation.md](automation/skill-evaluation.md) | What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero |
 | [skills.md](automation/skills.md) | How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point |
 
+### code/
+
+| Doc | Covers |
+| --- | --- |
+| [frontmatter-parsing.md](code/frontmatter-parsing.md) | The YAML subset the three shipped tools read — the comment rule, the canonical case list all three must decide identically, the anomaly set each must be able to name, and the three-copy lockstep obligation |
+
 ### naming/
 
 | Doc | Covers |
