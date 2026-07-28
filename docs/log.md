@@ -6,6 +6,8 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-28
 
+**Creation**: [Retire the docs/ log](/specs/plans/2026-07-28-retire-docs-log.md) — captures the ask to end `docs/log.md` entirely: not scaffolded by `/docs:align`, not appended to by the capture commands, not required by the OKF conformance contract.
+
 **Creation**: [Add customizable run modes to the specs cycle commands](/specs/plans/2026-07-28-add-specs-cycle-run-modes.md) — `develop`, `execute` and `conclude` each run one fixed way, so a human wanting a cheaper or a more thorough pass has no lever short of editing the command body; captures the ask for a run mode asked at invocation, on three named axes (how many questions reach the human, whether the run moves into a worktree, and effort as rounds of critique).
 
 **Creation**: [Declare the repo's body language in docs/standards so every command reads it for free](/specs/plans/2026-07-28-declare-repo-body-language.md) — spec bodies are English-only today, which costs comprehension in a repo whose working language is not; captures the ask for a declared home under `docs/standards/` and a near-free read path (a hook that reads it automatically is one candidate).
