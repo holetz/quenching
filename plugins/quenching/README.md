@@ -204,8 +204,7 @@ a human.
 
 Density figures carry **no finding code**, deliberately: a bundle can pass every check while
 holding scaffolded-but-empty homes and a placeholder glossary, and that is a signal worth seeing
-but not a defect list to chase. It writes nothing — `allowed-tools` carries no `Write` or `Edit`,
-which is the enforcement rather than a promise — and owns no contract, citing `conformance.md`
+but not a defect list to chase. It writes nothing, and owns no contract, citing `conformance.md`
 and `cycle.md` so the preview and the sweep cannot disagree.
 
 Triggers: *"what's the status of the docs"*, *"how healthy is the knowledge base"*, *"show me the

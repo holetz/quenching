@@ -31,8 +31,7 @@ point: a status view that disagreed with the sweep would be worse than none.
 
 - **Zero writes, no exceptions.** No stamp, no index regeneration, no `docs/log.md` entry, not
   even a marker file. A status read that changed the thing it read would break its own contract
-  and make the preview a lie. The `allowed-tools` above carry no `Write` or `Edit` — that is the
-  enforcement, not a promise.
+  and make the preview a lie.
 - **Report in the validator's vocabulary.** Every finding carries the code
   [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) defines and the command that
   closes it. Never invent a code, never soften one, and never report a finding the sweep would not
