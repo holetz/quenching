@@ -41,7 +41,14 @@
         { "prompt": "make this command run in its own isolated context", "routed": "(none)" }
       ]
     },
-    "edit": "NONE APPLIED. Every trigger in the description was reached by a hitting prompt, so nothing is sediment; no shouldNotTrigger prompt fired, so the Not for: boundary needs no sharpening. The contract removes a trigger only on a measured miss, and there were none.",
+    "edit": "NONE APPLIED AT THE TIME. Every trigger in the description was reached by a hitting prompt, so nothing was sediment; no shouldNotTrigger prompt fired. The contract removes a trigger only on a measured miss, and this run recorded none. See fixtureAssistedRate below — that reading did not survive task 1.4.",
+    "fixtureAssistedRate": {
+      "finding": "the 5/5 above is NOT a property of the description alone. The intent-shaped prompt 'set up something that audits our migrations and reports back' routes to this command only when the target repo already carries docs/standards/automation/agents.md. This eval's fixture shipped that file, so the trigger measured as a hit on borrowed evidence.",
+      "isolatedTest": "same box, single variable, both runs subtype success — WITHOUT agents.md the phrase routed to quenching:skill:new (the wrong mint); WITH it, to quenching:skill:agent:new.",
+      "surfacedBy": "task 1.4, when the same phrase became a functional-checks probe running in a lean sandbox rather than in this fixture.",
+      "fix": "task 1.4 added the phrase to the description verbatim, the same treatment task 1.3 gave /skill:hook:new. Re-tested in the box that had routed WRONG: it now routes to quenching:skill:agent:new with the description as the only change, and the probe passes in the suite (9 passed, 0 failed).",
+      "lesson": "a trigger measured in a rich fixture can be reading the repo rather than the description. An intent-shaped prompt needs the LEANEST fixture that still makes its subject exist, or the rate is not about the command."
+    },
     "note": "The two neighbour rejections did not merely fail to fire — they routed to the correct sibling (/skill:new, /skill:hook:new), which is the three-entry-point split in Design decision 6 working as intended. Also measured: the intent-phrased prompt ('audits our migrations and reports back'), which names no artifact, still routed correctly.",
     "methodWarning": "An earlier pass at --max-turns 3 reported 'delegate this to an agent' and the intent-phrased prompt as MISSES. Both were false: the sessions hit error_max_turns while still orienting with Bash. Tuning on that pass would have deleted a working trigger. Never grade a routing probe that ended in error_max_turns."
   },
