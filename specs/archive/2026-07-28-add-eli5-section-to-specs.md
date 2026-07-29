@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-29}
 branch: {base: main, work: plan/add-eli5-section-to-specs}
 reviewed: {date: 2026-07-29}
+outcome: done
 ---
 
 # Add an ELI5 section that makes a spec comprehensible to a human
@@ -397,3 +398,78 @@ Not yet done: the branch-wide review, merge, and archive — that's `/specs:conc
 - Task 4.1 declared docs/log.md as a file, but it was retired (deleted) by the already-merged retire-docs-log spec before this branch was rebased onto main; no such file exists to touch, and none was recreated.
 - okf-validate.py now reports 14 pre-existing stale-doc warnings (timestamp predates last commit touching resource) across standards/ whose resource globs match specs.py/schema.json/templates, touched repeatedly by this spec's earlier tasks; out of scope to bump here since none of those docs were declared by any task.
 - Task 5.3's skeleton gate skipped a fresh ./assets/bin/functional-checks.sh run per explicit user instruction mid-build; it last ran clean (11/11) during task 3.1's verification, before tasks 4.1/5.1/5.2 landed (docs/standards prose, spec backfills, version bump — none touch commands/** bodies or citation paths).
+
+## Outcome
+
+**What shipped.** `## Overview` is the fourteenth canonical section, position 1 of the set, ahead
+of `## Problem` — **warn-only**, never one of the ten sections the derived `ready` gate requires.
+The parsed contract carries it in all three places it is declared (`assets/specs/schema.json`,
+`specs.py`'s `DEFAULT_SCHEMA`, and the template duplicated as `TEMPLATE_SPEC`), and `selftest`
+proves the copies still agree. The authoring doctrine documents its register — plain language,
+connective rather than compressive — and its write-last rule in `spec-driven.md`, `artifacts.md`
+and `questions.md`: the shape bank creates it, every later bank refreshes it inside the same
+one-OK edit, authored last and shown as its own labelled before → after block. `/specs:align`
+reports an empty one as `sp-overview-missing` and routes it to `/specs:develop`, authoring
+nothing — added to `assets/references/specs-align/conformance.md`'s REPORTS table rather than to
+`align.md`, which never enumerates individual codes. All 33 active specs carry the section: 30
+barely-captured ones took an honest `- none — <reason>` since there was nothing yet to connect,
+and 3 developed ones got real orienting prose. `archive/` was left alone by design.
+`docs/standards/workflows/plan-artifacts.md` is revised to fourteen sections. The six version
+artifacts are at 4.3.0.
+
+**Merged as a merge commit**, so every per-task commit stays on `main` and all twelve recorded
+`subject:` anchors resolve from there.
+
+**What the branch review changed.** Three defects, none of them declared by any task, all fixed
+on the branch before the merge:
+
+- **`specs.py new` had silently stopped stamping `## Problem`.** `capture_form()` sliced
+  "everything up to the second `## ` heading" — a positional claim that `## Problem` came first,
+  which `## Overview` displaced. Every spec `new` created was born with an empty `## Overview`
+  and no `## Problem`: `sp-gate-unmet` on its own entry gate, plus a hard `sp-empty-section`
+  error on the section this spec designed to be warn-only. Now sliced by the `plans` phase's
+  declared `entryGate`. `selftest` gained the assertion the byte-for-byte template check
+  structurally could not make — `sp-capture-gate-missing` and `sp-capture-extra-heading`, that
+  capture stamps every entry-gate heading and no other. Verified it fails against the old slicer.
+- **The rename stopped at seven files.** "Thirteen" survived in twelve more, including two
+  user-facing messages (`section --write` and `validate` both told the human a stray was "not one
+  of the thirteen canonical headings") and `assets/specs/QUENCHING.md`, the operator manual that
+  installs into every adopting repo, which listed thirteen headings and omitted `## Overview`
+  entirely. Finished across the shipped product, plus the template's `AUDIENCE` line in both
+  copies, plus the 27 active specs whose preambles were stamped from the older template.
+- **A task's `subject:` split its own text.** `task --check --subject` fell back to inserting
+  under the checkbox's first physical line when a task carried no `files:`/`verify:`, cutting
+  tasks 1.4 and 5.3 in half mid-sentence. It now falls back to the end of the task block. Both
+  damaged tasks were repaired by uncheck + re-check through the fixed tool.
+
+**What the next reader needs.**
+
+- **`docs/standards/code/canonical-set-parsing.md` is new** (emergent, not declared under
+  `## Impact`). It generalises the first defect into two rules: slice a canonical set by declared
+  membership and never by position, and treat a byte-for-byte lockstep check as proof the copies
+  agree — never that the code reading them still means the same thing.
+- **`functional-checks.sh` was never re-run, and could not be.** It was taken out of service by
+  explicit instruction during this conclude, and a run in flight was killed. It is the only check
+  that a changed `commands/**` body and its citation paths actually load, and this branch changed
+  six command bodies (`align.md` during the build; `create.md`, `develop.md`, `execute.md`,
+  `status.md` and `align.md` during the review fixes) plus `conformance.md`. Those edits are
+  prose-only — no citation path and no conductor stage name changed — but they are unverified for
+  load. Discovery 3 asked for exactly this run before merge; it did not happen.
+- **This repo's own installed copies are stale.** `.claude/hooks/specs.py` and
+  `.claude/hooks/okf-validate.py` are at 4.2.0 against a plugin shipping 4.3.0, and
+  `specs/QUENCHING.md` still documents thirteen sections. Run against the merged tree, the
+  installed `specs.py` reports 33 `sp-stray-heading` warnings — one per spec carrying
+  `## Overview`. This is `## Risks` item 1 materialising, accepted there and delegated to the
+  already-merged `notice-installed-tool-version-drift` spec. `/specs:align` and `/docs:align` own
+  the refresh. Nothing is broken meanwhile: command tool-resolution is plugin-first, so every
+  command has been running 4.3.0 throughout, and the stale copy is only the fallback.
+- **`okf-validate.py docs` reports 17 warnings, 0 errors.** All `stale-doc` timestamp drift —
+  docs whose `resource:` globs match `specs.py`/`schema.json`/the templates, touched repeatedly
+  by this build and by the review fixes. None of them make a section-count claim, so this is
+  heuristic drift rather than contradiction; none were declared by any task here, and bumping a
+  timestamp without re-reading the doc would be a false claim about what it governs.
+
+**What was deliberately left out.** The three consumers — `/specs:triage`, `/specs:continue` and
+the approval bank — still regenerate their own renderings and do not read `## Overview`. Backfill
+makes wiring them viable, but that is an ordering argument, not membership, and it answers a
+different problem than `## Problem` states. It remains a follow-up spec.
