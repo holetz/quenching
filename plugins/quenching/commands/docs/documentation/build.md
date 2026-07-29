@@ -136,13 +136,8 @@ warning is either a site-layer finding you fix now (a nav entry, a plugin, a fea
 page-level one you **report**. If it is absent, report `unverified` and print the exact two
 commands. Never run `mkdocs serve`; never commit a built site.
 
-### 8. Log and report
-Append **one** consolidated entry to `docs/log.md` per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) —
-`**Update**: [documentation/](/docs/documentation/index.md) — site layer <installed|updated>:
-<what changed>` — **only when something inside the bundle changed** (a `.pages` file). A
-root-only config change gets no log line: `log.md` is the bundle's history, not the repo's.
-Then report: findings **fixed** / **reported** (each with its command), whether the build ran
+### 8. Report
+Report: findings **fixed** / **reported** (each with its command), whether the build ran
 and its result, and the two commands the human uses next (`pip install -r requirements.txt`,
 `mkdocs serve`).
 

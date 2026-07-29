@@ -132,15 +132,13 @@ specs.py plans reindex
 okf-validate.py specs/plans --listing-root
 ```
 `plans reindex` rebuilds the GENERATED zone from disk (read its `changed` field to know whether it
-wrote). Append ONE consolidated entry to `docs/log.md` per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md):
-`**Update**: [plans/](/specs/plans/index.md) — ranked N specs (X new, Y re-ranked)`. No `docs/`
-bundle → skip the log entry; `specs/` stands on its own.
+wrote). Nothing is written into the `docs/` bundle: the ranking lives in each spec's own
+`priority` record, and the bundle log this used to append to is retired.
 
 The validator must exit 0 with no `index-broken-link` / `index-orphan`. The hook is docs-scoped by
 config and never fires here, so this run is the coverage.
-**Done when:** the zone matches disk, the validator is clean or its residue is reported verbatim,
-and the log entry is appended or explicitly skipped.
+**Done when:** the zone matches disk, and the validator is clean or its residue is reported
+verbatim.
 
 ### 6. Report
 The ordered list as it now stands, what changed and why, which specs stayed unranked, and the
