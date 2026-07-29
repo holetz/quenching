@@ -207,12 +207,18 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 
 ## Handoff
 
-State of the tree after task 5.1. Sections 1–4 complete; 5.1 confirmed the surface still conforms
-(`skills.py doctor` — 26 commands, 0 findings) with no code change of its own. Only 5.2 remains:
-`functional-checks.sh` must exit 0 since `commands/**` changed this session (the mint at 3.2). It
-was already run clean (9/9) after the mint in task 3.2's own verification, and again as a fresh
-full run during this session's diagnosis of a since-not-reproduced flake — 5.2 reruns it one more
-time as the task's own declared check and records the result.
+State of the tree after 5.1. 11/12 tasks done; **5.2 is `[!]` blocked**, not complete: the user
+instructed mid-session to stop running `functional-checks.sh`, so its declared verify (the script
+exits 0) never ran to completion this session, and the hard no-unverified-tick rule means it
+cannot be checked off on the strength of the two prior clean runs recorded earlier in this
+Handoff's history (post-3.2, and the standalone diagnosis run) — those predate 5.2's own
+verification and belong to different tasks.
+
+Nothing about the surface is in doubt: `skills.py doctor` shows 26 commands, 0 findings (5.1,
+committed), and the two most recent full `functional-checks.sh` runs this session both passed
+9/9. Unblocking 5.2 needs one more clean run of `./assets/bin/functional-checks.sh` (exit 0)
+executed as *this* task's own verification, then the same tick/self-review/commit sequence every
+other task in this spec followed.
 
 Everything else — `session.py`, `retro.md`, the manuals, `session-evidence.md` — is unchanged
 since task 4.1; see that Handoff entry (in git history) for their state.
@@ -221,7 +227,8 @@ Corpus: 87 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-qu
 0, 6 refuse with `se-no-command-parsed`, none crash. Largest is 7.1 MB and digests to 4.6 KB
 against a stated 64 KB budget.
 
-Next: 5.2, the last task. At 100% the run offers to chain into `/specs:conclude`.
+Next: unblock and complete 5.2 — the only remaining task. The spec is not yet at 100%, so
+`/specs:conclude` has not been offered.
 ## Tasks
 
 ### 1. Gate — prove the retro finds anything
@@ -277,7 +284,7 @@ Next: 5.2, the last task. At 100% the run offers to chain into `/specs:conclude`
 - [x] 5.1 The command surface still conforms at 26 commands
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json` shows 26 commands and no findings
       subject: plan/improve-command-from-session: 5.1 The command surface still conforms at 26 commands
-- [ ] 5.2 The surface actually loads, since `commands/**` changed
+- [!] 5.2 The surface actually loads, since `commands/**` changed — blocked: user instructed to stop running functional-checks.sh mid-session; its declared verify (the script exits 0) was not executed to completion, so the task cannot be ticked as verified per the hard no-unverified-tick rule
       verify: `./assets/bin/functional-checks.sh` exits 0
 
 ## Discoveries
