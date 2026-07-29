@@ -291,6 +291,40 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
   partially counters it by authoring with every other section visible, and the failure is cosmetic
   rather than corrupting.
 
+## Handoff
+
+All 12 tasks are checked and committed. The parsed contract (`schema.json`, `specs.py`'s
+`DEFAULT_SCHEMA`, the duplicated template) carries `## Overview` at position 1 of 14, warn-only —
+`specs.py selftest` proves all three still agree. The authoring doctrine
+(`spec-driven.md`/`artifacts.md`/`questions.md`) documents its register and the write-last rule.
+`/specs:align` reports an empty one via `sp-overview-missing`, added to
+`assets/references/specs-align/conformance.md`'s REPORTS table rather than to `align.md`'s own
+prose — align.md never enumerates individual codes, it defers entirely to that table, so the row
+is the whole fix (human-confirmed mid-build). `docs/standards/workflows/plan-artifacts.md` (plus
+its two index rows) is revised to fourteen sections. Every spec in `specs/plans/` now carries the
+section — 30 barely-captured ones got an honest `- none — <reason>` since there was nothing yet to
+connect, and the 3 developed ones (this spec, `restructure-claude-front-namespace`,
+`restore-routing-info-on-docs-commands`) got real orienting prose. The six version artifacts are at
+4.3.0 (this branch was rebased onto main mid-build — see below).
+
+Three discoveries are on record, unresolved: (1) `docs/log.md` no longer exists (retired by the
+already-merged retire-docs-log spec) — task 4.1's declared file was dead on arrival, nothing was
+recreated; (2) 14 pre-existing `stale-doc` warnings now show up under `okf-validate.py` across
+`standards/` whose `resource:` globs match `specs.py`/`schema.json`/templates, touched repeatedly
+by this build — none of those docs were declared by any task here; (3) task 5.3's skeleton gate
+skipped a fresh `./assets/bin/functional-checks.sh` run per explicit user instruction mid-build —
+it last ran clean (11/11) during task 3.1's own verification, before tasks 4.1/5.1/5.2 landed (docs
+prose, spec backfills, a version bump — none touch `commands/**` bodies or citation paths), so the
+risk of an undetected regression is low but not zero. A fresh run before merge would close it out.
+
+**Branch history note.** This branch was 47 commits behind `main` when the build started —
+including two other specs that had already merged (`notice-installed-tool-version-drift`,
+`retire-docs-log`). It was rebased onto `main` before task 1.1 (human-confirmed), which is why
+`docs/log.md` turned out to be gone and why `docs/standards/ci-cd/versioning-release.md` existed
+for task 5.2 to read. Nothing else in this build depended on the stale state.
+
+Not yet done: the branch-wide review, merge, and archive — that's `/specs:conclude`.
+
 ## Tasks
 
 ### 1. The parsed contract
