@@ -1,4 +1,4 @@
-<!-- quenching v1.0.0 · operator manual · generated payload.
+<!-- quenching v4.2.0 · operator manual · generated payload.
      Refreshed by /docs:align (or /align). Edit the plugin asset, not this copy —
      a run with a newer plugin overwrites this file. Remove this banner to keep
      your own version: the align will then leave it alone and report it. -->
@@ -27,22 +27,21 @@ which command to run. It is a payload file — not an OKF concept doc, and the v
 
 | I want to… | Command | Scope |
 | --- | --- | --- |
+| See where the bundle stands, changing nothing | `/docs:status` | WHOLE bundle, read-only |
 | Record a rule or convention **we follow** | `/docs:add` | ONE doc |
 | Capture an understanding, concept, or learning | `/docs:learn` | ONE doc |
 | Define a term, acronym, or codename | `/docs:define` | ONE glossary entry |
 | Pull an external doc, folder, or URL into the base | `/docs:import` | MANY docs |
 | Move the agent's project memory into the base | `/docs:import-memory` | MANY docs |
-| Fix the structure — homes, stamps, indexes, `log.md` | `/docs:align` | WHOLE bundle |
+| Fix the structure **and** pull waiting content in, until stable | `/docs:align` | WHOLE bundle, looped |
 | Catch the glossary up on terms already documented | `/docs:glossary-backfill` | WHOLE bundle |
 | Slim `CLAUDE.md` / `AGENTS.md` down to pointers | `/docs:harness` | harness files |
 | Create/update the published docs **site** (mkdocs) | `/docs:documentation:build` | `documentation/` + root config |
-| Do all of the above until nothing changes | `/docs:align-and-update` | WHOLE bundle, looped |
 | Align **every** front (`docs/`, `specs/`, `.claude/`) | `/align` | whole repo |
-| Align **and update** every front, looped | `/align-and-update` | whole repo, looped |
 
-Every command is a thin wrapper over a skill; Claude also routes to the same skill on its own
-when you describe the intent in prose ("record that we always use X"). The wrapper is the
-**explicit** entry point — use it when you want to be sure which one runs.
+Each command is ONE file carrying both its description and its workflow; Claude can also route to
+it on its own when you describe the intent in prose ("record that we always use X"). Typing the
+command is the **explicit** entry point — use it when you want to be sure which one runs.
 
 > Commands are namespaced by plugin. `/docs:add` is the short form of
 > `/quenching:docs:add`; use the long form if another plugin claims the same namespace.
@@ -114,12 +113,25 @@ No entry means it is not defined yet — add it with `/docs:define`.
 
 ## 3. The commands, one by one
 
+### `/docs:status` — look, change nothing
+
+The only command here that cannot write. It reports the resolved bundle, the checker's result in
+its own finding codes, and the bundle's **density** — concept docs per home (empty homes shown as
+`0`, never omitted), glossary size, which `standards/` subjects hold anything — then splits what it
+found into what `/docs:align`'s structural pass would fix on one OK, what its content stages
+would then drive, and what neither closes because it needs you. Use it as the preview before authorizing a sweep: it
+speaks the validator's own vocabulary, so the two never disagree.
+
+Density is reported as **figures with no finding code**. A bundle can pass every check while
+holding scaffolded-but-empty homes and a placeholder glossary — that is not a defect list, but you
+should still be able to see it. *Not for:* fixing any of it (`/docs:align`).
+
 ### `/docs:add` — insert ONE concept doc
 
 Classifies what you state into its home + `type` + mold, derives the path, writes the doc with a
 complete stamp, updates that folder's `index.md`, appends to `log.md`, and offers a glossary
 entry when the doc introduces a repo-specific term. **Writes exactly one concept doc.**
-*Not for:* structural repair (`/docs:align`), or a task (`/specs:backlog:add`).
+*Not for:* structural repair (`/docs:align`), or a parked unit of work (`/specs:create`).
 
 ### `/docs:learn` — capture ONE piece of generic knowledge
 
@@ -148,23 +160,36 @@ Minted docs are attributed to the source and enter as `authority: background` un
 ### `/docs:import-memory` — drain the agent's project memory
 
 Reads `~/.claude/projects/<this-repo>/memory/`, promotes each durable memory into a `standard`,
-a `knowledge` doc, or a task in `specs/backlog/`, and **clears each memory only after its doc
+a `knowledge` doc, or a spec in `specs/plans/`, and **clears each memory only after its doc
 has landed and passed the conformance check**. A `user` memory or an unroutable fact is flagged
 and **kept**, never silently deleted. One plan, one confirmation.
 
-### `/docs:align` — force the whole bundle into shape
+### `/docs:align` — force the whole bundle into shape, and pull the waiting content in
 
-The installer, migrator, and validator in one. Scaffolds missing homes, migrates variant folder
-names (`docs/arquitetura/` → `docs/standards/`), folds prefix-clustered files into subject
-subfolders (`nomenclatura-*.md` → `naming/`), translates non-English slugs, stamps missing
-frontmatter (**MERGE** — a filled key and any third-party key survive), regenerates every
-`index.md`, establishes `log.md`, writes `okf_version`, installs this manual, then re-runs the
-validator. It also offers to install or upgrade the enforcement hook, and — when the repo has a
+The installer, migrator, and validator in one — **probe-first**: it opens with the validator plus
+two cheap out-of-band signals (is agent memory waiting? is the harness fat?), so a conformant
+bundle with nothing waiting costs three tool calls and stops there, saying so.
+
+When there is work: scaffolds missing homes, migrates variant folder names
+(`docs/arquitetura/` → `docs/standards/`), folds prefix-clustered files into subject subfolders
+(`nomenclatura-*.md` → `naming/`), translates non-English slugs, stamps missing frontmatter
+(**MERGE** — a filled key and any third-party key survive), regenerates every `index.md`,
+establishes `log.md`, writes `okf_version`, installs this manual, then re-runs the validator. It
+also offers to install or upgrade the enforcement hook, and — when the repo has a
 `documentation/` home — an mkdocs-material site setup.
 
-**Invasive by design.** It presents the complete plan and executes on **one** confirmation. A
-rename whose blast radius reaches **product code** (imports, path constants, docstrings) is
-**always its own separate confirmation** — it never rides the batch OK.
+The **content stages** run in the same pass, each only when its probe signal found work:
+`import-memory` (drain the agent's project memory) and `harness` (re-thin `CLAUDE.md`), looping
+until a pass changes nothing and the validator is clean. The whole-bundle glossary sweep has no
+cheap signal, so it is **offered** on a free proxy (doc count against glossary size) with its
+cost stated — never entered automatically. The per-item commands (`add`, `learn`, `define`,
+`import`) are never loop stages: each needs a human-supplied input, so the run **surfaces** those
+gaps rather than fabricating content to close them.
+
+**Invasive by design.** It presents the complete plan and executes on **one** confirmation —
+bounded by a pass cap and a no-progress guard, so it converges or reports the residue, never
+spins. A rename whose blast radius reaches **product code** (imports, path constants, docstrings)
+is **always its own separate confirmation** — it never rides the batch OK.
 
 ### `/docs:glossary-backfill` — catch the glossary up
 
@@ -199,33 +224,20 @@ fixes it (`/docs:align`, `/docs:add`). The site is rooted at `documentation/` �
 are your internal surface and stay unpublished; re-aiming `docs_dir` is its own confirmation.
 Run it after adding pages, after a section is created, or whenever the nav looks wrong.
 
-### `/docs:align-and-update` — align, then keep going until nothing changes
-
-This front's conductor, and the exact complement of `/docs:align`: the align fixes **structure**
-in one pass, this **also pulls content in** — from the agent's project memory and from your
-harness files — and backfills the glossary, looping until stable. Every front has this same pair
-(`/specs:align-and-update`, `/skill:align-and-update`); `/align-and-update` runs all three.
-
-Runs `align` → `import-memory` → `harness` → `glossary-backfill` as a dependency
-pipeline, **pass after pass**, until a full pass changes nothing and the validator is clean (a
-fixpoint). **One** OK at the start authorizes the whole run; code-coupled items still confirm
-individually. It conducts, never reimplements — every change is made by the sub-skill under its
-own doctrine. The per-item commands (`add`, `learn`, `define`, `import`) are **not** loop stages:
-each needs a human-supplied input, so the cycle **surfaces** those gaps rather than fabricating
-content to close them. Bounded by a pass cap and a no-progress guard — it converges or reports
-the residue, never spins.
-
 ---
 
 ## 4. How these skills behave — the operating model
 
 Read this once and every command becomes predictable.
 
+- **The probe comes before the inventory.** An align opens by running its front's own verifier
+  and stops when it finds nothing — a no-op align costs a couple of tool calls and says so,
+  which is what makes it cheap enough to run routinely.
 - **One plan → one OK.** Sweeps never write incrementally while you watch. You see the complete
   plan, you answer once, it executes exactly that.
 - **A code-coupled change always confirms alone.** If a rename would edit product code, CI, or
   scripts, it is pulled out of the batch and asked separately, with its blast radius shown —
-  even inside a `/docs:align-and-update` or `/align` run that you already authorized.
+  even inside a `/docs:align` or `/align` run that you already authorized.
 - **MERGE, never clobber.** Stamping fills a *missing* key. A key you set — including one no OKF
   consumer knows about — survives every sweep.
 - **Generated zones are derived from disk.** Anything between `<!-- BEGIN GENERATED -->` and
@@ -280,17 +292,17 @@ python3 .claude/hooks/okf-validate.py --version      # must match the plugin's v
 ## 6. Recipes
 
 **Adopting the plugin in an existing repo.** Run `/align` (all three fronts) or `/docs:align`
-(this one). Accept the hook install when offered. Then `/docs:harness` to move whatever knowledge
-is inlined in `CLAUDE.md` into its home, and `/docs:import-memory` if the agent has accumulated
-project memory. Finish with `/docs:glossary-backfill`.
+(this one). Accept the hook install when offered. The align drains project memory and re-thins
+the harness in the same run when its probe finds them waiting, and offers the glossary backfill
+with its cost stated.
 
 **A normal working day.** You decide something → `/docs:add`. You learn something → `/docs:learn`.
-A term keeps coming up → `/docs:define`. Something to do later → `/specs:backlog:add`. Each is
+A term keeps coming up → `/docs:define`. Something to do later → `/specs:create`. Each is
 seconds, one doc, no interrogation.
 
-**After a big refactor or a doc dump.** `/docs:align-and-update` — it will align the structure, drain
-memory, re-thin the harness, and backfill the glossary, looping until stable, then report exactly
-what it could not resolve without you.
+**After a big refactor or a doc dump.** `/docs:align` — it will align the structure, drain
+memory, re-thin the harness, and offer the glossary backfill, looping until stable, then report
+exactly what it could not resolve without you.
 
 **Onboarding a new source of truth** (a wiki export, a vendor's docs site) → `/docs:import`.
 
@@ -330,19 +342,20 @@ overwriting only the script and preserving your `hooks-config.json`.
 
 ## 8. The other fronts, and the real contract
 
-`quenching` acts on three surfaces, each with its own align and its own manual:
+`quenching` acts on three surfaces, each with **one align** and its own manual:
 
-| Front | Manual | Align (structure, one pass) | Align-and-update (+ content, looped) |
-| --- | --- | --- | --- |
-| `docs/` — this knowledge bundle | this file | `/docs:align` | `/docs:align-and-update` |
-| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:align` | `/specs:align-and-update` |
-| `.claude/` — the automation surface | `../.claude/QUENCHING.md` | `/skill:align` | `/skill:align-and-update` |
+| Front | Manual | Align |
+| --- | --- | --- |
+| `docs/` — this knowledge bundle | this file | `/docs:align` |
+| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:align` |
+| `.claude/` — the automation surface | `../.claude/QUENCHING.md` | `/skill:align` |
 
-`/align` runs the three aligns in dependency order on one confirmation; `/align-and-update` runs
-the three conductors the same way and loops across fronts, because they feed each other (a plan's
-archive distils docs the glossary must then index). A front this repo does not use
-simply has no manual.
+Each align opens with its front's own verifier (the probe), so a clean front costs a couple of
+tool calls and says so, and each carries its front's content stages when the probe finds work.
+`/align` conducts the three in dependency order on one confirmation, because the fronts feed
+each other (a spec's distillation is glossary work; the skill front's registry is a `docs/`
+listing). A front this repo does not use simply has no manual.
 
 The **normative** contract — the OKF spec, the taxonomy, the migration map, the exact conformance
-checks — lives in the plugin's own `skills/*/references/*.md`, not here. This file is the
+checks — lives in the plugin's own `assets/references/<name>/*.md`, not here. This file is the
 operator's view; that is the specification.
