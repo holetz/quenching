@@ -1139,6 +1139,15 @@ def _emit_deny(reason: str) -> None:
     }}))
 
 
+def hard_block_exempt(base: str) -> bool:
+    """Filenames the PreToolUse hard gate never denies: the harness pointers, the
+    retired `log.md`, and the migration README. A named predicate rather than an
+    inline condition so `selftest` can assert the retirement without standing up a
+    hook invocation — `run_hook` reads its config from disk beside this script, so a
+    subprocess would return early on `hardBlock` being off and prove nothing."""
+    return base in EXEMPT or base in ("log.md", "README.md")
+
+
 def _under_docs(rel: str, docs_dir: str) -> bool:
     return rel == docs_dir or rel.startswith(docs_dir.rstrip("/") + "/")
 
@@ -1152,19 +1161,74 @@ def _docs_relpath(rel: str, docs_dir: str) -> str:
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# the retirement fixture — `log.md` lost its checker, never its reservation
+#
+# With `check_log` gone, nothing in this file would notice if `log.md` also fell
+# out of `RESERVED` or out of the hard gate's skip list, and the damage would not
+# announce itself: every log surviving in an already-aligned bundle would quietly
+# start reporting `missing-type` at ERROR and, under `hardBlock`, become unwritable.
+# So the fixture validates a real bundle holding the worst log this tool ever
+# accepted — a `type` in its frontmatter, date headings in ascending order, the
+# three things the retired codes used to fire on — and demands silence about it.
+# --------------------------------------------------------------------------- #
+RETIRED_LOG_FIXTURE = {
+    # both shapes a surviving log actually takes, because they fail differently: the
+    # typed one is what `log-has-type` used to catch, and the bare one is the one that
+    # falls to `missing-type` at ERROR — the failure `## Design` of the retiring spec
+    # names — if the dispatch branch is ever dropped.
+    "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n\n- [Log](log.md)\n'
+                "- [Standards](standards/index.md)\n",
+    "log.md": ("---\ntype: standard\n---\n\n"
+               "## 2026-01-01\n\n- typed, and oldest first\n\n"
+               "## 2026-07-28\n\n- newest last\n"),
+    "standards/index.md": "# Standards\n\n- [Log](log.md)\n",
+    "standards/log.md": "# Log\n\n- an entry under no date heading at all\n",
+}
+
+
+def retired_log_failures() -> list[str]:
+    """Prove the retirement in all three places it has to hold at once."""
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for relpath, text in RETIRED_LOG_FIXTURE.items():
+            path = os.path.join(tmp, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+        findings = validate_tree(tmp)
+    judged = sorted(f"{rel}:{sev}/{code}" for sev, rel, code, msg in findings
+                    if os.path.basename(rel) == "log.md")
+    if judged:
+        out.append(f"retired-log: a populated `log.md` was judged: {judged}")
+    # anything else here means the fixture drifted, not that the retirement broke —
+    # without this the two logs could go silent for the wrong reason and still pass
+    rest = sorted(f"{rel}:{code}" for sev, rel, code, msg in findings
+                  if os.path.basename(rel) != "log.md")
+    if rest:
+        out.append(f"retired-log: the fixture bundle is not otherwise clean: {rest}")
+    if "log.md" not in RESERVED:
+        out.append("retired-log: `log.md` left RESERVED — every surviving log becomes a concept doc")
+    if not hard_block_exempt("log.md"):
+        out.append("retired-log: `log.md` left the PreToolUse skip — writes to it would be denied")
+    return out
+
+
 def run_selftest(as_json: bool) -> int:
-    """The canonical frontmatter cases, run against this checker's own parser.
+    """The canonical frontmatter cases plus the retirement fixture, run against this
+    checker's own parser and its own tree walk.
 
     The other two tools already had a `selftest`; this one had none, and it is the
     tool with the widest blast radius — a hook firing on every `docs/**` write in
     every target repo. A rule it cannot prove it implements is a rule it should not
     have been given."""
-    failures = canonical_case_failures()
+    failures = canonical_case_failures() + retired_log_failures()
+    cases = len(CANONICAL_CASES) + 1
     if as_json:
-        print(json.dumps({"ok": not failures, "cases": len(CANONICAL_CASES),
+        print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
-        print(f"okf-validate selftest — {len(CANONICAL_CASES)} canonical frontmatter case(s)")
+        print(f"okf-validate selftest — {len(CANONICAL_CASES)} canonical frontmatter case(s) "
+              "+ the retired-log fixture")
         for f in failures:
             print(f"  FAIL {f}")
         print(f"  {'PASS' if not failures else str(len(failures)) + ' FAILED'}")
@@ -1233,7 +1297,7 @@ def run_hook() -> int:
         if _is_ignored_path(_docs_relpath(rel, docs_dir), ignore_globs):
             return 0  # regenerable/vendored path (ignoreGlobs) — not authored OKF knowledge
         base = os.path.basename(file_path)
-        if base in EXEMPT or base in ("log.md", "README.md"):
+        if hard_block_exempt(base):
             return 0  # harness/reserved/migration files — never hard-blocked
         if base == "index.md":
             fm, _, _ = parse_frontmatter(content)

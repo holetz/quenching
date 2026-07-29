@@ -209,9 +209,10 @@ repositório.
 - [x] 1.1 Remover de `okf-validate.py` o despacho para `check_log` e os três códigos `log-has-type`, `log-no-date-heading` e `log-not-newest-first`, **mantendo** `log.md` em `RESERVED` (l. 130) e no skip do hard block do `PreToolUse` (l. 1251)
       files: plugins/quenching/assets/hooks/okf-validate.py
       subject: plan/retire-docs-log: 1.1 drop check_log and the three log-* codes
-- [ ] 1.2 Adicionar ao `selftest` o caso que prova a regra: um bundle com `log.md` populado valida em `0 error(s)` e não é bloqueado
+- [x] 1.2 Adicionar ao `selftest` o caso que prova a regra: um bundle com `log.md` populado valida em `0 error(s)` e não é bloqueado
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest
+      subject: plan/retire-docs-log: 1.2 guard the retirement with a selftest fixture
 
 ### 2. Skeleton and templates
 
