@@ -68,6 +68,17 @@ A task with no `verify:` line falls back to the spec's own `## Validation` secti
 that, to whatever the repo's standards name as its check. **No verification available at all is a
 finding to report, not a silent pass** — say plainly that the task was implemented but not proved.
 
+**A check that spawns billed agent sessions does not belong in a `verify:` line.** A `verify:` runs
+per task *and again on every retry of the loop below*, so a suite that costs money per invocation
+is multiplied by exactly the thing this loop is for. Those belong in `## Validation`, which
+`/specs:conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
+say so and run the narrowest scope the tool offers rather than the whole suite by reflex — and
+report the substitution, because a narrowed check is a narrowed claim.
+
+**A harness that proves the *command surface* loads belongs to neither.** It is owned by the
+command that edits the surface — `/skill:new`, or `/skill:eval` for a description — and running it
+from the spec cycle charges every spec for a front most of them never touch.
+
 ## The validation loop
 
 For each task the policy says to verify:
