@@ -111,7 +111,6 @@ closing out unbuilt work looks like.
 | [name-the-scaffolded-stage](2026-07-27-name-the-scaffolded-stage.md) | Decide whether a spec with an unwritten Problem gets a named stage | 2026-07-27 |
 | [retire-skill-vocabulary](2026-07-27-retire-skill-vocabulary.md) | Retire the skill vocabulary left behind by the collapse | 2026-07-27 |
 | [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
-| [add-eli5-section-to-specs](2026-07-28-add-eli5-section-to-specs.md) | Add an ELI5 section that makes a spec comprehensible to a human | 2026-07-28 |
 | [add-specs-cycle-run-modes](2026-07-28-add-specs-cycle-run-modes.md) | Add customizable run modes to the specs cycle commands | 2026-07-28 |
 | [align-in-worktree-then-merge](2026-07-28-align-in-worktree-then-merge.md) | Have the align commands propose a worktree and merge at the end, as specs already does | 2026-07-28 |
 | [check-the-lockstep-itself](2026-07-28-check-the-lockstep-itself.md) | Check The Lockstep Itself | 2026-07-28 |
@@ -130,6 +129,7 @@ closing out unbuilt work looks like.
 | [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
 | [stop-develop-offering-follow-up-specs](2026-07-28-stop-develop-offering-follow-up-specs.md) | /specs:develop should not offer to create a follow-up spec | 2026-07-28 |
 | [upgrade-okf-to-v0-2](2026-07-28-upgrade-okf-to-v0-2.md) | Upgrade the OKF contract to v0.2 or later | 2026-07-28 |
+| [wire-the-overview-consumers](2026-07-29-wire-the-overview-consumers.md) | Wire the three consumers to read `## Overview` | 2026-07-29 |
 <!-- END GENERATED -->
 
 ## Frontmatter
