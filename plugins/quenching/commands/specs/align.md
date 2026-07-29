@@ -88,6 +88,17 @@ each; otherwise continue to step 2.
 
 Neither `specs/` nor a legacy `openspec/` exists → `sp-no-workspace`, which is not a failure: it is
 what step 4 offers to scaffold.
+
+**The installed copy is a third question, and one call answers it:**
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+```
+Read this front's row (`specs.py`) and carry it into step 5's scaffold section: `behind` → offer
+the overwrite; `absent` → offer the install; `ahead` → **left alone and reported**, because the
+target being ahead of this plugin is a fact to state, not a regression to force. Run it from the
+**plugin path** — an installed copy answers from the same stale `VERSION` it is being asked about,
+and refuses (exit 2) rather than lie. A drift row does **not** by itself make an otherwise-clean
+workspace non-conformant: report it with the install offer and stop as prescribed above.
 **Done when:** the two payloads are in hand and the run has either stopped or been committed to a
 full sweep.
 

@@ -110,6 +110,7 @@ VERSION = "4.2.0"  # lockstep with the plugin VERSION file, plugin.json, specs.p
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
+HOOKS_DIR = "hooks"
 
 SURFACE_MISSING = "—"
 
@@ -1156,6 +1157,37 @@ EXPECTED_HOOKS = {
     "/docs:hooked-wide": {"sk-hook-unmatched", "sk-hook-llm-frequent"},
 }
 
+# A whole plugin and two targets, small enough to write in a temp dir: one drifted in
+# every direction at once, and one CONTROL that must fire nothing. The control is the
+# half that matters — a drift check which flags a conformant repo gets ignored in a
+# probe, and then it is worth less than no check at all.
+DRIFT_FIXTURE = {
+    "plugin/VERSION": "4.2.0\n",
+    "plugin/assets/bin/skills.py": 'VERSION = "4.2.0"\n',
+    "plugin/assets/bin/specs.py": 'VERSION = "4.2.0"\n',
+    "plugin/assets/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
+    # behind AND inert — the state this repo sat in undetected
+    "drifted/.claude/hooks/okf-validate.py": 'VERSION = "1.0.0"\n',
+    "drifted/.claude/hooks/specs.py": 'VERSION = "9.9.9"\n',        # ahead
+    "drifted/.claude/hooks/skills.py": "# a copy too old to declare one\n",  # unreadable
+    "drifted/.claude/settings.json": '{"hooks": {}}\n',
+    "clean/.claude/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
+    "clean/.claude/hooks/specs.py": 'VERSION = "4.2.0"\n',
+    "clean/.claude/hooks/skills.py": 'VERSION = "4.2.0"\n',
+    "clean/.claude/settings.json":
+        '{"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", '
+        '"command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"}]}]}}\n',
+    # a legitimate plugin-only repo: nothing installed, and nothing wrong with that
+    # except the one tool that does nothing unless it is on disk and invoked
+    "pluginonly/.claude/settings.json": "{}\n",
+}
+
+EXPECTED_DRIFT = {
+    "drifted": {"sk-tool-behind", "sk-tool-unwired", "sk-tool-ahead", "sk-tool-unreadable"},
+    "clean": set(),
+    "pluginonly": {"sk-tool-absent"},   # the hook only — never the two CLIs
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -1174,10 +1206,21 @@ def cmd_selftest(args, root: str) -> int:
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
-        for relpath, text in WIDER_FIXTURE.items():
+        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE}.items():
             path = os.path.join(tmp, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
+
+        plugin_root = os.path.join(tmp, "plugin")
+        drift_got = {
+            name: {f["code"] for f in drift_findings(
+                drift_rows(os.path.join(tmp, name, CLAUDE_DIR), plugin_root, "4.2.0"))}
+            for name in EXPECTED_DRIFT
+        }
+        # the refusal, not merely the comparison: asked to treat an installed copy's own
+        # directory as a plugin, `drift` must decline rather than answer from its VERSION
+        refusal_armed = resolve_plugin_root(
+            os.path.join(tmp, "drifted", CLAUDE_DIR, HOOKS_DIR)) is None
 
         surface = load_surface(tmp)
         got: dict = {}
@@ -1210,12 +1253,23 @@ def cmd_selftest(args, root: str) -> int:
     if got.get("agents/good.md"):
         failures.append(f"agents/good.md: the conformant control was flagged "
                         f"{sorted(got['agents/good.md'])}")
+    for target, codes in EXPECTED_DRIFT.items():
+        if drift_got.get(target) != codes:
+            failures.append(f"drift/{target}: expected {sorted(codes)}, "
+                            f"got {sorted(drift_got.get(target, []))}")
+    if not refusal_armed:
+        failures.append("drift: an installed copy's own directory resolved as a plugin root — "
+                        "the exit-2 refusal is not armed")
 
+    # + 2: the two conformant controls that must stay clean (/docs:add, agents/good.md),
+    # and the drift refusal, which is a case with no fixture row of its own
+    cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
+             + len(EXPECTED_DRIFT) + 3)
     if args.json:
-        print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES) + 1,
+        print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
-        print(f"skills selftest — {len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES) + 1} cases")
+        print(f"skills selftest — {cases} cases")
         for command in sorted(got):
             # the hook fixtures are graded by lint, not doctor; showing doctor's empty row
             # for them would print "(clean)" for the case that must fire two codes
@@ -1433,6 +1487,275 @@ register("budget",
                                     help=f"characters the surface may cost (default: "
                                          f"{DEFAULT_CEILING}, this plugin's measured baseline)"),
          cmd_budget)
+
+
+# --------------------------------------------------------------------------- #
+# drift — the installed copies against the plugin that ships them
+#
+# Each of the three tools is COPIED into a target's `.claude/hooks/` by its own align,
+# and that offer is the only moment a version is ever compared. A repo that installed
+# once and never aligned again keeps whatever it got, indefinitely, and nothing says
+# so. This subcommand is what notices — without an align, and without writing.
+#
+# It MUST run from the plugin's own copy. An installed copy's `VERSION` is the stale
+# number under test, so answering from it would report "all current" in exactly the
+# case this exists to catch. An unresolvable plugin root is a refusal (exit 2), never
+# a guess.
+# --------------------------------------------------------------------------- #
+PLUGIN_VERSION_FILE = "VERSION"
+
+# The three tools an align installs, each with the path it ships at and the align that
+# owns its copy. Nothing else under `.claude/hooks/` is this subcommand's business —
+# a target's own scripts live there too, and auditing them would be a different claim.
+#
+# `wired` marks the ONE tool that is a hook. `okf-validate.py` does nothing unless a
+# `hooks` block invokes it, so installed-and-uninvoked is a state it can sit in for
+# months — this repo did. `specs.py` and `skills.py` are CLIs a command body calls, so
+# their absence from settings.json is normal and asking about it would manufacture two
+# false findings on every conformant repo.
+INSTALLED_TOOLS = (
+    {"tool": "okf-validate.py", "ships": "assets/hooks/okf-validate.py",
+     "align": "/docs:align", "wired": True},
+    {"tool": "specs.py", "ships": "assets/bin/specs.py",
+     "align": "/specs:align", "wired": False},
+    {"tool": "skills.py", "ships": "assets/bin/skills.py",
+     "align": "/skill:align", "wired": False},
+)
+
+# Each tool declares `VERSION = "x.y.z"` at module level, in lockstep with the plugin's
+# VERSION file. Reading the constant — rather than running the script for `--version` —
+# keeps this a READ: `drift` is called from probes, and a probe that executes whatever
+# sits in a target's `.claude/hooks/` is a different and much larger claim than one that
+# reads three lines. A copy too old to declare one reads `unreadable`, which carries the
+# same call to action as `behind`.
+VERSION_CONSTANT_RE = re.compile(r'^VERSION\s*=\s*["\']([^"\']+)["\']', re.M)
+
+
+def read_tool_version(path: str) -> str | None:
+    text = read_text(path)
+    if text is None:
+        return None
+    m = VERSION_CONSTANT_RE.search(text)
+    return m.group(1).strip() if m else None
+
+
+def _version_key(v: str) -> tuple | None:
+    """`4.2.0` -> (4, 2, 0). Anything not purely numeric-dotted returns None, and an
+    unorderable pair is reported as `unreadable` rather than ordered on a guess."""
+    parts = v.split(".")
+    if not all(p.isdigit() for p in parts):
+        return None
+    return tuple(int(p) for p in parts)
+
+
+def compare_versions(installed: str | None, shipped: str) -> str:
+    """`current` · `behind` · `ahead` · `unreadable`, for a copy that IS on disk —
+    `absent` is the caller's, because "no file" and "a file I could not read" are
+    different facts and only one of them is a repo that thinks it is protected.
+
+    Both directions are reported because both are silent. Resolution is plugin-first
+    (plans-zone.md §Resolving the tool) while every align deliberately leaves a NEWER
+    installed copy alone — so an `ahead` copy is code that is never executed and never
+    repaired, and both halves of that are correct behaviour saying nothing."""
+    if installed is None:
+        return "unreadable"
+    a, b = _version_key(installed), _version_key(shipped)
+    if a is None or b is None:
+        return "unreadable"
+    return "current" if a == b else ("behind" if a < b else "ahead")
+
+
+def settings_hook_commands(root: str) -> list[str]:
+    """Every `command` string wired under a `hooks` event, across both settings files.
+
+    Reuses the pair `doctor` already reads (`settings.json` + `settings.local.json`) so
+    a per-developer override counts as wiring. Unparseable JSON yields nothing here and
+    is `doctor`'s finding to report — two tools naming the same broken file twice is
+    noise, and `drift` would only be guessing at what the file meant."""
+    out: list[str] = []
+    for settings_name in ("settings.json", "settings.local.json"):
+        text = read_text(os.path.join(root, settings_name))
+        if text is None:
+            continue
+        try:
+            hooks = json.loads(text).get("hooks", {})
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if not isinstance(hooks, dict):
+            continue
+        for entries in hooks.values():
+            for entry in entries if isinstance(entries, list) else []:
+                if not isinstance(entry, dict):
+                    continue
+                for h in entry.get("hooks") or []:
+                    if isinstance(h, dict) and isinstance(h.get("command"), str):
+                        out.append(h["command"])
+    return out
+
+
+def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
+    """One row per tool. `executes` is the copy a command actually runs: the documented
+    fallback tries the plugin path first, so it is the plugin's whenever this ran at all
+    — which is exactly what makes an `ahead` row worth printing."""
+    rows = []
+    wired_commands = settings_hook_commands(root)
+    for spec in INSTALLED_TOOLS:
+        installed_path = os.path.join(root, HOOKS_DIR, spec["tool"])
+        present = os.path.isfile(installed_path)
+        installed = read_tool_version(installed_path) if present else None
+        # the SHIPPED tool's own constant, not the plugin's VERSION file: it is what an
+        # install would put on disk, so it is what an installed copy must be compared
+        # against. The two agreeing is the lockstep's business, checked elsewhere.
+        tool_shipped = read_tool_version(os.path.join(plugin_root, spec["ships"])) or shipped
+        rows.append({
+            "tool": spec["tool"],
+            "align": spec["align"],
+            "installedPath": installed_path if present else None,
+            "installed": installed,
+            "shipped": tool_shipped,
+            "status": "absent" if not present else compare_versions(installed, tool_shipped),
+            "executes": "plugin",
+            # None for the two CLIs: "we did not ask" is not "we found nothing"
+            "wired": (any(spec["tool"] in c for c in wired_commands)
+                      if spec["wired"] else None),
+        })
+    return rows
+
+
+def drift_findings(rows: list[dict]) -> list[dict]:
+    """One finding per row that is not `current`, each naming the align that fixes it.
+
+    Severity follows what the state COSTS. `behind` is an error: a stale copy answers a
+    different CLI contract, so anything running it by hand branches on a payload shape
+    that no longer exists. `unwired` is an error: the script is inert, and the repo
+    believes it is protected. `ahead` and `unreadable` are warnings — the plugin copy
+    still runs, so nothing is currently wrong, only unmaintainable. `absent` is a
+    warning for the HOOK alone, and no finding at all for the two CLIs (see below)."""
+    out: list[dict] = []
+    for r in rows:
+        tool, align = r["tool"], r["align"]
+        if r["status"] == "behind":
+            out.append(finding(
+                "sk-tool-behind", "error",
+                f"{HOOKS_DIR}/{tool} is {r['installed']}, the plugin ships {r['shipped']} — "
+                "commands resolve the plugin copy first, but a session without the plugin, "
+                "a hook, or a human at a shell runs this one and gets its older CLI contract",
+                tool=tool, installed=r["installed"], shipped=r["shipped"],
+                remedy=f"{align} offers the overwrite"))
+        elif r["status"] == "ahead":
+            out.append(finding(
+                "sk-tool-ahead", "warn",
+                f"{HOOKS_DIR}/{tool} is {r['installed']}, ahead of the plugin's {r['shipped']} — "
+                "resolution is plugin-first and every align leaves a newer copy alone, so this "
+                "code is neither executed nor repaired",
+                tool=tool, installed=r["installed"], shipped=r["shipped"],
+                remedy="upgrade the plugin, then re-run " + align))
+        elif r["status"] == "unreadable":
+            out.append(finding(
+                "sk-tool-unreadable", "warn",
+                f"{HOOKS_DIR}/{tool} declares no `VERSION = \"…\"` — too old to carry one, or "
+                "edited in place; either way no comparison can be made",
+                tool=tool, remedy=f"{align} reinstalls it"))
+        elif r["status"] == "absent" and r["wired"] is not None:
+            # Only for the hook. A missing CLI costs nothing while the plugin is loaded —
+            # resolution is plugin-first — and warning about it fires on every plugin-only
+            # repo, including this one, which is how a probe's output gets ignored. A
+            # missing HOOK is the same practical state as an unwired one: the bundle has
+            # no enforcement at all. The row still reports `absent` either way.
+            out.append(finding(
+                "sk-tool-absent", "warn",
+                f"no {HOOKS_DIR}/{tool} installed — nothing enforces the bundle between "
+                "aligns, the same practical state as an installed copy nothing invokes",
+                tool=tool, remedy=f"{align} installs and wires it"))
+        if r["wired"] is False and r["status"] != "absent":
+            out.append(finding(
+                "sk-tool-unwired", "error",
+                f"{HOOKS_DIR}/{tool} is installed but no `hooks` block in settings.json or "
+                "settings.local.json invokes it — the script sits on disk and nothing fires it, "
+                "so deleting it would change no behaviour",
+                tool=tool, remedy=f"{align} merges the wiring into .claude/settings.json"))
+    return out
+
+
+def resolve_plugin_root(arg: str | None) -> str | None:
+    """`--plugin-root` when given, else the plugin checkout this script runs from.
+
+    A plugin holds `VERSION` beside `assets/`, so walking up from `assets/bin/skills.py`
+    finds it in two hops. A copy installed at `.claude/hooks/skills.py` has no such
+    parent — which is the case that must refuse rather than answer."""
+    if arg:
+        candidates = [arg]
+    else:
+        candidates, d = [], os.path.dirname(os.path.abspath(__file__))
+        for _ in range(4):
+            candidates.append(d)
+            parent = os.path.dirname(d)
+            if parent == d:
+                break
+            d = parent
+    for c in candidates:
+        if (os.path.isfile(os.path.join(c, PLUGIN_VERSION_FILE))
+                and os.path.isdir(os.path.join(c, "assets"))):
+            return os.path.abspath(c)
+    return None
+
+
+def _drift_refusal(args, given: str | None) -> int:
+    """Exit 2 — the refusal branch of the 0 ok / 1 findings / 2 refusal contract. A
+    caller that cannot tell "no drift" from "could not look" would report the silence
+    this whole subcommand exists to break."""
+    if given:
+        message = (f"--plugin-root {given} holds no {PLUGIN_VERSION_FILE} beside an "
+                   f"assets/ directory — it is not a plugin checkout")
+    else:
+        message = ("cannot resolve the plugin this script ships with — `drift` must run "
+                   "from the plugin's own copy, because an installed copy would answer "
+                   "from the same stale VERSION it is being asked about")
+    remedy = ("run `python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py drift`, or pass "
+              "--plugin-root <the plugin checkout>")
+    if args.json:
+        print(json.dumps({"ok": False, "refused": message, "remedy": remedy},
+                         indent=2, ensure_ascii=False))
+    else:
+        print("skills drift — refused")
+        print(f"  {message}")
+        print(f"  remedy: {remedy}")
+    return 2
+
+
+def cmd_drift(args, root: str) -> int:
+    given = getattr(args, "plugin_root", None)
+    plugin_root = resolve_plugin_root(given)
+    if plugin_root is None:
+        return _drift_refusal(args, given)
+    shipped = (read_text(os.path.join(plugin_root, PLUGIN_VERSION_FILE)) or "").strip()
+    rows = drift_rows(root, plugin_root, shipped)
+    findings = drift_findings(rows)
+    payload = {"root": root, "pluginRoot": plugin_root, "shipped": shipped, "tools": rows}
+    if args.json:
+        print(json.dumps({"ok": not findings, **payload, "findings": findings},
+                         indent=2, ensure_ascii=False))
+        return exit_for(findings)
+    print(f"skills drift — {root} against plugin {shipped} ({plugin_root})")
+    for r in rows:
+        wiring = "" if r["wired"] is None or r["status"] == "absent" else (
+            "  wired" if r["wired"] else "  NOT wired — nothing invokes it")
+        print(f"  {r['status']:<10} {r['tool']:<18} installed "
+              f"{r['installed'] or '-':<8} shipped {r['shipped']:<8} "
+              f"executes: {r['executes']}{wiring}")
+    for f in findings:
+        print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
+        print(f"          remedy: {f['remedy']}")
+    if not findings:
+        print("  OK — every installed copy matches the plugin that ships it.")
+    return exit_for(findings)
+
+
+register("drift",
+         lambda sp: sp.add_argument("--plugin-root",
+                                    help="the plugin checkout holding VERSION beside assets/ "
+                                         "(default: the one this script runs from)"),
+         cmd_drift)
 
 
 # --------------------------------------------------------------------------- #

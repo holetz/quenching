@@ -4,10 +4,10 @@ title: Align surface — one align per front, probe first
 description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, and the probe-before-inventory rule that makes a no-op align cost a couple of tool calls
 resource: plugins/quenching/commands/align.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/align-all/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4)
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28
 maintainer: quenching
 ---
 
@@ -59,6 +59,14 @@ the align opens by running it, branching on the code:
 The probe and the closing verification are the **same programs run twice**, which is why the rule
 costs a couple of tool calls rather than a second contract to maintain — and why it inverted the
 old order, where a full read-only inventory was paid before anything knew whether there was work.
+
+**One probe call is deliberately cross-front.** `skills.py drift` reports all three installed tool
+copies and the hook's wiring at once, so each align reads its own row from the same payload rather
+than hand-comparing a `--version` in prose — and a run of any one align can report the other two
+fronts' drift without a second probe. It is a **read**: it parses each tool's `VERSION` constant
+and never executes a script sitting in the target's `.claude/hooks/`, because a probe that runs
+whatever a repo has on disk is a much larger claim than one that reads three lines. The rule it
+implements is [../ci-cd/versioning-release.md](../ci-cd/versioning-release.md) §Noticing drift.
 
 **The rule is load-bearing, not an optimization.** An align that is expensive on a clean repo is
 an align nobody runs as the repo grows — which is exactly when drift accumulates. A free no-op

@@ -99,10 +99,23 @@ each already probes before paying for one:
   `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
   noting how many are legacy CLI-generated `openspec-*` shadow copies (front 2 clears those when
   migrating a legacy `openspec/` workspace).
+- **the installed tools** — one call, spanning all three fronts:
+  ```bash
+  python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+  ```
+  It reports each installed copy under `.claude/hooks/` against the version this plugin ships —
+  **in both directions** — and whether `okf-validate.py` is actually invoked by a `hooks` block.
+  Run it from the **plugin path**, never from `.claude/hooks/skills.py`: an installed copy answers
+  from the same stale `VERSION` it is being asked about, and refuses (exit 2) rather than lie.
+  `sk-tool-behind` and `sk-tool-unwired` are errors and belong in the plan; `sk-tool-ahead`,
+  `sk-tool-unreadable` and `sk-tool-absent` are warnings to report. Each finding names the align
+  that fixes it, so the row goes to that front's section of the step-2 plan — **this command never
+  installs or overwrites a tool itself.**
 
 **All three fronts probe clean** → say so and stop, before any plan: *"all three fronts conformant
-— nothing to align."* That is the cheapest complete answer this command can give, and giving it is
-the point of probing here rather than inside three separate runs.
+— nothing to align."* A drift error is **not** clean: an install offer belongs in the plan even
+when the three fronts' own findings are empty. That is the cheapest complete answer this command
+can give, and giving it is the point of probing here rather than inside three separate runs.
 **Done when:** each front is marked *present / absent / not applicable* with its counts, and
 nothing has been written.
 
