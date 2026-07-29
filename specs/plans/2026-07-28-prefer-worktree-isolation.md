@@ -6,6 +6,7 @@ priority: {level: 20, criticality: medium, date: 2026-07-28}
 branch: {base: main, work: plan/prefer-worktree-isolation}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+reviewed: {date: 2026-07-29}
 ---
 
 # Prefer worktrees for spec isolation and remove them after a successful merge
