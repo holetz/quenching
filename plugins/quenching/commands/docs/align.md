@@ -200,10 +200,22 @@ Both are one-shot scaffolding, not loop stages; skip this step entirely on later
 `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` + `hooks-config.json` into the target's
 `.claude/hooks/` (never the directory recursively), and merge `settings.snippet.json` into
 `.claude/settings.json` (`PostToolUse` + `Stop` propose; opt-in `PreToolUse` hard-block via
-`hardBlock: true`). Set `docsDir` if the bundle root is not `docs/`. Already installed → compare
-`python3 .claude/hooks/okf-validate.py --version` with the plugin's `VERSION` and offer to
-overwrite **only the script** when the plugin is newer; the target's `hooks-config.json` is
-preserved. See [../../assets/hooks/README.md](../../assets/hooks/README.md).
+`hardBlock: true`). Set `docsDir` if the bundle root is not `docs/`.
+
+**Ask the tool for the state; never hand-compare a version here.** One call answers installed,
+shipped and wired at once:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+```
+
+Read this front's row (`okf-validate.py`) and act on its `status`: `behind` → offer to overwrite
+**only the script**, never `hooks-config.json`, which holds the target's own knobs; `ahead` → leave
+it alone and **say so** — the target is ahead of this plugin, a fact to state rather than a
+regression to force; `absent` → the install offer above. A `sk-tool-unwired` finding is the one the
+script cannot fix by being copied: the file is on disk and no `hooks` block invokes it, so offer
+the `settings.snippet.json` merge even though the version is current. See
+[../../assets/hooks/README.md](../../assets/hooks/README.md).
 
 **The mkdocs site.** Only if the bundle has a `documentation/` home. Offer to copy from
 `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`: `mkdocs.yml.tmpl` → the repo **root** as `mkdocs.yml`
