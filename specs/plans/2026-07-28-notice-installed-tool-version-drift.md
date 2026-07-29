@@ -257,9 +257,10 @@ only registered tree).
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json
       subject: plan/notice-installed-tool-version-drift: 1.2 Compare the three tools in both directions, with the copy that executes
-- [ ] 1.3 Answer the wiring question for okf-validate.py only, over settings.json and settings.local.json, reusing the existing settings reader
+- [x] 1.3 Answer the wiring question for okf-validate.py only, over settings.json and settings.local.json, reusing the existing settings reader
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json
+      subject: plan/notice-installed-tool-version-drift: 1.3 Answer the wiring question for okf-validate.py over both settings files
 - [ ] 1.4 Emit the findings under the `sk-` vocabulary — `sk-tool-behind` (error), `sk-tool-ahead` (warn), `sk-tool-absent` (warn), `sk-tool-unwired` (error) — each with a remedy naming the align that fixes it, and hold the 0/1/2 exit contract
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json; echo "exit $?"

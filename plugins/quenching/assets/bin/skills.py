@@ -1454,10 +1454,19 @@ PLUGIN_VERSION_FILE = "VERSION"
 # The three tools an align installs, each with the path it ships at and the align that
 # owns its copy. Nothing else under `.claude/hooks/` is this subcommand's business —
 # a target's own scripts live there too, and auditing them would be a different claim.
+#
+# `wired` marks the ONE tool that is a hook. `okf-validate.py` does nothing unless a
+# `hooks` block invokes it, so installed-and-uninvoked is a state it can sit in for
+# months — this repo did. `specs.py` and `skills.py` are CLIs a command body calls, so
+# their absence from settings.json is normal and asking about it would manufacture two
+# false findings on every conformant repo.
 INSTALLED_TOOLS = (
-    {"tool": "okf-validate.py", "ships": "assets/hooks/okf-validate.py", "align": "/docs:align"},
-    {"tool": "specs.py", "ships": "assets/bin/specs.py", "align": "/specs:align"},
-    {"tool": "skills.py", "ships": "assets/bin/skills.py", "align": "/skill:align"},
+    {"tool": "okf-validate.py", "ships": "assets/hooks/okf-validate.py",
+     "align": "/docs:align", "wired": True},
+    {"tool": "specs.py", "ships": "assets/bin/specs.py",
+     "align": "/specs:align", "wired": False},
+    {"tool": "skills.py", "ships": "assets/bin/skills.py",
+     "align": "/skill:align", "wired": False},
 )
 
 # Each tool declares `VERSION = "x.y.z"` at module level, in lockstep with the plugin's
@@ -1503,11 +1512,40 @@ def compare_versions(installed: str | None, shipped: str) -> str:
     return "current" if a == b else ("behind" if a < b else "ahead")
 
 
+def settings_hook_commands(root: str) -> list[str]:
+    """Every `command` string wired under a `hooks` event, across both settings files.
+
+    Reuses the pair `doctor` already reads (`settings.json` + `settings.local.json`) so
+    a per-developer override counts as wiring. Unparseable JSON yields nothing here and
+    is `doctor`'s finding to report — two tools naming the same broken file twice is
+    noise, and `drift` would only be guessing at what the file meant."""
+    out: list[str] = []
+    for settings_name in ("settings.json", "settings.local.json"):
+        text = read_text(os.path.join(root, settings_name))
+        if text is None:
+            continue
+        try:
+            hooks = json.loads(text).get("hooks", {})
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if not isinstance(hooks, dict):
+            continue
+        for entries in hooks.values():
+            for entry in entries if isinstance(entries, list) else []:
+                if not isinstance(entry, dict):
+                    continue
+                for h in entry.get("hooks") or []:
+                    if isinstance(h, dict) and isinstance(h.get("command"), str):
+                        out.append(h["command"])
+    return out
+
+
 def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
     """One row per tool. `executes` is the copy a command actually runs: the documented
     fallback tries the plugin path first, so it is the plugin's whenever this ran at all
     — which is exactly what makes an `ahead` row worth printing."""
     rows = []
+    wired_commands = settings_hook_commands(root)
     for spec in INSTALLED_TOOLS:
         installed_path = os.path.join(root, HOOKS_DIR, spec["tool"])
         present = os.path.isfile(installed_path)
@@ -1524,6 +1562,9 @@ def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
             "shipped": tool_shipped,
             "status": "absent" if not present else compare_versions(installed, tool_shipped),
             "executes": "plugin",
+            # None for the two CLIs: "we did not ask" is not "we found nothing"
+            "wired": (any(spec["tool"] in c for c in wired_commands)
+                      if spec["wired"] else None),
         })
     return rows
 
@@ -1589,9 +1630,11 @@ def cmd_drift(args, root: str) -> int:
         return exit_for(findings)
     print(f"skills drift — {root} against plugin {shipped} ({plugin_root})")
     for r in rows:
+        wiring = "" if r["wired"] is None else (
+            "  wired" if r["wired"] else "  NOT wired — nothing invokes it")
         print(f"  {r['status']:<10} {r['tool']:<18} installed "
               f"{r['installed'] or '-':<8} shipped {r['shipped']:<8} "
-              f"executes: {r['executes']}")
+              f"executes: {r['executes']}{wiring}")
     return exit_for(findings)
 
 
