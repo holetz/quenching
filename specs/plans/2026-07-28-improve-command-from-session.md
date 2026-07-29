@@ -5,6 +5,7 @@ verification: per-section
 priority: {level: 26, criticality: low, date: 2026-07-28}
 branch: {base: main, work: plan/improve-command-from-session}
 refined: {mode: gate, date: 2026-07-28}
+approved: {date: 2026-07-28}
 ---
 
 # Mine a session for improvements to the command that started it
@@ -208,9 +209,10 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 
 ### 1. Gate — prove the retro finds anything
 
-- [ ] 1.1 Write `assets/bin/session.py`: list every command a session ran, by both entry forms, with its tool-call span, under `--json`
+- [x] 1.1 Write `assets/bin/session.py`: list every command a session ran, by both entry forms, with its tool-call span, under `--json`
       verify: `python3 plugins/quenching/assets/bin/session.py list --json <transcript>` returns at least one command with non-zero tool counts on a real session file
       files: plugins/quenching/assets/bin/session.py
+      subject: plan/improve-command-from-session: 1.1 Write assets/bin/session.py: list every command a session ran, by both entry forms, with its tool-call span, under --json
 - [ ] 1.2 Add the digest pass: per-command tool-call counts by name, repeated read targets, and the turns where the human corrected course
       verify: the digest of the largest file in `~/.claude/projects/` stays under a stated size and the transcript itself is never emitted
       files: plugins/quenching/assets/bin/session.py
@@ -250,3 +252,9 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json` shows 26 commands and no findings
 - [ ] 5.2 The surface actually loads, since `commands/**` changed
       verify: `./assets/bin/functional-checks.sh` exits 0
+
+## Discoveries
+
+- Transcripts carry a per-line attributionSkill/attributionPlugin field naming the command each turn belongs to — it covers BOTH entry forms at once and yields the per-command tool-call span directly, which the <command-name>+Skill parse in ## Design only approximates. The entry marks are still read, but for how a command was reached and with what args, not for what it cost.
+- A Skill tool_use is attributed to the CALLER while the stage own turns are attributed to the CALLEE, so a conductor and its stages separate without inferring nesting.
+- session.py sits OUTSIDE the six-artifact lockstep in docs/standards/ci-cd/versioning-release.md: that lockstep exists so an align can decide whether an installed copy is stale, and this tool is never installed into a target. The standard does not yet say what a plugin-side-only tool does about --version.
