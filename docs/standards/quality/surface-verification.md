@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Surface verification
-description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, and how an ordering property is verified by running a real cycle
-resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/assets/bin/conclude-order-check.sh, plugins/quenching/commands/**
-tags: [quality, verification, automation, commands, functional-tests]
-timestamp: 2026-07-28
+description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the skill front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
+resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/assets/bin/conclude-order-check.sh, plugins/quenching/commands/skill/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
+tags: [quality, verification, automation, commands, functional-tests, cost]
+timestamp: 2026-07-29
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28)
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the skill front on that evidence
 maintainer: quenching
 ---
 
@@ -35,7 +35,10 @@ therefore pass while the entire surface is unreachable:
   surface is inference from the file it just wrote.
 
 **Never report a surface change as working on the strength of the session that made it.** Run
-`assets/bin/functional-checks.sh`, which spawns one fresh `claude -p` per check.
+`assets/bin/functional-checks.sh`, which spawns a fresh `claude -p` per check. Who runs it and when
+is §The harness belongs to the skill front; which subset is §Scope the run to what the change can
+break. Where no such harness exists, **say the command is unproven until a fresh session** rather
+than quoting a linter as if it had loaded anything.
 
 ## Assert on what the process did, never on what it said
 
@@ -82,26 +85,85 @@ claimed:
    Measured three times on 2026-07-28: pristine `main` scored *worse* than the branch under test,
    and one check flipped verdict across identical runs. Open the capture with an explicit
    `encoding="utf-8"`, and treat a zero-event stream as **inconclusive**, never as a failure.
+   The **negative** halves are why this is not merely cosmetic: "read nothing under a `skills/`
+   tree" passes vacuously over an empty stream, so an unreadable capture reports a clean surface.
+   Gate every assertion on the capture carrying at least one `tool_use` event of any name.
 
-5. **The harness grades the checkout the marketplace points at, never your branch.**
-   `${CLAUDE_PLUGIN_ROOT}` resolves through the marketplace's `directory` source, pinned to one
-   clone in `~/.claude/plugins/known_marketplaces.json`. Every probe therefore loads *that* clone's
-   `commands/**` whatever tree `claude -p` was launched from. Measured 2026-07-28 from a worktree:
-   check 1's probe read the **main** checkout's reference file. This is precondition 2's mechanism
-   seen from the other side — the same pinning that hands a throwaway sandbox the real surface is
-   what makes a branch's edits invisible.
+5. **Load the plugin with `--plugin-dir`, from a sandbox that enables none — or you grade a
+   checkout nobody is editing.** `${CLAUDE_PLUGIN_ROOT}` resolves through the marketplace's
+   `directory` source, pinned to one clone in `~/.claude/plugins/known_marketplaces.json`, and
+   serves whatever `~/.claude/plugins/cache/` last installed. A probe that enables the plugin
+   through that registration therefore loads *that* copy whatever tree `claude -p` was launched
+   from. Measured 2026-07-28, twice: from a worktree, check 1's probe read the **main** checkout's
+   reference file; and the served cache was a `3.0.0` tree still carrying a command `4.2.0` had
+   deleted. `claude -p --plugin-dir <the checkout under test>` in a box whose settings enable no
+   plugin loads exactly one copy, and it is the right one.
 
 **A check that can fail for lack of evidence cannot gate anything** until it can tell that state
-apart from a real verdict. Say so in the report rather than quoting its pass count.
+apart from a real verdict. Say so in the report rather than quoting its pass count. An all-
+inconclusive run must not exit 0 — `functional-checks.sh` exits **2** for *nothing could be
+measured*, which is neither a pass nor a failure.
 
-**Precondition 5 has a consequence for the whole cycle.** A spec that isolates before editing
-`commands/**` — which `/specs:isolate` makes the ordinary case — cannot prove its own change from
-the branch: a green run there graded the base, and a red one indicted code the probe never loaded.
-So the harness runs on the base **after the merge**, and a pre-merge run is read as measuring
-nothing about the branch. A task whose `verify:` is the harness therefore will not converge while
-isolated; that is the tool's shape, not the task's failure, and it is written `- [!] … blocked`
-rather than retried. This narrows the standing rule above: the harness remains the only check for a
-`commands/**` change, but the moment it can run is after the merge, not before it.
+## The harness belongs to the skill front, not to the spec cycle
+
+**The command that changes the surface is the command that proves it still loads.** That is
+`/skill:new`, which mints and edits a command here, and `/skill:eval`, which tunes a description on
+measured hit rates. The harness is **not** a repo-wide post-change mandate, and it is **not** named
+in a spec's `## Validation` or a task's `verify:`.
+
+That is a narrowing, and it was earned by evidence rather than by budget. Measured 2026-07-29 over
+the whole `specs/archive/` record: **every red run this harness has ever produced traced to a
+defect in the harness itself** — the cp1252 read, a hardcoded marketplace ref that made a live
+command read as `Unknown command`, a turn cap that reported working triggers as misses, a probe
+flaky enough to flip verdict on identical runs. **Not one traced to a surface regression.**
+Meanwhile the one real routing defect the repo has recorded — a `/skill:hook:new` trigger that
+measured as a miss — was found by `/skill:eval`, and check 3 gained a probe for it only afterwards.
+
+A check that has only ever caught itself earns a narrow trigger. Two things follow:
+
+- **It runs where the surface is edited, once**, not on every spec that happens to reach a merge.
+  A spec whose work never touches `commands/**` was paying eight agent sessions to learn nothing.
+- **`/skill:eval` is the instrument for routing, and check 3 is a worse copy of it.** Step 7 of
+  that command measures the same property with should-trigger *and* should-not-trigger prompts,
+  graded per command, against five hardcoded phrases with no boundary arm. Check 3 is therefore
+  **opt-in** (`--only 3`), kept only to re-guard phrases already tuned; the default run is
+  `1,2,4`.
+
+## Scope the run to what the change can break
+
+Every check here is a fresh agent session, billed per run, and they are not interchangeable in
+what can move them. Making a harness all-or-nothing is what turns a correct rule into a bill:
+
+| what changed | what can regress | what to run |
+| --- | --- | --- |
+| a command **body** | placeholder resolution, a stale citation, a conductor's stage names | the default — checks 1, 2, 4 |
+| a `description:` line | spoken routing, and nothing else | **`/skill:eval`**; `--only 3` only to re-guard the tuned phrases |
+| a conductor's stage names | the stage reached by registry name | `--only 2,4` |
+
+**A verification tool with no selector will be run too often or not at all.** Give one to any check
+that spawns processes, state its cost where the rule that mandates it is written, and default it to
+the cheap subset rather than the exhaustive one.
+
+## When a process-spawning check *does* gate a merge, it gates before it
+
+Nothing above is specific to this harness: it holds for any check a repo's `## Validation` names
+that costs real resources per run. `/specs:conclude` step 6 runs that gate on the **work branch,
+before the merge**, and a red check stops the merge.
+
+- Run afterwards, a failure's only repair is a commit on the base — the exact write that command's
+  ordering exists to prevent. Run before, it still has somewhere to be fixed.
+- **The branch must already carry the base**, or the merge produces a tree neither side validated.
+  `git rev-list --count plan/<slug>..<base>` non-zero → stop and say so; catching the branch up is
+  a write, and the human's call.
+- **It is not re-run after the merge.** Same tree, full price, no new information. Only the
+  assertion that *cannot* be made earlier stays there: that the merge commit's subject is the one
+  recorded before it.
+
+This ordering became possible only with precondition 5 satisfied. While every probe loaded the
+marketplace's clone, a spec that isolated before editing `commands/**` could not prove its own
+change at all — a green run graded the base and a red one indicted code the probe never loaded —
+so the only honest moment left was after the merge, where a failure can be reported and no longer
+fixed.
 
 **Rules 2 and 3 pull against each other, and the tension is real.** A routing probe needs a
 populated repo to satisfy rule 3; a command that *writes* then writes there for real. Check 3's

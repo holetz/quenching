@@ -1,5 +1,5 @@
 ---
-description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome, and never treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage.
+description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 ---
@@ -46,8 +46,8 @@ Resolve `specs.py` by the fallback in
 never on prose.
 
 **Why `Bash` is unrestricted here.** Like `/specs:execute`, this command drives the target repo's
-`git` — the branch diff, the merge, the branch cleanup — and re-runs the repo's own checks after
-the merge. Its read-only siblings are scoped to `python3`/`py`.
+`git` — the branch diff, the merge, the branch cleanup — and re-runs the repo's own checks to
+gate the merge. Its read-only siblings are scoped to `python3`/`py`.
 
 ## Doctrine
 
@@ -70,6 +70,12 @@ the merge. Its read-only siblings are scoped to `python3`/`py`.
 - **Declared rules were already written.** The `docs/standards/` a task explicitly named went in
   during execution, honestly graded. What lands here is what the work *revealed* — and there is no
   delta and no second store to sync either way.
+- **What a standard attaches to the *merge* is settled here, not built as a task.** A version bump,
+  a changelog entry, a manifest re-stamp: none of them is knowable at task 1, because what the
+  release turns out to be depends on what the last task turned out to be. Scheduled as work they
+  also collide — two branches bump from the same base to the same number and the second one merges
+  into a conflict. Settled at step 5 they start from the base being merged into, and ride the same
+  merge as the code that earned them.
 - **Abandonment is never inferred.** No sweep, no conductor and no age threshold triggers it — a
   spec untouched for a year may be waiting on a vendor. Only the human concludes with
   `--outcome abandoned`.
@@ -85,7 +91,9 @@ is already set is **reported and skipped**, not repeated:
 | emergent `docs/` | it rides with the review — same stage, same commit | skipped with the review |
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
+| release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
 | merge stamp | `merge: {strategy, subject}` in frontmatter | skip the stamp; the merge itself may still be pending |
+| validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | merge | `git branch --merged` lists the work branch | skip; never merge twice |
 
 The last two rows are **separate signals** now that the stamp precedes the merge: a run interrupted
@@ -175,9 +183,9 @@ branch.
 **Done when:** the strategy is chosen, the file is in `archive/` with its `outcome:` stamped and
 committed, or the run stopped at a refusal the human declined to override.
 
-### 5. Distil, and stamp the merge record — both on the work branch
+### 5. Distil, settle the release obligations, and stamp the merge record — all on the work branch
 This is the last writing step, and everything it writes lands on the **work branch**, before any
-merge. Two things happen here, in this order.
+merge. Three things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `docs/`, per
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md), **branching on
@@ -194,8 +202,21 @@ One plan, one OK. Every write goes through
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). No bundle → skip
 silently. Commit what it writes **on the work branch**.
 
-**Then stamp the merge record**, still on the branch, naming the subject the merge commit is about
-to carry:
+**Then settle the release obligations the repo's standards attach to the merge itself.** With an
+OKF bundle present, read the `docs/standards/` subjects the branch diff touched and apply what they
+require *of the merge* rather than of any one task — a version bumped across artifacts a standard
+says must move together, a changelog entry, a manifest re-stamped. This is the only correct moment
+for that class of edit: the whole branch is written, so what the release *is* is finally knowable,
+and a bump made here starts from the base the branch is actually merging into rather than colliding
+with a sibling spec that bumped to the same number days ago.
+
+Nothing is invented. A repo whose standards attach nothing to a merge gets nothing, silently, and
+so does a repo with no bundle. What a standard *does* require is presented as ONE plan with the
+standard quoted, taken on one confirmation, and committed on the branch. A requirement the diff
+already satisfies is reported as already done, never redone.
+
+**Finally, stamp the merge record**, still on the branch, naming the subject the merge commit is
+about to carry:
 
 ```yaml
 merge: {strategy: <chosen in step 4>, subject: "plan/<slug>: merge (<strategy>)"}
@@ -211,13 +232,61 @@ makes to a file already there — the other is the distillation's append to `## 
 Both are permitted because they touch *this* spec, closing *this* run, and because the
 alternative is a write on the base after the merge. Commit them on the branch.
 
-For `abandoned` nothing is merged, so nothing is stamped; the distillation above still runs.
-**Done when:** the distillation offer was made and applied or declined, and `merge` is stamped for
-a `done` outcome — all committed on the work branch.
+For `abandoned` nothing is merged, so nothing is stamped **and no release obligation is settled** —
+a version nobody adopted is a claim the history should not carry. The distillation above still runs.
+**Done when:** the distillation offer was made and applied or declined, the release obligations were
+applied, reported as already satisfied, or reported as none, and `merge` is stamped for a `done`
+outcome — all committed on the work branch.
 
-### 6. Merge — the last action of this command
-Nothing after this point writes anything. First find **which checkout holds the base**, then merge
-into it in place, using exactly the subject recorded in step 5:
+### 6. Prove it on the branch, then merge — the last action of this command
+Nothing after this point writes anything.
+
+**First the gate: re-run whatever the repo's `## Validation` names — on the WORK BRANCH, before
+merging.** Run it from the checkout that carries the work (the worktree or branch this run is
+standing on), so what it grades is the change being proposed.
+
+**A failing check stops the merge.** Report which check failed and what it printed, leave the
+branch unmerged, and let the human fix it *on the branch* — then this command is re-run. Never
+merge past a red check, and never repair one with a commit: a fix belongs on the branch, where it
+rides the same merge as everything else.
+
+This is why the gate sits *before* the merge rather than after it. A check that runs afterwards can
+only narrate — the base already carries the change, and the only repair left is a commit on the
+base, which is the exact thing this ordering exists to prevent. Run on the branch, a red check
+still has somewhere to be fixed.
+
+**Nothing is stranded by stopping here.** `merge:` was stamped in step 5, and §Resuming names
+*stamped but unmerged* as the recoverable state: the next run re-reads the recorded subject and
+merges with it.
+
+**The gate grades the branch, so the branch must already carry the base.** If the base moved since
+the branch was cut, the merge produces a tree *neither* side ever validated, and a green gate says
+nothing about it:
+
+```bash
+git rev-list --count plan/<slug>..<base>      # commits on the base the branch does not have
+```
+
+Non-zero → **say so and stop before the gate**, naming the count. Bringing the branch up to date is
+a write, and it is the human's call which way (merge the base in, or rebase — the recorded task
+subjects survive a rebase, the `merge:` stamp does not describe one). Never do it unasked, and
+never run the gate over a branch you know is behind: that is a verdict about a tree that is not
+being merged.
+
+**An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
+could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
+it. The repo's own
+[surface-verification.md](../../docs/standards/quality/surface-verification.md) is where that
+distinction is defined for the command surface.
+
+**Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
+one, so a check with a `--only`-style selector gets the subset this branch can actually break — the
+whole suite by reflex is the expensive way to learn nothing. When the repo's `## Validation` names
+the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
+selector.
+
+Then find **which checkout holds the base**, and merge into it in place, using exactly the subject
+recorded in step 5:
 
 ```bash
 git worktree list --porcelain                    # which checkout has <base> checked out
@@ -235,13 +304,17 @@ then **stop without merging**. Never invent a checkout and never create a tempor
 was stamped in step 5, *before* the merge, so the run is resumable with nothing lost; refusing here
 is the same refusal this command already makes over open boxes.
 
-Then, **reading only**: re-run whatever the repo's `## Validation` names on the merged base, and
-compare `git -C <that path> log -1 --format=%s` against the recorded subject — from the same
-checkout the merge landed in, since this run is not standing on the base. A mismatch, or a failing
-check, is
-**reported as a finding** — never repaired with another commit, because a commit on the base after
-the merge is the exact thing this ordering exists to prevent. If something must be fixed, say so
-and let the human start a new change.
+Then, **reading only**, the one assertion that can only be made afterwards: compare
+`git -C <that path> log -1 --format=%s` against the recorded subject — from the same checkout the
+merge landed in, since this run is not standing on the base. A mismatch is **reported as a
+finding** — never repaired with another commit, because a commit on the base after the merge is the
+exact thing this ordering exists to prevent. If something must be fixed, say so and let the human
+start a new change.
+
+**`## Validation` is not re-run here.** It gated the merge above, on the branch, with the base
+already in it — so a second full run grades the same tree and buys a restatement at full price.
+Where that price is a fleet of fresh agent sessions, it was the largest recurring cost this command
+had.
 
 **Then, when the merge exited 0 and this spec was isolated in a worktree, remove it** — run from
 the checkout that holds the base, because nobody removes the tree they are standing in:
@@ -262,14 +335,16 @@ separate offer it already was.
 
 For `abandoned`, do not merge and do not remove the worktree. Offer to keep the branch (default) or
 delete it, and record the choice in the report.
-**Done when:** the merge landed and the post-merge checks were reported, any worktree was removed
-or its refusal reported, or the run recorded why nothing was merged.
+**Done when:** the gate ran green on the branch and the merge landed with its subject asserted, any
+worktree was removed or its refusal reported, or the run recorded why nothing was merged — a red
+gate among them.
 
 ### 7. Report
 The archived path, the outcome, task progress at close, `reviewed` / `merge` / `branch` as they now
 stand, what the review found and what was done about it, the docs written in step 3 and step 5, the
-result of the post-merge checks, and — for an abandonment — that nothing was adopted and what
-became of the branch.
+release obligations settled or found already satisfied, what the pre-merge gate returned — naming
+any check that came back inconclusive rather than counting it as passed — and —
+for an abandonment — that nothing was adopted and what became of the branch.
 
 **Say what became of the worktree**, when there was one: removed, or kept with git's refusal
 quoted. It left a directory on disk, and this report is the only place the human learns it is gone
@@ -291,8 +366,13 @@ reported.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
 - **Never `git checkout <base>` to merge.** Merge into the checkout that already holds the base with
   `git -C`; when none does, stop and say so rather than manufacturing one.
-- **Never write anything after the merge.** The merge is the last action; a post-merge check that
-  fails is a finding to report, not a commit on the base.
+- **Never write anything after the merge.** The merge is the last action; anything the post-merge
+  assertion catches is a finding to report, not a commit on the base.
+- **Never merge past a red `## Validation` gate**, and never count an inconclusive check as a green
+  one. The gate runs on the branch precisely so that a failure still has somewhere to be fixed —
+  merging anyway spends that.
+- **Never run the gate over a branch that is behind its base.** Report the count and stop; bringing
+  it up to date is a write, and which way is the human's call.
 - Never delete a branch after a **squash** without saying what it costs: each task's recorded
   `subject:` stops resolving.
 - Never overwrite a `writeOnce` record (`merge`, `outcome`) to make reality fit — report the
@@ -300,6 +380,8 @@ reported.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
 - Never re-write a rule a task already wrote into `docs/standards/` during execution — concluding
   syncs nothing.
+- Never settle a release obligation for an **abandoned** spec, and never invent one no standard
+  states — a bump nobody asked for is a release claim this command had no authority to make.
 - Never bulk-copy a spec into `docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
 - Never edit or delete anything already in `archive/`, with exactly two exceptions, both in
