@@ -6,6 +6,7 @@ priority: {level: 9, criticality: medium, date: 2026-07-28}
 branch: {base: main, work: plan/retire-docs-log}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+reviewed: {date: 2026-07-29}
 ---
 
 # Retire the docs/ log
