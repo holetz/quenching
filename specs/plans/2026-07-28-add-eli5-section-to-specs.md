@@ -299,9 +299,10 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
       pattern: the `## Handoff` block in the same template
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
       subject: plan/add-eli5-section-to-specs: 1.2 Add the heading and its guidance comment to the template, in BOTH copies
-- [ ] 1.3 Add `sp-overview-missing` (warn) to `specs.py validate`
+- [x] 1.3 Add `sp-overview-missing` (warn) to `specs.py validate`
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py validate --json
+      subject: plan/add-eli5-section-to-specs: 1.3 Add `sp-overview-missing` (warn) to `specs.py validate`
 - [ ] 1.4 Prove the gate did not move: a spec without `## Overview` reports the same stage and
       `ready.ok` as before, per the first assertion in `## Validation`
 
