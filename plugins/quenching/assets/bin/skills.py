@@ -106,7 +106,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.2.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
+VERSION = "4.3.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
