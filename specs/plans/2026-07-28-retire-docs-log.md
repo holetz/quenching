@@ -181,27 +181,37 @@ reconhecido.
 
 ## Handoff
 
-Estado: spec isolada no worktree `../claude-quenching-retire-docs-log`, branch
-`plan/retire-docs-log` a partir de `main`. Nada commitado ainda.
+Estado: todas as 15 tarefas construídas e commitadas no worktree
+`../claude-quenching-retire-docs-log`, branch `plan/retire-docs-log` a partir de `main`.
+Um commit por tarefa, mais um commit inicial com a passagem de desenvolvimento. Nada
+mergeado — `/specs:conclude` ainda não rodou.
 
-Convenções em vigor:
+Bateria de `## Validation` completa, rodada na tarefa 7.1 (de `plugins/quenching/`):
 
-- `log.md` **permanece** em `RESERVED` e no skip do hard block do `PreToolUse`.
-  Só `check_log` sai. Tirar dos três pontos derruba todo `log.md` sobrevivente
-  em repositório já alinhado para `missing-type` (ERROR) e nega escrita nele —
-  ver `## Design`.
-- Prosa dos corpos em português; headings, slugs, chaves de frontmatter e
-  valores de `type` em inglês canônico.
-- Depois de qualquer mudança em `commands/**`, `functional-checks.sh` é a única
-  prova de que a superfície ainda carrega — o registry é montado no início da
-  sessão, então nada mais neste repositório detecta um corpo inalcançável.
-- O bump de `VERSION` + `plugin.json` + `marketplace.json` + a constante
-  `VERSION` dos três scripts é lockstep de release e não é decisão desta spec.
+1. `okf-validate.py selftest` — PASS, 13 casos (12 canônicos + a fixture `retired-log`).
+2. `okf-validate.py assets/docs` — `0 error(s), 0 warning(s)`; zero arquivos `log.md` no
+   esqueleto.
+3. `specs.py selftest` e `skills.py selftest` — PASS; lockstep de `CANONICAL_CASES` intacto.
+4. `skills.py --root . doctor --json` — 25 comandos, 0 findings; `lint --json` sai 0
+   (34 warnings, **exatamente as mesmas** de antes desta spec — comparadas uma a uma).
+5. `grep -rn 'log\.md' commands assets/references` — só menções deliberadas: as declarações
+   de aposentadoria, duas listas de exclusão, e o transcript do OKF v0.1 em `okf-spec.md`.
+   Nenhuma instrução de append.
+6. `./assets/bin/functional-checks.sh` — **exit 0, 9 asserções, 0 falhas**. Obrigatório: 16
+   arquivos sob `commands/**` mudaram.
+7. `grep -rn 'log\.md' docs CLAUDE.md README.md` — 3 menções, todas descrevendo a
+   aposentadoria (o standard novo, sua entrada no glossário, a linha de nome reservado em
+   `QUENCHING.md`).
 
-Inventário já medido de `log.md`: 17 arquivos em `commands/` (38 ocorrências),
-8 em `assets/references/` (22), 8 no esqueleto e nos moldes, 8 na raiz deste
-repositório.
+Duas coisas que um revisor precisa saber e não deriva do diff:
 
+- **Um arquivo além dos quinze declarados na tarefa 4.3**: `commands/specs/conclude.md`.
+  A tarefa 3.3 roteou a ponte da distilação para o `## Outcome` da spec arquivada, o que
+  contradizia a invariante de `conclude.md` ("exatamente uma exceção: o stamp `merge:`").
+  A invariante passou a declarar **duas** exceções, ambas no passo 5 e ambas sobre a própria
+  spec sendo fechada. Registrado em `## Discoveries`.
+- **`log.md` continua em `RESERVED` e no skip do hard block** — só `check_log` saiu. A
+  fixture do selftest foi verificada a falhar (4 asserções) quando a reserva é removida.
 ## Tasks
 
 ### 1. Validator
@@ -268,9 +278,12 @@ repositório.
 
 ### 7. Verification
 
-- [ ] 7.1 Rodar a bateria completa de `## Validation` e registrar a saída
+- [x] 7.1 Rodar a bateria completa de `## Validation` e registrar a saída
       verify: cd plugins/quenching && ./assets/bin/functional-checks.sh
+      subject: plan/retire-docs-log: 7.1 run the full validation battery
 
 ## Discoveries
 
 - Routing the distillation bridge into `## Outcome` widens `/specs:conclude`'s "never edit anything in archive/" invariant from one bounded exception (the `merge:` stamp) to two — `## Outcome` is drafted at the archive gate, before distillation knows what it minted, so the append can only happen post-archive. Task 4.3 must restate conclude.md's invariant to match distill.md, or the two contradict.
+- okf-spec.md is a faithful condensation of the EXTERNAL OKF v0.1 spec, so three of its log.md mentions (the SHOULD for reserved filenames, the MAY for any level, the upstream bundle diagram) were left intact and the retirement stated once in the OKF-strict profile section instead. A reader who lands on the SHOULD without reading the profile could still act on it — worth deciding whether the transcript should carry inline retirement markers.
+- Validation item 7 expected 'nothing beyond the new standard' at the repo root, but three mentions remain: the standard, its glossary entry, and QUENCHING.md's reserved-name row. All three DOCUMENT the retirement rather than instruct an append, so the item is satisfied in substance; its wording was written before the glossary entry and the QUENCHING row were foreseen.
