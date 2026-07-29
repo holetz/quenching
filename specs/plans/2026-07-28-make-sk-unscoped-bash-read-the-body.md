@@ -45,6 +45,10 @@ priority: {level: 15, criticality: medium, complexity: 3, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `sk-unscoped-bash`'s own remedy text offers two ways to clear it: *"scope it to the commands the

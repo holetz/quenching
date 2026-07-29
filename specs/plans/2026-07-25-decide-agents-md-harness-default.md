@@ -7,6 +7,10 @@ priority: {level: 24, criticality: medium, date: 2026-07-28}
 
 # Decide whether AGENTS.md becomes the default harness target
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Deferred from the docs-verification-layer plan — AGENTS.md is now a Linux Foundation open spec with wide adoption, while the harness molds ship only claude-root.md and claude-subfolder.md

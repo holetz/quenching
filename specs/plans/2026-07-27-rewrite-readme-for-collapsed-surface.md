@@ -40,6 +40,10 @@ priority: {level: 13, criticality: high, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `plugins/quenching/README.md` still documents the two-file architecture the

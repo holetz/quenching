@@ -7,6 +7,10 @@ priority: {level: 18, criticality: medium, date: 2026-07-28}
 
 # Split the backlog-zone renderer out of specs.py
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 specs.py has passed the ~1,200-line threshold its own design set for splitting, and is now 1,388 lines

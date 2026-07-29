@@ -46,6 +46,22 @@ refined: {mode: gate, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+Nine of the eleven /docs:* and /skill:* command descriptions lost their quoted trigger phrases and
+`Not for:` boundary clause when the command surface was collapsed to one file per entry point, so a
+plainly-worded ask like "write this down in the docs" has nothing to tell it apart from /docs:add,
+/docs:learn, /docs:define, or /docs:import. `## Proposal` restores all three parts of a conformant
+description — concept, triggers, boundary — reusing phrasing that already exists elsewhere in the
+repo rather than inventing new text, and `## Design` requires all eleven descriptions be drafted as
+one allocation table, reviewed for collisions, before any file is edited. Restoring them pushes the
+surface past its always-on character ceiling, which has zero headroom by construction, so
+`## Tasks` runs in a fixed order: write the descriptions, then re-measure the ceiling from an actual
+run and transcribe that number everywhere it lives, then bump the release version.
+`## Open Decisions` flags that approval is currently withheld: a still-open spike into
+`disable-model-invocation` could make this whole restoration unnecessary, or confirm it and
+multiply its cost roughly tenfold once the surface grows as planned.
+
 ## Problem
 
 The collapse into one file per entry point deleted the half of each pair that carried the quoted
