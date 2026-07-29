@@ -5,6 +5,20 @@ History of the standards bundle, most recent first. Each entry is grouped under 
 
 ## 2026-07-28
 
+**Creation**: [Session evidence](/docs/standards/automation/session-evidence.md) — from the
+`improve-command-from-session` plan, the contract behind `/skill:retro` and the `session.py` it
+drives: where a transcript lives, the two entry forms (typed and conducted), and the rule that a
+counted claim comes from code reading the transcript, never from a model recalling its own run.
+Its central rule is that `attributionSkill` is a pointer, not a span — measured across 43
+Skill-invoked stages in an 86-transcript corpus, it reverts to the conductor after a stage
+returns exactly once, so a naive read over-credits a conducted stage with its conductor's own
+later turns (`/specs:isolate` was once credited with 5 `AskUserQuestion` calls that were
+`/specs:develop`'s own). `close_attribution` detects and names this rather than fabricating an
+end boundary, in the shape [Parse honesty](/docs/standards/quality/parse-honesty.md) already set
+for a parser applied here to a pointer. `authority: background` — the go/no-go this standard's
+graduation gate restates was answered PASS once, at the plan's own task 1.3; graduating to
+`current` is a later judgment for whether the rule keeps holding in independent use.
+
 **Update**: [Subagent authoring](/docs/standards/automation/agents.md) — `resource` widened from the single entry `.claude/agents/**` to also name `commands/skill/agent/new.md`, `commands/skill/align.md` and `assets/bin/skills.py`. The doc's own description promises three things — when work becomes a subagent, the definition contract, **and how the surface is inventoried** — but its scope named only the directory the definitions live in, so the minting command, the sweep that inventories them and the checker that enforces `sk-agent-no-description` were all governed in prose and by nothing in the frontmatter. Its sibling [Scoped hooks](/docs/standards/automation/hooks.md) already carried the full set, which is what made the asymmetry visible. Widening deliberately traded one warning for two before settling at one: the added globs are real files last touched 2026-07-28, so `stale-doc` fired truthfully and was closed by verifying the body still describes them (it does) and bumping the timestamp. `.claude/agents/**` is **kept** and still reports `resource-unresolved`, because this repo has minted no agent yet — an empty scope is what the doc governs, and dropping the entry to silence the check would make the resource lie about the doc's own subject. It clears itself the day a first agent lands.
 
 **Creation**: [Versioning and release — the six-artifact lockstep](/docs/standards/ci-cd/versioning-release.md) — moved from `CLAUDE.md` by `/docs:harness`, the first doc to populate the previously empty `ci-cd/` subject (its own index listed `versioning-release` as a candidate). The rule was already written down, but only in the harness file, where the validator does not look: six version strings must be bumped together. The doc's contribution over the harness text is *why* — the six split into two halves read by two independent consumers. Artifacts 1–2 (`plugin.json` `version` + `VERSION`) are what Claude Code compares to decide an upgrade fires at all; artifacts 4–6 (the `VERSION` constant in `okf-validate.py`, `specs.py`, `skills.py`) are what each installing align compares against the copy **already installed in a target repo**, so a tool whose constant was missed is never upgraded anywhere it is already in use — the plugin ships a fix that silently never reaches the repos it was written for. That second failure is invisible from this repository, which is what makes it worth a doc rather than a line in a harness file. The three-copy duplication is not incidental either: the tools may not import each other, because each installs standalone into a target's `.claude/hooks/` — the same constraint [frontmatter-parsing.md](/docs/standards/code/frontmatter-parsing.md) records for the shared parser rule. `authority: current` — the rule is enforced today and the release procedure it describes is the one in use.
