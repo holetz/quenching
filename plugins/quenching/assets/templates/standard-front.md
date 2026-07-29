@@ -24,5 +24,4 @@ derivable and non-fabricated. Favor structural markdown (headings, lists, tables
 
      Bundle-level OKF constructs live at the standards ROOT, not per doc:
        • standards/index.md — the reserved listing (its "Current docs" tables are DERIVED
-         between the BEGIN/END GENERATED markers).
-       • standards/log.md   — the change history (## YYYY-MM-DD, newest first). -->
+         between the BEGIN/END GENERATED markers). -->
