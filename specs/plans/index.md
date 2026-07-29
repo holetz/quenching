@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**27 specs** · 1 executing · 1 designed · 25 captured
+**28 specs** · 1 executing · 1 designed · 26 captured
 
 ### Executing
 
@@ -124,6 +124,7 @@ closing out unbuilt work looks like.
 | [retire-docs-log](2026-07-28-retire-docs-log.md) | Retire the docs/ log | 2026-07-28 |
 | [revise-standards-subject-folders](2026-07-28-revise-standards-subject-folders.md) | Revise the fixed docs/standards subject folders | 2026-07-28 |
 | [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
+| [narrow-the-stale-doc-trigger-to-content-drift](2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md) | Narrow The Stale Doc Trigger To Content Drift | 2026-07-29 |
 <!-- END GENERATED -->
 
 ## Frontmatter
