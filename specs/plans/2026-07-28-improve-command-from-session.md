@@ -6,6 +6,7 @@ priority: {level: 26, criticality: low, date: 2026-07-28}
 branch: {base: main, work: plan/improve-command-from-session}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+reviewed: {date: 2026-07-29}
 ---
 
 # Mine a session for improvements to the command that started it
