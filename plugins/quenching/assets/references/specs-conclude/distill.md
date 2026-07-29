@@ -4,7 +4,7 @@ How `/specs:conclude` offers to carry the **durable** knowledge a spec produced 
 OKF `docs/` bundle. This is **the single bridge** between the two systems: the archive side keeps
 its own history (the archived spec IS the record of what was proposed, designed and done); the OKF
 side receives **only** what outlives the spec and was not already written into `docs/` while it was
-built. Nothing is bulk-copied. The insert mechanics (stamp → index → log → glossary → self-check)
+built. Nothing is bulk-copied. The insert mechanics (stamp → index → glossary → self-check)
 live with `/docs:add`
 ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) — this file only
 decides **what crosses** and cites that procedure for **how**.
@@ -78,15 +78,29 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    invented; `source:` names the spec), update the home's `index.md`, enrich the glossary when a
    term warrants it. A follow-up instead goes through `/specs:create` into `specs/plans/` (outside
    the `docs/` bundle).
-4. **Log the bridge.** One `docs/log.md` entry per minted doc per §Appending to `log.md`,
-   e.g. `**Creation**: [<title>](/docs/<path>.md) — distilled from spec <slug>`.
+4. **Narrate the bridge in the archived spec's `## Outcome`.** One line per minted doc —
+   `distilled: [<title>](/docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
+   already written at the archive gate. An empty harvest writes nothing.
+
+   **Why there, and why this is a second edit to an archived file.** The bundle's `log.md` is
+   retired, and the provenance it used to carry has one honest home left: the record of the
+   spec that produced the doc. `## Outcome` is mandatory at promote and sits in the file a
+   reader of the archived spec already has open, so the bridge costs no new artifact. It has to
+   be written *after* the archive move because that is when the minted paths first exist —
+   `## Outcome` is drafted at the gate, before distillation knows what it minted. That makes
+   this the **second** bounded exception to "never edit anything in `archive/`", alongside the
+   `merge:` stamp, and for the same reason: both are facts that only come into being once the
+   spec has closed. Neither revises what the archived spec claimed; both append what happened
+   to it. Any third exception should be argued for, not assumed from these two.
 5. **Self-check** every touched file against
    [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
 
 ## Invariants
 
 - **Never bulk-copy** an artifact into `docs/` — distill the durable unit, cite the archive.
-- **Never delete or edit** the archived spec while distilling — the archive is history.
+- **Never delete or revise** the archived spec while distilling — the archive is history. The one
+  write permitted here is step 4's append to `## Outcome`, which records what the distillation
+  produced and changes nothing the spec claimed.
 - **Never mint without the one confirmation**, and never fabricate a candidate to have something
   to distill: an empty harvest is a valid outcome.
 - A distilled `standard` claims `authority: current` **only** when the spec actually implemented

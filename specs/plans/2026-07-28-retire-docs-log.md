@@ -231,8 +231,9 @@ repositório.
 - [x] 3.2 Retirar o log do contrato OKF em `docs-align/okf-spec.md`, `docs-align/taxonomy.md`, `docs-align/conformance.md` e `docs-align/cycle.md`
       files: plugins/quenching/assets/references/docs-align/okf-spec.md, plugins/quenching/assets/references/docs-align/taxonomy.md, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/assets/references/docs-align/cycle.md
       subject: plan/retire-docs-log: 3.2 retire the log in the OKF contract references
-- [ ] 3.3 Reescrever o passo 4 de `specs-conclude/distill.md`: a ponte deixa de ser uma entrada no log e passa a ser narrada no `## Outcome` da própria spec arquivada
+- [x] 3.3 Reescrever o passo 4 de `specs-conclude/distill.md`: a ponte deixa de ser uma entrada no log e passa a ser narrada no `## Outcome` da própria spec arquivada
       files: plugins/quenching/assets/references/specs-conclude/distill.md
+      subject: plan/retire-docs-log: 3.3 route the distillation bridge into ## Outcome
 - [ ] 3.4 Ajustar as menções restantes em `specs-create/plans-zone.md` e `specs-develop/spec-driven.md`
       files: plugins/quenching/assets/references/specs-create/plans-zone.md, plugins/quenching/assets/references/specs-develop/spec-driven.md
 
@@ -262,3 +263,7 @@ repositório.
 
 - [ ] 7.1 Rodar a bateria completa de `## Validation` e registrar a saída
       verify: cd plugins/quenching && ./assets/bin/functional-checks.sh
+
+## Discoveries
+
+- Routing the distillation bridge into `## Outcome` widens `/specs:conclude`'s "never edit anything in archive/" invariant from one bounded exception (the `merge:` stamp) to two — `## Outcome` is drafted at the archive gate, before distillation knows what it minted, so the append can only happen post-archive. Task 4.3 must restate conclude.md's invariant to match distill.md, or the two contradict.
