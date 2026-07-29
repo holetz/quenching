@@ -292,9 +292,10 @@ only registered tree).
 
 ### 4. Docs
 
-- [ ] 4.1 Write the drift half of docs/standards/ci-cd/versioning-release.md — both directions, the plugin-copy rule, and wired-versus-installed (authority: current once proved)
+- [x] 4.1 Write the drift half of docs/standards/ci-cd/versioning-release.md — both directions, the plugin-copy rule, and wired-versus-installed (authority: current once proved)
       files: docs/standards/ci-cd/versioning-release.md, docs/index.md, docs/standards/index.md, docs/log.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/notice-installed-tool-version-drift: 4.1 Write the drift half of docs/standards/ci-cd/versioning-release.md
 
 ### 5. Close
 

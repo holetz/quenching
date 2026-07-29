@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the six-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo — plus the half a bump cannot do, which is noticing that a target's copy has fallen behind, run ahead, or sits on disk with nothing invoking it
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-07-28
 audience: both
 authority: current
-source: moved from CLAUDE.md
+source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture
 maintainer: quenching
 ---
 
@@ -46,6 +46,40 @@ from one: the tools **may not import each other**, because each installs standal
 `.claude/hooks/` (see [frontmatter-parsing.md](../code/frontmatter-parsing.md) for the same
 constraint applied to the shared parser rule).
 
+## Noticing drift — the half a bump cannot do
+
+Bumping the six is what makes an upgrade *possible*. It does nothing about a target that already
+holds a copy and never runs an align again: the offer is the only moment a version is compared, so
+that repo keeps whatever it got, indefinitely, and nothing says so. This repository ran
+`.claude/hooks/specs.py` at **1.0.0** against a plugin at **4.2.0** for months — long enough that
+the stale copy's `status` still took `--plan` where the current one takes `--spec`.
+
+`python3 assets/bin/skills.py drift --json` is what notices. Three rules make its answer worth
+trusting:
+
+**1. It runs from the plugin's copy, and refuses otherwise.** An installed copy would answer from
+the same stale `VERSION` it is being asked about, so `drift` derives the plugin root from its own
+location (or takes `--plugin-root`) and **exits 2** when neither resolves. A checker that cannot
+tell "no drift" from "could not look" reports the silence it exists to break.
+
+**2. Both directions are findings.** `behind` is the obvious one. `ahead` matters because
+resolution is **plugin-first** and every align deliberately leaves a newer installed copy alone —
+so an ahead copy is code that is never executed and never repaired, with both halves of that
+behaving correctly and saying nothing.
+
+**3. Installed is not wired.** `okf-validate.py` does nothing unless a `hooks` block invokes it.
+This repo held it on disk with **no `hooks` block at all**: deleting it would have changed no
+behaviour, which is exactly why nobody noticed. A drift check comparing only versions would have
+caught 1.0.0-vs-4.2.0 and still missed the silence, so the wiring question is asked for the one
+tool that is a hook — and never for `specs.py` or `skills.py`, which are CLIs whose absence from
+`settings.json` is normal.
+
+The same asymmetry decides severity. `behind` and `unwired` are **errors** (a different CLI
+contract; an inert script). `ahead`, `unreadable` and a missing **hook** are **warnings**. A
+missing CLI is not a finding at all: the plugin copy is what resolution runs, so warning about it
+would fire on every plugin-only repo — including this one — and a probe whose output is routine
+noise gets skipped.
+
 ## The operator-manual rider
 
 A release on its own adds no manual work: each `QUENCHING.md` banner carries a `<VERSION>`
@@ -66,6 +100,13 @@ cat VERSION
 python3 assets/bin/specs.py --version
 python3 assets/bin/skills.py --version
 python3 assets/hooks/okf-validate.py --version
+```
+
+And the other end of the same rule — what a target actually holds, in both directions, with the
+wiring question answered:
+
+```bash
+python3 assets/bin/skills.py drift --json      # 0 ok · 1 findings · 2 refused to guess
 ```
 
 The broader "did I break the shipped skeleton" gate is
