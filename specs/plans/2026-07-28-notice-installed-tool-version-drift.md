@@ -3,6 +3,7 @@ slug: notice-installed-tool-version-drift
 title: Nothing notices an installed tool copy falling behind the plugin
 verification: per-section
 priority: {level: 5, criticality: high, date: 2026-07-28}
+branch: {base: main, work: plan/notice-installed-tool-version-drift}
 ---
 
 # Nothing notices an installed tool copy falling behind the plugin
@@ -72,3 +73,4 @@ Discovered and confirmed live during `instrument-and-extend-skill-front`'s concl
 ## Discoveries
 
 - Confirmed again 2026-07-28 during an /align run, with a SECOND silent failure mode this Problem does not cover: the installed okf-validate.py and specs.py were 1.0.0 against a plugin at 4.2.0, but .claude/settings.json carried NO hooks block at all — the scripts sat on disk with nothing invoking them, so deleting all three changed no behaviour, which is precisely why nobody noticed. A drift check that only compares --version would have caught 1.0.0-vs-4.2.0 and still missed that the hook was inert. Whatever notices drift should also answer 'is this tool actually wired?' (for okf-validate.py: a hooks block in settings.json referencing it — one cheap JSON read). Note too that /docs:align's install is step 5, 'pass 1 only, offered', so on this repo the offer never fired at all.
+- Drift is silent in BOTH directions, and the reverse case is invisible to a --version comparison alone: every command resolves the plugin path FIRST and the installed copy only as fallback (plans-zone.md 'Resolving the tool'), while each align refuses to overwrite a NEWER installed copy — so a repo whose .claude/hooks/ copy is ahead of the loaded plugin runs the older plugin code silently, and the align reports nothing because leaving the newer copy alone is its correct behaviour. Whatever notices drift should report the comparison in both directions and name which copy the commands will actually execute.
