@@ -234,8 +234,9 @@ repositório.
 - [x] 3.3 Reescrever o passo 4 de `specs-conclude/distill.md`: a ponte deixa de ser uma entrada no log e passa a ser narrada no `## Outcome` da própria spec arquivada
       files: plugins/quenching/assets/references/specs-conclude/distill.md
       subject: plan/retire-docs-log: 3.3 route the distillation bridge into ## Outcome
-- [ ] 3.4 Ajustar as menções restantes em `specs-create/plans-zone.md` e `specs-develop/spec-driven.md`
+- [x] 3.4 Ajustar as menções restantes em `specs-create/plans-zone.md` e `specs-develop/spec-driven.md`
       files: plugins/quenching/assets/references/specs-create/plans-zone.md, plugins/quenching/assets/references/specs-develop/spec-driven.md
+      subject: plan/retire-docs-log: 3.4 drop the bundle-log append from the specs references
 
 ### 4. Commands
 
