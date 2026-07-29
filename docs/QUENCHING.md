@@ -158,8 +158,9 @@ The installer, migrator, and validator in one. Scaffolds missing homes, migrates
 names (`docs/arquitetura/` → `docs/standards/`), folds prefix-clustered files into subject
 subfolders (`nomenclatura-*.md` → `naming/`), translates non-English slugs, stamps missing
 frontmatter (**MERGE** — a filled key and any third-party key survive), regenerates every
-`index.md`, writes `okf_version`, installs this manual, then re-runs the validator. It also offers to install or upgrade the enforcement hook, and — when the repo has a
-`documentation/` home — an mkdocs-material site setup.
+`index.md`, writes `okf_version`, installs this manual, then re-runs the validator. It also offers
+to install or upgrade the enforcement hook, and — when the repo has a `documentation/` home — an
+mkdocs-material site setup.
 
 **Invasive by design.** It presents the complete plan and executes on **one** confirmation. A
 rename whose blast radius reaches **product code** (imports, path constants, docstrings) is
