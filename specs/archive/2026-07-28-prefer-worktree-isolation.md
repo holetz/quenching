@@ -7,6 +7,7 @@ branch: {base: main, work: plan/prefer-worktree-isolation}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 reviewed: {date: 2026-07-29}
+merge: {strategy: merge-commit, subject: "plan/prefer-worktree-isolation: merge (merge-commit)"}
 outcome: done
 ---
 
@@ -435,3 +436,11 @@ desta conclusão toca `specs/**`, então quase todo doc cujo `resource:` nomeia 
 workspace disparou. Eram 6 no início da revisão e são 15 no fim, sem que o assunto de nenhum deles
 tenha mudado — recarimbá-los seria carimbar `authority` sem lastro, e o próprio número mostra que o
 sinal parou de carregar informação. Fica como o candidato a follow-up mais forte desta spec.
+
+**Destilação.** Nenhum doc novo em `docs/` — as decisões de `## Design` já tinham sido escritas em
+`docs/standards/` durante a execução, e o termo já está no glossário. O único achado sem casa virou
+um follow-up: [`2026-07-29-narrow-the-stale-doc-trigger-to-content-drift`](../plans/2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md),
+capturado só com `## Problem` e com a medição 6→15 desta conclusão como evidência. A varredura de
+worktrees órfãs, nomeada em `## Out of Scope`, foi **oferecida e recusada** e segue sem spec — o
+caso concreto no momento do fechamento era `plan/notice-installed-tool-version-drift`, já merjada em
+`main` com a worktree ainda em disco.
