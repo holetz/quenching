@@ -7,6 +7,7 @@ branch: {base: main, work: plan/improve-command-from-session}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 reviewed: {date: 2026-07-29}
+merge: {strategy: merge-commit, subject: "plan/improve-command-from-session: merge (merge-commit)"}
 outcome: done
 ---
 
@@ -368,4 +369,27 @@ keyed **by name**, so two invocations of the same command in one session merge i
 (observed with `/compact` run twice). A command run twice therefore over-claims its span and can
 absorb a correction from the gap between runs. Per-invocation spans are a design change, not a
 fix — the report should not be trusted on repeat runs until that is taken through
-`/specs:develop`. Carried out as a follow-up spec below.
+`/specs:develop`. **No follow-up spec was created for it**: at distillation the human chose the
+docs-only harvest, so this limitation is tracked by this paragraph and by the `## Discoveries`
+line above it, and by nothing else. Anyone acting on a `/skill:retro` report over a session that
+ran the same command twice should start here.
+
+**Distilled into `docs/`** — two updates, no new doc; the standard this spec would have written
+already existed and was wrong at its edges:
+
+- distilled: [Always-on context budget](/docs/standards/automation/context-budget.md) — the
+  `disable-model-invocation: true` exit, which `skills.py:1432` has always implemented and the
+  standard never mentioned. Adds §*The one command that costs nothing*, qualifies the ratchet
+  claim to *always-on* commands in the two places that stated it universally, and corrects the
+  25-command figure. `/skill:retro` is the case that proved a 26th command can be minted against a
+  zero-headroom ceiling for free.
+- distilled: [Glossary — **Always-on ceiling**](/docs/knowledge/glossary.md) — same correction at
+  term level: the entry claimed the next command crosses the ceiling the day it is minted, which
+  this spec falsified.
+
+Written earlier, on the branch, as the docs this work *revealed* rather than declared:
+[Mutation-checking a selftest](/docs/standards/quality/selftest-mutation.md) (new,
+`authority: background`) and the seventh-file rider on
+[Versioning and release](/docs/standards/ci-cd/versioning-release.md). The declared standard,
+[Session evidence](/docs/standards/automation/session-evidence.md), went in during execution at
+task 4.1 and is not re-listed here.
