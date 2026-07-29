@@ -279,8 +279,9 @@ only registered tree).
 
 ### 3. Wiring into the surface
 
-- [ ] 3.1 Add the drift call to /align step 1's probe, reporting it with the three front probes
+- [x] 3.1 Add the drift call to /align step 1's probe, reporting it with the three front probes
       files: plugins/quenching/commands/align.md
+      subject: plan/notice-installed-tool-version-drift: 3.1 Give /align step 1 the drift call, spanning all three fronts
 - [ ] 3.2 Make the three aligns' install steps consume the drift payload instead of restating a `--version` comparison
       files: plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/skill/align.md
 - [ ] 3.3 Add a functional-checks.sh assertion that a fresh session's probe actually issues the drift call
