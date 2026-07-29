@@ -46,7 +46,7 @@ TWO ENTRY MODES
 
 THE CONFORMANCE CORE (single source — mirrored in the skills' `references/conformance.md`)
 -----------------------------------------------------------------------------------------
-Reserved filenames: `index.md` (a listing), `log.md` (a change history).
+Reserved filenames: `index.md` (a listing), `log.md` (a retired change history).
 Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts) and
 `QUENCHING.md` (the operator manual the aligns install beside each front — a payload
 file, not authored knowledge).
@@ -58,8 +58,10 @@ file, not authored knowledge).
   **non-root** `index.md` MUST carry no frontmatter at all (ERROR). The **root**
   `index.md` (at the bundle root) MAY carry frontmatter but only `okf_version`
   (other keys → WARN); it SHOULD declare `okf_version: "0.1"` (missing/other value → WARN).
-- Every **`log.md`**            → entries under `## YYYY-MM-DD` headings, newest
-  first (no date heading → WARN; ascending order → WARN); a `type` here → ERROR.
+- Every **`log.md`**            → **retired**. Nothing produces it and nothing checks
+  it, but the name stays reserved and stays out of the hard block, so a log surviving
+  in an already-aligned bundle is recognized rather than read as a malformed concept
+  doc. Retired is not unknown.
 
 PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
 - **`okf-frontmatter-unparsed`** the frontmatter held something this parser could not
@@ -123,10 +125,14 @@ import sys
 import tempfile
 import time
 
-VERSION = "4.2.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
+VERSION = "4.3.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
+# `log.md` is RETIRED, not unreserved: it keeps its slot here (and its skip in the
+# PreToolUse hard block) so a log surviving in an already-aligned bundle stays
+# recognized. Drop it from this tuple and every such file falls through to the
+# concept-doc path — `missing-type` at ERROR, and denied writes under `hardBlock`.
 RESERVED = ("index.md", "log.md")
 # The bundle's one fixed concept doc, at a path the OKF contract pins. Its links are
 # its content, so it is link-checked alongside the reserved listings.
@@ -152,7 +158,6 @@ UNSUPPORTED_GLOB_CHARS = ("{", "}", "[", "]", "?")
 # ONCE: every consumer must agree on which kinds it may judge, or a kind added later is
 # silently in-scope for one check and out-of-scope for another.
 RESOLVABLE_KINDS = ("path", "glob")
-DATE_HEADING = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\b")
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # Seconds `stale-doc` waits on one `git log`. CLI-only, but a pathological repo must
 # not hang an operator's sweep; a timeout yields no finding rather than a wrong one.
@@ -754,26 +759,6 @@ def check_index(text: str, is_root: bool) -> list[tuple[str, str, str]]:
     return out
 
 
-def check_log(text: str) -> list[tuple[str, str, str]]:
-    out: list[tuple[str, str, str]] = []
-    fm, has_block, _ = parse_frontmatter(text)
-    if _nonempty(fm, "type"):
-        out.append(("ERROR", "log-has-type", "`log.md` is a reserved change history and must not carry a `type`"))
-    dates: list[str] = []
-    for line in text.splitlines():
-        m = DATE_HEADING.match(line)
-        if m:
-            dates.append(m.group(1))
-    body = text.split("---", 2)[-1] if has_block else text
-    if body.strip() and not dates:
-        out.append(("WARN", "log-no-date-heading",
-                    "`log.md` has content but no `## YYYY-MM-DD` heading (expected date-grouped entries)"))
-    if dates and dates != sorted(dates, reverse=True):
-        out.append(("WARN", "log-not-newest-first",
-                    "`log.md` date headings are not in newest-first order"))
-    return out
-
-
 # --------------------------------------------------------------------------- #
 # single-pass corpus — every whole-tree consumer reads each file exactly once
 # --------------------------------------------------------------------------- #
@@ -1033,7 +1018,7 @@ def _validate_text(path: str, text: str, bundle_root: str,
             os.path.dirname(os.path.abspath(path)) == os.path.abspath(bundle_root)
         raw = check_index(text, is_root)
     elif base == "log.md":
-        raw = check_log(text)
+        raw = []  # retired: reserved, recognized, never judged — see THE CONFORMANCE CORE
     elif base == "README.md":
         # OKF-strict uses `index.md` as the reserved listing; a README in the bundle
         # is a migration nudge, not a hard failure (OKF does not reserve README).
@@ -1132,7 +1117,7 @@ def _render_proposal(findings) -> str:
     return (f"[{TAG}] OKF conformance findings ({len(errors)} error(s), {len(warns)} warning(s)):\n"
             f"{body}\n"
             "Fix with the `quenching-docs-align` / `quenching-docs-add` skill (stamp `type`, keep `index.md` a "
-            "frontmatter-free listing, format `log.md` as `## YYYY-MM-DD` newest-first).")
+            "frontmatter-free listing).")
 
 
 # --------------------------------------------------------------------------- #
@@ -1154,6 +1139,15 @@ def _emit_deny(reason: str) -> None:
     }}))
 
 
+def hard_block_exempt(base: str) -> bool:
+    """Filenames the PreToolUse hard gate never denies: the harness pointers, the
+    retired `log.md`, and the migration README. A named predicate rather than an
+    inline condition so `selftest` can assert the retirement without standing up a
+    hook invocation — `run_hook` reads its config from disk beside this script, so a
+    subprocess would return early on `hardBlock` being off and prove nothing."""
+    return base in EXEMPT or base in ("log.md", "README.md")
+
+
 def _under_docs(rel: str, docs_dir: str) -> bool:
     return rel == docs_dir or rel.startswith(docs_dir.rstrip("/") + "/")
 
@@ -1167,19 +1161,74 @@ def _docs_relpath(rel: str, docs_dir: str) -> str:
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# the retirement fixture — `log.md` lost its checker, never its reservation
+#
+# With `check_log` gone, nothing in this file would notice if `log.md` also fell
+# out of `RESERVED` or out of the hard gate's skip list, and the damage would not
+# announce itself: every log surviving in an already-aligned bundle would quietly
+# start reporting `missing-type` at ERROR and, under `hardBlock`, become unwritable.
+# So the fixture validates a real bundle holding the worst log this tool ever
+# accepted — a `type` in its frontmatter, date headings in ascending order, the
+# three things the retired codes used to fire on — and demands silence about it.
+# --------------------------------------------------------------------------- #
+RETIRED_LOG_FIXTURE = {
+    # both shapes a surviving log actually takes, because they fail differently: the
+    # typed one is what `log-has-type` used to catch, and the bare one is the one that
+    # falls to `missing-type` at ERROR — the failure `## Design` of the retiring spec
+    # names — if the dispatch branch is ever dropped.
+    "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n\n- [Log](log.md)\n'
+                "- [Standards](standards/index.md)\n",
+    "log.md": ("---\ntype: standard\n---\n\n"
+               "## 2026-01-01\n\n- typed, and oldest first\n\n"
+               "## 2026-07-28\n\n- newest last\n"),
+    "standards/index.md": "# Standards\n\n- [Log](log.md)\n",
+    "standards/log.md": "# Log\n\n- an entry under no date heading at all\n",
+}
+
+
+def retired_log_failures() -> list[str]:
+    """Prove the retirement in all three places it has to hold at once."""
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for relpath, text in RETIRED_LOG_FIXTURE.items():
+            path = os.path.join(tmp, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+        findings = validate_tree(tmp)
+    judged = sorted(f"{rel}:{sev}/{code}" for sev, rel, code, msg in findings
+                    if os.path.basename(rel) == "log.md")
+    if judged:
+        out.append(f"retired-log: a populated `log.md` was judged: {judged}")
+    # anything else here means the fixture drifted, not that the retirement broke —
+    # without this the two logs could go silent for the wrong reason and still pass
+    rest = sorted(f"{rel}:{code}" for sev, rel, code, msg in findings
+                  if os.path.basename(rel) != "log.md")
+    if rest:
+        out.append(f"retired-log: the fixture bundle is not otherwise clean: {rest}")
+    if "log.md" not in RESERVED:
+        out.append("retired-log: `log.md` left RESERVED — every surviving log becomes a concept doc")
+    if not hard_block_exempt("log.md"):
+        out.append("retired-log: `log.md` left the PreToolUse skip — writes to it would be denied")
+    return out
+
+
 def run_selftest(as_json: bool) -> int:
-    """The canonical frontmatter cases, run against this checker's own parser.
+    """The canonical frontmatter cases plus the retirement fixture, run against this
+    checker's own parser and its own tree walk.
 
     The other two tools already had a `selftest`; this one had none, and it is the
     tool with the widest blast radius — a hook firing on every `docs/**` write in
     every target repo. A rule it cannot prove it implements is a rule it should not
     have been given."""
-    failures = canonical_case_failures()
+    failures = canonical_case_failures() + retired_log_failures()
+    cases = len(CANONICAL_CASES) + 1
     if as_json:
-        print(json.dumps({"ok": not failures, "cases": len(CANONICAL_CASES),
+        print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
-        print(f"okf-validate selftest — {len(CANONICAL_CASES)} canonical frontmatter case(s)")
+        print(f"okf-validate selftest — {len(CANONICAL_CASES)} canonical frontmatter case(s) "
+              "+ the retired-log fixture")
         for f in failures:
             print(f"  FAIL {f}")
         print(f"  {'PASS' if not failures else str(len(failures)) + ' FAILED'}")
@@ -1248,7 +1297,7 @@ def run_hook() -> int:
         if _is_ignored_path(_docs_relpath(rel, docs_dir), ignore_globs):
             return 0  # regenerable/vendored path (ignoreGlobs) — not authored OKF knowledge
         base = os.path.basename(file_path)
-        if base in EXEMPT or base in ("log.md", "README.md"):
+        if hard_block_exempt(base):
             return 0  # harness/reserved/migration files — never hard-blocked
         if base == "index.md":
             fm, _, _ = parse_frontmatter(content)

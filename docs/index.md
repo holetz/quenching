@@ -38,5 +38,5 @@ hook checks, and how to read a validator finding — [QUENCHING.md](QUENCHING.md
 manual installed beside this listing. This `index.md` says **what** is here; that file says
 **how** it is worked.
 
-The bundle's change history is in [log.md](log.md). The full contract (homes, types,
-migration doctrine, conformance) lives in the `quenching` skills' `references/`.
+The full contract (homes, types, migration doctrine, conformance) lives in the `quenching`
+skills' `references/`.

@@ -88,11 +88,10 @@ instead. **Done when:** the fast path prints `{}`, the matching payload fires, a
 parses.
 
 ### 8. OKF tail and report
-Bundle present: append to `docs/log.md` (`**Creation**`: the hook, its scope, its action) per
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md); write the
-rule if planned. Report: the check, the installed scope, the cost claim **as installed**, and
-— for a born-disabled rule — the exact line that enables it. **Done when:** the log is
-appended and the report states the cost claim.
+Bundle present: write the rule if planned, per
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). Report: the
+check, the installed scope, the cost claim **as installed**, and — for a born-disabled rule —
+the exact line that enables it. **Done when:** the report states the cost claim.
 
 ## Invariants
 

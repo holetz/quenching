@@ -181,12 +181,19 @@ rename.
 
 **Install the front's tool**, so the repo keeps its verifier after this run ends: copy
 **exactly** `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` into the target's `.claude/hooks/`
-(never the directory recursively). If a copy is **already installed**, compare its version
-(`python3 .claude/hooks/skills.py --version`) with the plugin's `VERSION` file and overwrite
-**only** when the plugin is newer — the same rule `/specs:align` applies to `specs.py`
-and `/docs:align` to `okf-validate.py`. A newer installed copy is left alone and
-reported: it means the target is ahead of this plugin, which is a fact to state, not a
-regression to force.
+(never the directory recursively). **Ask the tool rather than comparing by hand** — one call
+covers all three fronts' copies:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+```
+
+Run it from the **plugin path**: an installed copy would answer from the same stale `VERSION` it
+is being asked about, and refuses (exit 2) instead. Act on this front's row (`skills.py`):
+`behind` → overwrite; `absent` → the copy above; `ahead` → left alone and **reported**, because it
+means the target is ahead of this plugin, which is a fact to state, not a regression to force. The
+same one call is what `/specs:align` reads for `specs.py` and `/docs:align` for `okf-validate.py`,
+so a run of any one of them can report the other two fronts' drift without a second probe.
 
 Then install the operator manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/claude/QUENCHING.md` to `.claude/QUENCHING.md` under the
@@ -272,9 +279,9 @@ what remains. A second pass here catches the one thing the first can create — 
 the registry or dangled a reference. §7's findings are **not** progress: they are read-only and
 carry forward unchanged, so a pass that only produced them has converged.
 
-In an OKF repo, append ONE consolidated `log.md` entry (the migration, with counts) and confirm the
-registry is indexed, per
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
+In an OKF repo, confirm the registry is indexed, per
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The migration
+counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every `sk-*` finding that survived the run, by code; and §7's doctrine findings, listed
 apart, each with its `/skill:new`. Say plainly when the front converged in one pass — that is the

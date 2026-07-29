@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Align surface — one align per front, probe first
-description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, and the probe-before-inventory rule that makes a no-op align cost a couple of tool calls
+description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, and the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle
 resource: plugins/quenching/commands/align.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/align-all/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-07-27
+timestamp: 2026-07-29
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4)
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29
 maintainer: quenching
 ---
 
@@ -60,6 +60,14 @@ The probe and the closing verification are the **same programs run twice**, whic
 costs a couple of tool calls rather than a second contract to maintain — and why it inverted the
 old order, where a full read-only inventory was paid before anything knew whether there was work.
 
+**One probe call is deliberately cross-front.** `skills.py drift` reports all three installed tool
+copies and the hook's wiring at once, so each align reads its own row from the same payload rather
+than hand-comparing a `--version` in prose — and a run of any one align can report the other two
+fronts' drift without a second probe. It is a **read**: it parses each tool's `VERSION` constant
+and never executes a script sitting in the target's `.claude/hooks/`, because a probe that runs
+whatever a repo has on disk is a much larger claim than one that reads three lines. The rule it
+implements is [../ci-cd/versioning-release.md](../ci-cd/versioning-release.md) §Noticing drift.
+
 **The rule is load-bearing, not an optimization.** An align that is expensive on a clean repo is
 an align nobody runs as the repo grows — which is exactly when drift accumulates. A free no-op
 case is what permits an align to carry its front's content stages at all, instead of those stages
@@ -69,3 +77,28 @@ living in a separate command nobody invokes.
 whole-bundle glossary sweep in `/docs:align`: no cheap signal exists, so it is gated on a free
 proxy (doc count against glossary size) and offered with its cost stated, never entered
 automatically.
+
+## No sweep records itself
+
+**Every write a sweep makes belongs to the front it is aligning. The report is the only account
+of the run itself.** Each align used to close by appending one consolidated line to `docs/log.md`
+— `converged in N passes`, `aligned workspace (N migrated, M renamed)`, `ranked N specs` — and
+`/align` added a fifth for the cross-front run. All five are gone, and the rule that replaced
+them holds for any sweep added later.
+
+The entry was self-describing, and that is what made it worthless. What a pass did to `docs/` is
+legible **from `docs/`** and from the repo's own history; a line saying a sweep ran told a reader
+nothing the tree and the git log did not already say, and cost a write on every invocation —
+including the no-op runs the probe rule exists to make free. A sweep whose clean case costs three
+tool calls should not spend a fourth narrating that it found nothing.
+
+It also removed the one thing every align wrote **outside its own front**. `/specs:align` and
+`/specs:triage` reached into the `docs/` bundle for a log line and nothing else; with that gone,
+the `specs/` front writes into `docs/` at exactly one point — a concluded spec's distillation,
+which mints real knowledge rather than a record of activity. The cross-front dependency in
+[§The 1×4 column](#the-14-column) is unchanged: `docs/` still goes first, because that
+distillation and the skill front's rule + registry still need the tree to exist.
+
+The general form: **a command's own account of itself goes in its report, never into the artifact
+it maintains.** A store that accumulates entries about the tools that touched it is a second
+history competing with git, and the reader who needs it can read git.

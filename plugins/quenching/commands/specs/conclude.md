@@ -206,32 +206,64 @@ none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.
 merge commit to name. `specs.py validate` reports a record that gets this backwards either way
 (`sp-bad-merge`).
 
-The archived spec now lives in `archive/`, so stamping it is the one edit this command makes to a
-file already there — permitted because it is *this* spec, closing *this* run, and because the
-alternative is a write on the base after the merge. Commit it on the branch.
+The archived spec now lives in `archive/`, so stamping it is one of the two edits this command
+makes to a file already there — the other is the distillation's append to `## Outcome` above.
+Both are permitted because they touch *this* spec, closing *this* run, and because the
+alternative is a write on the base after the merge. Commit them on the branch.
 
 For `abandoned` nothing is merged, so nothing is stamped; the distillation above still runs.
 **Done when:** the distillation offer was made and applied or declined, and `merge` is stamped for
 a `done` outcome — all committed on the work branch.
 
 ### 6. Merge — the last action of this command
-Nothing after this point writes anything. Perform the merge the human chose in step 4, using
-exactly the subject recorded in step 5:
+Nothing after this point writes anything. First find **which checkout holds the base**, then merge
+into it in place, using exactly the subject recorded in step 5:
 
 ```bash
-git checkout <base> && git merge --no-ff plan/<slug> -m "plan/<slug>: merge (merge-commit)"
+git worktree list --porcelain                    # which checkout has <base> checked out
+git -C <that path> merge --no-ff plan/<slug> -m "plan/<slug>: merge (merge-commit)"
 ```
 
+**Never `git checkout <base>`.** From inside a worktree that is
+`fatal: '<base>' is already used by worktree at …` (exit 128) — so the form this command used to
+carry was broken for exactly the isolation it recommends. `git -C` is one path, not two: from a
+worktree it points at the main checkout, and from the main checkout it points at itself.
+
+**When no checkout holds the base**, say which base was wanted, that nothing has it checked out,
+and what would fix it (`git checkout <base>` in the main checkout, or a worktree of the base) —
+then **stop without merging**. Never invent a checkout and never create a temporary one. `merge:`
+was stamped in step 5, *before* the merge, so the run is resumable with nothing lost; refusing here
+is the same refusal this command already makes over open boxes.
+
 Then, **reading only**: re-run whatever the repo's `## Validation` names on the merged base, and
-compare `git log -1 --format=%s` against the recorded subject. A mismatch, or a failing check, is
+compare `git -C <that path> log -1 --format=%s` against the recorded subject — from the same
+checkout the merge landed in, since this run is not standing on the base. A mismatch, or a failing
+check, is
 **reported as a finding** — never repaired with another commit, because a commit on the base after
 the merge is the exact thing this ordering exists to prevent. If something must be fixed, say so
 and let the human start a new change.
 
-For `abandoned`, do not merge. Offer to keep the branch (default) or delete it, and record the
-choice in the report.
-**Done when:** the merge landed and the post-merge checks were reported, or the run recorded why
-nothing was merged.
+**Then, when the merge exited 0 and this spec was isolated in a worktree, remove it** — run from
+the checkout that holds the base, because nobody removes the tree they are standing in:
+
+```bash
+git -C <the base's checkout> worktree remove <the worktree path>
+```
+
+**Never `--force`, under any circumstance.** `git worktree remove` refuses a tree with modified or
+untracked files on its own (`contains modified or untracked files`, exit 128), which is precisely
+the irreversibility worth fearing — so the safety is already git's, and no prompt would buy more
+than it costs. A clean tree leaves the disk silently; a refusal is **reported with the path and
+git's own output verbatim**, and the worktree stays. Never retry it forced, and never offer to.
+
+This runs only after a merge verified at exit 0 — a merge that failed or was refused above leaves
+the worktree exactly where it is. Removing the worktree does not delete the branch: that stays the
+separate offer it already was.
+
+For `abandoned`, do not merge and do not remove the worktree. Offer to keep the branch (default) or
+delete it, and record the choice in the report.
+**Done when:** the merge landed and the post-merge checks were reported, any worktree was removed
+or its refusal reported, or the run recorded why nothing was merged.
 
 ### 7. Report
 The archived path, the outcome, task progress at close, `reviewed` / `merge` / `branch` as they now
@@ -239,16 +271,26 @@ stand, what the review found and what was done about it, the docs written in ste
 result of the post-merge checks, and — for an abandonment — that nothing was adopted and what
 became of the branch.
 
+**Say what became of the worktree**, when there was one: removed, or kept with git's refusal
+quoted. It left a directory on disk, and this report is the only place the human learns it is gone
+— an unreported removal is indistinguishable from one that never ran.
+
 Name any `## Discoveries` line still unresolved: those are `/specs:develop`'s discoveries bank to
 close, and they are easiest to lose at exactly this moment.
-**Done when:** path, outcome, records, and both `docs/` passes are all reported.
+**Done when:** path, outcome, records, the worktree's fate, and both `docs/` passes are all
+reported.
 
 ## Invariants to never violate
 
 - Never infer the outcome. `done` and `abandoned` are the human's word, always.
 - Never treat staleness as evidence of abandonment.
-- Never pass `--force` unprompted — a refusal is information, not an obstacle.
+- Never pass `--force` unprompted — a refusal is information, not an obstacle. On
+  `git worktree remove` never pass it **at all**: git's refusal over modified or untracked files is
+  the safety, and forcing past it destroys uncommitted work at the moment the human is least
+  watching.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
+- **Never `git checkout <base>` to merge.** Merge into the checkout that already holds the base with
+  `git -C`; when none does, stop and say so rather than manufacturing one.
 - **Never write anything after the merge.** The merge is the last action; a post-merge check that
   fails is a finding to report, not a commit on the base.
 - Never delete a branch after a **squash** without saying what it costs: each task's recorded
@@ -260,8 +302,10 @@ close, and they are easiest to lose at exactly this moment.
   syncs nothing.
 - Never bulk-copy a spec into `docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
-- Never edit or delete anything already in `archive/`, with exactly one exception: the `merge:`
-  stamp this run writes onto the spec it is closing, in step 5. Never touch a spec other than that
-  one, and never revise an archived spec from an earlier run.
+- Never edit or delete anything already in `archive/`, with exactly two exceptions, both in
+  step 5 and both onto the spec this run is closing: the `merge:` stamp, and the distillation's
+  one-line-per-doc append to `## Outcome`. Both record facts that only exist after the archive
+  move; neither revises what the spec claimed. Never touch a spec other than that one, and never
+  revise an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.

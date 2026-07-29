@@ -92,7 +92,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.2.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.3.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -923,6 +923,43 @@ def find_specs_root(root_arg: str | None) -> str:
             break
         d = parent
     return os.path.join(cur, "specs")   # default (created by `new`)
+
+
+CONFIG_FILE = "config.json"
+CONFIG_KEYS = ("worktreeSetup",)
+
+
+def load_config(root: str) -> dict:
+    """`specs/config.json` — the ONE declarative parameter a target repo may set, read as
+    data and never as a refusal.
+
+    Absent file, absent key, malformed JSON: all yield `worktreeSetup: None`, because a
+    workspace without a setup script is the normal case and must cost nothing. The two
+    ways it can be *wrong* — an unrecognised key, unparseable JSON — come back as fields
+    rather than as findings, so `doctor` decides what they are worth and every other
+    caller is spared the question.
+
+    Whether the declared command actually resolves is deliberately NOT answered here:
+    it is judged relative to the freshly created worktree, whose path this tool never
+    learns. `/specs:isolate` runs it there and reports the exit code."""
+    path = os.path.join(root, CONFIG_FILE)
+    out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
+           "unknownKeys": [], "worktreeSetup": None}
+    if not out["present"]:
+        return out
+    try:
+        obj = json.loads(read_text(path) or "")
+    except json.JSONDecodeError as e:
+        out["unparseable"] = str(e)
+        return out
+    if not isinstance(obj, dict):
+        out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
+        return out
+    out["unknownKeys"] = sorted(k for k in obj if k not in CONFIG_KEYS)
+    val = obj.get("worktreeSetup")
+    if isinstance(val, str) and val.strip():
+        out["worktreeSetup"] = val.strip()
+    return out
 
 
 def spec_files(root: str, phase: str | None = None) -> list[dict]:
@@ -2725,6 +2762,17 @@ def cmd_selftest(args, root: str) -> int:
     return 1 if errors else 0
 
 
+def cmd_config(args, root: str) -> int:
+    """The workspace's declared parameters, as data. Exit 0 even with nothing declared —
+    a missing config is the normal case, and `doctor` is where a malformed one is judged."""
+    cfg = load_config(root)
+    emit(args.json, {"ok": True, "root": root, **cfg},
+         f"specs config — {cfg['path']}\n"
+         + (f"  worktreeSetup: {cfg['worktreeSetup']}" if cfg["worktreeSetup"]
+            else "  worktreeSetup: (none declared)"))
+    return 0
+
+
 def cmd_doctor(args, root: str) -> int:
     findings: list[dict] = []
     if not os.path.isdir(root):
@@ -2752,6 +2800,24 @@ def cmd_doctor(args, root: str) -> int:
                                      remedy="specs.py migrate  (moves them into plans/ "
                                             "unrenamed; specs/archive/** is never touched)"))
 
+    # The real failure mode of a machine-read config is `worktree_setup` written where
+    # `worktreeSetup` was expected, followed by silence — the file is valid JSON, the key
+    # is simply never looked at, and the setup that was declared never runs. Both findings
+    # exist so that silence cannot happen; neither is an error, because a workspace with a
+    # malformed config is still a workspace and every other command still works.
+    cfg = load_config(root)
+    if cfg["unparseable"]:
+        findings.append(_finding("sp-config-unparseable", "warn",
+                                 f"{CONFIG_FILE} is not valid JSON: {cfg['unparseable']}",
+                                 path=CONFIG_FILE,
+                                 remedy=f"fix the JSON, or remove {CONFIG_FILE} — an absent "
+                                        f"config declares nothing and is not a finding"))
+    for key in cfg["unknownKeys"]:
+        findings.append(_finding("sp-config-unknown-key", "warn",
+                                 f"{CONFIG_FILE} declares `{key}`, which nothing reads",
+                                 path=CONFIG_FILE, key=key,
+                                 remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+
     leftovers = _v1_leftovers(root)
     for name in leftovers:
         findings.append(_finding("sp-v1-leftover", "error",
@@ -2761,7 +2827,7 @@ def cmd_doctor(args, root: str) -> int:
                                         f"specs/archive/** is never touched)"))
     for entry in sorted(os.listdir(root)):
         full = os.path.join(root, entry)
-        if os.path.isfile(full) and entry not in ("QUENCHING.md", "schema.json") \
+        if os.path.isfile(full) and entry not in ("QUENCHING.md", "schema.json", CONFIG_FILE) \
                 and not entry.startswith("."):
             findings.append(_finding("sp-stray-file", "warn",
                                      f"stray file at the specs root: {entry}", path=entry,
@@ -2921,6 +2987,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("validate", help="the canonical set, the gates, the sp-* codes"))
     sp.add_argument("--spec", help="one slug (default: every spec)")
 
+    add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
+
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
     add_json(sub.add_parser("selftest", help="prove the embedded schema and template "
@@ -2947,6 +3015,7 @@ DISPATCH: dict = {
     "parallel": cmd_parallel,
     "discover": cmd_discover,
     "validate": cmd_validate,
+    "config": cmd_config,
     "doctor": cmd_doctor,
     "selftest": cmd_selftest,
     "plans": cmd_plans,

@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**28 specs** · 1 executing · 1 designed · 26 captured
+**34 specs** · 1 executing · 1 designed · 32 captured
 
 ### Executing
 
@@ -113,18 +113,24 @@ closing out unbuilt work looks like.
 | [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
 | [add-eli5-section-to-specs](2026-07-28-add-eli5-section-to-specs.md) | Add an ELI5 section that makes a spec comprehensible to a human | 2026-07-28 |
 | [add-specs-cycle-run-modes](2026-07-28-add-specs-cycle-run-modes.md) | Add customizable run modes to the specs cycle commands | 2026-07-28 |
+| [align-in-worktree-then-merge](2026-07-28-align-in-worktree-then-merge.md) | Have the align commands propose a worktree and merge at the end, as specs already does | 2026-07-28 |
+| [check-the-lockstep-itself](2026-07-28-check-the-lockstep-itself.md) | Check The Lockstep Itself | 2026-07-28 |
 | [decide-plans-index-need](2026-07-28-decide-plans-index-need.md) | Reassess whether specs/plans/index.md is needed | 2026-07-28 |
 | [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's body language in docs/standards so every command reads it for free | 2026-07-28 |
 | [fix-conclude-abandoned-branch-harvest](2026-07-28-fix-conclude-abandoned-branch-harvest.md) | conclude --outcome abandoned can harvest a note and delete it in the same run | 2026-07-28 |
 | [fix-functional-checks-encoding](2026-07-28-fix-functional-checks-encoding.md) | functional-checks.sh fails for lack of evidence, not by verdict | 2026-07-28 |
 | [improve-command-from-session](2026-07-28-improve-command-from-session.md) | Mine a session for improvements to the command that started it | 2026-07-28 |
 | [make-sk-unscoped-bash-read-the-body](2026-07-28-make-sk-unscoped-bash-read-the-body.md) | sk-unscoped-bash cannot read the body its own remedy points at | 2026-07-28 |
-| [notice-installed-tool-version-drift](2026-07-28-notice-installed-tool-version-drift.md) | Nothing notices an installed tool copy falling behind the plugin | 2026-07-28 |
-| [prefer-worktree-isolation](2026-07-28-prefer-worktree-isolation.md) | Prefer worktrees for spec isolation and remove them after a successful merge | 2026-07-28 |
+| [plugin-dir-for-functional-checks](2026-07-28-plugin-dir-for-functional-checks.md) | Plugin Dir For Functional Checks | 2026-07-28 |
 | [probe-a-frontmatter-hook-firing](2026-07-28-probe-a-frontmatter-hook-firing.md) | No probe observes a frontmatter hooks: block actually fire | 2026-07-28 |
-| [retire-docs-log](2026-07-28-retire-docs-log.md) | Retire the docs/ log | 2026-07-28 |
+| [reduce-execute-conclude-cost](2026-07-28-reduce-execute-conclude-cost.md) | Re-evaluate /specs:execute and /specs:conclude runs for cost reduction | 2026-07-28 |
+| [resolve-spec-from-worktree](2026-07-28-resolve-spec-from-worktree.md) | Resolve a spec from its own worktree before falling back to the current branch | 2026-07-28 |
 | [revise-standards-subject-folders](2026-07-28-revise-standards-subject-folders.md) | Revise the fixed docs/standards subject folders | 2026-07-28 |
 | [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
+| [stop-develop-offering-follow-up-specs](2026-07-28-stop-develop-offering-follow-up-specs.md) | /specs:develop should not offer to create a follow-up spec | 2026-07-28 |
+| [upgrade-okf-to-v0-2](2026-07-28-upgrade-okf-to-v0-2.md) | Upgrade the OKF contract to v0.2 or later | 2026-07-28 |
+| [commit-on-worktree-specs](2026-07-29-commit-on-worktree-specs.md) | Commit work at the end of develop, create and execute when a spec is already isolated in a worktree | 2026-07-29 |
+| [narrow-the-stale-doc-trigger-to-content-drift](2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md) | Narrow The Stale Doc Trigger To Content Drift | 2026-07-29 |
 <!-- END GENERATED -->
 
 ## Frontmatter

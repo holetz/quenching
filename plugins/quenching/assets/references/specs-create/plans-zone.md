@@ -5,9 +5,8 @@
 `docsDir: docs`) never fires on it and the OKF insert procedure in
 [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) does **not** own
 its listing zone. This file is the single owner of that zone's contract, of the front's own
-on-write check, and of how every `/specs:*` command resolves its tools. The log entry a command
-appends still lands in the bundle's `docs/log.md` (the bundle log records the cross-boundary
-event).
+on-write check, and of how every `/specs:*` command resolves its tools. A `/specs:*` command
+writes nothing into the bundle at all — see §The `specs/` front records itself.
 
 ## The GENERATED zone — owned by `specs.py plans reindex`
 
@@ -124,10 +123,11 @@ two arguments and produces the same "no such file" with a different cause.
 `&&` between them. A loop of independent writes where the first silently fails and the rest
 proceed is how a partial spec gets reported as complete.
 
-## Appending to the bundle log
+## The `specs/` front records itself
 
-Newest first, in the bundle's `docs/log.md` (per §Appending to `log.md` in
-[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)):
-`**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — <one line>` for a new spec, and a
-single consolidated `**Update**: [plans/](/specs/plans/index.md) — <what the sweep did>` for a
-sweep. No `docs/` bundle → skip the entry; `specs/` stands on its own.
+A new spec and a sweep over `plans/` write **nothing** into the `docs/` bundle. They used to
+append to `docs/log.md`; that log is retired, and the `specs/` front never needed it — a spec's
+own frontmatter records (`priority`, `refined`, `approved`, `branch`, `reviewed`, `merge`,
+`outcome`) narrate its history in the file a reader already has open, and the GENERATED zone in
+[`plans/index.md`](#the-generated-zone--owned-by-specspy-plans-reindex) is derived from disk on
+every reindex. Nothing here is a cross-front event, so nothing here is the bundle's business.

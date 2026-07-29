@@ -71,8 +71,8 @@ Derives the target's current `docs/` shape, maps every existing section to a
 canonical **home**, and produces an **alignment plan**: which homes to scaffold,
 which variant names to migrate (`docs/arquitetura/` → `docs/standards/`), which
 misfiled docs to relocate, which frontmatter to stamp/normalize, which `index.md`
-to (re)generate, where to establish `log.md`, and the blast radius of any rename
-that reaches product code. It presents the **full plan** and executes on **one**
+to (re)generate, and the blast radius of any rename that reaches product code. It
+presents the **full plan** and executes on **one**
 confirmation. A rename whose blast radius reaches product code (path constants,
 imports, docstrings) is its **own** confirmation item — never folded into the batch
 OK. After executing it re-runs the conformance checker on the output.
@@ -85,8 +85,8 @@ Triggers: *"align the knowledge base to OKF"*, *"install the docs structure"*,
 Classifies a new piece of information into its **home + `type` + mold**, determines
 its path identity, fills the mold with a complete OKF stamp (`type` + recommended
 fields + method labels, `resource` derived and never invented), writes the concept
-doc, updates the folder's `index.md`, appends to `log.md`, enriches the glossary when
-the concept names a repo-specific term, and validates.
+doc, updates the folder's `index.md`, enriches the glossary when the concept names
+a repo-specific term, and validates.
 
 Triggers: *"insert new information into the base"*, *"add a standard/table/announcement"*,
 *"record knowledge in the OKF docs"*.
@@ -129,8 +129,8 @@ Triggers: *"import/ingest a source into the base"*, *"enrich the knowledge base 
 Files one piece of understanding the human states — a concept, glossary term,
 explanation, mental model, or learning — into the `knowledge/` home, with a
 `type: knowledge` stamp, the OKF recommended fields, `resource` derived from what
-the knowledge concerns, an updated `index.md`, and a `log.md` entry. If the
-information is really a contract / decision / procedure / external-asset fact, it
+the knowledge concerns, and an updated `index.md`. If the information is really a
+contract / decision / procedure / external-asset fact, it
 routes to its home via `quenching-docs-add`. As a tail step it **enriches the glossary**
 (`knowledge/glossary.md`) whenever the concept introduces a repo-specific term.
 
@@ -157,9 +157,9 @@ A–Z lookup of terms, acronyms, and domain vocabulary (a flat, alphabetically s
 list in the same syntax every `index.md` uses; the one deliberate exception to "one concept
 per file"). Confirms the term is repo-specific, derives the link to the concept doc that
 defines it (never invents one), inserts the entry in alphabetical position with a
-one-sentence definition, **MERGES** rather than clobbering a filled entry, and appends a
-`log.md` update. The on-demand, single-term counterpart of the glossary tail step the
-other knowledge skills run; `quenching-docs-glossary-backfill` is the whole-bundle bulk counterpart.
+one-sentence definition, and **MERGES** rather than clobbering a filled entry. The on-demand,
+single-term counterpart of the glossary tail step the other knowledge skills run;
+`quenching-docs-glossary-backfill` is the whole-bundle bulk counterpart.
 
 Triggers: *"add a term to the glossary"*, *"define this term"*, *"add this acronym / jargon
 to the glossary"*, *"update the glossary"*.
@@ -258,8 +258,8 @@ criteria, the no-op test) and
 **`quenching-skill-new`** (per-item) mints or edits ONE conformant skill: reads the rule
 (offering to create it on first run), classifies, derives name + wrapper, drafts under
 the doctrine, presents ONE plan, writes on a single OK, then runs the OKF tail
-(regenerate the registry zone, glossary offer, `log.md`, self-check). Without an OKF
-bundle the mint still proceeds (skill + wrapper only) and suggests `quenching-docs-align` once.
+(regenerate the registry zone, glossary offer, self-check). Without an OKF bundle the
+mint still proceeds (skill + wrapper only) and suggests `quenching-docs-align` once.
 
 Triggers: *"create a skill"*, *"mint a skill for X"*, *"organize this skill"*, *"wire a
 command for this skill"*.
@@ -285,9 +285,9 @@ contract → each sweep runs under its own doctrine, narrating its own plan → 
 report.
 
 The order is a **dependency, not a preference**: `docs/` first because the other two write OKF
-artifacts *into* the bundle (the skill front's rule + registry, the specs front's `log.md`
-entry); `specs/` before `.claude/` matters **only in a migration** — a legacy `openspec/` repo
-carries CLI-generated `openspec-*` skill + `opsx/` command shadow copies that
+artifacts *into* the bundle (the skill front's rule + registry, the `docs/standards/` docs a
+spec's distillation mints); `specs/` before `.claude/` matters **only in a migration** — a
+legacy `openspec/` repo carries CLI-generated `openspec-*` skill + `opsx/` command shadow copies that
 `quenching-specs-align` clears before `quenching-skill-align` would otherwise inventory them.
 **Front presence decides the pass** — an absent `docs/` bundle is what the plugin installs, so
 Front 1 always runs; an absent `specs/` workspace is what `quenching-specs-align` scaffolds (from
@@ -370,7 +370,6 @@ without data gets no `catalog/`):
 ```
 docs/                    # OKF bundle root
   index.md               # the ONLY index.md with frontmatter: okf_version: "0.1" + home listing
-  log.md                 # bundle change history (## YYYY-MM-DD, newest first)
   standards/             # "how WE do it" (current) — architecture/ code/ naming/ data-modeling/
                          #   ci-cd/ workflows/ mlops/ quality/ platform/  (type: standard)
   catalog/               # our data — <system>/index.md · <schema>.md · <schema>/<table>.md
@@ -393,7 +392,9 @@ agreed-but-unproven decision is a `standard` with `authority: background` (there
   root `docs/index.md`, which carries **only** `okf_version: "0.1"`).
 - Every concept doc (non-`index.md`/`log.md`) carries **non-empty `type`** from the
   fixed vocabulary above, plus the OKF recommended fields and the method's extra keys.
-- `log.md` uses `## YYYY-MM-DD` headings, newest entries first.
+- `log.md` is **retired**: nothing creates one, appends to one, or checks one. The name
+  stays reserved so a log surviving an earlier alignment is recognized rather than flagged
+  as a malformed concept doc — retired is not unreserved.
 - Links are **relative** within a home, **absolute from the bundle root** (`/docs/...`)
   across homes.
 - Folder names **and concept-doc file slugs**, frontmatter keys/enums, and the `type`
@@ -490,7 +491,7 @@ registry name, and that a spoken phrase still routes by description alone.
 | `/docs:align` (content passes) | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
 | `/align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
 | `/specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align-all/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
-| `/docs:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md`/`log.md` honest and resolves cross-slice dedup |
+| `/docs:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
 | `/docs:add` / `/docs:learn` | no pin — they inherit the session model (they classify, route, and gate operations). Both carry a frontmatter `hooks:` block running `okf-validate.py` on their own `Write`/`Edit` — rung 1 of the scope ladder and rung 1 of the handler ladder, firing only while the command runs |
 | `/docs:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
 | `/skill:new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
