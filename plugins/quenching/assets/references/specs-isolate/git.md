@@ -313,6 +313,7 @@ This file owns two prohibitions, and both are about **whose** conventions win:
 
 Commit hygiene is not this file's to state: `--no-verify`, `--no-gpg-sign`, amending a commit,
 force-pushing, `git init` on the human's behalf, and `git add -A` over a task's declared files are
-all forbidden by [../specs-execute/execution.md](../specs-execute/execution.md) §The commit and
+all forbidden by
+[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The commit and
 §The precondition, which own them. They bind every command that touches git here, including the
 ones in this file.

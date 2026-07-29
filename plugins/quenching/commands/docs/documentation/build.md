@@ -8,14 +8,14 @@ allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 
 **Input**: `$ARGUMENTS` (optionally a `documentation/` section to focus the nav check on, or the path of an existing `mkdocs.yml`; omit to inventory the whole site layer).
 
-Makes the OKF bundle's [`documentation/`](../../assets/docs/documentation/index.md) home
+Makes the OKF bundle's [`documentation/`](${CLAUDE_PLUGIN_ROOT}/assets/docs/documentation/index.md) home
 **render as a site**, and keeps that rendering honest as the home grows. The home is a plain
 Markdown tree; everything generator-specific lives in a thin **site layer** around it — the
 `mkdocs.yml` + `requirements.txt` at the repo **root** (outside the bundle) and one `.pages`
 nav file per section (inside it). This skill owns that layer end to end: it installs it when
 absent, merges it forward when present, regenerates the nav after pages come and go, and
 verifies the site actually builds. The payload it stamps from is
-[`${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`](../../assets/mkdocs/README.md); the home's own
+[`${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`](${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/README.md); the home's own
 boundaries and the `documentation` type live with `/docs:align`
 ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md)) and
 `/docs:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)).

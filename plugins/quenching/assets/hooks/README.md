@@ -1,7 +1,7 @@
 # assets/hooks/ — the OKF enforcement hook
 
 Self-contained enforcement payload of the `quenching` plugin. Keeps a target
-repo's `docs/` bundle aligned to OKF **after** `quenching-docs-align` installs it.
+repo's `docs/` bundle aligned to OKF **after** `/docs:align` installs it.
 
 | File | Role |
 | --- | --- |
@@ -57,7 +57,7 @@ repo's `docs/` bundle aligned to OKF **after** `quenching-docs-align` installs i
 2. Merge `settings.snippet.json` into the target's `.claude/settings.json`.
 3. Set `docsDir` if the bundle root is not `docs/`.
 
-`quenching-docs-align` offers to do all three (Step 6, wiring the enforcement hook).
+`/docs:align` offers to do all three (Step 6, wiring the enforcement hook).
 
 ## Upgrade a target
 
@@ -65,5 +65,5 @@ The installed copy is a snapshot. `okf-validate.py --version` prints its version
 compare it with this plugin's `VERSION` file and, when the plugin is newer, overwrite
 **only** `okf-validate.py` in the target's `.claude/hooks/` — the target's
 `hooks-config.json` holds local knobs and is **preserved** (new knobs fall back to
-built-in defaults). `quenching-docs-align` Step 6 performs this comparison and offers the
+built-in defaults). `/docs:align` Step 6 performs this comparison and offers the
 upgrade when it finds an older installed copy.

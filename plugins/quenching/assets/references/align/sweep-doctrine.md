@@ -11,7 +11,7 @@ is) stay in its command body and its own `references/`.
 This file is **self-contained**: an align reads it and needs nothing else. Its conductor-side
 peer — authorization across a whole run, convergence to a fixpoint, the anti-spin guards — is its
 sibling
-[`convergence.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md), and the one
+[`convergence.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md), and the one
 place the two touch (a cycle-authorized run) is stated here in full at §3 rather than deferred. A
 reference that sends a reader to another reference makes the second one mandatory, which is the
 opposite of what the loading hierarchy is for.

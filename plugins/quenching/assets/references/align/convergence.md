@@ -19,7 +19,7 @@ linked from here. A reference that sends a reader to another reference makes the
 mandatory, which is the opposite of what the loading hierarchy is for.
 
 The sweep-side peer of this contract — how one align behaves standalone — is its sibling
-[`sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md), which
+[`sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md), which
 states the cycle-authorized case in full rather than deferring back here. The two files agree by
 saying the same thing, not by pointing at each other.
 
