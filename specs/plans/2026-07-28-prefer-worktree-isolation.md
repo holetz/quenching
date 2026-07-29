@@ -5,6 +5,7 @@ verification: per-section
 priority: {level: 20, criticality: medium, date: 2026-07-28}
 branch: {base: main, work: plan/prefer-worktree-isolation}
 refined: {mode: gate, date: 2026-07-28}
+approved: {date: 2026-07-28}
 ---
 
 # Prefer worktrees for spec isolation and remove them after a successful merge
@@ -297,9 +298,10 @@ e que esta spec é quem a desfaz.
 
 ## Tasks
 
-- [ ] 1.1 `specs.py` lê `specs/config.json` e expõe `worktreeSetup`
+- [x] 1.1 `specs.py` lê `specs/config.json` e expõe `worktreeSetup`
       files: plugins/quenching/assets/bin/specs.py
       verify: config com a chave certa num workspace descartável; ausência de arquivo não é achado
+      subject: plan/prefer-worktree-isolation: 1.1 specs.py lê specs/config.json e expõe worktreeSetup
 - [ ] 1.2 `specs.py doctor` reporta `sp-config-unknown-key` e `sp-config-unparseable`, ambos warn
       files: plugins/quenching/assets/bin/specs.py
       verify: os três casos de `## Validation` §exercício; JSON truncado sai como achado, não traceback
