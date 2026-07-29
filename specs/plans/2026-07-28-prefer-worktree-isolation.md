@@ -302,9 +302,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/assets/bin/specs.py
       verify: config com a chave certa num workspace descartável; ausência de arquivo não é achado
       subject: plan/prefer-worktree-isolation: 1.1 specs.py lê specs/config.json e expõe worktreeSetup
-- [ ] 1.2 `specs.py doctor` reporta `sp-config-unknown-key` e `sp-config-unparseable`, ambos warn
+- [x] 1.2 `specs.py doctor` reporta `sp-config-unknown-key` e `sp-config-unparseable`, ambos warn
       files: plugins/quenching/assets/bin/specs.py
       verify: os três casos de `## Validation` §exercício; JSON truncado sai como achado, não traceback
+      subject: plan/prefer-worktree-isolation: 1.2 specs.py doctor reporta sp-config-unknown-key e sp-config-unparseable
 - [ ] 2.1 `/specs:isolate` §4 oferece Worktree primeiro e recomendada, com a linha do que ela não carrega
       files: plugins/quenching/commands/specs/isolate.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
