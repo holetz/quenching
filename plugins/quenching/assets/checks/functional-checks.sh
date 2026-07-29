@@ -57,7 +57,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# bin -> assets -> quenching -> plugins -> the repo root, which is where `docs/` and the
+# checks -> assets -> quenching -> plugins -> the repo root, which is where `docs/` and the
 # project's own .claude/settings.json live.
 REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
 PLUGIN="$REPO/plugins/quenching"

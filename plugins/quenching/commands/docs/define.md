@@ -16,7 +16,7 @@ hooks:
 **Input**: `$ARGUMENTS` (the term to add or refine, and optionally its one-sentence definition).
 
 Files ONE term into the canonical OKF bundle's fixed glossary,
-[`knowledge/glossary.md`](../../assets/docs/knowledge/glossary.md) — the repo's single A–Z lookup
+[`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md) — the repo's single A–Z lookup
 of what a term means **here**. The glossary is a flat, alphabetically sorted bullet list in the
 same syntax every `index.md` uses (`* [<Term>](<path>.md) — <definition>`, or `* **<Term>** —
 <definition>` when no doc exists yet): an *index* of vocabulary, the one deliberate exception to

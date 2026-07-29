@@ -1,9 +1,9 @@
 # `assets/mkdocs/` — the site setup payload (mkdocs-material)
 
-Inert here, like the rest of `assets/`. `quenching-docs-align` (Step 7) stamps these into a target
+Inert here, like the rest of `assets/`. `/docs:align` (Step 7) stamps these into a target
 repo **once**, while scaffolding the bundle, so the `documentation/` home renders as a site;
-`quenching-docs-documentation-build` (`/docs:documentation:build`) **owns** the layer after that
-— it installs, merges forward, regenerates the `.pages` nav, and verifies the build. **The OKF
+`/docs:documentation:build` **owns** the layer after that — it installs, merges forward,
+regenerates the `.pages` nav, and verifies the build. **The OKF
 markdown stays generator-neutral; only this config layer is mkdocs-specific.**
 
 | File | Stamped to | Notes |

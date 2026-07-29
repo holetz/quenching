@@ -140,7 +140,7 @@ A variant name enters the plan's migration list with its proposed canonical dest
 The procedure — **two repo scans for the whole rename set**, one `git grep -n -E "(a|b|c)"` for
 tracked files and one `grep -rn --no-ignore -E "(a|b|c)"` so gitignored-but-live maps are never
 skipped, then classify each hit yourself — is the shared one in
-[`align-all/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)
+[`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
 §The blast-radius sweep. Never run a scan per rename.
 
 **This front's delta:** a variant *path* is often load-bearing beyond `docs/` in a way a bare
@@ -161,7 +161,7 @@ item** with its scope shown — never folded into a bulk "align all" opt-in. A r
 resolves to a code constant is a **refactor of the target's product**, not a docs move: alert
 the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
 `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
-([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)) replaces only the batch gate
+([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
 
 ## 5. Frontmatter migration (field renames)

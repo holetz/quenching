@@ -10,7 +10,7 @@ allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuest
 `plans/`.
 
 The prioritization sweep. It reads every spec in
-[`specs/plans/`](../../assets/specs/plans/index.md), proposes ONE ordered list, and — on a single
+[`specs/plans/`](${CLAUDE_PLUGIN_ROOT}/assets/specs/plans/index.md), proposes ONE ordered list, and — on a single
 confirmation — writes each spec's `priority` record.
 
 **This is the only command that ranks.** `/specs:continue` consumes what this writes: with no

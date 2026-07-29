@@ -21,7 +21,7 @@ The whole `specs/` front is **plugin-owned**: unlike the old `openspec/` surface
 belonged to an external CLI), there is no CLI-owned/quenching-managed ownership line here. The
 sweep can align every part of it — scaffold, rename, seed, stamp, regenerate — bounded only by
 the never-delete-on-a-guess and code-coupled-renames-gate-individually rules the aligns share
-([`align-all/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)).
+([`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)).
 
 ## Contents
 
@@ -38,7 +38,7 @@ the never-delete-on-a-guess and code-coupled-renames-gate-individually rules the
 
 The rule is the shared one — nothing is inventoried until the front's own verifier has said there
 is work, and the same program closes the run
-([`align-all/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)
+([`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
 §Probe before the inventory, which also states why it is load-bearing rather than an
 optimization). What follows is only its `specs/` instantiation.
 

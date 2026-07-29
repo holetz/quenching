@@ -28,7 +28,7 @@ validator (`okf-validate.py`) **skips them entirely** — including link checks 
 runs only on `index.md`). So a CLAUDE.md that inlines a rule or lies about a link is **machine-
 invisible**: it escapes validation, is invisible to anyone browsing `docs/`, and drifts from the
 real doc. Pointer honesty is therefore this skill's job, not the validator's. The target shape is
-the shipped exemplar [../../../assets/docs/standards/CLAUDE.md](../../../assets/docs/standards/CLAUDE.md)
+the shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/docs/standards/CLAUDE.md)
 ("thin pointer, never a copy").
 
 ## 2. Content units

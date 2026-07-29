@@ -276,7 +276,7 @@ being merged.
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
 it. The repo's own
-[surface-verification.md](../../docs/standards/quality/surface-verification.md) is where that
+[surface-verification.md](../../../../docs/standards/quality/surface-verification.md) is where that
 distinction is defined for the command surface.
 
 **Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every

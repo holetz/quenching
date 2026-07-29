@@ -1,9 +1,13 @@
-# assets/templates/ — the OKF molds
+# `assets/templates/` — the molds
 
-Frontmatter + body molds the skills stamp/apply. They live **outside** the `docs/` bundle
+Frontmatter + body molds the commands stamp/apply. They live **outside** the `docs/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
-filled. `/docs:add` picks the mold by home → `type` (see
+filled — except the `harness/` and `automation/command|agent|hook` molds, which produce files
+that are not OKF concepts at all. `/docs:add` picks the mold by home → `type` (see
 `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md`).
+
+A mold is **applied per insert, never copied wholesale**: its content reaches the target repo,
+the file itself does not.
 
 | Mold | Produces | `type` |
 | --- | --- | --- |
@@ -12,22 +16,27 @@ filled. `/docs:add` picks the mold by home → `type` (see
 | `catalog/system.md` | `catalog/<system>/access.md` | `system` |
 | `catalog/schema.md` | `catalog/<system>/<catalog>/<schema>.md` | `schema` |
 | `catalog/table.md` | `catalog/<system>/<catalog>/<schema>/<table>.md` | `table` |
-| `backlog/task.md` | `specs/backlog/<task-slug>.md` (**outside** the OKF bundle) | `task` |
 | `vision/area.md` | `vision/<area>.md` | `vision` |
 | `sidecar.md` | `reference/regulations/**` extract | `sidecar` |
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
 | `harness/claude-root.md` | a repo-root `CLAUDE.md` thin pointer over the bundle | *(harness — exempt)* |
 | `harness/claude-subfolder.md` | a subfolder `CLAUDE.md` nearest-file pointer | *(harness — exempt)* |
 | `automation/command.md` | `.claude/commands/<folder-path>/<verb>.md` — the whole entry point (**outside** the OKF bundle) | *(not an OKF concept)* |
+| `automation/agent.md` | `.claude/agents/<name>.md` — a subagent definition (**outside** the bundle) | *(not an OKF concept)* |
+| `automation/hook.md` | a hook **wiring** — prose mold carrying the three shapes, narrowest first; the chosen one lands in `.claude/settings.json`, command frontmatter, or `.claude/hooks/` | *(not an OKF concept)* |
 | `automation/registry.md` | `documentation/reference/automation.md` (the derived command registry) | `documentation` |
-| `automation/skills-standard.md` | `standards/automation/skills.md` (the taxonomy rule, born `authority: background`) | `standard` |
+| `automation/skills-standard.md` | `standards/automation/skills.md` (the command taxonomy rule, born `authority: background`) | `standard` |
+| `automation/agents-standard.md` | `standards/automation/agents.md` (subagent authoring, born `authority: background`) | `standard` |
+| `automation/hooks-standard.md` | `standards/automation/hooks.md` (the hook scope ladder and policy defaults, born `authority: background`) | `standard` |
 
 The **harness molds** (`harness/`) produce **exempt** files — `CLAUDE.md`/`AGENTS.md` carry **no
 frontmatter and no `type`** (harness pointers, not OKF concepts — okf-spec strict-7; the validator
-skips them). `quenching-docs-harness` applies them when it refactors a repo's harness files into thin
+skips them). `/docs:harness` applies them when it refactors a repo's harness files into thin
 pointers over the bundle.
 
-The **automation molds** (`automation/`) are the `/skill:new` / `/skill:align` family. There is
+The **automation molds** (`automation/`) are the `/skill:*` family's — `/skill:new`,
+`/skill:agent:new`, `/skill:hook:new` mint from the three artifact molds, and `/skill:align`
+maintains the registry and the three `*-standard.md` rules in the target's bundle. There is
 ONE command mold, not a skill-plus-wrapper pair: Claude Code merged commands into skills, so a
 single `.claude/commands/<path>.md` carries both the description that routes to it and the body
 that runs. It lands under `.claude/` (outside the bundle — never validated), while the registry

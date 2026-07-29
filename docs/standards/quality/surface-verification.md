@@ -2,7 +2,7 @@
 type: standard
 title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the skill front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
-resource: plugins/quenching/assets/bin/functional-checks.sh, plugins/quenching/assets/bin/conclude-order-check.sh, plugins/quenching/commands/skill/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
+resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/skill/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
 timestamp: 2026-07-29
 audience: both
@@ -16,7 +16,7 @@ maintainer: quenching
 What it takes to claim a change under `commands/**` works. The sibling
 [bundle-verification.md](bundle-verification.md) covers the `docs/` front, where a checker reads
 files and reports findings; this standard covers the one front whose correctness **no in-process
-check can observe at all**. `assets/bin/functional-checks.sh` is the implementation.
+check can observe at all**. `assets/checks/functional-checks.sh` is the implementation.
 
 Distinct from [../automation/skill-evaluation.md](../automation/skill-evaluation.md), which asks
 whether a command *teaches* anything. This asks the prior question: whether it **loads**.
@@ -35,7 +35,7 @@ therefore pass while the entire surface is unreachable:
   surface is inference from the file it just wrote.
 
 **Never report a surface change as working on the strength of the session that made it.** Run
-`assets/bin/functional-checks.sh`, which spawns a fresh `claude -p` per check. Who runs it and when
+`assets/checks/functional-checks.sh`, which spawns a fresh `claude -p` per check. Who runs it and when
 is §The harness belongs to the skill front; which subset is §Scope the run to what the change can
 break. Where no such harness exists, **say the command is unproven until a fresh session** rather
 than quoting a linter as if it had loaded anything.
@@ -176,7 +176,7 @@ with the preconditions reproduced, or expect residue and clean it up in the same
 
 Some claims are about **when** something happens, not about what any one file says. *"Nothing is
 written to the base branch after the merge"* is true or false of a run; no linter, and no reading of
-`conclude.md`, can observe it. `assets/bin/conclude-order-check.sh` is the pattern: a throwaway
+`conclude.md`, can observe it. `assets/checks/conclude-order-check.sh` is the pattern: a throwaway
 `git init` repo where a spec is created, a task executed and the spec concluded end to end, then
 assertions on **real git state** — `HEAD` on the base *is* the merge commit, the task's commit lists
 both the code file and the ticked spec file, each recorded subject resolves to exactly one commit.

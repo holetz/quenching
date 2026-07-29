@@ -39,8 +39,8 @@ never `git init` a repo on the human's behalf.
 
 Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all belong to
 **`/specs:isolate`** and its reference,
-[../specs-isolate/git.md](../specs-isolate/git.md) §Recording the isolation. `/specs:execute`
-delegates to that command and never reimplements it, because isolation is not a privilege of
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+§Recording the isolation. `/specs:execute` delegates to that command and never reimplements it, because isolation is not a privilege of
 building: a spec can be isolated at creation or during development just as legitimately.
 
 Two things the loop below still needs from it:
@@ -158,8 +158,8 @@ If the commit **fails** — a rejecting hook, nothing staged — undo the tick
 report the failure. Never route around it with `--no-verify`.
 
 The **subject line format** is the target repo's to declare. Read
-[../specs-isolate/git.md](../specs-isolate/git.md) §Commit messages: a repo with
-`docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+§Commit messages: a repo with `docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
 

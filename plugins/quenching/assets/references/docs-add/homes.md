@@ -109,7 +109,7 @@ maintainer: <owner>
 
 ## Enriching the glossary (tail step, every capture)
 
-The `knowledge/` home ships one fixed file, [`knowledge/glossary.md`](../../../assets/docs/knowledge/glossary.md):
+The `knowledge/` home ships one fixed file, [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md):
 the repo's A–Z term lookup, a flat alphabetical bullet list in the same syntax every
 `index.md` uses (the one deliberate exception to "one concept per file") — `* [<Term>]
 (<path>.md) — <one-sentence definition>` when a concept doc exists, or `* **<Term>** —

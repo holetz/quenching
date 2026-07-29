@@ -153,7 +153,7 @@ unreachable, a `${CLAUDE_PLUGIN_ROOT}` placeholder never expands, or a citation 
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
 changed, since each check is a billed session. In this plugin that is
-`assets/bin/functional-checks.sh` (default subset for a body; `/skill:eval` for a description).
+`assets/checks/functional-checks.sh` (default subset for a body; `/skill:eval` for a description).
 **Where the repo ships none, say plainly that the command is written but unproven until a fresh
 session** — never report a linter's exit 0 as evidence that the surface loaded.
 

@@ -4,7 +4,7 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-07-28
+timestamp: 2026-07-29
 audience: both
 authority: current
 source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28)
@@ -49,8 +49,40 @@ directory level, a second citation prefix, and 351 more path rewrites to disting
 no reader confuses. If a future addition sits under `assets/` for a *third* reason, revisit; a
 folder meaning three things is a folder meaning nothing.
 
-Current subtrees: `bin/` `hooks/` `templates/` `docs/` `specs/` `claude/` (the installable
-payload) · `references/` (shared procedure) · `evals/` (measured case sets).
+### The revisit happened, and the answer was a name rather than a split
+
+That trigger fired (2026-07-29). The inventory had drifted past three reasons without anyone
+counting: `bin/` alone held four lifecycles — two tools installed into target repos (`specs.py`,
+`skills.py`), one the plugin runs but never installs (`session.py`, which says so in its own
+docstring), and two bash harnesses that grade *this checkout* and are payload of nothing
+(`functional-checks.sh`, `conclude-order-check.sh`). `mkdocs/` was missing from the inventory
+line above entirely.
+
+**The split stayed rejected.** Nothing in the drift touched the reasoning against it. What the
+folder needed was the fourth reason **named and given its own subtree**, which is exactly what
+`evals/` had already done for the third: the two harnesses moved to `checks/`.
+
+The rule that decides where an executable sits, made explicit by the same move: **by how it is
+invoked, not by whether it ships.** `okf-validate.py` stays in `hooks/` beside the
+`hooks-config.json` it loads from its own directory, even though it is the CLI sibling of the two
+tools in `bin/` and the third member of the release lockstep — separating the pair breaks config
+loading in every installed copy. Symmetry of *kind* is not a reason to move a file; adjacency it
+depends on is a reason not to.
+
+Current subtrees, by the reason each is here:
+
+| Reason | Subtrees |
+| --- | --- |
+| payload copied whole by an align | `docs/` `specs/` `claude/` `mkdocs/` · `hooks/*.json` |
+| payload applied per insert (molds) | `templates/` |
+| tool the plugin executes | `bin/` · `hooks/okf-validate.py` |
+| artifact of developing this repository | `references/` `evals/` `checks/` |
+
+Four rows is one past what the warning above tolerates, so the warning needs restating rather
+than quietly exceeding: what makes a folder mean nothing is a **membership rule that is a list**.
+This one's rule is still the single sentence in the blockquote, and the four rows are
+consequences of it that a reader can derive. Revisit when a subtree stops being derivable from
+that sentence — not when the table gains a row.
 
 ## References are cited by absolute path, never relatively
 
@@ -68,6 +100,27 @@ Relative paths are not merely inconvenient here, they are **wrong**: a relative 
 depth of the *citing* file, so `commands/docs/documentation/build.md` and `commands/align.md`
 would need different strings for the same target. The absolute form is one string everywhere,
 which is what makes the citation set mechanically rewritable and mechanically checkable.
+
+### `<name>` is the owning command's path, flattened
+
+`commands/docs/add.md` owns `references/docs-add/`; `commands/align.md` owns `references/align/`.
+The path, with `/` → `-`, and nothing else — which is why `references/align-all/`, carrying the
+name of the retired `quenching-align-all` skill, was renamed: a directory name that lies is
+forbidden by [../naming/command-surface.md](../naming/command-surface.md), and it lies about the
+one thing this convention encodes.
+
+**Owning is not exclusive.** `references/align/` is cited by seven commands and
+`references/skill-new/` by four. The folder is named for the command that would have to *change*
+the procedure, not for every command that reads it — that is what keeps a single name answerable
+when a rule has several readers.
+
+**`evals/` encodes the same source differently, and the difference is deliberate.** An eval tree
+keeps the slashes — `commands/skill/hook/new.md` ↔ `evals/skill/hook/new/` — because it mirrors
+exactly one command 1:1 and is renamed in the same mechanical step as that command, so the two
+paths differ by one prefix and a reviewer finds it without searching
+([skill-eval/evaluation.md](/plugins/quenching/assets/references/skill-eval/evaluation.md)
+§Where the artifacts live). A reference folder is shared, has no 1:1 to preserve, and gains a flat
+listing from being flattened. Same input, two encodings, two jobs — do not reconcile them.
 
 ### A mold cites nothing it does not also install
 
