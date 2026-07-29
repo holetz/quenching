@@ -1261,8 +1261,10 @@ def cmd_selftest(args, root: str) -> int:
         failures.append("drift: an installed copy's own directory resolved as a plugin root — "
                         "the exit-2 refusal is not armed")
 
+    # + 2: the two conformant controls that must stay clean (/docs:add, agents/good.md),
+    # and the drift refusal, which is a case with no fixture row of its own
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
-             + len(EXPECTED_DRIFT) + 2)
+             + len(EXPECTED_DRIFT) + 3)
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
@@ -1541,7 +1543,7 @@ def _version_key(v: str) -> tuple | None:
     """`4.2.0` -> (4, 2, 0). Anything not purely numeric-dotted returns None, and an
     unorderable pair is reported as `unreadable` rather than ordered on a guess."""
     parts = v.split(".")
-    if not all(p.isdigit() for p in parts) or not parts:
+    if not all(p.isdigit() for p in parts):
         return None
     return tuple(int(p) for p in parts)
 
@@ -1628,7 +1630,7 @@ def drift_findings(rows: list[dict]) -> list[dict]:
     that no longer exists. `unwired` is an error: the script is inert, and the repo
     believes it is protected. `ahead` and `unreadable` are warnings — the plugin copy
     still runs, so nothing is currently wrong, only unmaintainable. `absent` is a
-    warning: legitimate for a plugin-only target, and merely a lost fallback."""
+    warning for the HOOK alone, and no finding at all for the two CLIs (see below)."""
     out: list[dict] = []
     for r in rows:
         tool, align = r["tool"], r["align"]
