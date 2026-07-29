@@ -11,7 +11,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
 Sweeps the canonical OKF bundle's **entire** `docs/` tree — every doc already sitting there,
 written before the glossary existed, migrated in by `/docs:align`, or hand-authored — for
 repo-specific terms that were never fed into
-[`knowledge/glossary.md`](../../assets/docs/knowledge/glossary.md), and backfills them in one
+[`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md), and backfills them in one
 consolidated pass. This is a **retroactive, whole-bundle** sweep, not a capture: it never
 writes a `knowledge/` concept doc and never asks the human what a term means — those stay
 `/docs:learn`'s job. The glossary format and the shared **Enriching the glossary**
@@ -43,12 +43,12 @@ procedure live with `/docs:add`
 - **Plan first, one confirmation.** Merge every slice into ONE consolidated list before any
   write (mirrors `/docs:align`/`/docs:import-memory`'s posture). **Exception —
   cycle-authorized runs:** invoked as a stage of `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
-  ([align-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)), the
+  ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the
   consolidated plan is presented as narration, not a gate — this skill has no code-coupled
   items, so cycle-authorized means zero pauses.
 - **MERGE, never clobber; keep it sorted; skip what's already listed** — identical contract
   to `/docs:define` Step 4, in the bullet syntax from
-  [`knowledge/glossary.md`](../../assets/docs/knowledge/glossary.md).
+  [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md).
 
 ## Workflow
 

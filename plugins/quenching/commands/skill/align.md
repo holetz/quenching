@@ -32,7 +32,7 @@ accommodation, one plan → one OK with
 code-coupled items gating individually, the cycle-authorized narration exception, the two-scan
 blast-radius procedure, MERGE-never-clobber, never-delete-on-a-guess, and
 align-conformance-report-the-cycle — lives once in
-[align-all/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md).
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
 Read it as this skill's doctrine. What follows is only what is **specific to `.claude/`**:
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
@@ -47,7 +47,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   description/frontmatter conformance. §7 then **reads** each body and reports what it finds with
   the `/skill:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
   needs the human whose intent the command encodes — the same anti-fabrication boundary every
-  align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)
+  align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
   §Align conformance; report the cycle).
 - **This front is honestly short, and says so.** `docs/` and `specs/` each have an out-of-band
   store to drain; this one has none, and the migration is idempotent — so the loop reaches a
@@ -108,7 +108,7 @@ skills.py doctor --json   # descriptions, duplicate / paths, non-canonical segme
 skills.py lint --json     # per-command conformance, one sk-* code per gap
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
-[sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md) §Probe before
+[sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §Probe before
 the inventory prescribes:
 
 | Probe result | What happens |
@@ -148,7 +148,7 @@ working set, and no file changed.
 
 ### 3. Sweep the blast radius
 Run the shared procedure in
-[align-all/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
 §The blast-radius sweep — two repo scans for the whole set, never two per rename — over every name slated for
 rename or removal: skill names **and** command paths. **A collapse retires a skill name**, so
 every site naming it (a conductor invoking it via the Skill tool, a runbook, a registry row) is a
@@ -272,7 +272,7 @@ Every renamed reference site greps clean, and no citation still points into a de
 `skills/` tree.
 
 Then re-run §1's probe and decide by the four outcomes in
-[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)
+[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another pass from §2 under the same OK, narrating its
 plan; **converged** → report; **residue** → stop and report; **pass cap reached** → stop and report
 what remains. A second pass here catches the one thing the first can create — a rename that shifted

@@ -27,7 +27,7 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SPECS="$HERE/specs.py"
+SPECS="$HERE/../bin/specs.py"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 PASS=0; FAIL=0

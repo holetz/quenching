@@ -16,7 +16,7 @@ hooks:
 **Input**: `$ARGUMENTS` (the generic understanding to capture — a concept, mental model, explanation, or learning).
 
 Files one piece of understanding the human gives you into the canonical OKF bundle's
-[`knowledge/`](../../assets/docs/knowledge/index.md) home — the Diátaxis **explanation**
+[`knowledge/`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/index.md) home — the Diátaxis **explanation**
 quadrant raised to a home: domain concepts, glossaries, mental models, explanations, learnings.
 Assumes the bundle already exists (run `/docs:align` first if not). The mold lives at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/concept-front.md`; the home boundaries and the

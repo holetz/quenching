@@ -2,7 +2,7 @@
 type: standard
 title: Align surface — one align per front, probe first
 description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, and the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/align-all/**
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/align/**
 tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-07-29
 audience: both
@@ -16,7 +16,7 @@ maintainer: quenching
 The shape of the plugin's alignment surface after the fold: **one align per front**, each
 carrying its front's content stages, opened by a probe that makes the no-op case free. The full
 behavioral contract every align shares lives in
-`plugins/quenching/assets/references/align-all/sweep-doctrine.md`; this standard records the
+`plugins/quenching/assets/references/align/sweep-doctrine.md`; this standard records the
 architectural rule — why the surface has this shape and not the previous one.
 
 ## The 1×4 column
@@ -41,7 +41,7 @@ The two real loops survive where the looping is real: `/docs:align` keeps its in
 the fronts feed each other (a spec's distillation is glossary work; the skill front's registry is
 a `docs/` listing). The conductor contract — one human OK authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
-`align-all/convergence.md`, cited by `/align` alone.
+`align/convergence.md`, cited by `/align` alone.
 
 ## Probe before the inventory
 

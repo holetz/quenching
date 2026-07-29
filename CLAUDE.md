@@ -37,8 +37,8 @@ python3 assets/hooks/okf-validate.py selftest
 so no change under `commands/**` is testable in the session that writes it:
 
 ```bash
-./assets/bin/functional-checks.sh          # default: checks 1, 2, 4 — body, citation path, stage name
-./assets/bin/functional-checks.sh --only 3 # opt-in: spoken routing. Prefer /skill:eval — see below
+./assets/checks/functional-checks.sh          # default: checks 1, 2, 4 — body, citation path, stage name
+./assets/checks/functional-checks.sh --only 3 # opt-in: spoken routing. Prefer /skill:eval — see below
 ```
 `exit 0` all measured assertions passed · `1` one failed · `2` nothing could be measured, which is
 **not** a pass.
@@ -58,7 +58,7 @@ measures it graded and with a boundary arm; check 3 is a worse copy kept opt-in.
 
 - **Never add `context: fork` to these commands.** Every sweep command gates on a mid-flow
   confirmation (one plan → one OK) when run standalone — and even a cycle-authorized run
-  (`assets/references/align-all/convergence.md` §cycle-authorization) must still surface
+  (`assets/references/align/convergence.md` §cycle-authorization) must still surface
   code-coupled confirmations mid-flow, which a forked context cannot present.
 - **Never downgrade classification or executor sub-agents to `haiku` in `/docs:import-memory`.**
   A misclassification there becomes a wrong memory deletion — see the model-policy table in

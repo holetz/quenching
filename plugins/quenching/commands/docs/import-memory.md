@@ -26,7 +26,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   whole batch on a single OK. This is invasive (it writes docs **and** deletes memory); the user
   sees the full blast radius before anything moves. **Exception — cycle-authorized runs:**
   invoked as a stage of `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
-  ([align-all/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)), the plan is
+  ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
 - **Three destinations only.** This skill writes into exactly two `docs/` homes — `standards/`
   and `knowledge/` — plus `specs/plans/` for a **unit of work** (a quenching-managed folder

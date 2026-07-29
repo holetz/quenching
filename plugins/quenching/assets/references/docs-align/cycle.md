@@ -6,9 +6,9 @@ routing table** (which findings the align closes itself, and which it can only s
 
 Everything that is **not** front-specific lives elsewhere and is cited, never restated here: the
 probe-before-inventory rule, the one-plan-one-OK model and the blast-radius procedure in
-[`align-all/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md);
+[`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md);
 the cycle-authorization contract, the convergence condition and the anti-spin guards in
-[`align-all/convergence.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md).
+[`align/convergence.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md).
 
 ## The stage pipeline
 
