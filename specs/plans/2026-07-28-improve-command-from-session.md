@@ -207,36 +207,41 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 
 ## Handoff
 
-State of the tree after task 1.3 — the go/no-go gate. **The gate PASSED**; see `## Discoveries`.
+State of the tree after task 3.1. Sections 1 and 2 are complete; `session.py` is finished and
+hardened. **Two open decisions block task 3.2** — both recorded in `## Discoveries`, neither
+patchable inside a task.
 
-`plugins/quenching/assets/bin/session.py` is the only file this spec has written. Plugin-side
-only, NOT in the six-artifact version lockstep. Two subcommands, both `--json`, exit 0 ok /
-1 no commands found / 2 refusal:
+`plugins/quenching/assets/bin/session.py` is still the only file this spec has written. Plugin-side
+only, NOT in the six-artifact lockstep. Contract: every subcommand takes `--json`; exit 0 ok /
+1 read-with-holes / 2 refusal.
 
 - `list [transcript]` — every command a session ran, entry forms, tool-call span
-- `digest [transcript] [--command N] [--max-quote 200] [--cap 20]` — per-command tool counts,
-  repeated reads, repeated shell, human corrections (`during` vs `after` the span)
+- `digest [transcript] [--command N] [--max-quote 200] [--cap 20]` — tool counts, redundant
+  reads, repeated shell, human corrections (`during` vs `after`)
+- `selftest` — 15-record fixture, mutation-checked; also asserts the `--json` contract
 
-Transcript resolution: explicit path, or a bare session id, or the newest session for the cwd
-(nearest-ancestor walk, so a worktree falls back to its checkout).
+**BLOCKER 1 — the span is known wrong.** `attributionSkill` marks where a command STARTS driving
+and has no reliable end: across all 43 Skill stages in the 86-transcript corpus it reverts to the
+conductor once. In the gate session `/specs:isolate` is credited with 5 `AskUserQuestion` calls
+that were `/specs:develop`'s own. Minting the command before this is fixed ships that false claim.
+The span must close on the Skill call boundary — a `## Design` change, so `/specs:develop`.
 
-**READ BEFORE RESUMING — one open design correction.** `attributionSkill` marks where a command
-STARTS driving and has no reliable end: across all 43 Skill stages in the 86-transcript corpus it
-reverts to the conductor exactly once. Spans therefore over-credit the last stage invoked — in the
-gate session, `/specs:isolate` is credited with 5 `AskUserQuestion` calls that were `/specs:develop`'s
-own. The span must be closed by the Skill call boundary. This is a `## Design` change, so it goes
-through `/specs:develop` before task 3.2 mints the command — do not patch it inside a task.
+**BLOCKER 2 — the ceiling re-set is undeclared.** The draft description prices at 830 chars, taking
+the surface to 13,556 against a 12,726 zero-headroom ceiling. `sk-budget-ceiling` firing is the
+standard working as designed, but the re-set touches `DEFAULT_CEILING` in `skills.py`,
+`context-budget.md` and `README.md` — and no task declares any of them. `## Impact` needs them.
 
-Other measured facts, all in `## Discoveries`: human turns are text BLOCKS in a list, not the bare
-content string; `isMeta: true` is the harness-injected command body, never a human turn; reads and
-writes are counted separately on purpose; one Command per NAME, so a command invoked twice merges
-into one span.
+Measured facts behind the parser, all in `## Discoveries`: human turns are text BLOCKS in a list,
+not the bare content string; `isMeta: true` is the harness-injected command body; reads and writes
+are counted separately; one Command per NAME, so a command invoked twice merges into one span.
 
-Corpus: 86 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`. Largest
-is 7.1 MB and digests to 4.6 KB against a stated 64 KB budget; corpus max digest is 12.4 KB.
+Corpus: 87 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`. 81 exit
+0, 6 refuse with `se-no-command-parsed`, none crash. Largest is 7.1 MB and digests to 4.6 KB
+against a stated 64 KB budget.
 
-Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.x mint the command,
-4.1 writes `docs/standards/automation/session-evidence.md`, 5.x are surface checks.
+Next: 3.2 mint the command (BLOCKED on both decisions above), 3.3 the manuals and counts, 4.1
+`docs/standards/automation/session-evidence.md`, 5.x surface checks — 5.1 asserts 26 commands and
+5.2 is `functional-checks.sh`, the only check that `commands/**` actually loads.
 ## Tasks
 
 ### 1. Gate — prove the retro finds anything
@@ -270,8 +275,9 @@ Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.
 
 ### 3. The command
 
-- [ ] 3.1 Price the command's always-on `description` against `docs/standards/automation/context-budget.md` and record the figure
+- [x] 3.1 Price the command's always-on `description` against `docs/standards/automation/context-budget.md` and record the figure
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget` run before and after, with the delta stated
+      subject: plan/improve-command-from-session: 3.1 Price the command's always-on description against context-budget.md and record the figure
 - [ ] 3.2 Mint the command via `/skill:new` — a read-only grant with no `Write` and no `Edit`, target selection via `AskUserQuestion`
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint` clean on the new file
 - [ ] 3.3 Add the command to `assets/claude/QUENCHING.md` and update the surface counts in `CLAUDE.md` and `README.md`
@@ -303,3 +309,5 @@ Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.
 - GO/NO-GO ANSWERED — PASS (task 1.3, against session 94120e96, a /specs:develop run that conducted /specs:isolate as a stage). THE COUNTED FINDING NO PARTICIPANT STATED: the digest credits /specs:isolate with 18 tool calls against its conductor /specs:develop 7, and with ALL 5 of the session AskUserQuestion calls — which are the shape-bank questions [Evidence] [Shape] [Target] [Boundary] [Go/no-go] at lines 67-89, unmistakably /specs:develop own. QUOTED TURN, line 127 (assistant): "**Bank** — shape. 5 questions asked, 5 answered." The participant counted the questions and believed they were develop; nobody stated a tool-call count anywhere in the session (a scan for count-language found only "5 questions"/"10 asked, 10 answered"), and nobody noticed the transcript credits them to the stage. Also uncounted by anyone: 28 of the session 53 tool calls (53%) carry no command attribution at all.
 - CORRECTS the earlier discovery that "attributionSkill yields the per-command tool-call span directly" — it does NOT. Measured across all 43 Skill stages in the 86-transcript corpus: attribution reverts to the conductor after the stage returns exactly 1 time; 36 times it never returns to any command, and 6 times it jumps to a different one. attributionSkill marks where a command STARTS driving and has no reliable end, so a span derived from it alone over-credits the last stage invoked. The span must be closed by the Skill call boundary, not by the next attribution change — a design correction for /specs:develop before task 3.2 mints the command.
 - A selftest that passes on first write proves nothing. This one was mutation-checked: breaking the isMeta rule, the text-block rule, the reads-vs-writes split and the uuid dedup each made it fail (1-2 assertions apiece). The same cheap mutation pass would be worth running against the three shipped tools selftests, which have never been shown to fail.
+- TASK 3.1 — THE PRICE, measured not estimated (skills.py budget, parsed values). BEFORE: 25 commands, 12726 chars always on (~3182 tokens), ceiling 12726. DRAFT DESCRIPTION: 830 chars — inside both per-command caps, 706 under the 1536 sk-metadata-cap error and 194 under the 1024 sk-description-portable warning. AFTER (measured on a scratch copy of the surface, nothing minted): 26 commands, 13556 chars (~3389 tokens). DELTA +830 chars, ~+207 tokens, +6.5% on every session before anything fires.
+- The +830 crosses the zero-headroom ceiling and sk-budget-ceiling fires — by design, per docs/standards/automation/context-budget.md, which predicts the next command minted crosses it and treats that as the signal working (budget reports, never refuses). BUT the re-set is a three-file bookkeeping change — DEFAULT_CEILING in skills.py, the figure transcribed in context-budget.md, and README.md — and NO TASK IN THIS SPEC DECLARES IT. ## Impact lists neither skills.py nor context-budget.md. The standard names this exact cost ("a ratchet with no headroom converts every new command into a three-file bookkeeping change"), so the gap is in this spec, not in the standard. Needs a task before 3.2, via /specs:develop.
