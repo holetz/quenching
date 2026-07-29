@@ -2469,11 +2469,19 @@ def validate_spec(root: str, s: dict) -> list[dict]:
     ready = ready_report({"sections": sections}, schema) if s["phase"] == "plans" else None
     if ready and ready["ok"]:
         for h in ready["warn"]:
-            out.append(_finding("sp-handoff-empty", "warn",
-                                f"{where}: `## {h}` is empty in a spec that meets the ready "
-                                f"gate — an executor gets no context", spec=s["slug"],
-                                path=where, heading=h,
-                                remedy="rewrite it after each committed task"))
+            if h == "Overview":
+                out.append(_finding("sp-overview-missing", "warn",
+                                    f"{where}: `## Overview` is empty in a spec that meets "
+                                    f"the ready gate — a reader gets no orientation",
+                                    spec=s["slug"], path=where, heading=h,
+                                    remedy=f"specs.py section {s['slug']} \"Overview\" --write, "
+                                           "written last once the other sections settle"))
+            else:
+                out.append(_finding("sp-handoff-empty", "warn",
+                                    f"{where}: `## {h}` is empty in a spec that meets the ready "
+                                    f"gate — an executor gets no context", spec=s["slug"],
+                                    path=where, heading=h,
+                                    remedy="rewrite it after each committed task"))
 
     declared = parse_impact_standards(text, schema)
     if declared:
