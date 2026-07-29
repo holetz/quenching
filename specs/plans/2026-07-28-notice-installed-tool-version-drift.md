@@ -268,10 +268,11 @@ only registered tree).
 
 ### 2. Proof
 
-- [ ] 2.1 Add the drift selftest fixture — a clean control plus one case per code — so the rule is proved against a fixture and not against whatever this repo happens to hold
+- [x] 2.1 Add the drift selftest fixture — a clean control plus one case per code — so the rule is proved against a fixture and not against whatever this repo happens to hold
       files: plugins/quenching/assets/bin/skills.py
       pattern: plugins/quenching/assets/bin/skills.py (WIDER_FIXTURE / HOOK_FIXTURE)
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
+      subject: plan/notice-installed-tool-version-drift: 2.1 Add the drift selftest fixture — every status, the unwired case, and a clean control
 - [ ] 2.2 Run drift against this repo and a plugin-only scratch target, and settle the `sk-tool-absent` Open Decision with what they show
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json
 
