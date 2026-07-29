@@ -46,7 +46,7 @@ TWO ENTRY MODES
 
 THE CONFORMANCE CORE (single source — mirrored in the skills' `references/conformance.md`)
 -----------------------------------------------------------------------------------------
-Reserved filenames: `index.md` (a listing), `log.md` (a change history).
+Reserved filenames: `index.md` (a listing), `log.md` (a retired change history).
 Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts) and
 `QUENCHING.md` (the operator manual the aligns install beside each front — a payload
 file, not authored knowledge).
@@ -58,8 +58,10 @@ file, not authored knowledge).
   **non-root** `index.md` MUST carry no frontmatter at all (ERROR). The **root**
   `index.md` (at the bundle root) MAY carry frontmatter but only `okf_version`
   (other keys → WARN); it SHOULD declare `okf_version: "0.1"` (missing/other value → WARN).
-- Every **`log.md`**            → entries under `## YYYY-MM-DD` headings, newest
-  first (no date heading → WARN; ascending order → WARN); a `type` here → ERROR.
+- Every **`log.md`**            → **retired**. Nothing produces it and nothing checks
+  it, but the name stays reserved and stays out of the hard block, so a log surviving
+  in an already-aligned bundle is recognized rather than read as a malformed concept
+  doc. Retired is not unknown.
 
 PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
 - **`okf-frontmatter-unparsed`** the frontmatter held something this parser could not
@@ -127,6 +129,10 @@ VERSION = "4.2.0"  # kept in lockstep with the plugin VERSION file (and specs.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
+# `log.md` is RETIRED, not unreserved: it keeps its slot here (and its skip in the
+# PreToolUse hard block) so a log surviving in an already-aligned bundle stays
+# recognized. Drop it from this tuple and every such file falls through to the
+# concept-doc path — `missing-type` at ERROR, and denied writes under `hardBlock`.
 RESERVED = ("index.md", "log.md")
 # The bundle's one fixed concept doc, at a path the OKF contract pins. Its links are
 # its content, so it is link-checked alongside the reserved listings.
@@ -152,7 +158,6 @@ UNSUPPORTED_GLOB_CHARS = ("{", "}", "[", "]", "?")
 # ONCE: every consumer must agree on which kinds it may judge, or a kind added later is
 # silently in-scope for one check and out-of-scope for another.
 RESOLVABLE_KINDS = ("path", "glob")
-DATE_HEADING = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\b")
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # Seconds `stale-doc` waits on one `git log`. CLI-only, but a pathological repo must
 # not hang an operator's sweep; a timeout yields no finding rather than a wrong one.
@@ -754,26 +759,6 @@ def check_index(text: str, is_root: bool) -> list[tuple[str, str, str]]:
     return out
 
 
-def check_log(text: str) -> list[tuple[str, str, str]]:
-    out: list[tuple[str, str, str]] = []
-    fm, has_block, _ = parse_frontmatter(text)
-    if _nonempty(fm, "type"):
-        out.append(("ERROR", "log-has-type", "`log.md` is a reserved change history and must not carry a `type`"))
-    dates: list[str] = []
-    for line in text.splitlines():
-        m = DATE_HEADING.match(line)
-        if m:
-            dates.append(m.group(1))
-    body = text.split("---", 2)[-1] if has_block else text
-    if body.strip() and not dates:
-        out.append(("WARN", "log-no-date-heading",
-                    "`log.md` has content but no `## YYYY-MM-DD` heading (expected date-grouped entries)"))
-    if dates and dates != sorted(dates, reverse=True):
-        out.append(("WARN", "log-not-newest-first",
-                    "`log.md` date headings are not in newest-first order"))
-    return out
-
-
 # --------------------------------------------------------------------------- #
 # single-pass corpus — every whole-tree consumer reads each file exactly once
 # --------------------------------------------------------------------------- #
@@ -1033,7 +1018,7 @@ def _validate_text(path: str, text: str, bundle_root: str,
             os.path.dirname(os.path.abspath(path)) == os.path.abspath(bundle_root)
         raw = check_index(text, is_root)
     elif base == "log.md":
-        raw = check_log(text)
+        raw = []  # retired: reserved, recognized, never judged — see THE CONFORMANCE CORE
     elif base == "README.md":
         # OKF-strict uses `index.md` as the reserved listing; a README in the bundle
         # is a migration nudge, not a hard failure (OKF does not reserve README).
@@ -1132,7 +1117,7 @@ def _render_proposal(findings) -> str:
     return (f"[{TAG}] OKF conformance findings ({len(errors)} error(s), {len(warns)} warning(s)):\n"
             f"{body}\n"
             "Fix with the `quenching-docs-align` / `quenching-docs-add` skill (stamp `type`, keep `index.md` a "
-            "frontmatter-free listing, format `log.md` as `## YYYY-MM-DD` newest-first).")
+            "frontmatter-free listing).")
 
 
 # --------------------------------------------------------------------------- #
