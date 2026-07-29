@@ -30,7 +30,7 @@ task→commit anchor, and the **read-if-present** rule for a target's `docs/stan
 in [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md), whose
 command is `/specs:isolate`.
 
-The spec-driven facts — the layout, the thirteen canonical sections, the derived stages, the
+The spec-driven facts — the layout, the fourteen canonical sections, the derived stages, the
 `specs.py` surface, the `specs/`↔`docs/` boundary — live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 The OKF insert procedure for the docs a task writes lives in

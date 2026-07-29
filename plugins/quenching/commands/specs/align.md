@@ -20,7 +20,7 @@ conformant workspace ends the run there. That is what makes this safe to run hab
 only when something is already broken.
 
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
-thirteen canonical sections, the derived stages and the `specs.py` surface in
+fourteen canonical sections, the derived stages and the `specs.py` surface in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
 the listing-zone format and on-write check in
 [specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).

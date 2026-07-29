@@ -38,11 +38,11 @@ stable for the whole lifecycle, `git log --follow` reads as one history, and a p
 `ls` of any folder is chronological. A file listing IS the status view, and no file
 listing reads frontmatter.
 
-THIRTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
+FOURTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
 -----------------------------------------------------------------------
-`## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`, `## Validation`,
-`## Design`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`,
-`## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
+`## Overview`, `## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`,
+`## Validation`, `## Design`, `## Alternatives Considered`, `## Open Decisions`,
+`## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
 
 Headings are a PARSED contract — canonical English, exactly as written. A heading
 outside the set is a stray. Each canonical heading is in one of three states:
@@ -53,8 +53,8 @@ outside the set is a stray. Each canonical heading is in one of three states:
 
 A heading is required — and required to carry an explicit none — only once ITS OWN
 phase gate is reached. That scoping is what keeps a captured spec four lines long
-instead of a thirteen-heading skeleton, and it is what keeps the derived stage honest:
-applied absolutely, a fresh spec carrying thirteen `- none` sections would derive as
+instead of a fourteen-heading skeleton, and it is what keeps the derived stage honest:
+applied absolutely, a fresh spec carrying fourteen `- none` sections would derive as
 `designed` and pass every gate without anyone having thought anything.
 
 DERIVED STAGES, never declared. Computed from heading presence and frontmatter, so
@@ -262,7 +262,7 @@ verification: <VERIFICATION>
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
+     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
      first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -291,11 +291,11 @@ verification: <VERIFICATION>
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
 
-     AUDIENCE. Each section names who reads it. `## Problem`/`## Proposal`/`## Design` are for
-     the human — examples and plain language belong there. `## Handoff`/`## Tasks` are for
-     agents — terse, with `files:`/`verify:`/`pattern:` metadata. An orchestrator never sends
-     the human sections to an executor; that is what lets one file serve both audiences
-     without bloating agent context. -->
+     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
+     `## Design` are for the human — examples and plain language belong there.
+     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
+     metadata. An orchestrator never sends the human sections to an executor; that is what
+     lets one file serve both audiences without bloating agent context. -->
 
 ## Overview
 
@@ -807,7 +807,7 @@ def load_schema() -> dict:
 
 
 def load_template() -> str:
-    """The FULL thirteen-section authoring reference — frontmatter, the contract preamble,
+    """The FULL fourteen-section authoring reference — frontmatter, the contract preamble,
     and every heading with its guidance comment.
 
     Two consumers read it and they need different slices: `new` stamps only the capture
@@ -1539,7 +1539,7 @@ def cmd_section(args, root: str) -> int:
         emit(args.json,
              {"ok": False, "code": "sp-stray-heading", "heading": args.heading,
               "canonical": canonical_headings(),
-              "message": f"'{args.heading}' is not one of the thirteen canonical headings"},
+              "message": f"'{args.heading}' is not one of the fourteen canonical headings"},
              f"error: '{args.heading}' is not a canonical heading")
         return 2
     if not args.write:
@@ -2454,7 +2454,7 @@ def validate_spec(root: str, s: dict) -> list[dict]:
 
     for h in stray_headings(sections, schema):
         out.append(_finding("sp-stray-heading", "warn",
-                            f"{where}: `## {h}` is not one of the thirteen canonical headings",
+                            f"{where}: `## {h}` is not one of the fourteen canonical headings",
                             spec=s["slug"], path=where, heading=h,
                             remedy="rename it to a canonical heading or fold it into one"))
 

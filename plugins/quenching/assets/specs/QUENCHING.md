@@ -349,19 +349,24 @@ write-once — rewriting one would falsify a fact that already happened. A spec 
 `type:` — it is not a concept doc, it lives outside the bundle, and `specs.py validate` is what
 checks it.
 
-Thirteen canonical headings, in this order: `## Problem`, `## Proposal`, `## Out of Scope`,
-`## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`, `## Open Decisions`,
-`## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`. **Headings are a parsed
-contract** — canonical English, exactly as written; body prose follows your repo's language. A
-heading outside the set is a stray and `validate` flags it.
+Fourteen canonical headings, in this order: `## Overview`, `## Problem`, `## Proposal`,
+`## Out of Scope`, `## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`,
+`## Open Decisions`, `## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
+**Headings are a parsed contract** — canonical English, exactly as written; body prose follows
+your repo's language. A heading outside the set is a stray and `validate` flags it.
 
 A heading is required only once **its own gate** is reached — before that, its absence is a
 *not-yet*, not an omission. That is what keeps a freshly created spec four lines long instead of
-a thirteen-heading skeleton.
+a fourteen-heading skeleton.
 
 Two sections are load-bearing for machinery, not just for thinking: `## Validation` is the
 fallback for a task with no `verify:` line, and `## Impact` is the one machine-parsed
 declaration.
+
+`## Overview` is warn-only, like `## Handoff` — never one of the ten sections the `ready` gate
+requires. It sits first, ahead of `## Problem`, and is written **last**: `/specs:develop` fills
+it once the other sections have settled, because connecting them is only possible after they
+exist. An empty one on a spec that otherwise meets the gate is reported as `sp-overview-missing`.
 
 A completed task carries its implementing commit; a blocked one carries its reason — both in the
 task line's own metadata grammar, never in a sidecar:
@@ -439,7 +444,7 @@ and `specs.py validate` checks the specs.
 | --- | --- |
 | `list` exits 2 and every row says `legacy: true` | The workspace still has the old `backlog/` + `ready/` folders. Run `/specs:align` — it drives `specs.py migrate`, which folds both into `plans/` without renaming a single file. |
 | `list` says the workspace is empty, but there are files in `specs/` | It is a **v1 workspace** (one folder per plan). `specs.py doctor` detects the leftovers and declares `migrate` as the remedy — or just `/specs:align`. |
-| A freshly created spec shows as `designed` | Someone stamped all thirteen headings at creation. An explicit none counts as *filled*, so a skeleton derives as designed. `create` writes `## Problem` alone on purpose. |
+| A freshly created spec shows as `designed` | Someone stamped all fourteen headings at creation. An explicit none counts as *filled*, so a skeleton derives as designed. `create` writes `## Problem` alone on purpose. |
 | `execute` asks me to approve a spec I already promoted | The old `ready/` folder recorded your OK; the record vocabulary replaced it. Say yes once — it stamps `approved: {date}` and never asks again. |
 | `promote` refuses with open boxes | The outcome is `done` and the work is not. Finish them, pass `--force` if you know why, or switch to `outcome: abandoned`. |
 | Two commands both refuse with "slug matches 2 files" | Two specs resolve to the same slug. Identity IS the slug — rename one. |
@@ -518,7 +523,7 @@ the fronts feed each other: a spec's distillation is glossary work, and the skil
 registry is a `docs/` listing. A front this repo does not use simply has no manual — the paths
 above are references, not promises.
 
-The normative spec-driven facts — the folders, the thirteen canonical sections, the gates, the
+The normative spec-driven facts — the folders, the fourteen canonical sections, the gates, the
 derived stages, the record vocabulary, the full `specs.py` surface — live in the plugin's
 `assets/references/specs-develop/spec-driven.md`. This file is the operator's view; that is the
 specification.
