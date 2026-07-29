@@ -216,8 +216,9 @@ repositório.
 
 ### 2. Skeleton and templates
 
-- [ ] 2.1 Apagar `assets/docs/log.md`, `assets/docs/standards/log.md` e `assets/templates/log.md.tmpl`
+- [x] 2.1 Apagar `assets/docs/log.md`, `assets/docs/standards/log.md` e `assets/templates/log.md.tmpl`
       files: plugins/quenching/assets/docs/log.md, plugins/quenching/assets/docs/standards/log.md, plugins/quenching/assets/templates/log.md.tmpl
+      subject: plan/retire-docs-log: 2.1 delete the skeleton logs and the log mold
 - [ ] 2.2 Atualizar os sete arquivos do esqueleto e dos moldes que referenciam o log: `assets/docs/index.md`, `assets/docs/QUENCHING.md`, `assets/docs/standards/index.md`, `assets/docs/standards/CLAUDE.md`, `assets/templates/README.md`, `assets/templates/standard-front.md`, `assets/templates/harness/claude-root.md`
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs
 
