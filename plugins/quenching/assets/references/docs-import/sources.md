@@ -80,4 +80,4 @@ full bodies. The orchestrator merges the candidate lists, runs the cross-slice d
 and builds the single plan. Extraction/executor sub-agents may run on a **cheap
 model/effort**: enrich deletes nothing, so a misclassification only misfiles a doc (a
 correctable move), unlike `/docs:import-memory` where a misclassification deletes a
-memory. See the model policy in [../../../README.md](../../../README.md#cost-model).
+memory. See the model policy in [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model).

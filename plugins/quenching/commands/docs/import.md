@@ -55,7 +55,7 @@ slice** out to return **compact unit candidates** (home / `type` / path / one-li
 anchor), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
 a doc (correctable), unlike `/docs:import-memory` (see the model policy in
-[../../README.md](../../README.md#cost-model)).
+[README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model)).
 
 ### 3. Present ONE ingestion plan → gate on ONE OK
 Show the **complete** plan: every doc to **mint** or **enrich** with its home, `type`, path,

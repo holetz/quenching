@@ -42,7 +42,7 @@ The sweep contract every align shares — probe before the inventory, convergenc
 accommodation, one plan → one OK with code-coupled items gating individually, the cycle-authorized
 narration exception, the two-scan blast-radius procedure, MERGE-never-clobber,
 never-delete-on-a-guess, and align-conformance-report-the-cycle — lives once in
-[align-all/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md).
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
 Read it as this command's doctrine. What follows is only what is **specific to `docs/`**:
 
 - **This is the one front with a real loop.** `docs/` has two out-of-band stores that feed it and a
@@ -50,7 +50,7 @@ Read it as this command's doctrine. What follows is only what is **specific to `
   the harness MOVEs in is a term the glossary must then index. The loop ends at a **fixpoint** —
   a pass that changed nothing with the validator clean — never after a fixed count, bounded by a
   pass cap and a no-progress guard
-  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)).
+  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
   `/docs:import-memory`, `/docs:harness` and `/docs:glossary-backfill` through the `Skill` tool
   under their registry names (`quenching:docs:import-memory`, …). Each runs under its own doctrine
@@ -152,7 +152,7 @@ returning `rename → [file:line, …]` and classify each hit yourself. The batc
 enumerated docs-only set. Each **code-coupled** rename is its **own** confirmation item.
 
 This gate runs **once per run**, before pass 1 — later passes narrate their plan and do not re-ask
-([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)
+([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization).
 **Done when:** one OK covers the batch, or each code-coupled item was answered on its own, or the
 plan was rejected and nothing was written.
@@ -215,7 +215,7 @@ it alone and **say so** — the target is ahead of this plugin, a fact to state 
 regression to force; `absent` → the install offer above. A `sk-tool-unwired` finding is the one the
 script cannot fix by being copied: the file is on disk and no `hooks` block invokes it, so offer
 the `settings.snippet.json` merge even though the version is current. See
-[../../assets/hooks/README.md](../../assets/hooks/README.md).
+[hooks/README.md](${CLAUDE_PLUGIN_ROOT}/assets/hooks/README.md).
 
 **The mkdocs site.** Only if the bundle has a `documentation/` home. Offer to copy from
 `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`: `mkdocs.yml.tmpl` → the repo **root** as `mkdocs.yml`
@@ -236,7 +236,7 @@ skipped.
 Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,
 `quenching:docs:harness`. A bare `/docs:harness` is what a human types, not what the Skill tool
 resolves. Declare the cycle-authorization mode to each
-([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)
+([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization), and **skip any stage the probe found empty**:
 
 1. `quenching:docs:import-memory` — drain the project's memory dir into its homes, clearing each
@@ -272,7 +272,7 @@ non-empty `type`; every `index.md` is frontmatter-free (root only `okf_version`)
 findings).
 
 Then re-run step 1's probe — never the step 2 inventory — and decide by the four outcomes in
-[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)
+[convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another pass from step 2 under the same OK, narrating its
 plan; **converged** → step 9; **residue** → stop and report; **pass cap reached** → stop and report
 what remains. The guards there (pass cap, no-progress, never-widen-scope) apply unchanged.

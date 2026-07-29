@@ -48,7 +48,7 @@ listings must carry.
 Every entry point shares one contract: any item whose blast radius reaches **product code**
 confirms on its own, always — and inside a conducted run, so does every **irreversible close**.
 That contract lives once, in
-[`align-all/convergence.md`](assets/references/align-all/convergence.md).
+[`align/convergence.md`](assets/references/align/convergence.md).
 
 ## The twenty-six commands
 
@@ -469,7 +469,7 @@ The plugin keeps its context and token footprint predictable on three levels:
    tree Claude Code registers — `docs/standards/architecture/plugin-layout.md`.
 
 Because the command registry is built at **session start**, none of that is testable in the session
-that changes it. `assets/bin/functional-checks.sh` is the only check that proves the surface loads:
+that changes it. `assets/checks/functional-checks.sh` is the only check that proves the surface loads:
 it spawns fresh `claude -p` processes — each loading the checkout under test via `--plugin-dir`, so
 it sees a branch — and asserts on captured tool calls that `${CLAUDE_PLUGIN_ROOT}` substitutes in a
 command body, that a conductor reaches its stage by registry name, and that a spoken phrase still
@@ -497,7 +497,7 @@ graded and with a should-not-trigger arm.
 | `/docs:align` / `/docs:harness` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. `/docs:harness`'s `Bash` is scoped to `git grep` / `git check-ignore` / `grep` / `python3` / `py` — the two-scan sweep, the build-artifact check, the checker, and nothing else; `/docs:align` keeps the unrestricted grant its body prices. **Exception:** under `/docs:align`'s parallel content prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
 | `/docs:align` (content passes) | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
 | `/align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
-| `/specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align-all/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
+| `/specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `specs.py status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `specs.py`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
 | `/docs:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
 | `/docs:add` / `/docs:learn` | no pin — they inherit the session model (they classify, route, and gate operations). Both carry a frontmatter `hooks:` block running `okf-validate.py` on their own `Write`/`Edit` — rung 1 of the scope ladder and rung 1 of the handler ladder, firing only while the command runs |
 | `/docs:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
@@ -511,7 +511,7 @@ Two rules are deliberate and must survive any future "optimization":
 
 - **Never add `context: fork` to these skills.** Every sweep skill gates on a mid-flow
   confirmation (one plan → one OK) when run standalone — and even a cycle-authorized run
-  ([`align-all/convergence.md`](assets/references/align-all/convergence.md)
+  ([`align/convergence.md`](assets/references/align/convergence.md)
   §cycle-authorization) must still surface code-coupled confirmations mid-flow, which a forked
   context cannot present.
 - **Never downgrade classification or executor agents to haiku** in
@@ -557,7 +557,7 @@ the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`). Six so
   worktree, at **any** stage rather than only at build time — and `specs.py next --front` became
   branch-aware, so `/specs:continue` returns the spec whose branch you are standing on and demotes
   one alive elsewhere. `parse_frontmatter` learned block mappings (indent-scoped), which is what
-  lets an explicit-none merge record wrap or carry a comma. New `assets/bin/conclude-order-check.sh`
+  lets an explicit-none merge record wrap or carry a comma. New `assets/checks/conclude-order-check.sh`
   asserts the ordering on a real history — the one claim no in-process check can see. The budget
   ceiling fired on the 25th command exactly as designed and was re-measured to **12,726**.
 - **4.1.0:** **the capability layer got proved, applied and closed.** Both new mints were measured

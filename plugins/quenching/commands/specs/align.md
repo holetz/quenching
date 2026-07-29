@@ -35,7 +35,7 @@ The sweep contract every align shares — probe before the inventory, convergenc
 accommodation, one plan → one OK with code-coupled items gating individually, the cycle-authorized
 narration exception, the two-scan blast-radius procedure, MERGE-never-clobber,
 never-delete-on-a-guess, and align-conformance-report-the-cycle — lives once in
-[align-all/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md).
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
 Read it as this command's doctrine. What follows is only what is **specific to `specs/`**:
 
 - **This front's probe is `specs.py doctor` + `specs.py validate`.** Both exit 0 with no findings
@@ -133,7 +133,7 @@ removal candidate, divergent → `sp-shadow-diverged`, keep-and-report.
 
 ### 4. Sweep the blast radius of every rename
 Run the shared procedure in
-[align-all/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/sweep-doctrine.md)
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
 §The blast-radius sweep — two repo scans total for the whole set, never two per rename — over every planned
 filename change and every `sp-duplicate-slug` rename. **This front's delta:** a **slug** leaks
 further than any other name the plugin renames, because identity here *is* the slug — every

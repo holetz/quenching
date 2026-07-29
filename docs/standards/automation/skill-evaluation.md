@@ -4,7 +4,7 @@ title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero
 resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/skill/eval.md
 tags: [automation, skills, evaluation, testing, benchmark]
-timestamp: 2026-07-27
+timestamp: 2026-07-29
 audience: both
 authority: current
 source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /skill:agent:new and /skill:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)
@@ -148,7 +148,17 @@ lives elsewhere stops matching the skill within two edits.
 
 **A rename carries its eval tree.** The artifacts mirror the command's path, so renaming the
 command orphans them silently — nothing errors, and the stale tree keeps answering to a name that
-no longer routes. `assets/evals/specs/capture/` is the standing example: the folder still mirrors
-the retired `/specs:capture` (now `/specs:create`) and its `benchmark.json` names a *third* retired
-skill. Move the tree in the same commit as the rename, or the mirroring the design depends on is
-the one property it does not have.
+no longer routes. Move the tree in the same commit as the rename, or the mirroring the design
+depends on is the one property it does not have.
+
+**And an orphan is deleted, not re-pointed.** `assets/evals/specs/capture/` was the standing
+example of the failure above, and how it was settled (2026-07-29) is the rule for the next one.
+Renaming the folder to the successor command was the obvious move and the wrong one: the case set
+did not merely carry a stale *name*, it asserted a retired *model* — a task file under
+`specs/backlog/` with `type: task`, reindexed by a `specs.py` subcommand that no longer exists —
+and its only run had already recorded itself `citable: false` over a case set it called defective.
+Re-pointing it would have made measurements of a dead command read as evidence for the live one.
+So the tree was removed. **A run measures the command it was written against; when that command
+is gone, the run is history with nothing to attach to, and history that cannot be attached is
+deleted rather than re-labelled.** A rename moves an eval tree only while the case set still
+asserts what the command still does.
