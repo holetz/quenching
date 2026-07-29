@@ -1177,11 +1177,15 @@ DRIFT_FIXTURE = {
     "clean/.claude/settings.json":
         '{"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", '
         '"command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"}]}]}}\n',
+    # a legitimate plugin-only repo: nothing installed, and nothing wrong with that
+    # except the one tool that does nothing unless it is on disk and invoked
+    "pluginonly/.claude/settings.json": "{}\n",
 }
 
 EXPECTED_DRIFT = {
     "drifted": {"sk-tool-behind", "sk-tool-unwired", "sk-tool-ahead", "sk-tool-unreadable"},
     "clean": set(),
+    "pluginonly": {"sk-tool-absent"},   # the hook only — never the two CLIs
 }
 
 EXPECTED = {
@@ -1650,12 +1654,17 @@ def drift_findings(rows: list[dict]) -> list[dict]:
                 f"{HOOKS_DIR}/{tool} declares no `VERSION = \"…\"` — too old to carry one, or "
                 "edited in place; either way no comparison can be made",
                 tool=tool, remedy=f"{align} reinstalls it"))
-        elif r["status"] == "absent":
+        elif r["status"] == "absent" and r["wired"] is not None:
+            # Only for the hook. A missing CLI costs nothing while the plugin is loaded —
+            # resolution is plugin-first — and warning about it fires on every plugin-only
+            # repo, including this one, which is how a probe's output gets ignored. A
+            # missing HOOK is the same practical state as an unwired one: the bundle has
+            # no enforcement at all. The row still reports `absent` either way.
             out.append(finding(
                 "sk-tool-absent", "warn",
-                f"no {HOOKS_DIR}/{tool} installed — fine while the plugin is loaded, but a "
-                "session or shell without it has no fallback and drops to the manual check",
-                tool=tool, remedy=f"{align} installs it"))
+                f"no {HOOKS_DIR}/{tool} installed — nothing enforces the bundle between "
+                "aligns, the same practical state as an installed copy nothing invokes",
+                tool=tool, remedy=f"{align} installs and wires it"))
         if r["wired"] is False and r["status"] != "absent":
             out.append(finding(
                 "sk-tool-unwired", "error",
@@ -1727,7 +1736,7 @@ def cmd_drift(args, root: str) -> int:
         return exit_for(findings)
     print(f"skills drift — {root} against plugin {shipped} ({plugin_root})")
     for r in rows:
-        wiring = "" if r["wired"] is None else (
+        wiring = "" if r["wired"] is None or r["status"] == "absent" else (
             "  wired" if r["wired"] else "  NOT wired — nothing invokes it")
         print(f"  {r['status']:<10} {r['tool']:<18} installed "
               f"{r['installed'] or '-':<8} shipped {r['shipped']:<8} "
