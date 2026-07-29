@@ -205,6 +205,36 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
   currently taking. `ACCEPTED — the blind spot is one turn wide, and it is the one turn the human is
   already looking at.`
 
+## Handoff
+
+State of the tree after task 1.2.
+
+`plugins/quenching/assets/bin/session.py` exists and is the only file this spec has written.
+It is plugin-side only and is NOT in the six-artifact version lockstep.
+
+Two subcommands, both `--json`, exit 0 ok / 1 no commands found / 2 refusal:
+
+- `list [transcript]` — every command a session ran, entry forms, tool-call span
+- `digest [transcript] [--command N] [--max-quote 200] [--cap 20]` — per-command tool counts,
+  repeated reads, repeated shell, human corrections
+
+Transcript resolution: explicit path, or a bare session id, or the newest session for the cwd
+(nearest-ancestor walk, so a worktree falls back to its checkout).
+
+Measured, not assumed — re-read `## Discoveries` before changing the parser:
+
+- `attributionSkill` carries the per-command span; the two entry marks only say how it was reached
+- human turns are text BLOCKS in a list, not the bare content string
+- `isMeta: true` is the harness-injected command body, never a human turn
+- reads and writes are counted separately, on purpose
+- one Command per NAME, so a command invoked twice merges into one span — unfixed, by design
+
+Corpus check available: 86 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`.
+Largest is 7.1 MB and digests to 4.6 KB; the stated budget is 64 KB.
+
+Next: task 1.3 is the go/no-go in `## Validation` — it decides whether this spec continues at all.
+Tasks 2.x harden the tool, 3.x mint the command, 4.1 writes the standard, 5.x are surface checks.
+
 ## Tasks
 
 ### 1. Gate — prove the retro finds anything
@@ -213,9 +243,10 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
       verify: `python3 plugins/quenching/assets/bin/session.py list --json <transcript>` returns at least one command with non-zero tool counts on a real session file
       files: plugins/quenching/assets/bin/session.py
       subject: plan/improve-command-from-session: 1.1 Write assets/bin/session.py: list every command a session ran, by both entry forms, with its tool-call span, under --json
-- [ ] 1.2 Add the digest pass: per-command tool-call counts by name, repeated read targets, and the turns where the human corrected course
+- [x] 1.2 Add the digest pass: per-command tool-call counts by name, repeated read targets, and the turns where the human corrected course
       verify: the digest of the largest file in `~/.claude/projects/` stays under a stated size and the transcript itself is never emitted
       files: plugins/quenching/assets/bin/session.py
+      subject: plan/improve-command-from-session: 1.2 Add the digest pass: per-command tool-call counts by name, repeated read targets, and the turns where the human corrected course
 - [ ] 1.3 Answer the go/no-go in writing against a real `/specs:develop` session that conducted a stage
       verify: at least one counted finding no participant stated is recorded in `## Discoveries` with its count and its quoted turn; none means stop and abandon per `## Validation`
 
@@ -258,3 +289,8 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 - Transcripts carry a per-line attributionSkill/attributionPlugin field naming the command each turn belongs to — it covers BOTH entry forms at once and yields the per-command tool-call span directly, which the <command-name>+Skill parse in ## Design only approximates. The entry marks are still read, but for how a command was reached and with what args, not for what it cost.
 - A Skill tool_use is attributed to the CALLER while the stage own turns are attributed to the CALLEE, so a conductor and its stages separate without inferring nesting.
 - session.py sits OUTSIDE the six-artifact lockstep in docs/standards/ci-cd/versioning-release.md: that lockstep exists so an align can decide whether an installed copy is stale, and this tool is never installed into a target. The standard does not yet say what a plugin-side-only tool does about --version.
+- A human turn reaches the transcript as text BLOCKS in a list, not only as a bare content string — reading only the string form finds zero interjections and zero interrupts on a session that visibly had both. The string slot in the largest transcript holds nothing but compaction notices.
+- isMeta: true marks a turn the HARNESS wrote into the user slot, chiefly the expanded body of the command just invoked. Without excluding it, every command scores a human correction at its own first turn.
+- An interrupt ENDS the span it belongs to, so the strongest evidence a command misfired always falls just OUTSIDE its attributed span. Corrections are therefore attached as during|after, and a report that cannot tell those apart is guessing.
+- LIMITATION: Command is keyed by name, so two invocations of the same command in one session merge into ONE span (seen with /compact twice). A command run twice over-claims its span and can absorb a correction from the gap between runs. Per-invocation spans are a deliberate design change, not a patch — take it to /specs:develop before the report is trusted on repeat runs.
+- Counting Edit/Write against a file as a "read" reported 51 edits as "redundant read x72" — a confident, plausible, entirely wrong finding. Reads and writes are now counted separately; the honest redundant-read number for that same run is 0.

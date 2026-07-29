@@ -141,7 +141,7 @@ class Command:
     """One command, aggregated across every turn attributed to it."""
 
     __slots__ = ("name", "plugin", "invocations", "tools", "first", "last",
-                 "first_ts", "last_ts")
+                 "first_ts", "last_ts", "reads", "touches", "shell")
 
     def __init__(self, name: str):
         self.name = name
@@ -150,6 +150,9 @@ class Command:
         self.tools = {}            # tool name -> count, attributed turns only
         self.first = self.last = None
         self.first_ts = self.last_ts = None
+        self.reads = {}            # file path -> [window, ...], one entry per Read
+        self.touches = {}          # file path -> count of Edit/Write, which are not reads
+        self.shell = {}            # bash command string -> count
 
     def touch(self, index: int, ts):
         if self.first is None:
@@ -181,6 +184,39 @@ class Command:
         }
 
 
+def read_window(inp: dict) -> str:
+    """`Read`'s slice of a file. Two looks at the same window are redundant; two looks at
+    different windows are paging, and a digest that conflates them invents a finding."""
+    offset, limit = inp.get("offset"), inp.get("limit")
+    if offset is None and limit is None:
+        return "full"
+    return f"{offset or 0}+{limit if limit is not None else 'end'}"
+
+
+INTERRUPT = "[Request interrupted by user"
+COMPACTION = "This session is being continued from a previous conversation"
+
+
+def classify_user_turn(text: str) -> str | None:
+    """What a human turn is evidence OF, or None when it is not evidence at all.
+
+    An interrupt is the strongest signal a command misfired — the human stopped it
+    mid-flight. An interjection is weaker but is still the human supplying something the
+    command should have known. A compaction notice is neither; it is the harness talking,
+    and counting it as a correction would blame the command for running long.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return None
+    if INTERRUPT in stripped:
+        return "interrupt"
+    if stripped.startswith(COMPACTION):
+        return "compaction"
+    if stripped.startswith("<"):        # a command invocation or a harness-injected block
+        return None
+    return "interjection"
+
+
 def blocks(record: dict):
     """The content blocks of a record, as a list — a bare string yields none."""
     content = (record.get("message") or {}).get("content")
@@ -190,7 +226,7 @@ def blocks(record: dict):
 def read_session(path: Path) -> dict:
     """One streaming pass. Never holds the transcript, only the model built from it."""
     commands: dict[str, Command] = {}
-    anomalies, seen_uuids = [], set()
+    anomalies, seen_uuids, corrections = [], set(), []
     lines = unparsed = unattributed_tools = 0
     session = {"sessionId": None, "cwd": None, "gitBranch": None, "version": None}
 
@@ -238,12 +274,23 @@ def read_session(path: Path) -> dict:
                     cmd.plugin = rec.get("attributionPlugin")
                 cmd.touch(index, ts)
 
-            # Entry form 1 — a typed `/` invocation, in a user turn's content string.
             if rec.get("type") == "user":
                 content = (rec.get("message") or {}).get("content")
-                if isinstance(content, str) and "<command-name>" in content:
-                    for name in COMMAND_NAME_RE.findall(content):
-                        args = COMMAND_ARGS_RE.search(content)
+                # A human turn reaches the transcript BOTH ways: as a bare string, and as
+                # `text` blocks in a list beside the tool_results the harness also files
+                # under "user". Reading only the string form loses every interjection and
+                # every interrupt — measured, not assumed: the string form in this repo's
+                # largest transcript holds nothing but compaction notices.
+                if isinstance(content, str):
+                    text = content
+                else:
+                    text = "\n".join(b.get("text") or "" for b in blocks(rec)
+                                     if b.get("type") == "text").strip()
+
+                # Entry form 1 — a typed `/` invocation.
+                if "<command-name>" in text:
+                    for name in COMMAND_NAME_RE.findall(text):
+                        args = COMMAND_ARGS_RE.search(text)
                         cmd = command(normalize(name))
                         cmd.touch(index, ts)
                         cmd.invocations.append({
@@ -251,26 +298,50 @@ def read_session(path: Path) -> dict:
                             "args": (args.group(1).strip() if args else "") or None,
                             "invokedBy": None,
                         })
+                elif text and not rec.get("isMeta"):
+                    # isMeta marks a turn the HARNESS wrote into the user slot — chiefly the
+                    # expanded body of the command just invoked. It reads like a long human
+                    # message and is the opposite of one; counting it would score every
+                    # command as having been corrected at its own first turn.
+                    kind = classify_user_turn(text)
+                    if kind:
+                        corrections.append({"line": index, "timestamp": ts, "kind": kind,
+                                            "text": " ".join(text.split())})
 
             # Entry form 2 — a conductor's stage, as a `Skill` tool_use.
             for block in blocks(rec):
                 if block.get("type") != "tool_use":
                     continue
                 name = block.get("name")
+                inp_ = block.get("input") or {}
                 if attributed:
                     cmd = command(normalize(attributed))
                     cmd.tools[name] = cmd.tools.get(name, 0) + 1
+                    # Only what identifies a target is kept — never the payload. `Edit` and
+                    # `Write` carry whole file bodies in `new_string`/`content`, so touching
+                    # those inputs at all is how a digest quietly becomes the transcript.
+                    target = inp_.get("file_path")
+                    if target and name == "Read":
+                        cmd.reads.setdefault(target, []).append(read_window(inp_))
+                    elif target and name in ("Edit", "Write", "NotebookEdit"):
+                        # A write is NOT a read. Lumping them together reported 51 edits to
+                        # one file as a "redundant read x72" — a confident, plausible,
+                        # entirely wrong finding of exactly the kind this tool must not make.
+                        cmd.touches[target] = cmd.touches.get(target, 0) + 1
+                    elif name == "Bash":
+                        shell = (inp_.get("command") or "").strip()
+                        if shell:
+                            cmd.shell[shell] = cmd.shell.get(shell, 0) + 1
                 else:
                     unattributed_tools += 1
                 if name == "Skill":
-                    inp = block.get("input") or {}
-                    target = inp.get("skill")
+                    target = inp_.get("skill")
                     if target:
                         callee = command(normalize(target))
                         callee.touch(index, ts)
                         callee.invocations.append({
                             "form": "skill", "line": index, "timestamp": ts,
-                            "args": (inp.get("args") or None),
+                            "args": (inp_.get("args") or None),
                             "invokedBy": normalize(attributed) if attributed else None,
                         })
 
@@ -283,7 +354,176 @@ def read_session(path: Path) -> dict:
         "anomalies": anomalies,
         "unattributedToolCalls": unattributed_tools,
         "commands": [c.as_dict() for c in ordered],
+        "_commands": ordered,          # the objects, for digest; never serialised
+        "corrections": corrections,
     }
+
+
+def clip(text: str, limit: int) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def assign_corrections(corrections: list, ordered: list) -> tuple[dict, list]:
+    """Attach each human turn to the command it is evidence about.
+
+    Inside a span is unambiguous. The harder case is the turn that lands just *after* one:
+    an interrupt ENDS the span it belongs to, so the strongest evidence a command misfired
+    always falls outside it by construction. Those attach to the command that just stopped,
+    tagged `after` rather than `during`, because a report that cannot tell the two apart is
+    guessing and should say so.
+    """
+    spans = [(c.first, c.last, c) for c in ordered if c.first is not None]
+    spans.sort(key=lambda s: s[0])
+    out, unassigned = {c.name: [] for c in ordered}, []
+    for corr in corrections:
+        line, hit = corr["line"], None
+        for lo, hi, cmd in spans:
+            if lo <= line <= hi:
+                hit = (cmd, "during")
+                break
+        if hit is None:
+            # the nearest span that ended before this turn, with no other span in between
+            prior = [s for s in spans if s[1] < line]
+            nxt = [s for s in spans if s[0] > line]
+            if prior and (not nxt or prior[-1][1] < nxt[0][0]):
+                hit = (prior[-1][2], "after")
+        if hit is None:
+            unassigned.append(corr)
+        else:
+            out[hit[0].name].append(dict(corr, when=hit[1]))
+    return out, unassigned
+
+
+def digest_command(cmd: Command, corrections: list, limit: int, cap: int) -> dict:
+    """One command's evidence, bounded. Counts are exact; quotes are clipped."""
+    repeated_reads = []
+    for target, windows in cmd.reads.items():
+        if len(windows) < 2:
+            continue
+        tally = {}
+        for w in windows:
+            tally[w] = tally.get(w, 0) + 1
+        repeated_reads.append({
+            "target": target,
+            "count": len(windows),
+            "windows": dict(sorted(tally.items(), key=lambda kv: (-kv[1], kv[0]))),
+            # The same window fetched twice is a redundant read. Different windows are
+            # paging through one file, which is the tool working as intended.
+            "redundant": max(tally.values()) > 1,
+        })
+    repeated_reads.sort(key=lambda r: (-r["count"], r["target"]))
+
+    repeated_shell = [{"command": clip(c, limit), "count": n}
+                      for c, n in sorted(cmd.shell.items(), key=lambda kv: (-kv[1], kv[0]))
+                      if n > 1]
+
+    mine = corrections           # already attached to this command by assign_corrections
+
+    out = cmd.as_dict()
+    out["repeatedReads"] = repeated_reads[:cap]
+    out["repeatedShell"] = repeated_shell[:cap]
+    out["corrections"] = [{"line": c["line"], "timestamp": c["timestamp"],
+                           "kind": c["kind"], "when": c["when"],
+                           "quote": clip(c["text"], limit)}
+                          for c in mine[:cap]]
+    out["counts"] = {
+        "toolCalls": cmd.tool_calls,
+        "distinctFilesRead": len(cmd.reads),
+        "distinctFilesWritten": len(cmd.touches),
+        "writes": sum(cmd.touches.values()),
+        "repeatedReadTargets": sum(1 for r in repeated_reads if r["redundant"]),
+        "repeatedShellCommands": len(repeated_shell),
+        "interrupts": sum(1 for c in mine if c["kind"] == "interrupt"),
+        "interjections": sum(1 for c in mine if c["kind"] == "interjection"),
+    }
+    for key in ("repeatedReads", "repeatedShell", "corrections"):
+        dropped = {"repeatedReads": len(repeated_reads), "repeatedShell": len(repeated_shell),
+                   "corrections": len(mine)}[key] - len(out[key])
+        if dropped > 0:
+            out.setdefault("truncated", {})[key] = dropped
+    return out
+
+
+def cmd_digest(args) -> int:
+    path, how = resolve_transcript(args.transcript, Path.cwd().resolve())
+    if path is None:
+        if args.json:
+            print(json.dumps({"ok": False, "code": "se-no-transcript", "message": how}, indent=2))
+        else:
+            print(f"refused: {how}", file=sys.stderr)
+        return REFUSAL
+
+    model = read_session(path)
+    model_objects = model.pop("_commands")
+    objects = model_objects
+    corrections = model["corrections"]
+    if args.command:
+        want = normalize(args.command)
+        objects = [c for c in objects if c.name == want]
+        if not objects:
+            msg = f"no command named {want!r} in this transcript"
+            if args.json:
+                print(json.dumps({"ok": False, "code": "se-unknown-command",
+                                  "message": msg}, indent=2))
+            else:
+                print(f"refused: {msg}", file=sys.stderr)
+            return REFUSAL
+
+    # Assignment runs over EVERY command in the session, not just the ones being digested:
+    # a `--command` filter must not silently hand one command a turn that belonged to the
+    # stage running next to it.
+    attached, unassigned = assign_corrections(corrections, model_objects)
+    digested = [digest_command(c, attached[c.name], args.max_quote, args.cap)
+                for c in objects]
+
+    payload = {
+        "ok": bool(digested),
+        "transcript": model["transcript"],
+        "resolvedBy": how,
+        "session": model["session"],
+        "lines": model["lines"],
+        "unparsed": model["unparsed"],
+        "anomalies": model["anomalies"],
+        "unattributedToolCalls": model["unattributedToolCalls"],
+        "maxQuote": args.max_quote,
+        "commands": digested,
+        "unassignedCorrections": [{"line": c["line"], "kind": c["kind"],
+                                   "quote": clip(c["text"], args.max_quote)}
+                                  for c in unassigned[:args.cap]],
+    }
+
+    if args.json:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+    else:
+        print(f"transcript: {path}  ({how})   lines={payload['lines']}"
+              f"  unparsed={payload['unparsed']}")
+        for a in payload["anomalies"]:
+            print(f"  ! {a['code']} line {a['line']}: {a['message']}")
+        for c in digested:
+            n = c["counts"]
+            print(f"\n{c['command']}  [{', '.join(c['entryForms'])}]"
+                  f"  lines {c['span']['firstLine']}-{c['span']['lastLine']}")
+            print(f"  tool calls: {n['toolCalls']}"
+                  f"  | files read: {n['distinctFilesRead']}"
+                  f"  | files written: {n['distinctFilesWritten']} ({n['writes']} writes)"
+                  f"  | redundant read targets: {n['repeatedReadTargets']}"
+                  f"  | repeated shell: {n['repeatedShellCommands']}"
+                  f"  | interrupts: {n['interrupts']}"
+                  f"  | interjections: {n['interjections']}")
+            if c["tools"]:
+                print("  tools: " + ", ".join(f"{k}={v}" for k, v in c["tools"].items()))
+            for r in c["repeatedReads"]:
+                if r["redundant"]:
+                    print(f"  redundant read x{r['count']}: {r['target']}  {r['windows']}")
+            for s in c["repeatedShell"]:
+                print(f"  repeated shell x{s['count']}: {s['command']}")
+            for k in c["corrections"]:
+                print(f"  {k['kind']} ({k['when']}) @ line {k['line']}: {k['quote']}")
+            # A capped list that does not say it was capped reads as a complete one.
+            for key, n in sorted(c.get("truncated", {}).items()):
+                print(f"  … {n} more {key} not shown (--cap {args.cap})")
+    return OK if digested else FINDINGS
 
 
 def cmd_list(args) -> int:
@@ -296,6 +536,8 @@ def cmd_list(args) -> int:
         return REFUSAL
 
     model = read_session(path)
+    model.pop("_commands")
+    model.pop("corrections")
     model["resolvedBy"] = how
     model["ok"] = bool(model["commands"])
 
@@ -340,6 +582,16 @@ def build_parser() -> argparse.ArgumentParser:
                          "default: the most recent session for this cwd")
     sp.add_argument("--json", action="store_true", help="machine-readable output")
     sp.set_defaults(func=cmd_list)
+
+    dg = sub.add_parser("digest", help="one command's evidence: counts, redundant reads, corrections")
+    dg.add_argument("transcript", nargs="?", help="path to a .jsonl transcript, or a session id")
+    dg.add_argument("--command", help="digest only this command (default: all of them)")
+    dg.add_argument("--json", action="store_true", help="machine-readable output")
+    dg.add_argument("--max-quote", type=int, default=200, metavar="N",
+                    help="clip every quoted string to N characters (default: 200)")
+    dg.add_argument("--cap", type=int, default=20, metavar="N",
+                    help="at most N items per evidence list (default: 20)")
+    dg.set_defaults(func=cmd_digest)
     return p
 
 
