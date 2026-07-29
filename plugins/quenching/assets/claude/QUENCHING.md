@@ -9,8 +9,8 @@
 wrote for itself, the commands that invoke them, the hooks that enforce its conventions. It is
 kept on a single taxonomy by the
 [`quenching`](https://github.com/eloysekonell/quenching) plugin, via the `/skill:*` commands —
-`/skill:new`, `/skill:agent:new`, `/skill:hook:new`, `/skill:eval`, and the sweep
-`/skill:align`.
+`/skill:new`, `/skill:agent:new`, `/skill:hook:new`, `/skill:eval`, `/skill:retro`, and the
+sweep `/skill:align`.
 
 Its siblings: `../docs/QUENCHING.md` (the knowledge bundle) and
 `../specs/QUENCHING.md` (the plan workspace).
@@ -142,6 +142,16 @@ grades every assertion against **quoted evidence**, and reports the delta over p
 and duration. A command whose delta is zero is reported as teaching nothing, never quietly
 passed. Description tuning runs on measured should-trigger / should-not-trigger rates, never on
 taste.
+
+### `/skill:retro` — what one session proves about the command that drove it
+
+Typed-only: a human names the session (or takes the current one) and, optionally, the command
+in it to analyse. Reads the transcript through the bundled `session.py` — never by recalling the
+run — and reports counted findings in four classes: performance, redundancy, bugs, and
+unresolved problems the human had to fix by hand, each carrying its count and the quoted turn
+behind it. A command reached as a conducted stage whose conductor never regained attribution is
+spoken as an upper bound, never as an exact count. Reports only; nothing is applied — each
+finding ends with the `/skill:new` invocation that would close it.
 
 ---
 
