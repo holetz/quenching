@@ -7,6 +7,7 @@ branch: {base: main, work: plan/improve-command-from-session}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 reviewed: {date: 2026-07-29}
+outcome: done
 ---
 
 # Mine a session for improvements to the command that started it
@@ -304,3 +305,67 @@ Next: unblock and complete 5.2 — the only remaining task. The spec is not yet 
 - TASK 3.1 — THE PRICE, measured not estimated (skills.py budget, parsed values). BEFORE: 25 commands, 12726 chars always on (~3182 tokens), ceiling 12726. DRAFT DESCRIPTION: 830 chars — inside both per-command caps, 706 under the 1536 sk-metadata-cap error and 194 under the 1024 sk-description-portable warning. AFTER (measured on a scratch copy of the surface, nothing minted): 26 commands, 13556 chars (~3389 tokens). DELTA +830 chars, ~+207 tokens, +6.5% on every session before anything fires.
 - The +830 crosses the zero-headroom ceiling and sk-budget-ceiling fires — by design, per docs/standards/automation/context-budget.md, which predicts the next command minted crosses it and treats that as the signal working (budget reports, never refuses). BUT the re-set is a three-file bookkeeping change — DEFAULT_CEILING in skills.py, the figure transcribed in context-budget.md, and README.md — and NO TASK IN THIS SPEC DECLARES IT. ## Impact lists neither skills.py nor context-budget.md. The standard names this exact cost ("a ratchet with no headroom converts every new command into a three-file bookkeeping change"), so the gap is in this spec, not in the standard. Needs a task before 3.2, via /specs:develop.
 - functional-checks.sh assertion 1 (the /quenching:specs:status reference-citation probe) showed one stray FAIL against this worktree that did not reproduce on an immediate rerun or a fresh full run (9/9 passed) — likely --max-turns 10 being too tight for a claude -p subprocess that sometimes explores sibling worktrees first; probe flakiness, not a regression from session.py or retro.md, neither of which touch /specs:status's body or its cited references
+
+## Outcome
+
+**Shipped**, as `/skill:retro` — a typed-only command that reads back the session a command ran
+in and reports what it cost, what it repeated, where it misfired and what the human had to fix by
+hand. Four artifacts:
+
+- `plugins/quenching/assets/bin/session.py` — resolves a transcript (explicit path, bare session
+  id, or the newest for this cwd), lists every command by both entry forms, and returns a bounded
+  digest. Uniform tool contract: `--json` everywhere, exit `0` ok · `1` anomaly · `2` refusal.
+- `plugins/quenching/commands/skill/retro.md` — the command, `disable-model-invocation: true`.
+- `docs/standards/automation/session-evidence.md` — the contract, `authority: background`.
+- Surface counts updated across `CLAUDE.md`, `README.md` and `assets/claude/QUENCHING.md`;
+  the surface stands at **26 commands, 0 doctor findings**.
+
+**The go/no-go was answered PASS** at task 1.3, against session `94120e96` — a `/specs:develop`
+run that conducted `/specs:isolate` as a stage. The counted finding no participant stated: the
+digest credited `/specs:isolate` with all 5 of the session's `AskUserQuestion` calls, which were
+`/specs:develop`'s own shape-bank questions. That single observation forced the design's central
+rule — `attributionSkill` is a **pointer, not a span**, reverting to the conductor exactly once
+across 43 Skill-invoked stages in an 86-transcript corpus — so `closed: false` counts are spoken
+as an upper bound naming the conductor, rather than as fact.
+
+**The context budget cost nothing.** `## Discoveries` flagged that the +830-character description
+would cross the zero-headroom ceiling and force a three-file bookkeeping change that **no task
+declared**. The implementation took the other exit instead: `disable-model-invocation: true` keeps
+the description out of the always-on total entirely. Measured at conclude: **12,726 characters,
+ceiling 12,726, `/skill:retro` at 0** — the ceiling never fired and the undeclared task was never
+needed. The discovery is closed by the design, not deferred.
+
+**Left out — task 5.2 was never verified, and this spec was archived with `--force`.**
+`./assets/bin/functional-checks.sh` is the only check that a changed `commands/**` actually loads,
+and this branch adds one command file. Its run was stopped mid-flow and the box was deliberately
+left unticked rather than claimed. **A future reader must not read this spec as evidence that
+`/skill:retro` loads in a real session.** Everything else in `## Validation` was re-run green at
+conclude: 26 commands / 0 findings, all four selftests PASS, `okf-validate docs` 0 errors, and the
+version lockstep consistent at 4.3.0. One related observation, recorded as an observation because
+it did not reproduce: functional-checks assertion 1 showed a stray FAIL against this worktree that
+passed on an immediate rerun and on a fresh full run (9/9) — likely `--max-turns 10` being tight
+for a `claude -p` subprocess, not a regression from anything here.
+
+**The branch review did real work**, because the branch forked at `e814761` and stayed open across
+40+ commits of main:
+
+- Merged main in and resolved two conflicts. `docs/standards/log.md` was the important one: the
+  branch appended a 14-line entry to the docs log, and main had **deleted that file**
+  (`079ded7`, the `retire-docs-log` plan). The entry documented the retirement of the artifact it
+  was written into. Main's deletion won.
+- `session.py` shipped `VERSION = "4.2.0"` under a comment reading *"tracks the plugin"* while the
+  plugin had moved to `4.3.0`. Nothing caught it — no checker, no selftest, no lockstep rule — and
+  nothing would have. Bumped, and the gap written up (see the distillation below).
+
+**Merge strategy: merge commit** (`git merge --no-ff`, run via `git -C` in the base's own
+checkout). Every per-task commit stays on `main`, so all 11 recorded `subject:` fields resolve from
+the base branch and this spec's task→commit anchors survive the branch's deletion. The worktree at
+`../claude-quenching-improve-command-from-session` is removed after the merge; the branch is not
+deleted.
+
+**What the next reader needs.** One limitation is live and is not a bug to patch: a command is
+keyed **by name**, so two invocations of the same command in one session merge into a single span
+(observed with `/compact` run twice). A command run twice therefore over-claims its span and can
+absorb a correction from the gap between runs. Per-invocation spans are a design change, not a
+fix — the report should not be trusted on repeat runs until that is taken through
+`/specs:develop`. Carried out as a follow-up spec below.
