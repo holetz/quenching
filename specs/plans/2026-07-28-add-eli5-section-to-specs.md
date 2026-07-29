@@ -317,9 +317,10 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
       plain language, assume no prior context, no jargon the spec itself introduces, connective
       rather than compressive
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
-- [ ] 2.3 questions.md: the shape bank lands `## Overview`, and every bank refreshes it — authored
+- [x] 2.3 questions.md: the shape bank lands `## Overview`, and every bank refreshes it — authored
       last, shown as its own labelled before → after block, never folded into the section diffs
       files: plugins/quenching/assets/references/specs-develop/questions.md
+      subject: plan/add-eli5-section-to-specs: 2.3 questions.md: the shape bank lands `## Overview`, and every bank refreshes it
 
 ### 3. The report surface
 
