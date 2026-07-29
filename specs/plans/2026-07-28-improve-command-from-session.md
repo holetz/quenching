@@ -207,34 +207,36 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 
 ## Handoff
 
-State of the tree after task 1.2.
+State of the tree after task 1.3 — the go/no-go gate. **The gate PASSED**; see `## Discoveries`.
 
-`plugins/quenching/assets/bin/session.py` exists and is the only file this spec has written.
-It is plugin-side only and is NOT in the six-artifact version lockstep.
-
-Two subcommands, both `--json`, exit 0 ok / 1 no commands found / 2 refusal:
+`plugins/quenching/assets/bin/session.py` is the only file this spec has written. Plugin-side
+only, NOT in the six-artifact version lockstep. Two subcommands, both `--json`, exit 0 ok /
+1 no commands found / 2 refusal:
 
 - `list [transcript]` — every command a session ran, entry forms, tool-call span
 - `digest [transcript] [--command N] [--max-quote 200] [--cap 20]` — per-command tool counts,
-  repeated reads, repeated shell, human corrections
+  repeated reads, repeated shell, human corrections (`during` vs `after` the span)
 
 Transcript resolution: explicit path, or a bare session id, or the newest session for the cwd
 (nearest-ancestor walk, so a worktree falls back to its checkout).
 
-Measured, not assumed — re-read `## Discoveries` before changing the parser:
+**READ BEFORE RESUMING — one open design correction.** `attributionSkill` marks where a command
+STARTS driving and has no reliable end: across all 43 Skill stages in the 86-transcript corpus it
+reverts to the conductor exactly once. Spans therefore over-credit the last stage invoked — in the
+gate session, `/specs:isolate` is credited with 5 `AskUserQuestion` calls that were `/specs:develop`'s
+own. The span must be closed by the Skill call boundary. This is a `## Design` change, so it goes
+through `/specs:develop` before task 3.2 mints the command — do not patch it inside a task.
 
-- `attributionSkill` carries the per-command span; the two entry marks only say how it was reached
-- human turns are text BLOCKS in a list, not the bare content string
-- `isMeta: true` is the harness-injected command body, never a human turn
-- reads and writes are counted separately, on purpose
-- one Command per NAME, so a command invoked twice merges into one span — unfixed, by design
+Other measured facts, all in `## Discoveries`: human turns are text BLOCKS in a list, not the bare
+content string; `isMeta: true` is the harness-injected command body, never a human turn; reads and
+writes are counted separately on purpose; one Command per NAME, so a command invoked twice merges
+into one span.
 
-Corpus check available: 86 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`.
-Largest is 7.1 MB and digests to 4.6 KB; the stated budget is 64 KB.
+Corpus: 86 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`. Largest
+is 7.1 MB and digests to 4.6 KB against a stated 64 KB budget; corpus max digest is 12.4 KB.
 
-Next: task 1.3 is the go/no-go in `## Validation` — it decides whether this spec continues at all.
-Tasks 2.x harden the tool, 3.x mint the command, 4.1 writes the standard, 5.x are surface checks.
-
+Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.x mint the command,
+4.1 writes `docs/standards/automation/session-evidence.md`, 5.x are surface checks.
 ## Tasks
 
 ### 1. Gate — prove the retro finds anything
@@ -247,8 +249,9 @@ Tasks 2.x harden the tool, 3.x mint the command, 4.1 writes the standard, 5.x ar
       verify: the digest of the largest file in `~/.claude/projects/` stays under a stated size and the transcript itself is never emitted
       files: plugins/quenching/assets/bin/session.py
       subject: plan/improve-command-from-session: 1.2 Add the digest pass: per-command tool-call counts by name, repeated read targets, and the turns where the human corrected course
-- [ ] 1.3 Answer the go/no-go in writing against a real `/specs:develop` session that conducted a stage
+- [x] 1.3 Answer the go/no-go in writing against a real `/specs:develop` session that conducted a stage
       verify: at least one counted finding no participant stated is recorded in `## Discoveries` with its count and its quoted turn; none means stop and abandon per `## Validation`
+      subject: plan/improve-command-from-session: 1.3 Answer the go/no-go in writing against a real /specs:develop session that conducted a stage
 
 ### 2. The tool, hardened
 
@@ -294,3 +297,5 @@ Tasks 2.x harden the tool, 3.x mint the command, 4.1 writes the standard, 5.x ar
 - An interrupt ENDS the span it belongs to, so the strongest evidence a command misfired always falls just OUTSIDE its attributed span. Corrections are therefore attached as during|after, and a report that cannot tell those apart is guessing.
 - LIMITATION: Command is keyed by name, so two invocations of the same command in one session merge into ONE span (seen with /compact twice). A command run twice over-claims its span and can absorb a correction from the gap between runs. Per-invocation spans are a deliberate design change, not a patch — take it to /specs:develop before the report is trusted on repeat runs.
 - Counting Edit/Write against a file as a "read" reported 51 edits as "redundant read x72" — a confident, plausible, entirely wrong finding. Reads and writes are now counted separately; the honest redundant-read number for that same run is 0.
+- GO/NO-GO ANSWERED — PASS (task 1.3, against session 94120e96, a /specs:develop run that conducted /specs:isolate as a stage). THE COUNTED FINDING NO PARTICIPANT STATED: the digest credits /specs:isolate with 18 tool calls against its conductor /specs:develop 7, and with ALL 5 of the session AskUserQuestion calls — which are the shape-bank questions [Evidence] [Shape] [Target] [Boundary] [Go/no-go] at lines 67-89, unmistakably /specs:develop own. QUOTED TURN, line 127 (assistant): "**Bank** — shape. 5 questions asked, 5 answered." The participant counted the questions and believed they were develop; nobody stated a tool-call count anywhere in the session (a scan for count-language found only "5 questions"/"10 asked, 10 answered"), and nobody noticed the transcript credits them to the stage. Also uncounted by anyone: 28 of the session 53 tool calls (53%) carry no command attribution at all.
+- CORRECTS the earlier discovery that "attributionSkill yields the per-command tool-call span directly" — it does NOT. Measured across all 43 Skill stages in the 86-transcript corpus: attribution reverts to the conductor after the stage returns exactly 1 time; 36 times it never returns to any command, and 6 times it jumps to a different one. attributionSkill marks where a command STARTS driving and has no reliable end, so a span derived from it alone over-credits the last stage invoked. The span must be closed by the Skill call boundary, not by the next attribution change — a design correction for /specs:develop before task 3.2 mints the command.
