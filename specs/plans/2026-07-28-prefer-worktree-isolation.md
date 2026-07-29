@@ -314,9 +314,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/commands/specs/isolate.md
       verify: skills.py lint exit 0; o corpo diz que o comando é exibido antes de rodar
       subject: plan/prefer-worktree-isolation: 2.2 /specs:isolate exibe e roda o worktreeSetup
-- [ ] 3.1 `/specs:conclude` faz o merge por `git -C` no checkout da base, e recusa quando nenhum a detém
+- [x] 3.1 `/specs:conclude` faz o merge por `git -C` no checkout da base, e recusa quando nenhum a detém
       files: plugins/quenching/commands/specs/conclude.md
       verify: skills.py lint exit 0; o corpo não contém mais `git checkout <base>` no passo do merge
+      subject: plan/prefer-worktree-isolation: 3.1 /specs:conclude faz o merge por git -C no checkout da base
 - [ ] 3.2 `/specs:conclude` remove a worktree após um merge bem-sucedido, sem `--force`
       files: plugins/quenching/commands/specs/conclude.md
       verify: skills.py lint exit 0; `--force` não aparece no passo de remoção
