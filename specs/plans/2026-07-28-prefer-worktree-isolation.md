@@ -296,6 +296,28 @@ e que esta spec é quem a desfaz.
   com o motivo, para que quem revisar saiba que a ausência era deliberada e que esta spec é quem a
   desfaz.
 
+## Handoff
+
+Todas as 12 tasks estão `- [x]`, cada uma em seu próprio commit na branch `plan/prefer-worktree-isolation`
+(base: `main`). Nenhuma bloqueada. Pronta para `/specs:conclude`.
+
+**Duas descobertas abertas em `## Discoveries`, para o `/specs:conclude` resolver:**
+- `functional-checks.sh` check 3 (roteamento por gatilho falado) é não-determinístico — uma
+  reprovação isolada não é evidência de regressão.
+- O fechamento da seção 5 (`okf-validate.py docs` na raiz) reportou 6 warnings `stale-doc` novos
+  (além do `resource-unresolved` pré-existente em `automation/agents.md`), porque os `resource:`
+  globs de `plugin-layout.md`, `skills.md`, `plan-git-record.md`, `plan-lifecycle.md`,
+  `task-execution.md` e `worktree-setup.md` casam com arquivos que esta spec commitou (`git.md`,
+  `QUENCHING.md`, o próprio arquivo da spec) — e esses commits landaram em 2026-07-29, um dia
+  depois do timestamp `2026-07-28` desses cinco documentos. Nenhum é `files:` de nenhuma task
+  desta spec, então nenhum foi tocado; o conteúdo de `plan-git-record.md` e `worktree-setup.md`
+  foi escrito para antecipar exatamente o `git.md` que a 5.1 implementou depois, e é o caso mais
+  provável de já estar correto.
+
+O roteiro end-to-end de `## Validation` (merge por `git -C`, remoção da worktree sem `--force`)
+foi exercitado à mão num repositório descartável na 6.1 — as duas asserções passaram e o
+descartável foi limpo.
+
 ## Tasks
 
 - [x] 1.1 `specs.py` lê `specs/config.json` e expõe `worktreeSetup`
