@@ -299,8 +299,9 @@ only registered tree).
 
 ### 5. Close
 
-- [ ] 5.1 Run the whole shipped-skeleton verification block from CLAUDE.md and report each result
+- [x] 5.1 Run the whole shipped-skeleton verification block from CLAUDE.md and report each result
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/notice-installed-tool-version-drift: 5.1 Run the shipped-skeleton verification block — all green
 
 ## Discoveries
 
