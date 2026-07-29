@@ -45,23 +45,43 @@ A command is reached two ways, and each leaves a *different* mark:
 Detecting only the first makes every conducted stage invisible. But neither mark tells you
 what the command then *did* — they are both single points, and the work is a span.
 
-`attributionSkill` is that span: every turn a command drives carries the command's name,
+`attributionSkill` covers both: every turn a command drives carries the command's name,
 including turns inside a stage a conductor invoked. The invoking `Skill` call is attributed
-to the **caller**, and the stage's own turns to the **callee**, so a conductor and its
-stages separate cleanly without inferring nesting from anything.
+to the **caller** and the stage's own turns to the **callee**, so a command is found even
+when its entry mark fell outside a compacted window.
+
+WHAT ATTRIBUTION IS NOT: A SPAN
+-------------------------------
+It is a *most-recently-entered* pointer. It is set on entry and **never cleared on return**
+— measured across all 43 Skill stages in an 86-transcript corpus: attribution returns to
+the conductor **once**, never returns to any command 36 times, and jumps to a third command
+6 times.
+
+The consequence is not academic. In the session that answered this spec's own go/no-go,
+`/specs:develop` invoked `/specs:isolate` as a stage; isolate finished at its "Isolated."
+turn, and the conductor's next five `AskUserQuestion` calls — its own spec-shape bank — are
+still stamped `quenching:specs:isolate`. Reported naively that is "the isolation stage asked
+the human five questions", which is false and entirely plausible.
+
+There is no end marker in the transcript to fix this with. Inventing one would manufacture
+findings, so this tool does the other thing: it **detects and names the misread**. A command
+entered as a stage whose caller never regained attribution is marked `closed: false`, and
+every count on it is reported as an upper bound that may include the caller's own work. That
+is `docs/standards/quality/parse-honesty.md` applied to a pointer instead of a parser — name
+the *misread*, never the *consequence*.
 
 So the entry marks are read for *how a command was reached and with what arguments*, and
-attribution is read for *what it cost*. A command may be found by attribution alone — a
-stage whose entry mark fell outside a compacted window still has every turn it drove.
+attribution for *what it plausibly cost*, with the honesty flag attached.
 
 THE TOOL CONTRACT
 -----------------
 Same shape as its three siblings, so a command body branches on DATA and never on prose:
 every subcommand takes `--json`, and the exit code is the whole decision.
 
-    0   ok            the transcript was read and every record parsed
-    1   findings      it was read and reported, but something in it could not be parsed —
-                      the counts are real and the coverage is not provably complete
+    0   ok            read clean: every record parsed and every stage's attribution closed
+    1   findings      read and reported, with an anomaly against it — an unparsable record,
+                      or a stage whose counts are an upper bound. The numbers are real; the
+                      coverage is not provably complete
     2   refusal       nothing usable: no transcript, an empty one, a non-empty one that
                       yielded no command, or a `--command` that is not in it
 
@@ -155,7 +175,7 @@ class Command:
     """One command, aggregated across every turn attributed to it."""
 
     __slots__ = ("name", "plugin", "invocations", "tools", "first", "last",
-                 "first_ts", "last_ts", "reads", "touches", "shell")
+                 "first_ts", "last_ts", "reads", "touches", "shell", "closed", "may_include")
 
     def __init__(self, name: str):
         self.name = name
@@ -167,6 +187,9 @@ class Command:
         self.reads = {}            # file path -> [window, ...], one entry per Read
         self.touches = {}          # file path -> count of Edit/Write, which are not reads
         self.shell = {}            # bash command string -> count
+        # True until proven otherwise: only a stage whose caller never resumed is unclosed.
+        self.closed = True
+        self.may_include = None
 
     def touch(self, index: int, ts):
         if self.first is None:
@@ -189,11 +212,15 @@ class Command:
             "invocations": self.invocations,
             "toolCalls": self.tool_calls,
             "tools": dict(sorted(self.tools.items(), key=lambda kv: (-kv[1], kv[0]))),
-            "span": {
+            # Named `attributedRun`, not `span`: these are the turns for which this command
+            # was the most recently entered one, which is NOT proof it was still executing.
+            "attributedRun": {
                 "firstLine": self.first,
                 "lastLine": self.last,
                 "firstTimestamp": self.first_ts,
                 "lastTimestamp": self.last_ts,
+                "closed": self.closed,
+                "mayIncludeTurnsFrom": self.may_include,
             },
         }
 
@@ -237,10 +264,43 @@ def blocks(record: dict):
     return [b for b in content if isinstance(b, dict)] if isinstance(content, list) else []
 
 
+def close_attribution(ordered: list, timeline: list, anomalies: list) -> None:
+    """Mark every stage whose caller never took attribution back.
+
+    A stage invoked by a conductor at line N is `closed` only if the conductor appears in
+    the attribution timeline again after N. When it does not, attribution stayed pointing at
+    the stage while the conductor carried on working, and every count on that stage is an
+    upper bound that silently includes the conductor's own turns.
+
+    This is the only claim the transcript actually supports. Guessing where the stage really
+    stopped would turn an unknown into a fabricated finding, which is the failure the whole
+    tool exists to avoid.
+    """
+    for cmd in ordered:
+        for inv in cmd.invocations:
+            caller = inv.get("invokedBy")
+            if inv["form"] != "skill" or not caller:
+                continue
+            resumed = next((line for line, name in timeline
+                            if line > inv["line"] and name == caller), None)
+            if resumed is None:
+                cmd.closed = False
+                cmd.may_include = caller
+                anomalies.append({
+                    "code": "se-attribution-unclosed", "line": inv["line"],
+                    "message": f"{cmd.name} was invoked as a stage by {caller}, which never "
+                               f"regained attribution — counts for {cmd.name} are an upper "
+                               f"bound and may include {caller}'s own turns"})
+            else:
+                # The conductor came back, so the stage's run genuinely ends before it.
+                cmd.last = min(cmd.last, resumed - 1) if cmd.last is not None else None
+
+
 def read_session(path: Path) -> dict:
     """One streaming pass. Never holds the transcript, only the model built from it."""
     commands: dict[str, Command] = {}
     anomalies, seen_uuids, corrections = [], set(), []
+    timeline = []                  # (line, command) for every attributed record, in order
     lines = unparsed = unattributed_tools = 0
     session = {"sessionId": None, "cwd": None, "gitBranch": None, "version": None}
 
@@ -287,6 +347,7 @@ def read_session(path: Path) -> dict:
                 if cmd.plugin is None:
                     cmd.plugin = rec.get("attributionPlugin")
                 cmd.touch(index, ts)
+                timeline.append((index, cmd.name))
 
             if rec.get("type") == "user":
                 content = (rec.get("message") or {}).get("content")
@@ -360,6 +421,7 @@ def read_session(path: Path) -> dict:
                         })
 
     ordered = sorted(commands.values(), key=lambda c: (c.first if c.first is not None else 0))
+    close_attribution(ordered, timeline, anomalies)
     return {
         "transcript": str(path),
         "session": session,
@@ -548,7 +610,8 @@ def cmd_digest(args) -> int:
         for c in digested:
             n = c["counts"]
             print(f"\n{c['command']}  [{', '.join(c['entryForms'])}]"
-                  f"  lines {c['span']['firstLine']}-{c['span']['lastLine']}")
+                  f"  lines {c['attributedRun']['firstLine']}-{c['attributedRun']['lastLine']}"
+                  f"{'' if c['attributedRun']['closed'] else '  [UNCLOSED]'}")
             print(f"  tool calls: {n['toolCalls']}"
                   f"  | files read: {n['distinctFilesRead']}"
                   f"  | files written: {n['distinctFilesWritten']} ({n['writes']} writes)"
@@ -568,7 +631,7 @@ def cmd_digest(args) -> int:
             # A capped list that does not say it was capped reads as a complete one.
             for key, n in sorted(c.get("truncated", {}).items()):
                 print(f"  … {n} more {key} not shown (--cap {args.cap})")
-    return FINDINGS if payload["unparsed"] else OK
+    return FINDINGS if payload["anomalies"] else OK
 
 
 # --------------------------------------------------------------------------------------
@@ -641,6 +704,22 @@ FIXTURE = [
 ]
 
 
+# The rare good case: the conductor DOES take attribution back, so the stage's run genuinely
+# ends and its counts are exact. Measured at 1 of 43 stages, which is exactly why the other
+# 42 must not be reported as though they looked like this.
+CLOSED_FIXTURE = [
+    {"type": "user", "uuid": "c1",
+     "message": {"content": "<command-name>/demo:conduct</command-name>"}},
+    {"type": "assistant", "uuid": "c2", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Skill",
+                              "input": {"skill": "demo:stage"}}]}},
+    {"type": "assistant", "uuid": "c3", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "a"}}]}},
+    {"type": "assistant", "uuid": "c4", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "b"}}]}},
+]
+
+
 # A transcript that plainly HELD something and yielded no command. The point of the case
 # is that this must never come back as a clean, empty report.
 SILENT_FIXTURE = [
@@ -670,6 +749,12 @@ def selftest_failures() -> list:
         empty_path.write_text("", encoding="utf-8")
         empty_model = read_session(empty_path)
         empty_model.pop("_commands")
+
+        closed_path = Path(tmp) / "closed.jsonl"
+        closed_path.write_text("\n".join(json.dumps(r) for r in CLOSED_FIXTURE) + "\n",
+                               encoding="utf-8")
+        closed_model = read_session(closed_path)
+        closed_by_name = {c.name: c for c in closed_model.pop("_commands")}
 
     fail = []
     by_name = {c.name: c for c in model["_commands"]}
@@ -706,9 +791,25 @@ def selftest_failures() -> list:
     check("corrections collected", kinds,
           [(11, "interjection"), (12, "interrupt"), (15, "compaction")])
 
+    # Attribution honesty: the stage's caller never resumed here, so its counts are capped.
+    check("conductor's own run is closed", conduct.closed, True)
+    check("unresumed stage is unclosed", stage.closed, False)
+    check("and names whose turns it may hold", stage.may_include, "demo:conduct")
+    check("the misread is reported, not just flagged",
+          [a["code"] for a in model["anomalies"] if a["code"] == "se-attribution-unclosed"],
+          ["se-attribution-unclosed"])
+    # ...and the good case is not flagged, or the signal would mean nothing.
+    closed_stage = closed_by_name.get("demo:stage")
+    check("a resumed stage IS closed", closed_stage and closed_stage.closed, True)
+    check("a closed stage's run ends before the conductor resumes",
+          closed_stage and closed_stage.last, 3)
+    check("no anomaly on the clean case",
+          [a["code"] for a in closed_model["anomalies"]], [])
+
+    unparsed_anomalies = [a for a in model["anomalies"] if a["code"] == "se-unparsed-line"]
     check("unparsed counted", model["unparsed"], 1)
-    check("unparsed reported", [a["code"] for a in model["anomalies"]], ["se-unparsed-line"])
-    check("unparsed line number", [a["line"] for a in model["anomalies"]], [13])
+    check("unparsed reported", len(unparsed_anomalies), 1)
+    check("unparsed line number", [a["line"] for a in unparsed_anomalies], [13])
 
     # Silence must refuse, never report clean.
     check("a parsed run does not refuse", silence_refusal(model), None)
@@ -772,11 +873,15 @@ def cmd_list(args) -> int:
         # A zero-command parse never reaches here — silence_refusal already exited 2.
         print(f"\n{len(model['commands'])} command(s):")
         for c in model["commands"]:
-            span = c["span"]
+            run = c["attributedRun"]
             print(f"  {c['command']}")
             print(f"    entry: {', '.join(c['entryForms'])}"
-                  f"  lines {span['firstLine']}-{span['lastLine']}"
-                  f"  tool calls: {c['toolCalls']}")
+                  f"  lines {run['firstLine']}-{run['lastLine']}"
+                  f"  tool calls: {c['toolCalls']}"
+                  f"{'' if run['closed'] else '  [UNCLOSED]'}")
+            if not run["closed"]:
+                print(f"    ! attribution never returned to {run['mayIncludeTurnsFrom']} — "
+                      f"these counts are an upper bound")
             if c["tools"]:
                 top = ", ".join(f"{k}={v}" for k, v in list(c["tools"].items())[:6])
                 print(f"    tools: {top}")
@@ -784,7 +889,7 @@ def cmd_list(args) -> int:
                 by = f" (invoked by {inv['invokedBy']})" if inv["invokedBy"] else ""
                 arg = f" args={inv['args']!r}" if inv["args"] else ""
                 print(f"    - {inv['form']} at line {inv['line']}{by}{arg}")
-    return FINDINGS if model["unparsed"] else OK
+    return FINDINGS if model["anomalies"] else OK
 
 
 def build_parser() -> argparse.ArgumentParser:

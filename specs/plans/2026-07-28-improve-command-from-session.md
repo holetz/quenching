@@ -278,8 +278,9 @@ Next: 3.2 mint the command (BLOCKED on both decisions above), 3.3 the manuals an
 - [x] 3.1 Price the command's always-on `description` against `docs/standards/automation/context-budget.md` and record the figure
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget` run before and after, with the delta stated
       subject: plan/improve-command-from-session: 3.1 Price the command's always-on description against context-budget.md and record the figure
-- [ ] 3.2 Mint the command via `/skill:new` — a read-only grant with no `Write` and no `Edit`, target selection via `AskUserQuestion`
+- [x] 3.2 Mint the command via `/skill:new` — a read-only grant with no `Write` and no `Edit`, target selection via `AskUserQuestion`
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint` clean on the new file
+      subject: plan/improve-command-from-session: 3.2 Mint the command via /skill:new
 - [ ] 3.3 Add the command to `assets/claude/QUENCHING.md` and update the surface counts in `CLAUDE.md` and `README.md`
       verify: the stated counts agree with `skills.py --root plugins/quenching doctor --json`
 
