@@ -1157,6 +1157,33 @@ EXPECTED_HOOKS = {
     "/docs:hooked-wide": {"sk-hook-unmatched", "sk-hook-llm-frequent"},
 }
 
+# A whole plugin and two targets, small enough to write in a temp dir: one drifted in
+# every direction at once, and one CONTROL that must fire nothing. The control is the
+# half that matters — a drift check which flags a conformant repo gets ignored in a
+# probe, and then it is worth less than no check at all.
+DRIFT_FIXTURE = {
+    "plugin/VERSION": "4.2.0\n",
+    "plugin/assets/bin/skills.py": 'VERSION = "4.2.0"\n',
+    "plugin/assets/bin/specs.py": 'VERSION = "4.2.0"\n',
+    "plugin/assets/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
+    # behind AND inert — the state this repo sat in undetected
+    "drifted/.claude/hooks/okf-validate.py": 'VERSION = "1.0.0"\n',
+    "drifted/.claude/hooks/specs.py": 'VERSION = "9.9.9"\n',        # ahead
+    "drifted/.claude/hooks/skills.py": "# a copy too old to declare one\n",  # unreadable
+    "drifted/.claude/settings.json": '{"hooks": {}}\n',
+    "clean/.claude/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
+    "clean/.claude/hooks/specs.py": 'VERSION = "4.2.0"\n',
+    "clean/.claude/hooks/skills.py": 'VERSION = "4.2.0"\n',
+    "clean/.claude/settings.json":
+        '{"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", '
+        '"command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"}]}]}}\n',
+}
+
+EXPECTED_DRIFT = {
+    "drifted": {"sk-tool-behind", "sk-tool-unwired", "sk-tool-ahead", "sk-tool-unreadable"},
+    "clean": set(),
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -1175,10 +1202,21 @@ def cmd_selftest(args, root: str) -> int:
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
-        for relpath, text in WIDER_FIXTURE.items():
+        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE}.items():
             path = os.path.join(tmp, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
+
+        plugin_root = os.path.join(tmp, "plugin")
+        drift_got = {
+            name: {f["code"] for f in drift_findings(
+                drift_rows(os.path.join(tmp, name, CLAUDE_DIR), plugin_root, "4.2.0"))}
+            for name in EXPECTED_DRIFT
+        }
+        # the refusal, not merely the comparison: asked to treat an installed copy's own
+        # directory as a plugin, `drift` must decline rather than answer from its VERSION
+        refusal_armed = resolve_plugin_root(
+            os.path.join(tmp, "drifted", CLAUDE_DIR, HOOKS_DIR)) is None
 
         surface = load_surface(tmp)
         got: dict = {}
@@ -1211,12 +1249,21 @@ def cmd_selftest(args, root: str) -> int:
     if got.get("agents/good.md"):
         failures.append(f"agents/good.md: the conformant control was flagged "
                         f"{sorted(got['agents/good.md'])}")
+    for target, codes in EXPECTED_DRIFT.items():
+        if drift_got.get(target) != codes:
+            failures.append(f"drift/{target}: expected {sorted(codes)}, "
+                            f"got {sorted(drift_got.get(target, []))}")
+    if not refusal_armed:
+        failures.append("drift: an installed copy's own directory resolved as a plugin root — "
+                        "the exit-2 refusal is not armed")
 
+    cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
+             + len(EXPECTED_DRIFT) + 2)
     if args.json:
-        print(json.dumps({"ok": not failures, "cases": len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES) + 1,
+        print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
-        print(f"skills selftest — {len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES) + 1} cases")
+        print(f"skills selftest — {cases} cases")
         for command in sorted(got):
             # the hook fixtures are graded by lint, not doctor; showing doctor's empty row
             # for them would print "(clean)" for the case that must fire two codes
