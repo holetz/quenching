@@ -180,6 +180,14 @@ sentence, and **link out** rather than explaining in full here.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
+- [**Version lockstep**](../standards/ci-cd/versioning-release.md) — the six version strings a
+  release must bump together, split into two halves read by two independent consumers: the
+  `plugin.json` `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the
+  `VERSION` constant in each of the three shipped tools, which its installing align compares against
+  the copy **already installed in a target repo**. Missing the second half is the silent failure —
+  the tool is never upgraded in any repo that already has it, which cannot be observed from this
+  repository at all. Distinct from the **Canonical case list**, which is the lockstep unit for the
+  three tools' *parser behaviour* rather than their version strings.
 
 ## How to enrich
 
