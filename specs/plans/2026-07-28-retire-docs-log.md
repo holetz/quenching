@@ -255,8 +255,9 @@ repositório.
 - [x] 5.1 Apagar `docs/log.md` e `docs/standards/log.md` e atualizar os quatro arquivos do bundle que os linkam: `docs/index.md`, `docs/QUENCHING.md`, `docs/standards/index.md`, `docs/standards/CLAUDE.md`
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/retire-docs-log: 5.1 delete this repo's two logs
-- [ ] 5.2 Atualizar `CLAUDE.md`, `README.md` e `plugins/quenching/README.md`
+- [x] 5.2 Atualizar `CLAUDE.md`, `README.md` e `plugins/quenching/README.md`
       files: CLAUDE.md, README.md, plugins/quenching/README.md
+      subject: plan/retire-docs-log: 5.2 update this repo's root docs
 
 ### 6. Standard
 
