@@ -6,6 +6,8 @@ History of the OKF bundle, most recent first. Each entry is grouped under a
 
 ## 2026-07-28
 
+**Update**: [plans/](/specs/plans/index.md) — ranked 26 specs (10 new, 16 re-ranked), renumbered contiguously from 1 after the prior sweep's top four archived; 2 left unranked because their v1-era subjects no longer exist in the surface.
+
 **Creation**: [Reassess whether specs/plans/index.md is needed](/specs/plans/2026-07-28-decide-plans-index-need.md) — captures the ask to re-examine the `specs/plans/index.md` listing: whether its GENERATED zone still earns the reindex call every creating, promoting and ranking command pays, given `specs.py list`/`status` derive the same view from disk.
 
 **Creation**: [Prefer worktrees for spec isolation and remove them after a successful merge](/specs/plans/2026-07-28-prefer-worktree-isolation.md) — captures two asks about isolation: make the worktree the preferred path in `/specs:isolate` rather than the branch, and have `/specs:conclude` remove the worktree once its merge succeeds instead of leaving it on disk pointing at an integrated branch.

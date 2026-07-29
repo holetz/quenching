@@ -2,6 +2,7 @@
 slug: fix-functional-checks-encoding
 title: functional-checks.sh fails for lack of evidence, not by verdict
 verification: per-section
+priority: {level: 2, criticality: high, complexity: 2, date: 2026-07-28}
 ---
 
 # functional-checks.sh fails for lack of evidence, not by verdict

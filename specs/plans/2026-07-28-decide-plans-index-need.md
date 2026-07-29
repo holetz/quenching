@@ -2,6 +2,7 @@
 slug: decide-plans-index-need
 title: Reassess whether specs/plans/index.md is needed
 verification: per-section
+priority: {level: 8, criticality: medium, date: 2026-07-28}
 ---
 
 # Reassess whether specs/plans/index.md is needed

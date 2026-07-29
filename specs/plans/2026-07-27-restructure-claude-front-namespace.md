@@ -2,7 +2,7 @@
 slug: restructure-claude-front-namespace
 title: Rename the /skill namespace to /automation and split it into artifact contexts
 verification: per-section
-priority: {level: 8, criticality: medium, date: 2026-07-28}
+priority: {level: 11, criticality: medium, date: 2026-07-28}
 ---
 
 # Rename the /skill namespace to /automation and split it into artifact contexts

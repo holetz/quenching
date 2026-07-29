@@ -2,7 +2,7 @@
 slug: notice-installed-tool-version-drift
 title: Nothing notices an installed tool copy falling behind the plugin
 verification: per-section
-priority: {level: 6, criticality: high, date: 2026-07-28}
+priority: {level: 5, criticality: high, date: 2026-07-28}
 ---
 
 # Nothing notices an installed tool copy falling behind the plugin
