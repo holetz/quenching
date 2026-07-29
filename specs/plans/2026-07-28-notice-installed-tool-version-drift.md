@@ -273,8 +273,9 @@ only registered tree).
       pattern: plugins/quenching/assets/bin/skills.py (WIDER_FIXTURE / HOOK_FIXTURE)
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
       subject: plan/notice-installed-tool-version-drift: 2.1 Add the drift selftest fixture — every status, the unwired case, and a clean control
-- [ ] 2.2 Run drift against this repo and a plugin-only scratch target, and settle the `sk-tool-absent` Open Decision with what they show
+- [x] 2.2 Run drift against this repo and a plugin-only scratch target, and settle the `sk-tool-absent` Open Decision with what they show
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json
+      subject: plan/notice-installed-tool-version-drift: 2.2 Settle sk-tool-absent on evidence — a finding for the hook only
 
 ### 3. Wiring into the surface
 
@@ -303,3 +304,4 @@ only registered tree).
 - Drift is silent in BOTH directions, and the reverse case is invisible to a --version comparison alone: every command resolves the plugin path FIRST and the installed copy only as fallback (plans-zone.md 'Resolving the tool'), while each align refuses to overwrite a NEWER installed copy — so a repo whose .claude/hooks/ copy is ahead of the loaded plugin runs the older plugin code silently, and the align reports nothing because leaving the newer copy alone is its correct behaviour. Whatever notices drift should report the comparison in both directions and name which copy the commands will actually execute. -> folded: ## Design decision 4 — three statuses plus the executing copy, with `ahead` a real finding rather than a nicety
 - Design decision 2 said drift would invoke --version on each installed copy; the implementation READS the VERSION constant instead. Running the copy would execute whatever sits in a target's .claude/hooks/ from inside a read-only probe — a much larger claim than reading three lines, and it needs python3 on PATH. A copy too old to declare a constant reads 'unreadable', which carries the same call to action as 'behind', so nothing is lost. Deviation taken deliberately at task 1.2.
 - drift compares an installed copy against the SHIPPED TOOL's own VERSION constant, not against the plugin's VERSION file, because the constant is what an install would put on disk. That leaves the lockstep's own failure — a tool whose constant was not bumped with the VERSION file — unchecked by drift. It is one comparison away (plugin VERSION vs each shipped tool's constant) and worth a follow-up spec.
+- Open Decision on sk-tool-absent SETTLED at task 2.2, on evidence from two runs: a plugin-only target fired three warnings and this repo — fully conformant, 25 commands, no doctor findings — fired one for skills.py. Resolution: absent is a finding ONLY for okf-validate.py, where it means the bundle has no enforcement at all (the same practical state as unwired). For specs.py and skills.py the plugin copy is what resolution runs anyway, so absence costs nothing and warning about it would make a probe's output routine noise. The row still reports 'absent' for all three; only the finding was scoped. Encoded in the selftest as the 'pluginonly' fixture.
