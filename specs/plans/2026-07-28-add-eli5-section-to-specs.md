@@ -6,6 +6,7 @@ priority: {level: 22, criticality: low, date: 2026-07-28}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-29}
 branch: {base: main, work: plan/add-eli5-section-to-specs}
+reviewed: {date: 2026-07-29}
 ---
 
 # Add an ELI5 section that makes a spec comprehensible to a human
