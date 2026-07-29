@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-29}
 branch: {base: main, work: plan/add-eli5-section-to-specs}
 reviewed: {date: 2026-07-29}
+merge: {strategy: merge-commit, subject: "plan/add-eli5-section-to-specs: merge (merge-commit)"}
 outcome: done
 ---
 
@@ -473,3 +474,12 @@ on the branch before the merge:
 the approval bank — still regenerate their own renderings and do not read `## Overview`. Backfill
 makes wiring them viable, but that is an ordering argument, not membership, and it answers a
 different problem than `## Problem` states. It remains a follow-up spec.
+
+**Distilled.**
+
+- `docs/standards/code/canonical-set-parsing.md` (`type: standard`, `authority: current`) — slice a
+  canonical set by declared membership, never by position; a lockstep duplicate check proves the
+  copies agree, not that the code reading them still means the same thing.
+- `docs/knowledge/glossary.md` — **Canonical set**, linking to that standard.
+- `specs/plans/2026-07-29-wire-the-overview-consumers.md` — the follow-up named directly above,
+  captured as `## Problem` only.
