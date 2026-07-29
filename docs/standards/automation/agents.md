@@ -2,9 +2,9 @@
 type: standard
 title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
-resource: .claude/agents/**
+resource: .claude/agents/**, plugins/quenching/commands/skill/agent/new.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/bin/skills.py
 tags: [automation, agents, delegation]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: background
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6
