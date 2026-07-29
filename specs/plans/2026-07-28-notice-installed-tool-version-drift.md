@@ -68,3 +68,7 @@ restores the same silence tomorrow. Something must *notice*: a drift check that 
 run without an align, reporting the installed version against the shipped one for all three tools.
 
 Discovered and confirmed live during `instrument-and-extend-skill-front`'s conclude, 2026-07-28.
+
+## Discoveries
+
+- Confirmed again 2026-07-28 during an /align run, with a SECOND silent failure mode this Problem does not cover: the installed okf-validate.py and specs.py were 1.0.0 against a plugin at 4.2.0, but .claude/settings.json carried NO hooks block at all — the scripts sat on disk with nothing invoking them, so deleting all three changed no behaviour, which is precisely why nobody noticed. A drift check that only compares --version would have caught 1.0.0-vs-4.2.0 and still missed that the hook was inert. Whatever notices drift should also answer 'is this tool actually wired?' (for okf-validate.py: a hooks block in settings.json referencing it — one cheap JSON read). Note too that /docs:align's install is step 5, 'pass 1 only, offered', so on this repo the offer never fired at all.
