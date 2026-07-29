@@ -24,7 +24,7 @@ The banks, the four shared mechanics, and each bank's stop condition live in
 [specs-develop/questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) —
 read it before running a bank; it is the owner of the technique, and this body never restates it.
 
-The spec-driven facts — the layout, the thirteen canonical sections, the gates, the derived stages,
+The spec-driven facts — the layout, the fourteen canonical sections, the gates, the derived stages,
 the `specs.py` surface, the `specs/`↔`docs/` boundary — live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 The per-section authoring doctrine — what belongs under each heading, how to write an honest

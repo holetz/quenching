@@ -102,6 +102,14 @@ sentence, and **link out** rather than explaining in full here.
   so a form a tool does **not** read can never become a row; that asymmetry is named per-tool
   instead, which is why a block scalar is diagnosed by two of the three and by neither the list nor
   the third.
+- [**Canonical set**](../standards/code/canonical-set-parsing.md) — an ordered contract declared in
+  one place and read in many: `schema.json`'s `sections` array, its `phases[].entryGate`, the
+  frontmatter record vocabulary. Each declares **both** a membership (which members) and an order
+  (in what sequence), and the two change independently — so code that consumes one must slice by
+  declared membership and never by an ordinal position, which is an unchecked claim about the set's
+  shape that keeps returning a plausible answer once the set grows. Distinct from the
+  [Canonical case list](../standards/code/frontmatter-parsing.md), which is one specific lockstep
+  unit rather than the general shape.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `specs.py task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with

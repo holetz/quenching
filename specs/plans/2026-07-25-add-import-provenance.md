@@ -7,6 +7,10 @@ priority: {level: 25, criticality: medium, date: 2026-07-28}
 
 # Add provenance and idempotent re-ingestion to quenching-docs-import
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Deferred from the docs-verification-layer plan — source_uri plus a content hash so a changed source is detectable and a re-import enriches instead of duplicating

@@ -7,6 +7,10 @@ priority: {level: 19, criticality: medium, complexity: 3, date: 2026-07-28}
 
 # Expose a finding's advisory/blocking status as data in okf-validate --json
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Found by the docs-verification-layer end-of-plan review — "stale-doc is advisory" is restated in five files and twelve places, while the JSON carries no field a skill can branch on

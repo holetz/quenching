@@ -18,7 +18,7 @@ same mold as `okf-validate.py`.
 - [The `specs/` layout](#the-specs-layout)
 - [Identity: the slug and the filename](#identity-the-slug-and-the-filename)
 - [Frontmatter](#frontmatter)
-- [The thirteen sections](#the-thirteen-sections)
+- [The fourteen sections](#the-fourteen-sections)
 - [The gates and the stage-scoped explicit-none rule](#the-gates-and-the-stage-scoped-explicit-none-rule)
 - [Derived stages](#derived-stages)
 - [`## Impact` — the one parsed declaration](#-impact--the-one-parsed-declaration)
@@ -114,7 +114,7 @@ merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`. Both are gone.
 
-## The thirteen sections
+## The fourteen sections
 
 The canonical set, in canonical order. **Headings are a parsed contract** — canonical English, like
 frontmatter keys — while body prose follows the repo's language. A heading outside this set is a
@@ -122,30 +122,34 @@ frontmatter keys — while body prose follows the repo's language. A heading out
 
 | # | Heading | Phase | Audience |
 | --- | --- | --- | --- |
-| 1 | `## Problem` | definition | human |
-| 2 | `## Proposal` | definition | human |
-| 3 | `## Out of Scope` | definition | human |
-| 4 | `## Impact` | definition | human + **parsed** |
-| 5 | `## Validation` | definition | human + agent (the `verify:` fallback) |
-| 6 | `## Design` | definition | human |
-| 7 | `## Alternatives Considered` | definition | human |
-| 8 | `## Open Decisions` | definition | human |
-| 9 | `## Risks` | definition | human |
-| 10 | `## Handoff` | execution | **agent** |
-| 11 | `## Tasks` | execution | **agent** |
-| 12 | `## Discoveries` | execution | triage |
-| 13 | `## Outcome` | archive | archive reader |
+| 1 | `## Overview` | orientation | human |
+| 2 | `## Problem` | definition | human |
+| 3 | `## Proposal` | definition | human |
+| 4 | `## Out of Scope` | definition | human |
+| 5 | `## Impact` | definition | human + **parsed** |
+| 6 | `## Validation` | definition | human + agent (the `verify:` fallback) |
+| 7 | `## Design` | definition | human |
+| 8 | `## Alternatives Considered` | definition | human |
+| 9 | `## Open Decisions` | definition | human |
+| 10 | `## Risks` | definition | human |
+| 11 | `## Handoff` | execution | **agent** |
+| 12 | `## Tasks` | execution | **agent** |
+| 13 | `## Discoveries` | execution | triage |
+| 14 | `## Outcome` | archive | archive reader |
 
-**Every section declares its audience, and that is load-bearing.** `## Problem` / `## Proposal` /
-`## Design` are for the human — examples and plain language live there. `## Handoff` / `## Tasks`
-are for agents — terse, carrying `files:` / `verify:` / `pattern:` metadata. An orchestrator never
-sends the human sections to an executor; this is what lets one file serve both audiences without
-bloating agent context.
+**Every section declares its audience, and that is load-bearing.** `## Overview` / `## Problem` /
+`## Proposal` / `## Design` are for the human — examples and plain language live there. `## Handoff`
+/ `## Tasks` are for agents — terse, carrying `files:` / `verify:` / `pattern:` metadata. An
+orchestrator never sends the human sections to an executor; this is what lets one file serve both
+audiences without bloating agent context.
 
 Two of these sections are load-bearing for machinery, not just for thinking:
 
 - **`## Validation`** is the fallback for a task with no `verify:` line.
 - **`## Impact`** is machine-parsed (see below). Removing the heading silently disables a check.
+- **`## Overview`** is warn-only, like `## Handoff` — never required for the `ready` gate — and it
+  is the section `/specs:develop` writes LAST, once every other section has settled, even though it
+  reads first in the file.
 
 ## The gates and the stage-scoped explicit-none rule
 
@@ -157,7 +161,7 @@ omission; it is a *not-yet*.
 | --- | --- |
 | `new` (creation) | `## Problem` |
 | `ready` (**derived**) | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
-| `ready` (warning only) | `## Handoff` non-empty |
+| `ready` (warning only) | `## Overview` non-empty, `## Handoff` non-empty |
 | `promote → archive/` | `## Outcome` |
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
@@ -176,10 +180,10 @@ Three rules decide whether a section counts as filled:
 2. **A present-but-empty heading is malformed and refuses.** It is neither an answer nor a
    not-yet, and admitting it would reintroduce the ambiguity this rule exists to remove.
 3. **An absent heading before its gate is legal.** `specs.py new` stamps `## Problem` and nothing
-   else — a captured spec is four lines of body, not a thirteen-heading skeleton.
+   else — a captured spec is four lines of body, not a fourteen-heading skeleton.
 
 **Why the rule is scoped rather than absolute.** Applied absolutely it would kill the derived
-stage: since `- none — <reason>` counts as filled, a freshly created spec carrying thirteen
+stage: since `- none — <reason>` counts as filled, a freshly created spec carrying fourteen
 `- none` sections would derive as `designed` and clear the whole ready gate without anyone having
 thought anything. Stage-scoping is the version where both rules survive.
 

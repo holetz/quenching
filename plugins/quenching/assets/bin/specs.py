@@ -38,11 +38,11 @@ stable for the whole lifecycle, `git log --follow` reads as one history, and a p
 `ls` of any folder is chronological. A file listing IS the status view, and no file
 listing reads frontmatter.
 
-THIRTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
+FOURTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
 -----------------------------------------------------------------------
-`## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`, `## Validation`,
-`## Design`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`,
-`## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
+`## Overview`, `## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`,
+`## Validation`, `## Design`, `## Alternatives Considered`, `## Open Decisions`,
+`## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
 
 Headings are a PARSED contract — canonical English, exactly as written. A heading
 outside the set is a stray. Each canonical heading is in one of three states:
@@ -53,8 +53,8 @@ outside the set is a stray. Each canonical heading is in one of three states:
 
 A heading is required — and required to carry an explicit none — only once ITS OWN
 phase gate is reached. That scoping is what keeps a captured spec four lines long
-instead of a thirteen-heading skeleton, and it is what keeps the derived stage honest:
-applied absolutely, a fresh spec carrying thirteen `- none` sections would derive as
+instead of a fourteen-heading skeleton, and it is what keeps the derived stage honest:
+applied absolutely, a fresh spec carrying fourteen `- none` sections would derive as
 `designed` and pass every gate without anyone having thought anything.
 
 DERIVED STAGES, never declared. Computed from heading presence and frontmatter, so
@@ -195,19 +195,20 @@ DEFAULT_SCHEMA: dict = {
         },
     },
     "sections": [
-        {"heading": "Problem", "order": 1, "group": "definition", "audience": "human"},
-        {"heading": "Proposal", "order": 2, "group": "definition", "audience": "human"},
-        {"heading": "Out of Scope", "order": 3, "group": "definition", "audience": "human"},
-        {"heading": "Impact", "order": 4, "group": "definition", "audience": "human", "parsed": True},
-        {"heading": "Validation", "order": 5, "group": "definition", "audience": "both"},
-        {"heading": "Design", "order": 6, "group": "definition", "audience": "human"},
-        {"heading": "Alternatives Considered", "order": 7, "group": "definition", "audience": "human"},
-        {"heading": "Open Decisions", "order": 8, "group": "definition", "audience": "human"},
-        {"heading": "Risks", "order": 9, "group": "definition", "audience": "human"},
-        {"heading": "Handoff", "order": 10, "group": "execution", "audience": "agent"},
-        {"heading": "Tasks", "order": 11, "group": "execution", "audience": "agent"},
-        {"heading": "Discoveries", "order": 12, "group": "execution", "audience": "triage"},
-        {"heading": "Outcome", "order": 13, "group": "archive", "audience": "human"},
+        {"heading": "Overview", "order": 1, "group": "orientation", "audience": "human"},
+        {"heading": "Problem", "order": 2, "group": "definition", "audience": "human"},
+        {"heading": "Proposal", "order": 3, "group": "definition", "audience": "human"},
+        {"heading": "Out of Scope", "order": 4, "group": "definition", "audience": "human"},
+        {"heading": "Impact", "order": 5, "group": "definition", "audience": "human", "parsed": True},
+        {"heading": "Validation", "order": 6, "group": "definition", "audience": "both"},
+        {"heading": "Design", "order": 7, "group": "definition", "audience": "human"},
+        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "audience": "human"},
+        {"heading": "Open Decisions", "order": 9, "group": "definition", "audience": "human"},
+        {"heading": "Risks", "order": 10, "group": "definition", "audience": "human"},
+        {"heading": "Handoff", "order": 11, "group": "execution", "audience": "agent"},
+        {"heading": "Tasks", "order": 12, "group": "execution", "audience": "agent"},
+        {"heading": "Discoveries", "order": 13, "group": "execution", "audience": "triage"},
+        {"heading": "Outcome", "order": 14, "group": "archive", "audience": "human"},
     ],
     "impact": {
         "parsedSubheading": "Standards this spec will write into docs/standards/",
@@ -238,7 +239,7 @@ DEFAULT_SCHEMA: dict = {
              "when": {"filled": ["Problem", "Proposal", "Out of Scope", "Impact",
                                  "Validation", "Design", "Alternatives Considered",
                                  "Open Decisions", "Risks", "Tasks"]},
-             "warnWhenEmpty": ["Handoff"]},
+             "warnWhenEmpty": ["Overview", "Handoff"]},
             {"id": "approved", "phase": "plans", "when": {"frontmatter": "approved"}},
             {"id": "executing", "phase": "plans",
              "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]}},
@@ -261,7 +262,7 @@ verification: <VERIFICATION>
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
+     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
      first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -271,7 +272,7 @@ verification: <VERIFICATION>
        new (capture)        `## Problem`
        ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready (warn only)    `## Handoff` non-empty
+       ready (warn only)    `## Overview` non-empty, `## Handoff` non-empty
        promote -> archive/  `## Outcome`
 
      `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
@@ -290,11 +291,22 @@ verification: <VERIFICATION>
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
 
-     AUDIENCE. Each section names who reads it. `## Problem`/`## Proposal`/`## Design` are for
-     the human — examples and plain language belong there. `## Handoff`/`## Tasks` are for
-     agents — terse, with `files:`/`verify:`/`pattern:` metadata. An orchestrator never sends
-     the human sections to an executor; that is what lets one file serve both audiences
-     without bloating agent context. -->
+     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
+     `## Design` are for the human — examples and plain language belong there.
+     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
+     metadata. An orchestrator never sends the human sections to an executor; that is what
+     lets one file serve both audiences without bloating agent context. -->
+
+## Overview
+
+<!-- AUDIENCE: human. Warned on when empty once the ready gate is met.
+
+     Connective tissue for a reader who is not holding the whole spec in their head: how the
+     other sections relate to one another, not a compressed restatement of each. Plain
+     language, assuming no prior context — avoid the jargon the spec itself introduces.
+
+     Written LAST, after every other section has settled, because it can only be correct once
+     they have — even though it lives here, first, because that is where a reader starts. -->
 
 ## Problem
 
@@ -795,7 +807,7 @@ def load_schema() -> dict:
 
 
 def load_template() -> str:
-    """The FULL thirteen-section authoring reference — frontmatter, the contract preamble,
+    """The FULL fourteen-section authoring reference — frontmatter, the contract preamble,
     and every heading with its guidance comment.
 
     Two consumers read it and they need different slices: `new` stamps only the capture
@@ -805,24 +817,36 @@ def load_template() -> str:
     return txt if txt is not None else TEMPLATE_SPEC
 
 
-def capture_form(template_text: str | None = None) -> str:
-    """What `new` stamps: everything up to (not including) the SECOND `## ` heading — so
-    frontmatter, the contract preamble, and `## Problem` with its guidance, and nothing else.
+def capture_form(template_text: str | None = None, schema: dict | None = None) -> str:
+    """What `new` stamps: the frontmatter and the contract preamble, then the heading blocks
+    the `plans` entry gate names — `## Problem` with its guidance, and nothing else.
 
-    A captured spec is four lines of body, not a thirteen-heading skeleton. That is not
+    Sliced by GATE MEMBERSHIP, never by position. The obvious implementation — everything up
+    to the SECOND `## ` heading — was right only while `## Problem` happened to be the first
+    heading in the template, and it broke the moment `## Overview` was added ahead of it:
+    capture then stamped an empty `## Overview` and dropped `## Problem`, so every spec `new`
+    created was born failing its own gate. What makes a heading part of capture is the gate,
+    not where it sits in the file, so read the gate.
+
+    A captured spec is four lines of body, not a fourteen-heading skeleton. That is not
     cosmetic: the explicit-none rule makes `- none — <reason>` count as filled, so a spec
-    born with thirteen headings would derive as `designed` and pass every promote gate
+    born with fourteen headings would derive as `designed` and pass every promote gate
     without anyone having thought anything."""
     text = template_text if template_text is not None else load_template()
-    seen = 0
+    gate = phase_spec("plans", schema).get("entryGate", [])
+    if not gate:
+        return text
     lines = text.splitlines(keepends=True)
+    preamble = None
     for i, line in enumerate(lines):
         m = HEADING_RE.match(line)
         if m and len(m.group(1)) == 2:
-            seen += 1
-            if seen == 2:
-                return "".join(lines[:i]).rstrip() + "\n"
-    return text
+            preamble = "".join(lines[:i]).rstrip()
+            break
+    if preamble is None:
+        return text
+    blocks = [section_guidance(h, text).rstrip() for h in gate]
+    return preamble + "\n\n" + "\n\n".join(blocks) + "\n"
 
 
 def section_guidance(heading: str, template_text: str | None = None) -> str:
@@ -1120,12 +1144,14 @@ def parse_tasks(text: str) -> list[dict]:
         pattern = verify = subject = commit = None
         subject_off = commit_off = last_meta_off = None
         meta_indent = None
+        block_end = i + 1
         for off, cont in enumerate(lines[i + 1:], start=i + 1):
             # the task's block ends at a blank line, a non-indented line, or another
             # checkbox; anything else indented is scanned, so a wrapped prose line between
             # the checkbox and its `verify:` does not hide it.
             if not cont.strip() or cont[:1] not in (" ", "\t") or CHECKBOX_RE.match(cont):
                 break
+            block_end = off + 1
             mm = TASK_META_RE.match(cont)
             if not mm:
                 continue
@@ -1166,8 +1192,11 @@ def parse_tasks(text: str) -> list[dict]:
             # be able to drop it.
             "subjectLineno": (base + subject_off) if subject_off is not None else None,
             "commitLineno": (base + commit_off) if commit_off is not None else None,
+            # After the last metadata line when there is one; otherwise after the WHOLE
+            # block, not under the checkbox's first physical line. A task with no `files:`
+            # or `verify:` whose text wraps was being cut in half by its own `subject:`.
             "metaInsertAt": base + ((last_meta_off + 1) if last_meta_off is not None
-                                    else i + 1),
+                                    else block_end),
             "metaIndent": meta_indent or DEFAULT_META_INDENT,
         })
     return out
@@ -1552,7 +1581,7 @@ def cmd_section(args, root: str) -> int:
         emit(args.json,
              {"ok": False, "code": "sp-stray-heading", "heading": args.heading,
               "canonical": canonical_headings(),
-              "message": f"'{args.heading}' is not one of the thirteen canonical headings"},
+              "message": f"'{args.heading}' is not one of the fourteen canonical headings"},
              f"error: '{args.heading}' is not a canonical heading")
         return 2
     if not args.write:
@@ -2467,7 +2496,7 @@ def validate_spec(root: str, s: dict) -> list[dict]:
 
     for h in stray_headings(sections, schema):
         out.append(_finding("sp-stray-heading", "warn",
-                            f"{where}: `## {h}` is not one of the thirteen canonical headings",
+                            f"{where}: `## {h}` is not one of the fourteen canonical headings",
                             spec=s["slug"], path=where, heading=h,
                             remedy="rename it to a canonical heading or fold it into one"))
 
@@ -2494,11 +2523,19 @@ def validate_spec(root: str, s: dict) -> list[dict]:
     ready = ready_report({"sections": sections}, schema) if s["phase"] == "plans" else None
     if ready and ready["ok"]:
         for h in ready["warn"]:
-            out.append(_finding("sp-handoff-empty", "warn",
-                                f"{where}: `## {h}` is empty in a spec that meets the ready "
-                                f"gate — an executor gets no context", spec=s["slug"],
-                                path=where, heading=h,
-                                remedy="rewrite it after each committed task"))
+            if h == "Overview":
+                out.append(_finding("sp-overview-missing", "warn",
+                                    f"{where}: `## Overview` is empty in a spec that meets "
+                                    f"the ready gate — a reader gets no orientation",
+                                    spec=s["slug"], path=where, heading=h,
+                                    remedy=f"specs.py section {s['slug']} \"Overview\" --write, "
+                                           "written last once the other sections settle"))
+            else:
+                out.append(_finding("sp-handoff-empty", "warn",
+                                    f"{where}: `## {h}` is empty in a spec that meets the ready "
+                                    f"gate — an executor gets no context", spec=s["slug"],
+                                    path=where, heading=h,
+                                    remedy="rewrite it after each committed task"))
 
     declared = parse_impact_standards(text, schema)
     if declared:
@@ -2680,7 +2717,9 @@ def cmd_selftest(args, root: str) -> int:
 
     The canonical frontmatter cases are NOT part of that caveat — they are self-contained and
     must run everywhere, which is why they are checked before the early return: an installed
-    copy is exactly where a drifted parser would otherwise go unnoticed."""
+    copy is exactly where a drifted parser would otherwise go unnoticed. The capture-form
+    assertion runs there for the same reason, and covers what a byte-for-byte comparison
+    structurally cannot: whether `new` still stamps the headings its own gate requires."""
     findings: list[dict] = []
     for failure in canonical_case_failures():
         findings.append(_finding("sp-frontmatter-case", "error",
@@ -2688,6 +2727,35 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="this parser disagrees with the case list in "
                                         "docs/standards/code/frontmatter-parsing.md; the three "
                                         "tools move together or not at all"))
+
+    # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
+    # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
+    # checked BEFORE the early return for the same reason the frontmatter cases are.
+    #
+    # This is the assertion the byte-for-byte drift check below cannot make. Adding
+    # `## Overview` ahead of `## Problem` kept both template copies identical, so drift
+    # passed — while capture, which sliced to the second `## ` heading, silently started
+    # stamping an empty `## Overview` and dropping `## Problem`. Position is not what makes a
+    # heading part of capture; gate membership is, and that is what this checks.
+    stamped = capture_form(TEMPLATE_SPEC, DEFAULT_SCHEMA)
+    gate = phase_spec("plans", DEFAULT_SCHEMA).get("entryGate", [])
+    present = {h for h in canonical_headings(DEFAULT_SCHEMA)
+               if re.search(rf"^## {re.escape(h)}\s*$", stamped, re.M)}
+    for h in [x for x in gate if x not in present]:
+        findings.append(_finding("sp-capture-gate-missing", "error",
+                                 f"the capture form omits `## {h}`, which the plans entry "
+                                 f"gate requires — every spec `new` creates would be born "
+                                 f"failing its own gate", heading=h,
+                                 remedy="capture_form() slices by entryGate membership; a "
+                                        "heading in the gate must appear in what `new` stamps"))
+    for h in sorted(present - set(gate)):
+        findings.append(_finding("sp-capture-extra-heading", "error",
+                                 f"the capture form stamps `## {h}`, which is not in the "
+                                 f"plans entry gate — stamped empty, it is malformed "
+                                 f"(sp-empty-section) from the moment the spec exists",
+                                 heading=h,
+                                 remedy="capture_form() must stamp the entry-gate headings "
+                                        "and nothing else"))
 
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
@@ -2757,8 +2825,9 @@ def cmd_selftest(args, root: str) -> int:
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print("  OK — the canonical frontmatter cases pass, and the embedded schema and "
-              "template match their asset files.")
+        print("  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
+              "the entry-gate headings, and the embedded schema and template match their "
+              "asset files.")
     return 1 if errors else 0
 
 

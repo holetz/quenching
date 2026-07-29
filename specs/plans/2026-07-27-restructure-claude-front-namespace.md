@@ -10,7 +10,7 @@ priority: {level: 11, criticality: medium, date: 2026-07-28}
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
+     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
      first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -20,7 +20,7 @@ priority: {level: 11, criticality: medium, date: 2026-07-28}
        new (capture)        `## Problem`
        ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready (warn only)    `## Handoff` non-empty
+       ready (warn only)    `## Overview` non-empty, `## Handoff` non-empty
        promote -> archive/  `## Outcome`
 
      `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
@@ -39,11 +39,29 @@ priority: {level: 11, criticality: medium, date: 2026-07-28}
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
 
-     AUDIENCE. Each section names who reads it. `## Problem`/`## Proposal`/`## Design` are for
-     the human — examples and plain language belong there. `## Handoff`/`## Tasks` are for
-     agents — terse, with `files:`/`verify:`/`pattern:` metadata. An orchestrator never sends
-     the human sections to an executor; that is what lets one file serve both audiences
-     without bloating agent context. -->
+     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
+     `## Design` are for the human — examples and plain language belong there.
+     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
+     metadata. An orchestrator never sends the human sections to an executor; that is what
+     lets one file serve both audiences without bloating agent context. -->
+
+## Overview
+
+The plugin's `.claude/` command front is named `skill`, but `skill` is also the name of one
+specific artifact kind inside it, so the agents and hooks nested under `commands/skill/` read as
+sub-kinds of a skill when they are not — that's the defect this spec exists to fix. The fix renames
+the whole front to `automation` (a name the repo already uses for this territory elsewhere) and
+gives it four peer contexts, one per artifact it mints — `command/`, `agent/`, `hook/`,
+`harness/` — with the CLAUDE.md-aligning commands moving into `harness`. `## Design` works through
+the choices this forces: why `automation` beats `claude` as the front's name, why
+sweep-the-whole-front verbs sit at the root while single-artifact verbs sit under their context,
+why the shared `harness` stage can safely be invoked by two different aligns, and where the
+bare-vs-registry-name rule should live once renamed. Every citation of a moved path across
+`commands/**`, `assets/**`, `docs/**` and the three manuals is rewritten in the same diff, since the
+noun `skill` is being retired from the same ~50 files the path rename touches. The work is blocked
+until `instrument-and-extend-skill-front` merges, and `## Open Decisions` leaves two questions for
+later — whether `skills.py` itself gets renamed, and whether a sibling spec on stale vocabulary is
+now superseded.
 
 ## Problem
 

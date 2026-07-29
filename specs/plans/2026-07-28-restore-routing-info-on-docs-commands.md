@@ -11,7 +11,7 @@ refined: {mode: gate, date: 2026-07-28}
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
+     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
      first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -21,7 +21,7 @@ refined: {mode: gate, date: 2026-07-28}
        new (capture)        `## Problem`
        ready (derived)      the nine definition sections (`## Problem` .. `## Risks`)
                             AND `## Tasks`
-       ready (warn only)    `## Handoff` non-empty
+       ready (warn only)    `## Overview` non-empty, `## Handoff` non-empty
        promote -> archive/  `## Outcome`
 
      `ready` is a DERIVED STAGE, not a folder: a spec lives in `plans/` for its whole active
@@ -40,11 +40,27 @@ refined: {mode: gate, date: 2026-07-28}
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
 
-     AUDIENCE. Each section names who reads it. `## Problem`/`## Proposal`/`## Design` are for
-     the human — examples and plain language belong there. `## Handoff`/`## Tasks` are for
-     agents — terse, with `files:`/`verify:`/`pattern:` metadata. An orchestrator never sends
-     the human sections to an executor; that is what lets one file serve both audiences
-     without bloating agent context. -->
+     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
+     `## Design` are for the human — examples and plain language belong there.
+     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
+     metadata. An orchestrator never sends the human sections to an executor; that is what
+     lets one file serve both audiences without bloating agent context. -->
+
+## Overview
+
+Nine of the eleven /docs:* and /skill:* command descriptions lost their quoted trigger phrases and
+`Not for:` boundary clause when the command surface was collapsed to one file per entry point, so a
+plainly-worded ask like "write this down in the docs" has nothing to tell it apart from /docs:add,
+/docs:learn, /docs:define, or /docs:import. `## Proposal` restores all three parts of a conformant
+description — concept, triggers, boundary — reusing phrasing that already exists elsewhere in the
+repo rather than inventing new text, and `## Design` requires all eleven descriptions be drafted as
+one allocation table, reviewed for collisions, before any file is edited. Restoring them pushes the
+surface past its always-on character ceiling, which has zero headroom by construction, so
+`## Tasks` runs in a fixed order: write the descriptions, then re-measure the ceiling from an actual
+run and transcribe that number everywhere it lives, then bump the release version.
+`## Open Decisions` flags that approval is currently withheld: a still-open spike into
+`disable-model-invocation` could make this whole restoration unnecessary, or confirm it and
+multiply its cost roughly tenfold once the surface grows as planned.
 
 ## Problem
 

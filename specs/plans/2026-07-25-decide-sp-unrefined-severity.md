@@ -6,6 +6,10 @@ verification: per-section
 
 # Decide whether sp-unrefined should escalate to error
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Open decision from the refine-and-execute-specs-flow plan — revisit the warning's severity once there is evidence about unrefined plans

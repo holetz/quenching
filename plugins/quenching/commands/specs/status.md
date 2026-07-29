@@ -17,7 +17,7 @@ it is also the sweep's honest preview: the plan you would be authorizing, before
 reads the same two payloads `/specs:align`'s probe reads, which is what lets the two agree: a
 status view that disagreed with the sweep would be worse than none.
 
-The workspace facts (layout, the thirteen sections, the derived stages, the `specs.py` surface)
+The workspace facts (layout, the fourteen sections, the derived stages, the `specs.py` surface)
 live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
 every `sp-*` code and what the sweep would do about it in
