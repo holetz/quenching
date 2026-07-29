@@ -93,10 +93,18 @@ Whether the spec file is already committed on the base decides what step 5 can d
 State in one block: the spec, the base branch, the branch name that will be created, whether the
 spec file rides along, and what will be stamped. Then ask with **AskUserQuestion**:
 
-- **Branch** *(default)* — `git checkout -b plan/<slug>`, work continues in this checkout;
-- **Worktree** — `git worktree add ../<repo>-<slug> -b plan/<slug>`, a separate checkout beside the
-  repo, leaving this one where it is;
+- **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<slug> -b plan/<slug>`, a
+  separate checkout beside the repo, leaving this one untouched. State its cost **in the offer**:
+  a fresh checkout carries only what git tracks — no `node_modules/`, no `.venv/`, no `.env`, no
+  build output — so a repo with installed dependencies needs them installed again there;
+- **Branch** — `git checkout -b plan/<slug>`, work continues in this checkout;
 - **In place** — declines isolation. Nothing is created and **nothing is stamped**.
+
+Worktree leads **unconditionally** — never on a heuristic that sniffs the target for
+`package.json` or `.venv/`. A recommendation that changes from repo to repo cannot be documented in
+one sentence, and guessing somebody else's build is how the recommended path becomes a silent trap.
+The cost above is stated instead, in one line, so choosing **Branch** is a decision the human read
+rather than a discovery at the first `verify:` that fails.
 
 Recommend isolation before building, and never impose it. A human who declines gets no branch, no
 record, and no second prompt.
