@@ -817,24 +817,36 @@ def load_template() -> str:
     return txt if txt is not None else TEMPLATE_SPEC
 
 
-def capture_form(template_text: str | None = None) -> str:
-    """What `new` stamps: everything up to (not including) the SECOND `## ` heading — so
-    frontmatter, the contract preamble, and `## Problem` with its guidance, and nothing else.
+def capture_form(template_text: str | None = None, schema: dict | None = None) -> str:
+    """What `new` stamps: the frontmatter and the contract preamble, then the heading blocks
+    the `plans` entry gate names — `## Problem` with its guidance, and nothing else.
 
-    A captured spec is four lines of body, not a thirteen-heading skeleton. That is not
+    Sliced by GATE MEMBERSHIP, never by position. The obvious implementation — everything up
+    to the SECOND `## ` heading — was right only while `## Problem` happened to be the first
+    heading in the template, and it broke the moment `## Overview` was added ahead of it:
+    capture then stamped an empty `## Overview` and dropped `## Problem`, so every spec `new`
+    created was born failing its own gate. What makes a heading part of capture is the gate,
+    not where it sits in the file, so read the gate.
+
+    A captured spec is four lines of body, not a fourteen-heading skeleton. That is not
     cosmetic: the explicit-none rule makes `- none — <reason>` count as filled, so a spec
-    born with thirteen headings would derive as `designed` and pass every promote gate
+    born with fourteen headings would derive as `designed` and pass every promote gate
     without anyone having thought anything."""
     text = template_text if template_text is not None else load_template()
-    seen = 0
+    gate = phase_spec("plans", schema).get("entryGate", [])
+    if not gate:
+        return text
     lines = text.splitlines(keepends=True)
+    preamble = None
     for i, line in enumerate(lines):
         m = HEADING_RE.match(line)
         if m and len(m.group(1)) == 2:
-            seen += 1
-            if seen == 2:
-                return "".join(lines[:i]).rstrip() + "\n"
-    return text
+            preamble = "".join(lines[:i]).rstrip()
+            break
+    if preamble is None:
+        return text
+    blocks = [section_guidance(h, text).rstrip() for h in gate]
+    return preamble + "\n\n" + "\n\n".join(blocks) + "\n"
 
 
 def section_guidance(heading: str, template_text: str | None = None) -> str:
@@ -2663,7 +2675,9 @@ def cmd_selftest(args, root: str) -> int:
 
     The canonical frontmatter cases are NOT part of that caveat — they are self-contained and
     must run everywhere, which is why they are checked before the early return: an installed
-    copy is exactly where a drifted parser would otherwise go unnoticed."""
+    copy is exactly where a drifted parser would otherwise go unnoticed. The capture-form
+    assertion runs there for the same reason, and covers what a byte-for-byte comparison
+    structurally cannot: whether `new` still stamps the headings its own gate requires."""
     findings: list[dict] = []
     for failure in canonical_case_failures():
         findings.append(_finding("sp-frontmatter-case", "error",
@@ -2671,6 +2685,35 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="this parser disagrees with the case list in "
                                         "docs/standards/code/frontmatter-parsing.md; the three "
                                         "tools move together or not at all"))
+
+    # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
+    # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
+    # checked BEFORE the early return for the same reason the frontmatter cases are.
+    #
+    # This is the assertion the byte-for-byte drift check below cannot make. Adding
+    # `## Overview` ahead of `## Problem` kept both template copies identical, so drift
+    # passed — while capture, which sliced to the second `## ` heading, silently started
+    # stamping an empty `## Overview` and dropping `## Problem`. Position is not what makes a
+    # heading part of capture; gate membership is, and that is what this checks.
+    stamped = capture_form(TEMPLATE_SPEC, DEFAULT_SCHEMA)
+    gate = phase_spec("plans", DEFAULT_SCHEMA).get("entryGate", [])
+    present = {h for h in canonical_headings(DEFAULT_SCHEMA)
+               if re.search(rf"^## {re.escape(h)}\s*$", stamped, re.M)}
+    for h in [x for x in gate if x not in present]:
+        findings.append(_finding("sp-capture-gate-missing", "error",
+                                 f"the capture form omits `## {h}`, which the plans entry "
+                                 f"gate requires — every spec `new` creates would be born "
+                                 f"failing its own gate", heading=h,
+                                 remedy="capture_form() slices by entryGate membership; a "
+                                        "heading in the gate must appear in what `new` stamps"))
+    for h in sorted(present - set(gate)):
+        findings.append(_finding("sp-capture-extra-heading", "error",
+                                 f"the capture form stamps `## {h}`, which is not in the "
+                                 f"plans entry gate — stamped empty, it is malformed "
+                                 f"(sp-empty-section) from the moment the spec exists",
+                                 heading=h,
+                                 remedy="capture_form() must stamp the entry-gate headings "
+                                        "and nothing else"))
 
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
@@ -2740,8 +2783,9 @@ def cmd_selftest(args, root: str) -> int:
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print("  OK — the canonical frontmatter cases pass, and the embedded schema and "
-              "template match their asset files.")
+        print("  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
+              "the entry-gate headings, and the embedded schema and template match their "
+              "asset files.")
     return 1 if errors else 0
 
 
