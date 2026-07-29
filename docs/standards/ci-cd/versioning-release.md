@@ -62,6 +62,12 @@ the same stale `VERSION` it is being asked about, so `drift` derives the plugin 
 location (or takes `--plugin-root`) and **exits 2** when neither resolves. A checker that cannot
 tell "no drift" from "could not look" reports the silence it exists to break.
 
+**1b. It reads; it never runs the copy.** The version comes from each tool's `VERSION = "…"`
+constant, parsed. Shelling out for `--version` would mean a probe **executing** whatever script a
+target happens to have under `.claude/hooks/` — a far larger claim than reading three lines, and
+one that also needs `python3` on `PATH`. A copy too old to declare a constant reads `unreadable`,
+which carries the same call to action as `behind`, so nothing is lost by not running it.
+
 **2. Both directions are findings.** `behind` is the obvious one. `ahead` matters because
 resolution is **plugin-first** and every align deliberately leaves a newer installed copy alone —
 so an ahead copy is code that is never executed and never repaired, with both halves of that

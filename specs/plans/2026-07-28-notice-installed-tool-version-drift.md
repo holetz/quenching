@@ -6,6 +6,7 @@ priority: {level: 5, criticality: high, date: 2026-07-28}
 branch: {base: main, work: plan/notice-installed-tool-version-drift}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
+reviewed: {date: 2026-07-28}
 ---
 
 # Nothing notices an installed tool copy falling behind the plugin
