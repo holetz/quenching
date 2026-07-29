@@ -526,6 +526,139 @@ def cmd_digest(args) -> int:
     return OK if digested else FINDINGS
 
 
+# --------------------------------------------------------------------------------------
+# selftest
+#
+# The fixture is a synthetic transcript exercising every rule the parser was WRONG about
+# at least once during its own construction. Each record below is a defect that shipped a
+# silent zero or a confident false count before it was caught; the fixture is what stops
+# each from coming back.
+#
+# It deliberately does NOT assert where a command's span ENDS, nor which command a human
+# turn attaches to. Attribution has no reliable end (measured: it reverts to the conductor
+# in 1 of 43 Skill stages across an 86-transcript corpus), and closing the span on the
+# Skill boundary is an open `## Design` correction. Freezing today's answer here would
+# make the fix look like a regression.
+# --------------------------------------------------------------------------------------
+
+FIXTURE = [
+    # A typed `/` invocation: a user turn whose content is a STRING.
+    {"type": "user", "uuid": "u1", "timestamp": "2026-07-28T10:00:00Z",
+     "message": {"content": "<command-message>demo:conduct</command-message>\n"
+                            "<command-name>/demo:conduct</command-name>\n"
+                            "<command-args>alpha beta</command-args>"}},
+    # The harness-injected command body. Reads exactly like a long human message; isMeta
+    # is the only thing separating them, and without it every command scores a correction
+    # against itself at its own first turn.
+    {"type": "user", "uuid": "u2", "isMeta": True, "timestamp": "2026-07-28T10:00:01Z",
+     "message": {"content": [{"type": "text", "text": "# /demo:conduct — the expanded body"}]}},
+    # Two Reads of the SAME window: redundant.
+    {"type": "assistant", "uuid": "u3", "attributionSkill": "demo:conduct",
+     "attributionPlugin": "demo", "timestamp": "2026-07-28T10:00:02Z",
+     "message": {"content": [{"type": "tool_use", "name": "Read", "input": {"file_path": "/a.py"}}]}},
+    {"type": "assistant", "uuid": "u4", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Read", "input": {"file_path": "/a.py"}}]}},
+    # Two Reads of DIFFERENT windows: paging, not redundancy.
+    {"type": "assistant", "uuid": "u5", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Read",
+                              "input": {"file_path": "/b.py", "offset": 1, "limit": 50}}]}},
+    {"type": "assistant", "uuid": "u6", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Read",
+                              "input": {"file_path": "/b.py", "offset": 60, "limit": 50}}]}},
+    # An Edit is a WRITE. Counting it as a read once reported 51 edits as "redundant x72".
+    {"type": "assistant", "uuid": "u7", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Edit",
+                              "input": {"file_path": "/a.py", "old_string": "x", "new_string": "y"}}]}},
+    # A conductor's stage. The Skill call is attributed to the CALLER.
+    {"type": "assistant", "uuid": "u8", "attributionSkill": "demo:conduct",
+     "message": {"content": [{"type": "tool_use", "name": "Skill",
+                              "input": {"skill": "demo:stage", "args": "gamma"}}]}},
+    {"type": "assistant", "uuid": "u9", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash",
+                              "input": {"command": "echo hi"}}]}},
+    {"type": "assistant", "uuid": "u10", "attributionSkill": "demo:stage",
+     "message": {"content": [{"type": "tool_use", "name": "Bash",
+                              "input": {"command": "echo hi"}}]}},
+    # A human turn as a text BLOCK in a list. Reading only the string form found ZERO
+    # interjections on a real session that visibly had several.
+    {"type": "user", "uuid": "u11", "timestamp": "2026-07-28T10:00:11Z",
+     "message": {"content": [{"type": "text", "text": "no, use the other file"}]}},
+    {"type": "user", "uuid": "u12", "timestamp": "2026-07-28T10:00:12Z",
+     "message": {"content": [{"type": "text", "text": "[Request interrupted by user]"}]}},
+    "{ this line is not JSON",          # must be COUNTED and REPORTED, never silently dropped
+    # A replayed uuid: a compact summary re-embeds earlier turns, which would double the run.
+    {"type": "user", "uuid": "u12",
+     "message": {"content": [{"type": "text", "text": "[Request interrupted by user]"}]}},
+    # The harness talking, not the human. Counting it blames the command for running long.
+    {"type": "user", "uuid": "u15",
+     "message": {"content": "This session is being continued from a previous conversation "
+                            "that ran out of context."}},
+]
+
+
+def selftest_failures() -> list:
+    """Every assertion the fixture exists to make. Returns the failures, [] on pass."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "fixture.jsonl"
+        path.write_text("\n".join(json.dumps(r) if isinstance(r, dict) else r
+                                  for r in FIXTURE) + "\n", encoding="utf-8")
+        model = read_session(path)
+
+    fail = []
+    by_name = {c.name: c for c in model["_commands"]}
+
+    def check(label, got, want):
+        if got != want:
+            fail.append(f"{label}: expected {want!r}, got {got!r}")
+
+    check("commands found", sorted(by_name), ["demo:conduct", "demo:stage"])
+    if fail:
+        return fail          # nothing below this line is meaningful without both commands
+
+    conduct, stage = by_name["demo:conduct"], by_name["demo:stage"]
+
+    check("typed entry form", conduct.entry_forms, ["typed"])
+    check("typed args", [i["args"] for i in conduct.invocations], ["alpha beta"])
+    check("attributionPlugin", conduct.plugin, "demo")
+    check("skill entry form", stage.entry_forms, ["skill"])
+    check("stage invokedBy", [i["invokedBy"] for i in stage.invocations], ["demo:conduct"])
+    check("stage args", [i["args"] for i in stage.invocations], ["gamma"])
+
+    # The Skill call itself belongs to the caller, and the stage's work to the callee.
+    check("conduct tool counts", conduct.tools, {"Read": 4, "Edit": 1, "Skill": 1})
+    check("stage tool counts", stage.tools, {"Bash": 2})
+
+    check("reads exclude writes", sorted(conduct.reads), ["/a.py", "/b.py"])
+    check("same window twice", conduct.reads.get("/a.py"), ["full", "full"])
+    check("paged reads differ", conduct.reads.get("/b.py"), ["1+50", "60+50"])
+    check("writes counted apart", conduct.touches, {"/a.py": 1})
+    check("repeated shell", stage.shell, {"echo hi": 2})
+
+    # Corrections: what was collected, not where it was attached (see the note above).
+    kinds = [(c["line"], c["kind"]) for c in model["corrections"]]
+    check("corrections collected", kinds,
+          [(11, "interjection"), (12, "interrupt"), (15, "compaction")])
+
+    check("unparsed counted", model["unparsed"], 1)
+    check("unparsed reported", [a["code"] for a in model["anomalies"]], ["se-unparsed-line"])
+    check("unparsed line number", [a["line"] for a in model["anomalies"]], [13])
+    return fail
+
+
+def cmd_selftest(args) -> int:
+    fail = selftest_failures()
+    if args.json:
+        print(json.dumps({"ok": not fail, "cases": len(FIXTURE), "failures": fail}, indent=2))
+    else:
+        print(f"session selftest — {len(FIXTURE)} fixture record(s)")
+        for f in fail:
+            print(f"  FAIL {f}")
+        print("\n  PASS" if not fail else f"\n  FAIL — {len(fail)} assertion(s)")
+    return OK if not fail else FINDINGS
+
+
 def cmd_list(args) -> int:
     path, how = resolve_transcript(args.transcript, Path.cwd().resolve())
     if path is None:
@@ -592,6 +725,10 @@ def build_parser() -> argparse.ArgumentParser:
     dg.add_argument("--cap", type=int, default=20, metavar="N",
                     help="at most N items per evidence list (default: 20)")
     dg.set_defaults(func=cmd_digest)
+
+    st = sub.add_parser("selftest", help="prove the transcript-parsing rules against the fixture")
+    st.add_argument("--json", action="store_true", help="machine-readable output")
+    st.set_defaults(func=cmd_selftest)
     return p
 
 

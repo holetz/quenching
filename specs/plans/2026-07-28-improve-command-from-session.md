@@ -255,9 +255,10 @@ Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.
 
 ### 2. The tool, hardened
 
-- [ ] 2.1 Add a fixture-backed `selftest` subcommand proving the transcript-parsing rule
+- [x] 2.1 Add a fixture-backed `selftest` subcommand proving the transcript-parsing rule
       verify: `python3 plugins/quenching/assets/bin/session.py selftest` exits 0
       files: plugins/quenching/assets/bin/session.py
+      subject: plan/improve-command-from-session: 2.1 Add a fixture-backed selftest subcommand proving the transcript-parsing rule
 - [ ] 2.2 Refuse with exit 2 on a zero-command parse of a non-empty transcript, so silence cannot look clean
       verify: a non-empty fixture holding no command yields exit 2 and a stated reason
       files: plugins/quenching/assets/bin/session.py
@@ -299,3 +300,4 @@ Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.
 - Counting Edit/Write against a file as a "read" reported 51 edits as "redundant read x72" — a confident, plausible, entirely wrong finding. Reads and writes are now counted separately; the honest redundant-read number for that same run is 0.
 - GO/NO-GO ANSWERED — PASS (task 1.3, against session 94120e96, a /specs:develop run that conducted /specs:isolate as a stage). THE COUNTED FINDING NO PARTICIPANT STATED: the digest credits /specs:isolate with 18 tool calls against its conductor /specs:develop 7, and with ALL 5 of the session AskUserQuestion calls — which are the shape-bank questions [Evidence] [Shape] [Target] [Boundary] [Go/no-go] at lines 67-89, unmistakably /specs:develop own. QUOTED TURN, line 127 (assistant): "**Bank** — shape. 5 questions asked, 5 answered." The participant counted the questions and believed they were develop; nobody stated a tool-call count anywhere in the session (a scan for count-language found only "5 questions"/"10 asked, 10 answered"), and nobody noticed the transcript credits them to the stage. Also uncounted by anyone: 28 of the session 53 tool calls (53%) carry no command attribution at all.
 - CORRECTS the earlier discovery that "attributionSkill yields the per-command tool-call span directly" — it does NOT. Measured across all 43 Skill stages in the 86-transcript corpus: attribution reverts to the conductor after the stage returns exactly 1 time; 36 times it never returns to any command, and 6 times it jumps to a different one. attributionSkill marks where a command STARTS driving and has no reliable end, so a span derived from it alone over-credits the last stage invoked. The span must be closed by the Skill call boundary, not by the next attribution change — a design correction for /specs:develop before task 3.2 mints the command.
+- A selftest that passes on first write proves nothing. This one was mutation-checked: breaking the isMeta rule, the text-block rule, the reads-vs-writes split and the uuid dedup each made it fail (1-2 assertions apiece). The same cheap mutation pass would be worth running against the three shipped tools selftests, which have never been shown to fail.
