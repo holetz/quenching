@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the six-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo — plus the half a bump cannot do, which is noticing that a target's copy has fallen behind, run ahead, or sits on disk with nothing invoking it
-resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo — plus the half a bump cannot do, which is noticing that a target's copy has fallen behind, run ahead, or sits on disk with nothing invoking it, and the seventh version-carrying file that stays outside the six because no consumer reads it
+resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/bin/session.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-07-28
+timestamp: 2026-07-29
 audience: both
 authority: current
-source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture
+source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin
 maintainer: quenching
 ---
 
@@ -45,6 +45,36 @@ That asymmetry is the whole reason the constant is duplicated in three places ra
 from one: the tools **may not import each other**, because each installs standalone into a target's
 `.claude/hooks/` (see [frontmatter-parsing.md](../code/frontmatter-parsing.md) for the same
 constraint applied to the shared parser rule).
+
+## The seventh file — a version nothing reads
+
+`plugins/quenching/assets/bin/session.py` also carries a `VERSION` constant
+(`session.py:109`), and it is **not** a seventh member of the lockstep. It fits neither half above:
+Claude Code never reads it, and no align ever compares it, because `session.py` is a plugin-side
+tool that is **never installed into a target repo** — `/skill:retro` invokes it at
+`${CLAUDE_PLUGIN_ROOT}`, where the copy that executes is always the one that shipped with the
+plugin. The three-copy duplication the six exist to manage does not arise.
+
+**It must still be bumped with the rest**, and the reason is the opposite of the one that governs
+artifacts 4–6. Those are enforced by a consumer: miss one and an align silently stops upgrading a
+target. This one is enforced by **nothing at all** — `skills.py drift` does not know about it,
+no selftest asserts it, and `--version` still answers, just with the wrong number.
+
+That is not theoretical. `session.py` was authored at `4.2.0` on a branch that stayed open while
+main released `4.3.0`; it reached the branch review still reporting `4.2.0`, under a comment that
+read *"tracks the plugin"*. The only thing that caught it was a human reading the whole branch diff
+at [`/specs:conclude`](../workflows/plan-lifecycle.md) — which is exactly the class of miss a
+long-lived branch produces and no checker covers.
+
+The rule, stated so a future plugin-side-only tool inherits it:
+
+- A tool that ships in the plugin but is never installed into a target **stays out of the six**.
+  Adding it would make `drift` compare a version no target holds.
+- It **carries a `VERSION` anyway**, because `--version` is part of the uniform tool contract
+  (`0` ok · `1` findings · `2` refusal, `--json` everywhere) that every tool here answers to.
+- It is bumped **at release, with the six**, and the release checklist reads it back like the
+  others. Since nothing enforces it, the bump is a discipline, and a stale value survives until
+  somebody reads the file.
 
 ## Noticing drift — the half a bump cannot do
 
@@ -98,7 +128,8 @@ would have been churn.
 
 ## Verifying
 
-The lockstep is checked by reading all four version surfaces back and confirming one value:
+The lockstep is checked by reading every version surface back and confirming one value — the four
+the six resolve to, plus the plugin-side-only tool above, which no checker will catch:
 
 ```bash
 cd plugins/quenching
@@ -106,6 +137,7 @@ cat VERSION
 python3 assets/bin/specs.py --version
 python3 assets/bin/skills.py --version
 python3 assets/hooks/okf-validate.py --version
+python3 assets/bin/session.py --version        # outside the six; nothing else reads it
 ```
 
 And the other end of the same rule — what a target actually holds, in both directions, with the
