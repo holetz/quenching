@@ -18,6 +18,9 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
   it as a content gap: the sidecar that adds the signal without changing a return type, why the
   finding is a warn, and why a lossy transform never ships without the diagnostic for it.
+* [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
+  an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
+  prove, and the gate the three shipped selftests have not yet cleared.
 * [surface-verification.md](surface-verification.md) — how a change to the command surface is
   proven: a fresh process because the registry is built at session start, assertions on captured
   `tool_use` rather than prose, and the three preconditions a functional check must satisfy.
