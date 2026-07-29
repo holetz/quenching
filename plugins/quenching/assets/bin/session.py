@@ -359,6 +359,39 @@ def read_session(path: Path) -> dict:
     }
 
 
+def refuse(payload: dict, as_json: bool) -> int:
+    """Every refusal leaves by this door: exit 2, a code, and a stated reason."""
+    if as_json:
+        print(json.dumps({"ok": False, **payload}, indent=2, ensure_ascii=False))
+    else:
+        print(f"refused: {payload['message']}", file=sys.stderr)
+    return REFUSAL
+
+
+def silence_refusal(model: dict) -> dict | None:
+    """Why a zero-command parse must refuse rather than report nothing.
+
+    "No commands found" and "I could not read this file" produce the same empty report and
+    call for opposite actions — rerun against another session, or fix the parser. A format
+    drift in Claude Code's undocumented JSONL would otherwise land as a clean run forever,
+    which is the failure mode `## Risks` names first. So a transcript that HELD something
+    and yielded nothing is an exit-2 refusal carrying its reason.
+    """
+    if model["commands"]:
+        return None
+    if model["lines"] == 0:
+        return {"code": "se-empty-transcript",
+                "message": f"{model['transcript']} holds no records — nothing to report, "
+                           f"and an empty report would not have said so"}
+    unparsed = model["unparsed"]
+    detail = (f", and {unparsed} of them could not be parsed — the transcript format has "
+              f"likely drifted" if unparsed else
+              ", all of which parsed — this session ran no command, or the attribution "
+              "and entry-form marks have changed shape")
+    return {"code": "se-no-command-parsed",
+            "message": f"read {model['lines']} record(s) from {model['transcript']}{detail}"}
+
+
 def clip(text: str, limit: int) -> str:
     text = " ".join(text.split())
     return text if len(text) <= limit else text[:limit - 1] + "…"
@@ -448,27 +481,25 @@ def digest_command(cmd: Command, corrections: list, limit: int, cap: int) -> dic
 def cmd_digest(args) -> int:
     path, how = resolve_transcript(args.transcript, Path.cwd().resolve())
     if path is None:
-        if args.json:
-            print(json.dumps({"ok": False, "code": "se-no-transcript", "message": how}, indent=2))
-        else:
-            print(f"refused: {how}", file=sys.stderr)
-        return REFUSAL
+        return refuse({"code": "se-no-transcript", "message": how}, args.json)
 
     model = read_session(path)
     model_objects = model.pop("_commands")
     objects = model_objects
     corrections = model["corrections"]
+
+    silent = silence_refusal(model)
+    if silent:
+        return refuse(silent, args.json)
+
     if args.command:
         want = normalize(args.command)
         objects = [c for c in objects if c.name == want]
         if not objects:
-            msg = f"no command named {want!r} in this transcript"
-            if args.json:
-                print(json.dumps({"ok": False, "code": "se-unknown-command",
-                                  "message": msg}, indent=2))
-            else:
-                print(f"refused: {msg}", file=sys.stderr)
-            return REFUSAL
+            return refuse({"code": "se-unknown-command",
+                           "message": f"no command named {want!r} in this transcript; "
+                                      f"found {', '.join(c.name for c in model_objects)}"},
+                          args.json)
 
     # Assignment runs over EVERY command in the session, not just the ones being digested:
     # a `--command` filter must not silently hand one command a turn that belonged to the
@@ -523,7 +554,7 @@ def cmd_digest(args) -> int:
             # A capped list that does not say it was capped reads as a complete one.
             for key, n in sorted(c.get("truncated", {}).items()):
                 print(f"  … {n} more {key} not shown (--cap {args.cap})")
-    return OK if digested else FINDINGS
+    return OK
 
 
 # --------------------------------------------------------------------------------------
@@ -596,6 +627,15 @@ FIXTURE = [
 ]
 
 
+# A transcript that plainly HELD something and yielded no command. The point of the case
+# is that this must never come back as a clean, empty report.
+SILENT_FIXTURE = [
+    {"type": "user", "uuid": "s1", "message": {"content": "just a conversation"}},
+    {"type": "assistant", "uuid": "s2",
+     "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "ls"}}]}},
+]
+
+
 def selftest_failures() -> list:
     """Every assertion the fixture exists to make. Returns the failures, [] on pass."""
     import tempfile
@@ -605,6 +645,17 @@ def selftest_failures() -> list:
         path.write_text("\n".join(json.dumps(r) if isinstance(r, dict) else r
                                   for r in FIXTURE) + "\n", encoding="utf-8")
         model = read_session(path)
+
+        silent_path = Path(tmp) / "silent.jsonl"
+        silent_path.write_text("\n".join(json.dumps(r) for r in SILENT_FIXTURE) + "\n",
+                               encoding="utf-8")
+        silent_model = read_session(silent_path)
+        silent_model.pop("_commands")
+
+        empty_path = Path(tmp) / "empty.jsonl"
+        empty_path.write_text("", encoding="utf-8")
+        empty_model = read_session(empty_path)
+        empty_model.pop("_commands")
 
     fail = []
     by_name = {c.name: c for c in model["_commands"]}
@@ -644,6 +695,16 @@ def selftest_failures() -> list:
     check("unparsed counted", model["unparsed"], 1)
     check("unparsed reported", [a["code"] for a in model["anomalies"]], ["se-unparsed-line"])
     check("unparsed line number", [a["line"] for a in model["anomalies"]], [13])
+
+    # Silence must refuse, never report clean.
+    check("a parsed run does not refuse", silence_refusal(model), None)
+    silent = silence_refusal(silent_model)
+    check("non-empty zero-command refuses",
+          silent and silent["code"], "se-no-command-parsed")
+    check("the refusal states how much it read",
+          bool(silent and "2 record(s)" in silent["message"]), True)
+    empty = silence_refusal(empty_model)
+    check("empty transcript refuses", empty and empty["code"], "se-empty-transcript")
     return fail
 
 
@@ -662,17 +723,17 @@ def cmd_selftest(args) -> int:
 def cmd_list(args) -> int:
     path, how = resolve_transcript(args.transcript, Path.cwd().resolve())
     if path is None:
-        if args.json:
-            print(json.dumps({"ok": False, "code": "se-no-transcript", "message": how}, indent=2))
-        else:
-            print(f"refused: {how}", file=sys.stderr)
-        return REFUSAL
+        return refuse({"code": "se-no-transcript", "message": how}, args.json)
 
     model = read_session(path)
     model.pop("_commands")
     model.pop("corrections")
     model["resolvedBy"] = how
-    model["ok"] = bool(model["commands"])
+
+    silent = silence_refusal(model)
+    if silent:
+        return refuse(silent, args.json)
+    model["ok"] = True
 
     if args.json:
         print(json.dumps(model, indent=2, ensure_ascii=False))
@@ -684,24 +745,22 @@ def cmd_list(args) -> int:
               f"  unattributed tool calls={model['unattributedToolCalls']}")
         for a in model["anomalies"]:
             print(f"  ! {a['code']} line {a['line']}: {a['message']}")
-        if not model["commands"]:
-            print("\nno commands found in this transcript")
-        else:
-            print(f"\n{len(model['commands'])} command(s):")
-            for c in model["commands"]:
-                span = c["span"]
-                print(f"  {c['command']}")
-                print(f"    entry: {', '.join(c['entryForms'])}"
-                      f"  lines {span['firstLine']}-{span['lastLine']}"
-                      f"  tool calls: {c['toolCalls']}")
-                if c["tools"]:
-                    top = ", ".join(f"{k}={v}" for k, v in list(c["tools"].items())[:6])
-                    print(f"    tools: {top}")
-                for inv in c["invocations"]:
-                    by = f" (invoked by {inv['invokedBy']})" if inv["invokedBy"] else ""
-                    arg = f" args={inv['args']!r}" if inv["args"] else ""
-                    print(f"    - {inv['form']} at line {inv['line']}{by}{arg}")
-    return OK if model["commands"] else FINDINGS
+        # A zero-command parse never reaches here — silence_refusal already exited 2.
+        print(f"\n{len(model['commands'])} command(s):")
+        for c in model["commands"]:
+            span = c["span"]
+            print(f"  {c['command']}")
+            print(f"    entry: {', '.join(c['entryForms'])}"
+                  f"  lines {span['firstLine']}-{span['lastLine']}"
+                  f"  tool calls: {c['toolCalls']}")
+            if c["tools"]:
+                top = ", ".join(f"{k}={v}" for k, v in list(c["tools"].items())[:6])
+                print(f"    tools: {top}")
+            for inv in c["invocations"]:
+                by = f" (invoked by {inv['invokedBy']})" if inv["invokedBy"] else ""
+                arg = f" args={inv['args']!r}" if inv["args"] else ""
+                print(f"    - {inv['form']} at line {inv['line']}{by}{arg}")
+    return OK
 
 
 def build_parser() -> argparse.ArgumentParser:
