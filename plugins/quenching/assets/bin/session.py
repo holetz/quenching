@@ -54,6 +54,20 @@ So the entry marks are read for *how a command was reached and with what argumen
 attribution is read for *what it cost*. A command may be found by attribution alone — a
 stage whose entry mark fell outside a compacted window still has every turn it drove.
 
+THE TOOL CONTRACT
+-----------------
+Same shape as its three siblings, so a command body branches on DATA and never on prose:
+every subcommand takes `--json`, and the exit code is the whole decision.
+
+    0   ok            the transcript was read and every record parsed
+    1   findings      it was read and reported, but something in it could not be parsed —
+                      the counts are real and the coverage is not provably complete
+    2   refusal       nothing usable: no transcript, an empty one, a non-empty one that
+                      yielded no command, or a `--command` that is not in it
+
+Exit 1 exists so a caller can tell "clean read" from "read with holes" without parsing the
+anomaly list. It is not a failure — the findings are printed either way.
+
 PARSE HONESTY
 -------------
 Per `docs/standards/quality/parse-honesty.md`: this tool narrows a transcript into a
@@ -554,7 +568,7 @@ def cmd_digest(args) -> int:
             # A capped list that does not say it was capped reads as a complete one.
             for key, n in sorted(c.get("truncated", {}).items()):
                 print(f"  … {n} more {key} not shown (--cap {args.cap})")
-    return OK
+    return FINDINGS if payload["unparsed"] else OK
 
 
 # --------------------------------------------------------------------------------------
@@ -705,6 +719,16 @@ def selftest_failures() -> list:
           bool(silent and "2 record(s)" in silent["message"]), True)
     empty = silence_refusal(empty_model)
     check("empty transcript refuses", empty and empty["code"], "se-empty-transcript")
+
+    # The uniform contract, proved against the parser rather than against the docstring:
+    # a subcommand added without --json is the whole failure mode this catches.
+    subparsers = [a for a in build_parser()._actions
+                  if isinstance(a, argparse._SubParsersAction)]
+    check("the parser has subcommands", bool(subparsers), True)
+    for name, sub in (subparsers[0].choices.items() if subparsers else []):
+        opts = {o for action in sub._actions for o in action.option_strings}
+        check(f"{name} accepts --json", "--json" in opts, True)
+    check("exit codes are 0/1/2", (OK, FINDINGS, REFUSAL), (0, 1, 2))
     return fail
 
 
@@ -760,7 +784,7 @@ def cmd_list(args) -> int:
                 by = f" (invoked by {inv['invokedBy']})" if inv["invokedBy"] else ""
                 arg = f" args={inv['args']!r}" if inv["args"] else ""
                 print(f"    - {inv['form']} at line {inv['line']}{by}{arg}")
-    return OK
+    return FINDINGS if model["unparsed"] else OK
 
 
 def build_parser() -> argparse.ArgumentParser:
