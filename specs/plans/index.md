@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**33 specs** · 1 executing · 1 designed · 31 captured
+**34 specs** · 1 executing · 1 designed · 32 captured
 
 ### Executing
 
@@ -122,7 +122,6 @@ closing out unbuilt work looks like.
 | [improve-command-from-session](2026-07-28-improve-command-from-session.md) | Mine a session for improvements to the command that started it | 2026-07-28 |
 | [make-sk-unscoped-bash-read-the-body](2026-07-28-make-sk-unscoped-bash-read-the-body.md) | sk-unscoped-bash cannot read the body its own remedy points at | 2026-07-28 |
 | [plugin-dir-for-functional-checks](2026-07-28-plugin-dir-for-functional-checks.md) | Plugin Dir For Functional Checks | 2026-07-28 |
-| [prefer-worktree-isolation](2026-07-28-prefer-worktree-isolation.md) | Prefer worktrees for spec isolation and remove them after a successful merge | 2026-07-28 |
 | [probe-a-frontmatter-hook-firing](2026-07-28-probe-a-frontmatter-hook-firing.md) | No probe observes a frontmatter hooks: block actually fire | 2026-07-28 |
 | [reduce-execute-conclude-cost](2026-07-28-reduce-execute-conclude-cost.md) | Re-evaluate /specs:execute and /specs:conclude runs for cost reduction | 2026-07-28 |
 | [resolve-spec-from-worktree](2026-07-28-resolve-spec-from-worktree.md) | Resolve a spec from its own worktree before falling back to the current branch | 2026-07-28 |
@@ -130,6 +129,8 @@ closing out unbuilt work looks like.
 | [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
 | [stop-develop-offering-follow-up-specs](2026-07-28-stop-develop-offering-follow-up-specs.md) | /specs:develop should not offer to create a follow-up spec | 2026-07-28 |
 | [upgrade-okf-to-v0-2](2026-07-28-upgrade-okf-to-v0-2.md) | Upgrade the OKF contract to v0.2 or later | 2026-07-28 |
+| [commit-on-worktree-specs](2026-07-29-commit-on-worktree-specs.md) | Commit work at the end of develop, create and execute when a spec is already isolated in a worktree | 2026-07-29 |
+| [narrow-the-stale-doc-trigger-to-content-drift](2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md) | Narrow The Stale Doc Trigger To Content Drift | 2026-07-29 |
 <!-- END GENERATED -->
 
 ## Frontmatter

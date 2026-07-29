@@ -16,9 +16,11 @@ This file is the **operator manual** for that workspace. Its sibling
 described in §6.
 
 **Fully native — nothing external to install.** This front has **no npm package, no Node
-runtime, no external CLI, no `config.yaml`, no delta format, and no separate spec store**. The
-one tool is `specs.py` — a single stdlib-only Python script (the same mold as the OKF validator),
-installed into `.claude/hooks/specs.py` by `/specs:align`. All you need is Python:
+runtime, no external CLI, no delta format, and no separate spec store**. The one tool is
+`specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), installed
+into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `specs/config.json`
+(§4, `/specs:isolate`) — absent in most repos, and its absence costs nothing. All you need is
+Python:
 
 ```bash
 python3 --version           # or `py --version` on Windows
@@ -193,10 +195,27 @@ Isolation is not a privilege of building. Creating and developing a spec also wr
 `plans/` and dirty your tree, and sometimes a spec should be born on the branch that will carry
 its work — so this command takes **or reports** isolation for one spec whenever you want it.
 
-It offers a **branch** (`plan/<slug>`, the default) or a **worktree** beside the repo, commits an
-uncommitted spec file onto the new branch so the base keeps no trace of it, and stamps
-`branch: {base, work}`. `base` is captured while it is still true: after a merge, git cannot say
-what the branch was cut from.
+It offers a **worktree** beside the repo first, and recommends it, unconditionally — a plain
+**branch** (`plan/<slug>`) and working in place stay available after it. No heuristic sniffs the
+target for `node_modules/` or `.venv/`; the offer states the cost instead, inline: a fresh
+worktree carries only what git tracks, so choosing Branch is a decision you read rather than a
+discovery at the first failing `verify:`. Either way it commits an uncommitted spec file onto the
+new branch so the base keeps no trace of it, and stamps `branch: {base, work}`. `base` is
+captured while it is still true: after a merge, git cannot say what the branch was cut from.
+
+**A target may declare a setup command.** `specs/config.json` at the workspace root, with one
+recognised key:
+
+```json
+{"worktreeSetup": "./scripts/wt-setup.sh"}
+```
+
+No file, no key, or a command that does not resolve all mean no setup, and none of it is a
+finding. When Worktree is chosen and the key is declared, `/specs:isolate` shows the command
+**verbatim** in the same plan block that already shows the branch name and the worktree path,
+then runs it once, with cwd inside the new worktree, right after `git worktree add`. **Choosing
+Worktree is the OK for it** — no second prompt. A failing setup is reported and never undoes the
+worktree.
 
 **Asking is a complete use of it.** "Am I isolated?" costs a few `git` reads and writes nothing.
 A spec whose branch is already alive is never given a second one — you are offered a checkout or
@@ -400,6 +419,7 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
+| `specs.py config [--json]` | the workspace's declared `specs/config.json`, as data; exit 0 whether or not anything is declared |
 
 There is no `init` (scaffold is an asset copy), no `store`, no `profiles`, no telemetry, and no
 delta parser. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
