@@ -207,41 +207,39 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 
 ## Handoff
 
-State of the tree after task 3.1. Sections 1 and 2 are complete; `session.py` is finished and
-hardened. **Two open decisions block task 3.2** — both recorded in `## Discoveries`, neither
-patchable inside a task.
+State of the tree after task 3.3. Sections 1–3 are complete: the tool is hardened, the command is
+minted, and the manuals/counts agree with `skills.py doctor` (26 commands, 0 findings).
 
-`plugins/quenching/assets/bin/session.py` is still the only file this spec has written. Plugin-side
-only, NOT in the six-artifact lockstep. Contract: every subcommand takes `--json`; exit 0 ok /
-1 read-with-holes / 2 refusal.
+`plugins/quenching/assets/bin/session.py` — plugin-side only, NOT in the six-artifact lockstep.
+Contract: every subcommand takes `--json`; exit 0 clean / 1 findings (an anomaly against it —
+unparsed line or unclosed attribution) / 2 refusal. `attributedRun` carries `closed` and
+`mayIncludeTurnsFrom`; `close_attribution()` marks a stage unclosed when its conductor never
+reappears in the timeline after the invoking `Skill` call, and tightens `last` when it does.
 
-- `list [transcript]` — every command a session ran, entry forms, tool-call span
-- `digest [transcript] [--command N] [--max-quote 200] [--cap 20]` — tool counts, redundant
-  reads, repeated shell, human corrections (`during` vs `after`)
-- `selftest` — 15-record fixture, mutation-checked; also asserts the `--json` contract
+`plugins/quenching/commands/skill/retro.md` — minted via `/skill:new`, typed-only
+(`disable-model-invocation: true`, 0 always-on chars), read-only grant, not `context: fork`.
+`skills.py lint` clean; `functional-checks.sh` 9/9 on a fresh full run (one stray FAIL on an
+unrelated assertion did not reproduce — see `## Discoveries`).
 
-**BLOCKER 1 — the span is known wrong.** `attributionSkill` marks where a command STARTS driving
-and has no reliable end: across all 43 Skill stages in the 86-transcript corpus it reverts to the
-conductor once. In the gate session `/specs:isolate` is credited with 5 `AskUserQuestion` calls
-that were `/specs:develop`'s own. Minting the command before this is fixed ships that false claim.
-The span must close on the Skill call boundary — a `## Design` change, so `/specs:develop`.
-
-**BLOCKER 2 — the ceiling re-set is undeclared.** The draft description prices at 830 chars, taking
-the surface to 13,556 against a 12,726 zero-headroom ceiling. `sk-budget-ceiling` firing is the
-standard working as designed, but the re-set touches `DEFAULT_CEILING` in `skills.py`,
-`context-budget.md` and `README.md` — and no task declares any of them. `## Impact` needs them.
+Manuals updated: `CLAUDE.md` and `plugins/quenching/README.md` now say 26 commands / six
+`/skill:*`; `assets/claude/QUENCHING.md` lists `/skill:retro` in its intro and carries its own
+`### /skill:retro` section. The cost-model paragraph in README now also names the typed-only
+route as the alternative to a `DEFAULT_CEILING` re-set — `/skill:retro` added 0 of the 12,726
+always-on characters.
 
 Measured facts behind the parser, all in `## Discoveries`: human turns are text BLOCKS in a list,
 not the bare content string; `isMeta: true` is the harness-injected command body; reads and writes
-are counted separately; one Command per NAME, so a command invoked twice merges into one span.
+are counted separately; one Command per NAME; attribution returns to the conductor in 1 of 43
+measured Skill stages.
 
 Corpus: 87 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`. 81 exit
 0, 6 refuse with `se-no-command-parsed`, none crash. Largest is 7.1 MB and digests to 4.6 KB
 against a stated 64 KB budget.
 
-Next: 3.2 mint the command (BLOCKED on both decisions above), 3.3 the manuals and counts, 4.1
-`docs/standards/automation/session-evidence.md`, 5.x surface checks — 5.1 asserts 26 commands and
-5.2 is `functional-checks.sh`, the only check that `commands/**` actually loads.
+Next: 4.1 write `docs/standards/automation/session-evidence.md` at `authority: background`
+(the one `docs/standards/` path this spec is allowed to author), then 5.1 confirm 26 commands
+with no `doctor` findings (already true, task just needs to assert it) and 5.2
+`functional-checks.sh` exits 0 — the only check that `commands/**` actually loads.
 ## Tasks
 
 ### 1. Gate — prove the retro finds anything
@@ -281,8 +279,9 @@ Next: 3.2 mint the command (BLOCKED on both decisions above), 3.3 the manuals an
 - [x] 3.2 Mint the command via `/skill:new` — a read-only grant with no `Write` and no `Edit`, target selection via `AskUserQuestion`
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint` clean on the new file
       subject: plan/improve-command-from-session: 3.2 Mint the command via /skill:new
-- [ ] 3.3 Add the command to `assets/claude/QUENCHING.md` and update the surface counts in `CLAUDE.md` and `README.md`
+- [x] 3.3 Add the command to `assets/claude/QUENCHING.md` and update the surface counts in `CLAUDE.md` and `README.md`
       verify: the stated counts agree with `skills.py --root plugins/quenching doctor --json`
+      subject: plan/improve-command-from-session: 3.3 Add the command to assets/claude/QUENCHING.md and update surface counts
 
 ### 4. The standard
 
@@ -312,3 +311,4 @@ Next: 3.2 mint the command (BLOCKED on both decisions above), 3.3 the manuals an
 - A selftest that passes on first write proves nothing. This one was mutation-checked: breaking the isMeta rule, the text-block rule, the reads-vs-writes split and the uuid dedup each made it fail (1-2 assertions apiece). The same cheap mutation pass would be worth running against the three shipped tools selftests, which have never been shown to fail.
 - TASK 3.1 — THE PRICE, measured not estimated (skills.py budget, parsed values). BEFORE: 25 commands, 12726 chars always on (~3182 tokens), ceiling 12726. DRAFT DESCRIPTION: 830 chars — inside both per-command caps, 706 under the 1536 sk-metadata-cap error and 194 under the 1024 sk-description-portable warning. AFTER (measured on a scratch copy of the surface, nothing minted): 26 commands, 13556 chars (~3389 tokens). DELTA +830 chars, ~+207 tokens, +6.5% on every session before anything fires.
 - The +830 crosses the zero-headroom ceiling and sk-budget-ceiling fires — by design, per docs/standards/automation/context-budget.md, which predicts the next command minted crosses it and treats that as the signal working (budget reports, never refuses). BUT the re-set is a three-file bookkeeping change — DEFAULT_CEILING in skills.py, the figure transcribed in context-budget.md, and README.md — and NO TASK IN THIS SPEC DECLARES IT. ## Impact lists neither skills.py nor context-budget.md. The standard names this exact cost ("a ratchet with no headroom converts every new command into a three-file bookkeeping change"), so the gap is in this spec, not in the standard. Needs a task before 3.2, via /specs:develop.
+- functional-checks.sh assertion 1 (the /quenching:specs:status reference-citation probe) showed one stray FAIL against this worktree that did not reproduce on an immediate rerun or a fresh full run (9/9 passed) — likely --max-turns 10 being too tight for a claude -p subprocess that sometimes explores sibling worktrees first; probe flakiness, not a regression from session.py or retro.md, neither of which touch /specs:status's body or its cited references
