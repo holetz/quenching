@@ -50,13 +50,13 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align-all/convergence.md`](assets/references/align-all/convergence.md).
 
-## The twenty-five commands
+## The twenty-six commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
-there is no `skills/` tree and no wrapper. The twenty-five split by front: `/docs:*` for the ten
+there is no `skills/` tree and no wrapper. The twenty-six split by front: `/docs:*` for the ten
 that act on the OKF `docs/` bundle (one nested a level deeper at `/docs:documentation:build`),
-`/specs:*` for the nine that act on the native `specs/` workspace, `/skill:*` for the five that
+`/specs:*` for the nine that act on the native `specs/` workspace, `/skill:*` for the six that
 act on the target's `.claude/` automation surface (two nested: `/skill:agent:new`,
 `/skill:hook:new`), and the root `/align` for the one that spans all three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
@@ -421,7 +421,7 @@ and identical in every adopting repo:
 | --- | --- | --- |
 | `docs/QUENCHING.md` | `/docs:align` | the "I want to → run this" table, the homes and `type` vocabulary, the ten `/docs:*` commands, the shared operating model (probe first, one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
 | `specs/QUENCHING.md` | `/specs:align` | the single-folder layout, the create → develop → approve → execute → conclude lifecycle, the nine `/specs:*` commands, the frontmatter record vocabulary, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, and the older-workspace migrations |
-| `.claude/QUENCHING.md` | `/skill:align` | the single taxonomy axis, one file per entry point, the five `/skill:*` commands, the rule + registry artifacts, hook/settings hygiene |
+| `.claude/QUENCHING.md` | `/skill:align` | the single taxonomy axis, one file per entry point, the six `/skill:*` commands, the rule + registry artifacts, hook/settings hygiene |
 
 They complement, never duplicate, the reserved listings: `docs/index.md` says **what** is in the
 bundle, `QUENCHING.md` says **how** it is worked. `QUENCHING.md` is an **exempt** basename in
@@ -448,13 +448,16 @@ The plugin keeps its context and token footprint predictable on three levels:
    Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
 
-   **Where it stands now: 12,726 characters** (~3,182 approximate tokens) across 25 commands and
+   **Where it stands now: 12,726 characters** (~3,182 approximate tokens) across 26 commands and
    0 agent definitions, measured 2026-07-28 — the ceiling fired the day `/specs:isolate` was
    minted, exactly as a zero-headroom ratchet is meant to, and was revised from that measurement. Most of the difference between 2,083 and that figure
    is the routing information being bought back deliberately — the triggers and boundaries the
    collapse had dropped. That measurement is also the current default ceiling, which has **no
-   headroom by construction**: it equals the surface's total, so the 25th command crosses it the
-   day it is minted. The rule and the revision procedure live in
+   headroom by construction**: it equals the surface's total, so the next always-on command
+   crosses it the day it is minted — `/skill:retro`, the 26th, took the other exit instead:
+   `disable-model-invocation: true` drops its description from the always-on total entirely, so
+   it cost **0** of the 12,726 characters and the ceiling never fired. The rule and the revision
+   procedure live in
    [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md).
 2. **Body on invocation.** A command's body loads only when it runs; every body stays well
    under 500 lines. Shared procedure lives once, in its owners —
