@@ -350,8 +350,9 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
       at execution time, one commit, `archive/` untouched
       verify: the completeness sweep in `## Validation` prints nothing
       subject: plan/add-eli5-section-to-specs: 5.1 Backfill `## Overview` into every spec in specs/plans/ that lacks it
-- [ ] 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
+- [x] 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
       verify: cat VERSION and the three `--version` calls all agree
+      subject: plan/add-eli5-section-to-specs: 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
 - [ ] 5.3 Run the full skeleton gate — selftest ×3, okf-validate ×2, skills.py doctor and lint,
       and ./assets/bin/functional-checks.sh — all clean
 
