@@ -45,6 +45,10 @@ priority: {level: 16, criticality: medium, complexity: 5, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Four `specs.py` functions repeat the same sequence to turn a path into a usable spec:

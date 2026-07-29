@@ -45,6 +45,10 @@ priority: {level: 6, criticality: high, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Spec bodies are written in English today, which makes them hard to read for the users of a

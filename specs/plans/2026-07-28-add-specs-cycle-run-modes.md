@@ -45,6 +45,10 @@ priority: {level: 21, criticality: medium, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `/specs:develop`, `/specs:execute` and `/specs:conclude` each run one fixed way, so a human

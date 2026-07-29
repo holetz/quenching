@@ -45,6 +45,10 @@ priority: {level: 7, criticality: high, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Every command's `description` is **always-on**: it is in context on every session in every repo

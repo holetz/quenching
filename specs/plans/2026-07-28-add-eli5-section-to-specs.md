@@ -48,6 +48,12 @@ branch: {base: main, work: plan/add-eli5-section-to-specs}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+A spec's own sections are precise and hard to read cold — a reviewer or a returning author has nowhere to start. This spec adds a fourteenth canonical section, `## Overview`, first in the file, ahead of `## Problem`: connective tissue that orients a reader among the other sections rather than summarizing each one. It is warn-only, like `## Handoff`, never part of the ten-section `ready` gate.
+
+The parsed contract (`schema.json`, `specs.py`, the duplicated template) now carries `## Overview` at position 1; the authoring doctrine (`spec-driven.md`, `artifacts.md`, `questions.md`) documents its register and its write-last rule — the shape bank creates it, every later bank refreshes it, always authored last within one edit even though it reads first in the file. `/specs:align` reports an empty one via `sp-overview-missing`, through the same reported-not-authored contract the sweep already applies to `sp-handoff-empty` and `sp-unrefined`. A one-time sweep backfills the section into every other spec already sitting in `plans/`; `archive/` is left alone, and no future consumer is wired to read it yet — that is a follow-up spec's job.
+
 ## Problem
 
 A spec's sections are already written for a human reader, and it still is not enough:
@@ -340,9 +346,10 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
 
 ### 5. Backfill and release
 
-- [ ] 5.1 Backfill `## Overview` into every spec in `specs/plans/` that lacks it — the set resolved
+- [x] 5.1 Backfill `## Overview` into every spec in `specs/plans/` that lacks it — the set resolved
       at execution time, one commit, `archive/` untouched
       verify: the completeness sweep in `## Validation` prints nothing
+      subject: plan/add-eli5-section-to-specs: 5.1 Backfill `## Overview` into every spec in specs/plans/ that lacks it
 - [ ] 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
       verify: cat VERSION and the three `--version` calls all agree
 - [ ] 5.3 Run the full skeleton gate — selftest ×3, okf-validate ×2, skills.py doctor and lint,

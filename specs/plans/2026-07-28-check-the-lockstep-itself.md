@@ -44,6 +44,10 @@ verification: per-section
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `skills.py drift` compares each installed copy against **the shipped tool's own `VERSION`

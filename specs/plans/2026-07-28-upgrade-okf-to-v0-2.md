@@ -44,6 +44,10 @@ verification: per-section
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 The bundle contract this repo ships and enforces is OKF v0.1 — the version stamped in

@@ -44,6 +44,10 @@ verification: per-section
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `functional-checks.sh` checks 1-3 spawn `claude -p` in a sandbox whose `.claude/settings.json`

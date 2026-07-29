@@ -44,6 +44,10 @@ verification: per-section
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Os aligns escrevem direto na árvore em que a sessão está. `/docs:align`,

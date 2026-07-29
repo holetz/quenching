@@ -45,6 +45,10 @@ priority: {level: 3, criticality: medium, complexity: 3, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `functional-checks.sh` check 3 proves a spoken phrase still routes by description alone, and it

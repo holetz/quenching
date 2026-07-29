@@ -45,6 +45,10 @@ priority: {level: 10, criticality: medium, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 A estrutura de subpastas fixas de `docs/standards/` que o plugin instala e espera precisa ser revista. A pasta `mlops` destoa das demais: enquanto as outras nomeiam assuntos de aplicação geral, `mlops` representa um braço muito específico, usado em quase nenhum projeto que o plugin alinha — o que faz o esqueleto canônico carregar, em todo alvo, uma pasta que quase sempre fica vazia.

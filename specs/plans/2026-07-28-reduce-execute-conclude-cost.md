@@ -44,6 +44,10 @@ verification: per-section
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 `/specs:execute` and `/specs:conclude` are the two most expensive commands on the specs front, and

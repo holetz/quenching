@@ -45,6 +45,24 @@ priority: {level: 11, criticality: medium, date: 2026-07-28}
      the human sections to an executor; that is what lets one file serve both audiences
      without bloating agent context. -->
 
+## Overview
+
+The plugin's `.claude/` command front is named `skill`, but `skill` is also the name of one
+specific artifact kind inside it, so the agents and hooks nested under `commands/skill/` read as
+sub-kinds of a skill when they are not — that's the defect this spec exists to fix. The fix renames
+the whole front to `automation` (a name the repo already uses for this territory elsewhere) and
+gives it four peer contexts, one per artifact it mints — `command/`, `agent/`, `hook/`,
+`harness/` — with the CLAUDE.md-aligning commands moving into `harness`. `## Design` works through
+the choices this forces: why `automation` beats `claude` as the front's name, why
+sweep-the-whole-front verbs sit at the root while single-artifact verbs sit under their context,
+why the shared `harness` stage can safely be invoked by two different aligns, and where the
+bare-vs-registry-name rule should live once renamed. Every citation of a moved path across
+`commands/**`, `assets/**`, `docs/**` and the three manuals is rewritten in the same diff, since the
+noun `skill` is being retired from the same ~50 files the path rename touches. The work is blocked
+until `instrument-and-extend-skill-front` merges, and `## Open Decisions` leaves two questions for
+later — whether `skills.py` itself gets renamed, and whether a sibling spec on stale vocabulary is
+now superseded.
+
 ## Problem
 
 The plugin grew the skill-authoring flow inside `commands/skill/`, when a command was the only
