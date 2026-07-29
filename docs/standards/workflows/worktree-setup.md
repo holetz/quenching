@@ -4,7 +4,7 @@ title: Worktree setup contract
 description: The `specs/config.json` contract — the one recognised key, where the file lives, what its absence means, who runs the declared command and with which cwd, and why the consent is the isolation offer rather than a prompt of its own
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-isolate/git.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-07-28
+timestamp: 2026-07-29
 audience: both
 authority: current
 source: prefer-worktree-isolation plan (task 4.2)

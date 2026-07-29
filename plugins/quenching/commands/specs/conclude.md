@@ -270,9 +270,14 @@ stand, what the review found and what was done about it, the docs written in ste
 result of the post-merge checks, and — for an abandonment — that nothing was adopted and what
 became of the branch.
 
+**Say what became of the worktree**, when there was one: removed, or kept with git's refusal
+quoted. It left a directory on disk, and this report is the only place the human learns it is gone
+— an unreported removal is indistinguishable from one that never ran.
+
 Name any `## Discoveries` line still unresolved: those are `/specs:develop`'s discoveries bank to
 close, and they are easiest to lose at exactly this moment.
-**Done when:** path, outcome, records, and both `docs/` passes are all reported.
+**Done when:** path, outcome, records, the worktree's fate, and both `docs/` passes are all
+reported.
 
 ## Invariants to never violate
 
