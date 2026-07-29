@@ -84,19 +84,14 @@ Add a bullet-link with the doc's `description`
 subfolder, create its frontmatter-free `index.md` and link it from `knowledge/index.md`. Never
 add frontmatter to an `index.md`.
 
-### 6. Append to `log.md`
-Per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), with the entry:
-`**Creation**: [<title>](/docs/knowledge/<path>.md) — <one line>`.
-
-### 7. Enrich the glossary
+### 6. Enrich the glossary
 If the concept introduced a **repo-specific term**, add or sharpen its entry in
 `knowledge/glossary.md` per **Enriching the glossary** in
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) (the tail step
 every capture runs; on-demand counterpart `/docs:define`, bulk counterpart
 `/docs:glossary-backfill`).
 
-### 8. Self-check against the conformance core
+### 7. Self-check against the conformance core
 Verify every file you touched against
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) —
 the same checks the installed `okf-validate.py` hook (if wired) machine-verifies on write.

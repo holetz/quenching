@@ -76,12 +76,9 @@ Write the definition (and the rule if planned). **Done when:** every planned fil
 with its planned content.
 
 ### 7. OKF tail (bundle present)
-Append to `docs/log.md` (`**Creation**`/`**Update**`: the agent minted/edited) per
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The
-registry's GENERATED zone lists commands only — offer ONE line in its **curated prose**
-pointing at the agent surface instead, and a `knowledge/glossary.md` entry if the agent
-coined a term; the user decides both. **Done when:** the log is appended and each offer is
-answered.
+The registry's GENERATED zone lists commands only — offer ONE line in its **curated prose**
+pointing at the agent surface, and a `knowledge/glossary.md` entry if the agent coined a term;
+the user decides both. **Done when:** each offer is answered.
 
 ### 8. Self-check
 ```bash

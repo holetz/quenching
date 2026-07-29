@@ -75,13 +75,7 @@ position under `## Terms`. If an entry for the term exists, add a missing link o
 definition — never clobber a filled definition or link. Keep the list sorted. Definitions may
 follow the repo's language; the term itself is verbatim as the repo writes it.
 
-### 5. Append to `log.md`
-Per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), with the entry:
-`**Update**: [Glossary](/docs/knowledge/glossary.md) — added term "<Term>"` (or `refined`). This
-is the one case where a glossary edit logs on its own — it is the only thing written.
-
-### 6. Self-check against the conformance core
+### 5. Self-check against the conformance core
 Verify every file you touched against
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md),
 plus this skill's own gate: the list is still sorted and its links resolve.

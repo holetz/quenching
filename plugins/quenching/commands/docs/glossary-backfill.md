@@ -92,11 +92,8 @@ writing anything — never present a plan per slice.
 The orchestrator alone edits `knowledge/glossary.md`: insert each **add** in alphabetical
 position as `* [<Term>](<path>.md) — <definition>` (linked) or `* **<Term>** —
 <definition>` (unlinked); for each **refine**, add the missing link to an existing unlinked
-entry — never overwrite a filled definition or link. Then append **one** summarizing entry
-to `docs/log.md` (not one per term), per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md):
-`**Update**: [Glossary](/docs/knowledge/glossary.md) — backfilled N terms from a bundle-wide
-scan (M linked)`.
+entry — never overwrite a filled definition or link. The glossary is the only file this
+command writes; the count of terms added and refined belongs in the report, not in the bundle.
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against

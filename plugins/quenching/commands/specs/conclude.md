@@ -206,9 +206,10 @@ none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.
 merge commit to name. `specs.py validate` reports a record that gets this backwards either way
 (`sp-bad-merge`).
 
-The archived spec now lives in `archive/`, so stamping it is the one edit this command makes to a
-file already there — permitted because it is *this* spec, closing *this* run, and because the
-alternative is a write on the base after the merge. Commit it on the branch.
+The archived spec now lives in `archive/`, so stamping it is one of the two edits this command
+makes to a file already there — the other is the distillation's append to `## Outcome` above.
+Both are permitted because they touch *this* spec, closing *this* run, and because the
+alternative is a write on the base after the merge. Commit them on the branch.
 
 For `abandoned` nothing is merged, so nothing is stamped; the distillation above still runs.
 **Done when:** the distillation offer was made and applied or declined, and `merge` is stamped for
@@ -260,8 +261,10 @@ close, and they are easiest to lose at exactly this moment.
   syncs nothing.
 - Never bulk-copy a spec into `docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
-- Never edit or delete anything already in `archive/`, with exactly one exception: the `merge:`
-  stamp this run writes onto the spec it is closing, in step 5. Never touch a spec other than that
-  one, and never revise an archived spec from an earlier run.
+- Never edit or delete anything already in `archive/`, with exactly two exceptions, both in
+  step 5 and both onto the spec this run is closing: the `merge:` stamp, and the distillation's
+  one-line-per-doc append to `## Outcome`. Both record facts that only exist after the archive
+  move; neither revises what the spec claimed. Never touch a spec other than that one, and never
+  revise an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.
