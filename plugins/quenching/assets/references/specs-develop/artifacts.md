@@ -1,7 +1,7 @@
 # Authoring a spec's sections
 
 The per-section authoring doctrine every `/specs:*` command applies when it writes into a spec. The
-**layout, the thirteen sections, the gates, the derived stages and the `specs.py` surface** live
+**layout, the fourteen sections, the gates, the derived stages and the `specs.py` surface** live
 once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
 cited, never restated here — this file is only the *writing* guidance: what belongs under each
@@ -15,6 +15,7 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 ## Contents
 
 - [The explicit-none rule](#the-explicit-none-rule)
+- [`## Overview` — connective tissue, not a summary](#-overview--connective-tissue-not-a-summary)
 - [The nine definition sections](#the-nine-definition-sections)
 - [`## Impact` — the parsed sub-heading](#-impact--the-parsed-sub-heading)
 - [`## Handoff` — small, and refreshed on events](#-handoff--small-and-refreshed-on-events)
@@ -39,15 +40,31 @@ Three rules follow, and the scoping is what keeps them from contradicting the de
 3. **An absent heading before its own gate is legal** — a *not-yet*, not an omission.
 
 **Never invent the explicit none.** `- none — <reason>` is an *answer*; writing one the human never
-gave is worse than leaving the heading absent, because it looks decided. And never write thirteen
+gave is worse than leaving the heading absent, because it looks decided. And never write fourteen
 of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
 without anyone having thought anything.
 
 `specs.py new <slug>` stamps the frontmatter and `## Problem` alone, from
 `assets/specs/templates/spec.md`. Every other heading is created on first write by
 `specs.py section <slug> "<Heading>" --write`, in canonical position. Do not invent new top-level
-headings — one outside the canonical thirteen is a stray and `validate` flags it — and never paste
+headings — one outside the canonical fourteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
+
+## `## Overview` — connective tissue, not a summary
+
+Position 1, ahead of `## Problem`. Warn-only, like `## Handoff` — never part of the `ready` gate
+(spec-driven.md §The fourteen sections).
+
+**Register.** Plain language, assuming no prior context. No jargon the spec itself introduces — a
+reader who has not yet read `## Design` should not need a term `## Design` coins. Connective, not
+compressive: link the sections to each other so the dense material that follows has somewhere to
+attach, rather than restating what each one already says. A summary compresses each section; an
+Overview orients the reader among them.
+
+**Written last.** The shape bank is where it is first written, the same way that bank first writes
+`## Proposal`; every later bank's consolidated edit refreshes it — always authored last within that
+edit, because it can only be correct once the sections it connects have settled. It still sits
+first in the file: only the authoring order within a pass is last, never its position.
 
 ## The nine definition sections
 
