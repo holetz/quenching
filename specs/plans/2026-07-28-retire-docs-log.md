@@ -261,9 +261,10 @@ repositório.
 
 ### 6. Standard
 
-- [ ] 6.1 Escrever `docs/standards/architecture/retiring-a-reserved-artifact.md` (`authority: current`), citando o caso de selftest da tarefa 1.2 como sua guarda
+- [x] 6.1 Escrever `docs/standards/architecture/retiring-a-reserved-artifact.md` (`authority: current`), citando o caso de selftest da tarefa 1.2 como sua guarda
       files: docs/standards/architecture/retiring-a-reserved-artifact.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/retire-docs-log: 6.1 write the retiring-a-reserved-artifact standard
 
 ### 7. Verification
 
