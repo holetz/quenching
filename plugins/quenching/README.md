@@ -71,8 +71,8 @@ Derives the target's current `docs/` shape, maps every existing section to a
 canonical **home**, and produces an **alignment plan**: which homes to scaffold,
 which variant names to migrate (`docs/arquitetura/` → `docs/standards/`), which
 misfiled docs to relocate, which frontmatter to stamp/normalize, which `index.md`
-to (re)generate, and the blast radius of any rename
-that reaches product code. It presents the **full plan** and executes on **one**
+to (re)generate, and the blast radius of any rename that reaches product code. It
+presents the **full plan** and executes on **one**
 confirmation. A rename whose blast radius reaches product code (path constants,
 imports, docstrings) is its **own** confirmation item — never folded into the batch
 OK. After executing it re-runs the conformance checker on the output.
@@ -85,8 +85,8 @@ Triggers: *"align the knowledge base to OKF"*, *"install the docs structure"*,
 Classifies a new piece of information into its **home + `type` + mold**, determines
 its path identity, fills the mold with a complete OKF stamp (`type` + recommended
 fields + method labels, `resource` derived and never invented), writes the concept
-doc, updates the folder's `index.md`, enriches the glossary when the concept names a
-repo-specific term, and validates.
+doc, updates the folder's `index.md`, enriches the glossary when the concept names
+a repo-specific term, and validates.
 
 Triggers: *"insert new information into the base"*, *"add a standard/table/announcement"*,
 *"record knowledge in the OKF docs"*.
@@ -129,8 +129,8 @@ Triggers: *"import/ingest a source into the base"*, *"enrich the knowledge base 
 Files one piece of understanding the human states — a concept, glossary term,
 explanation, mental model, or learning — into the `knowledge/` home, with a
 `type: knowledge` stamp, the OKF recommended fields, `resource` derived from what
-the knowledge concerns, and an updated `index.md`. If the
-information is really a contract / decision / procedure / external-asset fact, it
+the knowledge concerns, and an updated `index.md`. If the information is really a
+contract / decision / procedure / external-asset fact, it
 routes to its home via `quenching-docs-add`. As a tail step it **enriches the glossary**
 (`knowledge/glossary.md`) whenever the concept introduces a repo-specific term.
 
@@ -157,9 +157,9 @@ A–Z lookup of terms, acronyms, and domain vocabulary (a flat, alphabetically s
 list in the same syntax every `index.md` uses; the one deliberate exception to "one concept
 per file"). Confirms the term is repo-specific, derives the link to the concept doc that
 defines it (never invents one), inserts the entry in alphabetical position with a
-one-sentence definition, and **MERGES** rather than clobbering a filled entry. The
-on-demand, single-term counterpart of the glossary tail step the
-other knowledge skills run; `quenching-docs-glossary-backfill` is the whole-bundle bulk counterpart.
+one-sentence definition, and **MERGES** rather than clobbering a filled entry. The on-demand,
+single-term counterpart of the glossary tail step the other knowledge skills run;
+`quenching-docs-glossary-backfill` is the whole-bundle bulk counterpart.
 
 Triggers: *"add a term to the glossary"*, *"define this term"*, *"add this acronym / jargon
 to the glossary"*, *"update the glossary"*.
@@ -258,8 +258,8 @@ criteria, the no-op test) and
 **`quenching-skill-new`** (per-item) mints or edits ONE conformant skill: reads the rule
 (offering to create it on first run), classifies, derives name + wrapper, drafts under
 the doctrine, presents ONE plan, writes on a single OK, then runs the OKF tail
-(regenerate the registry zone, glossary offer, self-check). Without an OKF
-bundle the mint still proceeds (skill + wrapper only) and suggests `quenching-docs-align` once.
+(regenerate the registry zone, glossary offer, self-check). Without an OKF bundle the
+mint still proceeds (skill + wrapper only) and suggests `quenching-docs-align` once.
 
 Triggers: *"create a skill"*, *"mint a skill for X"*, *"organize this skill"*, *"wire a
 command for this skill"*.
@@ -286,8 +286,8 @@ report.
 
 The order is a **dependency, not a preference**: `docs/` first because the other two write OKF
 artifacts *into* the bundle (the skill front's rule + registry, the `docs/standards/` docs a
-spec's distillation mints); `specs/` before `.claude/` matters **only in a migration** — a legacy `openspec/` repo
-carries CLI-generated `openspec-*` skill + `opsx/` command shadow copies that
+spec's distillation mints); `specs/` before `.claude/` matters **only in a migration** — a
+legacy `openspec/` repo carries CLI-generated `openspec-*` skill + `opsx/` command shadow copies that
 `quenching-specs-align` clears before `quenching-skill-align` would otherwise inventory them.
 **Front presence decides the pass** — an absent `docs/` bundle is what the plugin installs, so
 Front 1 always runs; an absent `specs/` workspace is what `quenching-specs-align` scaffolds (from
