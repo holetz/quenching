@@ -338,9 +338,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/assets/specs/QUENCHING.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/specs/plans --listing-root
       subject: plan/prefer-worktree-isolation: 5.2 QUENCHING.md — a oferta invertida e o specs/config.json
-- [ ] 5.3 [P] Corrigir no `CLAUDE.md` a afirmação de que este front não tem arquivo de configuração
+- [x] 5.3 [P] Corrigir no `CLAUDE.md` a afirmação de que este front não tem arquivo de configuração
       files: CLAUDE.md
       verify: a frase "no Node runtime, no `config.yaml`" não descreve mais o front
+      subject: plan/prefer-worktree-isolation: 5.3 CLAUDE.md — a afirmação já não existe (removida pelo align anterior)
 - [ ] 6.1 Rodar o roteiro end-to-end de `## Validation` e registrar as duas asserções
       files: none
       verify: `git log --oneline <base>` contém `merge (merge-commit)` e `test ! -d <worktree>`
@@ -348,3 +349,4 @@ e que esta spec é quem a desfaz.
 ## Discoveries
 
 - functional-checks.sh check 3 (spoken-trigger routing) is nondeterministic — the /docs:add assertion failed once and passed on an identical re-run, so a single red run is not evidence of a regression and the script's exit 0 is not reproducible per-run
+- 5.3: a frase citada ("no Node runtime, no `config.yaml`") já não existe em CLAUDE.md — o commit fcb2a52 (align: converge all three fronts in one pass), incorporado pelo merge de main antes da task 1.1, reescreveu o arquivo de 374 para ~106 linhas e removeu a alegação junto com todo o bloco em que vivia. O verify da task ("a frase ... não descreve mais o front") já é verdadeiro sem edição; nenhuma mudança em CLAUDE.md foi necessária.
