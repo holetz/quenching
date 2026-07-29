@@ -7,6 +7,7 @@ branch: {base: main, work: plan/retire-docs-log}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 reviewed: {date: 2026-07-29}
+outcome: done
 ---
 
 # Retire the docs/ log
@@ -288,3 +289,70 @@ Duas coisas que um revisor precisa saber e não deriva do diff:
 - Routing the distillation bridge into `## Outcome` widens `/specs:conclude`'s "never edit anything in archive/" invariant from one bounded exception (the `merge:` stamp) to two — `## Outcome` is drafted at the archive gate, before distillation knows what it minted, so the append can only happen post-archive. Task 4.3 must restate conclude.md's invariant to match distill.md, or the two contradict.
 - okf-spec.md is a faithful condensation of the EXTERNAL OKF v0.1 spec, so three of its log.md mentions (the SHOULD for reserved filenames, the MAY for any level, the upstream bundle diagram) were left intact and the retirement stated once in the OKF-strict profile section instead. A reader who lands on the SHOULD without reading the profile could still act on it — worth deciding whether the transcript should carry inline retirement markers.
 - Validation item 7 expected 'nothing beyond the new standard' at the repo root, but three mentions remain: the standard, its glossary entry, and QUENCHING.md's reserved-name row. All three DOCUMENT the retirement rather than instruct an append, so the item is satisfied in substance; its wording was written before the glossary entry and the QUENCHING row were foreseen.
+
+## Outcome
+
+Entregue e mergeado com **merge commit** (`--no-ff`), 15/15 tasks. O `log.md` do
+bundle `docs/` deixou de existir como artefato vivo: nada o cria, nada acrescenta
+a ele e nada o valida.
+
+**A distinção que o spec existe para fixar: aposentado não é dessreservado.** O
+nome continua em `RESERVED` e continua isento do bloqueio duro do `PreToolUse`.
+Só o checker saiu. Tirar também a reserva mandaria todo `log.md` sobrevivente
+para o caminho de concept doc — `missing-type` em ERROR, e escrita negada sob
+`hardBlock` — em **todo repositório-alvo já alinhado**, que não mudou nada e só
+atualizou o plugin. A regra está em
+[retiring-a-reserved-artifact.md](/docs/standards/architecture/retiring-a-reserved-artifact.md).
+
+O que mudou, por camada:
+
+- **`okf-validate.py`** — `check_log` e os três códigos `log-*` removidos; o
+  branch de despacho ficou, retornando nada. `hard_block_exempt()` nasceu como
+  predicado nomeado para que o `selftest` possa provar a isenção sem levantar uma
+  invocação de hook.
+- **A guarda** — `selftest` ganhou um fixture com um bundle real carregando os
+  dois formatos que um log sobrevivente assume (um com `type:` no frontmatter,
+  outro sem frontmatter nenhum) e exige silêncio sobre ambos, mais as asserções
+  de que o nome segue em `RESERVED` e coberto por `hard_block_exempt()`. Desfazer
+  qualquer perna da aposentadoria quebra o teste.
+- **Esqueleto e moldes** — os dois `log.md` e o `log.md.tmpl` deletados.
+- **Referências e comandos** — 8 referências e 17 command bodies perderam o passo
+  de append. Cinco varreduras (`/align`, os três `*:align`, `/specs:triage`)
+  deixaram de gravar a linha final que narrava a si mesmas.
+- **`/docs:status`** — um `log.md` sobrevivente virou **figura sem código de
+  finding**: está lá, é aposentado, e manter ou apagar é decisão do repo-alvo.
+- **A ponte de proveniência** — o que o log carregava (“este doc veio deste
+  spec”) passou a ser anexado ao `## Outcome` do spec arquivado.
+
+**O que ficou de fora, por decisão.** `okf-spec.md` é uma condensação fiel da
+especificação OKF v0.1 **externa**. Três menções a `log.md` permanecem intactas
+dentro do transcrito — o SHOULD dos nomes reservados, o MAY de qualquer nível, e
+o diagrama do bundle upstream — e a aposentadoria é declarada uma vez, no perfil
+OKF-strict (§4), com um ponteiro inline no §Reserved filenames. Marcar as outras
+três inline compraria segurança do leitor ao preço da fidelidade do transcrito,
+que é a função do arquivo. Decidido na revisão de branch: fidelidade ganha.
+
+**A revisão da branch** encontrou duas coisas e escreveu dois docs que nenhuma
+task havia declarado:
+
+- o mesmo parágrafo editado por duas tasks e quebrado de dois jeitos (a cópia do
+  esqueleto reflowada, a deste repo deixada numa linha de 168 caracteres),
+  corrigido junto de cinco parágrafos esfarrapados do README;
+- [align-surface.md](/docs/standards/architecture/align-surface.md) ganhou
+  **nenhuma varredura registra a si mesma** — a conta que um align dá do próprio
+  run vai no relatório, nunca no artefato que ele mantém;
+- [plan-lifecycle.md](/docs/standards/workflows/plan-lifecycle.md) ganhou a regra
+  do **arquivo append-only**: um spec arquivado aceita exatamente dois anexos,
+  ambos para fatos que não existiam no momento do arquivamento, e um terceiro
+  precisa ser argumentado — não presumido do precedente de dois. Essa é a
+  Discovery #1 resolvida.
+
+**Estratégia de merge: merge commit.** Os commits por task permanecem na `main` e
+todo `subject:` gravado resolve por `git log --grep=<subject> --fixed-strings` a
+partir dela. A branch pode ser apagada sem custo — a ressalva do squash não se
+aplica.
+
+**Bateria de validação:** os sete itens de `## Validation` passaram na branch,
+incluindo os dois que nada mais cobre — `okf-validate.py selftest` com o fixture
+novo, e `functional-checks.sh` em 9/9 (17 command bodies mudaram; nada mais prova
+que a superfície ainda carrega).
