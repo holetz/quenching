@@ -310,9 +310,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/commands/specs/isolate.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
       subject: plan/prefer-worktree-isolation: 2.1 /specs:isolate oferece Worktree primeiro e recomendada
-- [ ] 2.2 `/specs:isolate` exibe o comando do `worktreeSetup` no bloco de plano e o roda após `git worktree add`
+- [x] 2.2 `/specs:isolate` exibe o comando do `worktreeSetup` no bloco de plano e o roda após `git worktree add`
       files: plugins/quenching/commands/specs/isolate.md
       verify: skills.py lint exit 0; o corpo diz que o comando é exibido antes de rodar
+      subject: plan/prefer-worktree-isolation: 2.2 /specs:isolate exibe e roda o worktreeSetup
 - [ ] 3.1 `/specs:conclude` faz o merge por `git -C` no checkout da base, e recusa quando nenhum a detém
       files: plugins/quenching/commands/specs/conclude.md
       verify: skills.py lint exit 0; o corpo não contém mais `git checkout <base>` no passo do merge
@@ -337,3 +338,7 @@ e que esta spec é quem a desfaz.
 - [ ] 6.1 Rodar o roteiro end-to-end de `## Validation` e registrar as duas asserções
       files: none
       verify: `git log --oneline <base>` contém `merge (merge-commit)` e `test ! -d <worktree>`
+
+## Discoveries
+
+- functional-checks.sh check 3 (spoken-trigger routing) is nondeterministic — the /docs:add assertion failed once and passed on an identical re-run, so a single red run is not evidence of a regression and the script's exit 0 is not reproducible per-run
