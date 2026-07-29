@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Always-on context budget
-description: What a command surface costs before anything fires — the two description caps, what the description may carry, and the per-surface ceiling
-resource: plugins/quenching/commands/**
+description: What a command surface costs before anything fires — the two description caps, what the description may carry, the per-surface ceiling, and the disable-model-invocation exit that lets a typed-only command cost nothing at all
+resource: plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-07-28
+timestamp: 2026-07-29
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27)
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726
 maintainer: quenching
 ---
 
@@ -87,12 +87,14 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **12,726 characters** — this plugin's measured total across its 25 commands
-and 0 agent definitions, on 2026-07-28. It is a number a run produced, not one somebody picked, and
-it is **revised only from a measurement**.
+The current default is **12,726 characters** — this plugin's measured total across its 25 always-on
+commands and 0 agent definitions, on 2026-07-28. It is a number a run produced, not one somebody
+picked, and it is **revised only from a measurement**. The surface has since grown to 26 commands
+and the figure has not moved, because the 26th is typed-only and counts 0 (§*The one command that
+costs nothing* below).
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
-the next command crosses it on the day it is minted. Under §*A new command is not free* below,
+the next **always-on** command crosses it on the day it is minted. Under §*A new command is not free* below,
 that is the signal working: `budget` **reports, it never refuses**, so crossing it prompts a human
 to re-measure and re-set rather than blocking anything. The pre-diet default (36,503) was a
 baseline the surface then sat 5,798 characters under, which meant it could never fire and
@@ -109,9 +111,14 @@ working once.
 
 What the firing also showed is the cost of the shape: the re-set is a `skills.py` edit that **no
 task declares**, sitting in lockstep with the figure this standard and the README both transcribe.
-A ratchet with no headroom converts every new command into a three-file bookkeeping change. That is
-a real price for a signal that cannot go quiet, and it is the trade this standard is choosing —
-stated so the next person to find it annoying knows it was chosen rather than overlooked.
+A ratchet with no headroom converts every new **always-on** command into a three-file bookkeeping
+change. That is a real price for a signal that cannot go quiet, and it is the trade this standard is
+choosing — stated so the next person to find it annoying knows it was chosen rather than overlooked.
+
+The qualifier is load-bearing and was added after the fact: a typed-only command pays nothing and
+fires nothing, so the ratchet has a second exit — see
+[§The one command that costs nothing](#the-one-command-that-costs-nothing--disable-model-invocation-true).
+The 26th command took it, and the re-set this paragraph predicts was never needed.
 
 ### Why the ceiling went 2,083 → 11,565
 
@@ -153,6 +160,34 @@ The same discipline therefore applies to an agent's description as to a command'
 the agent does **and when to invoke it**, and nothing about how it works. `/skill:agent:new` prices
 that cost in its plan; `doctor` and `budget` read the agent surface through one shared enumeration,
 so the two can never disagree about what it contains.
+
+### The one command that costs nothing — `disable-model-invocation: true`
+
+A command whose frontmatter carries `disable-model-invocation: true` counts **0** against the total
+(`skills.py:1432`, applied at `skills.py:1439`). This is not an exemption the budget grants as a
+favour: Claude Code drops such a command's description from the routing surface entirely, because
+the model is never offered the chance to route to it. The description is still read — by a human,
+in the file, and by `/skill:*` — but it is not resident in any session's context, so there is
+nothing to charge.
+
+That makes the ceiling's zero-headroom ratchet **a question rather than a verdict**. When the next
+command would cross the ceiling, there are two exits, not one:
+
+| Exit | When it applies | Cost |
+| --- | --- | --- |
+| **re-measure the ceiling** | the command must be auto-routable — Claude should reach it from a description alone | the bookkeeping change: `DEFAULT_CEILING`, the figure transcribed here, and `README.md` |
+| **`disable-model-invocation: true`** | a human should choose it — it reads private data, is irreversible, or only makes sense when deliberately invoked | **0**, and the ceiling never fires |
+
+The second exit is only honest when typed-only is the *right* design, never as a way to dodge the
+measurement. `/skill:retro` is the case that established it and shows the test: a retro reads the
+human's own session transcripts, so a human chooses it — the same reasoning that would have made it
+typed-only at zero cost. It was minted as the 26th command against a ceiling equal to the total,
+and the surface stayed at **12,726 characters** with the new command reporting `0`.
+
+Stating this matters because the ratchet's phrasing invites the wrong inference. "The next command
+crosses the ceiling the day it is minted" is true only of the next **always-on** command; read as a
+universal it turns every new command into a mandatory three-file edit, and a spec that planned for
+that bookkeeping found it was never needed.
 
 Two things follow from the ceiling being per-surface rather than per-command:
 
