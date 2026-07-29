@@ -110,6 +110,7 @@ VERSION = "4.2.0"  # lockstep with the plugin VERSION file, plugin.json, specs.p
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
+HOOKS_DIR = "hooks"
 
 SURFACE_MISSING = "—"
 
@@ -1450,6 +1451,82 @@ register("budget",
 # --------------------------------------------------------------------------- #
 PLUGIN_VERSION_FILE = "VERSION"
 
+# The three tools an align installs, each with the path it ships at and the align that
+# owns its copy. Nothing else under `.claude/hooks/` is this subcommand's business —
+# a target's own scripts live there too, and auditing them would be a different claim.
+INSTALLED_TOOLS = (
+    {"tool": "okf-validate.py", "ships": "assets/hooks/okf-validate.py", "align": "/docs:align"},
+    {"tool": "specs.py", "ships": "assets/bin/specs.py", "align": "/specs:align"},
+    {"tool": "skills.py", "ships": "assets/bin/skills.py", "align": "/skill:align"},
+)
+
+# Each tool declares `VERSION = "x.y.z"` at module level, in lockstep with the plugin's
+# VERSION file. Reading the constant — rather than running the script for `--version` —
+# keeps this a READ: `drift` is called from probes, and a probe that executes whatever
+# sits in a target's `.claude/hooks/` is a different and much larger claim than one that
+# reads three lines. A copy too old to declare one reads `unreadable`, which carries the
+# same call to action as `behind`.
+VERSION_CONSTANT_RE = re.compile(r'^VERSION\s*=\s*["\']([^"\']+)["\']', re.M)
+
+
+def read_tool_version(path: str) -> str | None:
+    text = read_text(path)
+    if text is None:
+        return None
+    m = VERSION_CONSTANT_RE.search(text)
+    return m.group(1).strip() if m else None
+
+
+def _version_key(v: str) -> tuple | None:
+    """`4.2.0` -> (4, 2, 0). Anything not purely numeric-dotted returns None, and an
+    unorderable pair is reported as `unreadable` rather than ordered on a guess."""
+    parts = v.split(".")
+    if not all(p.isdigit() for p in parts) or not parts:
+        return None
+    return tuple(int(p) for p in parts)
+
+
+def compare_versions(installed: str | None, shipped: str) -> str:
+    """`current` · `behind` · `ahead` · `unreadable`, for a copy that IS on disk —
+    `absent` is the caller's, because "no file" and "a file I could not read" are
+    different facts and only one of them is a repo that thinks it is protected.
+
+    Both directions are reported because both are silent. Resolution is plugin-first
+    (plans-zone.md §Resolving the tool) while every align deliberately leaves a NEWER
+    installed copy alone — so an `ahead` copy is code that is never executed and never
+    repaired, and both halves of that are correct behaviour saying nothing."""
+    if installed is None:
+        return "unreadable"
+    a, b = _version_key(installed), _version_key(shipped)
+    if a is None or b is None:
+        return "unreadable"
+    return "current" if a == b else ("behind" if a < b else "ahead")
+
+
+def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
+    """One row per tool. `executes` is the copy a command actually runs: the documented
+    fallback tries the plugin path first, so it is the plugin's whenever this ran at all
+    — which is exactly what makes an `ahead` row worth printing."""
+    rows = []
+    for spec in INSTALLED_TOOLS:
+        installed_path = os.path.join(root, HOOKS_DIR, spec["tool"])
+        present = os.path.isfile(installed_path)
+        installed = read_tool_version(installed_path) if present else None
+        # the SHIPPED tool's own constant, not the plugin's VERSION file: it is what an
+        # install would put on disk, so it is what an installed copy must be compared
+        # against. The two agreeing is the lockstep's business, checked elsewhere.
+        tool_shipped = read_tool_version(os.path.join(plugin_root, spec["ships"])) or shipped
+        rows.append({
+            "tool": spec["tool"],
+            "align": spec["align"],
+            "installedPath": installed_path if present else None,
+            "installed": installed,
+            "shipped": tool_shipped,
+            "status": "absent" if not present else compare_versions(installed, tool_shipped),
+            "executes": "plugin",
+        })
+    return rows
+
 
 def resolve_plugin_root(arg: str | None) -> str | None:
     """`--plugin-root` when given, else the plugin checkout this script runs from.
@@ -1503,13 +1580,18 @@ def cmd_drift(args, root: str) -> int:
     if plugin_root is None:
         return _drift_refusal(args, given)
     shipped = (read_text(os.path.join(plugin_root, PLUGIN_VERSION_FILE)) or "").strip()
+    rows = drift_rows(root, plugin_root, shipped)
     findings: list[dict] = []
-    payload = {"root": root, "pluginRoot": plugin_root, "shipped": shipped}
+    payload = {"root": root, "pluginRoot": plugin_root, "shipped": shipped, "tools": rows}
     if args.json:
         print(json.dumps({"ok": not findings, **payload, "findings": findings},
                          indent=2, ensure_ascii=False))
         return exit_for(findings)
     print(f"skills drift — {root} against plugin {shipped} ({plugin_root})")
+    for r in rows:
+        print(f"  {r['status']:<10} {r['tool']:<18} installed "
+              f"{r['installed'] or '-':<8} shipped {r['shipped']:<8} "
+              f"executes: {r['executes']}")
     return exit_for(findings)
 
 
