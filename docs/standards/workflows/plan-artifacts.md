@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec file contract
-description: The one-file spec, its thirteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in specs/archive/
+description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-07-28
+timestamp: 2026-07-29
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec
 maintainer: quenching
 ---
 
@@ -60,11 +60,11 @@ counter**, because machine state a human never reads does not belong in a spec.
 mirror inside the file is worth its keep, and `validate` compares it to the filename. A merely
 derived fact earns no such mirror.
 
-## Thirteen canonical sections
+## Fourteen canonical sections
 
-`## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`, `## Validation`, `## Design`,
-`## Alternatives Considered`, `## Open Decisions`, `## Risks`, `## Handoff`, `## Tasks`,
-`## Discoveries`, `## Outcome`.
+`## Overview`, `## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`, `## Validation`,
+`## Design`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`, `## Handoff`,
+`## Tasks`, `## Discoveries`, `## Outcome`.
 
 **Headings are a parsed contract** — canonical English, exactly as written; body prose follows the
 repo's language. A heading outside the set is a stray and `validate` flags it.
@@ -75,6 +75,10 @@ Two are load-bearing for machinery, not only for thinking:
 - **`## Impact`** is the one machine-parsed declaration (below). Removing the heading disables a
   check without a line of code changing.
 
+`## Overview` is warn-only, like `## Handoff` — never one of the ten sections the `ready` gate
+requires. It sits first, ahead of `## Problem`, but is authored **last**: `/specs:develop` writes
+it once every other section has settled, because connecting them is only possible after they exist.
+
 ## The explicit-none rule is PHASE-SCOPED
 
 A heading is required — and required to carry `- none — <reason>` when it has nothing in it — only
@@ -84,7 +88,7 @@ once **its own gate** is reached. Two of the four gates move a file; two are com
 | --- | --- | --- |
 | `new` (capture) | entry to `plans/` | `## Problem` |
 | the `ready` stage | derived, refuses nothing | the nine definition sections (`## Problem` … `## Risks`) **and `## Tasks`** |
-| the `ready` stage (warning only) | derived | `## Handoff` non-empty |
+| the `ready` stage (warning only) | derived | `## Overview` non-empty, `## Handoff` non-empty |
 | `promote → archive/` | entry to `archive/` | `## Outcome` |
 
 Three rules decide whether a section counts as filled:
@@ -96,7 +100,7 @@ Three rules decide whether a section counts as filled:
 3. **An absent heading before its gate is legal** — a *not-yet*, not an omission.
 
 **Why scoped and not absolute.** Applied absolutely the rule would kill the derived stage: since an
-explicit none counts as filled, a freshly captured spec carrying thirteen `- none` sections would
+explicit none counts as filled, a freshly captured spec carrying fourteen `- none` sections would
 derive as `designed` and pass every gate without anyone having thought anything. Scoping is the
 version where both rules survive, and it is why capture stamps `## Problem` alone.
 
@@ -187,7 +191,7 @@ Any change to the record vocabulary is therefore a **three-file lockstep edit**:
 was found by a task that declared only the first under `files:` and produced a tool that reported
 the old vocabulary from the new code.
 
-The template holds all thirteen headings with their guidance; `new` stamps only the **capture
+The template holds all fourteen headings with their guidance; `new` stamps only the **capture
 form** (everything up to the second `## ` heading), and `section --write` pulls one heading's
 guidance when creating it. One source, two slices.
 

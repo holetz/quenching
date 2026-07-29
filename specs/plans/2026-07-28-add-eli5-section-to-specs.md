@@ -333,9 +333,10 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
 
 ### 4. The standard
 
-- [ ] 4.1 Revise docs/standards/workflows/plan-artifacts.md — fourteen sections, `## Overview` at
+- [x] 4.1 Revise docs/standards/workflows/plan-artifacts.md — fourteen sections, `## Overview` at
       position 1, warn-only in the gate table (authority: current)
       files: docs/standards/workflows/plan-artifacts.md, docs/standards/workflows/index.md, docs/log.md
+      subject: plan/add-eli5-section-to-specs: 4.1 Revise docs/standards/workflows/plan-artifacts.md — fourteen sections, `## Overview` at position 1, warn-only in the gate table
 
 ### 5. Backfill and release
 
@@ -346,3 +347,8 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
       verify: cat VERSION and the three `--version` calls all agree
 - [ ] 5.3 Run the full skeleton gate — selftest ×3, okf-validate ×2, skills.py doctor and lint,
       and ./assets/bin/functional-checks.sh — all clean
+
+## Discoveries
+
+- Task 4.1 declared docs/log.md as a file, but it was retired (deleted) by the already-merged retire-docs-log spec before this branch was rebased onto main; no such file exists to touch, and none was recreated.
+- okf-validate.py now reports 14 pre-existing stale-doc warnings (timestamp predates last commit touching resource) across standards/ whose resource globs match specs.py/schema.json/templates, touched repeatedly by this spec's earlier tasks; out of scope to bump here since none of those docs were declared by any task.
