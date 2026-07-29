@@ -306,9 +306,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/assets/bin/specs.py
       verify: os três casos de `## Validation` §exercício; JSON truncado sai como achado, não traceback
       subject: plan/prefer-worktree-isolation: 1.2 specs.py doctor reporta sp-config-unknown-key e sp-config-unparseable
-- [ ] 2.1 `/specs:isolate` §4 oferece Worktree primeiro e recomendada, com a linha do que ela não carrega
+- [x] 2.1 `/specs:isolate` §4 oferece Worktree primeiro e recomendada, com a linha do que ela não carrega
       files: plugins/quenching/commands/specs/isolate.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
+      subject: plan/prefer-worktree-isolation: 2.1 /specs:isolate oferece Worktree primeiro e recomendada
 - [ ] 2.2 `/specs:isolate` exibe o comando do `worktreeSetup` no bloco de plano e o roda após `git worktree add`
       files: plugins/quenching/commands/specs/isolate.md
       verify: skills.py lint exit 0; o corpo diz que o comando é exibido antes de rodar
