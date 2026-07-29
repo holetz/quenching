@@ -15,7 +15,7 @@ Keep only the subtopics that apply to the repo; within each, break standards **o
 concept per file** by considering the candidate sub-standards catalog (a
 **consideration** checklist, evidence-gated generation, recorded deferral — not a blind
 generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE.md)
-(auto-loaded); the change history is [log.md](log.md).
+(auto-loaded).
 
 ## Subtopics
 
