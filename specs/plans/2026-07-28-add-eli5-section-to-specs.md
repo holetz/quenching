@@ -289,10 +289,11 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
 
 ### 1. The parsed contract
 
-- [ ] 1.1 Add `## Overview` to the canonical section set as position 1 of fourteen, warn-only —
+- [x] 1.1 Add `## Overview` to the canonical section set as position 1 of fourteen, warn-only —
       the schema and the constant duplicated in the tool
       files: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/add-eli5-section-to-specs: 1.1 Add `## Overview` to the canonical section set as position 1 of fourteen, warn-only
 - [ ] 1.2 Add the heading and its guidance comment to the template, in BOTH copies
       files: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/bin/specs.py
       pattern: the `## Handoff` block in the same template
