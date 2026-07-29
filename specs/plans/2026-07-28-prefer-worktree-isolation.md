@@ -342,11 +342,13 @@ e que esta spec é quem a desfaz.
       files: CLAUDE.md
       verify: a frase "no Node runtime, no `config.yaml`" não descreve mais o front
       subject: plan/prefer-worktree-isolation: 5.3 CLAUDE.md — a afirmação já não existe (removida pelo align anterior)
-- [ ] 6.1 Rodar o roteiro end-to-end de `## Validation` e registrar as duas asserções
+- [x] 6.1 Rodar o roteiro end-to-end de `## Validation` e registrar as duas asserções
       files: none
       verify: `git log --oneline <base>` contém `merge (merge-commit)` e `test ! -d <worktree>`
+      subject: plan/prefer-worktree-isolation: 6.1 roteiro end-to-end — merge por git -C e remoção da worktree, ambos confirmados
 
 ## Discoveries
 
 - functional-checks.sh check 3 (spoken-trigger routing) is nondeterministic — the /docs:add assertion failed once and passed on an identical re-run, so a single red run is not evidence of a regression and the script's exit 0 is not reproducible per-run
 - 5.3: a frase citada ("no Node runtime, no `config.yaml`") já não existe em CLAUDE.md — o commit fcb2a52 (align: converge all three fronts in one pass), incorporado pelo merge de main antes da task 1.1, reescreveu o arquivo de 374 para ~106 linhas e removeu a alegação junto com todo o bloco em que vivia. O verify da task ("a frase ... não descreve mais o front") já é verdadeiro sem edição; nenhuma mudança em CLAUDE.md foi necessária.
+- Fechamento da seção 5: `okf-validate.py docs` na raiz reporta 0 erro(s) mas 7 warning(s), não 0/0 como o bloco de ## Validation antecipava — 1 é o `resource-unresolved` pré-existente em automation/agents.md (já registrado em log.md), e 6 são `stale-doc` novos (architecture/plugin-layout.md, automation/skills.md, workflows/plan-git-record.md, workflows/plan-lifecycle.md, workflows/task-execution.md, workflows/worktree-setup.md). Causa: seus `resource:` globs (assets/**, specs/**, ou citando git.md diretamente) casam com arquivos que esta spec commitou (git.md na 5.1, QUENCHING.md na 5.2, e o próprio arquivo da spec em toda task) — e esses commits landaram em 2026-07-29 depois que o relógio real virou o dia, enquanto os cinco documentos carregam timestamp: 2026-07-28. Nenhum dos cinco é files: de nenhuma task desta spec, então nenhum foi tocado — bater o timestamp sem uma revisão de conteúdo real seria carimbar authority sem lastro. O conteúdo de plan-git-record.md e worktree-setup.md (tasks 4.1/4.2) foi escrito para antecipar exatamente o git.md que a 5.1 implementou depois, então é o caso mais provável de já estar correto; plugin-layout.md, skills.md e plan-lifecycle.md têm globs amplos que capturam qualquer coisa sob assets/** ou specs/**, não mudanças no assunto que eles próprios descrevem.
