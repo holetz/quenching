@@ -41,7 +41,9 @@ sentence, and **link out** rather than explaining in full here.
 - [**Always-on ceiling**](../standards/automation/context-budget.md) — the per-surface character
   total `skills.py budget` compares the summed descriptions against, commands **and** agent
   definitions alike; set from a measurement and never guessed, and deliberately kept EQUAL to the
-  current total so it has no headroom and the next command crosses it the day it is minted.
+  current total so it has no headroom and the next **always-on** command crosses it the day it is
+  minted. A `disable-model-invocation: true` command counts 0 and crosses nothing, so the ratchet
+  has two exits — re-measure, or make the command typed-only where that is the honest design.
   `budget` reports and never refuses — crossing it prompts a re-measure, not a block.
 - [**Always-on metadata**](../standards/automation/context-budget.md) — the frontmatter
   `description` of every command, resident in every session's context before anything fires and
