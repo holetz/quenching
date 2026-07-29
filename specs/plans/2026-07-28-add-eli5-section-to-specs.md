@@ -313,10 +313,11 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
       warn-only gate membership
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
       subject: plan/add-eli5-section-to-specs: 2.1 spec-driven.md becomes fourteen sections, with the position and the warn-only gate membership
-- [ ] 2.2 artifacts.md gains the section's entry AND its writing register, stated explicitly:
+- [x] 2.2 artifacts.md gains the section's entry AND its writing register, stated explicitly:
       plain language, assume no prior context, no jargon the spec itself introduces, connective
       rather than compressive
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
+      subject: plan/add-eli5-section-to-specs: 2.2 artifacts.md gains the section's entry AND its writing register
 - [x] 2.3 questions.md: the shape bank lands `## Overview`, and every bank refreshes it — authored
       last, shown as its own labelled before → after block, never folded into the section diffs
       files: plugins/quenching/assets/references/specs-develop/questions.md
