@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**28 specs** · 1 executing · 1 designed · 26 captured
+**31 specs** · 1 executing · 1 designed · 29 captured
 
 ### Executing
 
@@ -122,9 +122,12 @@ closing out unbuilt work looks like.
 | [notice-installed-tool-version-drift](2026-07-28-notice-installed-tool-version-drift.md) | Nothing notices an installed tool copy falling behind the plugin | 2026-07-28 |
 | [prefer-worktree-isolation](2026-07-28-prefer-worktree-isolation.md) | Prefer worktrees for spec isolation and remove them after a successful merge | 2026-07-28 |
 | [probe-a-frontmatter-hook-firing](2026-07-28-probe-a-frontmatter-hook-firing.md) | No probe observes a frontmatter hooks: block actually fire | 2026-07-28 |
+| [resolve-spec-from-worktree](2026-07-28-resolve-spec-from-worktree.md) | Resolve a spec from its own worktree before falling back to the current branch | 2026-07-28 |
 | [retire-docs-log](2026-07-28-retire-docs-log.md) | Retire the docs/ log | 2026-07-28 |
 | [revise-standards-subject-folders](2026-07-28-revise-standards-subject-folders.md) | Revise the fixed docs/standards subject folders | 2026-07-28 |
 | [route-commands-without-always-on-descriptions](2026-07-28-route-commands-without-always-on-descriptions.md) | Route a 10x command surface without per-command always-on descriptions | 2026-07-28 |
+| [stop-develop-offering-follow-up-specs](2026-07-28-stop-develop-offering-follow-up-specs.md) | /specs:develop should not offer to create a follow-up spec | 2026-07-28 |
+| [upgrade-okf-to-v0-2](2026-07-28-upgrade-okf-to-v0-2.md) | Upgrade the OKF contract to v0.2 or later | 2026-07-28 |
 <!-- END GENERATED -->
 
 ## Frontmatter
