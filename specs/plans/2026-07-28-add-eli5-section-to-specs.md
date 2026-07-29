@@ -353,10 +353,12 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
 - [x] 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
       verify: cat VERSION and the three `--version` calls all agree
       subject: plan/add-eli5-section-to-specs: 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
-- [ ] 5.3 Run the full skeleton gate — selftest ×3, okf-validate ×2, skills.py doctor and lint,
+- [x] 5.3 Run the full skeleton gate — selftest ×3, okf-validate ×2, skills.py doctor and lint,
+      subject: plan/add-eli5-section-to-specs: 5.3 Run the full skeleton gate
       and ./assets/bin/functional-checks.sh — all clean
 
 ## Discoveries
 
 - Task 4.1 declared docs/log.md as a file, but it was retired (deleted) by the already-merged retire-docs-log spec before this branch was rebased onto main; no such file exists to touch, and none was recreated.
 - okf-validate.py now reports 14 pre-existing stale-doc warnings (timestamp predates last commit touching resource) across standards/ whose resource globs match specs.py/schema.json/templates, touched repeatedly by this spec's earlier tasks; out of scope to bump here since none of those docs were declared by any task.
+- Task 5.3's skeleton gate skipped a fresh ./assets/bin/functional-checks.sh run per explicit user instruction mid-build; it last ran clean (11/11) during task 3.1's verification, before tasks 4.1/5.1/5.2 landed (docs/standards prose, spec backfills, version bump — none touch commands/** bodies or citation paths).
