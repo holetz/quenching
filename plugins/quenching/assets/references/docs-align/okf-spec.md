@@ -19,7 +19,8 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
 
 - **`index.md`** — a directory **listing** (progressive disclosure). It MUST NOT be used for
   a concept document.
-- **`log.md`** — an **update history**. Also reserved.
+- **`log.md`** — an **update history**. Also reserved. OKF v0.1 keeps it; the OKF-strict
+  profile **retires** it (§4 below) without unreserving it.
 - Every **other** `.md` file is a **concept document**.
 
 ## Frontmatter
@@ -98,8 +99,12 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    aggregate** whose scope contains the bundle root, which `knowledge/glossary.md` legitimately
    is. A glob states what the doc governs and is the input the staleness check reads; a
    `file:line` states only where a rule happens to be written today.
-4. **`log.md` uses `## YYYY-MM-DD` headings, newest first**, with `**Creation**/**Update**/
-   **Deprecation**` prefixes, at `docs/` and `docs/standards/`.
+4. **`log.md` is retired** — nothing in this plugin creates one, appends to one, or checks
+   one. It stays a **reserved** name all the same: a log left over from an earlier alignment
+   is still recognized, so it is never read as a malformed concept doc and never blocked.
+   Unreserving it is a different and much worse change than retiring it — see
+   `docs/standards/architecture/retiring-a-reserved-artifact.md`. Provenance that used to
+   land here now lands in the archived spec's `## Outcome`.
 5. **Links:** relative within a home, absolute `/docs/...` across homes.
 6. **Canonical English structure** — folder names **and concept-doc file slugs**, keys, enum
    values, and the `type` vocabulary. Frontmatter is English; **body prose MAY follow the repo's
