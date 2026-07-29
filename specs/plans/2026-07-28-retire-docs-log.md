@@ -225,8 +225,9 @@ repositório.
 
 ### 3. References
 
-- [ ] 3.1 Remover de `docs-add/homes.md` a seção **Appending to `log.md`** e reescrever o procedimento de inserção de cinco etapas para quatro (stamp → index → glossary → self-check), incluindo o sumário e as citações internas
+- [x] 3.1 Remover de `docs-add/homes.md` a seção **Appending to `log.md`** e reescrever o procedimento de inserção de cinco etapas para quatro (stamp → index → glossary → self-check), incluindo o sumário e as citações internas
       files: plugins/quenching/assets/references/docs-add/homes.md
+      subject: plan/retire-docs-log: 3.1 cut the insert procedure to four steps
 - [ ] 3.2 Retirar o log do contrato OKF em `docs-align/okf-spec.md`, `docs-align/taxonomy.md`, `docs-align/conformance.md` e `docs-align/cycle.md`
       files: plugins/quenching/assets/references/docs-align/okf-spec.md, plugins/quenching/assets/references/docs-align/taxonomy.md, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/assets/references/docs-align/cycle.md
 - [ ] 3.3 Reescrever o passo 4 de `specs-conclude/distill.md`: a ponte deixa de ser uma entrada no log e passa a ser narrada no `## Outcome` da própria spec arquivada
