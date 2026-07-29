@@ -2,5 +2,31 @@
   "enabledPlugins": {
     "quenching@claude-quenching": true,
     "context7@context7-marketplace": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   }
 }
