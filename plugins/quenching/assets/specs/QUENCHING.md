@@ -270,10 +270,15 @@ ran, so a second call picks up where the first stopped:
    two tasks solving the same problem differently. Records `reviewed: {date}`.
 2. **Write the emergent `docs/`** — the standards and knowledge the work *revealed* (resolved
    from `## Discoveries`), as opposed to the declared docs `execute` already wrote.
-3. **Archive + distil** — `outcome: done` refuses while boxes are open (`--force` if you know
-   why); `abandoned` is always allowed and distils **nothing as adopted** — at most a narrow
-   `authority: background` note. The outcome is **your word**, never inferred from progress or
-   staleness. Both the archive move and the distillation land on the **work branch**.
+3. **Archive + distil + settle the release obligations** — `outcome: done` refuses while boxes are
+   open (`--force` if you know why); `abandoned` is always allowed and distils **nothing as
+   adopted** — at most a narrow `authority: background` note. The outcome is **your word**, never
+   inferred from progress or staleness. Whatever your `docs/standards/` attach to the *merge*
+   rather than to a task — a version bump, a changelog entry, a manifest re-stamp — is applied
+   here, on one confirmation, and never as a task in the spec: what the release turns out to be is
+   only knowable once the last task is written, and a bump made here starts from the base you are
+   actually merging into. An abandoned spec settles none of it. The archive move, the distillation
+   and these all land on the **work branch**.
 4. **Merge — the last action, without exception.** Strategy offered, never chosen for you: merge
    commit (default), squash, rebase, or fast-forward. `merge: {strategy, subject}` is stamped on
    the branch *before* the merge, so **nothing is ever committed to the base after it** and one

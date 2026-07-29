@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**34 specs** · 1 executing · 1 designed · 32 captured
+**33 specs** · 1 executing · 1 designed · 31 captured
 
 ### Executing
 
@@ -118,7 +118,6 @@ closing out unbuilt work looks like.
 | [decide-plans-index-need](2026-07-28-decide-plans-index-need.md) | Reassess whether specs/plans/index.md is needed | 2026-07-28 |
 | [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's body language in docs/standards so every command reads it for free | 2026-07-28 |
 | [fix-conclude-abandoned-branch-harvest](2026-07-28-fix-conclude-abandoned-branch-harvest.md) | conclude --outcome abandoned can harvest a note and delete it in the same run | 2026-07-28 |
-| [fix-functional-checks-encoding](2026-07-28-fix-functional-checks-encoding.md) | functional-checks.sh fails for lack of evidence, not by verdict | 2026-07-28 |
 | [improve-command-from-session](2026-07-28-improve-command-from-session.md) | Mine a session for improvements to the command that started it | 2026-07-28 |
 | [make-sk-unscoped-bash-read-the-body](2026-07-28-make-sk-unscoped-bash-read-the-body.md) | sk-unscoped-bash cannot read the body its own remedy points at | 2026-07-28 |
 | [plugin-dir-for-functional-checks](2026-07-28-plugin-dir-for-functional-checks.md) | Plugin Dir For Functional Checks | 2026-07-28 |

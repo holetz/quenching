@@ -8,28 +8,80 @@
 # asserts on what the process DID (a Read of a given path, a Skill invoked by a given name) and
 # never on what its prose claims. A self-report is not a test.
 #
-#   usage:  ./functional-checks.sh [/path/to/plugin/repo]
-#   exit :  0 all passed · 1 a check failed
+# EVERY check loads the plugin with `--plugin-dir`, from a sandbox that enables NO plugin, so
+# exactly one copy is loaded and it is the checkout THIS SCRIPT LIVES IN. Resolving through the
+# marketplace instead — which checks 1-3 used to do — serves whatever `~/.claude/plugins/cache/`
+# last installed: measured 2026-07-28, a 3.0.0 tree still carrying a command 4.2.0 had deleted,
+# so the repo's only check for a `commands/**` change was grading a copy nobody had edited.
+# It is also what lets this harness see a BRANCH or a WORKTREE, and therefore gate a merge
+# before it happens rather than report on it afterwards.
+#
+#   usage:  ./functional-checks.sh [--only 1,2,4] [/path/to/plugin/repo]
+#   exit :  0 every measured assertion passed
+#           1 an assertion failed
+#           2 nothing could be measured — no verdict, do not read it as a pass
+#
+# WHO RUNS THIS, AND WHEN. It belongs to the **skill front**: the commands that change the surface
+# are the ones that prove it still loads — `/skill:new` after minting or editing a command here,
+# and `/skill:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
+# does NOT belong in a spec's `## Validation` or a task's `verify:`. Measured 2026-07-29 over the
+# whole archive: every red run this harness ever produced traced to a defect in THIS SCRIPT — a
+# cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
+# regression. A check that has only ever caught itself earns a narrow trigger, not a broad one.
+#
+# COST — each check is a full agent session, so scope the run to what the change can break:
+#
+#   (no flag)      checks 1, 2, 4 — a command BODY, a citation path, a conductor's stage names
+#   --only 3       spoken routing — OPT-IN, see below
+#   --only 1,2,3,4 all four
+#
+# CHECK 3 IS OPT-IN, AND `/skill:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the eight
+# sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
+# identical runs), and a strictly worse duplicate of `/skill:eval` step 7 — which measures the
+# same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
+# five hardcoded phrases with no boundary arm. Reach for `/skill:eval` when a description changed;
+# reach for `--only 3` only to re-guard the five phrases already tuned here.
 #
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
 set -uo pipefail
 
+ONLY="1,2,4"
+REPO=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --only)   ONLY="${2:-}"; shift 2 ;;
+    --only=*) ONLY="${1#*=}"; shift ;;
+    # the whole header comment, however long it grows — a fixed range silently truncates it
+    -h|--help) sed -n '2,/^set -uo pipefail/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 0 ;;
+    *)        REPO="$1"; shift ;;
+  esac
+done
+
 # bin -> assets -> quenching -> plugins -> the repo root, which is where `docs/` and the
-# project's own .claude/settings.json live; the checks below cd into it.
-REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
+# project's own .claude/settings.json live.
+REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
+PLUGIN="$REPO/plugins/quenching"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 PASS=0; FAIL=0; INCONC=0
 
-emit () { printf '  %-6s %s\n' "$1" "$2"; }
-check () { if [ "$1" = "yes" ]; then emit "PASS" "$2"; PASS=$((PASS+1)); else emit "FAIL" "$2"; FAIL=$((FAIL+1)); fi }
+want () { case ",$ONLY," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 
-# tool_use inputs for a given tool name, one JSON object per line
+emit  () { printf '  %-6s %s\n' "$1" "$2"; }
+check () { if [ "$1" = "yes" ]; then emit "PASS" "$2"; PASS=$((PASS+1)); else emit "FAIL" "$2"; FAIL=$((FAIL+1)); fi }
+inconc () { emit "SKIP" "$1 (inconclusive: $2)"; INCONC=$((INCONC+1)); }
+
+# tool_use inputs for a given tool name, one JSON object per line.
+#
+# The capture is UTF-8. A bare open() decodes it in the PLATFORM default — cp1252 on Windows —
+# and raises on the first non-ASCII byte, after which this helper yields nothing and every
+# assertion below fails for lack of evidence rather than by verdict. Measured three times on
+# 2026-07-28, once flipping a check's verdict across identical runs. Read it explicitly.
 tools () {
   python3 -c '
 import json,sys
 want=sys.argv[1]
-for line in open(sys.argv[2]):
+for line in open(sys.argv[2], encoding="utf-8", errors="replace"):
     try: ev=json.loads(line)
     except Exception: continue
     for c in (ev.get("message",{}).get("content") or []):
@@ -38,7 +90,53 @@ for line in open(sys.argv[2]):
 ' "$1" "$2"
 }
 
-echo "functional-checks — plugin at $REPO"
+# Did the session act at all? Zero tool_use events of ANY name means the capture carries no
+# evidence — the process died, the stream was unreadable, or nothing ran. Every assertion here
+# must be gated on this, because the NEGATIVE halves ("read nothing under a skills/ tree") pass
+# vacuously over an empty stream: an unreadable capture would report a clean surface.
+# No evidence is reported as INCONCLUSIVE. It is never a pass and never a failure.
+evidence () {
+  [ "$(python3 -c '
+import json,sys
+n=0
+for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
+    try: ev=json.loads(line)
+    except Exception: continue
+    for c in (ev.get("message",{}).get("content") or []):
+        if isinstance(c,dict) and c.get("type")=="tool_use": n+=1
+print(n)
+' "$1")" -gt 0 ]
+}
+
+# Every check gets a throwaway git repo that enables NO plugin — the plugin arrives by
+# --plugin-dir, so exactly one copy is loaded and it is $PLUGIN.
+#
+# The box must contain whatever the prompts refer to, or a check grades the FIXTURE.
+# Three ways that bit, all observed here:
+#   - an intent-shaped phrase names a subject ("our migrations"), and where the subject does
+#     not exist the session correctly challenges the premise instead of routing. Probe d
+#     failed in a bare box with "There are no migrations to audit", while the same phrase
+#     routed in the /skill:agent:new eval, whose fixture carried a migration.
+#   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
+#     for one. That cost used to be hidden because probe c ran against REPO, which has a
+#     bundle; sandboxing removed it and pushed the probe into the turn cap.
+#   - a command that reports on a workspace ("/specs:status") wants one to report on.
+# So every box gets a migration, a minimal bundle and an empty plans zone: the smallest repo
+# every prompt below can be answered in without exploring to find out its subject is missing.
+newbox () {
+  mkdir -p "$1/.claude" "$1/db/migrations" "$1/docs/standards" "$1/specs/plans"
+  printf '{}\n' > "$1/.claude/settings.json"
+  printf 'CREATE TABLE accounts (\n  id BIGSERIAL PRIMARY KEY,\n  email TEXT NOT NULL\n);\n' \
+    > "$1/db/migrations/0001_create_accounts.sql"
+  printf -- '---\nokf_version: "0.1"\n---\n\n# Documentation\n\n- [standards/](standards/index.md)\n' \
+    > "$1/docs/index.md"
+  printf '# Standards\n' > "$1/docs/standards/index.md"
+  printf '# Plans\n' > "$1/specs/plans/index.md"
+  ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )
+}
+
+echo "functional-checks — plugin at $PLUGIN"
+echo "  checks: $ONLY"
 echo
 
 # --------------------------------------------------------------------------- #
@@ -50,58 +148,54 @@ echo
 # It also covers re-homed references for free: /specs:status cites a reference directory that
 # the specs-flow-consolidation fold renamed, so a stale citation fails here rather than silently
 # reading nothing.
+#
+# It runs in a sandbox rather than in REPO so that --plugin-dir is the ONLY source of the
+# plugin. In REPO the checkout's own enabledPlugins would load a second, marketplace copy.
 # --------------------------------------------------------------------------- #
+if want 1; then
 echo "1. a collapsed command loads and cites its re-homed reference"
-( cd "$REPO" && claude -p "/quenching:specs:status
+newbox "$WORK/sandbox1"
+( cd "$WORK/sandbox1" && claude -p --plugin-dir "$PLUGIN" "/quenching:specs:status
 
 Before the report: list the absolute path of every reference file THIS COMMAND'S OWN BODY tells
 you to consult, exactly as the body spells them. Then Read the first one. Do not guess a path —
 copy it from the body you were given." \
   --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/1.jsonl" 2>&1 )
-if grep -q '/assets/references/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=yes; else r=no; fi
-check "$r" "Read a file under assets/references/ (placeholder substituted)"
-if grep -q '/skills/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=no; else r=yes; fi
-check "$r" "read nothing under a skills/ tree"
+if evidence "$WORK/1.jsonl"; then
+  if grep -q '/assets/references/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "Read a file under assets/references/ (placeholder substituted)"
+  if grep -q '/skills/' <<<"$(tools Read "$WORK/1.jsonl")"; then r=no; else r=yes; fi
+  check "$r" "read nothing under a skills/ tree"
+else
+  inconc "Read a file under assets/references/ (placeholder substituted)" "no tool_use in the capture"
+  inconc "read nothing under a skills/ tree" "no tool_use in the capture"
+fi
+fi
 
 # --------------------------------------------------------------------------- #
 # 2. a conductor reaches its stage BY NAME
 #
 # The highest-risk path: a wrong name produces a conductor that runs and does nothing. It runs
-# against a throwaway repo — /align is invasive — with the plugin still loaded from REPO.
+# against a throwaway repo — /align is invasive — with the plugin loaded from $PLUGIN.
 # --------------------------------------------------------------------------- #
+if want 2; then
 echo "2. a conductor invokes its stage by registry name"
-
-# Every sandbox must enable the plugin exactly the way THIS repo does. The marketplace name is
-# whatever `claude plugin marketplace add` registered it under — usually the checkout's directory
-# name, NOT the `name` inside marketplace.json — so hardcoding it here pins the script to one
-# machine and silently reports `Unknown command` as a routing failure. Copy the repo's own keys.
-# Built once, up front: check 3's probes need it too and must not depend on check 2 having run.
-python3 -c '
-import json,sys
-try: fm = json.load(open(sys.argv[1])).get("enabledPlugins") or {}
-except Exception: fm = {}
-json.dump({"enabledPlugins": fm}, open(sys.argv[2], "w"))
-sys.exit(0 if fm else 1)
-' "$REPO/.claude/settings.json" "$WORK/enabled.json" \
-  || { emit "FAIL" "$REPO/.claude/settings.json declares no enabledPlugins — no check can run"; FAIL=$((FAIL+1)); }
-
-# A throwaway git repo with the plugin enabled. Every check that invokes a command gets its own.
-newbox () {
-  mkdir -p "$1/.claude"
-  cp "$WORK/enabled.json" "$1/.claude/settings.json"
-  ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )
-}
-
-newbox "$WORK/sandbox"
-( cd "$WORK/sandbox" && claude -p "/quenching:align
+newbox "$WORK/sandbox2"
+( cd "$WORK/sandbox2" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
 
 You have my authorization for the whole run — treat the plan gate as granted and proceed. I only
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
-if grep -q '"quenching:docs:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes; else r=no; fi
-check "$r" "invoked quenching:docs:align by name"
-if grep -qE '"skill": *"[^"]*quenching-docs-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
-check "$r" "invoked no retired quenching-* skill name"
+if evidence "$WORK/2.jsonl"; then
+  if grep -q '"quenching:docs:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "invoked quenching:docs:align by name"
+  if grep -qE '"skill": *"[^"]*quenching-docs-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
+  check "$r" "invoked no retired quenching-* skill name"
+else
+  inconc "invoked quenching:docs:align by name" "no tool_use in the capture"
+  inconc "invoked no retired quenching-* skill name" "no tool_use in the capture"
+fi
+fi
 
 # --------------------------------------------------------------------------- #
 # 3. a spoken trigger still routes by description alone
@@ -113,7 +207,11 @@ check "$r" "invoked no retired quenching-* skill name"
 # the command fire, and these commands write when they fire — "park a spec" lands a real file in
 # specs/plans/, "add a standard" lands one in docs/. A check that mutates the repository it is
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
+#
+# OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
+# `/skill:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
+if want 3; then
 echo "3. a spoken trigger routes with no / typed"
 
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)
@@ -127,31 +225,15 @@ probe () {
   local id="$1" phrase="$2" want="$3"
   local box="$WORK/probe-$id"
   newbox "$box" >/dev/null 2>&1
-  # The box must contain whatever the phrases refer to, or the probe grades the FIXTURE.
-  # Two ways that bit, both observed here:
-  #   - an intent-shaped phrase names a subject ("our migrations"), and where the subject does
-  #     not exist the session correctly challenges the premise instead of routing. Probe d
-  #     failed in a bare box with "There are no migrations to audit", while the same phrase
-  #     routed in the /skill:agent:new eval, whose fixture carried a migration.
-  #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
-  #     for one. That cost used to be hidden because probe c ran against REPO, which has a
-  #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-  # So the box gets a migration and a minimal bundle: the smallest repo all five phrases can
-  # be answered in without exploring to find out the subject is missing.
-  mkdir -p "$box/db/migrations" "$box/docs/standards"
-  printf 'CREATE TABLE accounts (\n  id BIGSERIAL PRIMARY KEY,\n  email TEXT NOT NULL\n);\n' \
-    > "$box/db/migrations/0001_create_accounts.sql"
-  printf -- '---\nokf_version: "0.1"\n---\n\n# Documentation\n\n- [standards/](standards/index.md)\n' \
-    > "$box/docs/index.md"
-  printf '# Standards\n' > "$box/docs/standards/index.md"
-  ( cd "$box" && git add -A && git commit -qm seed )
-  ( cd "$box" && claude -p "$phrase" --max-turns 14 --output-format stream-json --verbose \
+  ( cd "$box" && claude -p --plugin-dir "$PLUGIN" "$phrase" \
+      --max-turns 14 --output-format stream-json --verbose \
       < /dev/null > "$WORK/3$id.jsonl" 2>&1 )
-  if grep -q "\"$want\"" <<<"$(tools Skill "$WORK/3$id.jsonl")"; then
+  if ! evidence "$WORK/3$id.jsonl"; then
+    inconc "\"$phrase\" -> $want" "no tool_use in the capture"
+  elif grep -q "\"$want\"" <<<"$(tools Skill "$WORK/3$id.jsonl")"; then
     check yes "\"$phrase\" -> $want"
   elif grep -q '"subtype":"error_max_turns"' "$WORK/3$id.jsonl"; then
-    emit "SKIP" "\"$phrase\" -> $want (inconclusive: hit the turn cap before routing)"
-    INCONC=$((INCONC+1))
+    inconc "\"$phrase\" -> $want" "hit the turn cap before routing"
   else
     check no "\"$phrase\" -> $want"
   fi
@@ -166,6 +248,7 @@ probe c "add a standard: we always use snake_case for database columns"         
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
 probe d "set up something that audits our migrations and reports back"                        "quenching:skill:agent:new"
 probe e "I want something to catch it automatically whenever a migration lands"               "quenching:skill:hook:new"
+fi
 
 # --------------------------------------------------------------------------- #
 # 4. the conductor's probe asks about the installed tools, from the plugin's copy
@@ -180,18 +263,10 @@ probe e "I want something to catch it automatically whenever a migration lands" 
 # own copy, because an installed copy answers from the same stale VERSION it is being
 # asked about.
 # --------------------------------------------------------------------------- #
-#
-# It loads the plugin with `--plugin-dir "$REPO/plugins/quenching"` instead of through
-# the marketplace, and its box enables NO plugin, so exactly one copy is loaded and it is
-# the checkout under test. Checks 1-3 above resolve the plugin from the marketplace
-# registration, which serves whatever `~/.claude/plugins/cache/` last installed — on this
-# machine a 3.0.0 tree carrying commands 4.2.0 deleted. A check that silently grades a
-# cached copy reports on code nobody is editing.
-# --------------------------------------------------------------------------- #
+if want 4; then
 echo "4. the conductor's probe asks about the installed tools"
 newbox "$WORK/sandbox4"
-printf '{}\n' > "$WORK/sandbox4/.claude/settings.json"
-( cd "$WORK/sandbox4" && claude -p --plugin-dir "$REPO/plugins/quenching" "/quenching:align
+( cd "$WORK/sandbox4" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
 
 Run ONLY step 1, the read-only probe. Report what every call in it returned, then stop —
 write nothing and do not present the plan." \
@@ -199,10 +274,16 @@ write nothing and do not present the plan." \
 # `tools` prints each input as JSON, so a quoted path arrives escaped —
 # `python3 \"/…/skills.py\" drift`. Match across the escape rather than assuming a bare
 # space, or a correct call reads as a miss (it did, on the first run of this check).
-if grep -qE 'skills\.py[\\"[:space:]]+drift' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=yes; else r=no; fi
-check "$r" "ran skills.py drift during the probe"
-if grep -q 'hooks/skills.py' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=no; else r=yes; fi
-check "$r" "ran it from the plugin's copy, never from .claude/hooks/"
+if evidence "$WORK/4.jsonl"; then
+  if grep -qE 'skills\.py[\\"[:space:]]+drift' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "ran skills.py drift during the probe"
+  if grep -q 'hooks/skills.py' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=no; else r=yes; fi
+  check "$r" "ran it from the plugin's copy, never from .claude/hooks/"
+else
+  inconc "ran skills.py drift during the probe" "no tool_use in the capture"
+  inconc "ran it from the plugin's copy, never from .claude/hooks/" "no tool_use in the capture"
+fi
+fi
 
 echo
 if [ "$INCONC" -gt 0 ]; then
@@ -210,4 +291,12 @@ if [ "$INCONC" -gt 0 ]; then
 else
   echo "  $PASS passed, $FAIL failed"
 fi
-[ "$FAIL" -eq 0 ]
+
+# An inconclusive assertion is NOT a passing one. A run that measured nothing at all exits 2 so
+# it can never be quoted as a green gate — the failure mode precondition 4 exists to name.
+if [ "$FAIL" -gt 0 ]; then exit 1; fi
+if [ "$PASS" -eq 0 ]; then
+  echo "  nothing could be measured — this is not a pass"
+  exit 2
+fi
+exit 0
