@@ -7,6 +7,7 @@ branch: {base: main, work: plan/prefer-worktree-isolation}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 reviewed: {date: 2026-07-29}
+outcome: done
 ---
 
 # Prefer worktrees for spec isolation and remove them after a successful merge
@@ -375,3 +376,62 @@ descartável foi limpo.
 - functional-checks.sh check 3 (spoken-trigger routing) is nondeterministic — the /docs:add assertion failed once and passed on an identical re-run, so a single red run is not evidence of a regression and the script's exit 0 is not reproducible per-run
 - 5.3: a frase citada ("no Node runtime, no `config.yaml`") já não existe em CLAUDE.md — o commit fcb2a52 (align: converge all three fronts in one pass), incorporado pelo merge de main antes da task 1.1, reescreveu o arquivo de 374 para ~106 linhas e removeu a alegação junto com todo o bloco em que vivia. O verify da task ("a frase ... não descreve mais o front") já é verdadeiro sem edição; nenhuma mudança em CLAUDE.md foi necessária.
 - Fechamento da seção 5: `okf-validate.py docs` na raiz reporta 0 erro(s) mas 7 warning(s), não 0/0 como o bloco de ## Validation antecipava — 1 é o `resource-unresolved` pré-existente em automation/agents.md (já registrado em log.md), e 6 são `stale-doc` novos (architecture/plugin-layout.md, automation/skills.md, workflows/plan-git-record.md, workflows/plan-lifecycle.md, workflows/task-execution.md, workflows/worktree-setup.md). Causa: seus `resource:` globs (assets/**, specs/**, ou citando git.md diretamente) casam com arquivos que esta spec commitou (git.md na 5.1, QUENCHING.md na 5.2, e o próprio arquivo da spec em toda task) — e esses commits landaram em 2026-07-29 depois que o relógio real virou o dia, enquanto os cinco documentos carregam timestamp: 2026-07-28. Nenhum dos cinco é files: de nenhuma task desta spec, então nenhum foi tocado — bater o timestamp sem uma revisão de conteúdo real seria carimbar authority sem lastro. O conteúdo de plan-git-record.md e worktree-setup.md (tasks 4.1/4.2) foi escrito para antecipar exatamente o git.md que a 5.1 implementou depois, então é o caso mais provável de já estar correto; plugin-layout.md, skills.md e plan-lifecycle.md têm globs amplos que capturam qualquer coisa sob assets/** ou specs/**, não mudanças no assunto que eles próprios descrevem.
+
+## Outcome
+
+Entregue e integrado em `main` por **merge commit** (`git merge --no-ff`), de modo que os commits
+da branch permanecem em `main` e o `subject:` registrado em cada uma das 12 tasks continua
+resolvendo a partir dela — nada foi esmagado e nenhum registro ficou órfão.
+
+**O que shipou** — as quatro mudanças da `## Proposal`, todas as 12 tasks fechadas:
+
+- `/specs:isolate` oferece **Worktree primeiro e recomendada**, incondicionalmente, com o custo
+  dito na própria oferta: uma checkout nova carrega só o que o git rastreia.
+- `/specs:conclude` faz o merge por `git -C <checkout que detém a base>`, **nunca**
+  `git checkout <base>` — a forma antiga falhava com exit 128 de dentro de uma worktree, isto é,
+  estava quebrada exatamente para a isolação que o comando recomenda. Sem checkout detendo a base,
+  o run para em vez de fabricar um.
+- Depois de um merge com exit 0, `conclude` remove a worktree, **jamais** com `--force`; a recusa
+  do git sobre árvore suja é reportada verbatim e a worktree fica.
+- `specs/config.json` com a única chave `worktreeSetup`, lida por `specs.py config` e rodada por
+  `/specs:isolate` dentro da worktree recém-criada. Ausência nunca é achado; os dois achados `warn`
+  (`sp-config-unknown-key`, `sp-config-unparseable`) existem só para que uma chave errada não falhe
+  em silêncio.
+
+Docs escritos durante a execução: `workflows/worktree-setup.md` (novo), `workflows/plan-git-record.md`
+(emendado) e a entrada **Worktree setup** no glossário.
+
+**A revisão da branch achou quatro coisas, todas corrigidas na branch antes do merge:**
+
+1. **O lockstep de versão não tinha sido bumpado.** `specs.py` ganhou o subcomando `config` e
+   `isolate.md` passou a chamá-lo, mas os seis artefatos seguiam em 4.2.0. Como `/specs:align`
+   compara `--version` para decidir sobrescrever a cópia instalada, todo repo alvo que já tivesse a
+   ferramenta receberia o novo corpo de `isolate.md` contra um `specs.py` que responde
+   `invalid choice: 'config'`. Os seis foram para **4.3.0**. É precisamente o modo de falha que
+   `ci-cd/versioning-release.md` existe para prevenir, e é invisível deste repositório, onde corpo e
+   ferramenta são a mesma árvore de trabalho.
+2. `worktree-setup.md` e `plan-git-record.md` carimbavam `timestamp: 2026-07-28` mas os commits que
+   os escreveram landaram em 2026-07-29 — recarimbados, e os dois `stale-doc` fecharam.
+3. `workflows/index.md` listava `worktree-setup.md` fora da ordem alfabética que aquela tabela e
+   `standards/index.md` mantêm — reordenado.
+4. `conclude.md` §6 manda remover a worktree, mas §7 nunca pedia que isso fosse reportado — a única
+   tela em que o humano fica sabendo que um diretório saiu do disco. Acrescentado.
+
+**O que ficou de fora.** A oferta de doc emergente foi **recusada**. A regra que a revisão revelou
+— que um corpo de comando chamando uma capacidade nova de ferramenta torna o bump do lockstep parte
+da mudança, e não higiene de release — **não foi escrita** em `ci-cd/versioning-release.md`. Quem
+repetir o padrão não tem onde ler isso; o achado 1 acima é o único registro que existe dele.
+
+**Estado dos checadores no fechamento.** Lockstep nos seis artefatos em 4.3.0; `skills.py doctor`
+25 comandos / 0 achados; `skills.py lint` exit 0 (35 avisos, +1 sobre a base: o `sk-unscoped-bash`
+de `isolate.md`, que segue o mesmo padrão justificado-no-corpo de `conclude.md` e `execute.md`); os
+três selftests exit 0; o esqueleto shipado (`assets/docs` e `assets/specs/plans`) em 0/0;
+`functional-checks.sh` 9/9 na árvore final, exit 0 — inclusive o check 3, o não-determinístico.
+
+`okf-validate.py docs` na raiz fecha em **0 erros e 16 avisos**: 1 `resource-unresolved`
+pré-existente em `automation/agents.md`, e 15 `stale-doc` cuja causa é **largura de glob, não
+conteúdo desatualizado**. O bump do lockstep toca as três ferramentas por definição, e cada commit
+desta conclusão toca `specs/**`, então quase todo doc cujo `resource:` nomeia uma ferramenta ou o
+workspace disparou. Eram 6 no início da revisão e são 15 no fim, sem que o assunto de nenhum deles
+tenha mudado — recarimbá-los seria carimbar `authority` sem lastro, e o próprio número mostra que o
+sinal parou de carregar informação. Fica como o candidato a follow-up mais forte desta spec.
