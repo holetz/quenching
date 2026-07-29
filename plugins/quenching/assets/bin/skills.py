@@ -1569,6 +1569,56 @@ def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
     return rows
 
 
+def drift_findings(rows: list[dict]) -> list[dict]:
+    """One finding per row that is not `current`, each naming the align that fixes it.
+
+    Severity follows what the state COSTS. `behind` is an error: a stale copy answers a
+    different CLI contract, so anything running it by hand branches on a payload shape
+    that no longer exists. `unwired` is an error: the script is inert, and the repo
+    believes it is protected. `ahead` and `unreadable` are warnings — the plugin copy
+    still runs, so nothing is currently wrong, only unmaintainable. `absent` is a
+    warning: legitimate for a plugin-only target, and merely a lost fallback."""
+    out: list[dict] = []
+    for r in rows:
+        tool, align = r["tool"], r["align"]
+        if r["status"] == "behind":
+            out.append(finding(
+                "sk-tool-behind", "error",
+                f"{HOOKS_DIR}/{tool} is {r['installed']}, the plugin ships {r['shipped']} — "
+                "commands resolve the plugin copy first, but a session without the plugin, "
+                "a hook, or a human at a shell runs this one and gets its older CLI contract",
+                tool=tool, installed=r["installed"], shipped=r["shipped"],
+                remedy=f"{align} offers the overwrite"))
+        elif r["status"] == "ahead":
+            out.append(finding(
+                "sk-tool-ahead", "warn",
+                f"{HOOKS_DIR}/{tool} is {r['installed']}, ahead of the plugin's {r['shipped']} — "
+                "resolution is plugin-first and every align leaves a newer copy alone, so this "
+                "code is neither executed nor repaired",
+                tool=tool, installed=r["installed"], shipped=r["shipped"],
+                remedy="upgrade the plugin, then re-run " + align))
+        elif r["status"] == "unreadable":
+            out.append(finding(
+                "sk-tool-unreadable", "warn",
+                f"{HOOKS_DIR}/{tool} declares no `VERSION = \"…\"` — too old to carry one, or "
+                "edited in place; either way no comparison can be made",
+                tool=tool, remedy=f"{align} reinstalls it"))
+        elif r["status"] == "absent":
+            out.append(finding(
+                "sk-tool-absent", "warn",
+                f"no {HOOKS_DIR}/{tool} installed — fine while the plugin is loaded, but a "
+                "session or shell without it has no fallback and drops to the manual check",
+                tool=tool, remedy=f"{align} installs it"))
+        if r["wired"] is False and r["status"] != "absent":
+            out.append(finding(
+                "sk-tool-unwired", "error",
+                f"{HOOKS_DIR}/{tool} is installed but no `hooks` block in settings.json or "
+                "settings.local.json invokes it — the script sits on disk and nothing fires it, "
+                "so deleting it would change no behaviour",
+                tool=tool, remedy=f"{align} merges the wiring into .claude/settings.json"))
+    return out
+
+
 def resolve_plugin_root(arg: str | None) -> str | None:
     """`--plugin-root` when given, else the plugin checkout this script runs from.
 
@@ -1622,7 +1672,7 @@ def cmd_drift(args, root: str) -> int:
         return _drift_refusal(args, given)
     shipped = (read_text(os.path.join(plugin_root, PLUGIN_VERSION_FILE)) or "").strip()
     rows = drift_rows(root, plugin_root, shipped)
-    findings: list[dict] = []
+    findings = drift_findings(rows)
     payload = {"root": root, "pluginRoot": plugin_root, "shipped": shipped, "tools": rows}
     if args.json:
         print(json.dumps({"ok": not findings, **payload, "findings": findings},
@@ -1635,6 +1685,11 @@ def cmd_drift(args, root: str) -> int:
         print(f"  {r['status']:<10} {r['tool']:<18} installed "
               f"{r['installed'] or '-':<8} shipped {r['shipped']:<8} "
               f"executes: {r['executes']}{wiring}")
+    for f in findings:
+        print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
+        print(f"          remedy: {f['remedy']}")
+    if not findings:
+        print("  OK — every installed copy matches the plugin that ships it.")
     return exit_for(findings)
 
 
