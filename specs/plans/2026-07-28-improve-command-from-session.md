@@ -259,9 +259,10 @@ Next: tasks 2.x harden the tool (selftest, exit-2 refusal, uniform contract), 3.
       verify: `python3 plugins/quenching/assets/bin/session.py selftest` exits 0
       files: plugins/quenching/assets/bin/session.py
       subject: plan/improve-command-from-session: 2.1 Add a fixture-backed selftest subcommand proving the transcript-parsing rule
-- [ ] 2.2 Refuse with exit 2 on a zero-command parse of a non-empty transcript, so silence cannot look clean
+- [x] 2.2 Refuse with exit 2 on a zero-command parse of a non-empty transcript, so silence cannot look clean
       verify: a non-empty fixture holding no command yields exit 2 and a stated reason
       files: plugins/quenching/assets/bin/session.py
+      subject: plan/improve-command-from-session: 2.2 Refuse with exit 2 on a zero-command parse of a non-empty transcript, so silence cannot look clean
 - [ ] 2.3 Bring it onto the uniform tool contract — `--json` on every subcommand, exit codes 0/1/2
       verify: every subcommand accepts `--json` and the three exit codes match the contract
       files: plugins/quenching/assets/bin/session.py
