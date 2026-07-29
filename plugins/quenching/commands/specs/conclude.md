@@ -242,10 +242,27 @@ check, is
 the merge is the exact thing this ordering exists to prevent. If something must be fixed, say so
 and let the human start a new change.
 
-For `abandoned`, do not merge. Offer to keep the branch (default) or delete it, and record the
-choice in the report.
-**Done when:** the merge landed and the post-merge checks were reported, or the run recorded why
-nothing was merged.
+**Then, when the merge exited 0 and this spec was isolated in a worktree, remove it** — run from
+the checkout that holds the base, because nobody removes the tree they are standing in:
+
+```bash
+git -C <the base's checkout> worktree remove <the worktree path>
+```
+
+**Never `--force`, under any circumstance.** `git worktree remove` refuses a tree with modified or
+untracked files on its own (`contains modified or untracked files`, exit 128), which is precisely
+the irreversibility worth fearing — so the safety is already git's, and no prompt would buy more
+than it costs. A clean tree leaves the disk silently; a refusal is **reported with the path and
+git's own output verbatim**, and the worktree stays. Never retry it forced, and never offer to.
+
+This runs only after a merge verified at exit 0 — a merge that failed or was refused above leaves
+the worktree exactly where it is. Removing the worktree does not delete the branch: that stays the
+separate offer it already was.
+
+For `abandoned`, do not merge and do not remove the worktree. Offer to keep the branch (default) or
+delete it, and record the choice in the report.
+**Done when:** the merge landed and the post-merge checks were reported, any worktree was removed
+or its refusal reported, or the run recorded why nothing was merged.
 
 ### 7. Report
 The archived path, the outcome, task progress at close, `reviewed` / `merge` / `branch` as they now
@@ -261,7 +278,10 @@ close, and they are easiest to lose at exactly this moment.
 
 - Never infer the outcome. `done` and `abandoned` are the human's word, always.
 - Never treat staleness as evidence of abandonment.
-- Never pass `--force` unprompted — a refusal is information, not an obstacle.
+- Never pass `--force` unprompted — a refusal is information, not an obstacle. On
+  `git worktree remove` never pass it **at all**: git's refusal over modified or untracked files is
+  the safety, and forcing past it destroys uncommitted work at the moment the human is least
+  watching.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
 - **Never `git checkout <base>` to merge.** Merge into the checkout that already holds the base with
   `git -C`; when none does, stop and say so rather than manufacturing one.
