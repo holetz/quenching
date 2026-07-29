@@ -240,8 +240,9 @@ repositório.
 
 ### 4. Commands
 
-- [ ] 4.1 `/docs:align`: remover o passo 4(f) (estabelecer `log.md`), o estabelecer/append do passo 7 e a entrada única do passo 9
+- [x] 4.1 `/docs:align`: remover o passo 4(f) (estabelecer `log.md`), o estabelecer/append do passo 7 e a entrada única do passo 9
       files: plugins/quenching/commands/docs/align.md
+      subject: plan/retire-docs-log: 4.1 stop /docs:align establishing and writing the log
 - [ ] 4.2 `/docs:status`: passar a reportar um `log.md` sobrevivente como resíduo aposentado, **sem código de finding**, como já faz com as figuras de densidade
       files: plugins/quenching/commands/docs/status.md
 - [ ] 4.3 Remover as menções ao log dos quinze arquivos de comando restantes, em um commit
