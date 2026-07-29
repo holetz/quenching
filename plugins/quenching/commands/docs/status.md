@@ -29,9 +29,9 @@ point: a status view that disagreed with the sweep would be worse than none.
 
 ## Doctrine
 
-- **Zero writes, no exceptions.** No stamp, no index regeneration, no `docs/log.md` entry, not
-  even a marker file. A status read that changed the thing it read would break its own contract
-  and make the preview a lie.
+- **Zero writes, no exceptions.** No stamp, no index regeneration, not even a marker file. A
+  status read that changed the thing it read would break its own contract and make the preview
+  a lie.
 - **Report in the validator's vocabulary.** Every finding carries the code
   [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) defines and the command that
   closes it. Never invent a code, never soften one, and never report a finding the sweep would not
@@ -74,7 +74,8 @@ Invoke via `python3`/`py`; branch on the **exit code** and the `--json`, never o
   and `docs/knowledge/glossary.md`.
 - `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `CLAUDE.md`/`AGENTS.md` size —
   the two out-of-band stores whose content the cycle would pull in.
-- Read `docs/log.md`'s newest heading for the bundle's last activity date.
+- Note whether a **retired `log.md`** is still present anywhere in the bundle (`Glob`
+  `docs/**/log.md`) — a figure for §5, never a finding.
 
 Nothing here writes. If the checker is unavailable, collect what the frontmatter supports and mark
 every conformance row as unverified rather than reporting a clean bundle.
@@ -98,8 +99,7 @@ so it is never reported as though it did.
 One report, in this order:
 
 1. **Header** — the resolved bundle root, whether it is an installed OKF bundle (`okf_version` on
-   the root `index.md`), the checker's version and exit code verbatim, and the newest `log.md`
-   date as the bundle's last activity.
+   the root `index.md`), and the checker's version and exit code verbatim.
 2. **Density** — the table §5 defines. It comes *before* the findings, because a bundle with no
    findings and no content is the case this skill exists to make visible.
 3. **Would be fixed by `/docs:align`** — the codes
@@ -141,7 +141,14 @@ Report it as one table, and give **no row a finding code**:
 | Glossary terms | entries under `## Terms` in `knowledge/glossary.md`; note separately when the shipped **seed placeholder** is still the only one |
 | Unlinked glossary entries | terms with no concept doc yet — a **valid permanent state**, reported as a figure and never as a defect |
 | Standards subjects | subject subfolders under `standards/`, and how many hold at least one doc |
-| Last activity | the newest `## YYYY-MM-DD` heading in `docs/log.md` |
+| Last activity | the newest `timestamp:` across the bundle's concept docs |
+| Retired `log.md` | how many survive, and where — see below |
+
+**A surviving `log.md` is a figure, not a defect.** The artifact is retired: nothing writes one,
+the validator emits no code for one, and `/docs:align` neither creates nor deletes one. Report
+that it is there, say it is retired and that keeping or deleting it is the repo's call, and stop
+— inventing a code for it here would make this command disagree with the sweep, which is the one
+thing it must never do. It has no owning command to name, because none of them want it.
 
 Two rules keep this honest:
 
@@ -157,8 +164,8 @@ code.
 
 ## Invariants to never violate
 
-- Never write, anywhere, for any reason — not a stamp, not an index, not a log line, not a marker.
-  If something looks wrong enough to fix, name the command that fixes it and stop.
+- Never write, anywhere, for any reason — not a stamp, not an index, not a marker. If something
+  looks wrong enough to fix, name the command that fixes it and stop.
 - Never report a finding with a code the validator does not define, and never state a finding the
   sweep would not raise.
 - Never give a density figure a finding code, and never present an empty home as a defect.
