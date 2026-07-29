@@ -248,10 +248,11 @@ only registered tree).
 
 ### 1. The check
 
-- [ ] 1.1 Add the `drift` subcommand to skills.py: `--plugin-root` argument, derivation from `__file__`, and the exit-2 refusal when neither resolves a directory holding `VERSION`
+- [x] 1.1 Add the `drift` subcommand to skills.py: `--plugin-root` argument, derivation from `__file__`, and the exit-2 refusal when neither resolves a directory holding `VERSION`
       files: plugins/quenching/assets/bin/skills.py
       pattern: plugins/quenching/assets/bin/skills.py (the `register("budget", …)` block and `cmd_budget`)
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json; python3 plugins/quenching/assets/hooks/skills.py 2>/dev/null; true
+      subject: plan/notice-installed-tool-version-drift: 1.1 Add the drift subcommand with plugin-root resolution and the exit-2 refusal
 - [ ] 1.2 Compare each of the three tools in both directions — `current`/`behind`/`ahead`/`absent`/`unreadable` — reading `<plugin-root>/VERSION` and each installed copy's `--version` at runtime, and report which copy a command will execute
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py drift --json

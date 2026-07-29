@@ -1436,6 +1436,91 @@ register("budget",
 
 
 # --------------------------------------------------------------------------- #
+# drift — the installed copies against the plugin that ships them
+#
+# Each of the three tools is COPIED into a target's `.claude/hooks/` by its own align,
+# and that offer is the only moment a version is ever compared. A repo that installed
+# once and never aligned again keeps whatever it got, indefinitely, and nothing says
+# so. This subcommand is what notices — without an align, and without writing.
+#
+# It MUST run from the plugin's own copy. An installed copy's `VERSION` is the stale
+# number under test, so answering from it would report "all current" in exactly the
+# case this exists to catch. An unresolvable plugin root is a refusal (exit 2), never
+# a guess.
+# --------------------------------------------------------------------------- #
+PLUGIN_VERSION_FILE = "VERSION"
+
+
+def resolve_plugin_root(arg: str | None) -> str | None:
+    """`--plugin-root` when given, else the plugin checkout this script runs from.
+
+    A plugin holds `VERSION` beside `assets/`, so walking up from `assets/bin/skills.py`
+    finds it in two hops. A copy installed at `.claude/hooks/skills.py` has no such
+    parent — which is the case that must refuse rather than answer."""
+    if arg:
+        candidates = [arg]
+    else:
+        candidates, d = [], os.path.dirname(os.path.abspath(__file__))
+        for _ in range(4):
+            candidates.append(d)
+            parent = os.path.dirname(d)
+            if parent == d:
+                break
+            d = parent
+    for c in candidates:
+        if (os.path.isfile(os.path.join(c, PLUGIN_VERSION_FILE))
+                and os.path.isdir(os.path.join(c, "assets"))):
+            return os.path.abspath(c)
+    return None
+
+
+def _drift_refusal(args, given: str | None) -> int:
+    """Exit 2 — the refusal branch of the 0 ok / 1 findings / 2 refusal contract. A
+    caller that cannot tell "no drift" from "could not look" would report the silence
+    this whole subcommand exists to break."""
+    if given:
+        message = (f"--plugin-root {given} holds no {PLUGIN_VERSION_FILE} beside an "
+                   f"assets/ directory — it is not a plugin checkout")
+    else:
+        message = ("cannot resolve the plugin this script ships with — `drift` must run "
+                   "from the plugin's own copy, because an installed copy would answer "
+                   "from the same stale VERSION it is being asked about")
+    remedy = ("run `python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py drift`, or pass "
+              "--plugin-root <the plugin checkout>")
+    if args.json:
+        print(json.dumps({"ok": False, "refused": message, "remedy": remedy},
+                         indent=2, ensure_ascii=False))
+    else:
+        print("skills drift — refused")
+        print(f"  {message}")
+        print(f"  remedy: {remedy}")
+    return 2
+
+
+def cmd_drift(args, root: str) -> int:
+    given = getattr(args, "plugin_root", None)
+    plugin_root = resolve_plugin_root(given)
+    if plugin_root is None:
+        return _drift_refusal(args, given)
+    shipped = (read_text(os.path.join(plugin_root, PLUGIN_VERSION_FILE)) or "").strip()
+    findings: list[dict] = []
+    payload = {"root": root, "pluginRoot": plugin_root, "shipped": shipped}
+    if args.json:
+        print(json.dumps({"ok": not findings, **payload, "findings": findings},
+                         indent=2, ensure_ascii=False))
+        return exit_for(findings)
+    print(f"skills drift — {root} against plugin {shipped} ({plugin_root})")
+    return exit_for(findings)
+
+
+register("drift",
+         lambda sp: sp.add_argument("--plugin-root",
+                                    help="the plugin checkout holding VERSION beside assets/ "
+                                         "(default: the one this script runs from)"),
+         cmd_drift)
+
+
+# --------------------------------------------------------------------------- #
 # dispatch
 # --------------------------------------------------------------------------- #
 def build_parser() -> argparse.ArgumentParser:
