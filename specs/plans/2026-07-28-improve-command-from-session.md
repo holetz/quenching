@@ -207,31 +207,21 @@ one arm and never claims one. Authoring stays `/skill:new`'s.
 
 ## Handoff
 
-State of the tree after task 4.1. Sections 1–4 are complete: the tool is hardened, the command is
-minted, the manuals/counts agree with `skills.py doctor` (26 commands, 0 findings), and the one
-`docs/standards/` write this spec is allowed lands.
+State of the tree after task 5.1. Sections 1–4 complete; 5.1 confirmed the surface still conforms
+(`skills.py doctor` — 26 commands, 0 findings) with no code change of its own. Only 5.2 remains:
+`functional-checks.sh` must exit 0 since `commands/**` changed this session (the mint at 3.2). It
+was already run clean (9/9) after the mint in task 3.2's own verification, and again as a fresh
+full run during this session's diagnosis of a since-not-reproduced flake — 5.2 reruns it one more
+time as the task's own declared check and records the result.
 
-`docs/standards/automation/session-evidence.md` — new, `authority: background`. States: where a
-transcript lives, the two entry forms, the `attributedRun.closed`/`mayIncludeTurnsFrom` rule (a
-pointer, not a span — 1-of-43 reversion measured), the JSONL-first/reflection-fallback ladder with
-the arm declared, and the counted-claim-from-code rule. Graduation gate is the same criterion the
-spec's own `## Validation` states; that gate was met once (task 1.3, session 94120e96) but
-graduating to `current` is a separate, later call, not automatic from this doc's own creation.
-Indexed in `docs/standards/automation/index.md` and the top-level GENERATED zone in
-`docs/standards/index.md`; logged in `docs/standards/log.md` under 2026-07-28.
-`okf-validate.py docs` — 0 errors, 9 pre-existing warnings unrelated to this write (mostly
-`stale-doc` on other standards whose tracked mtime moved when the date rolled to 2026-07-29).
-
-`plugins/quenching/assets/bin/session.py` and `plugins/quenching/commands/skill/retro.md` are
-unchanged since task 3.3 — see that Handoff entry (in git history) for their state.
+Everything else — `session.py`, `retro.md`, the manuals, `session-evidence.md` — is unchanged
+since task 4.1; see that Handoff entry (in git history) for their state.
 
 Corpus: 87 transcripts under `~/.claude/projects/-home-holetz-Projects-claude-quenching/`. 81 exit
 0, 6 refuse with `se-no-command-parsed`, none crash. Largest is 7.1 MB and digests to 4.6 KB
 against a stated 64 KB budget.
 
-Next: 5.1 confirm 26 commands with no `doctor` findings (already true today — the task just needs
-to assert it against a fresh run) and 5.2 `functional-checks.sh` exits 0, the only check that
-`commands/**` actually loads. At 100% the run offers to chain into `/specs:conclude`.
+Next: 5.2, the last task. At 100% the run offers to chain into `/specs:conclude`.
 ## Tasks
 
 ### 1. Gate — prove the retro finds anything
@@ -284,8 +274,9 @@ to assert it against a fresh run) and 5.2 `functional-checks.sh` exits 0, the on
 
 ### 5. Surface checks
 
-- [ ] 5.1 The command surface still conforms at 26 commands
+- [x] 5.1 The command surface still conforms at 26 commands
       verify: `python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json` shows 26 commands and no findings
+      subject: plan/improve-command-from-session: 5.1 The command surface still conforms at 26 commands
 - [ ] 5.2 The surface actually loads, since `commands/**` changed
       verify: `./assets/bin/functional-checks.sh` exits 0
 
