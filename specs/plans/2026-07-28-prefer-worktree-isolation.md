@@ -326,9 +326,10 @@ e que esta spec é quem a desfaz.
       files: docs/standards/workflows/plan-git-record.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/prefer-worktree-isolation: 4.1 plan-git-record.md — o merge sem checkout e a remoção da worktree
-- [ ] 4.2 [P] Escrever docs/standards/workflows/worktree-setup.md — o contrato do `specs/config.json`
+- [x] 4.2 [P] Escrever docs/standards/workflows/worktree-setup.md — o contrato do `specs/config.json`
       files: docs/standards/workflows/worktree-setup.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/prefer-worktree-isolation: 4.2 worktree-setup.md — o contrato do specs/config.json
 - [ ] 5.1 [P] Emendar `specs-isolate/git.md` — a worktree como forma preferida e o merge por `git -C`
       files: plugins/quenching/assets/references/specs-isolate/git.md
       verify: ./plugins/quenching/assets/bin/functional-checks.sh
