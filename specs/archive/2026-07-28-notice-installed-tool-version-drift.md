@@ -7,6 +7,8 @@ branch: {base: main, work: plan/notice-installed-tool-version-drift}
 refined: {mode: gate, date: 2026-07-28}
 approved: {date: 2026-07-28}
 reviewed: {date: 2026-07-28}
+merge: {strategy: merge-commit, subject: "plan/notice-installed-tool-version-drift: merge (merge-commit)"}
+outcome: done
 ---
 
 # Nothing notices an installed tool copy falling behind the plugin
@@ -311,8 +313,43 @@ Built out on `plan/notice-installed-tool-version-drift`; 11/11 tasks committed, 
 
 - Confirmed again 2026-07-28 during an /align run, with a SECOND silent failure mode this Problem does not cover: the installed okf-validate.py and specs.py were 1.0.0 against a plugin at 4.2.0, but .claude/settings.json carried NO hooks block at all — the scripts sat on disk with nothing invoking them, so deleting all three changed no behaviour, which is precisely why nobody noticed. A drift check that only compares --version would have caught 1.0.0-vs-4.2.0 and still missed that the hook was inert. Whatever notices drift should also answer 'is this tool actually wired?' (for okf-validate.py: a hooks block in settings.json referencing it — one cheap JSON read). Note too that /docs:align's install is step 5, 'pass 1 only, offered', so on this repo the offer never fired at all. -> folded: ## Proposal and ## Design decision 5 — wiring is answered, not assumed, and asked only for okf-validate.py, the one tool that is a hook
 - Drift is silent in BOTH directions, and the reverse case is invisible to a --version comparison alone: every command resolves the plugin path FIRST and the installed copy only as fallback (plans-zone.md 'Resolving the tool'), while each align refuses to overwrite a NEWER installed copy — so a repo whose .claude/hooks/ copy is ahead of the loaded plugin runs the older plugin code silently, and the align reports nothing because leaving the newer copy alone is its correct behaviour. Whatever notices drift should report the comparison in both directions and name which copy the commands will actually execute. -> folded: ## Design decision 4 — three statuses plus the executing copy, with `ahead` a real finding rather than a nicety
-- Design decision 2 said drift would invoke --version on each installed copy; the implementation READS the VERSION constant instead. Running the copy would execute whatever sits in a target's .claude/hooks/ from inside a read-only probe — a much larger claim than reading three lines, and it needs python3 on PATH. A copy too old to declare a constant reads 'unreadable', which carries the same call to action as 'behind', so nothing is lost. Deviation taken deliberately at task 1.2.
-- drift compares an installed copy against the SHIPPED TOOL's own VERSION constant, not against the plugin's VERSION file, because the constant is what an install would put on disk. That leaves the lockstep's own failure — a tool whose constant was not bumped with the VERSION file — unchecked by drift. It is one comparison away (plugin VERSION vs each shipped tool's constant) and worth a follow-up spec.
-- Open Decision on sk-tool-absent SETTLED at task 2.2, on evidence from two runs: a plugin-only target fired three warnings and this repo — fully conformant, 25 commands, no doctor findings — fired one for skills.py. Resolution: absent is a finding ONLY for okf-validate.py, where it means the bundle has no enforcement at all (the same practical state as unwired). For specs.py and skills.py the plugin copy is what resolution runs anyway, so absence costs nothing and warning about it would make a probe's output routine noise. The row still reports 'absent' for all three; only the finding was scoped. Encoded in the selftest as the 'pluginonly' fixture.
-- functional-checks.sh checks 1-3 do NOT test the checkout they are run from: the sandboxes enable the plugin through the marketplace registration, which serves ~/.claude/plugins/cache/claude-quenching/quenching/3.0.0 — a tree still carrying commands 4.2.0 deleted (align-and-update.md). So the repo's only check for a commands/** change has been grading a cached copy nobody edits. Check 4 avoids it with 'claude -p --plugin-dir $REPO/plugins/quenching' and a sandbox that enables no plugin; the same one-flag fix applies to checks 1-3 and is worth its own spec.
-- Editing the four align bodies made okf-validate report stale-doc against docs/standards/architecture/align-surface.md — its resource names exactly those four files and its timestamp is 2026-07-27. The doc's claims still hold (the drift call is a probe step, and step 6 re-runs the probe, so 'the probe and the closing verification are the same programs run twice' survives), but it now describes a probe it does not enumerate. Emergent docs work for conclude: re-stamp with a sentence naming the cross-front drift call, or leave it and explain why.
+- Design decision 2 said drift would invoke --version on each installed copy; the implementation READS the VERSION constant instead. Running the copy would execute whatever sits in a target's .claude/hooks/ from inside a read-only probe — a much larger claim than reading three lines, and it needs python3 on PATH. A copy too old to declare a constant reads 'unreadable', which carries the same call to action as 'behind', so nothing is lost. Deviation taken deliberately at task 1.2. -> folded: ## Design decision 2 and docs/standards/ci-cd/versioning-release.md §Noticing drift 1b — the read-not-execute rule is now written down
+- drift compares an installed copy against the SHIPPED TOOL's own VERSION constant, not against the plugin's VERSION file, because the constant is what an install would put on disk. That leaves the lockstep's own failure — a tool whose constant was not bumped with the VERSION file — unchecked by drift. It is one comparison away (plugin VERSION vs each shipped tool's constant) and worth a follow-up spec. -> promoted: check-the-lockstep-itself
+- Open Decision on sk-tool-absent SETTLED at task 2.2, on evidence from two runs: a plugin-only target fired three warnings and this repo — fully conformant, 25 commands, no doctor findings — fired one for skills.py. Resolution: absent is a finding ONLY for okf-validate.py, where it means the bundle has no enforcement at all (the same practical state as unwired). For specs.py and skills.py the plugin copy is what resolution runs anyway, so absence costs nothing and warning about it would make a probe's output routine noise. The row still reports 'absent' for all three; only the finding was scoped. Encoded in the selftest as the 'pluginonly' fixture. -> folded: ## Open Decisions, first entry — settled, and the code scoped to the hook alone
+- functional-checks.sh checks 1-3 do NOT test the checkout they are run from: the sandboxes enable the plugin through the marketplace registration, which serves ~/.claude/plugins/cache/claude-quenching/quenching/3.0.0 — a tree still carrying commands 4.2.0 deleted (align-and-update.md). So the repo's only check for a commands/** change has been grading a cached copy nobody edits. Check 4 avoids it with 'claude -p --plugin-dir $REPO/plugins/quenching' and a sandbox that enables no plugin; the same one-flag fix applies to checks 1-3 and is worth its own spec. -> promoted: plugin-dir-for-functional-checks
+- Editing the four align bodies made okf-validate report stale-doc against docs/standards/architecture/align-surface.md — its resource names exactly those four files and its timestamp is 2026-07-27. The doc's claims still hold (the drift call is a probe step, and step 6 re-runs the probe, so 'the probe and the closing verification are the same programs run twice' survives), but it now describes a probe it does not enumerate. Emergent docs work for conclude: re-stamp with a sentence naming the cross-front drift call, or leave it and explain why. -> folded: docs/standards/architecture/align-surface.md — the missing rule was written and the doc re-stamped, closing the warning
+
+## Outcome
+
+**Shipped.** `skills.py drift` is the check that notices — one subcommand, three tools, one
+payload, `--json`, exit `0` ok · `1` findings · `2` refusal. It reports `current`/`behind`/`ahead`/
+`absent`/`unreadable` per tool, names the copy that actually executes, and answers whether
+`okf-validate.py` is invoked by a `hooks` block. Run from an installed copy it refuses rather than
+answering from the stale `VERSION` it is being asked about. All four aligns call it in their probe,
+and `functional-checks.sh` check 4 proves in a fresh session that the conductor really does.
+
+11 tasks, 11 commits, none blocked. Merged as a **merge-commit**, so every task's recorded
+`subject:` stays resolvable in history.
+
+**Decided while building, and worth knowing:**
+
+- `drift` **reads** each tool's `VERSION` constant; it never executes an installed script. Design
+  decision 2 had said `--version`, and running a target's on-disk script from inside a read-only
+  probe is a much larger claim than parsing three lines. Written down as
+  `versioning-release.md` §Noticing drift 1b.
+- `sk-tool-absent` fires for `okf-validate.py` **only**. A missing CLI costs nothing while the
+  plugin is loaded, and warning about it fired on a plugin-only target and on this repo — a probe
+  whose output is routine noise gets skipped. Settled on evidence at task 2.2, encoded in the
+  `pluginonly` selftest fixture.
+- It compares against **the shipped tool's own constant**, not the plugin's `VERSION` file, which
+  leaves the lockstep's own failure unchecked → `check-the-lockstep-itself`.
+
+**Left out, deliberately:** the six-artifact release bump (nothing here needs an installed copy to
+carry `drift` — the check must run from the plugin copy anyway); fixing drift, which stays each
+align's offered, confirmed job; operator-manual drift.
+
+**What the next reader needs.** `functional-checks.sh` checks 1-3 still load the plugin through the
+marketplace, which on this machine served a cached **3.0.0** tree — they were grading a copy nobody
+had edited. Check 4 uses `--plugin-dir`; the same fix for the other three is
+`plugin-dir-for-functional-checks`. Do not trust a green run of checks 1-3 as evidence about a
+working tree until that lands.
