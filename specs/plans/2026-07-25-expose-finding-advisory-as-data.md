@@ -2,7 +2,7 @@
 slug: expose-finding-advisory-as-data
 title: Expose a finding's advisory/blocking status as data in okf-validate --json
 verification: per-section
-priority: {level: 11, criticality: medium, complexity: 3, date: 2026-07-28}
+priority: {level: 19, criticality: medium, complexity: 3, date: 2026-07-28}
 ---
 
 # Expose a finding's advisory/blocking status as data in okf-validate --json

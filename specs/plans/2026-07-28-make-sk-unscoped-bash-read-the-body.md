@@ -2,7 +2,7 @@
 slug: make-sk-unscoped-bash-read-the-body
 title: sk-unscoped-bash cannot read the body its own remedy points at
 verification: per-section
-priority: {level: 9, criticality: medium, complexity: 3, date: 2026-07-28}
+priority: {level: 15, criticality: medium, complexity: 3, date: 2026-07-28}
 ---
 
 # sk-unscoped-bash cannot read the body its own remedy points at

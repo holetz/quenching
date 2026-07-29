@@ -2,6 +2,7 @@
 slug: prefer-worktree-isolation
 title: Prefer worktrees for spec isolation and remove them after a successful merge
 verification: per-section
+priority: {level: 20, criticality: medium, date: 2026-07-28}
 ---
 
 # Prefer worktrees for spec isolation and remove them after a successful merge

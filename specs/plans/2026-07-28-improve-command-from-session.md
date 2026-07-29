@@ -2,7 +2,7 @@
 slug: improve-command-from-session
 title: Mine a session for improvements to the command that started it
 verification: per-section
-priority: {level: 20, criticality: low, date: 2026-07-28}
+priority: {level: 26, criticality: low, date: 2026-07-28}
 ---
 
 # Mine a session for improvements to the command that started it

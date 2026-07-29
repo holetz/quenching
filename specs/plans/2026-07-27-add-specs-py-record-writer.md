@@ -2,7 +2,7 @@
 slug: add-specs-py-record-writer
 title: Give the frontmatter records a mechanical writer in specs.py
 verification: per-section
-priority: {level: 13, criticality: medium, date: 2026-07-28}
+priority: {level: 17, criticality: medium, date: 2026-07-28}
 ---
 
 # Give the frontmatter records a mechanical writer in specs.py

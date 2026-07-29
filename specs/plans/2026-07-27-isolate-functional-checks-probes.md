@@ -2,7 +2,7 @@
 slug: isolate-functional-checks-probes
 title: functional-checks.sh check 3 creates real specs in the repo it probes
 verification: per-section
-priority: {level: 10, criticality: medium, complexity: 3, date: 2026-07-28}
+priority: {level: 3, criticality: medium, complexity: 3, date: 2026-07-28}
 ---
 
 # functional-checks.sh check 3 creates real specs in the repo it probes

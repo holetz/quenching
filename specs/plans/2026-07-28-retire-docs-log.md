@@ -2,6 +2,7 @@
 slug: retire-docs-log
 title: Retire the docs/ log
 verification: per-section
+priority: {level: 9, criticality: medium, date: 2026-07-28}
 ---
 
 # Retire the docs/ log

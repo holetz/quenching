@@ -2,6 +2,7 @@
 slug: declare-repo-body-language
 title: Declare the repo's body language in docs/standards so every command reads it for free
 verification: per-section
+priority: {level: 6, criticality: high, date: 2026-07-28}
 ---
 
 # Declare the repo's body language in docs/standards so every command reads it for free

@@ -2,6 +2,7 @@
 slug: add-eli5-section-to-specs
 title: Add an ELI5 section that makes a spec comprehensible to a human
 verification: per-section
+priority: {level: 22, criticality: low, date: 2026-07-28}
 ---
 
 # Add an ELI5 section that makes a spec comprehensible to a human
