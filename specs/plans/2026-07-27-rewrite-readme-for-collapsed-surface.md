@@ -10,7 +10,7 @@ priority: {level: 13, criticality: high, date: 2026-07-28}
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
      `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
-     lines of body, not a thirteen-heading skeleton. Every other heading below is created on
+     lines of body, not a fourteen-heading skeleton. Every other heading below is created on
      first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
@@ -34,11 +34,11 @@ priority: {level: 13, criticality: high, date: 2026-07-28}
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
 
-     AUDIENCE. Each section names who reads it. `## Problem`/`## Proposal`/`## Design` are for
-     the human — examples and plain language belong there. `## Handoff`/`## Tasks` are for
-     agents — terse, with `files:`/`verify:`/`pattern:` metadata. An orchestrator never sends
-     the human sections to an executor; that is what lets one file serve both audiences
-     without bloating agent context. -->
+     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
+     `## Design` are for the human — examples and plain language belong there.
+     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
+     metadata. An orchestrator never sends the human sections to an executor; that is what
+     lets one file serve both audiences without bloating agent context. -->
 
 ## Overview
 

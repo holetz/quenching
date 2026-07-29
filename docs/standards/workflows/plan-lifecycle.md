@@ -15,7 +15,7 @@ maintainer: quenching
 
 Where a spec lives over its life, which of its states are computed, and which facts are recorded
 because nothing can compute them. This is the v3 lifecycle — one active folder, stages derived,
-human judgments in frontmatter. The spec-*file* contract (the thirteen canonical sections, the
+human judgments in frontmatter. The spec-*file* contract (the fourteen canonical sections, the
 phase-scoped explicit-none rule, the duplicated template) is
 [plan-artifacts.md](plan-artifacts.md) and is untouched by v3; that file's v2 *lifecycle* claims —
 the three-folder phase model, promote-as-the-human-OK, and the minimal frontmatter list — are

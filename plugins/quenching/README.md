@@ -330,7 +330,7 @@ alone with its sha on the task line).
 | `/specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/specs:align` | The front's align + installer — see below. |
 
-The shared facts live once — the layout, the thirteen canonical sections, the gates, the record
+The shared facts live once — the layout, the fourteen canonical sections, the gates, the record
 vocabulary, the `specs.py` surface, and the `specs/`↔`docs/` boundary in
 [`specs-develop/spec-driven.md`](assets/references/specs-develop/spec-driven.md),
 the execution mechanics in

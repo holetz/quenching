@@ -17,7 +17,7 @@ out under the same basename. Nothing here to retire, hand off, or reconcile — 
 The date prefix is stamped **once, here**, and never rewritten: `promote` moves the file without
 renaming it, so this basename is the spec's identity for its whole lifecycle.
 
-The layout, the thirteen canonical sections, the gates and the `specs.py` surface live in
+The layout, the fourteen canonical sections, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
 the listing-zone format and the tool fallback in
 [specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md);
@@ -49,7 +49,7 @@ because this command worked harder at it.
   `title`, `verification`) and that one heading. Every other canonical heading is left ABSENT,
   which the stage-scoped explicit-none rule
   ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The gates)
-  makes legal. Writing thirteen `- none` headings here would make a fresh capture derive as
+  makes legal. Writing fourteen `- none` headings here would make a fresh capture derive as
   `designed` and clear the whole ready gate without anyone having thought anything.
 - **Never invent what the input lacks.** On the plan-file path, `- none — the plan recorded no
   alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
