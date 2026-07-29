@@ -4,7 +4,7 @@ title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: .claude/settings.json, .claude/hooks/**, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-07-27
+timestamp: 2026-07-28
 audience: both
 authority: current
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface: /docs:add, /docs:learn and /docs:define carry rung-1 frontmatter `hooks:` blocks on the rung-1 `command` handler, and skills.py enforces both rungs from one implementation (8 selftest cases)
@@ -69,9 +69,19 @@ a rung-1 frontmatter `hooks:` block running `okf-validate.py` on their own `Writ
 rung-1 `command` handler with a `timeout` sized to the event. Each **guards the checker's absence**
 per the rule above: `/docs:align` step 6's install is an *offer*, so the three commands most likely
 to be run before any align are also the three that would otherwise report a hook error on every
-write. Nothing else on the surface wires a hook, and the shipped `stopScan: "dirty"` gate is the
-rung-3 example above. `skills.py` reads both rungs from one implementation, so a `settings.json`
-hook and a frontmatter one are held to the same ladder.
+write. `skills.py` reads both rungs from one implementation, so a `settings.json` hook and a
+frontmatter one are held to the same ladder.
+
+**This repository now also wires the checker at rungs 2 and 3**, having accepted that offer: its
+`.claude/settings.json` carries a `PostToolUse` hook matched to `Write|Edit` (rung 2,
+operation-scoped) and an unmatched `Stop` hook (rung 3), both running the `okf-validate.py` copy
+installed under `.claude/hooks/`. The `Stop` hook is the rung-3 example in the flesh rather than in
+the abstract — it is only affordable because the shipped `stopScan: "dirty"` gate makes a turn that
+touched no `docs/**` file cost one stat. The opt-in `PreToolUse` deny gate is deliberately **not**
+wired: `hardBlock` stays `false`, so the checker proposes and never blocks. Note the second-order
+cost this repo pays and a target repo does not — `plugins/quenching/assets/docs/` is a bundle
+skeleton, so an edit there fires the same `Write|Edit` hook against payload that is deliberately a
+template rather than a live bundle.
 
 The full pricing doctrine lives once, in
 [capabilities.md](/plugins/quenching/assets/references/skill-new/capabilities.md) §Hooks;
