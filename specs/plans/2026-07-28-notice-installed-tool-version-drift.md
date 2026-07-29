@@ -233,17 +233,20 @@ only registered tree).
 
 ## Handoff
 
-- Work happens on `plan/notice-installed-tool-version-drift`, in the worktree beside the repo.
-- `skills.py` already reads `settings.json` + `settings.local.json` and runs the hook ladder over
-  both — reuse that reader; do not add a second one.
-- Subcommands register through `register(name, add_args, cmd_fn)`; `--json` is added for every
-  subcommand by `build_parser`, so do not add it by hand.
-- Findings are built by `finding(code, severity, message, ...)` with a `remedy:` naming the command
-  that fixes it. Severity is `error` or `warn` only.
-- The three tools may **not** import each other — each installs standalone.
-- Every `Bash` invocation writes the resolved interpreter+path literally; never `$VAR` as a command
-  (zsh does not word-split, and the failure is silent).
+Built out on `plan/notice-installed-tool-version-drift`; 11/11 tasks committed, none blocked.
 
+- `skills.py drift` is implemented and selftested (`drifted` / `clean` / `pluginonly` fixtures).
+  It reads each tool's `VERSION` **constant** — it never executes an installed copy — and refuses
+  (exit 2) when it cannot resolve a plugin root.
+- `sk-tool-absent` fires for `okf-validate.py` only; that Open Decision is settled on evidence and
+  encoded in the `pluginonly` fixture.
+- The four align bodies carry the call; `functional-checks.sh` check 4 proves a fresh session
+  issues it, and loads the plugin with `--plugin-dir` because the marketplace serves a cached
+  3.0.0 tree on this machine.
+- Left for conclude: `docs/standards/architecture/align-surface.md` is now `stale-doc` — its
+  `resource` names the four edited aligns. Four discoveries are unresolved; two are follow-up
+  specs (the lockstep's own unchecked half, and `--plugin-dir` for checks 1-3).
+- The six-artifact version bump is deliberately NOT part of this branch.
 ## Tasks
 
 ### 1. The check
