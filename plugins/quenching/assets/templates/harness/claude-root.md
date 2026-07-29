@@ -45,7 +45,7 @@ one entry per term with a link to its full doc when one exists. `grep -i '<term>
      with `quenching-docs-glossary-backfill`, or capture the concept with `quenching-docs-learn` (which
      enters the term as its tail step). -->
 
-To **create / edit / move** knowledge (keeping the listing + `log.md` in sync), use the
+To **create / edit / move** knowledge (keeping the listing in sync), use the
 `quenching` skills: `quenching-docs-add` to add one, `quenching-docs-define` to add a glossary
 term, `quenching-docs-align` to migrate/normalize, `quenching-docs-harness` to keep this file thin.
 

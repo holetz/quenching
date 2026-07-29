@@ -16,7 +16,6 @@ filled. `/docs:add` picks the mold by home → `type` (see
 | `vision/area.md` | `vision/<area>.md` | `vision` |
 | `sidecar.md` | `reference/regulations/**` extract | `sidecar` |
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
-| `log.md.tmpl` | a bundle's reserved `log.md` history | *(reserved)* |
 | `harness/claude-root.md` | a repo-root `CLAUDE.md` thin pointer over the bundle | *(harness — exempt)* |
 | `harness/claude-subfolder.md` | a subfolder `CLAUDE.md` nearest-file pointer | *(harness — exempt)* |
 | `automation/command.md` | `.claude/commands/<folder-path>/<verb>.md` — the whole entry point (**outside** the OKF bundle) | *(not an OKF concept)* |

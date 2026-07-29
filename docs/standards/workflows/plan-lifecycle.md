@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan lifecycle contract
-description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, and the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else
+description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, and the append-only archive rule for facts that did not exist at the move
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records]
-timestamp: 2026-07-28
+timestamp: 2026-07-29
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2)
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review
 maintainer: quenching
 ---
 
@@ -37,6 +37,29 @@ and that fact moved into frontmatter as `approved: {date}`.
 `promote` therefore has one hop, `plans/ → archive/`, and it is the only move a spec ever makes.
 Archiving as `done` refuses while `- [ ]` boxes remain (`--force` overrides); `abandoned` is
 always allowed, because open tasks are what closing out unbuilt work looks like.
+
+### The archive is append-only, for facts that did not exist at the move
+
+`archive/` is history, and nothing revises it. The one thing that may be added is a fact that
+**came into being after the move** — which is not a revision of what the spec claimed, but a
+record of what happened to it. There are exactly two, both written by `/specs:conclude` onto the
+spec that run is closing, and both before the merge:
+
+| Append | Why it cannot be written earlier |
+| --- | --- |
+| `merge: {strategy, subject}` | the subject names a merge commit that does not exist yet — and stamping it *after* the merge would mean a write on the base branch, the exact thing the merge-last ordering exists to prevent |
+| the distillation's one line per minted doc, appended to `## Outcome` | `## Outcome` is drafted at the archive gate, before the distillation pass knows what it minted; the paths do not exist until the harvest runs |
+
+The shape of the test is what generalizes, not the count: an append is permitted only when the
+fact is **unavailable at promote time and unwritable anywhere else**. The distillation line
+qualifies on the second clause too — `docs/log.md` used to carry that provenance, and with the
+log retired the archived spec is the only honest home left for "this doc came from this spec".
+
+**A third exception is argued for, never assumed from these two.** Two precedents are how a
+bounded rule becomes an unbounded one; if a future run wants to write into `archive/`, the case is
+that the fact meets both clauses, not that the archive was already written to twice. A spec other
+than the one being closed is never touched, and a spec archived by an earlier run is never
+revisited.
 
 ## Frontmatter records human judgments; everything else is derived
 

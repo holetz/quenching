@@ -17,10 +17,8 @@ The single source of the tree `/docs:align` installs and `/docs:add` files into.
 ```
 docs/                          # OKF bundle root
   index.md                     # ONLY index.md with frontmatter — okf_version: "0.1" + home listing
-  log.md                       # bundle change history (## YYYY-MM-DD, newest first)
   standards/                   # "how WE do it" (current) — a conformant sub-bundle
     index.md                   # reserved listing + DERIVED "Current docs" tables (BEGIN/END GENERATED)
-    log.md                     # standards change history
     CLAUDE.md                  # thin agent-facing pointer (auto-loaded; harness file, not a concept)
     architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
                                #   each: index.md + one standard per file (type: standard)
@@ -48,7 +46,9 @@ docs/                          # OKF bundle root
 | `reference/` | `reference` | `tools/`·`libraries/`·`regulations/` |
 | `reference/regulations/` (extracts) | `sidecar` | one per binary |
 
-Reserved `index.md`/`log.md` carry **no** `type`; `CLAUDE.md`/`AGENTS.md` are exempt.
+Reserved `index.md` carries **no** `type`; `CLAUDE.md`/`AGENTS.md` are exempt. `log.md` is
+reserved too but **retired** — the tree above no longer grows one, and nothing checks one that
+survived an earlier alignment.
 
 ## Boundary rules (memorable summary)
 

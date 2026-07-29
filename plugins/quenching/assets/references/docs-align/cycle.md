@@ -52,8 +52,8 @@ read-only prefix with stage 2's execution — plan in parallel, write in series:
    rest of the table stands.
 5. **Writes to `docs/` are one stage at a time, always** — harness's writes start only after the
    memory drain's writes have finished. Two stages read-modify-writing the same shared files (a
-   home's `index.md`, `docs/log.md`, `knowledge/glossary.md`) is a race with no lock; the
-   serial-write rule is an invariant, not an optimization choice.
+   home's `index.md`, `knowledge/glossary.md`) is a race with no lock; the serial-write rule is
+   an invariant, not an optimization choice.
 
 When only ONE feeder has work, run it in the normal serial flow — dispatching a discovery agent
 with nothing to overlap only costs tokens. The stages' own internal fan-outs (memory slice
