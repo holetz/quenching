@@ -309,9 +309,10 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
 
 ### 2. The prose contract
 
-- [ ] 2.1 spec-driven.md §The thirteen sections becomes fourteen, with the position and the
+- [x] 2.1 spec-driven.md §The thirteen sections becomes fourteen, with the position and the
       warn-only gate membership
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
+      subject: plan/add-eli5-section-to-specs: 2.1 spec-driven.md becomes fourteen sections, with the position and the warn-only gate membership
 - [ ] 2.2 artifacts.md gains the section's entry AND its writing register, stated explicitly:
       plain language, assume no prior context, no jargon the spec itself introduces, connective
       rather than compressive
