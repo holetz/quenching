@@ -2800,6 +2800,24 @@ def cmd_doctor(args, root: str) -> int:
                                      remedy="specs.py migrate  (moves them into plans/ "
                                             "unrenamed; specs/archive/** is never touched)"))
 
+    # The real failure mode of a machine-read config is `worktree_setup` written where
+    # `worktreeSetup` was expected, followed by silence — the file is valid JSON, the key
+    # is simply never looked at, and the setup that was declared never runs. Both findings
+    # exist so that silence cannot happen; neither is an error, because a workspace with a
+    # malformed config is still a workspace and every other command still works.
+    cfg = load_config(root)
+    if cfg["unparseable"]:
+        findings.append(_finding("sp-config-unparseable", "warn",
+                                 f"{CONFIG_FILE} is not valid JSON: {cfg['unparseable']}",
+                                 path=CONFIG_FILE,
+                                 remedy=f"fix the JSON, or remove {CONFIG_FILE} — an absent "
+                                        f"config declares nothing and is not a finding"))
+    for key in cfg["unknownKeys"]:
+        findings.append(_finding("sp-config-unknown-key", "warn",
+                                 f"{CONFIG_FILE} declares `{key}`, which nothing reads",
+                                 path=CONFIG_FILE, key=key,
+                                 remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+
     leftovers = _v1_leftovers(root)
     for name in leftovers:
         findings.append(_finding("sp-v1-leftover", "error",
