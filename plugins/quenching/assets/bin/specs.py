@@ -1107,12 +1107,14 @@ def parse_tasks(text: str) -> list[dict]:
         pattern = verify = subject = commit = None
         subject_off = commit_off = last_meta_off = None
         meta_indent = None
+        block_end = i + 1
         for off, cont in enumerate(lines[i + 1:], start=i + 1):
             # the task's block ends at a blank line, a non-indented line, or another
             # checkbox; anything else indented is scanned, so a wrapped prose line between
             # the checkbox and its `verify:` does not hide it.
             if not cont.strip() or cont[:1] not in (" ", "\t") or CHECKBOX_RE.match(cont):
                 break
+            block_end = off + 1
             mm = TASK_META_RE.match(cont)
             if not mm:
                 continue
@@ -1153,8 +1155,11 @@ def parse_tasks(text: str) -> list[dict]:
             # be able to drop it.
             "subjectLineno": (base + subject_off) if subject_off is not None else None,
             "commitLineno": (base + commit_off) if commit_off is not None else None,
+            # After the last metadata line when there is one; otherwise after the WHOLE
+            # block, not under the checkbox's first physical line. A task with no `files:`
+            # or `verify:` whose text wraps was being cut in half by its own `subject:`.
             "metaInsertAt": base + ((last_meta_off + 1) if last_meta_off is not None
-                                    else i + 1),
+                                    else block_end),
             "metaIndent": meta_indent or DEFAULT_META_INDENT,
         })
     return out

@@ -344,8 +344,8 @@ Not yet done: the branch-wide review, merge, and archive — that's `/specs:conc
       verify: python3 plugins/quenching/assets/bin/specs.py validate --json
       subject: plan/add-eli5-section-to-specs: 1.3 Add `sp-overview-missing` (warn) to `specs.py validate`
 - [x] 1.4 Prove the gate did not move: a spec without `## Overview` reports the same stage and
-      subject: plan/add-eli5-section-to-specs: 1.4 Prove the gate did not move
       `ready.ok` as before, per the first assertion in `## Validation`
+      subject: plan/add-eli5-section-to-specs: 1.4 Prove the gate did not move
 
 ### 2. The prose contract
 
@@ -388,8 +388,8 @@ Not yet done: the branch-wide review, merge, and archive — that's `/specs:conc
       verify: cat VERSION and the three `--version` calls all agree
       subject: plan/add-eli5-section-to-specs: 5.2 Bump the six version artifacts per docs/standards/ci-cd/versioning-release.md
 - [x] 5.3 Run the full skeleton gate — selftest ×3, okf-validate ×2, skills.py doctor and lint,
-      subject: plan/add-eli5-section-to-specs: 5.3 Run the full skeleton gate
       and ./assets/bin/functional-checks.sh — all clean
+      subject: plan/add-eli5-section-to-specs: 5.3 Run the full skeleton gate
 
 ## Discoveries
 
