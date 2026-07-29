@@ -334,9 +334,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/assets/references/specs-isolate/git.md
       verify: ./plugins/quenching/assets/bin/functional-checks.sh
       subject: plan/prefer-worktree-isolation: 5.1 git.md — a worktree como forma preferida e o merge por git -C
-- [ ] 5.2 [P] Emendar `assets/specs/QUENCHING.md` com a oferta invertida e o `specs/config.json`
+- [x] 5.2 [P] Emendar `assets/specs/QUENCHING.md` com a oferta invertida e o `specs/config.json`
       files: plugins/quenching/assets/specs/QUENCHING.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/specs/plans --listing-root
+      subject: plan/prefer-worktree-isolation: 5.2 QUENCHING.md — a oferta invertida e o specs/config.json
 - [ ] 5.3 [P] Corrigir no `CLAUDE.md` a afirmação de que este front não tem arquivo de configuração
       files: CLAUDE.md
       verify: a frase "no Node runtime, no `config.yaml`" não descreve mais o front
