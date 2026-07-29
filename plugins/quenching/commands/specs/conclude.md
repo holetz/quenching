@@ -215,15 +215,29 @@ For `abandoned` nothing is merged, so nothing is stamped; the distillation above
 a `done` outcome — all committed on the work branch.
 
 ### 6. Merge — the last action of this command
-Nothing after this point writes anything. Perform the merge the human chose in step 4, using
-exactly the subject recorded in step 5:
+Nothing after this point writes anything. First find **which checkout holds the base**, then merge
+into it in place, using exactly the subject recorded in step 5:
 
 ```bash
-git checkout <base> && git merge --no-ff plan/<slug> -m "plan/<slug>: merge (merge-commit)"
+git worktree list --porcelain                    # which checkout has <base> checked out
+git -C <that path> merge --no-ff plan/<slug> -m "plan/<slug>: merge (merge-commit)"
 ```
 
+**Never `git checkout <base>`.** From inside a worktree that is
+`fatal: '<base>' is already used by worktree at …` (exit 128) — so the form this command used to
+carry was broken for exactly the isolation it recommends. `git -C` is one path, not two: from a
+worktree it points at the main checkout, and from the main checkout it points at itself.
+
+**When no checkout holds the base**, say which base was wanted, that nothing has it checked out,
+and what would fix it (`git checkout <base>` in the main checkout, or a worktree of the base) —
+then **stop without merging**. Never invent a checkout and never create a temporary one. `merge:`
+was stamped in step 5, *before* the merge, so the run is resumable with nothing lost; refusing here
+is the same refusal this command already makes over open boxes.
+
 Then, **reading only**: re-run whatever the repo's `## Validation` names on the merged base, and
-compare `git log -1 --format=%s` against the recorded subject. A mismatch, or a failing check, is
+compare `git -C <that path> log -1 --format=%s` against the recorded subject — from the same
+checkout the merge landed in, since this run is not standing on the base. A mismatch, or a failing
+check, is
 **reported as a finding** — never repaired with another commit, because a commit on the base after
 the merge is the exact thing this ordering exists to prevent. If something must be fixed, say so
 and let the human start a new change.
@@ -249,6 +263,8 @@ close, and they are easiest to lose at exactly this moment.
 - Never treat staleness as evidence of abandonment.
 - Never pass `--force` unprompted — a refusal is information, not an obstacle.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
+- **Never `git checkout <base>` to merge.** Merge into the checkout that already holds the base with
+  `git -C`; when none does, stop and say so rather than manufacturing one.
 - **Never write anything after the merge.** The merge is the last action; a post-merge check that
   fails is a finding to report, not a commit on the base.
 - Never delete a branch after a **squash** without saying what it costs: each task's recorded
