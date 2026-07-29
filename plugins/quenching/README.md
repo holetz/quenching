@@ -326,7 +326,7 @@ alone with its sha on the task line).
 | `/specs:create` | ONE spec in `plans/` — effort proportional to input, never an interrogation. A sentence becomes `## Problem` alone; a Claude Code plan file becomes every section it actually supports, mapped and never invented. |
 | `/specs:develop` | One question at a time with an inline recommendation, the bank chosen by the spec's derived stage — generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
 | `/specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation delegated to `/specs:isolate`, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`specs.py task --check --subject`) so code and box land in ONE commit. Writes only the `docs/standards/` a task explicitly names; everything else is one `specs.py discover` line. Stops at the last commit. |
-| `/specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass and the `merge: {strategy, subject}` stamp — all on the work branch — and only then the merge. Nothing is committed to the base after it. |
+| `/specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject}` stamp — all on the work branch — and only then the merge. Nothing is committed to the base after it. |
 | `/specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/specs:align` | The front's align + installer — see below. |
 
@@ -470,9 +470,16 @@ The plugin keeps its context and token footprint predictable on three levels:
 
 Because the command registry is built at **session start**, none of that is testable in the session
 that changes it. `assets/bin/functional-checks.sh` is the only check that proves the surface loads:
-it spawns fresh `claude -p` processes and asserts on captured tool calls that
-`${CLAUDE_PLUGIN_ROOT}` substitutes in a command body, that a conductor reaches its stage by
-registry name, and that a spoken phrase still routes by description alone.
+it spawns fresh `claude -p` processes — each loading the checkout under test via `--plugin-dir`, so
+it sees a branch — and asserts on captured tool calls that `${CLAUDE_PLUGIN_ROOT}` substitutes in a
+command body, that a conductor reaches its stage by registry name, and that a spoken phrase still
+routes by description alone.
+
+Each check is a **billed agent session**, so it belongs to the command that changes the surface —
+`/skill:new` after minting or editing one, `/skill:eval` when it tunes a description — and not to
+the spec cycle, which would charge every spec for a front most of them never touch. The default run
+is the body subset; spoken routing is opt-in (`--only 3`) because `/skill:eval` measures it better,
+graded and with a should-not-trigger arm.
 
 **Model policy** (conservative — judgment is never downgraded):
 

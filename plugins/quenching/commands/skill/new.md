@@ -145,8 +145,21 @@ with its `sk-*` code rather than silently accepting it. What no parser can decid
 test, sediment, sprawl, positive prescription — is still read by eye against
 [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md). Any OKF doc touched passes
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
-Report what was written, the invocation (`/…:…:<verb>`), and any residue. **Done when:** `lint`
-and `doctor` exit 0, `registry reindex` reports `changed: false`, and every remaining `warn` is
+**None of that proves the command LOADS.** `lint` and `doctor` read frontmatter off disk, and disk
+is not the registry — which is built at **session start**, so the command just written is not
+invocable until a new process. Every mechanical check above can be green while the body is
+unreachable, a `${CLAUDE_PLUGIN_ROOT}` placeholder never expands, or a citation points at nothing.
+
+So this step, not a later one, owns the functional proof: **where the repo ships a harness that
+spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
+changed, since each check is a billed session. In this plugin that is
+`assets/bin/functional-checks.sh` (default subset for a body; `/skill:eval` for a description).
+**Where the repo ships none, say plainly that the command is written but unproven until a fresh
+session** — never report a linter's exit 0 as evidence that the surface loaded.
+
+Report what was written, the invocation (`/…:…:<verb>`), the functional result or its absence, and
+any residue. **Done when:** `lint` and `doctor` exit 0, `registry reindex` reports `changed: false`,
+the surface was either functionally proved or reported unproven, and every remaining `warn` is
 named in the report with its code.
 
 ## Invariants

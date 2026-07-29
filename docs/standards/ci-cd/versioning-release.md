@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the six-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo — plus the half a bump cannot do, which is noticing that a target's copy has fallen behind, run ahead, or sits on disk with nothing invoking it, and the seventh version-carrying file that stays outside the six because no consumer reads it
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo — bumped once per spec at conclude, immediately before the merge, never as a task, plus the half a bump cannot do, which is noticing that a target's copy has fallen behind, run ahead, or sits on disk with nothing invoking it, and the seventh version-carrying file that stays outside the six because no consumer reads it
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/bin/session.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-07-29
 audience: both
 authority: current
-source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin
+source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the conclude-time rule added after `/specs:develop` inferred a bump task from this doc's `resource:` alone; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin
 maintainer: quenching
 ---
 
@@ -46,6 +46,34 @@ from one: the tools **may not import each other**, because each installs standal
 `.claude/hooks/` (see [frontmatter-parsing.md](../code/frontmatter-parsing.md) for the same
 constraint applied to the shared parser rule).
 
+## When the bump happens — once, at conclude, before the merge
+
+The six move **once per spec, on the work branch, in `/specs:conclude` step 5 — the last writing
+stage before the merge**. A version bump is never a task in a spec's `## Tasks`, and
+`/specs:execute` never makes one.
+
+**Why not a task.** Three things break when the bump is scheduled as work rather than as the merge's
+own act:
+
+- **What the release *is* is not knowable at task 1.** Whether the change is patch, minor or major
+  depends on what task 7 turned out to be — a new command makes it minor, and the task list is
+  routinely revised mid-build. A number chosen at the top of the branch is a guess that nobody
+  re-checks at the bottom.
+- **Two specs in flight collide on all six files.** Both bump from the same base to the same number,
+  and the second to merge resolves a conflict in `plugin.json`, `marketplace.json` and three Python
+  constants by hand. Deferring to just-before-merge means the second spec bumps from the base it is
+  actually merging into.
+- **A branch that is abandoned or descoped carries a version claim it never earned.** Nothing shipped
+  it, but the branch's history says a release happened.
+
+**Why conclude step 5 specifically.** That stage is where everything still lands on the work branch,
+so the single merge carries the code, the emergent docs, the archived spec and the version together
+— and reverting that merge reverts the version claim with them. A bump committed to the base after
+the merge would be the one thing this command forbids outright.
+
+The [operator-manual rider](#the-operator-manual-rider) below is settled at the same moment and for
+the same reason: a command rename or a new command is only fully known once the branch is written.
+
 ## The seventh file — a version nothing reads
 
 `plugins/quenching/assets/bin/session.py` also carries a `VERSION` constant
@@ -72,9 +100,10 @@ The rule, stated so a future plugin-side-only tool inherits it:
   Adding it would make `drift` compare a version no target holds.
 - It **carries a `VERSION` anyway**, because `--version` is part of the uniform tool contract
   (`0` ok · `1` findings · `2` refusal, `--json` everywhere) that every tool here answers to.
-- It is bumped **at release, with the six**, and the release checklist reads it back like the
-  others. Since nothing enforces it, the bump is a discipline, and a stale value survives until
-  somebody reads the file.
+- It is bumped **with the six, at the same moment** — `/specs:conclude` step 5, per §*When the bump
+  happens* above — and §*Verifying* reads it back like the others. Since nothing enforces it, the
+  bump is a discipline, and a stale value survives until somebody reads the file. That is precisely
+  how `4.2.0` survived: the conclude that should have carried it was still open.
 
 ## Noticing drift — the half a bump cannot do
 

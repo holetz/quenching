@@ -1,11 +1,10 @@
 ---
-slug: fix-functional-checks-encoding
-title: functional-checks.sh fails for lack of evidence, not by verdict
+slug: commit-on-worktree-specs
+title: Commit work at the end of develop, create and execute when a spec is already isolated in a worktree
 verification: per-section
-priority: {level: 2, criticality: high, complexity: 2, date: 2026-07-28}
 ---
 
-# functional-checks.sh fails for lack of evidence, not by verdict
+# Commit work at the end of develop, create and execute when a spec is already isolated in a worktree
 
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
@@ -47,31 +46,4 @@ priority: {level: 2, criticality: high, complexity: 2, date: 2026-07-28}
 
 ## Problem
 
-`assets/bin/functional-checks.sh` nÃ£o consegue gatear nada no Windows, e falha
-de um jeito que se parece com um veredito real.
-
-A linha 32 lÃª a captura `--output-format stream-json` com um `open()` sem
-encoding. O stream Ã© UTF-8; o default da plataforma no Windows Ã© cp1252, entÃ£o
-a leitura levanta `UnicodeDecodeError`, `tools()` nÃ£o emite nada, e **toda
-asserÃ§Ã£o falha por falta de evidÃªncia** â€” indistinguÃ­vel, na saÃ­da, de uma
-superfÃ­cie que nÃ£o carregou.
-
-Medido trÃªs vezes em 2026-07-28: a `main` pristina (`96f6657`) marcou 3
-passed/6 failed e a branch `plan/move-conclude-merge-last` marcou 4 passed/5
-failed, com as mesmas cinco falhas de check 3 nas duas. O check 1a
-("Read a file under assets/references/") **inverteu o veredito** entre execuÃ§Ãµes
-idÃªnticas do mesmo script: FAIL na pristina, PASS na branch, FAIL de novo mais
-tarde na mesma branch.
-
-Da mesma famÃ­lia: `print()` em python escreve CRLF em stdout no Windows, entÃ£o
-qualquer pipeline de shell que leia um valor de um heredoc python embutido
-recebe um CR final â€” quebrou silenciosamente a asserÃ§Ã£o `git log --grep` do
-`conclude-order-check.sh` atÃ© `tr -d '\r'` ser acrescentado.
-
-A regra jÃ¡ estÃ¡ escrita: `docs/standards/quality/surface-verification.md`
-Â§As quatro prÃ©-condiÃ§Ãµes, item 4 â€” ler a evidÃªncia com encoding explÃ­cito, e
-tratar um stream de zero eventos como **inconclusivo**, nunca como falha. O que
-falta Ã© o script obedecÃª-la.
-
-Enquanto isso, `functional-checks.sh` continua declarado OBRIGATÃ“RIO no
-`## Validation` de specs que tocam `commands/**`, e nÃ£o pode cumprir esse papel.
+When a spec already has work isolated in its own worktree, the /specs:develop, /specs:create and /specs:execute skills should always finish their run by committing that work — right now this is not guaranteed.

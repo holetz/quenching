@@ -37,12 +37,19 @@ python3 assets/hooks/okf-validate.py selftest
 so no change under `commands/**` is testable in the session that writes it:
 
 ```bash
-./assets/bin/functional-checks.sh        # 9 assertions across 7 sandboxed sessions, exit 0 = all passed
+./assets/bin/functional-checks.sh          # default: checks 1, 2, 4 — body, citation path, stage name
+./assets/bin/functional-checks.sh --only 3 # opt-in: spoken routing. Prefer /skill:eval — see below
 ```
+`exit 0` all measured assertions passed · `1` one failed · `2` nothing could be measured, which is
+**not** a pass.
 
-**Run it after any change to `commands/**`, to a citation path, or to a conductor's stage names** —
-those are the three things it is the only check for. Why a fresh process and why assertions run on
-captured tool calls → [surface-verification.md](docs/standards/quality/surface-verification.md).
+**It belongs to the skill front — `/skill:new` after minting or editing a command here, and
+`/skill:eval` when it tunes a description.** It is not a repo-wide mandate, and it does not go in a
+spec's `## Validation` or a task's `verify:`: every check is a billed agent session, and measured
+across the whole archive, **every red run this harness ever produced traced to a defect in the
+harness itself, none to a surface regression**. For spoken routing reach for `/skill:eval`, which
+measures it graded and with a boundary arm; check 3 is a worse copy kept opt-in. Full reasoning →
+[surface-verification.md](docs/standards/quality/surface-verification.md).
 
 `specs.py` has no fixture in the repo; exercise it in a throwaway workspace (`specs.py new x` →
 `status`/`next`/`task` → `promote x --outcome abandoned`) when its logic changes.
