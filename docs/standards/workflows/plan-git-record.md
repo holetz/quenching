@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit subject as the task→commit anchor, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, and the read-if-present contract for a target's own docs/standards/git/
+description: How a plan's work is recorded in git — the commit subject as the task→commit anchor, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/
 resource: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-07-28
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1)
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1)
 maintainer: quenching
 ---
 
@@ -116,6 +116,48 @@ recorded commit and left the archived spec pointing at commits that no longer ex
 strategy that made the record strictly worse rather than merely narrower. A subject is carried by
 the rewrite, so rebase now sits on the same footing as the others. The old warning applies only to
 specs still carrying the sha form.
+
+## The merge runs in the checkout that already holds the base — never `git checkout`
+
+A plan's merge is performed **into** the base's checkout, from wherever the run happens to be
+standing:
+
+```bash
+git worktree list --porcelain                    # which checkout holds <base>
+git -C <that path> merge --no-ff plan/<slug> -m "plan/<slug>: merge (<strategy>)"
+```
+
+`git checkout <base>` is **never** how a plan comes home. From inside a worktree it does not merely
+misbehave, it fails outright — `fatal: '<base>' is already used by worktree at …`, exit 128 — so
+that form is broken for precisely the isolation this repo recommends. `git -C` is one path rather
+than two special cases: from a worktree it names the main checkout, and from the main checkout it
+names itself.
+
+**When no checkout holds the base, the run stops without merging.** It names the base it wanted,
+says nothing has it checked out, and names the fix — check the base out, or add a worktree of it.
+It never manufactures a temporary checkout. This costs nothing, because `merge:` is stamped
+*before* the merge: the run resumes with no record falsified.
+
+## A worktree is removed after a successful merge, and never forced
+
+Isolation that is not cleaned up accumulates: directories beside the repo, each pointing at a
+branch already integrated, none of them obviously safe to delete. So once the merge exits 0,
+`/specs:conclude` removes the worktree — run from the base's checkout, because nothing removes the
+tree it is standing in:
+
+```bash
+git -C <the base's checkout> worktree remove <the worktree path>
+```
+
+**`--force` is never passed on this command.** `git worktree remove` refuses a tree holding
+modified or untracked files by itself (`contains modified or untracked files`, exit 128), which is
+exactly the irreversible case worth fearing — the safety is already git's, so no confirmation
+prompt would buy anything a human would not answer "yes" to every time. A clean tree leaves the
+disk silently; a refusal is reported with the path and git's own output, and the worktree stays.
+
+Three bounds keep this from being destructive: it runs **only** after a merge verified at exit 0,
+it **never** runs for an abandoned plan, and it does **not** delete the branch — that stays the
+separate, offered decision it already was.
 
 ## The target's git conventions win — read if present, never installed
 

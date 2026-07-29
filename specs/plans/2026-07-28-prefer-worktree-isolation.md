@@ -322,9 +322,10 @@ e que esta spec é quem a desfaz.
       files: plugins/quenching/commands/specs/conclude.md
       verify: skills.py lint exit 0; `--force` não aparece no passo de remoção
       subject: plan/prefer-worktree-isolation: 3.2 /specs:conclude remove a worktree após o merge, sem --force
-- [ ] 4.1 [P] Escrever docs/standards/workflows/plan-git-record.md — o merge sem checkout e a remoção da worktree
+- [x] 4.1 [P] Escrever docs/standards/workflows/plan-git-record.md — o merge sem checkout e a remoção da worktree
       files: docs/standards/workflows/plan-git-record.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/prefer-worktree-isolation: 4.1 plan-git-record.md — o merge sem checkout e a remoção da worktree
 - [ ] 4.2 [P] Escrever docs/standards/workflows/worktree-setup.md — o contrato do `specs/config.json`
       files: docs/standards/workflows/worktree-setup.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
