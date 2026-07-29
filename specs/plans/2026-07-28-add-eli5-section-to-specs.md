@@ -303,7 +303,8 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py validate --json
       subject: plan/add-eli5-section-to-specs: 1.3 Add `sp-overview-missing` (warn) to `specs.py validate`
-- [ ] 1.4 Prove the gate did not move: a spec without `## Overview` reports the same stage and
+- [x] 1.4 Prove the gate did not move: a spec without `## Overview` reports the same stage and
+      subject: plan/add-eli5-section-to-specs: 1.4 Prove the gate did not move
       `ready.ok` as before, per the first assertion in `## Validation`
 
 ### 2. The prose contract
