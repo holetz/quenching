@@ -325,10 +325,11 @@ declared: `assets/specs/schema.json`, the templates duplicated as constants in `
 
 ### 3. The report surface
 
-- [ ] 3.1 `/specs:align` reports `sp-overview-missing`, routing each to `/specs:develop <slug>`,
+- [x] 3.1 `/specs:align` reports `sp-overview-missing`, routing each to `/specs:develop <slug>`,
       and authors nothing
       files: plugins/quenching/commands/specs/align.md
       verify: ./plugins/quenching/assets/bin/functional-checks.sh
+      subject: plan/add-eli5-section-to-specs: 3.1 /specs:align reports `sp-overview-missing`, routing each to /specs:develop <slug>, and authors nothing
 
 ### 4. The standard
 
