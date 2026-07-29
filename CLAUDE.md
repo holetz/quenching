@@ -59,7 +59,7 @@ plugins/quenching/
   assets/                              # everything Claude Code must NOT surface as an entry point
     references/<name>/*.md             # shared procedure, cited by ${CLAUDE_PLUGIN_ROOT} absolute path
     evals/<command-path>/              # measured case sets, mirroring the command path
-    docs/                              # canonical OKF bundle skeleton (index.md listings, log.md seeds, glossary seed)
+    docs/                              # canonical OKF bundle skeleton (index.md listings, glossary seed)
       QUENCHING.md                     # operator manual for the docs/ front — installed by /docs:align
     specs/                             # native specs/ workspace payload: schema.json, templates/, plans/ seed, QUENCHING.md
       QUENCHING.md                     # operator manual for the specs/ front — installed by /specs:align
@@ -95,7 +95,7 @@ deliberately outside the three namespaces, because it is what crosses them.
 
 | Command | Role |
 | --- | --- |
-| `/docs:align` | Installer + force-aligner + validator + the front's content conductor, probe-first: the validator plus two cheap out-of-band signals run before anything is read, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: migrates a target's `docs/` to the canonical tree, stamps frontmatter, regenerates every `index.md`, establishes `log.md`, then runs the content stages that have work (`import-memory`, `harness`) and OFFERS the glossary sweep on a cheap proxy, looping to a fixpoint. Invasive: one full plan, one confirmation (a code-coupled rename gets its own). |
+| `/docs:align` | Installer + force-aligner + validator + the front's content conductor, probe-first: the validator plus two cheap out-of-band signals run before anything is read, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: migrates a target's `docs/` to the canonical tree, stamps frontmatter, regenerates every `index.md`, then runs the content stages that have work (`import-memory`, `harness`) and OFFERS the glossary sweep on a cheap proxy, looping to a fixpoint. Invasive: one full plan, one confirmation (a code-coupled rename gets its own). |
 | `/docs:add` | Adds ONE new concept doc (standard, catalog table, announcement, …) into the right home with a complete OKF stamp. |
 | `/docs:import` | Imports an external source (local files/folders, or URLs) and mints MULTIPLE OKF docs in one plan→OK pass — a batch fan-out of the insert procedure (cites `homes.md`). Bounded web ingestion; additive/merge only, never deletes. |
 | `/docs:learn` | Captures ONE piece of generic knowledge a human states into `knowledge/`. |
@@ -209,7 +209,6 @@ enforces everywhere:
   carries only `okf_version: "0.1"`).
 - Every other concept doc MUST have YAML frontmatter with a non-empty `type` from the
   fixed vocabulary.
-- `log.md` uses `## YYYY-MM-DD` headings, newest first, and an entry goes under **its own** date.
 - Folder names, concept-doc file slugs, frontmatter keys, and `type` values are canonical
   English (cross-repo greppable); body prose may follow the target repo's language;
   identifier-derived slugs (catalog tables, repo names) stay verbatim.
