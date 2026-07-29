@@ -194,6 +194,13 @@ sentence, and **link out** rather than explaining in full here.
   the tool is never upgraded in any repo that already has it, which cannot be observed from this
   repository at all. Distinct from the **Canonical case list**, which is the lockstep unit for the
   three tools' *parser behaviour* rather than their version strings.
+- [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
+  in `specs/config.json`, holding a command `/specs:isolate` runs once inside a newly created
+  worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at
+  the first `verify:`. `specs.py` reads it and never executes it. Declaring nothing is the normal
+  case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`
+  — exist only so a mistyped key cannot fail silently. Its consent is the isolation offer itself:
+  the command is shown verbatim in the plan block, and choosing Worktree is the OK for it.
 
 ## How to enrich
 
