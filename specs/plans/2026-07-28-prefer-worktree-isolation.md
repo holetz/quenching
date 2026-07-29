@@ -330,9 +330,10 @@ e que esta spec é quem a desfaz.
       files: docs/standards/workflows/worktree-setup.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/prefer-worktree-isolation: 4.2 worktree-setup.md — o contrato do specs/config.json
-- [ ] 5.1 [P] Emendar `specs-isolate/git.md` — a worktree como forma preferida e o merge por `git -C`
+- [x] 5.1 [P] Emendar `specs-isolate/git.md` — a worktree como forma preferida e o merge por `git -C`
       files: plugins/quenching/assets/references/specs-isolate/git.md
       verify: ./plugins/quenching/assets/bin/functional-checks.sh
+      subject: plan/prefer-worktree-isolation: 5.1 git.md — a worktree como forma preferida e o merge por git -C
 - [ ] 5.2 [P] Emendar `assets/specs/QUENCHING.md` com a oferta invertida e o `specs/config.json`
       files: plugins/quenching/assets/specs/QUENCHING.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/specs/plans --listing-root

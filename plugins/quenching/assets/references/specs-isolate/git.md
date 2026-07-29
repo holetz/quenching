@@ -13,10 +13,13 @@ somebody else's history.
 - [The read-if-present rule](#the-read-if-present-rule)
 - [Isolation is available at any stage](#isolation-is-available-at-any-stage)
 - [Branch and worktree names](#branch-and-worktree-names)
+  - [The worktree is the preferred form](#the-worktree-is-the-preferred-form)
+  - [A target may declare a setup command](#a-target-may-declare-a-setup-command)
 - [Recording the isolation](#recording-the-isolation)
 - [Commit messages](#commit-messages)
 - [The subject is the anchor](#the-subject-is-the-anchor)
 - [Merge strategies](#merge-strategies)
+  - [The worktree is removed after a successful merge](#the-worktree-is-removed-after-a-successful-merge)
 - [What is never done, on any repo](#what-is-never-done-on-any-repo)
 
 ## The read-if-present rule
@@ -89,6 +92,44 @@ git worktree add ../<repo>-<slug> -b plan/<slug>
 
 Inside the repo it lands in the tree the spec is about to change, and shows up in every `git
 status`, every glob, and every checker this plugin runs.
+
+### The worktree is the preferred form
+
+`/specs:isolate` offers **Worktree first and recommends it**, unconditionally — a plain branch and
+working in place stay available, in that order after it. A worktree leaves the main checkout
+untouched, which is what lets several specs be built at once and what keeps satisfying the clean
+tree `/specs:execute` demands.
+
+**Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. A
+recommendation that changes from repo to repo cannot be documented in one sentence, and guessing
+somebody else's build is how a recommended path becomes a silent trap. What is offered instead is
+the **cost, stated in the offer itself**: a fresh checkout carries only what git tracks — no
+installed dependencies, no `.env`, no venv, no build output — so choosing Branch is a decision the
+human read rather than a discovery at the first `verify:` that fails.
+
+### A target may declare a setup command
+
+`specs/config.json`, at the root of the specs workspace, with exactly one recognised key:
+
+```json
+{"worktreeSetup": "./scripts/wt-setup.sh"}
+```
+
+Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
+`/specs:isolate`, immediately after `git worktree add`, with **cwd inside the new worktree** — the
+tree lacking the dependencies is the tree that must install them. `specs.py` reads the value and
+never executes it: whether the command resolves can only be judged against the new worktree's path,
+which `specs.py` is never told.
+
+No file, no key, or a command that does not resolve all mean **no setup**, and none of them is a
+finding — most repos declare nothing, and declaring nothing must cost nothing. `specs.py doctor`
+reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key` and
+`sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
+`worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
+
+**Its consent is the isolation offer.** The command is displayed **verbatim** in `/specs:isolate`'s
+plan block, and choosing Worktree is the OK for it: no second prompt, no remembered authorisation.
+A failing setup is reported and **never undoes the worktree**.
 
 ## Recording the isolation
 
@@ -181,7 +222,21 @@ the commit would reintroduce the very ordering this design removed.
 
 ## Merge strategies
 
-Offered by `/specs:conclude`, never chosen for the human. State the trade in one line each:
+Offered by `/specs:conclude`, never chosen for the human. State the trade in one line each.
+
+**Every one of them runs in the checkout that already holds the base**, located first and merged
+into in place:
+
+```bash
+git worktree list --porcelain                 # which checkout holds <base>
+git -C <that path> <the chosen command>
+```
+
+**Never `git checkout <base>`.** From inside a worktree it fails outright —
+`fatal: '<base>' is already used by worktree at …`, exit 128 — so it is broken for exactly the
+isolation recommended above. `git -C` is one path, not two special cases: from a worktree it names
+the main checkout, from the main checkout it names itself. When no checkout holds the base,
+`/specs:conclude` says so and stops without merging rather than manufacturing one.
 
 | Strategy | Command | What it buys | What it costs |
 | --- | --- | --- | --- |
@@ -225,6 +280,26 @@ fields pointing at commits that no longer existed — it was the one strategy th
 strictly worse rather than merely narrower. A subject survives the rewrite, so a rebased branch's
 records still resolve. Rebase now sits on the same footing as the others, and the old warning
 applies only to specs still carrying the sha form.
+
+### The worktree is removed after a successful merge
+
+Isolation nobody cleans up accumulates: directories beside the repo, each pointing at an already
+integrated branch, none of them obviously safe to delete. So once the merge exits 0,
+`/specs:conclude` removes the worktree — from the base's checkout, because nothing removes the tree
+it is standing in:
+
+```bash
+git -C <the base's checkout> worktree remove <the worktree path>
+```
+
+**Never `--force`.** `git worktree remove` refuses a tree holding modified or untracked files on
+its own (`contains modified or untracked files`, exit 128), so the irreversible case is one git
+already declines — no prompt buys safety here, and one always answered "yes" is only friction. A
+clean tree leaves the disk silently; a refusal is reported with the path and git's own output, and
+the worktree stays.
+
+Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
+**not** delete the branch — that stays the separate offer it already was.
 
 ## What is never done, on any repo
 
