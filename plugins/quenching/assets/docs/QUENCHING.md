@@ -80,7 +80,7 @@ There is **no `decisions/` home**: an agreed-but-unproven decision is a `standar
 | File | Rule |
 | --- | --- |
 | `index.md` | A **listing**, never a concept. No frontmatter at all — except the bundle-root `index.md`, which carries **only** `okf_version: "0.1"`. |
-| `log.md` | The change history. `## YYYY-MM-DD` headings, **newest first**, entries prefixed `**Creation**` / `**Update**` / `**Deprecation**`. |
+| `log.md` | **Retired.** Nothing writes one and nothing checks one, but the name stays reserved so a log left over from an earlier alignment is recognized rather than read as a malformed concept doc. Keep it, delete it — the validator is silent either way. |
 | `CLAUDE.md`, `AGENTS.md` | Harness pointers. Exempt from OKF — their honesty is checked by `/docs:harness`, not by the validator. |
 | `QUENCHING.md` | This manual. Exempt — a plugin payload, not authored knowledge. |
 | anything else `.md` | A **concept doc**: MUST carry parseable YAML frontmatter with a **non-empty `type`**. |
@@ -129,14 +129,14 @@ should still be able to see it. *Not for:* fixing any of it (`/docs:align`).
 ### `/docs:add` — insert ONE concept doc
 
 Classifies what you state into its home + `type` + mold, derives the path, writes the doc with a
-complete stamp, updates that folder's `index.md`, appends to `log.md`, and offers a glossary
-entry when the doc introduces a repo-specific term. **Writes exactly one concept doc.**
+complete stamp, updates that folder's `index.md`, and offers a glossary entry when the doc
+introduces a repo-specific term. **Writes exactly one concept doc.**
 *Not for:* structural repair (`/docs:align`), or a parked unit of work (`/specs:create`).
 
 ### `/docs:learn` — capture ONE piece of generic knowledge
 
 The `knowledge/` counterpart of `add`. Files an understanding you state under
-`knowledge/<subject>/` with a `type: knowledge` stamp, then runs the same index + log + glossary
+`knowledge/<subject>/` with a `type: knowledge` stamp, then runs the same index + glossary
 tail. If what you stated is really a binding rule, a how-to, or an external fact, it re-routes to
 `/docs:add`. *Not for:* draining agent memory (`/docs:import-memory`).
 
@@ -174,9 +174,9 @@ When there is work: scaffolds missing homes, migrates variant folder names
 (`docs/arquitetura/` → `docs/standards/`), folds prefix-clustered files into subject subfolders
 (`nomenclatura-*.md` → `naming/`), translates non-English slugs, stamps missing frontmatter
 (**MERGE** — a filled key and any third-party key survive), regenerates every `index.md`,
-establishes `log.md`, writes `okf_version`, installs this manual, then re-runs the validator. It
-also offers to install or upgrade the enforcement hook, and — when the repo has a
-`documentation/` home — an mkdocs-material site setup.
+writes `okf_version`, installs this manual, then re-runs the validator. It also offers to
+install or upgrade the enforcement hook, and — when the repo has a `documentation/` home —
+an mkdocs-material site setup.
 
 The **content stages** run in the same pass, each only when its probe signal found work:
 `import-memory` (drain the agent's project memory) and `harness` (re-thin `CLAUDE.md`), looping
@@ -321,8 +321,6 @@ Codes come from the validator (`--json` prints them).
 | `index-has-type` | ERROR | An `index.md` carries a concept `type`. | Move that content into a real concept doc; keep the index a listing. |
 | `index-has-frontmatter` | ERROR | A non-root `index.md` has any frontmatter. | Strip it. |
 | `root-no-okf-version` · `root-okf-version-mismatch` · `root-extra-keys` | WARN | The root `index.md` frontmatter is wrong. | It carries **only** `okf_version: "0.1"`. |
-| `log-has-type` | ERROR | A `log.md` carries a `type`. | Strip it. |
-| `log-no-date-heading` · `log-not-newest-first` | WARN | Log entries are unheaded or ascending. | `## YYYY-MM-DD`, newest first. |
 | `dir-no-index` | WARN | A folder holds concept docs but has no front door. | `/docs:align` regenerates it. |
 | `index-broken-link` | WARN | A listing points at a file that does not exist (a **lying index**). | `/docs:align`. |
 | `index-orphan` | WARN | A concept doc nothing links to. | Add it to its folder's `index.md` — `/docs:align`. |

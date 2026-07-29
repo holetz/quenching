@@ -1,11 +1,10 @@
 ---
-slug: retire-docs-log
-title: Retire the docs/ log
+slug: reduce-execute-conclude-cost
+title: Re-evaluate /specs:execute and /specs:conclude runs for cost reduction
 verification: per-section
-priority: {level: 9, criticality: medium, date: 2026-07-28}
 ---
 
-# Retire the docs/ log
+# Re-evaluate /specs:execute and /specs:conclude runs for cost reduction
 
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
@@ -47,11 +46,12 @@ priority: {level: 9, criticality: medium, date: 2026-07-28}
 
 ## Problem
 
-Remover a criação e a manutenção do `log.md` no bundle `docs/`. Hoje vários
-comandos de captura do plugin gastam passos para localizar ou criar a data de
-hoje e acrescentar uma linha ao `docs/log.md`, e a conformidade OKF trata o
-arquivo como parte do contrato do bundle.
+`/specs:execute` and `/specs:conclude` are the two most expensive commands on the specs front, and
+nobody has ever looked at what that cost is actually buying. Both run long — execute walks task by
+task, conclude reviews a whole branch — and neither declares which of its steps genuinely need the
+session's model and which would survive on a weaker one.
 
-O que se quer decidir e executar é o fim desse artefato: nem criado pelo
-`/docs:align`, nem alimentado pelos comandos de captura, nem exigido pelo
-validador.
+Re-evaluate both commands' runs for cost reduction: look at the transcripts of sessions that have
+already executed them for evidence of where the money went, and use that evidence to say which
+steps (sub-agent calls, per-task verification, the branch review) could drop to a cheaper model or
+a lower effort without weakening what the command guarantees.

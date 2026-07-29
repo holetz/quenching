@@ -279,9 +279,9 @@ what remains. A second pass here catches the one thing the first can create — 
 the registry or dangled a reference. §7's findings are **not** progress: they are read-only and
 carry forward unchanged, so a pass that only produced them has converged.
 
-In an OKF repo, append ONE consolidated `log.md` entry (the migration, with counts) and confirm the
-registry is indexed, per
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
+In an OKF repo, confirm the registry is indexed, per
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The migration
+counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every `sk-*` finding that survived the run, by code; and §7's doctrine findings, listed
 apart, each with its `/skill:new`. Say plainly when the front converged in one pass — that is the

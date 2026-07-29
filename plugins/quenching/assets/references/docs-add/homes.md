@@ -1,10 +1,10 @@
-# Homes — routing table + the index/log procedure
+# Homes — routing table + the index procedure
 
 How `/docs:add` decides **where** a new concept goes, **which** `type` it carries, **which**
-mold fills it, and **how** to keep the `index.md`/`log.md` honest. **This file is the single owner
-of the insert procedure** — stamp (§The frontmatter stamp) → index (§Updating `index.md`) → log
-(§Appending to `log.md`) → glossary (§Enriching the glossary) → self-check (§Self-check) — and
-every skill that inserts a doc (`/docs:add`, `/docs:learn`, `/docs:harness`,
+mold fills it, and **how** to keep the `index.md` honest. **This file is the single owner of
+the insert procedure** — stamp (§The frontmatter stamp) → index (§Updating `index.md`) →
+glossary (§Enriching the glossary) → self-check (§Self-check) — and every skill that inserts
+a doc (`/docs:add`, `/docs:learn`, `/docs:harness`,
 `/docs:import-memory`) cites these sections instead of restating them; only each skill's own
 safety deltas stay inline in its SKILL.md. The full home boundaries and tree live in
 `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`; the checks in
@@ -15,7 +15,6 @@ safety deltas stay inline in its SKILL.md. The full home boundaries and tree liv
 - [Classification — one question decides the home](#classification--one-question-decides-the-home)
 - [The frontmatter stamp](#the-frontmatter-stamp)
 - [Updating `index.md` (the listing)](#updating-indexmd-the-listing)
-- [Appending to `log.md` (the history)](#appending-to-logmd-the-history)
 - [Enriching the glossary (tail step, every capture)](#enriching-the-glossary-tail-step-every-capture)
 - [Self-check before finishing](#self-check-before-finishing)
 
@@ -108,15 +107,6 @@ maintainer: <owner>
 `specs/` lives outside the bundle; that zone is owned by the `/specs:*` commands, in
 [`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).)
 
-## Appending to `log.md` (the history)
-
-- Newest first. If today's `## YYYY-MM-DD` heading exists, add a line under it; else add the
-  heading at the **top** of the entries.
-- Prefix the kind: `**Creation**` (new doc) · `**Update**` (edit) · `**Deprecation**`
-  (removed/superseded), each with a link: `**Creation**: [<title>](/docs/<path>.md) — <one line>`.
-- The bundle `docs/log.md` records cross-home events; `docs/standards/log.md` records standards
-  events. A per-home `log.md` is optional.
-
 ## Enriching the glossary (tail step, every capture)
 
 The `knowledge/` home ships one fixed file, [`knowledge/glossary.md`](../../../assets/docs/knowledge/glossary.md):
@@ -135,9 +125,8 @@ term that belongs in the glossary** and, if so, enrich it:
   absolute across homes). If an entry for the term already exists, sharpen its definition
   or add the link — never overwrite a filled definition or a filled link.
 - **Only the entry.** The glossary is an index, not the long-form home — the depth stays in
-  the concept doc; the glossary points to it. Do not touch `knowledge/index.md` for this
-  (the glossary is already listed there) and do not log a separate glossary event unless
-  the term entry is the only thing you wrote.
+  the concept doc; the glossary points to it. Do not touch `knowledge/index.md` for this —
+  the glossary is already listed there.
 
 This is the same tail step `/docs:learn`, `/docs:add`, and
 `/docs:import-memory` each run; the on-demand single-term counterpart is the
@@ -148,6 +137,6 @@ already in `docs/` for terms the glossary never caught — is `/docs:glossary-ba
 
 Apply `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`: the new concept has parseable frontmatter +
 a non-empty `type`; every `index.md` you touched is still frontmatter-free; the new doc's folder
-has an `index.md` that **links** it (no `dir-no-index`, no `index-orphan`, no `index-broken-link`);
-the `log.md` is `## YYYY-MM-DD` newest-first. If the `okf-validate.py` hook is wired in the
-target, it will confirm on write.
+has an `index.md` that **links** it (no `dir-no-index`, no `index-orphan`, no
+`index-broken-link`). If the `okf-validate.py` hook is wired in the target, it will confirm
+on write.

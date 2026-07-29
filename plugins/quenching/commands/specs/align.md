@@ -180,11 +180,9 @@ spec carries no OKF `type:` and pointing the bundle validator at one proves noth
 the one thing neither tool sees: the zone matches disk. The OKF hook is docs-scoped by config, so
 it does not fire on `specs/`; this run is the coverage.
 
-In a repo with an OKF bundle, append **one** consolidated entry to `docs/log.md` per **Appending to
-`log.md`** in [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md):
-`**Update**: [specs/](/specs/plans/index.md) — aligned workspace (N migrated, M renamed, K shadow
-copies removed)`. Then report the counts **and** the reported-not-applied residue, each with the
-command that closes it.
+This sweep writes nothing into the `docs/` bundle — the `specs/` front records itself, and the
+bundle log it used to append to is retired. Report the counts **and** the reported-not-applied
+residue, each with the command that closes it.
 **Done when:** the probe's re-run state, the counts, and the residue are all reported.
 
 ## Invariants to never violate
