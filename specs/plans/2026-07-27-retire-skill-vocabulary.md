@@ -69,3 +69,7 @@ first half before writing tasks for it.
 
 Recorded in the archived spec's `## Discoveries`:
 [/specs/archive/2026-07-26-collapse-skills-into-commands.md](/specs/archive/2026-07-26-collapse-skills-into-commands.md)
+
+## Discoveries
+
+- Scope extends past command bodies, references and docs/ into SHIPPED PRODUCT SOURCE, where the retired vocabulary is user-visible at runtime: (1) okf-validate.py's own finding message tells every user to 'Fix with the quenching-docs-align / quenching-docs-add skill' — emitted on each hook firing in every target repo, so this is the highest-traffic instance in the plugin and not cosmetic; (2) plugins/quenching/README.md still heads its per-command sections with quenching-docs-* / quenching-skill-* names; (3) assets/templates/harness/claude-root.md, the mold /docs:harness writes FROM, names five retired skills and specs/backlog/, so a harness refactor propagates retired vocabulary into every target repo it touches; (4) .claude-plugin/plugin.json's description says 'Twenty-four commands' where there are twenty-five. Items 1 and 3 are the load-bearing ones — both are copied into target repos, so they re-seed the vocabulary this spec exists to retire. Found during an /align run, 2026-07-28.
