@@ -137,13 +137,9 @@ Call `specs.py plans reindex`. The tool owns the zone format and rebuilds it det
 the specs on disk, grouped by derived stage, only between the GENERATED markers.
 **Done when:** the zone lists the new spec.
 
-### 8. Log — one append, nothing else
-Append `**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — <one line>` to the bundle's
-`docs/log.md` per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). Read only the head
-of the file — enough to find or place today's `## YYYY-MM-DD` heading — never the whole history.
-(No `docs/` bundle → skip; `specs/` stands on its own.)
-**Done when:** exactly one line was appended, or the bundle is absent.
+**Nothing is written into `docs/`.** Creating a spec used to append a line to the bundle's
+`docs/log.md`; that artifact is retired, and the spec's own frontmatter already records when it
+was captured. `specs/` stands on its own.
 
 **No glossary tail here.** Every other capture command runs **Enriching the glossary** as its tail;
 this one deliberately does not. A new spec names work, not a concept — the step was a no-op in the
@@ -151,7 +147,7 @@ overwhelming majority of runs, and paying to read `knowledge/glossary.md` on a p
 is "seconds" is the wrong trade. A term a spec genuinely coins is caught by
 `/docs:glossary-backfill`, or by `/docs:define` when the human says the word matters.
 
-### 9. Check
+### 8. Check
 Run `specs.py validate --spec <slug>` (the spec's own conformance) and
 `okf-validate.py specs/plans --listing-root` (the **listing** only — a spec carries no OKF `type:`
 and the bundle validator is not pointed at it, per
@@ -159,7 +155,7 @@ and the bundle validator is not pointed at it, per
 Then confirm the one thing neither sees: the zone matches disk.
 **Done when:** both checks are clean, or the residue is reported verbatim.
 
-### 10. Report
+### 9. Report
 Name the spec (`plans/YYYY-MM-DD-<slug>.md`) and its slug. On the plan-file path, add which
 sections were filled from which part of the source, the task count derived, which sections carry an
 explicit none — and say plainly that the source file was **read, never moved or deleted**. Name the

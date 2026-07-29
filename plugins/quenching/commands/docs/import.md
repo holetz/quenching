@@ -21,8 +21,8 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
 
 - **Cite, don't restate.** Every per-doc step — home + `type` + mold classification, the
-  frontmatter stamp, updating `index.md`, appending `log.md`, enriching the glossary,
-  self-check — lives in homes.md. This skill restates none of it; it adds only these deltas.
+  frontmatter stamp, updating `index.md`, enriching the glossary, self-check — lives in
+  homes.md. This skill restates none of it; it adds only these deltas.
 - **Bounded ingestion (discipline, not code).** A web source is bounded **up front**: an
   explicit **seed list**, a **page cap**, and a **host allowlist** — never an open crawl
   (echoing the upstream enrich caps). Fetch only what the user named, plus links **within the
@@ -67,11 +67,10 @@ confirmation item (mirrors `/docs:align`) — never folded into the batch OK.
 ### 4. Execute on OK — mint each doc via the insert procedure
 For each planned unit, run homes.md end to end: fill the mold (§The frontmatter stamp;
 `authority: background` for an unproven standard), write the doc (cross-home links absolute,
-within-home relative), update the folder's `index.md` (§Updating `index.md`), append `log.md`
-(§Appending to `log.md`), and enrich the glossary if it introduced a repo-specific term
-(§Enriching the glossary). Fan **one `Task` executor per slice** out for scale — the
-executors write docs; the **orchestrator alone** keeps each `index.md`/`log.md` honest and
-resolves cross-slice dedup. Attribute each doc to its source.
+within-home relative), update the folder's `index.md` (§Updating `index.md`), and enrich the
+glossary if it introduced a repo-specific term (§Enriching the glossary). Fan **one `Task`
+executor per slice** out for scale — the executors write docs; the **orchestrator alone** keeps
+each `index.md` honest and resolves cross-slice dedup. Attribute each doc to its source.
 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /

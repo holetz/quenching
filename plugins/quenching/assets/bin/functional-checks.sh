@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# functional-checks.sh — the three checks nothing in-process can make.
+# functional-checks.sh — the four checks nothing in-process can make.
 #
 # The command registry is built at SESSION START, so no change under commands/** is testable
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
@@ -166,6 +166,43 @@ probe c "add a standard: we always use snake_case for database columns"         
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
 probe d "set up something that audits our migrations and reports back"                        "quenching:skill:agent:new"
 probe e "I want something to catch it automatically whenever a migration lands"               "quenching:skill:hook:new"
+
+# --------------------------------------------------------------------------- #
+# 4. the conductor's probe asks about the installed tools, from the plugin's copy
+#
+# The drift check is only worth having if it actually RUNS, and its whole subject —
+# `.claude/hooks/` against the plugin that ships it — is invisible to every in-process
+# check: `doctor` and `lint` read the surface, not what a session decides to invoke.
+#
+# The prompt names the STEP (which the body defines) and never the tool, the subcommand
+# or the path, so a matching `Bash` call can only have come from the body being loaded.
+# The negative half is the rule that makes the answer trustworthy: run from the plugin's
+# own copy, because an installed copy answers from the same stale VERSION it is being
+# asked about.
+# --------------------------------------------------------------------------- #
+#
+# It loads the plugin with `--plugin-dir "$REPO/plugins/quenching"` instead of through
+# the marketplace, and its box enables NO plugin, so exactly one copy is loaded and it is
+# the checkout under test. Checks 1-3 above resolve the plugin from the marketplace
+# registration, which serves whatever `~/.claude/plugins/cache/` last installed — on this
+# machine a 3.0.0 tree carrying commands 4.2.0 deleted. A check that silently grades a
+# cached copy reports on code nobody is editing.
+# --------------------------------------------------------------------------- #
+echo "4. the conductor's probe asks about the installed tools"
+newbox "$WORK/sandbox4"
+printf '{}\n' > "$WORK/sandbox4/.claude/settings.json"
+( cd "$WORK/sandbox4" && claude -p --plugin-dir "$REPO/plugins/quenching" "/quenching:align
+
+Run ONLY step 1, the read-only probe. Report what every call in it returned, then stop —
+write nothing and do not present the plan." \
+  --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/4.jsonl" 2>&1 )
+# `tools` prints each input as JSON, so a quoted path arrives escaped —
+# `python3 \"/…/skills.py\" drift`. Match across the escape rather than assuming a bare
+# space, or a correct call reads as a miss (it did, on the first run of this check).
+if grep -qE 'skills\.py[\\"[:space:]]+drift' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=yes; else r=no; fi
+check "$r" "ran skills.py drift during the probe"
+if grep -q 'hooks/skills.py' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=no; else r=yes; fi
+check "$r" "ran it from the plugin's copy, never from .claude/hooks/"
 
 echo
 if [ "$INCONC" -gt 0 ]; then

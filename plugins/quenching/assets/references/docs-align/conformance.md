@@ -12,7 +12,7 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
 | Basename | Kind | Checked as |
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
-| `log.md` | reserved history | `check_log` |
+| `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
 | `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/docs:harness`, not the validator) |
 | `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/docs:align` for `docs/`, not authored knowledge) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
@@ -36,11 +36,14 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
   - **WARN `root-okf-version-mismatch`** — declares a version other than `0.1`.
   - **WARN `root-extra-keys`** — carries keys other than `okf_version`.
 
-## `log.md` (`check_log`)
+## `log.md` (retired — no checks)
 
-- **ERROR `log-has-type`** — carries a concept `type`.
-- **WARN `log-no-date-heading`** — has content but no `## YYYY-MM-DD` heading.
-- **WARN `log-not-newest-first`** — date headings are not in descending order.
+No codes. The validator recognizes the name, emits nothing about the file, and never blocks a
+write to it under `hardBlock`. **The reservation is what makes that true**, and it is load-bearing
+in a way the silence hides: drop `log.md` from the validator's `RESERVED` tuple and every log
+surviving in an already-aligned bundle falls through to `check_concept` — `missing-type` at ERROR,
+and denied writes under the hard gate. Retired is not unreserved. `okf-validate.py selftest` holds
+the line with a fixture bundle carrying two surviving logs.
 
 ## Bundle level
 

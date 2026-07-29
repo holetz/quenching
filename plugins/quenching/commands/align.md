@@ -14,7 +14,7 @@ one that spans all three.
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `docs/` — the OKF bundle | `/docs:align` | homes, frontmatter stamps, every `index.md`, `log.md`, the validator — then project memory, the harness, the glossary |
+| 1 | `docs/` — the OKF bundle | `/docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `specs/` — the spec-driven workspace | `/specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
 | 3 | `.claude/` — the automation surface | `/skill:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
@@ -49,8 +49,8 @@ here, not three edits that must stay in agreement.
 - **Order is a dependency, not a preference.** `docs/` → `specs/` → `.claude/`:
   - **docs first** — both other fronts write OKF artifacts into the bundle (the skill front's
     rule `docs/standards/automation/skills.md` and registry
-    `docs/documentation/reference/automation.md`; the specs front's `docs/log.md` entry and the
-    `docs/standards/` docs a spec's distillation mints). None can land in a tree that is not there.
+    `docs/documentation/reference/automation.md`; the `docs/standards/` docs a spec's
+    distillation mints). None can land in a tree that is not there.
   - **specs before skills** — when migrating a legacy `openspec/` workspace, `/specs:align`
     removes the CLI-generated `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow
     copies, so `/skill:align` inventories an already-clean surface instead of classifying plugin
@@ -62,7 +62,7 @@ here, not three edits that must stay in agreement.
   - `/specs:align` **concludes** a spec → its distillation mints docs into `docs/` → the `docs/`
     front's glossary stage must now index those terms.
   - `/skill:align` **creates** the rule and registry in `docs/` → the `docs/` front's `index.md`
-    and `log.md` must list them.
+    must list them.
   - `/docs:align`'s **harness** stage moves a fact into `docs/` that a `specs/` spec should now
     cite instead of restating.
   A single cross-front pass would leave every one of those half-done.
@@ -89,7 +89,7 @@ here, not three edits that must stay in agreement.
 ### 1. Probe the three fronts (read-only, cheap)
 Presence and rough scale only — **not** a full inventory, which each align does for itself, and
 each already probes before paying for one:
-- **docs/** — does a bundle root exist (`docs/` or the repo's variant, `index.md` / `log.md` /
+- **docs/** — does a bundle root exist (`docs/` or the repo's variant, `index.md` /
   `okf_version`)? Run `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <docs> --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
@@ -99,10 +99,23 @@ each already probes before paying for one:
   `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
   noting how many are legacy CLI-generated `openspec-*` shadow copies (front 2 clears those when
   migrating a legacy `openspec/` workspace).
+- **the installed tools** — one call, spanning all three fronts:
+  ```bash
+  python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+  ```
+  It reports each installed copy under `.claude/hooks/` against the version this plugin ships —
+  **in both directions** — and whether `okf-validate.py` is actually invoked by a `hooks` block.
+  Run it from the **plugin path**, never from `.claude/hooks/skills.py`: an installed copy answers
+  from the same stale `VERSION` it is being asked about, and refuses (exit 2) rather than lie.
+  `sk-tool-behind` and `sk-tool-unwired` are errors and belong in the plan; `sk-tool-ahead`,
+  `sk-tool-unreadable` and `sk-tool-absent` are warnings to report. Each finding names the align
+  that fixes it, so the row goes to that front's section of the step-2 plan — **this command never
+  installs or overwrites a tool itself.**
 
 **All three fronts probe clean** → say so and stop, before any plan: *"all three fronts conformant
-— nothing to align."* That is the cheapest complete answer this command can give, and giving it is
-the point of probing here rather than inside three separate runs.
+— nothing to align."* A drift error is **not** clean: an install offer belongs in the plan even
+when the three fronts' own findings are empty. That is the cheapest complete answer this command
+can give, and giving it is the point of probing here rather than inside three separate runs.
 **Done when:** each front is marked *present / absent / not applicable* with its counts, and
 nothing has been written.
 
@@ -161,7 +174,7 @@ A front align's own read-only findings — the doctrine audit, the cycle actions
 are **not** progress and never justify another cross-front pass.
 **Done when:** the loop has stopped for a stated reason.
 
-### 7. Consolidated report + one log entry
+### 7. Consolidated report
 One report, front by front: passes run, what each front's stages did in total, its ending verify
 state (validator findings · `doctor`/`validate` · registry-vs-disk), and — explicitly — everything
 **deferred**, each with the command that closes it (`/docs:add`, `/docs:learn`, `/docs:define`,
@@ -171,11 +184,11 @@ so the loop's value is visible.
 State which **operator manuals** each front installed, refreshed, or left alone
 (`docs/QUENCHING.md`, `specs/QUENCHING.md`, `.claude/QUENCHING.md`) — each front writes its own;
 this command only reports them, and points a first-time adopter at `docs/QUENCHING.md` as the place
-to start. Then append **one** entry to `docs/log.md` per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md):
-`**Update**: [Repository](/docs/index.md) — aligned all fronts in N passes (docs/specs/skills);
-M deferred`.
-**Done when:** every front's outcome and every deferral is stated, and the entry is written.
+to start.
+
+This command writes **nothing** of its own — not even a record that it ran. Every write belongs
+to the front align that made it, and the report is where this run is accounted for.
+**Done when:** every front's outcome and every deferral is stated.
 
 ## Invariants to never violate
 

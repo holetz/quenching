@@ -88,6 +88,17 @@ each; otherwise continue to step 2.
 
 Neither `specs/` nor a legacy `openspec/` exists → `sp-no-workspace`, which is not a failure: it is
 what step 4 offers to scaffold.
+
+**The installed copy is a third question, and one call answers it:**
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+```
+Read this front's row (`specs.py`) and carry it into step 5's scaffold section: `behind` → offer
+the overwrite; `absent` → offer the install; `ahead` → **left alone and reported**, because the
+target being ahead of this plugin is a fact to state, not a regression to force. Run it from the
+**plugin path** — an installed copy answers from the same stale `VERSION` it is being asked about,
+and refuses (exit 2) rather than lie. A drift row does **not** by itself make an otherwise-clean
+workspace non-conformant: report it with the install offer and stop as prescribed above.
 **Done when:** the two payloads are in hand and the run has either stopped or been committed to a
 full sweep.
 
@@ -169,11 +180,9 @@ spec carries no OKF `type:` and pointing the bundle validator at one proves noth
 the one thing neither tool sees: the zone matches disk. The OKF hook is docs-scoped by config, so
 it does not fire on `specs/`; this run is the coverage.
 
-In a repo with an OKF bundle, append **one** consolidated entry to `docs/log.md` per **Appending to
-`log.md`** in [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md):
-`**Update**: [specs/](/specs/plans/index.md) — aligned workspace (N migrated, M renamed, K shadow
-copies removed)`. Then report the counts **and** the reported-not-applied residue, each with the
-command that closes it.
+This sweep writes nothing into the `docs/` bundle — the `specs/` front records itself, and the
+bundle log it used to append to is retired. Report the counts **and** the reported-not-applied
+residue, each with the command that closes it.
 **Done when:** the probe's re-run state, the counts, and the residue are all reported.
 
 ## Invariants to never violate

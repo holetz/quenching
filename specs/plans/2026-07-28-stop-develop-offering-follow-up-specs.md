@@ -1,11 +1,10 @@
 ---
-slug: prefer-worktree-isolation
-title: Prefer worktrees for spec isolation and remove them after a successful merge
+slug: stop-develop-offering-follow-up-specs
+title: /specs:develop should not offer to create a follow-up spec
 verification: per-section
-priority: {level: 20, criticality: medium, date: 2026-07-28}
 ---
 
-# Prefer worktrees for spec isolation and remove them after a successful merge
+# /specs:develop should not offer to create a follow-up spec
 
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
@@ -47,21 +46,17 @@ priority: {level: 20, criticality: medium, date: 2026-07-28}
 
 ## Problem
 
-Duas coisas a ajustar na isolação de uma spec, ambas sobre worktree.
+`/specs:develop` currently ends a pass by offering to create a follow-up spec for anything that
+turned out to belong outside the spec. Its invariants say so directly: "an out-of-scope follow-up
+to `/specs:create` — **offered, never auto-written**".
 
-A primeira: `/specs:isolate` oferece branch **ou** worktree, e hoje a branch é o
-caminho de menor atrito — o worktree é a alternativa que só aparece quando
-alguém pede. Deveria ser o contrário: uma spec construída num worktree deixa o
-repositório principal intocado, o que permite trabalhar em várias specs em
-paralelo e mantém a árvore limpa que `/specs:execute` exige. A preferência
-precisa inverter, sem que a branch simples deixe de ser possível.
+That offer duplicates work `/specs:conclude` already owns. Its distillation harvest table in
+`specs-conclude/distill.md` carries the row "a **follow-up** the spec surfaced but did not pursue →
+a fresh spec in `specs/plans/` via `/specs:create`", and `conclude.md` names "a follow-up worth its
+own spec" as one of the four things the `done` pass harvests. So the front already has one
+designed place where follow-ups become specs, at the point where it is known whether the parent
+spec shipped at all.
 
-A segunda: nada apaga o worktree depois. `/specs:conclude` termina no merge —
-essa é sua última ação — e o worktree fica no disco, ao lado do repositório,
-apontando para uma branch já integrada. Quem conclui várias specs acumula
-diretórios órfãos que ninguém sabe se ainda são necessários. Depois de um merge
-bem-sucedido, o worktree deveria ser removido.
-
-Fica em aberto o quanto disso é automático: remover um worktree é irreversível
-para qualquer trabalho não commitado que ainda esteja nele, e `conclude` já
-oferece — sem executar — a deleção da branch.
+Offering it during `develop` costs a prompt in one of the two most-run commands, and creates specs
+in `plans/` that cannot be built until their parent merges — competing for attention in
+`/specs:triage` and `/specs:continue` on the way.

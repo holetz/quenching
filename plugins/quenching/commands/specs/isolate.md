@@ -1,7 +1,7 @@
 ---
 description: Take or report git isolation for ONE spec — a branch or a worktree, at any stage of its life. Triggers on "isolate this spec", "cut a branch for this spec", "work on this in a worktree", "put this spec on its own branch", "am I isolated?", "which branch is this spec on", "is anything in flight". Records branch: {base, work}, the one git fact no derivation recovers once the branch is merged. Not for: building a spec's tasks → /specs:execute; merging, reviewing or archiving → /specs:conclude; creating a spec → /specs:create; interrogating one → /specs:develop; choosing which spec to work on → /specs:continue.
 argument-hint: [spec slug, or nothing to infer it]
-allowed-tools: Read, Grep, Glob, Edit, Bash(git:*), Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Read, Grep, Glob, Edit, Bash, AskUserQuestion
 ---
 
 # /specs:isolate — one spec, one branch
@@ -38,6 +38,13 @@ Resolve `specs.py` by the fallback in
 [specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
 §Resolving the tool. Invoke with `python3`/`py`; branch on the **exit code** (0 ok · 1 findings ·
 2 refusal) and the `--json`, never on prose.
+
+**Why `Bash` is unrestricted here.** Everything this command runs itself is `git` and `python3` —
+but a target repo may declare a `worktreeSetup` (step 4), and that command is the *target's*, whose
+shape this plugin cannot know or enumerate in advance. The scope that would cover it is the scope
+that covers everything. What bounds it instead is consent: the command is displayed verbatim in the
+plan block before the human chooses, and it is the only thing outside `git`/`python3` this command
+ever runs.
 
 ## Workflow
 
@@ -90,13 +97,36 @@ Whether the spec file is already committed on the base decides what step 5 can d
 **Done when:** the tree state and the spec file's git status are known and reported.
 
 ### 4. Offer the form — one plan, one OK
-State in one block: the spec, the base branch, the branch name that will be created, whether the
-spec file rides along, and what will be stamped. Then ask with **AskUserQuestion**:
+Read what the workspace declares first, so the plan block can show it:
 
-- **Branch** *(default)* — `git checkout -b plan/<slug>`, work continues in this checkout;
-- **Worktree** — `git worktree add ../<repo>-<slug> -b plan/<slug>`, a separate checkout beside the
-  repo, leaving this one where it is;
+```bash
+specs.py config --json        # `worktreeSetup`, or null — exit 0 either way
+```
+
+State in one block: the spec, the base branch, the branch name that will be created, the worktree
+path, whether the spec file rides along, what will be stamped, and — when `worktreeSetup` is
+non-null — **the setup command verbatim**, exactly as read, never paraphrased or reformatted.
+
+**That block is the consent.** Choosing **Worktree** below IS the OK for the command shown, and
+there is no second prompt and no remembered "this repo is authorised" state. The human judges the
+command on the same screen where they choose the form, which is the only screen where judging it is
+possible — so the command is **never run without having been displayed first**. Nothing is declared
+→ say nothing; an absent config is the normal case, not a finding.
+
+Then ask with **AskUserQuestion**:
+
+- **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<slug> -b plan/<slug>`, a
+  separate checkout beside the repo, leaving this one untouched. State its cost **in the offer**:
+  a fresh checkout carries only what git tracks — no `node_modules/`, no `.venv/`, no `.env`, no
+  build output — so a repo with installed dependencies needs them installed again there;
+- **Branch** — `git checkout -b plan/<slug>`, work continues in this checkout;
 - **In place** — declines isolation. Nothing is created and **nothing is stamped**.
+
+Worktree leads **unconditionally** — never on a heuristic that sniffs the target for
+`package.json` or `.venv/`. A recommendation that changes from repo to repo cannot be documented in
+one sentence, and guessing somebody else's build is how the recommended path becomes a silent trap.
+The cost above is stated instead, in one line, so choosing **Branch** is a decision the human read
+rather than a discovery at the first `verify:` that fails.
 
 Recommend isolation before building, and never impose it. A human who declines gets no branch, no
 record, and no second prompt.
@@ -113,7 +143,22 @@ git add "<the spec's path>" && git commit -m "plan/<slug>: record the spec on it
 Nothing else is staged, and no other file is committed. If the checkout or the worktree fails —
 a name already taken, a dirty path, a locked worktree — report the git error verbatim and stop
 without stamping.
-**Done when:** the branch or worktree exists, or the failure is reported and nothing was stamped.
+
+**Then, on a worktree with a `worktreeSetup` declared**, run it once — **with cwd inside the new
+worktree**, which is the whole point: it is the tree that lacks the dependencies.
+
+```bash
+cd "<the new worktree>" && <the command shown in step 4>
+```
+
+Report its output and its exit code. **A failing setup does not undo the worktree** — the worktree
+exists either way, and whether it is usable is a fact to state, not a reason to tear down a tree
+that may already hold the human's chosen isolation. Say plainly which of the two it is: setup ran
+clean, or setup failed and the first `verify:` will likely need the dependencies installed by hand.
+A command whose first token does not resolve inside the worktree is reported as not run, for that
+reason, rather than executed and blamed on the shell.
+**Done when:** the branch or worktree exists, any declared setup has run and been reported, or the
+failure is reported and nothing was stamped.
 
 ### 6. Stamp the record
 ```yaml
@@ -128,7 +173,8 @@ that disagrees with `work` is a finding to report, not a value to correct.
 
 ### 7. Report, and hand off
 Show the spec, the form taken, the base and work branches, the worktree path when there is one,
-whether the spec file was carried onto the branch, and the record as stamped. Then name the command
+whether a `worktreeSetup` was declared and how it exited, whether the spec file was carried onto
+the branch, and the record as stamped. Then name the command
 that comes next — `/specs:develop` for a spec still being shaped, `/specs:execute` for one ready to
 build — and stop.
 **Done when:** the summary is shown and the next command has been named.
@@ -158,4 +204,7 @@ build — and stop.
 - Stamp `branch:` only when isolation was actually taken, and never over an existing record.
 - Never merge, never review, never archive — those are `/specs:conclude`, with their own gates.
 - Never write code, never touch `## Tasks`, never tick a box.
+- Never run a `worktreeSetup` that was not displayed verbatim in the plan block the human answered,
+  and never run one anywhere but inside the worktree just created. A setup that fails is reported;
+  it never tears the worktree down.
 - Drive off `specs.py status` and git's own output, branching on exit codes rather than prose.

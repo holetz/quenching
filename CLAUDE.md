@@ -83,7 +83,7 @@ validator finding → [docs/QUENCHING.md](docs/QUENCHING.md).
 - [specs/plans/](specs/plans/index.md) — the spec workspace, a quenching-managed sibling
   **outside** the `docs/` bundle.
 
-To create / edit / move knowledge (keeping the listing + `log.md` in sync), use the plugin's own
+To create / edit / move knowledge (keeping the listing in sync), use the plugin's own
 commands: `/docs:add` for one doc, `/docs:define` for a glossary term, `/docs:align` to
 migrate/normalize, `/docs:harness` to keep this file thin.
 

@@ -102,7 +102,7 @@ Branch as sweep-doctrine §Probe before the inventory prescribes:
 | exit 0 and the only findings are ones this command **surfaces** rather than closes (cycle.md's routing table, rightmost column `No`) | STOP the same way, then list them with the command that closes each. |
 | any signal shows work | Continue to step 2. |
 
-**No bundle at all** (no `index.md` / `log.md` / `okf_version`) is not a failure — it is the
+**No bundle at all** (no `index.md` / `okf_version`) is not a failure — it is the
 install case, and step 4 scaffolds it.
 **Done when:** the three signals are in hand and the run has either stopped or committed to a pass.
 
@@ -130,15 +130,14 @@ the plan — enumerate:
   - **(e)** `index.md` files to (re)generate (reserved listings) — **one per directory that
     holds concept docs** (the `dir-no-index` set from the checker), plus any `index.md` that
     wrongly carries frontmatter, or `README.md` to convert to `index.md`;
-  - **(f)** `log.md` to establish (`docs/` and `docs/standards/`);
-  - **(g)** the **blast radius** of every code-coupled rename (a slug translation or a
+  - **(f)** the **blast radius** of every code-coupled rename (a slug translation or a
     cluster-fold is a rename — sweep its references like any other);
-  - **(h)** **which content stages will run this pass** — memory (dir non-empty), harness (fat),
+  - **(g)** **which content stages will run this pass** — memory (dir non-empty), harness (fat),
     each with its count. A stage the probe found empty is skipped, not run to confirm it is empty.
 
 On a later pass, re-derive only what the previous pass could have changed; never re-inventory a
 converged half of the bundle.
-**Done when:** one plan enumerates (a)–(h), with a per-item destination and a scope per rename.
+**Done when:** one plan enumerates (a)–(g), with a per-item destination and a scope per rename.
 
 ### 3. Present the full plan → gate on ONE OK
 Show the whole plan, including which content stages will run and the pass cap the OK authorizes:
@@ -187,11 +186,12 @@ plan was rejected and nothing was written.
   its real children (no `dir-no-index`, no `index-broken-link`, no `index-orphan` left behind);
   strip stray frontmatter; for `standards/index.md` rebuild only the
   `<!-- BEGIN/END GENERATED -->` zone from disk.
-- **Establish/append** `log.md` (`## YYYY-MM-DD`, newest first, `**Creation**/**Update**/
-  **Deprecation**` prefixes).
 - **Write** `okf_version: "0.1"` into the root `docs/index.md` frontmatter.
+- **Never create a `log.md`, and never touch one that is already there.** The artifact is
+  retired: the name stays reserved so a surviving log is recognized rather than flagged, and
+  whether to keep or delete it is the target repo's call, not this sweep's.
 
-**Done when:** every approved (a)–(g) item is on disk and no unapproved item was touched.
+**Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.
 
 ### 5. Install the hook and the site layer — pass 1 only, offered
 Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
@@ -200,10 +200,22 @@ Both are one-shot scaffolding, not loop stages; skip this step entirely on later
 `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` + `hooks-config.json` into the target's
 `.claude/hooks/` (never the directory recursively), and merge `settings.snippet.json` into
 `.claude/settings.json` (`PostToolUse` + `Stop` propose; opt-in `PreToolUse` hard-block via
-`hardBlock: true`). Set `docsDir` if the bundle root is not `docs/`. Already installed → compare
-`python3 .claude/hooks/okf-validate.py --version` with the plugin's `VERSION` and offer to
-overwrite **only the script** when the plugin is newer; the target's `hooks-config.json` is
-preserved. See [../../assets/hooks/README.md](../../assets/hooks/README.md).
+`hardBlock: true`). Set `docsDir` if the bundle root is not `docs/`.
+
+**Ask the tool for the state; never hand-compare a version here.** One call answers installed,
+shipped and wired at once:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+```
+
+Read this front's row (`okf-validate.py`) and act on its `status`: `behind` → offer to overwrite
+**only the script**, never `hooks-config.json`, which holds the target's own knobs; `ahead` → leave
+it alone and **say so** — the target is ahead of this plugin, a fact to state rather than a
+regression to force; `absent` → the install offer above. A `sk-tool-unwired` finding is the one the
+script cannot fix by being copied: the file is on disk and no `hooks` block invokes it, so offer
+the `settings.snippet.json` merge even though the version is current. See
+[../../assets/hooks/README.md](../../assets/hooks/README.md).
 
 **The mkdocs site.** Only if the bundle has a `documentation/` home. Offer to copy from
 `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`: `mkdocs.yml.tmpl` → the repo **root** as `mkdocs.yml`
@@ -254,10 +266,10 @@ the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
 Re-run `okf-validate.py <docs> --json` and confirm: every non-reserved doc has frontmatter and a
-non-empty `type`; every `index.md` is frontmatter-free (root only `okf_version`); every `log.md` is
-`## YYYY-MM-DD` newest-first; and the **structural-integrity WARNs are cleared — zero
-`dir-no-index`, `index-broken-link`, `index-orphan`** (these are WARN, so exit 0 alone does not
-prove them clean — inspect the findings).
+non-empty `type`; every `index.md` is frontmatter-free (root only `okf_version`); and the
+**structural-integrity WARNs are cleared — zero `dir-no-index`, `index-broken-link`,
+`index-orphan`** (these are WARN, so exit 0 alone does not prove them clean — inspect the
+findings).
 
 Then re-run step 1's probe — never the step 2 inventory — and decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align-all/convergence.md)
@@ -269,17 +281,17 @@ Re-probing rather than re-inventorying is what keeps a second pass cheap — and
 signals, so a stage that emptied itself this pass is simply absent from the next.
 **Done when:** the run has converged, hit residue, or hit the cap — and which one is recorded.
 
-### 9. Report + one log entry
+### 9. Report
 Summarize the whole run: N passes, what each stage did across all of them, the final validator
 state, and — explicitly — what was **deliberately not closed**, each with the command that closes
 it (per-item content needing human input, unroutable harness facts, deferred sub-standards, a
-declined glossary sweep). Append **one** entry to `docs/log.md` per **Appending to `log.md`** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md):
-`**Update**: [Align](/docs/index.md) — converged in N passes (structure/memory/harness/glossary);
-M items deferred to <command>`. Self-check the entry against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
-**Done when:** the report names the residue with its owning command and the single log entry is
-appended.
+declined glossary sweep).
+
+**The report is the record.** This step used to also append a closing entry to `docs/log.md`;
+that artifact is retired, and the sweep leaves no trace of itself in the bundle. What the pass
+did to `docs/` is legible from `docs/` and from the repo's own history — a self-describing
+entry added nothing a reader could not already see, and cost a write on every run.
+**Done when:** the report names the residue with its owning command.
 
 ## Invariants to never violate
 - Never inventory before the probe, and never run a stage to find out whether it had work — the

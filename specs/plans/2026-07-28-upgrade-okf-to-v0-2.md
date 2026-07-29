@@ -1,11 +1,10 @@
 ---
-slug: retire-docs-log
-title: Retire the docs/ log
+slug: upgrade-okf-to-v0-2
+title: Upgrade the OKF contract to v0.2 or later
 verification: per-section
-priority: {level: 9, criticality: medium, date: 2026-07-28}
 ---
 
-# Retire the docs/ log
+# Upgrade the OKF contract to v0.2 or later
 
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
@@ -47,11 +46,11 @@ priority: {level: 9, criticality: medium, date: 2026-07-28}
 
 ## Problem
 
-Remover a criação e a manutenção do `log.md` no bundle `docs/`. Hoje vários
-comandos de captura do plugin gastam passos para localizar ou criar a data de
-hoje e acrescentar uma linha ao `docs/log.md`, e a conformidade OKF trata o
-arquivo como parte do contrato do bundle.
+The bundle contract this repo ships and enforces is OKF v0.1 — the version stamped in
+`docs/index.md`, encoded in `assets/references/docs-align/okf-spec.md` and checked by
+`okf-validate.py`. OKF has moved on: v0.2 (or whatever the latest release now is) carries changes
+this plugin has not adopted.
 
-O que se quer decidir e executar é o fim desse artefato: nem criado pelo
-`/docs:align`, nem alimentado pelos comandos de captura, nem exigido pelo
-validador.
+Bring the contract up to the current OKF release, and carry the new capabilities through into the
+`/docs:*` command surface that implements it — not just the validator and the spec document, but
+the commands whose bodies encode what a conformant bundle looks like.

@@ -125,11 +125,10 @@ prose. Then regenerate the zone:
 ```bash
 skills.py registry reindex --json
 ```
-Update `documentation/reference/`'s `index.md` and append to `log.md`
-(`**Creation**`/`**Update**`: the command minted/edited) per the procedure in
+Update `documentation/reference/`'s `index.md` per the procedure in
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). If the
 command coined a new repo-specific term, **offer** ONE `knowledge/glossary.md` entry — the user
-decides. **Done when:** `registry reindex` exits 0, the index is honest, and the log is appended.
+decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 
 ### 9. Self-check
 Ask the tool, do not read for it:
