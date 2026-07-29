@@ -4,7 +4,7 @@ The single owner of the **specs-workspace conformance contract**: what a canonic
 surface looks like, the probe that decides whether the sweep runs at all, the finding codes it
 produces, which findings it **fixes** versus which it only **reports**, and the two one-way
 **migrations** (an older quenching workspace, and a legacy `openspec/` one). The spec-driven facts
-themselves — the phase folders, the thirteen canonical sections, the gates, the derived stages, the
+themselves — the phase folders, the fourteen canonical sections, the gates, the derived stages, the
 `specs.py` surface — live once in
 [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 and are cited here, never restated.
@@ -185,7 +185,8 @@ conformance.
 | --- | --- | --- |
 | `sp-empty-section` | A canonical heading is present with an empty body — malformed, at any stage | The human. Filling it, even with `- none — <reason>`, is **authoring an answer**: only they know whether it is empty because nothing applies or because nobody thought about it. |
 | `sp-gate-unmet` | A spec is missing a section its own gate requires | The human, via `/specs:develop` (which asks rather than fills). |
-| `sp-stray-heading` | A `##` heading outside the canonical thirteen | The human — folding a stray into a canonical section is a judgment about what it *meant*. |
+| `sp-stray-heading` | A `##` heading outside the canonical fourteen | The human — folding a stray into a canonical section is a judgment about what it *meant*. |
+| `sp-overview-missing` | A spec meets the whole ready gate but carries an empty `## Overview` | `/specs:develop` — written last, once every other section has settled. |
 | `sp-handoff-empty` | A spec being executed has an empty `## Handoff` | `/specs:execute`, which refreshes it after each committed task. |
 | `sp-impact-uncovered` | A `docs/standards/**.md` path declared under `## Impact` that no `## Tasks` item names | The human — add the task, or drop the declaration. Which of the two is correct is a judgment, so the sweep never picks. |
 | `sp-unrefined` | A spec meets the whole ready gate but carries no `refined` record | `/specs:develop`'s adversarial bank. **Never gates** — a spec may always be built unrefined. |

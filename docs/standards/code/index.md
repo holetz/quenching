@@ -12,6 +12,10 @@ its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standa
 
 ## Current docs
 
+* [canonical-set-parsing.md](canonical-set-parsing.md) — how a declared set is consumed: slice it by
+  declared membership and never by position, and why a byte-for-byte lockstep check proves the copies
+  agree but never that the code reading them still means the same, so a membership invariant is owed
+  its own assertion.
 * [frontmatter-parsing.md](frontmatter-parsing.md) — the YAML subset the three shipped tools read:
   the comment rule, the canonical case list all three must decide identically, the anomaly set each
   must be able to name, and the three-copy lockstep obligation that stands in for the shared module

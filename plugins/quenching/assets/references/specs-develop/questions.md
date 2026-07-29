@@ -87,6 +87,14 @@ Three reasons this is not merely tidier:
 The edit lands per **bank**, not per pass. A pass that crosses two boundaries produces two
 confirmed edits, and the stage between them is real.
 
+Every bank's consolidated edit also refreshes `## Overview` to match whatever the bank just
+changed — it is authored **last** within that one edit, after every other section has settled,
+because it can only be correct once they have. It still sits first in the file; only its authoring
+order within the pass is last. Present the refreshed Overview to the human as its own labelled
+before → after block, separate from the list of other section diffs — never folded in alongside
+them — and this rides inside the same one-OK edit the bank already produces, not a second
+confirmation.
+
 ### 3. A declared stop condition
 
 Each bank below states when it is **done**. Announce the stop condition when the bank starts, so
@@ -134,8 +142,9 @@ about, roughly in this order:
 A good ASCII diagram — current flow, proposed flow, the state machine — is worth several of these
 questions and often replaces one.
 
-**Lands in** `## Proposal` (the shape), `## Out of Scope` (the boundary), and `## Design` /
-`## Alternatives Considered` when the shapes table produced a real comparison.
+**Lands in** `## Proposal` (the shape), `## Out of Scope` (the boundary), `## Design` /
+`## Alternatives Considered` when the shapes table produced a real comparison, and `## Overview` —
+this is the bank that first writes it, the same way it first writes `## Proposal`.
 
 **Stop when** `## Proposal` states what will be true afterwards that is not true now, and the human
 would recognise the spec as describing their idea. Not when the gate is met — that is two banks

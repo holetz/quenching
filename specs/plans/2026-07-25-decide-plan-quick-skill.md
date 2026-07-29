@@ -6,6 +6,10 @@ verification: per-section
 
 # Decide whether quenching-specs-plan-quick is still needed
 
+## Overview
+
+- none — only `## Problem` is filled; nothing else exists yet to connect.
+
 ## Problem
 
 Open decision from the refine-and-execute-specs-flow plan — re-evaluate the express lane after two weeks of using the chained path
