@@ -456,7 +456,7 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   files: `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/docs/standards/index.md`, `plugins/quenching/assets/docs/standards/agents/index.md`, `docs/standards/index.md`, `docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` and `... docs` both report `0 error(s), 0 warning(s)`
   subject: plan/declare-repo-body-language: 1 Abrir o subject agents/ nas duas árvores
-- [ ] 2 Entregar o dono no skeleton em `docs/standards/agents/communication.md` sob `assets/docs/`
+- [x] 2 Entregar o dono no skeleton em `docs/standards/agents/communication.md` sob `assets/docs/`
   Duas metades. **A língua:** o que declarar significa, que somente o harness **raiz** carrega a
   declaração, que o valor é uma tag BCP-47, que ela governa toda prosa autorada pelo agente
   (artefato e conversa) com as duas exclusões de `## Out of Scope`, e que o silêncio significa
@@ -466,6 +466,7 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   pelo uso.
   files: `plugins/quenching/assets/docs/standards/agents/communication.md`, `plugins/quenching/assets/docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` → `0 error(s), 0 warning(s)`, and the `## Validation` citation grep shows the etiquette half citing and not restating
+  subject: plan/declare-repo-body-language: 2 Entregar o dono no skeleton
 - [ ] 3 Instalar o mesmo dono em `docs/standards/agents/communication.md` no bundle deste repo, e
   declarar a language deste próprio repositório no harness raiz — o dogfood que o spec alega. A
   linha carrega a tag e uma citação, e nada mais.
