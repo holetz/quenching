@@ -482,10 +482,11 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   verify: `grep -n 'audience: human' docs/index.md plugins/quenching/assets/docs/index.md` shows no
   subject: plan/declare-repo-body-language: 4 Reconciliar as duas linhas de index
   language clause narrowed by audience
-- [ ] 5 Colapsar os seis locais que reenunciam a regra para que citem o dono; `okf-spec.md` conserva
+- [x] 5 Colapsar os seis locais que reenunciam a regra para que citem o dono; `okf-spec.md` conserva
   sua declaração autocontida com a razão registrada inline.
   files: `docs/standards/naming/command-surface.md`, `docs/standards/workflows/plan-artifacts.md`, `plugins/quenching/assets/references/specs-develop/spec-driven.md`, `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/references/docs-align/migration.md`, `plugins/quenching/assets/references/docs-align/okf-spec.md`
   verify: the `## Validation` grep returns five citing sites and no restatement
+  subject: plan/declare-repo-body-language: 5 Colapsar os seis locais para citarem o dono
 - [ ] 6 Ensinar `/docs:align` a perguntar a language uma vez na adoção e escrever a linha no
   arquivo de harness raiz — a tag e uma citação, nunca uma segunda chave de configuração.
   files: `plugins/quenching/commands/docs/align.md`
@@ -499,3 +500,4 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
 
 - O verify: das tasks 1-3 e o quinto bullet de ## Validation exigem 0 warning(s) do okf-validate.py sobre docs/, mas a baseline ja carrega 13 warnings stale-doc/resource-unresolved pre-existentes e alheios a este spec (identicos antes e depois da task 1). O criterio efetivo aplicado e: 0 error(s) e nenhum finding NOVO. O spec irmao narrow-the-stale-doc-trigger-to-content-drift e quem cura o ruido.
 - As tasks 1-2 fizeram docs/standards/architecture/plugin-layout.md acusar stale-doc: o resource dele cobre plugins/quenching/assets/**, e este spec escreve ali. O contrato do doc nao mudou - so o glob foi tocado. Nao foi silenciado com bump de timestamp; e o mesmo gatilho que narrow-the-stale-doc-trigger-to-content-drift existe para estreitar. Baseline docs/: 13 warnings em main, 14 a partir da task 1.
+- O primeiro bullet de ## Validation espera que o grep 'the repo.s language' retorne cinco locais citando o dono. Depois da task 5 ele retorna ZERO: os cinco colapsados deixaram de conter a frase, e a unica ocorrencia viva - a declaracao autocontida de okf-spec.md - esta quebrada por wrap e escapa ao padrao de uma linha. O invariante util virou um par: grep da frase = alarme de reenunciacao NOVA (deve dar so okf-spec, via -A1); grep de 'agents/communication.md' = as cinco citacoes. Vale corrigir a redacao do bullet no conclude.
