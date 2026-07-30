@@ -369,6 +369,30 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
   aquela spec mover a pasta de assunto, o caminho declarado em `## Impact` muda com ela; esta spec
   não escolhe a pasta nem antecipa a mudança.
 
+## Handoff
+
+Estado da árvore após a seção 1 (o contrato da chave), que um executor novo não deriva sozinho:
+
+- **Isolamento:** worktree em `../claude-quenching-add-import-provenance`, branch
+  `plan/add-import-provenance`, cortado de `main` em `9c289f1`. O checkout principal
+  `~/Projects/claude-quenching` está sendo usado por **outra sessão Claude Code em paralelo**,
+  que edita `specs/plans/2026-07-28-decide-plans-index-need.md` — não commitar nada de lá.
+- **Hook local:** `.claude/settings.json` (versionado) aponta para `.claude/hooks/okf-validate.py`,
+  que o commit `193578c` havia apagado. O arquivo foi reinstalado em 4.4.0 **sem ser versionado**,
+  nos dois checkouts, para manter os commits desta spec dentro do escopo declarado. Decidir em
+  `/specs:conclude` se ele deve ser commitado.
+- **Seção 1 fechada e verde:** o contrato de `source_uri:` mora em `sources.md` §Attribution;
+  §Dedup item 2 tenta a URI exata antes do grep por prosa; `okf-spec.md` §Frontmatter lista a
+  chave; `homes.md` marca-a como fora do mold. O portão da seção passou inteiro — okf-validate nos
+  dois bundles embarcados, `doctor` com 26 comandos e zero findings, `lint` em exit 0, três
+  selftests verdes.
+- **Contagem que a seção 4 vai cobrar:** `grep -rl source_uri plugins/quenching/` devolve **3**
+  caminhos agora e deve terminar em exatamente **5** — faltam `commands/docs/import.md` (seção 2) e
+  `assets/docs/QUENCHING.md` (seção 3). Um sexto arquivo é a falha que `## Design` §Decisão 2
+  existe para evitar.
+- **Próxima tarefa:** 2.1, em `commands/docs/import.md`. A seção 2 termina com 2.4, que corta a
+  doutrina duplicada até `grep -ic attribut` devolver exatamente 1 naquele arquivo — hoje devolve 3.
+
 ## Tasks
 
 ### 1. O contrato da chave
@@ -383,9 +407,10 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
 - [x] 1.3 Acrescentar `source_uri` à lista de chaves extras do perfil em `okf-spec.md` §Frontmatter, ao lado de `audience`, `authority`, `source` e `maintainer`
       files: plugins/quenching/assets/references/docs-align/okf-spec.md
       subject: plan/add-import-provenance: 1.3 source_uri na lista de chaves extras do perfil em okf-spec.md
-- [ ] 1.4 Marcar em `homes.md` §The frontmatter stamp, em uma linha e sem acrescentar a chave ao bloco, que `source_uri:` é escrita apenas por `/docs:import` e nunca inventada pelos outros comandos que citam o bloco
+- [x] 1.4 Marcar em `homes.md` §The frontmatter stamp, em uma linha e sem acrescentar a chave ao bloco, que `source_uri:` é escrita apenas por `/docs:import` e nunca inventada pelos outros comandos que citam o bloco
       files: plugins/quenching/assets/references/docs-add/homes.md
       verify: test -z "$(grep -rl source_uri plugins/quenching/assets/templates/)"
+      subject: plan/add-import-provenance: 1.4 marcar em homes.md que source_uri é escrita só pelo import
 
 ### 2. O comando
 

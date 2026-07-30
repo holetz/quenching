@@ -89,6 +89,11 @@ source: <origin/author>
 maintainer: <owner>
 ```
 
+**Not in the mold, deliberately:** `source_uri:` — written by `/docs:import` alone, never invented
+by the commands citing this block, and simply absent on a doc with no external origin. Its
+contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)
+§Attribution.
+
 ## Updating `index.md` (the listing)
 
 - Add `* [<title>](<relative-path>.md) — <description>` under the right section. Keep links
