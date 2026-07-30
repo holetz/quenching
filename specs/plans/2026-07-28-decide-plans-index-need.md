@@ -672,8 +672,9 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - [x] 5.3 Tirar a cláusula `--listing-root` do contrato de convergência e da tabela de verificadores por front
       files: plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/align/sweep-doctrine.md
       subject: plan/decide-plans-index-need: 5.3 Tirar a clausula do flag da convergencia e da tabela de verificadores
-- [ ] 5.4 Corrigir `spec-driven.md`, `docs-add/homes.md`, `docs-align/migration.md` e o comentário de `skills.py:1557`
+- [x] 5.4 Corrigir `spec-driven.md`, `docs-add/homes.md`, `docs-align/migration.md` e o comentário de `skills.py:1557`
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/references/docs-add/homes.md, plugins/quenching/assets/references/docs-align/migration.md, plugins/quenching/assets/bin/skills.py
+      subject: plan/decide-plans-index-need: 5.4 Corrigir spec-driven, homes, migration e o comentario de skills.py
       A árvore de layout de `spec-driven.md:38` perde a linha do `index.md`, `:56-57` perde a
       cláusula `--listing-root`, `:217` perde a zona da lista de agrupadores e `:312` perde a linha
       do subcomando na tabela do tool.
