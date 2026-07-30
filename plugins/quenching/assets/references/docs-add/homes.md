@@ -105,7 +105,7 @@ maintainer: <owner>
 
 (The `specs/plans/index.md` GENERATED zone is **not** part of this OKF insert procedure —
 `specs/` lives outside the bundle; that zone is owned by the `/specs:*` commands, in
-[`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).)
+[`specs-create/specs-front.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).)
 
 ## Enriching the glossary (tail step, every capture)
 

@@ -436,12 +436,14 @@ compre — só custa um arquivo a mais, para sempre.
 - ~~**`sp-index-frontmatter` sobrevive como regra de prosa, ou a lacuna é aceita e registrada?**~~
   **MOOT:** sem artefato produzido não há frontmatter para checar, nem lacuna para registrar. O
   código sai junto com o modo `--listing-root` que o emitia.
-- **NOVA — o nome `assets/references/specs-create/plans-zone.md` descreve um artefato retirado.** O
-  arquivo sobrevive: §Resolving the tool e §The `specs/` front records itself não falam da zona, e
-  a primeira é citada por **18 arquivos** do plugin. O nome, porém, passa a nomear o que não existe.
-  **Como se decide:** o humano escolhe quando a task 5.1 rodar; o default é **manter o nome**,
-  porque renomear uma reference com 18 citações é mudança de superfície com raio próprio e não é o
-  assunto deste spec (`## Out of Scope`).
+- ~~**NOVA — o nome `assets/references/specs-create/plans-zone.md` descreve um artefato
+  retirado.**~~ **RESOLVIDA 2026-07-30, contra o default:** renomeado para `specs-front.md`. O
+  humano escolheu o nome mais largo, que cobre as três seções sobreviventes — §The folder is the
+  listing, §Resolving the tool e §The `specs/` front records itself — em vez de `tool-resolution.md`,
+  que nomearia só a dominante. Renomeação code-coupled, aplicada atômica no commit da task 5.1: 21
+  sítios de citação medidos, 17 arquivos do plugin reescritos, `plans-zone` a zero, e as quatro
+  frases que descreviam a citação como "the listing-zone format" corrigidas junto. As 225 citações
+  em link markdown do plugin resolvem.
 ## Risks
 
 - **Retirar o artefato sem retirar `--listing-root` no mesmo movimento.** Medido em 2026-07-30: com
@@ -657,8 +659,9 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 5. Atualizar as references e os manuais que descrevem o artefato retirado
 
-- [ ] 5.1 Cortar de `plans-zone.md` as seções §The GENERATED zone e §The on-write check, e resolver o nome do arquivo com o humano
+- [x] 5.1 Cortar de `plans-zone.md` as seções §The GENERATED zone e §The on-write check, e resolver o nome do arquivo com o humano
       files: plugins/quenching/assets/references/specs-create/plans-zone.md
+      subject: plan/decide-plans-index-need: 5.1 Cortar as duas secoes da zona e renomear para specs-front.md
       Mantém §Resolving the tool e §The `specs/` front records itself, que não falam da zona. O H1
       passa a nomear o que sobrou. A renomeação do arquivo é a entrada aberta de
       `## Open Decisions` — 18 arquivos o citam, e o default é manter o nome.

@@ -195,7 +195,7 @@ with this skill's deltas kept inline:
 - A **unit of work** row instead follows the `/specs:create` path: run `specs.py new <slug>` and
   write the memory's content into `## Problem` and nothing else, then `specs.py validate --spec
   <slug>` as the self-check per
-  [specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+  [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
   (the OKF hook does not cover `specs/`); the bundle-log line is
   `**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — migrated from project memory`.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a

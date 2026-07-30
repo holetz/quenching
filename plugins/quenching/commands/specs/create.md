@@ -19,8 +19,8 @@ renaming it, so this basename is the spec's identity for its whole lifecycle.
 
 The layout, the fourteen canonical sections, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the listing-zone format and the tool fallback in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md);
+the tool fallback and the front's on-write check in
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md);
 the shared log procedure in
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
 
@@ -68,7 +68,7 @@ because this command worked harder at it.
 ## Resolving the tool
 
 Resolve `specs.py` by the fallback in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Resolving the tool: `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then the target's
 `.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
 `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.

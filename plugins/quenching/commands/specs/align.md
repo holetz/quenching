@@ -22,8 +22,8 @@ only when something is already broken.
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
 fourteen canonical sections, the derived stages and the `specs.py` surface in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the listing-zone format and on-write check in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).
+the tool fallback and the front's on-write check in
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
 findings it fixes versus only reports, and the migrations — is
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
@@ -73,7 +73,7 @@ Read it as this command's doctrine. What follows is only what is **specific to `
 
 ### 1. Probe — the two calls that decide whether anything else runs
 Resolve `specs.py` by the fallback in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Resolving the tool, invoked via `python3` or `py`. Resolve the `specs/` root at the repo root,
 then:
 ```bash
