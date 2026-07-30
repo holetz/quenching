@@ -81,21 +81,16 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**32 specs** · 1 executing · 1 designed · 30 captured
+**32 specs** · 2 executing · 30 ready
 
 ### Executing
 
 | Spec | Title | Since |
 | --- | --- | --- |
+| [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's body language in docs/standards so every command reads it for free | 2026-07-28 |
 | [restore-routing-info-on-docs-commands](2026-07-28-restore-routing-info-on-docs-commands.md) | Restore trigger phrases and boundaries on the nine bare /docs:* descriptions | 2026-07-28 |
 
-### Designed
-
-| Spec | Title | Since |
-| --- | --- | --- |
-| [restructure-claude-front-namespace](2026-07-27-restructure-claude-front-namespace.md) | Rename the /skill namespace to /automation and split it into artifact contexts | 2026-07-27 |
-
-### Captured
+### Ready
 
 | Spec | Title | Since |
 | --- | --- | --- |
@@ -109,16 +104,16 @@ closing out unbuilt work looks like.
 | [dedupe-specs-py-spec-reader](2026-07-27-dedupe-specs-py-spec-reader.md) | Fold the four copies of read-parse-derive in specs.py into one helper | 2026-07-27 |
 | [isolate-functional-checks-probes](2026-07-27-isolate-functional-checks-probes.md) | functional-checks.sh check 3 creates real specs in the repo it probes | 2026-07-27 |
 | [name-the-scaffolded-stage](2026-07-27-name-the-scaffolded-stage.md) | Decide whether a spec with an unwritten Problem gets a named stage | 2026-07-27 |
+| [restructure-claude-front-namespace](2026-07-27-restructure-claude-front-namespace.md) | Rename the /skill namespace to /automation and split it into artifact contexts | 2026-07-27 |
 | [retire-skill-vocabulary](2026-07-27-retire-skill-vocabulary.md) | Retire the skill vocabulary left behind by the collapse | 2026-07-27 |
 | [rewrite-readme-for-collapsed-surface](2026-07-27-rewrite-readme-for-collapsed-surface.md) | Rewrite README.md for the collapsed command surface | 2026-07-27 |
 | [add-specs-cycle-run-modes](2026-07-28-add-specs-cycle-run-modes.md) | Add customizable run modes to the specs cycle commands | 2026-07-28 |
 | [align-in-worktree-then-merge](2026-07-28-align-in-worktree-then-merge.md) | Have the align commands propose a worktree and merge at the end, as specs already does | 2026-07-28 |
-| [check-the-lockstep-itself](2026-07-28-check-the-lockstep-itself.md) | Check The Lockstep Itself | 2026-07-28 |
+| [check-the-lockstep-itself](2026-07-28-check-the-lockstep-itself.md) | Assert the seven-surface version lockstep in skills.py selftest | 2026-07-28 |
 | [decide-plans-index-need](2026-07-28-decide-plans-index-need.md) | Reassess whether specs/plans/index.md is needed | 2026-07-28 |
-| [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's body language in docs/standards so every command reads it for free | 2026-07-28 |
 | [fix-conclude-abandoned-branch-harvest](2026-07-28-fix-conclude-abandoned-branch-harvest.md) | conclude --outcome abandoned can harvest a note and delete it in the same run | 2026-07-28 |
 | [make-sk-unscoped-bash-read-the-body](2026-07-28-make-sk-unscoped-bash-read-the-body.md) | sk-unscoped-bash cannot read the body its own remedy points at | 2026-07-28 |
-| [plugin-dir-for-functional-checks](2026-07-28-plugin-dir-for-functional-checks.md) | Plugin Dir For Functional Checks | 2026-07-28 |
+| [plugin-dir-for-functional-checks](2026-07-28-plugin-dir-for-functional-checks.md) | Make functional-checks.sh witness which plugin copy it graded | 2026-07-28 |
 | [probe-a-frontmatter-hook-firing](2026-07-28-probe-a-frontmatter-hook-firing.md) | No probe observes a frontmatter hooks: block actually fire | 2026-07-28 |
 | [reduce-execute-conclude-cost](2026-07-28-reduce-execute-conclude-cost.md) | Re-evaluate /specs:execute and /specs:conclude runs for cost reduction | 2026-07-28 |
 | [resolve-spec-from-worktree](2026-07-28-resolve-spec-from-worktree.md) | Resolve a spec from its own worktree before falling back to the current branch | 2026-07-28 |
@@ -127,7 +122,7 @@ closing out unbuilt work looks like.
 | [stop-develop-offering-follow-up-specs](2026-07-28-stop-develop-offering-follow-up-specs.md) | /specs:develop should not offer to create a follow-up spec | 2026-07-28 |
 | [upgrade-okf-to-v0-2](2026-07-28-upgrade-okf-to-v0-2.md) | Upgrade the OKF contract to v0.2 or later | 2026-07-28 |
 | [commit-on-worktree-specs](2026-07-29-commit-on-worktree-specs.md) | Commit work at the end of develop, create and execute when a spec is already isolated in a worktree | 2026-07-29 |
-| [narrow-the-stale-doc-trigger-to-content-drift](2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md) | Narrow The Stale Doc Trigger To Content Drift | 2026-07-29 |
+| [narrow-the-stale-doc-trigger-to-content-drift](2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md) | Narrow stale-doc — retire the verdict, report resource activity as a figure | 2026-07-29 |
 | [wire-the-overview-consumers](2026-07-29-wire-the-overview-consumers.md) | Wire the three consumers to read `## Overview` | 2026-07-29 |
 <!-- END GENERATED -->
 

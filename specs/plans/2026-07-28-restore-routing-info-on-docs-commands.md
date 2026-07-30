@@ -3,7 +3,7 @@ slug: restore-routing-info-on-docs-commands
 title: Restore trigger phrases and boundaries on the nine bare /docs:* descriptions
 verification: per-task
 priority: {level: 2, criticality: high, complexity: 4, date: 2026-07-29}
-refined: {mode: gate, date: 2026-07-28}
+refined: {mode: adversarial, date: 2026-07-30}
 ---
 
 # Restore trigger phrases and boundaries on the nine bare /docs:* descriptions
@@ -48,171 +48,175 @@ refined: {mode: gate, date: 2026-07-28}
 
 ## Overview
 
-Nine of the eleven /docs:* and /skill:* command descriptions lost their quoted trigger phrases and
-`Not for:` boundary clause when the command surface was collapsed to one file per entry point, so a
-plainly-worded ask like "write this down in the docs" has nothing to tell it apart from /docs:add,
-/docs:learn, /docs:define, or /docs:import. `## Proposal` restores all three parts of a conformant
-description — concept, triggers, boundary — reusing phrasing that already exists elsewhere in the
-repo rather than inventing new text, and `## Design` requires all eleven descriptions be drafted as
-one allocation table, reviewed for collisions, before any file is edited. Restoring them pushes the
-surface past its always-on character ceiling, which has zero headroom by construction, so
-`## Tasks` runs in a fixed order: write the descriptions, then re-measure the ceiling from an actual
-run and transcribe that number everywhere it lives, then bump the release version.
-`## Open Decisions` flags that approval is currently withheld: a still-open spike into
-`disable-model-invocation` could make this whole restoration unnecessary, or confirm it and
-multiply its cost roughly tenfold once the surface grows as planned.
+Nove das onze descrições de comando `/docs:*` e `/skill:*` perderam suas frases-gatilho entre
+aspas e a cláusula de fronteira `Not for:` quando a superfície de comandos foi colapsada em um
+arquivo por ponto de entrada, então um pedido em linguagem simples como "write this down in the
+docs" não tem nada que o separe de `/docs:add`, `/docs:learn`, `/docs:define` ou `/docs:import`.
+`## Proposal` restaura as três partes de uma descrição conformante — conceito, gatilhos, fronteira
+— reaproveitando fraseado que já existe em outros pontos do repo em vez de inventar texto novo, e
+`## Design` exige que todas as onze descrições sejam rascunhadas como uma única tabela de alocação,
+revisada contra colisões, antes de qualquer arquivo ser editado. Restaurá-las empurra a superfície
+além do seu teto de caracteres always-on, que tem zero folga por construção, então `## Tasks` roda
+em ordem fixa: escrever as descrições, depois re-medir o teto a partir de uma execução real e
+transcrever esse número para todos os lugares onde ele vive, depois subir a versão de release.
+`## Open Decisions` sinaliza que a aprovação está retida no momento: um spike ainda aberto sobre
+`disable-model-invocation` pode tornar toda esta restauração desnecessária, ou confirmá-la e
+multiplicar seu custo por cerca de dez vezes quando a superfície crescer como planejado. E
+`## Risks` registra que a linha de base já derivou por conta própria: medido em 2026-07-30, antes
+de esta spec somar um caractere, `budget` reporta 12,875 contra um teto de 12,726 e sai 1.
 
 ## Problem
 
-The collapse into one file per entry point deleted the half of each pair that carried the quoted
-trigger phrases and the `Not for:` boundary. Restoring them was called affordable, and it happened
-— on `/specs:*` and on most of `/skill:*`. It never reached `/docs:*`.
+O colapso em um arquivo por ponto de entrada apagou a metade de cada par que carregava as
+frases-gatilho entre aspas e a fronteira `Not for:`. Restaurá-las foi julgado barato, e aconteceu —
+em `/specs:*` e na maior parte de `/skill:*`. Nunca chegou a `/docs:*`.
 
-Measured on `main` at 4.1.0, `skills.py lint` reports `sk-trigger-position` **and**
-`sk-no-boundary` on nine of the eleven `/docs:*` commands: `add`, `define`, `documentation:build`,
-`glossary-backfill`, `harness`, `import`, `import-memory`, `learn`, `status`. Only `/docs:align`
-carries a full description. `/skill:eval` carries both findings too, and `/skill:new`
-`sk-trigger-position` — so the command that measures routing and the command that mints commands
-are themselves among the least routable on the surface.
+Medido na `main` em 4.1.0, `skills.py lint` reporta `sk-trigger-position` **e** `sk-no-boundary` em
+nove dos onze comandos `/docs:*`: `add`, `define`, `documentation:build`, `glossary-backfill`,
+`harness`, `import`, `import-memory`, `learn`, `status`. Somente `/docs:align` carrega uma descrição
+completa. `/skill:eval` carrega as duas findings também, e `/skill:new` carrega
+`sk-trigger-position` — ou seja, o comando que mede roteamento e o comando que cunha comandos estão
+eles mesmos entre os menos roteáveis da superfície.
 
-Both are warnings, so the surface reports clean while the routing information is absent from the
-only text that is always in context. A user who says "capture this thought" reaches `/specs:create`
-because that description quotes the phrase; a user who says "write this down in the docs" has
-nothing to route to.
+As duas são warnings, então a superfície reporta limpa enquanto a informação de roteamento está
+ausente do único texto que está sempre em contexto. Um usuário que diz "capture this thought" chega
+em `/specs:create` porque aquela descrição cita a frase; um usuário que diz "write this down in the
+docs" não tem nada para onde rotear.
 
-**The constraint that makes this a spec rather than an edit.** The always-on ceiling has **no
-headroom by construction** — it equals the surface's current total. It read 11,565 when this was
-captured; it reads **12,726** today, because the ratchet fired on 2026-07-28 when `/specs:isolate`
-became the 25th command and a human re-measured. Restoring the missing descriptions will cross it
-again, and crossing it is the signal working, not a failure: it forces a measured re-set rather
-than an unpriced expansion. So this spec must buy the routing information and re-measure the
-ceiling from a run, in that order, and state both numbers.
+**A restrição que faz disto uma spec e não uma edição.** O teto always-on **não tem folga por
+construção** — ele é igual ao total corrente da superfície. Marcava 11,565 quando isto foi
+capturado; marca **12,726** hoje, porque o ratchet disparou em 2026-07-28, quando `/specs:isolate`
+se tornou o 25º comando e um humano re-mediu. Restaurar as descrições ausentes vai cruzá-lo de
+novo, e cruzar é o sinal funcionando, não uma falha: força um re-ajuste medido em vez de uma
+expansão sem preço. Então esta spec precisa comprar a informação de roteamento e re-medir o teto a
+partir de uma execução, nessa ordem, e declarar os dois números.
 
-Discovered by `instrument-and-extend-skill-front` (task 3.x territory, recorded in its
-`## Discoveries` as two commands) and re-measured during its conclude, where it turned out to be
-eleven.
+Descoberto por `instrument-and-extend-skill-front` (território da tarefa 3.x, registrado no seu
+`## Discoveries` como dois comandos) e re-medido durante o seu conclude, onde acabou sendo onze.
 
 ## Proposal
 
-Every command on the surface carries the three parts
+Todo comando da superfície carrega as três partes que
 [context-budget.md](/docs/standards/automation/context-budget.md) §What the description may carry
-already calls mandatory — the leading concept, quoted trigger phrases in the **second** sentence,
-and a `Not for: <adjacent job> → <owning command>` boundary — and the surface-wide ceiling is
-re-measured **from a run** afterwards, in that order.
+já chama de obrigatórias — o conceito à frente, frases-gatilho entre aspas na **segunda** frase, e
+uma fronteira `Not for: {trabalho adjacente} → {comando dono}` — e o teto de superfície inteira é
+re-medido **a partir de uma execução** depois, nessa ordem.
 
-**Eleven descriptions, not nine.** The title names the nine bare `/docs:*` that motivated the
-spec. The scope settled while shaping it is *every command reporting either code*, which adds
-`/skill:eval` (both codes) and `/skill:new` (`sk-trigger-position` only — it already carries a
-boundary). That makes the end state a checkable absolute rather than a list of improved files:
-`skills.py lint` reports **zero** `sk-trigger-position` and **zero** `sk-no-boundary` across all
-25 commands.
+**Onze descrições, não nove.** O título nomeia as nove `/docs:*` nuas que motivaram a spec. O
+escopo decidido durante a modelagem é *todo comando que reporta qualquer um dos dois códigos*, o
+que acrescenta `/skill:eval` (os dois códigos) e `/skill:new` (`sk-trigger-position` apenas — ele já
+carrega uma fronteira). Isso faz do estado final um absoluto verificável em vez de uma lista de
+arquivos melhorados: `skills.py lint` reporta **zero** `sk-trigger-position` e **zero**
+`sk-no-boundary` nos 25 comandos.
 
-**What this buys — stated more narrowly than `## Problem` did.** Not "routing now works". A bare
-label already routes a clearly-worded ask: `functional-checks.sh` probe c fires
-`"add a standard: we always use snake_case for database columns"` → `quenching:docs:add` against a
-76-character description, and the collapse's three spoken probes all survived. What eleven bare
-labels cannot do is **discriminate**. "Write this down in the docs" has to choose between
-`/docs:add`, `/docs:learn`, `/docs:define` and `/docs:import`, and nothing in a `/`-menu label
-answers it — the `Not for:` clause is the only text that does, and it is the part truncation eats
-first. So the claim is: *the routing information the standard mandates is present, allocated
-without collision, and truncation-safe.* Whether routing measurably improved is a
-should-trigger/should-not-trigger question this spec deliberately does not answer — see
+**O que isto compra — declarado mais estreitamente do que `## Problem` declarou.** Não é
+"roteamento agora funciona". Um rótulo nu já roteia um pedido claramente formulado:
+`functional-checks.sh`, probe c, dispara
+`"add a standard: we always use snake_case for database columns"` → `quenching:docs:add` contra uma
+descrição de 76 caracteres, e as três probes faladas do colapso sobreviveram todas. O que onze
+rótulos nus não conseguem fazer é **discriminar**. "Write this down in the docs" tem que escolher
+entre `/docs:add`, `/docs:learn`, `/docs:define` e `/docs:import`, e nada em um rótulo de menu `/`
+responde isso — a cláusula `Not for:` é o único texto que responde, e é a parte que a truncagem come
+primeiro. Então a afirmação é: *a informação de roteamento que o padrão exige está presente,
+alocada sem colisão, e à prova de truncagem.* Se o roteamento melhorou de forma mensurável é uma
+pergunta should-trigger/should-not-trigger que esta spec deliberadamente não responde — ver
 `## Out of Scope`.
 
-**What it costs, and why that cost is the spec rather than an edit.** The eleven descriptions
-total 935 characters today. At the 400–650 band `## Design` sets they land near 5,450, taking the
-surface from 12,726 to roughly **17,200** (~4,300 approximate tokens, from ~3,182). That crosses
-`DEFAULT_CEILING`, which equals the current total by construction, so `skills.py budget` exits 1
-with `sk-budget-ceiling`. **That is the ratchet working, not a regression** — and this spec is its
-**second** firing and the first caused by *description growth* rather than by a new command being
-minted, which is a fact about the mechanism the standard does not yet record.
+**O que custa, e por que esse custo é a spec e não uma edição.** As onze descrições somam 935
+caracteres hoje. Na faixa de 400–650 que `## Design` fixa, elas chegam perto de 5,450, levando a
+superfície de 12,726 para cerca de **17,200** (~4,300 tokens aproximados, saindo de ~3,182). Isso
+cruza `DEFAULT_CEILING`, que é igual ao total corrente por construção, então `skills.py budget` sai
+1 com `sk-budget-ceiling`. **Isso é o ratchet funcionando, não uma regressão** — e esta spec é o seu
+**segundo** disparo e o primeiro causado por *crescimento de descrição* em vez de por um comando
+novo sendo cunhado, que é um fato sobre o mecanismo que o padrão ainda não registra.
 
-The re-set is therefore a declared part of this spec, not bookkeeping discovered at the end: the
-new figure is transcribed from what `budget` printed into the three places that hold it —
-`skills.py` `DEFAULT_CEILING`, `context-budget.md`, and `README.md` — and never estimated. Every
-number above except the two measured ones (935 and 12,726) is an estimate, and the spec is done
-when the run has replaced them.
+O re-ajuste é portanto uma parte declarada desta spec, não contabilidade descoberta no fim: a nova
+cifra é transcrita do que `budget` imprimiu para os três lugares que a guardam —
+`DEFAULT_CEILING` em `skills.py`, `context-budget.md` e `README.md` — e nunca estimada. Todo número
+acima, exceto os dois medidos (935 e 12,726), é uma estimativa, e a spec está pronta quando a
+execução os tiver substituído.
 
 ## Out of Scope
 
-- **Proving the restored triggers actually route.** That is a should-trigger /
-  should-not-trigger measurement, owned by `/skill:eval` against a per-command eval fixture —
-  and `assets/evals/` holds exactly three case sets today (`skill/agent/new`, `skill/hook/new`,
-  `specs/capture`), none of them on the `docs` front. Building nine fixtures and running each
-  twice in isolated sub-agents is a larger job than the restoration itself, and
-  [context-budget.md](/docs/standards/automation/context-budget.md) §What the collapse measured is
-  explicit that cheapness and routability are independent questions. This spec closes the
-  conformance gap; the measurement is a follow-up, and until it runs no claim of improved routing
-  is made anywhere in this spec.
-- **Adding discrimination probes to `functional-checks.sh`.** The natural cheap instrument — one
-  probe asserting `"write this down in the docs"` reaches `/docs:learn` and not `/docs:add` — is
-  blocked twice over: each probe costs a fresh `claude -p` session, and the script cannot decode
-  its own evidence on this platform at all (`fix-functional-checks-encoding`). Deferred to that
-  spec landing.
-- **Giving `skills.py lint` a way to gate on a selected warning code.** `lint` exits 0 on
-  warnings, so every consumer that wants a warning to fail a build must filter the `--json`
-  itself — including every `verify:` in this spec's `## Tasks`. A `--code X --fail-on warn` pair
-  would fix that for good, and it does not follow from this spec's `## Problem`. The inline filter
-  in `## Design` costs nothing and works today; the flag is a follow-up.
-- **The other three lint codes.** `sk-step-criterion` (9 commands), `sk-unscoped-bash` (5) and
-  every body-level defect are untouched. They are body work; this spec edits **only** frontmatter
-  `description` values, plus three transcriptions of one number.
-- **Changing the zero-headroom ratchet.** `context-budget.md` §The ratchet fired exactly as
-  predicted already prices the shape — every re-set is a three-file bookkeeping change — and
-  chooses it deliberately. Re-litigating that is its own spec; this one pays the price and records
-  a second data point about when the ratchet fires.
-- **The `/skill` → `/automation` rename.** `restructure-claude-front-namespace` (stage `designed`)
-  moves `/skill:new` → `/automation:command:new`, `/skill:eval` → `/automation:command:eval` and
-  `/docs:harness` → `/automation:harness:align`, and rewrites every moved-path citation across
-  `commands/**`. Nothing here anticipates it: descriptions are written for the paths that exist
-  today, and that spec's own citation task covers the boundary clauses either way — see
-  `## Risks`.
-- **Rewriting `README.md`.** Only the three lines transcribing the ceiling figure change.
-  `rewrite-readme-for-collapsed-surface` owns the rest of that file.
+- **Provar que os gatilhos restaurados de fato roteiam.** Isso é uma medição should-trigger /
+  should-not-trigger, de responsabilidade de `/skill:eval` contra uma fixture de eval por comando —
+  e `assets/evals/` guarda exatamente três conjuntos de casos hoje (`skill/agent/new`,
+  `skill/hook/new`, `specs/capture`), nenhum deles na front `docs`. Construir nove fixtures e rodar
+  cada uma duas vezes em sub-agentes isolados é um trabalho maior que a restauração em si, e
+  [context-budget.md](/docs/standards/automation/context-budget.md) §What the collapse measured é
+  explícito que baixo custo e roteabilidade são perguntas independentes. Esta spec fecha a lacuna
+  de conformidade; a medição é um follow-up, e até ela rodar nenhuma afirmação de roteamento
+  melhorado é feita em lugar algum desta spec.
+- **Acrescentar probes de discriminação em `functional-checks.sh`.** O instrumento barato natural —
+  uma probe afirmando que `"write this down in the docs"` chega em `/docs:learn` e não em
+  `/docs:add` — está bloqueado duas vezes: cada probe custa uma sessão `claude -p` nova, e o script
+  não consegue decodificar a própria evidência nesta plataforma de jeito nenhum
+  (`fix-functional-checks-encoding`). Postergado até aquela spec aterrissar.
+- **Dar a `skills.py lint` uma forma de falhar em cima de um código de warning selecionado.**
+  `lint` sai 0 em warnings, então todo consumidor que quer que um warning quebre um build precisa
+  filtrar o `--json` por conta própria — incluindo todo `verify:` no `## Tasks` desta spec. Um par
+  `--code X --fail-on warn` resolveria isso de vez, e não decorre do `## Problem` desta spec. O
+  filtro inline em `## Design` não custa nada e funciona hoje; a flag é um follow-up.
+- **Os outros três códigos de lint.** `sk-step-criterion` (9 comandos), `sk-unscoped-bash` (5) e
+  todo defeito de nível de corpo ficam intocados. São trabalho de corpo; esta spec edita **somente**
+  valores de `description` no frontmatter, mais três transcrições de um número.
+- **Mudar o ratchet de folga zero.** `context-budget.md` §The ratchet fired exactly as predicted já
+  precifica a forma — todo re-ajuste é uma mudança de contabilidade em três arquivos — e a escolhe
+  deliberadamente. Re-litigar isso é uma spec própria; esta paga o preço e registra um segundo ponto
+  de dado sobre quando o ratchet dispara.
+- **A renomeação `/skill` → `/automation`.** `restructure-claude-front-namespace` (stage `designed`)
+  move `/skill:new` → `/automation:command:new`, `/skill:eval` → `/automation:command:eval` e
+  `/docs:harness` → `/automation:harness:align`, e reescreve toda citação de caminho movido em
+  `commands/**`. Nada aqui antecipa isso: as descrições são escritas para os caminhos que existem
+  hoje, e a própria tarefa de citação daquela spec cobre as cláusulas de fronteira de qualquer forma
+  — ver `## Risks`.
+- **Reescrever o `README.md`.** Só as três linhas que transcrevem a cifra do teto mudam.
+  `rewrite-readme-for-collapsed-surface` é dono do resto daquele arquivo.
 
 ## Impact
 
 ### Standards this spec will write into docs/standards/
 
-- `docs/standards/automation/context-budget.md` — the re-measured ceiling in §The per-surface
-  ceiling and the `breakdown` sample, plus a **third** entry in the ratchet's history: the first
-  firing caused by description growth rather than by a new command being minted. Its `timestamp`
-  moves to the build date, or the doc fires `stale-doc` on its own `commands/**` resource.
+- `docs/standards/automation/context-budget.md` — o teto re-medido em §The per-surface ceiling e na
+  amostra de `breakdown`, mais uma **terceira** entrada no histórico do ratchet: o primeiro disparo
+  causado por crescimento de descrição em vez de por um comando novo sendo cunhado. Seu `timestamp`
+  passa para a data do build, ou o doc dispara `stale-doc` no seu próprio recurso `commands/**`.
 
-### Standards at `authority: background` this spec may resolve
+### Padrões em `authority: background` que esta spec pode resolver
 
-- none — `context-budget.md` is `authority: background` and this spec does **not** graduate it. Its
-  own stated condition is a measurement on this plugin plus at least two adopting repos, and it
-  rules out exactly what this spec adds: "a bigger number from the same repo is still one repo."
+- none — `context-budget.md` é `authority: background` e esta spec **não** o gradua. A condição
+  declarada por ele mesmo é uma medição neste plugin mais pelo menos dois repos adotantes, e ele
+  exclui exatamente o que esta spec acrescenta: "a bigger number from the same repo is still one
+  repo."
 
-### Product code this spec expects to touch
+### Código de produto que esta spec espera tocar
 
 - `plugins/quenching/commands/docs/{add,define,glossary-backfill,harness,import,import-memory,learn,status}.md`
-  and `commands/docs/documentation/build.md` — the frontmatter `description` value **only**; no
-  body line changes.
-- `plugins/quenching/commands/skill/{new,eval}.md` — same, and the only files outside the `docs`
-  front.
-- `plugins/quenching/assets/bin/skills.py` — `DEFAULT_CEILING` and its dated changelog comment
-  (the constant is the ceiling's home; the two docs transcribe it).
-- `plugins/quenching/README.md` — the three lines carrying the figure, and nothing else.
-- `plugins/quenching/VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
-  and the `VERSION` constant in all three shipped scripts — the release lockstep, because a
-  shipped script's behaviour changes.
+  e `commands/docs/documentation/build.md` — o valor de `description` no frontmatter **apenas**;
+  nenhuma linha de corpo muda.
+- `plugins/quenching/commands/skill/{new,eval}.md` — o mesmo, e os únicos arquivos fora da front
+  `docs`.
+- `plugins/quenching/assets/bin/skills.py` — `DEFAULT_CEILING` e seu comentário de changelog datado
+  (a constante é a casa do teto; os dois docs a transcrevem).
+- `plugins/quenching/README.md` — as três linhas que carregam a cifra, e nada mais.
+- `plugins/quenching/VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, e a
+  constante `VERSION` nos três scripts distribuídos — o release lockstep, porque o comportamento de
+  um script distribuído muda.
 
-**Nothing in a target repo changes shape.** No installed artefact is rewritten, no migration runs,
-and an adopter sees this only as a plugin upgrade. The always-on cost, however, lands on every
-session in every repo that installs it — which is the point of pricing it here rather than
-discovering it later.
+**Nada em um repo alvo muda de forma.** Nenhum artefato instalado é reescrito, nenhuma migração
+roda, e um adotante vê isto só como um upgrade de plugin. O custo always-on, no entanto, cai em toda
+sessão de todo repo que o instala — que é justamente o motivo de precificá-lo aqui em vez de
+descobri-lo depois.
 
 ## Validation
 
-All commands run from `plugins/quenching/`. Every check is deterministic and local; the one that
-is not (**V7**) is declared conditional rather than dropped. `## Tasks` cites these by id.
+Todos os comandos rodam a partir de `plugins/quenching/`. Toda checagem é determinística e local; a
+única que não é (**V7**) é declarada condicional em vez de descartada. `## Tasks` cita estas por id.
 
-**V1 — both target codes are gone, surface-wide.** Must print nothing and exit 0. Checking the
-exit code of `lint` alone proves nothing: both codes are `severity: warn`, and `lint` returns
-`"ok": true` with them present (measured on `commands/docs/add.md`, exit 0). The filter is the
-check.
+**V1 — os dois códigos alvo desapareceram, em toda a superfície.** Precisa imprimir nada e sair 0.
+Checar só o código de saída de `lint` não prova nada: os dois códigos são `severity: warn`, e `lint`
+retorna `"ok": true` com eles presentes (medido em `commands/docs/add.md`, saída 0). O filtro é a
+checagem.
 
 ```bash
 python3 assets/bin/skills.py --root . lint --json | python3 -c "import json,sys; \
@@ -221,12 +225,13 @@ B=[f for f in json.load(sys.stdin)['findings'] \
 [print(f['code'], f['command']) for f in B]; sys.exit(1 if B else 0)"
 ```
 
-**V2 — closing them did not overshoot a cap.** Same shape, codes `sk-metadata-cap` (error, 1,536)
-and `sk-description-portable` (warn, 1,024). Must print nothing and exit 0. The 400–650 band means
-this should never be close; if it fires, a description is carrying *how it works*.
+**V2 — fechá-los não estourou um cap.** Mesma forma, códigos `sk-metadata-cap` (error, 1,536) e
+`sk-description-portable` (warn, 1,024). Precisa imprimir nada e sair 0. A faixa de 400–650
+significa que isto nunca deveria chegar perto; se disparar, uma descrição está carregando *como
+funciona*.
 
-**V3 — the ceiling was set from the run, not from this spec's estimate.** Must print two **equal**
-numbers and exit 0.
+**V3 — o teto foi ajustado a partir da execução, não da estimativa desta spec.** Precisa imprimir
+dois números **iguais** e sair 0.
 
 ```bash
 python3 assets/bin/skills.py --root . budget --json | python3 -c "import json,sys; \
@@ -234,104 +239,106 @@ d=json.load(sys.stdin); print(d['total'], d['ceiling']); \
 sys.exit(0 if d['total']==d['ceiling'] else 1)"
 ```
 
-`budget` exiting 0 is **not** the check — it exits 0 for any `total <= ceiling`, so a ceiling
-transcribed 200 characters high from `## Proposal`'s estimate passes an exit-code gate while
-having silently disabled the ratchet for the next command minted. Equality is what proves the
-zero-headroom property survived (risk 1).
+`budget` sair 0 **não** é a checagem — ele sai 0 para qualquer `total <= ceiling`, então um teto
+transcrito 200 caracteres alto a partir da estimativa de `## Proposal` passa por um gate de código
+de saída tendo silenciosamente desligado o ratchet para o próximo comando cunhado. Igualdade é o
+que prova que a propriedade de folga zero sobreviveu (risco 1).
 
-**V4 — the surface still has the shape it had.** `doctor --json` reports `"commands": 25`,
-`"findings": []`, exit 0. This spec adds and removes no command; a change here means a
-description edit corrupted frontmatter.
+**V4 — a superfície ainda tem a forma que tinha.** `doctor --json` reporta `"commands": 25`,
+`"findings": []`, saída 0. Esta spec não acrescenta nem remove comando; uma mudança aqui significa
+que uma edição de descrição corrompeu frontmatter. (A contagem escrita aqui foi medida em 4.2.0 e
+já derivou — ver `## Risks` risco 8 e `## Open Decisions`.)
 
-**V5 — the figure agrees in all three places.** `grep -rn "<measured>" assets/bin/skills.py
-../../docs/standards/automation/context-budget.md README.md` hits all three files, and no
-*current-value* site still reads 12,726. The historical sentences in `context-budget.md` that
-narrate `2,083 → 11,565 → 12,726` **must survive** — they are the ratchet's record, and this
-spec appends a third transition rather than overwriting the second.
+**V5 — a cifra concorda nos três lugares.** `grep -rn "<measured>" assets/bin/skills.py
+../../docs/standards/automation/context-budget.md README.md` acerta os três arquivos, e nenhum site
+de *valor corrente* ainda lê 12,726. As frases históricas em `context-budget.md` que narram
+`2,083 → 11,565 → 12,726` **precisam sobreviver** — elas são o registro do ratchet, e esta spec
+acrescenta uma terceira transição em vez de sobrescrever a segunda.
 
-**V6 — the release lockstep holds.** All four print the same new version, and
-`.claude-plugin/plugin.json` + `../../.claude-plugin/marketplace.json` carry it too:
+**V6 — o release lockstep se sustenta.** Todos os quatro imprimem a mesma versão nova, e
+`.claude-plugin/plugin.json` + `../../.claude-plugin/marketplace.json` a carregam também:
 
 ```bash
 cat VERSION; python3 assets/bin/skills.py --version; python3 assets/bin/specs.py --version
 python3 assets/hooks/okf-validate.py --version
 ```
 
-**V7 — spoken routing did not regress. CONDITIONAL.** `./assets/bin/functional-checks.sh` is the
-mandatory instrument for any spec touching `commands/**`, and probe c asserts `/docs:add` against
-a description this spec rewrites. It **cannot decode its own evidence on this platform**
-(`fix-functional-checks-encoding`): every assertion fails for lack of evidence, indistinguishable
-from a surface that did not load. So:
+**V7 — o roteamento falado não regrediu. CONDICIONAL.** `./assets/bin/functional-checks.sh` é o
+instrumento obrigatório para qualquer spec que toque `commands/**`, e a probe c afirma `/docs:add`
+contra uma descrição que esta spec reescreve. Ele **não consegue decodificar a própria evidência
+nesta plataforma** (`fix-functional-checks-encoding`): toda asserção falha por falta de evidência,
+indistinguível de uma superfície que não carregou. Então:
 
-- if that spec has landed, V7 is a hard gate and must exit 0;
-- if it has not, the run is recorded **inconclusive** and graded as nothing in either direction,
-  per `docs/standards/quality/surface-verification.md` §The four preconditions, item 4. A run that
-  cannot read its evidence is never recorded as a pass, and never as a failure.
+- se aquela spec aterrissou, V7 é um gate duro e precisa sair 0;
+- se não, a execução é registrada como **inconclusiva** e vale nada em nenhuma das duas direções,
+  conforme `docs/standards/quality/surface-verification.md` §The four preconditions, item 4. Uma
+  execução que não consegue ler a própria evidência nunca é registrada como aprovação, e nunca como
+  falha.
 
-**V8 — the bundle still conforms.** `python3 assets/hooks/okf-validate.py ../../docs` reports
-**0 errors**. Baseline before this spec: 0 errors, 2 warnings (`resource-unresolved` on
-`agents.md`, `stale-doc` on `hooks.md`) — both pre-existing and untouched here. Editing
-`context-budget.md` without moving its `timestamp` would add a third warning on the same doc this
-spec declares, so V8 catches that directly.
+**V8 — o bundle ainda conforma.** `python3 assets/hooks/okf-validate.py ../../docs` reporta
+**0 errors**. Linha de base antes desta spec: 0 errors, 2 warnings (`resource-unresolved` em
+`agents.md`, `stale-doc` em `hooks.md`) — ambos pré-existentes e intocados aqui. Editar
+`context-budget.md` sem mover o `timestamp` dele acrescentaria um terceiro warning no mesmo doc que
+esta spec declara, então V8 pega isso direto.
 
-**What no check here proves.** That the restored descriptions route better than the bare labels
-did. Nothing in this list measures routing, by design — see `## Out of Scope` and accepted risk 7.
-A green run means *the routing information the standard mandates is present, allocated without
-collision, and truncation-safe*, and nothing more.
+**O que nenhuma checagem aqui prova.** Que as descrições restauradas roteiam melhor do que os
+rótulos nus roteavam. Nada nesta lista mede roteamento, por desenho — ver `## Out of Scope` e o
+risco 7 aceito. Uma execução verde significa *a informação de roteamento que o padrão exige está
+presente, alocada sem colisão, e à prova de truncagem*, e nada além disso.
 
 ## Design
 
-### One allocation table, written before any file is edited
+### Uma tabela de alocação, escrita antes de qualquer arquivo ser editado
 
-The failure mode that would make this spec worse than doing nothing is **trigger collision**: two
-descriptions quoting phrases that cover the same ask, so the model now has two confident
-candidates where it previously had a coin-flip between labels.
-[doctrine.md](/plugins/quenching/assets/references/skill-new/doctrine.md) names both halves —
+O modo de falha que tornaria esta spec pior do que não fazer nada é **colisão de gatilhos**: duas
+descrições citando frases que cobrem o mesmo pedido, de modo que o modelo passa a ter dois
+candidatos confiantes onde antes tinha uma moeda ao ar entre rótulos.
+[doctrine.md](/plugins/quenching/assets/references/skill-new/doctrine.md) nomeia as duas metades —
 "a branch without a trigger is a branch that never fires, and two triggers for the same branch are
 sediment".
 
-Collision is only visible across the whole set, so the trigger phrases and boundary clauses for
-all eleven commands are drafted as **one table** and reviewed as one artifact, *before* the first
-file is touched. Writing them command-by-command is what produces sediment.
+Colisão só é visível no conjunto inteiro, então as frases-gatilho e as cláusulas de fronteira dos
+onze comandos são rascunhadas como **uma tabela** e revisadas como um artefato só, *antes* de o
+primeiro arquivo ser tocado. Escrevê-las comando por comando é o que produz sedimento.
 
-The table's rows are the confusable clusters, because a boundary that does not name the nearest
-lookalike is decoration:
+As linhas da tabela são os clusters confundíveis, porque uma fronteira que não nomeia o sósia mais
+próximo é decoração:
 
-| Cluster | Commands | What has to discriminate them |
+| Cluster | Comandos | O que tem de discriminá-los |
 | --- | --- | --- |
-| write one thing | `add` · `learn` · `define` | a full concept doc · a fact a human just stated · one glossary term |
-| bulk ingestion | `import` · `import-memory` | an external source (files/folders/URLs) · this project's Claude Code memory |
-| glossary grain | `define` · `glossary-backfill` | ONE term on demand · a sweep of the whole bundle |
-| read vs converge | `status` · `align` | reports and writes nothing · forces the bundle into shape |
-| site vs content | `documentation:build` · the rest | the mkdocs config and nav · the pages themselves |
-| instruction files | `harness` · `add` | `CLAUDE.md`/`AGENTS.md` pointers · a doc inside the bundle |
-| automation front | `skill:new` · `skill:eval` | mint or edit ONE command · measure whether one teaches anything |
+| escrever uma coisa | `add` · `learn` · `define` | um doc de conceito completo · um fato que um humano acabou de dizer · um termo de glossário |
+| ingestão em massa | `import` · `import-memory` | uma fonte externa (arquivos/pastas/URLs) · a memória Claude Code deste projeto |
+| grão do glossário | `define` · `glossary-backfill` | UM termo sob demanda · uma varredura do bundle inteiro |
+| ler vs convergir | `status` · `align` | reporta e não escreve nada · força o bundle para a forma canônica |
+| site vs conteúdo | `documentation:build` · o resto | a config e a nav do mkdocs · as próprias páginas |
+| arquivos de instrução | `harness` · `add` | ponteiros em `CLAUDE.md`/`AGENTS.md` · um doc dentro do bundle |
+| front de automação | `skill:new` · `skill:eval` | cunhar ou editar UM comando · medir se um deles ensina algo |
 
-### Most of the content already exists, in the repo's own words
+### A maior parte do conteúdo já existe, nas palavras do próprio repo
 
-`/docs:align`'s description is the only full one on the front, and its `Not for:` clause already
-states the distinguishing job of **six** of the nine:
+A descrição de `/docs:align` é a única completa na front, e sua cláusula `Not for:` já declara o
+trabalho distintivo de **seis** das nove:
 
 > Not for: adding ONE doc → /docs:add; capturing ONE fact a human just stated → /docs:learn; ONE
 > glossary term → /docs:define; importing an external source → /docs:import; reading the bundle
 > without changing it → /docs:status; the mkdocs site layer → /docs:documentation:build.
 
-So the work is largely **inverting a clause that already exists**, which is also what keeps the
-set consistent: two commands cannot claim the same job if both were written from one sentence that
-already separated them. The remaining three (`glossary-backfill`, `harness`, `import-memory`) take
-their distinguishing job from the role table in `CLAUDE.md`. Trigger phrases are drawn from the
-same vocabulary — never invented to fill a slot, because an invented phrase costs always-on
-characters and routes nothing.
+Então o trabalho é em grande parte **inverter uma cláusula que já existe**, o que também é o que
+mantém o conjunto consistente: dois comandos não podem reivindicar o mesmo trabalho se ambos foram
+escritos a partir de uma frase que já os separava. As três restantes (`glossary-backfill`,
+`harness`, `import-memory`) tiram seu trabalho distintivo da tabela de papéis em `CLAUDE.md`. As
+frases-gatilho vêm do mesmo vocabulário — nunca inventadas para preencher um espaço, porque uma
+frase inventada custa caracteres always-on e não roteia nada.
 
-### Size budget: 400–650 characters, not `/docs:align`'s 1,018
+### Orçamento de tamanho: 400–650 caracteres, não os 1,018 de `/docs:align`
 
-`/docs:align` (1,018) and the `/specs:*` range (614–974) are **not** the model to copy. Those
-descriptions carry prose about *how the command works* — "probes okf-validate.py plus two cheap
-out-of-band signals before reading anything", "one inventory, ONE plan, one OK" — which
+`/docs:align` (1,018) e a faixa `/specs:*` (614–974) **não** são o modelo a copiar. Aquelas
+descrições carregam prosa sobre *como o comando funciona* — "probes okf-validate.py plus two cheap
+out-of-band signals before reading anything", "one inventory, ONE plan, one OK" — o que
 [context-budget.md](/docs/standards/automation/context-budget.md) §What the description may carry
-puts in the "belongs in none of them" list.
+põe na lista do "belongs in none of them".
 
-Concept + triggers + boundary, and nothing else, sizes at roughly:
+Conceito + gatilhos + fronteira, e nada mais, dimensiona em aproximadamente:
 
 ```
   leading concept      ~ 80-110   (the nine already have this; it is the whole current cost)
@@ -341,25 +348,25 @@ Concept + triggers + boundary, and nothing else, sizes at roughly:
   per description       400-650
 ```
 
-**Hard rail: no restored description exceeds 1,024 characters**, the Agent Skills portable limit
-(`sk-description-portable`). The band leaves wide margin; the rail is what the `verify:` asserts,
-so the margin cannot be spent silently. The 1,536 hard cap (`sk-metadata-cap`, an error) is never
-approached.
+**Trilho duro: nenhuma descrição restaurada passa de 1,024 caracteres**, o limite portável de Agent
+Skills (`sk-description-portable`). A faixa deixa margem larga; o trilho é o que o `verify:` afirma,
+para que a margem não possa ser gasta em silêncio. O cap duro de 1,536 (`sk-metadata-cap`, um error)
+nunca é aproximado.
 
-### The `verify:` shape, and the two traps it exists to avoid
+### A forma do `verify:`, e as duas armadilhas que ela existe para evitar
 
-**Trap 1 — `lint` exits 0 on warnings.** Both target codes are `severity: warn`, and warnings do
-not set the exit code. Measured: `skills.py lint commands/docs/add.md --json` prints
-`"ok": true` with both findings present and exits **0**. A `verify:` that checks the exit code
-proves nothing at all.
+**Armadilha 1 — `lint` sai 0 em warnings.** Os dois códigos alvo são `severity: warn`, e warnings
+não definem o código de saída. Medido: `skills.py lint commands/docs/add.md --json` imprime
+`"ok": true` com as duas findings presentes e sai **0**. Um `verify:` que checa o código de saída
+não prova absolutamente nada.
 
-**Trap 2 — a single-file `lint` re-roots.** Given one file, `lint` resolves the root to that
-file's directory, so the finding comes back as `"command": "/add", "path": "add.md"` — not
-`/docs:add`. A filter written against the full command path silently matches nothing, which reads
-as a pass.
+**Armadilha 2 — um `lint` de arquivo único re-enraíza.** Dado um arquivo, `lint` resolve a raiz para
+o diretório daquele arquivo, então a finding volta como `"command": "/add", "path": "add.md"` — não
+`/docs:add`. Um filtro escrito contra o caminho completo do comando não casa com nada em silêncio,
+o que se lê como aprovação.
 
-Every `verify:` therefore runs the **whole-surface** lint and filters the JSON by code and by
-path. One shape, `$P` being the file under test:
+Todo `verify:` portanto roda o lint de **superfície inteira** e filtra o JSON por código e por
+caminho. Uma forma só, com `$P` sendo o arquivo sob teste:
 
 ```bash
 cd plugins/quenching && python3 assets/bin/skills.py --root . lint --json \
@@ -370,10 +377,10 @@ B=[f for f in F if f['path']==P and f['code'] in \
 [print(f['code'],f['message']) for f in B]; sys.exit(1 if B else 0)"
 ```
 
-Four codes, not two: the same call proves the finding closed **and** that closing it did not
-overshoot a cap — the one regression this spec can cause on the file it is editing.
+Quatro códigos, não dois: a mesma chamada prova que a finding fechou **e** que fechá-la não estourou
+um cap — a única regressão que esta spec pode causar no arquivo que está editando.
 
-### Order is a constraint, not a preference
+### Ordem é uma restrição, não uma preferência
 
 ```
   1. draft the allocation table (all eleven, one artifact)   <- no file edited yet
@@ -383,152 +390,200 @@ overshoot a cap — the one regression this spec can cause on the file it is edi
   5. re-run `budget`      -> exits 0, total == ceiling, headroom zero again
 ```
 
-Step 3 cannot move earlier and step 4 cannot be estimated: `context-budget.md` requires the
-ceiling be "revised only from a measurement", and every prior revision records the run that
-produced it. The three places are `skills.py:166` (`DEFAULT_CEILING`, plus its dated changelog
-comment), `context-budget.md` (§The per-surface ceiling, the ratchet section, and the
-`breakdown` sample), and `README.md` (three lines).
+O passo 3 não pode vir mais cedo e o passo 4 não pode ser estimado: `context-budget.md` exige que o
+teto seja "revised only from a measurement", e toda revisão anterior registra a execução que a
+produziu. Os três lugares são `skills.py:166` (`DEFAULT_CEILING`, mais seu comentário de changelog
+datado), `context-budget.md` (§The per-surface ceiling, a seção do ratchet, e a amostra de
+`breakdown`) e `README.md` (três linhas). Medido em 2026-07-30 a constante está na linha 167, não
+166 — ver `## Risks` risco 8.
 
 ## Alternatives Considered
 
-| Approach | Cost | What it buys | What it forecloses |
+| Abordagem | Custo | O que compra | O que impede |
 | --- | --- | --- | --- |
-| **Do nothing** | 0 | surface stays at 12,726; ratchet stays quiet | nothing — but the standard stays violated on 11 of 25 commands |
-| **Copy `/specs:*` sizing** (~850–1,000 each) | ~+9,000 chars → ~22,000 | front-to-front consistency | the diet; propagates a defect |
-| **Boundary only, no triggers** | ~+2,400 chars | closes `sk-no-boundary` on 10 | leaves `sk-trigger-position` on 11; no truncation-safe routing |
-| **Shrink instead of grow** (two-tier) | negative | ~11,000 chars back | already tried and superseded |
-| **Measure first, write only what scores** | 9 eval fixtures × 2 runs | every character evidence-backed | impossible in this order — see below |
-| **Restore concept+triggers+boundary at 400–650** ← chosen | ~+4,500 chars → ~17,200 | conformance, discrimination, truncation-safety | nothing; the eval measurement stays available |
+| **Não fazer nada** | 0 | superfície fica em 12,726; ratchet fica quieto | nada — mas o padrão segue violado em 11 dos 25 comandos |
+| **Copiar o dimensionamento de `/specs:*`** (~850–1,000 cada) | ~+9,000 chars → ~22,000 | consistência de front para front | a dieta; propaga um defeito |
+| **Só fronteira, sem gatilhos** | ~+2,400 chars | fecha `sk-no-boundary` em 10 | deixa `sk-trigger-position` em 11; nenhum roteamento à prova de truncagem |
+| **Encolher em vez de crescer** (dois níveis) | negativo | ~11,000 chars de volta | já tentado e superado |
+| **Medir primeiro, escrever só o que pontuar** | 9 fixtures de eval × 2 execuções | todo caractere respaldado por evidência | impossível nesta ordem — ver abaixo |
+| **Amolecer o padrão em vez da superfície** | 0 caracteres; uma edição em `context-budget.md` | fecha as onze findings sem custo always-on algum | o único instrumento que tornou esta lacuna visível |
+| **Restaurar conceito+gatilhos+fronteira em 400–650** ← escolhida | ~+4,500 chars → ~17,200 | conformidade, discriminação, resistência a truncagem | nada; a medição por eval segue disponível |
 
-**Do nothing** is the one that has to be argued against rather than dismissed, because it is what
-has actually been happening since the collapse. It loses on a second-order cost: both codes are
-warnings, so the surface reports *clean* while eleven commands violate a standard the repo wrote
-down. A checker that reports a defect nobody ever closes teaches everyone to skim its output, and
-the next real finding is skimmed with it. Either the standard is enforced or §What the description
-may carry should be softened — leaving both in place is the only outcome with no defender.
+**Não fazer nada** é a que precisa ser argumentada em vez de descartada, porque é o que de fato vem
+acontecendo desde o colapso. Ela perde por um custo de segunda ordem: os dois códigos são warnings,
+então a superfície reporta *limpa* enquanto onze comandos violam um padrão que o próprio repo
+escreveu. Um checker que reporta um defeito que ninguém nunca fecha ensina todo mundo a passar o
+olho pela sua saída, e a próxima finding real é ignorada junto. Ou o padrão é aplicado, ou §What the
+description may carry deveria ser amolecido — deixar os dois no lugar é o único desfecho sem
+defensor.
 
-**Copy `/specs:*` sizing** loses on its own evidence. Those descriptions run 614–974 because they
-narrate *how the command works*, which `context-budget.md` explicitly excludes. Copying them
-doubles this spec's character cost to propagate a defect. (It also argues the `/specs:*`
-descriptions should themselves be trimmed one day — noted, not attempted here.)
+**Copiar o dimensionamento de `/specs:*`** perde pela própria evidência. Aquelas descrições rodam
+614–974 porque narram *como o comando funciona*, o que `context-budget.md` exclui explicitamente.
+Copiá-las dobra o custo em caracteres desta spec para propagar um defeito. (Isso também argumenta
+que as descrições `/specs:*` deveriam elas mesmas ser enxugadas um dia — anotado, não tentado aqui.)
 
-**Boundary only** is the closest call, and it is genuinely cheap: the boundary is the half that
-does the discriminating, and probe c shows a conventionally-worded ask already reaches its
-command without any trigger at all. It loses because the two halves serve different users. The
-boundary helps the reader who worded the ask the way the docs do; the quoted trigger helps the one
-who did not — and the standard puts triggers in the **second sentence** precisely so truncation
-cannot reach them, which is a guarantee a boundary-only description cannot offer. Taking half now
-also makes the other half harder later: a second pass re-opens eleven files and fires the ratchet
-a second time.
+**Só fronteira** é a decisão mais apertada, e é genuinamente barata: a fronteira é a metade que
+discrimina, e a probe c mostra que um pedido formulado convencionalmente já chega ao seu comando sem
+gatilho nenhum. Ela perde porque as duas metades servem usuários diferentes. A fronteira ajuda o
+leitor que formulou o pedido do jeito que a documentação formula; o gatilho entre aspas ajuda quem
+não formulou — e o padrão põe gatilhos na **segunda frase** exatamente para que a truncagem não os
+alcance, que é uma garantia que uma descrição só-fronteira não pode oferecer. Levar metade agora
+também torna a outra metade mais difícil depois: um segundo passe reabre onze arquivos e dispara o
+ratchet uma segunda vez.
 
-**Shrink instead of grow** was a real spec: `skill-description-tiering` (2026-07-26,
-`outcome: abandoned`), which proposed cutting always-on metadata by 87% on the premise that these
-commands are operated by typed `/` and a description the human never reads buys nothing. Stated at
-its strongest, that premise is still live. It loses on two facts that landed after it:
+**Encolher em vez de crescer** foi uma spec real: `skill-description-tiering` (2026-07-26,
+`outcome: abandoned`), que propunha cortar 87% dos metadados always-on sob a premissa de que estes
+comandos são operados por `/` digitado e que uma descrição que o humano nunca lê não compra nada.
+Declarada na sua forma mais forte, aquela premissa continua viva. Ela perde por dois fatos que
+aterrissaram depois dela:
 
-- It was **superseded, not refuted** — abandoned at its own gate in favour of
-  `collapse-skills-into-commands`, with its analysis recorded as holding up. So its argument
-  deserves the answer below rather than a citation.
-- The surface then chose the other side, deliberately: every command keeps **default invocation**
-  (no `user-invocable: false`, no `disable-model-invocation`), so the model is expected to select
-  commands from prose — and `context-budget.md` §What the collapse measured records that spoken
-  routing *was measured after the collapse and survived*, three natural phrases reaching their
-  command by description alone. A description that routes is not metadata the human never reads;
-  it is the only thing serving the invocation path the plugin deliberately kept.
+- Ela foi **superada, não refutada** — abandonada no próprio gate em favor de
+  `collapse-skills-into-commands`, com sua análise registrada como tendo se sustentado. Então o
+  argumento dela merece a resposta abaixo em vez de uma citação.
+- A superfície então escolheu o outro lado, deliberadamente: todo comando mantém **invocação
+  padrão** (sem `user-invocable: false`, sem `disable-model-invocation`), então espera-se que o
+  modelo selecione comandos a partir de prosa — e `context-budget.md` §What the collapse measured
+  registra que o roteamento falado *foi medido depois do colapso e sobreviveu*, três frases naturais
+  chegando ao seu comando só pela descrição. Uma descrição que roteia não é metadado que o humano
+  nunca lê; é a única coisa que serve o caminho de invocação que o plugin deliberadamente manteve.
 
-**Measure first** is the one this spec would most like to take, and it is not available. An eval
-run scores `shouldTrigger` / `shouldNotTrigger` prompts against a description that already
-contains the phrases; there is no way to measure the hit rate of a trigger that has not been
-written yet. `skill-evaluation.md` §Description tuning draws the same line — measurement
-authorizes *tuning* (a trigger is removed only on a measured miss), while writing one is
-**authoring**, which needs the human whose intent the command encodes. Write first, measure
-after, remove only on a measured miss. That is also why nothing here may later be trimmed for
-length.
+**Medir primeiro** é a que esta spec mais gostaria de tomar, e não está disponível. Uma execução de
+eval pontua prompts `shouldTrigger` / `shouldNotTrigger` contra uma descrição que já contém as
+frases; não há como medir a taxa de acerto de um gatilho que ainda não foi escrito.
+`skill-evaluation.md` §Description tuning traça a mesma linha — medição autoriza *tuning* (um
+gatilho é removido só sob um miss medido), enquanto escrever um é **autoria**, que precisa do humano
+cuja intenção o comando codifica. Escrever primeiro, medir depois, remover só sob um miss medido. É
+também por isso que nada aqui pode ser enxugado por tamanho mais tarde.
+
+**Amolecer o padrão** é a outra metade da frase que o parágrafo "Não fazer nada" já pronuncia, e ela
+nunca foi precificada como opção própria. Na sua forma mais forte: §What the description may carry
+passa a exigir as três partes só acima de um limiar de tamanho, ou só nos comandos condutores, e
+`sk-trigger-position`/`sk-no-boundary` passam a ser condicionais. Custa zero caractere always-on,
+fecha onze findings em uma edição, e é reversível em um `git revert` de um arquivo. Perde por dois
+motivos. Primeiro, um padrão enfraquecido até caber na superfície deixa de ser um contrato: `lint`
+para de ter sinal sobre o próximo comando cunhado sem gatilho, e foi exatamente esse sinal que
+tornou esta lacuna encontrável — o mesmo custo de segunda ordem que derruba "não fazer nada", só
+que pago de propósito. Segundo, ele não sobrevive melhor ao cenário 10x: a 250 comandos um padrão
+amolecido continua não dizendo nada sobre o que roteia, então desarma o instrumento sem responder a
+pergunta que `## Open Decisions` levanta. O caminho honesto para amolecer o padrão é o spike, não
+uma edição de conveniência.
 
 ## Open Decisions
 
-**BLOCKING — the spec's load-bearing assumption is contested, and approval was withheld on it
-(2026-07-28).** `## Risks` opens by naming the assumption this spec rests on: that a model routes
-better from quoted triggers plus a boundary than from a bare label, at a cost worth paying. The
-cost half is now contradicted by a stated constraint that was not in `## Problem`:
+**BLOCKING — a premissa que sustenta a spec está contestada, e a aprovação foi retida por causa
+dela (2026-07-28).** `## Risks` abre nomeando a premissa em que esta spec se apoia: que um modelo
+roteia melhor a partir de gatilhos entre aspas mais uma fronteira do que a partir de um rótulo nu, a
+um custo que vale pagar. A metade do custo está agora contradita por uma restrição declarada que não
+estava em `## Problem`:
 
-> the command surface is expected to grow **~10x** (25 → ~250), and the description reduction was
-> **deliberate for that scenario** rather than collateral damage from the collapse.
+> espera-se que a superfície de comandos cresça **~10x** (25 → ~250), e a redução das descrições foi
+> **deliberada para esse cenário** em vez de dano colateral do colapso.
 
-Scaled from the measured 12,726 over 25 commands, the always-on cost at 250 is ~18,250 characters
-(~4,560 tokens) with bare labels, ~131,250 (~32,800 tokens) at this spec's 400–650 band, and
-~210,500 (~52,600 tokens) at `/specs:*` sizing. At that scale the per-command always-on
-description model does not survive **in any variant**, including doing nothing. This spec would
-therefore buy conformance with a standard whose own economics fail one order of magnitude out.
+Escalando a partir dos 12,726 medidos sobre 25 comandos, o custo always-on em 250 é de ~18,250
+caracteres (~4,560 tokens) com rótulos nus, ~131,250 (~32,800 tokens) na faixa de 400–650 desta
+spec, e ~210,500 (~52,600 tokens) no dimensionamento `/specs:*`. Nessa escala o modelo de descrição
+always-on por comando não sobrevive **em nenhuma variante**, incluindo não fazer nada. Esta spec
+compraria, então, conformidade com um padrão cuja própria economia falha uma ordem de magnitude
+adiante.
 
-**How it gets decided — one spike, and it gates both directions.** Whether
-`disable-model-invocation: true` blocks only autonomous selection, or **also** blocks an explicit
-by-name Skill call. This plugin's conductors reach their stages by name
-(`/align` → `quenching:docs:align`), which is why `CLAUDE.md` forbids the flag today, and nobody
-has established which of the two it is. `functional-checks.sh` check 2 is already that shape.
+**Como se decide — um spike, e ele decide as duas direções.** Se
+`disable-model-invocation: true` bloqueia apenas a seleção autônoma, ou **também** bloqueia uma
+chamada Skill explícita por nome. Os condutores deste plugin alcançam seus estágios por nome
+(`/align` → `quenching:docs:align`), que é por que `CLAUDE.md` proíbe a flag hoje, e ninguém
+estabeleceu qual dos dois é o caso. `functional-checks.sh` check 2 já tem essa forma.
 
-- **blocked only** → the whole surface can go typed-only at **zero** always-on cost, and this spec
-  is moot rather than merely expensive.
-- **also blocks by-name** → conductors break, typed-only is dead, and the per-command description
-  is the only routing mechanism there is — which revives this spec, at 10x the cost it prices.
+- **bloqueia apenas** → a superfície inteira pode ir typed-only com custo always-on **zero**, e esta
+  spec fica moot em vez de meramente caro.
+- **também bloqueia por nome** → os condutores quebram, typed-only morre, e a descrição por comando
+  é o único mecanismo de roteamento que existe — o que revive esta spec, a 10x o custo que ela
+  precifica.
 
-**The candidate replacement**, if the spike allows it: typed-only commands (zero description) plus
-ONE model-invocable router whose body is the registry `skills.py registry reindex` already
-generates into `docs/documentation/reference/automation.md`. Cost goes O(n) → O(1); the routing
-problem is not removed but relocated into one description that can be measured and tuned, instead
-of 250 that cannot. Two known gaps: `lint` does not skip `sk-trigger-position`/`sk-no-boundary`
-for typed-only commands although `budget` already counts them at 0, so the two instruments would
-disagree; and `context-budget.md` §What the description may carry would need a second tier.
+**A substituição candidata**, se o spike permitir: comandos typed-only (descrição zero) mais UM
+roteador model-invocable cujo corpo é o registro que `skills.py registry reindex` já gera em
+`docs/documentation/reference/automation.md`. O custo vai de O(n) → O(1); o problema de roteamento
+não é removido, é relocado para uma descrição que pode ser medida e ajustada, em vez de 250 que não
+podem. Duas lacunas conhecidas: `lint` não pula `sk-trigger-position`/`sk-no-boundary` em comandos
+typed-only, apesar de `budget` já contá-los como 0, então os dois instrumentos discordariam; e
+`context-budget.md` §What the description may carry precisaria de um segundo nível.
 
-**This spec is not abandoned and not approved.** Its `## Alternatives Considered` and `## Risks`
-are the material a replacement spec needs — in particular it is now the honest statement of the
-"restore per-command descriptions" option, with its cost priced, for that spec's own alternatives
-table.
+**O irmão que pode tornar tudo isto discutível tem nome.**
+`route-commands-without-always-on-descriptions` (prioridade nível 1, criticidade `critical`, em
+desenvolvimento em paralelo a esta spec) é a spec que carrega a substituição candidata descrita
+acima. Ela é a dona da decisão de arquitetura; esta é a dona da conformidade sob a arquitetura de
+hoje. Esta spec não presume o resultado dela, não a edita, e não a espera: se ela vencer, esta fica
+moot e sua `## Alternatives Considered` é justamente o material que aquela precisa; se não vencer,
+esta segue como está escrita. `restructure-claude-front-namespace` (stage `designed`) e
+`retire-skill-vocabulary` movem ou renomeiam os caminhos que as cláusulas `Not for:` citam, não a
+decisão de carregá-las — essa fronteira está em `## Out of Scope` e no risco 6.
+
+**ABERTO — o re-ajuste do teto absorve, ou atribui, os 149 caracteres que esta spec não somou?** A
+tarefa 2.2 escreve em `DEFAULT_CEILING` o total que `budget` imprimir. Medido em 2026-07-30 esse
+total já está 149 caracteres acima do teto **antes** de qualquer descrição ser restaurada
+(`## Risks` risco 8). Transcrever o número cru é o que a spec manda e é mecanicamente correto, mas
+lava crescimento de terceiros dentro da medição desta spec: a terceira entrada do histórico do
+ratchet passaria a atribuir a ela um custo que ela não gerou, e esse histórico é exatamente o
+registro que `context-budget.md` existe para manter honesto.
+
+- **Como se decide.** Antes da tarefa 2.1, um `git log -p` sobre os valores de `description` entre o
+  commit que fixou 12,726 e a `main` atribui os 149 caracteres. Depois, uma de duas: (a) transcrever
+  o total cru e registrar a atribuição em uma frase dentro da terceira entrada do ratchet, ou (b)
+  tratar a deriva como um disparo separado, com seu próprio re-ajuste, e medir esta spec contra a
+  linha de base corrigida. A recomendação é (a) — um teto é uma medição da superfície, não uma
+  alocação de culpa, e uma frase de atribuição preserva o registro sem inventar um disparo que
+  nenhum humano mediu. É decisão do humano porque muda o que a tarefa 2.3 escreve.
+
+**Esta spec não está abandonada e não está aprovada.** Sua `## Alternatives Considered` e seus
+`## Risks` são o material de que uma spec substituta precisa — em particular ela é agora a
+declaração honesta da opção "restaurar descrições por comando", com o custo precificado, para a
+tabela de alternativas daquela spec.
 
 ---
 
-The four decisions below were settled during shaping and stand on their own terms — they describe
-what this spec would do **if** the spike revives it.
+As quatro decisões abaixo foram resolvidas durante a modelagem e se sustentam por si — elas
+descrevem o que esta spec faria **se** o spike a revivesse.
 
-1. **Nine commands or eleven** → eleven. `/skill:eval` and `/skill:new` carry the same codes, and
-   `restructure-claude-front-namespace` rewrites moved-path citations across *every* command
-   regardless, so including them adds no coupling that excluding them avoids.
-2. **How big** → 400–650 characters, not `/docs:align`'s 1,018 or the `/specs:*` 614–974. Those
-   carry *how it works*, which the binding standard excludes.
-3. **Write first or measure first** → write first. A trigger's hit rate cannot be measured before
-   the trigger exists; `skill-evaluation.md` scopes measurement to *tuning*, and removal to a
-   measured miss.
-4. **`verification` policy** → `per-task`, changed from `per-section`. Each task's check is a
-   sub-second local script run against one file, so there is no suite cost to amortise.
+1. **Nove comandos ou onze** → onze. `/skill:eval` e `/skill:new` carregam os mesmos códigos, e
+   `restructure-claude-front-namespace` reescreve citações de caminho movido em *todo* comando de
+   qualquer forma, então incluí-los não acrescenta acoplamento que excluí-los evitaria.
+2. **Que tamanho** → 400–650 caracteres, não os 1,018 de `/docs:align` nem os 614–974 de
+   `/specs:*`. Aqueles carregam *como funciona*, que o padrão vinculante exclui.
+3. **Escrever primeiro ou medir primeiro** → escrever primeiro. A taxa de acerto de um gatilho não
+   pode ser medida antes de o gatilho existir; `skill-evaluation.md` limita a medição a *tuning*, e
+   a remoção a um miss medido.
+4. **Política de `verification`** → `per-task`, mudada de `per-section`. A checagem de cada tarefa é
+   uma execução local de script em menos de um segundo contra um arquivo, então não há custo de
+   suíte a amortizar.
+
 ## Risks
 
-**The load-bearing assumption, stated first.** That a model routes better from quoted trigger
-phrases plus a `Not for:` boundary than from a bare `/`-menu label. It is written down as a
-standard and it is unmeasured **on this front** — the only routing measurement this repo owns
-(three spoken probes, 2026-07-26) tested the *bare* labels and found them working. If the
-assumption is false, this spec buys nothing and costs ~4,500 always-on characters in every
-session of every adopting repo, forever. Everything below is downstream of it.
+**A premissa que sustenta tudo, declarada primeiro.** Que um modelo roteia melhor a partir de
+frases-gatilho entre aspas mais uma fronteira `Not for:` do que a partir de um rótulo nu de menu
+`/`. Está escrita como padrão e está não medida **nesta front** — a única medição de roteamento que
+este repo possui (três probes faladas, 2026-07-26) testou os rótulos *nus* e os encontrou
+funcionando. Se a premissa é falsa, esta spec não compra nada e custa ~4,500 caracteres always-on em
+toda sessão de todo repo adotante, para sempre. Tudo abaixo é a jusante dela.
 
-| # | Failure story | Likely | Bad | How it is detected | Response |
+| # | História de falha | Provável | Grave | Como é detectada | Resposta |
 | --- | --- | --- | --- | --- | --- |
-| 1 | the ceiling is re-set from this spec's own estimate instead of the run | med | **high** | `budget` reports `total != ceiling` | mitigated — `## Validation` asserts equality |
-| 2 | two descriptions quote overlapping phrases; routing ends up worse than bare labels | med | **high** | nothing mechanical | mitigated — one allocation table, reviewed whole |
-| 3 | a restored description steals a phrase `functional-checks.sh` already asserts | med | med | that script — **which cannot run here** | mitigated — design constraint below |
-| 4 | descriptions land, ceiling never re-set | low | med | `budget` exits 1 forever after | mitigated — `## Validation` gate |
-| 5 | `skills.py` changes without a version bump; installed copies silently keep the old ceiling | med | med | nothing — `/skill:align` compares `--version`, which matched | mitigated — declared bump task |
-| 6 | `restructure-claude-front-namespace` lands first; three boundary clauses cite dead paths | low | low | any citation check | **accepted** |
-| 7 | the eval follow-up is never run; the characters are paid forever, unmeasured | **high** | med | never, by construction | **accepted — the biggest one** |
+| 1 | o teto é re-ajustado a partir da estimativa desta própria spec em vez da execução | méd | **alta** | `budget` reporta `total != ceiling` | mitigado — `## Validation` afirma igualdade |
+| 2 | duas descrições citam frases sobrepostas; o roteamento acaba pior que rótulos nus | méd | **alta** | nada mecânico | mitigado — uma tabela de alocação, revisada inteira |
+| 3 | uma descrição restaurada rouba uma frase que `functional-checks.sh` já afirma | méd | méd | aquele script — **que não roda aqui** | mitigado — restrição de design abaixo |
+| 4 | as descrições aterrissam, o teto nunca é re-ajustado | baixa | méd | `budget` sai 1 para sempre depois | mitigado — gate em `## Validation` |
+| 5 | `skills.py` muda sem bump de versão; cópias instaladas seguem em silêncio com o teto antigo | méd | méd | nada — `/skill:align` compara `--version`, que casou | mitigado — tarefa de bump declarada |
+| 6 | `restructure-claude-front-namespace` aterrissa primeiro; três cláusulas de fronteira citam caminhos mortos | baixa | baixa | qualquer checagem de citação | **ACCEPTED** |
+| 7 | o follow-up de eval nunca roda; os caracteres são pagos para sempre, sem medição | **alta** | méd | nunca, por construção | **ACCEPTED — a maior delas** |
+| 8 | a linha de base já derivou antes de esta spec começar: `budget` mede 12,875 contra o teto 12,726, `doctor` conta 26 comandos e a versão é 4.4.0 | **já ocorreu** | méd | `budget --json` sai 1 numa `main` limpa | mitigado — nenhum número desta spec vale sem ser relido de uma execução; ver abaixo |
 
-**Risk 1 is the one worth the most care**, because the obvious check does not catch it. `budget`
-exits 0 whenever `total <= ceiling`, so a ceiling set 200 characters too high from an estimate
-passes an exit-code gate while having silently disabled the ratchet — the mechanism can no longer
-fire on the next command minted, which is the entire reason it exists. The assertion must be
-`total == ceiling`, not `exit == 0`. This spec prints an estimate (~17,200) in two sections, which
-is exactly the temptation; both label it an estimate for that reason.
+**O risco 1 é o que merece mais cuidado**, porque a checagem óbvia não o pega. `budget` sai 0 sempre
+que `total <= ceiling`, então um teto ajustado 200 caracteres alto a partir de uma estimativa passa
+por um gate de código de saída tendo silenciosamente desligado o ratchet — o mecanismo não consegue
+mais disparar no próximo comando cunhado, que é a razão inteira de ele existir. A asserção precisa
+ser `total == ceiling`, não `exit == 0`. Esta spec imprime uma estimativa (~17,200) em duas seções,
+que é exatamente a tentação; as duas a rotulam como estimativa por esse motivo.
 
-**Risk 3's mitigation is a design constraint on the allocation table**, since its detector is
-unavailable: no restored description may introduce a phrase competing with the five
-`functional-checks.sh` already asserts —
+**A mitigação do risco 3 é uma restrição de design sobre a tabela de alocação**, já que seu detector
+está indisponível: nenhuma descrição restaurada pode introduzir uma frase que compita com as cinco
+que `functional-checks.sh` já afirma —
 
 ```
   a  "park a spec for later: …"                                  -> quenching:specs:create
@@ -538,116 +593,153 @@ unavailable: no restored description may introduce a phrase competing with the f
   e  "I want something to catch it automatically whenever a migration lands" -> quenching:skill:hook:new
 ```
 
-Two are live hazards. Probe c asserts `/docs:add` against the description this spec rewrites, so
-`/docs:add` must keep an "add a standard"-shaped trigger rather than narrowing to "concept doc".
-Probes d and e belong to `/skill:agent:new` and `/skill:hook:new`, which are **not** in scope — so
-`/skill:new`'s new triggers must not reach for "set up something…" or "catch it automatically…",
-or this spec breaks two assertions in commands it never edited.
+Duas são perigos vivos. A probe c afirma `/docs:add` contra a descrição que esta spec reescreve,
+então `/docs:add` precisa manter um gatilho com a forma de "add a standard" em vez de estreitar para
+"concept doc". As probes d e e pertencem a `/skill:agent:new` e `/skill:hook:new`, que **não** estão
+no escopo — então os gatilhos novos de `/skill:new` não podem alcançar "set up something…" nem
+"catch it automatically…", ou esta spec quebra duas asserções em comandos que nunca editou.
 
-**Risk 7 is accepted, not mitigated, and it is what the approval question is really about.** The
-follow-up (`/skill:eval` fixtures for the `docs` front) has no owner and no date. Approving this
-spec means accepting a recurring, unmeasured always-on cost on the authority of a standard rather
-than a measurement — which is the same basis on which `/specs:*` and `/skill:*` were already
-restored, and `context-budget.md` is `authority: background` precisely because it has not earned
-more. The honest framing: this brings the last front into line with a rule the repo chose, and the
-rule is still unproven.
+**O risco 7 é ACCEPTED, não mitigado, e é sobre ele que a pergunta de aprovação realmente trata.** O
+follow-up (fixtures de `/skill:eval` para a front `docs`) não tem dono e não tem data. Aprovar esta
+spec significa aceitar um custo always-on recorrente e não medido pela autoridade de um padrão em
+vez de uma medição — que é a mesma base sobre a qual `/specs:*` e `/skill:*` já foram restaurados, e
+`context-budget.md` é `authority: background` justamente porque não mereceu mais que isso. O
+enquadramento honesto: isto traz a última front para a linha de uma regra que o repo escolheu, e a
+regra segue não provada.
 
-**Reversibility is high, and that is what makes the above acceptable.** The whole change is eleven
-frontmatter string values plus one integer constant and its three transcriptions. Reverting is one
-`git revert`, with no data migration, no installed state to unwind, and no adopter action beyond a
-plugin upgrade.
+**O risco 8 já se materializou, e ele invalida três números escritos nesta spec.** Medido na `main`
+em 2026-07-30, antes de qualquer tarefa desta spec rodar:
+
+```
+python3 assets/bin/skills.py --root . budget --json  -> ok: false, total 12875, ceiling 12726
+python3 assets/bin/skills.py --root . doctor --json  -> "commands": 26, "findings": []
+cat VERSION                                          -> 4.4.0
+```
+
+O 26º comando é `/skill:retro`, cunhado por `improve-command-from-session`. Ele mesmo custa **0** —
+carrega `disable-model-invocation: true`, e `budget` conta uma descrição escondida como zero de
+propósito (`skills.py` `budget_rows`) — e tanto `context-budget.md` (linhas 10 e 185) quanto
+`README.md` registram essa saída de custo zero afirmando que o total ficou em 12,726. A medição
+contradiz o registro: os 25 comandos ainda visíveis somam **12,875**, 149 caracteres acima do teto,
+porque as cláusulas `Not for:` que passaram a citar `/skill:retro` nos seus vizinhos foram somadas
+sem serem precificadas. O ratchet está portanto **vermelho na `main` por um motivo que esta spec não
+causou**, e o "segundo disparo" que `## Proposal` reivindica já não é o próximo.
+
+Três consequências concretas, nenhuma resolvida aqui:
+
+- `## Validation` V4 afirma `"commands": 25`; a superfície tem 26. V4 falharia hoje sem nenhuma
+  edição desta spec.
+- `## Handoff` diz que o total da superfície é 12,726 = `DEFAULT_CEILING` exatamente, com folga zero,
+  medido em 4.2.0; a linha de base real é 12,875 sobre 12,726 em 4.4.0, e a tarefa 3.1 nomeia um
+  salto 4.2.0 → 4.3.0 que a versão já passou.
+- `## Design` cita `skills.py:166` para `DEFAULT_CEILING`; a constante está na linha 167.
+
+**A mitigação é a que a spec já escolheu, só aplicada mais cedo:** nenhum desses números pode ser
+escrito a partir desta spec. A tarefa 2.1 relê o total de uma execução e o risco 1 já proíbe
+transcrever uma estimativa — a única mudança que a deriva exige é que a tarefa 2.1 rode **antes** de
+qualquer contagem citada aqui ser tratada como linha de base. Corrigir os três números acima muda
+critérios declarados desta spec, então fica para o humano, e a atribuição dos 149 caracteres é a
+segunda entrada de `## Open Decisions`.
+
+**A reversibilidade é alta, e é isso que torna o acima aceitável.** A mudança inteira são onze
+valores de string em frontmatter mais uma constante inteira e suas três transcrições. Reverter é um
+`git revert`, sem migração de dados, sem estado instalado para desfazer, e sem ação do adotante além
+de um upgrade de plugin.
 
 ## Handoff
 
-**State of play.** Nothing built yet. Measured on `main` at 4.2.0, 2026-07-28.
+**Estado atual.** Nada construído. Medido na `main` em 4.2.0, 2026-07-28. Uma medição mais nova em
+2026-07-30 contradiz os números abaixo — leia `## Risks` risco 8 antes de confiar em qualquer um
+deles, e re-meça antes de escrever.
 
-**The numbers you need.** Eleven descriptions total **935** characters today (nine `/docs:*` = 660;
-`/skill:eval` 80; `/skill:new` 195). Surface total **12,726** = `DEFAULT_CEILING` exactly, zero
-headroom. Target band 400–650 per description; expected new total ~17,200 — **an estimate, and
-never the number you write anywhere.** Task 2.1 produces the real one.
+**Os números de que você precisa.** As onze descrições somam **935** caracteres hoje (nove `/docs:*`
+= 660; `/skill:eval` 80; `/skill:new` 195). Total da superfície **12,726** = `DEFAULT_CEILING`
+exatamente, folga zero. Faixa alvo 400–650 por descrição; novo total esperado ~17,200 — **uma
+estimativa, e nunca o número que você escreve em lugar algum.** A tarefa 2.1 produz o real.
 
-**Two mechanical traps, both measured, both already cost a wrong assumption:**
+**Duas armadilhas mecânicas, as duas medidas, as duas já custaram uma suposição errada:**
 
-1. `skills.py lint` exits **0** with `severity: warn` findings present. Never gate on its exit
-   code — filter `--json` by code (`## Validation` V1/V2).
-2. `lint <single-file>` re-roots to that file's directory and reports `"command": "/add"`, not
-   `/docs:add`. Run whole-surface lint and filter by `path`.
+1. `skills.py lint` sai **0** com findings de `severity: warn` presentes. Nunca use o código de
+   saída dele como gate — filtre o `--json` por código (`## Validation` V1/V2).
+2. `lint <single-file>` re-enraíza para o diretório daquele arquivo e reporta `"command": "/add"`,
+   não `/docs:add`. Rode o lint de superfície inteira e filtre por `path`.
 
-**Where the content comes from — do not invent it.** `/docs:align`'s existing `Not for:` clause
-already names the distinguishing job of six of the nine, in the repo's own words; the other three
-(`glossary-backfill`, `harness`, `import-memory`) come from the role table in `CLAUDE.md`. An
-invented phrase costs always-on characters in every session forever and routes nothing.
+**De onde vem o conteúdo — não invente.** A cláusula `Not for:` que já existe em `/docs:align` nomeia
+o trabalho distintivo de seis das nove, nas palavras do próprio repo; as outras três
+(`glossary-backfill`, `harness`, `import-memory`) vêm da tabela de papéis em `CLAUDE.md`. Uma frase
+inventada custa caracteres always-on em toda sessão para sempre e não roteia nada.
 
-**Conventions in force.** `context-budget.md` §What the description may carry — three things, in
-order, and **nothing about how the command works**. That last rule is why `/docs:align` (1,018)
-and the `/specs:*` range (614–974) are *not* the model to copy, despite being the obvious
-precedent.
+**Convenções em vigor.** `context-budget.md` §What the description may carry — três coisas, em
+ordem, e **nada sobre como o comando funciona**. Essa última regra é por que `/docs:align` (1,018) e
+a faixa `/specs:*` (614–974) *não* são o modelo a copiar, apesar de serem o precedente óbvio.
 
-**Already tried, do not redo.** Shrinking instead of growing was a real spec
-(`skill-description-tiering`, abandoned — superseded by the collapse, *not* refuted). Measuring
-before writing is impossible: a trigger's hit rate cannot be scored before the trigger exists.
-Both are argued out in `## Alternatives Considered`.
+**Já tentado, não refaça.** Encolher em vez de crescer foi uma spec real
+(`skill-description-tiering`, abandonada — superada pelo colapso, *não* refutada). Medir antes de
+escrever é impossível: a taxa de acerto de um gatilho não pode ser pontuada antes de o gatilho
+existir. As duas estão argumentadas em `## Alternatives Considered`.
 
-**Do not touch.** Command bodies, `sk-step-criterion`, `sk-unscoped-bash`, the rest of `README.md`,
-and the zero-headroom ratchet design itself.
+**Não toque.** Corpos de comando, `sk-step-criterion`, `sk-unscoped-bash`, o resto do `README.md`, e
+o próprio desenho do ratchet de folga zero.
 
 ## Tasks
 
-Serial throughout. No task is `[P]`: the whole point of `## Design` §One allocation table is that
-the phrase set is decided across all eleven commands at once, and two executors drafting halves in
-parallel is exactly the collision this spec exists to avoid. The wall-clock saved would be seconds.
+Serial de ponta a ponta. Nenhuma tarefa é `[P]`: o ponto inteiro de `## Design` §Uma tabela de
+alocação é que o conjunto de frases é decidido nos onze comandos de uma vez, e dois executores
+rascunhando metades em paralelo é exatamente a colisão que esta spec existe para evitar. O tempo de
+parede economizado seria de segundos.
 
-### 1. Restore the routing information
+### 1. Restaurar a informação de roteamento
 
-- [ ] 1.1 Write all nine `/docs:*` descriptions as ONE set, in one commit — the full allocation is
-      drafted across all eleven before this task's first edit, then applied
+- [ ] 1.1 Escrever todas as nove descrições `/docs:*` como UM conjunto, em um commit — a alocação
+      completa é rascunhada nas onze antes da primeira edição desta tarefa, e só então aplicada
       files: plugins/quenching/commands/docs/add.md, plugins/quenching/commands/docs/define.md, plugins/quenching/commands/docs/glossary-backfill.md, plugins/quenching/commands/docs/harness.md, plugins/quenching/commands/docs/import.md, plugins/quenching/commands/docs/import-memory.md, plugins/quenching/commands/docs/learn.md, plugins/quenching/commands/docs/status.md, plugins/quenching/commands/docs/documentation/build.md
       pattern: plugins/quenching/commands/docs/align.md
       verify: ## Validation V1 + V2 + V4
-- [ ] 1.2 Write the two automation-front descriptions — `/skill:eval` gains both parts,
-      `/skill:new` gains trigger phrases only (it already carries a boundary)
+- [ ] 1.2 Escrever as duas descrições da front de automação — `/skill:eval` ganha as duas partes,
+      `/skill:new` ganha apenas frases-gatilho (já carrega uma fronteira)
       files: plugins/quenching/commands/skill/eval.md, plugins/quenching/commands/skill/new.md
       pattern: plugins/quenching/commands/skill/agent/new.md
       verify: ## Validation V1 + V2 + V4
-- [ ] 1.3 Cross-check the allocation across all eleven: no quoted phrase serves two commands, and
-      none competes with the five phrases `functional-checks.sh` already asserts (`## Risks`) —
-      in particular `/docs:add` keeps an "add a standard"-shaped trigger, and `/skill:new` reaches
-      for neither "set up something…" nor "catch it automatically…"
+- [ ] 1.3 Conferir a alocação nos onze de uma vez: nenhuma frase entre aspas serve dois comandos, e
+      nenhuma compete com as cinco frases que `functional-checks.sh` já afirma (`## Risks`) — em
+      particular `/docs:add` mantém um gatilho com a forma de "add a standard", e `/skill:new` não
+      alcança nem "set up something…" nem "catch it automatically…"
       files: plugins/quenching/commands/docs/, plugins/quenching/commands/skill/
       verify: ## Validation V1 + V2 + V4
 
-### 2. Re-measure and re-set the ceiling — strictly after every task in 1
+### 2. Re-medir e re-ajustar o teto — estritamente depois de toda tarefa do grupo 1
 
-- [ ] 2.1 Run `skills.py --root . budget --json` and record the measured `total` in the commit
-      message. It is EXPECTED to exit 1 with `sk-budget-ceiling`; that is the ratchet firing, not
-      a failure, and this task is complete when the number is captured from the run
+- [ ] 2.1 Rodar `skills.py --root . budget --json` e registrar o `total` medido na mensagem de
+      commit. É ESPERADO que saia 1 com `sk-budget-ceiling`; esse é o ratchet disparando, não uma
+      falha, e esta tarefa está completa quando o número tiver sido capturado da execução
       verify: the run's `total` is quoted verbatim in the commit message
-- [ ] 2.2 Set `DEFAULT_CEILING` to that measured total, with a dated changelog comment in the same
-      style as the two entries above it — naming that this firing was caused by description
-      growth, not by a new command
+- [ ] 2.2 Ajustar `DEFAULT_CEILING` para esse total medido, com um comentário de changelog datado no
+      mesmo estilo das duas entradas acima dele — nomeando que este disparo foi causado por
+      crescimento de descrição, não por um comando novo
       files: plugins/quenching/assets/bin/skills.py
       verify: ## Validation V3
-- [ ] 2.3 Transcribe the figure into `docs/standards/automation/context-budget.md`: §The
-      per-surface ceiling, the `breakdown`
-      sample, a THIRD entry in the ratchet's history, and move `timestamp` to the build date.
-      Leave every historical `2,083 → 11,565 → 12,726` sentence standing
+- [ ] 2.3 Transcrever a cifra para `docs/standards/automation/context-budget.md`: §The per-surface
+      ceiling, a amostra de `breakdown`, uma TERCEIRA entrada no histórico do ratchet, e mover
+      `timestamp` para a data do build. Deixar de pé toda frase histórica
+      `2,083 → 11,565 → 12,726`
       files: docs/standards/automation/context-budget.md
       verify: ## Validation V5 + V8
-- [ ] 2.4 Transcribe the figure into the three `README.md` lines that carry it, and nothing else in
-      that file
+- [ ] 2.4 Transcrever a cifra para as três linhas do `README.md` que a carregam, e nada mais naquele
+      arquivo
       files: plugins/quenching/README.md
       verify: ## Validation V5
 
 ### 3. Release lockstep
 
-- [ ] 3.1 Bump 4.2.0 → 4.3.0 across all six sites — a shipped script's behaviour changed, and an
-      installed copy whose `--version` still matches is never upgraded by `/skill:align`
+- [ ] 3.1 Subir 4.2.0 → 4.3.0 nos seis sites — o comportamento de um script distribuído mudou, e uma
+      cópia instalada cujo `--version` ainda casa nunca é atualizada por `/skill:align`
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
       pattern: git show f6c8038
       verify: ## Validation V6
 
-### 4. Final verification
+### 4. Verificação final
 
-- [ ] 4.1 Run V1–V6 and V8 together and record the outputs; run V7 and record it as pass or
-      **inconclusive**, never as a failure it cannot distinguish from a broken decoder
+- [ ] 4.1 Rodar V1–V6 e V8 juntas e registrar as saídas; rodar V7 e registrá-la como aprovação ou
+      **inconclusiva**, nunca como uma falha que ela não consegue distinguir de um decodificador
+      quebrado
       verify: ## Validation V1–V8

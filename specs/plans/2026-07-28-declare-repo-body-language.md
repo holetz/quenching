@@ -3,7 +3,7 @@ slug: declare-repo-body-language
 title: Declare the repo's body language in docs/standards so every command reads it for free
 verification: per-section
 priority: {level: 16, criticality: high, date: 2026-07-29}
-refined: {mode: adversarial, date: 2026-07-29}
+refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-29}
 ---
 
@@ -49,242 +49,300 @@ approved: {date: 2026-07-29}
 
 ## Overview
 
-Binds the unbound phrase "the repo's language", which six clauses across the standards and the
-shipped references defer to and none of them defines. A repository declares its body language as a
-BCP-47 tag in one line of its **root** harness file — in context at session start, and working
-without a `docs/` bundle — while a shipped standards doc **owns** the rule those six clauses now cite
-instead of restating. The declared language governs every body, agent-facing sections included.
+Vincula a expressão solta "the repo's language", à qual seis cláusulas espalhadas pelos standards e
+pelas references entregues deferem sem que nenhuma delas a defina. Um repositório declara sua body
+language como uma tag BCP-47 em uma linha do seu harness **raiz** — em contexto no início da sessão,
+e funcionando sem um `docs/` bundle — enquanto um doc de standards entregue **é o dono** da regra que
+essas seis cláusulas passam a citar em vez de reenunciar. A language declarada governa todo body,
+inclusive as seções voltadas a agentes.
 
-The owner lands in a new `docs/standards/agents/` subject — *how we instruct agents* — which grows
-the locked canonical tree by one, because `naming/` governs names and this rule names nothing, and
-`automation/` collides in the repositories most likely to adopt the bundle.
+O dono vai para um subject novo, `docs/standards/agents/` — *como instruímos agentes* —, que faz a
+árvore canônica travada crescer em um, porque `naming/` governa nomes e esta regra não nomeia nada, e
+`automation/` colide nos repositórios mais propensos a adotar o bundle.
 
-`/docs:align` asks once on adoption; silence stays unconstrained, so adoption is opt-in per
-repository and nothing becomes retroactively non-conformant.
+`/docs:align` pergunta uma vez, na adoção; o silêncio continua sem restrição, então a adoção é
+opt-in por repositório e nada se torna retroativamente não conformante.
+
+Este é também o spec que formaliza a própria regra sob a qual seu body está escrito: o corpo aqui
+está em pt-BR e a estrutura — frontmatter, H1, `##` headings, metadados de task, caminhos e comandos
+— segue em inglês canônico. `## Open Decisions` guarda o que este spec deliberadamente **não**
+decide, incluindo o censo das outras dez reenunciações da mesma cláusula que ele não colapsa.
 ## Problem
 
-Spec bodies are written in English today, which makes them hard to read for the users of a
-repository whose working language is not English (Portuguese, for instance). The canonical-surface
-rule already fixes what must stay English — folder names, file slugs, frontmatter keys, `type`
-values — but it says nothing about where a repository *declares* which language its bodies should
-be written in, so today every command either guesses or leaves it to whoever is typing.
+Hoje os bodies dos specs são escritos em inglês, o que os torna difíceis de ler para os usuários de
+um repositório cuja língua de trabalho não é o inglês (português, por exemplo). A regra da canonical
+surface já fixa o que precisa permanecer em inglês — nomes de pasta, slugs de arquivo, chaves de
+frontmatter, valores de `type` —, mas nada diz sobre onde um repositório *declara* em que língua seus
+bodies devem ser escritos, de modo que hoje cada comando adivinha ou deixa a decisão para quem está
+digitando.
 
-That declaration needs a home of its own in the repo — preferably under `docs/standards/` — and
-reaching it has to be nearly free for the agent: cheap enough that knowing the correct setting is
-never a reason to skip checking. A hook that reads it automatically is one candidate mechanism.
+Essa declaração precisa de uma casa própria no repositório — de preferência sob `docs/standards/` — e
+alcançá-la tem de ser quase gratuito para o agente: barato o suficiente para que saber a configuração
+correta nunca seja motivo para deixar de conferir. Um hook que a leia automaticamente é um mecanismo
+candidato.
 
 ## Proposal
 
-Six clauses — two in `docs/standards/`, four in `assets/references/` — defer body prose to "the
-repo's language", and nothing anywhere binds that phrase to a value. This spec binds it, with one
-mechanism serving both this repository and every repository the plugin aligns.
+Seis cláusulas — duas em `docs/standards/`, quatro em `assets/references/` — deferem o body prose a
+"the repo's language", e nada em lugar algum vincula essa expressão a um valor. Este spec a vincula,
+com um mecanismo que serve tanto a este repositório quanto a todo repositório que o plugin alinha.
 
-A repository declares its body language in one line of its **root** harness file (`CLAUDE.md` /
-`AGENTS.md`): in context at session start, costing zero tool calls, and working in a repository that
-has `specs/` and no `docs/` bundle. **Only the root harness carries the declaration.** A nested
-harness file (`docs/standards/CLAUDE.md`) loads when that folder is touched, not at session start,
-so it would deliver none of the zero cost the shape is chosen for.
+Um repositório declara sua body language em uma linha do seu arquivo de harness **raiz** (`CLAUDE.md`
+/ `AGENTS.md`): em contexto no início da sessão, custando zero tool calls, e funcionando em um
+repositório que tem `specs/` e nenhum `docs/` bundle. **Somente o harness raiz carrega a
+declaração.** Um arquivo de harness aninhado (`docs/standards/CLAUDE.md`) é carregado quando aquela
+pasta é tocada, não no início da sessão, então não entregaria nada do custo zero pelo qual esta forma
+foi escolhida.
 
-The statement of the rule gets **one owner** — `docs/standards/naming/body-language.md`, shipped in
-the skeleton under `assets/docs/`. The six clauses stop restating the rule and cite that doc
-instead: the collapse `docs/standards/architecture/plugin-layout.md` already argues for, applied to
-a rule that had been written out six times.
+O enunciado da regra ganha **um único dono** — `docs/standards/agents/body-language.md`, entregue no
+skeleton sob `assets/docs/`. As seis cláusulas deixam de reenunciar a regra e passam a citar esse doc:
+o colapso que `docs/standards/architecture/plugin-layout.md` já defende, aplicado a uma regra que
+havia sido escrita seis vezes.
 
-`/docs:align` asks the language **once**, when a repository adopts the bundle, and writes the line
-into the root harness; `/docs:harness` keeps it thereafter. **Silence keeps its current meaning** —
-a repository that declares nothing is under no constraint, exactly as the six `MAY` clauses read
-today. Nothing becomes retroactively non-conformant and no adopted repository has to change.
+`/docs:align` pergunta a language **uma vez**, quando um repositório adota o bundle, e escreve a
+linha no harness raiz; `/docs:harness` a mantém dali em diante. **O silêncio conserva seu significado
+atual** — um repositório que não declara nada não está sob restrição alguma, exatamente como as seis
+cláusulas `MAY` são lidas hoje. Nada se torna retroativamente não conformante e nenhum repositório já
+adotado precisa mudar.
 
-Afterwards, an agent that needs to know which language a body is written in reads it for free at
-session start, instead of guessing or asking whoever is typing.
+Depois disso, um agente que precise saber em que língua um body está escrito lê essa informação de
+graça no início da sessão, em vez de adivinhar ou perguntar a quem está digitando.
 ## Out of Scope
 
-- **Translating the bodies that already exist.** Declaring a language does not rewrite the
-  thirty-five English docs under `docs/standards/`, nor any target repository's. That is a
-  migration, and it is its own spec.
-- **Machine enforcement.** No natural-language check enters `okf-validate.py` —
-  `assets/references/docs-align/conformance.md` already records that a validator cannot reliably
-  detect a document's language. The declaration is applied by convention, as it is today.
-- **The canonical surface.** Folder names, file slugs, frontmatter keys, `type` values and the
-  parsed `##` headings stay canonical English. This is the existing rule in
-  `docs/standards/naming/command-surface.md`, named here as the boundary this spec complements —
-  not something it changes.
-- **The plugin's own surface.** The twenty-six command `description`s and every body under
-  `commands/**` are English, whatever language a target repository declares.
+- **Traduzir os bodies que já existem.** Declarar uma language não reescreve os trinta e cinco docs
+  em inglês sob `docs/standards/`, nem os de nenhum repositório-alvo. Isso é uma migração, e é spec
+  próprio.
+- **Enforcement por máquina.** Nenhuma verificação de língua natural entra em `okf-validate.py` —
+  `assets/references/docs-align/conformance.md` já registra que um validador não consegue detectar a
+  língua de um documento de forma confiável. A declaração é aplicada por convenção, como já é hoje.
+- **A canonical surface.** Nomes de pasta, slugs de arquivo, chaves de frontmatter, valores de `type`
+  e os `##` headings parseados permanecem em inglês canônico. Esta é a regra que já existe em
+  `docs/standards/naming/command-surface.md`, nomeada aqui como o limite que este spec complementa —
+  não algo que ele mude.
+- **A própria surface do plugin.** As vinte e seis `description`s de comando e todo body sob
+  `commands/**` são em inglês, qualquer que seja a language que um repositório-alvo declare.
 
 ## Impact
 
-**Code and content this spec touches:** the six restating sites listed in `## Design`;
-`docs/index.md` and `plugins/quenching/assets/docs/index.md`, whose "only `audience: human`
-material follows the repo's language" line is narrower than what this spec decides;
-`plugins/quenching/assets/references/docs-align/taxonomy.md`, whose §The canonical tree (locked)
-grows by one subject; the two `standards/index.md` subtopic lists and the two new
-`agents/index.md` subject listings (reserved listings, not standards — which is why they are not
-bulleted below); `plugins/quenching/commands/docs/align.md` (the one-time question on adoption);
-and `plugins/quenching/commands/docs/harness.md` (the declaration line as a KEEP that never
-paraphrases the rule).
+**Código e conteúdo que este spec toca:** os seis locais que reenunciam a regra, listados em
+`## Design`; `docs/index.md` e `plugins/quenching/assets/docs/index.md`, cuja linha "only
+`audience: human` material follows the repo's language" é mais estreita do que o que este spec
+decide; `plugins/quenching/assets/references/docs-align/taxonomy.md`, cuja §The canonical tree
+(locked) cresce em um subject; as duas listas de subtopics em `standards/index.md` e as duas novas
+listagens de subject em `agents/index.md` (listagens reservadas, não standards — e é por isso que não
+aparecem na lista abaixo); `plugins/quenching/commands/docs/align.md` (a pergunta única na adoção);
+e `plugins/quenching/commands/docs/harness.md` (a linha da declaração como um KEEP que nunca
+parafraseia a regra).
 
 ### Standards this spec will write into docs/standards/
 
-- `docs/standards/agents/body-language.md` — the rule's single owner, written twice at the same
-  bundle-relative path: once into the shipped skeleton under
-  `plugins/quenching/assets/docs/`, and once into this repository's own bundle, so the repo that
-  ships the rule is also its first consumer
+- `docs/standards/agents/body-language.md` — o dono único da regra, escrito duas vezes no mesmo
+  caminho relativo ao bundle: uma vez no skeleton entregue sob
+  `plugins/quenching/assets/docs/`, e uma vez no bundle deste próprio repositório, para que o repo
+  que entrega a regra seja também seu primeiro consumidor
 ## Validation
 
-- `grep -rn "the repo.s language" docs/ plugins/quenching/assets/references/` returns the five citing
-  sites and **no** restatement of the rule, plus `okf-spec.md`'s deliberate self-contained
-  statement. A sixth restatement anywhere is a failure.
-- The root harness line carries a value and a citation and **no paraphrase of the rule** — the
-  invariant that keeps this design compliant with `/docs:harness` §Move, never copy.
-- `grep -n 'agents/' plugins/quenching/assets/references/docs-align/taxonomy.md` shows the subject
-  inside §The canonical tree (locked), and both `standards/index.md` files carry its subtopic row.
-  A subject that exists on disk but not in the locked tree is the nonconformity this spec is
-  correcting, not a state it may leave behind.
-- `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` and the same on `docs`
-  both report `0 error(s), 0 warning(s)` with the new subject and the new standards doc in place.
+- `grep -rn "the repo.s language" docs/ plugins/quenching/assets/references/` retorna os cinco locais
+  que citam o dono e **nenhuma** reenunciação da regra, mais a declaração autocontida deliberada de
+  `okf-spec.md`. Uma sexta reenunciação **dentro dessas duas árvores** é falha; as reenunciações que
+  vivem fora delas estão registradas em `## Open Decisions` e não pertencem a este invariante.
+- A linha do harness raiz carrega um valor e uma citação e **nenhuma paráfrase da regra** — o
+  invariante que mantém este design compatível com `/docs:harness` §Move, never copy.
+- `grep -n 'agents/' plugins/quenching/assets/references/docs-align/taxonomy.md` mostra o subject
+  dentro de §The canonical tree (locked), e os dois arquivos `standards/index.md` carregam sua linha de
+  subtopic. Um subject que existe em disco mas não na árvore travada é a não conformidade que este
+  spec está corrigindo, não um estado que ele possa deixar para trás.
+- `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` e o mesmo em `docs`
+  reportam ambos `0 error(s), 0 warning(s)` com o novo subject e o novo doc de standards no lugar.
 ## Design
 
-**Rule and value are two different facts, in one place each.** The harness line carries the
-**value** and a citation; the standards doc carries the **contract** — what declaring means, what
-silence means. Neither paraphrases the other. That is what keeps the mechanism on the right side of
-`/docs:harness` §Move, never copy: a rule restated in a harness file is precisely the drift that
-command exists to remove, while a value plus a citation is not a restatement.
+**Regra e valor são dois fatos diferentes, cada um em um lugar só.** A linha do harness carrega o
+**valor** e uma citação; o doc de standards carrega o **contrato** — o que declarar significa, o que o
+silêncio significa. Nenhum dos dois parafraseia o outro. É isso que mantém o mecanismo do lado certo
+de `/docs:harness` §Move, never copy: uma regra reenunciada em um arquivo de harness é exatamente o
+drift que aquele comando existe para remover, enquanto um valor mais uma citação não é reenunciação.
 
-**The value is a BCP-47 tag** (`pt-BR`, `en`), not a language name. A name invites `Português`,
-`portugues` and `Portuguese` to mean the same thing, and no citation resolves that; a tag is one
-string with one spelling.
+**O valor é uma tag BCP-47** (`pt-BR`, `en`), não um nome de língua. Um nome convida `Português`,
+`portugues` e `Portuguese` a significarem a mesma coisa, e nenhuma citação resolve isso; uma tag é uma
+string com uma grafia só.
 
-**The declared language governs every body**, `## Handoff` and `## Tasks` included — those stay
-terse, because they are agent context, but terse in the declared language. This is wider than
-`docs/index.md`, which today scopes the rule to `audience: human` material only, so that line and
-its skeleton twin are reconciled as part of this spec (see `## Impact`).
+**A language declarada governa todo body**, `## Handoff` e `## Tasks` incluídos — essas seções
+continuam terse, porque são contexto de agente, mas terse na language declarada. Isso é mais amplo que
+`docs/index.md`, que hoje limita a regra a material `audience: human`, então aquela linha e sua gêmea
+no skeleton são reconciliadas como parte deste spec (ver `## Impact`).
 
-**The owner is `docs/standards/agents/body-language.md`** — a new subject, and the locked tree grows
-by one to hold it. The subject is *how we instruct agents*: what the always-on surface declares to
-whoever reads it at session start. Two nearer-looking homes were rejected on the record in
-`## Alternatives Considered`; the short form is that `naming/` governs names and this rule names
-nothing, and `automation/` collides in the repositories most likely to adopt the bundle — a repo
-whose own product is automation cannot tell "how we drive Claude Code" from "our automation domain"
-under one folder. `automation/` is also not in the shipped set: it is this repository's local
-subject, which is precisely the ambiguity being avoided.
+**O dono é `docs/standards/agents/body-language.md`** — um subject novo, e a árvore travada cresce em
+um para acomodá-lo. O subject é *como instruímos agentes*: o que a surface always-on declara a quem a
+lê no início da sessão. Duas casas de aparência mais próxima foram rejeitadas nos autos, em
+`## Alternatives Considered`; a forma curta é que `naming/` governa nomes e esta regra não nomeia
+nada, e `automation/` colide justamente nos repositórios mais propensos a adotar o bundle — um repo
+cujo próprio produto é automação não consegue distinguir "how we drive Claude Code" de "our automation
+domain" sob uma única pasta. `automation/` também não está no conjunto entregue: é o subject local
+deste repositório, o que é precisamente a ambiguidade que se está evitando.
 
-Growing the locked tree overlaps the queued `revise-standards-subject-folders`; see `## Risks`.
+Fazer a árvore travada crescer se sobrepõe ao spec enfileirado `revise-standards-subject-folders`;
+ver `## Risks`.
 
-The four `assets/references/**` sites cite the owner by its bundle-relative path, which **only
-resolves once the skeleton is installed** — accepted, with the mitigation that task ordering ships
-the doc before any site is edited to cite it. In a repository that uses `specs/` and never adopts
-the bundle the citation does not resolve; see `## Risks`.
+Os quatro locais em `assets/references/**` citam o dono pelo seu caminho relativo ao bundle, que **só
+resolve depois que o skeleton está instalado** — aceito, com a mitigação de que a ordem das tasks
+entrega o doc antes que qualquer local seja editado para citá-lo. Em um repositório que usa `specs/` e
+nunca adota o bundle a citação não resolve; ver `## Risks`.
 
-The collapse, by layer:
+O colapso, por camada:
 
-| Layer | Site | After |
+| Camada | Local | Depois |
 | --- | --- | --- |
-| `docs/standards` | `naming/command-surface.md:118` | cites the owner |
-| `docs/standards` | `workflows/plan-artifacts.md:69` | cites the owner |
-| `assets/references` | `specs-develop/spec-driven.md:119` | cites the owner |
-| `assets/references` | `docs-align/taxonomy.md:117` | cites the owner |
-| `assets/references` | `docs-align/migration.md:40` | cites the owner |
-| `assets/references` | `docs-align/okf-spec.md:111` | **keeps a self-contained statement** — it is the contract other implementers read, and a format spec that defers to a repo-local doc stops being self-describing |
+| `docs/standards` | `naming/command-surface.md:118` | cita o dono |
+| `docs/standards` | `workflows/plan-artifacts.md:69` | cita o dono |
+| `assets/references` | `specs-develop/spec-driven.md:119` | cita o dono |
+| `assets/references` | `docs-align/taxonomy.md:117` | cita o dono |
+| `assets/references` | `docs-align/migration.md:40` | cita o dono |
+| `assets/references` | `docs-align/okf-spec.md:111` | **conserva uma declaração autocontida** — é o contrato que outros implementadores leem, e um format spec que defere a um doc local do repo deixa de ser autodescritivo |
 ## Alternatives Considered
 
-| Approach | Why it lost |
+| Abordagem | Por que perdeu |
 | --- | --- |
-| **The owner under `naming/`** — where the clause being bound already lives | Neighbourhood, not belonging. `docs/standards/naming/index.md` scopes the subject to "the globally unique, predictable **names** this repo commits to", and the skeleton's twin scopes it to **data** naming outright — `tables · columns · descriptions · schemas-catalogs`. Which natural language prose is written in names nothing. Putting it there meant stretching a declared subject from inside a task. |
-| **The owner under `automation/`** | The best-fitting existing folder — the carrier is the always-on harness and `automation/context-budget.md` already governs that budget — and rejected anyway, because it collides in exactly the repositories that adopt this bundle: one whose product *is* automation cannot distinguish "how we drive Claude Code" from "our automation domain" under one folder. It is also not in the shipped nine; it is this repo's local subject, which is the same ambiguity one level down. |
-| **A key on `docs/index.md`**, beside `okf_version` | Machine-readable buys nothing here: `docs-align/conformance.md` records that no validator will ever branch on this value, so the only consumer is the agent — which reads the harness for free. It also costs an edit to `okf-spec.md`, whose line 92 pins that listing to `okf_version` alone, colliding with the queued `upgrade-okf-to-v0-2`. And it excludes a repository with `specs/` and no bundle. |
-| **A `SessionStart` hook injecting the value** | A process per session, forever, to deliver a constant the auto-loaded harness already delivers for nothing. `docs/standards/automation/hooks.md` asks a hook to justify its scope; this one cannot. |
-| **The standards doc alone, with no carrier** | Gives the rule a home, an authority and a maintainer, but nothing makes an agent read it — discovery is exactly the cost `## Problem` says must stay near zero. |
-| **Do nothing** | The six clauses say `MAY`, so a repository writing Portuguese is already conformant without declaring anything. Rejected because the gap is not conformance: it is that an agent has no way to *know*, which is what makes it guess. |
+| **O dono sob `naming/`** — onde a cláusula sendo vinculada já vive | Vizinhança, não pertencimento. `docs/standards/naming/index.md` limita o subject a "the globally unique, predictable **names** this repo commits to", e a gêmea do skeleton o limita à nomenclatura de **dados** sem rodeios — `tables · columns · descriptions · schemas-catalogs`. Em que língua natural a prosa está escrita não nomeia nada. Colocá-lo ali significava esticar um subject declarado de dentro de uma task. |
+| **O dono sob `automation/`** | A pasta existente que melhor se encaixa — o carregador é o harness always-on e `automation/context-budget.md` já governa esse budget — e rejeitada de todo modo, porque colide exatamente nos repositórios que adotam este bundle: um cujo produto *é* automação não consegue distinguir "how we drive Claude Code" de "our automation domain" sob uma única pasta. Também não está nos nove entregues; é o subject local deste repo, que é a mesma ambiguidade um nível abaixo. |
+| **Uma chave em `docs/index.md`**, ao lado de `okf_version` | Ser legível por máquina não compra nada aqui: `docs-align/conformance.md` registra que nenhum validador jamais vai ramificar sobre esse valor, então o único consumidor é o agente — que lê o harness de graça. Também custa uma edição em `okf-spec.md`, cuja linha 92 fixa aquela listagem apenas a `okf_version`, colidindo com o spec enfileirado `upgrade-okf-to-v0-2`. E exclui um repositório com `specs/` e sem bundle. |
+| **Um hook `SessionStart` injetando o valor** | Um processo por sessão, para sempre, para entregar uma constante que o harness auto-carregado já entrega de graça. `docs/standards/automation/hooks.md` exige que um hook justifique seu escopo; este não consegue. |
+| **Só o doc de standards, sem carregador** | Dá à regra uma casa, uma autoridade e um mantenedor, mas nada faz um agente lê-la — descoberta é exatamente o custo que `## Problem` diz que precisa ficar perto de zero. |
+| **Não fazer nada** | As seis cláusulas dizem `MAY`, então um repositório escrevendo português já é conformante sem declarar nada. Rejeitado porque a lacuna não é conformidade: é que um agente não tem como *saber*, e é isso que o faz adivinhar. |
+| **`agents/` só neste repositório, criado sob demanda pelo `/docs:align` no alvo** — em vez de fazer o skeleton entregue crescer | Perdeu por transformar um risco limitado em universal. As quatro citações em `assets/references/**` são relativas ao bundle, então um subject criado sob demanda faz o risco "a citação não resolve" valer para todo bundle que ainda não rodou o align, e não apenas para um repositório `specs/`-only. Um subject que existe na árvore travada e não no skeleton entregue é também exatamente a divergência que o terceiro bullet de `## Validation` foi escrito para impedir. |
 ## Open Decisions
 
-- **Is `AGENTS.md` a carrier on equal footing with `CLAUDE.md`?** This spec assumes it is, because
-  the plugin already treats the pair as one in nine places and `/docs:harness` sweeps both. **How it
-  will be decided:** by the sibling spec `decide-agents-md-harness-default`, not by this one. If it
-  makes `AGENTS.md` the default target, what changes is the owner doc's wording, not this
-  mechanism — which is why this spec does not wait on it.
+- **`AGENTS.md` é um carregador em pé de igualdade com `CLAUDE.md`?** Este spec assume que sim,
+  porque o plugin já trata o par como um só em nove pontos e `/docs:harness` varre os dois. **Como
+  será decidido:** pelo spec irmão `decide-agents-md-harness-default`, não por este. Se ele tornar
+  `AGENTS.md` o alvo padrão, o que muda é a redação do doc dono, não este mecanismo — razão pela qual
+  este spec não espera por ele.
+- **As outras dez reenunciações da mesma cláusula `MAY`, fora das duas árvores que este spec varre,
+  também colapsam?** O censo completo, levantado nesta passagem adversarial:
+  `plugins/quenching/assets/README.md:115`,
+  `plugins/quenching/assets/templates/harness/claude-root.md:71`,
+  `plugins/quenching/assets/templates/harness/claude-subfolder.md:32`,
+  `plugins/quenching/assets/bin/specs.py:292`,
+  `plugins/quenching/assets/specs/templates/spec.md:39`,
+  `plugins/quenching/commands/docs/add.md:37`, `plugins/quenching/commands/docs/align.md:79`,
+  `plugins/quenching/commands/docs/define.md:76` e `plugins/quenching/commands/docs/learn.md:41` e
+  `:79`. Este spec **não** as toca, e o limite que ele mantém é este: as seis que ele colapsa são
+  enunciados **normativos** da regra (um standard ou uma reference compartilhada), enquanto essas dez
+  são texto de template entregue — que aterra em um repositório-alvo que pode não ter bundle algum
+  para citar — ou uma condição lateral dentro de um body de comando. **Como será decidido:** por um
+  spec de follow-up próprio, porque as gêmeas de template obrigam edição em par (`specs.py` e
+  `assets/specs/templates/spec.md`, "Edit both or neither") e os bodies de comando são a surface em
+  inglês que `## Out of Scope` já protege. Até então o censo fica registrado aqui, para que ninguém
+  precise redescobri-lo.
+- **Quando o doc dono sai de `authority: background` para `current`?** A task 2 o entrega em
+  `background` até a regra ser provada pelo uso, e nada declara o que conta como provado. **Como será
+  decidido:** pelo primeiro comando que efetivamente ramifique sobre o valor declarado — hoje nenhum
+  ramifica, porque `/docs:align` e `/docs:harness` apenas escrevem e preservam a linha. Quando esse
+  consumidor existir, a promoção é uma edição de uma linha em `authority:`. Este spec não a agenda, e
+  a decisão não bloqueia nenhuma das sete tasks.
 
 ## Risks
 
-- **This spec now grows the locked tree, which `revise-standards-subject-folders` also intends to
-  revise.** Two specs editing the same declared subject set can each land a half of it. **Accepted,
-  with the boundary stated:** this spec adds exactly one subject and touches no other, and the
-  sibling spec remains free to revise the set as a whole afterwards — including renaming what this
-  one added. What this spec must not do is pre-empt that revision by reorganizing subjects it does
-  not need. If the sibling lands first, task 1 shrinks to a row in whatever set it produced.
-- **The citation does not resolve in a repository that never adopts the bundle.** A `specs/`-only
-  repository reads a reference citing `docs/standards/agents/body-language.md`, which it does not
-  have. **Accepted risk** — the alternative was an owner under `assets/`, which would put the rule
-  outside the bundle it governs. Mitigation: the four reference citations name the doc as *the
-  bundle's*, so a repository without one reads a pointer to something it knowingly does not have,
-  rather than a broken promise.
-- **`agents/` is read as "agent definitions" rather than "how we instruct agents".** The name is
-  short enough to invite the narrower reading, and `docs/standards/automation/agents.md` already
-  holds the `.claude/agents/` definition contract. Mitigated by the subject `index.md` stating the
-  boundary in its first line, and by that existing doc being a candidate to move there when the
-  sibling spec revises the set — not by this one.
-- **Rule and value drift apart.** Mitigated by the `## Validation` invariant: the harness line never
-  paraphrases the rule, so there is nothing for it to drift from.
-- **Task ordering.** Editing a site to cite the doc before the skeleton ships it leaves a dangling
-  citation in a released plugin. Mitigated by the ordering declared in `## Tasks`.
+- **Este spec agora faz a árvore travada crescer, e `revise-standards-subject-folders` também pretende
+  revisá-la.** Dois specs editando o mesmo conjunto declarado de subjects podem cada um entregar
+  metade dele. **Accepted, with the boundary stated:** este spec adiciona exatamente um subject e não
+  toca em nenhum outro, e o spec irmão continua livre para revisar o conjunto como um todo depois —
+  inclusive renomeando o que este adicionou. O que este spec não pode fazer é antecipar aquela
+  revisão reorganizando subjects de que não precisa. Se o irmão entrar primeiro, a task 1 encolhe para
+  uma linha em qualquer conjunto que ele tenha produzido.
+- **A citação não resolve em um repositório que nunca adota o bundle.** Um repositório `specs/`-only
+  lê uma reference citando `docs/standards/agents/body-language.md`, que ele não tem. **Accepted
+  risk** — a alternativa era um dono sob `assets/`, o que colocaria a regra fora do bundle que ela
+  governa. Mitigação: as quatro citações nas references nomeiam o doc como *do bundle*, então um
+  repositório sem bundle lê um ponteiro para algo que sabidamente não tem, em vez de uma promessa
+  quebrada.
+- **`agents/` é lido como "definições de agente" e não como "como instruímos agentes".** O nome é
+  curto o bastante para convidar à leitura mais estreita, e `docs/standards/automation/agents.md` já
+  guarda o contrato de definição de `.claude/agents/`. Mitigado pelo `index.md` do subject enunciando
+  o limite em sua primeira linha, e por aquele doc existente ser candidato a mudar de casa quando o
+  spec irmão revisar o conjunto — não por este.
+- **Regra e valor se afastam — ou a linha simplesmente desaparece.** A **paráfrase** é mitigada pelo
+  invariante de `## Validation`: a linha do harness nunca parafraseia a regra, então não há do que ela
+  divergir. A **remoção** é o modo de falha mais silencioso dos dois: uma linha cujo conteúdo inteiro
+  é um valor mais uma citação é exatamente a forma que uma passagem de emagrecimento do
+  `/docs:harness` trata como ponteiro colapsável, e nenhum validador nota a falta dela — os arquivos
+  de harness são isentos em `okf-validate.py`. Mitigado pela task 7, que ensina o comando que a linha
+  é um KEEP; a detecção é essa task e nada mais, e é por isso que ela não é opcional.
+- **Ordem das tasks.** Editar um local para citar o doc antes de o skeleton entregá-lo deixa uma
+  citação pendurada em um plugin já lançado. Mitigado pela ordem declarada em `## Tasks`.
+- **O grep declarado em `## Validation` não vê todas as ocorrências que precisa ver.** O padrão é de
+  uma linha, e em dois dos locais a expressão está quebrada por wrap:
+  `docs/standards/workflows/plan-artifacts.md:69` traz `follows the` / `repo's language` e
+  `plugins/quenching/assets/references/docs-align/okf-spec.md:110` traz `the repo's` / `language**`.
+  Hoje o grep retorna cinco ocorrências e omite justamente as duas mais importantes — a que precisa
+  colapsar e a que precisa **não** colapsar. Mitigação: o grep é um alarme contra reenunciação **nova**,
+  não um censo; quem executa a task 5 enumera os seis locais pela tabela de `## Design`, e confere os
+  dois quebrados por wrap com `grep -rn -A1` antes de declarar a task pronta.
 ## Handoff
 
-Nothing built yet — tasks 1–7 open, none blocked, none committed. Two orderings are load-bearing:
-task 1 opens the subject before anything is written into it, and task 2 ships the owner before task 5
-makes any site cite it.
+Nada construído ainda — tasks 1–7 abertas, nenhuma bloqueada, nenhuma commitada. Duas ordens são
+load-bearing: a task 1 abre o subject antes de qualquer coisa ser escrita nele, e a task 2 entrega o
+dono antes de a task 5 fazer qualquer local citá-lo.
 
-State a fresh executor cannot derive:
+Estado que um executor novo não consegue derivar:
 
-- The `agents/` subject exists in neither tree. Task 1 creates it **and** declares it in
-  `taxonomy.md` §The canonical tree (locked) — editing that section is intended here, not a slip.
-- Do not fold `docs/standards/automation/agents.md` into the new subject. It is the `.claude/agents/`
-  definition contract, it stays where it is, and moving it belongs to
+- O subject `agents/` não existe em nenhuma das duas árvores. A task 1 o cria **e** o declara em
+  `taxonomy.md` §The canonical tree (locked) — editar aquela seção é intencional aqui, não um deslize.
+- Não funda `docs/standards/automation/agents.md` dentro do subject novo. Ele é o contrato de
+  definição de `.claude/agents/`, fica onde está, e movê-lo pertence a
   `revise-standards-subject-folders`.
-- The owner doc exists nowhere yet. Both writes are creations.
-- The six sites still restate the rule verbatim. `okf-spec.md` is the one that keeps its statement —
-  do not collapse it.
-- `docs/index.md` and `plugins/quenching/assets/docs/index.md` still scope the rule to
-  `audience: human`; task 4 widens them. Reading them before task 4 gives the pre-decision wording.
-- This session runs without a `plan/` branch: isolation was declined because the session's
-  designated branch is mandated. No `branch` record is stamped, and commits land on that branch.
-- `verification: per-section` — verify at each task's own boundary, per that task's `verify:`.
+- O doc dono não existe em lugar algum ainda. As duas escritas são criações.
+- Os seis locais ainda reenunciam a regra literalmente. `okf-spec.md` é o que conserva sua declaração
+  — não o colapse.
+- `docs/index.md` e `plugins/quenching/assets/docs/index.md` ainda limitam a regra a
+  `audience: human`; a task 4 as amplia. Lê-los antes da task 4 dá a redação de antes da decisão.
+- Os dois `standards/index.md` carregam uma zona `## Current docs` entre `BEGIN GENERATED` e
+  `END GENERATED`, agrupada por subject e reconstruída a partir do disco. **Nada a valida:**
+  `okf-validate.py` não conhece o conjunto de subjects e checa apenas `dir-no-index`, links de
+  listagem quebrados e docs órfãos. Logo o `verify:` das tasks 1–3 reporta
+  `0 error(s), 0 warning(s)` mesmo com a zona sem o grupo `### agents/`. Regenere a zona nas duas
+  árvores dentro da própria task em que o doc aterra.
+- Esta sessão roda sem branch `plan/`: a isolação foi declinada porque a branch designada da sessão é
+  mandatória. Nenhum registro `branch` é estampado, e os commits aterram nessa branch.
+- `verification: per-section` — verifique no limite de cada task, conforme o `verify:` daquela task.
 ## Tasks
 
-Ordered, and the ordering is load-bearing twice: task 1 opens the subject before anything is written
-into it, and task 2 ships the owner before task 5 makes any site cite it — or a released plugin
-carries a dangling citation. Each task names its declared `docs/standards/**` path on its own
-checkbox line, because `sp-impact-uncovered` matches that line and not the `files:` continuation.
+Ordenadas, e a ordem é load-bearing duas vezes: a task 1 abre o subject antes de qualquer coisa ser
+escrita nele, e a task 2 entrega o dono antes de a task 5 fazer qualquer local citá-lo — ou um plugin
+lançado carrega uma citação pendurada. Cada task nomeia o caminho `docs/standards/**` que declara na
+própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e não com a continuação
+`files:`.
 
-- [ ] 1 Open the `agents/` subject in both trees — folder + `index.md` in the skeleton and in this
-  repo, the subject added to `taxonomy.md` §The canonical tree (locked), and a subtopic row in both
-  `standards/index.md`. The subject's boundary: how we instruct agents — what the always-on surface
-  declares. Distinct from `automation/` (this repo's local subject for the command surface itself).
+- [ ] 1 Abrir o subject `agents/` nas duas árvores — pasta + `index.md` no skeleton e neste
+  repositório, o subject adicionado a `taxonomy.md` §The canonical tree (locked), e uma linha de
+  subtopic nos dois `standards/index.md`. O limite do subject: como instruímos agentes — o que a
+  surface always-on declara. Distinto de `automation/` (o subject local deste repo para a própria
+  command surface).
   files: `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/docs/standards/index.md`, `plugins/quenching/assets/docs/standards/agents/index.md`, `docs/standards/index.md`, `docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` and `... docs` both report `0 error(s), 0 warning(s)`
-- [ ] 2 Ship the owner in the skeleton at `docs/standards/agents/body-language.md` under `assets/docs/`
-  States what declaring means, that only the **root** harness carries it, that the value is a BCP-47
-  tag, and that silence means no constraint. Full OKF frontmatter; `authority: background` until the
-  rule is proven by use.
+- [ ] 2 Entregar o dono no skeleton em `docs/standards/agents/body-language.md` sob `assets/docs/`
+  Enuncia o que declarar significa, que somente o harness **raiz** o carrega, que o valor é uma tag
+  BCP-47, e que o silêncio significa nenhuma restrição. Frontmatter OKF completo;
+  `authority: background` até a regra ser provada pelo uso.
   files: `plugins/quenching/assets/docs/standards/agents/body-language.md`, `plugins/quenching/assets/docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` → `0 error(s), 0 warning(s)`
-- [ ] 3 Install the same owner at `docs/standards/agents/body-language.md` in this repo's bundle, and
-  declare this repository's own body language in the root harness — the dogfood the spec claims.
+- [ ] 3 Instalar o mesmo dono em `docs/standards/agents/body-language.md` no bundle deste repo, e
+  declarar a body language deste próprio repositório no harness raiz — o dogfood que o spec alega.
   files: `docs/standards/agents/body-language.md`, `docs/standards/agents/index.md`, `CLAUDE.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py docs` → `0 error(s), 0 warning(s)`
-- [ ] 4 Reconcile the two index lines that scope the rule to `audience: human` with this spec's
-  decision that the declared language governs every body.
+- [ ] 4 Reconciliar as duas linhas de index que limitam a regra a `audience: human` com a decisão
+  deste spec de que a language declarada governa todo body.
   files: `docs/index.md`, `plugins/quenching/assets/docs/index.md`
   verify: `grep -n 'audience: human' docs/index.md plugins/quenching/assets/docs/index.md` shows no
   language clause narrowed by audience
-- [ ] 5 Collapse the six restating sites to cite the owner; `okf-spec.md` keeps its self-contained
-  statement with the reason recorded inline.
+- [ ] 5 Colapsar os seis locais que reenunciam a regra para que citem o dono; `okf-spec.md` conserva
+  sua declaração autocontida com a razão registrada inline.
   files: `docs/standards/naming/command-surface.md`, `docs/standards/workflows/plan-artifacts.md`, `plugins/quenching/assets/references/specs-develop/spec-driven.md`, `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/references/docs-align/migration.md`, `plugins/quenching/assets/references/docs-align/okf-spec.md`
   verify: the `## Validation` grep returns five citing sites and no restatement
-- [ ] 6 Teach `/docs:align` to ask the body language once on adoption and write the line into the
-  root harness file.
+- [ ] 6 Ensinar `/docs:align` a perguntar a body language uma vez na adoção e escrever a linha no
+  arquivo de harness raiz.
   files: `plugins/quenching/commands/docs/align.md`
   verify: `grep -n 'body language' plugins/quenching/commands/docs/align.md`
-- [ ] 7 Teach `/docs:harness` that the declaration line is a KEEP and must never paraphrase the
-  rule — the invariant `## Validation` asserts.
+- [ ] 7 Ensinar `/docs:harness` que a linha da declaração é um KEEP e nunca deve parafrasear a
+  regra — o invariante que `## Validation` afirma.
   files: `plugins/quenching/commands/docs/harness.md`
   verify: `grep -n 'body language' plugins/quenching/commands/docs/harness.md`
