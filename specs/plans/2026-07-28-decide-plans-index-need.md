@@ -643,9 +643,10 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 4. Tirar os ponteiros que sobraram
 
-- [ ] 4.1 Tirar o link das duas citações de `specs/plans/` em `create.md:12` e `triage.md:13`, deixando texto puro
+- [x] 4.1 Tirar o link das duas citações de `specs/plans/` em `create.md:12` e `triage.md:13`, deixando texto puro
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/triage.md
       verify: grep -rn "assets/specs/plans" plugins/quenching/commands/
+      subject: plan/decide-plans-index-need: 4.1 Tirar o link das duas citacoes de specs/plans/
       Não pode imprimir nenhuma linha. A frase ao redor de cada link explica a pasta em duas frases
       e não precisa mandar o leitor a lugar nenhum — decidido em `## Design`.
 - [ ] 4.2 Corrigir o link `specs/plans/index.md` do `CLAUDE.md`
