@@ -2,7 +2,7 @@
 slug: dedupe-specs-py-spec-reader
 title: Fold the four copies of read-parse-derive in specs.py into one helper
 verification: per-section
-priority: {level: 16, criticality: medium, complexity: 5, date: 2026-07-28}
+priority: {level: 24, criticality: medium, complexity: 5, date: 2026-07-29}
 ---
 
 # Fold the four copies of read-parse-derive in specs.py into one helper

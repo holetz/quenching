@@ -2,7 +2,7 @@
 slug: rewrite-readme-for-collapsed-surface
 title: Rewrite README.md for the collapsed command surface
 verification: per-section
-priority: {level: 13, criticality: high, date: 2026-07-28}
+priority: {level: 20, criticality: high, date: 2026-07-29}
 ---
 
 # Rewrite README.md for the collapsed command surface

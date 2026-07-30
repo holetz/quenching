@@ -2,7 +2,7 @@
 slug: probe-a-frontmatter-hook-firing
 title: No probe observes a frontmatter hooks: block actually fire
 verification: per-section
-priority: {level: 14, criticality: high, date: 2026-07-28}
+priority: {level: 17, criticality: high, date: 2026-07-29}
 ---
 
 # No probe observes a frontmatter hooks: block actually fire

@@ -2,6 +2,7 @@
 slug: check-the-lockstep-itself
 title: Check The Lockstep Itself
 verification: per-section
+priority: {level: 14, criticality: medium, complexity: 1, date: 2026-07-29}
 ---
 
 # Check The Lockstep Itself

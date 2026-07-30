@@ -2,7 +2,7 @@
 slug: add-specs-cycle-run-modes
 title: Add customizable run modes to the specs cycle commands
 verification: per-section
-priority: {level: 21, criticality: medium, date: 2026-07-28}
+priority: {level: 4, criticality: high, date: 2026-07-29}
 ---
 
 # Add customizable run modes to the specs cycle commands

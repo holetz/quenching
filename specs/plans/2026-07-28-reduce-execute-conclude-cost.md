@@ -2,6 +2,7 @@
 slug: reduce-execute-conclude-cost
 title: Re-evaluate /specs:execute and /specs:conclude runs for cost reduction
 verification: per-section
+priority: {level: 3, criticality: high, date: 2026-07-29}
 ---
 
 # Re-evaluate /specs:execute and /specs:conclude runs for cost reduction

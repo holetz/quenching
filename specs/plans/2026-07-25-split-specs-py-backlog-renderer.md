@@ -2,7 +2,7 @@
 slug: split-specs-py-backlog-renderer
 title: Split the backlog-zone renderer out of specs.py
 verification: per-section
-priority: {level: 18, criticality: medium, date: 2026-07-28}
+priority: {level: 26, criticality: medium, date: 2026-07-29}
 ---
 
 # Split the backlog-zone renderer out of specs.py

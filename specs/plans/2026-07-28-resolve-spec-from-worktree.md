@@ -2,6 +2,7 @@
 slug: resolve-spec-from-worktree
 title: Resolve a spec from its own worktree before falling back to the current branch
 verification: per-section
+priority: {level: 12, criticality: high, complexity: 3, date: 2026-07-29}
 ---
 
 # Resolve a spec from its own worktree before falling back to the current branch

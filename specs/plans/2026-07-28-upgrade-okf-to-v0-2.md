@@ -2,6 +2,7 @@
 slug: upgrade-okf-to-v0-2
 title: Upgrade the OKF contract to v0.2 or later
 verification: per-section
+priority: {level: 27, criticality: medium, date: 2026-07-29}
 ---
 
 # Upgrade the OKF contract to v0.2 or later

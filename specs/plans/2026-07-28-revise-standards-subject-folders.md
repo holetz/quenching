@@ -2,7 +2,7 @@
 slug: revise-standards-subject-folders
 title: Revise the fixed docs/standards subject folders
 verification: per-section
-priority: {level: 10, criticality: medium, date: 2026-07-28}
+priority: {level: 22, criticality: medium, date: 2026-07-29}
 ---
 
 # Revise the fixed docs/standards subject folders
