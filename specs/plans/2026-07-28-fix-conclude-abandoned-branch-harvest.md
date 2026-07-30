@@ -2,7 +2,7 @@
 slug: fix-conclude-abandoned-branch-harvest
 title: conclude --outcome abandoned can harvest a note and delete it in the same run
 verification: per-section
-priority: {level: 4, criticality: high, complexity: 2, date: 2026-07-28}
+priority: {level: 9, criticality: high, complexity: 2, date: 2026-07-29}
 ---
 
 # conclude --outcome abandoned can harvest a note and delete it in the same run

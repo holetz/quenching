@@ -2,7 +2,7 @@
 slug: name-the-scaffolded-stage
 title: Decide whether a spec with an unwritten Problem gets a named stage
 verification: per-section
-priority: {level: 23, criticality: low, complexity: 2, date: 2026-07-28}
+priority: {level: 30, criticality: low, complexity: 2, date: 2026-07-29}
 ---
 
 # Decide whether a spec with an unwritten Problem gets a named stage

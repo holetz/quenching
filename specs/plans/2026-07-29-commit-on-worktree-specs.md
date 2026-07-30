@@ -2,6 +2,7 @@
 slug: commit-on-worktree-specs
 title: Commit work at the end of develop, create and execute when a spec is already isolated in a worktree
 verification: per-section
+priority: {level: 13, criticality: medium, complexity: 3, date: 2026-07-29}
 ---
 
 # Commit work at the end of develop, create and execute when a spec is already isolated in a worktree

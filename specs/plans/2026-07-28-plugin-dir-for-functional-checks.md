@@ -2,6 +2,7 @@
 slug: plugin-dir-for-functional-checks
 title: Plugin Dir For Functional Checks
 verification: per-section
+priority: {level: 10, criticality: high, complexity: 2, date: 2026-07-29}
 ---
 
 # Plugin Dir For Functional Checks

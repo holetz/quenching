@@ -2,6 +2,7 @@
 slug: wire-the-overview-consumers
 title: "Wire the three consumers to read `## Overview`"
 verification: per-section
+priority: {level: 5, criticality: high, complexity: 4, date: 2026-07-29}
 ---
 
 # Wire the three consumers to read `## Overview`

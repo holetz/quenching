@@ -2,6 +2,7 @@
 slug: narrow-the-stale-doc-trigger-to-content-drift
 title: Narrow The Stale Doc Trigger To Content Drift
 verification: per-section
+priority: {level: 8, criticality: high, date: 2026-07-29}
 ---
 
 # Narrow The Stale Doc Trigger To Content Drift

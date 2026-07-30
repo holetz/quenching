@@ -2,6 +2,7 @@
 slug: stop-develop-offering-follow-up-specs
 title: /specs:develop should not offer to create a follow-up spec
 verification: per-section
+priority: {level: 7, criticality: medium, complexity: 1, date: 2026-07-29}
 ---
 
 # /specs:develop should not offer to create a follow-up spec

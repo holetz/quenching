@@ -2,7 +2,7 @@
 slug: route-commands-without-always-on-descriptions
 title: Route a 10x command surface without per-command always-on descriptions
 verification: per-section
-priority: {level: 7, criticality: high, date: 2026-07-28}
+priority: {level: 1, criticality: critical, date: 2026-07-29}
 ---
 
 # Route a 10x command surface without per-command always-on descriptions

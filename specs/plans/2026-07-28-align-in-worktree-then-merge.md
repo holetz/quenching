@@ -2,6 +2,7 @@
 slug: align-in-worktree-then-merge
 title: Have the align commands propose a worktree and merge at the end, as specs already does
 verification: per-section
+priority: {level: 15, criticality: medium, date: 2026-07-29}
 ---
 
 # Have the align commands propose a worktree and merge at the end, as specs already does
