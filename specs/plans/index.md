@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**32 specs** · 2 executing · 30 ready
+**33 specs** · 2 executing · 30 ready · 1 captured
 
 ### Executing
 
@@ -124,6 +124,12 @@ closing out unbuilt work looks like.
 | [commit-on-worktree-specs](2026-07-29-commit-on-worktree-specs.md) | Commit work at the end of develop, create and execute when a spec is already isolated in a worktree | 2026-07-29 |
 | [narrow-the-stale-doc-trigger-to-content-drift](2026-07-29-narrow-the-stale-doc-trigger-to-content-drift.md) | Narrow stale-doc — retire the verdict, report resource activity as a figure | 2026-07-29 |
 | [wire-the-overview-consumers](2026-07-29-wire-the-overview-consumers.md) | Wire the three consumers to read `## Overview` | 2026-07-29 |
+
+### Captured
+
+| Spec | Title | Since |
+| --- | --- | --- |
+| [cut-specs-execute-turns](2026-07-30-cut-specs-execute-turns.md) | Cut /specs:execute's turn count through body wording | 2026-07-30 |
 <!-- END GENERATED -->
 
 ## Frontmatter
