@@ -476,10 +476,11 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   files: `docs/standards/agents/communication.md`, `docs/standards/agents/index.md`, `CLAUDE.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py docs` → `0 error(s), 0 warning(s)`
   subject: plan/declare-repo-body-language: 3 Instalar o dono neste repo e declarar pt-BR
-- [ ] 4 Reconciliar as duas linhas de index que limitam a regra a `audience: human` com a decisão
+- [x] 4 Reconciliar as duas linhas de index que limitam a regra a `audience: human` com a decisão
   deste spec de que ela governa toda prosa autorada pelo agente.
   files: `docs/index.md`, `plugins/quenching/assets/docs/index.md`
   verify: `grep -n 'audience: human' docs/index.md plugins/quenching/assets/docs/index.md` shows no
+  subject: plan/declare-repo-body-language: 4 Reconciliar as duas linhas de index
   language clause narrowed by audience
 - [ ] 5 Colapsar os seis locais que reenunciam a regra para que citem o dono; `okf-spec.md` conserva
   sua declaração autocontida com a razão registrada inline.
