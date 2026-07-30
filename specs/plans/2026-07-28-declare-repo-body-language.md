@@ -401,8 +401,11 @@ O colapso, por camada:
   dois quebrados por wrap com `grep -rn -A1` antes de declarar a task pronta.
 ## Handoff
 
-Tasks 1–3 commitadas; tasks 4–7 abertas, nenhuma bloqueada. O dono já existe, então a ordem
-load-bearing restante já foi cumprida — a task 5 pode citá-lo com segurança.
+**As sete tasks estão commitadas, nenhuma bloqueada.** O que resta é `/specs:conclude`: revisar a
+branch inteira, escrever o `docs/` que o trabalho revelou, resolver as quatro linhas de
+`## Discoveries`, arquivar e mergear. Duas delas pedem correção de redação **no próprio spec** antes
+do arquivamento — o primeiro e o quinto bullet de `## Validation`, cujos greps não medem o que
+afirmam medir.
 
 **Este repositório declara `pt-BR`** (task 3, escolhido pelo humano). A partir daí a prosa autorada
 pelo agente aqui segue a tag — body de doc e de spec, mensagem de commit, e também resposta,
@@ -492,13 +495,15 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   files: `plugins/quenching/commands/docs/align.md`
   verify: `grep -n 'communication' plugins/quenching/commands/docs/align.md`
   subject: plan/declare-repo-body-language: 6 Ensinar /docs:align a perguntar a language
-- [ ] 7 Ensinar `/docs:harness` que a linha da declaração é um KEEP e nunca deve parafrasear a
+- [x] 7 Ensinar `/docs:harness` que a linha da declaração é um KEEP e nunca deve parafrasear a
   regra — o invariante que `## Validation` afirma.
   files: `plugins/quenching/commands/docs/harness.md`
   verify: `grep -n 'communication' plugins/quenching/commands/docs/harness.md`
+  subject: plan/declare-repo-body-language: 7 Ensinar /docs:harness que a linha e KEEP
 
 ## Discoveries
 
 - O verify: das tasks 1-3 e o quinto bullet de ## Validation exigem 0 warning(s) do okf-validate.py sobre docs/, mas a baseline ja carrega 13 warnings stale-doc/resource-unresolved pre-existentes e alheios a este spec (identicos antes e depois da task 1). O criterio efetivo aplicado e: 0 error(s) e nenhum finding NOVO. O spec irmao narrow-the-stale-doc-trigger-to-content-drift e quem cura o ruido.
 - As tasks 1-2 fizeram docs/standards/architecture/plugin-layout.md acusar stale-doc: o resource dele cobre plugins/quenching/assets/**, e este spec escreve ali. O contrato do doc nao mudou - so o glob foi tocado. Nao foi silenciado com bump de timestamp; e o mesmo gatilho que narrow-the-stale-doc-trigger-to-content-drift existe para estreitar. Baseline docs/: 13 warnings em main, 14 a partir da task 1.
 - O primeiro bullet de ## Validation espera que o grep 'the repo.s language' retorne cinco locais citando o dono. Depois da task 5 ele retorna ZERO: os cinco colapsados deixaram de conter a frase, e a unica ocorrencia viva - a declaracao autocontida de okf-spec.md - esta quebrada por wrap e escapa ao padrao de uma linha. O invariante util virou um par: grep da frase = alarme de reenunciacao NOVA (deve dar so okf-spec, via -A1); grep de 'agents/communication.md' = as cinco citacoes. Vale corrigir a redacao do bullet no conclude.
+- Uma decima-primeira reenunciacao, fora do censo de ## Open Decisions: plugins/quenching/commands/docs/harness.md passo 7 diz 'Structure and links are canonical English; prose may follow the repo's language'. Nao foi colapsada - e body de comando, a mesma categoria que o censo deixou para um spec de follow-up. Some-a ao censo quando aquele spec for escrito.
