@@ -193,8 +193,8 @@ plan was rejected and nothing was written.
 
 **Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.
 
-### 5. Install the hook and the site layer — pass 1 only, offered
-Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
+### 5. Install the hook, the language declaration and the site layer — pass 1 only, offered
+All three are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
 **The enforcement hook.** Offer to copy **exactly**
 `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` + `hooks-config.json` into the target's
@@ -217,6 +217,23 @@ script cannot fix by being copied: the file is on disk and no `hooks` block invo
 the `settings.snippet.json` merge even though the version is current. See
 [hooks/README.md](${CLAUDE_PLUGIN_ROOT}/assets/hooks/README.md).
 
+**The language declaration.** Ask **once**, and only when the target's **root** harness file
+(`CLAUDE.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
+`ja` — and write a single line into that root file:
+
+    Language: <tag> — the contract is docs/standards/agents/communication.md
+
+That line carries **a value and a citation, and nothing else**: never a paraphrase of the rule, and
+never a second configuration key. The rule itself belongs to
+`docs/standards/agents/communication.md`, which the structural pass (step 4) has already put on
+disk — so the citation resolves the moment it is written.
+
+**Declining is a complete answer.** A repo that declares nothing is under no constraint, and
+nothing becomes non-conformant for it. Never infer a tag from the prose already sitting in the
+bundle, never write the line into a nested harness file — only the root one is in context at
+session start, which is the whole reason this form was chosen — and on a repo that already declares
+one, read it and move on rather than asking again.
+
 **The mkdocs site.** Only if the bundle has a `documentation/` home. Offer to copy from
 `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`: `mkdocs.yml.tmpl` → the repo **root** as `mkdocs.yml`
 **only if absent** (never clobber a customized one — show a diff and let the user merge), filling
@@ -229,8 +246,8 @@ later update, nav regeneration, config merge, and build verification is **its** 
 is anything more than stamping two absent files — a customized `mkdocs.yml` to merge, a `docs_dir`
 pointing elsewhere, `.pages` files no longer matching the tree — hand off to that command instead of
 resolving it here.
-**Done when:** both offers have been made once and answered, or the pass is >1 and this step was
-skipped.
+**Done when:** the three offers have been made once and answered, or the pass is >1 and this step
+was skipped.
 
 ### 6. Run the content stages that have work, in order
 Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,

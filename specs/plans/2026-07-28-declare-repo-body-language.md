@@ -487,10 +487,11 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   files: `docs/standards/naming/command-surface.md`, `docs/standards/workflows/plan-artifacts.md`, `plugins/quenching/assets/references/specs-develop/spec-driven.md`, `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/references/docs-align/migration.md`, `plugins/quenching/assets/references/docs-align/okf-spec.md`
   verify: the `## Validation` grep returns five citing sites and no restatement
   subject: plan/declare-repo-body-language: 5 Colapsar os seis locais para citarem o dono
-- [ ] 6 Ensinar `/docs:align` a perguntar a language uma vez na adoção e escrever a linha no
+- [x] 6 Ensinar `/docs:align` a perguntar a language uma vez na adoção e escrever a linha no
   arquivo de harness raiz — a tag e uma citação, nunca uma segunda chave de configuração.
   files: `plugins/quenching/commands/docs/align.md`
   verify: `grep -n 'communication' plugins/quenching/commands/docs/align.md`
+  subject: plan/declare-repo-body-language: 6 Ensinar /docs:align a perguntar a language
 - [ ] 7 Ensinar `/docs:harness` que a linha da declaração é um KEEP e nunca deve parafrasear a
   regra — o invariante que `## Validation` afirma.
   files: `plugins/quenching/commands/docs/harness.md`
