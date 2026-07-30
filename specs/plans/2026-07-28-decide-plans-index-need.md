@@ -517,6 +517,39 @@ compre — só custa um arquivo a mais, para sempre.
   histórico, a zona é determinística, e não há estado nenhum para migrar de volta: um único reindex
   a reconstruiria do disco sem perda. A assimetria é o argumento — a remoção é reversível, e a
   staleness que ela mata não é detectável.
+## Handoff
+
+<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+
+     The context an executor needs and cannot derive: the state of play, the conventions in
+     force, what was already tried. Small by construction — it is sent with EVERY task.
+
+     Refresh is bound to EVENTS, not judgment: the orchestrator rewrites this after each
+     committed task. Staleness is this section's failure mode. -->
+
+Worktree `../claude-quenching-decide-plans-index-need`, branch `plan/decide-plans-index-need`
+cut from `main`. Um commit por task, subject `plan/<slug>: <id> <título>`.
+
+**Estado após 1.3.** Seção 1 fechada: `okf-validate.py` não tem mais `--listing-root`,
+`_is_spec_file` nem `SPEC_FILENAME_RE`; `validate_file`/`_validate_text`/`validate_tree`
+perderam o parâmetro. A guarda nova é `retired_listing_root_failures()`, com fixture próprio.
+`specs.py` ainda tem `cmd_plans` — seção 2.
+
+**Três correções de fato que o executor precisa saber:**
+
+1. `okf-validate.py` **não tem `--help`** — `--help` cai num scan normal do bundle. Todo
+   `verify:` na forma `okf-validate.py --help | grep -c X` é vácuo e imprime `0` sempre.
+   `specs.py` **tem** argparse, então o `verify:` da task 2.1 é real.
+2. `index.md` **nunca esteve** em `hard_block_exempt()` — só em `RESERVED`, e tem de continuar
+   fora do skip: negar um `index.md` com `type` de conceito é a função do gate PreToolUse.
+   O spec afirma o contrário em `## Proposal`, `## Design` §3, `## Validation` e na task 1.2.
+3. Task 7.1 está **bloqueada por contrato**: `docs/standards/ci-cd/versioning-release.md`
+   §When the bump happens proíbe bump como task — é do `/specs:conclude` step 5.
+
+**Convenção adotada:** toda guarda de selftest escrita aqui passa por mutation pass
+(`docs/standards/quality/selftest-mutation.md`) antes do commit; o resultado vai em
+`## Discoveries`.
+
 ## Tasks
 
 Cada primeira linha é a task inteira e se lê sozinha — `specs.py next` entrega só ela ao executor.
@@ -542,9 +575,10 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       subject: plan/decide-plans-index-need: 1.2 Acrescentar a okf-validate.py selftest a guarda da retirada
       É a guarda que `docs/standards/architecture/retiring-a-reserved-artifact.md` §The guard exige:
       tem que falhar se alguém reintroduzir o flag ou tirar o nome da reserva.
-- [ ] 1.3 Tirar do `CLAUDE.md` e de `assets/README.md` as duas receitas que invocam o flag retirado
+- [x] 1.3 Tirar do `CLAUDE.md` e de `assets/README.md` as duas receitas que invocam o flag retirado
       files: CLAUDE.md, plugins/quenching/assets/README.md
       verify: grep -rn -- "--listing-root" CLAUDE.md plugins/quenching/assets/README.md
+      subject: plan/decide-plans-index-need: 1.3 Tirar as receitas que invocam o flag retirado
       Não pode imprimir nenhuma linha. Uma receita que aponta para o que não existe é pior que
       nenhuma. Usar `/docs:harness` para o `CLAUDE.md`.
 

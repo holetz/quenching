@@ -82,7 +82,7 @@ its own docstring.
 The `docs/` tree is the **portable signature** — every repo the plugin aligns ends with the same
 homes, the same reserved `index.md` listings, the same `type` vocabulary. The skeleton is
 **conformant by construction**: `python3 hooks/okf-validate.py docs` over it reports **0 errors, 0
-warnings**, and so does `python3 hooks/okf-validate.py specs/plans --listing-root` over the seed.
+warnings**.
 
 ## How the commands use it
 
