@@ -55,20 +55,55 @@ well-scoped** units over shredding prose into fragments.
 
 ## Attribution
 
-Every minted doc records where it came from — the source path/URL in the frontmatter
-`source:` field (and a link in the body when the source is a stable URL). This keeps the
-bundle honest about what is imported vs authored, and lets a later run re-sync the source.
-Never present imported material as proven local practice: that is the `authority: background`
-rule.
+Every minted doc records where it came from, in **two frontmatter fields that answer different
+questions** — one written to be searched, one written to be read:
+
+- **`source_uri:`** — the exact URI or path of the *source unit*. One value on one line: an
+  absolute URL (`https://host/page#heading` when the heading is addressable) or the path as the
+  user named the source, anchored where the unit starts (`docs/api/auth.md:120`). No prose, no
+  parenthetical, no list. This is the key a later run greps for an exact match on, so an
+  approximate value is worse than no value at all.
+- **`source:`** — unchanged, and still prose: which spec, person, or body of work originated the
+  rule. A bundle's own authored docs already use it that way, and importing must not overload one
+  key with two meanings.
+
+**Only `/docs:import` writes `source_uri:`.** No other command mints it, infers it, or backfills
+it, and a doc with no external origin simply has no such key — inventing one fabricates a
+provenance that never existed. The shared frontmatter mold in
+[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) deliberately
+does not carry it, so the commands citing that mold are never invited to fill it in.
+
+The body keeps its attribution line when the source is a stable URL, and that line carries **the
+date the source was read**. `source_uri:` records *where*, and `timestamp:` already means
+something else entirely — the doc's own last change. A URI with no age ages badly: a reader
+deciding whether a dead link matters needs to know how old the reading was, and that costs a
+sentence in the body rather than a second key to parse.
+
+This keeps the bundle honest about what is imported vs authored, and lets a later run re-sync the
+source. Never present imported material as proven local practice: that is the
+`authority: background` rule.
 
 ## Dedup — within the source and against the bundle
 
 1. **Within the source.** Two sections describing the same concept collapse into one unit
    (merge their detail); do not mint duplicates.
-2. **Against the existing bundle.** Before minting, `Grep` the bundle for an existing doc on
-   the same concept (by title, slug, and any repo-specific term). If one exists, the unit is a
-   **MERGE** target — enrich that doc (fill missing keys, add detail, add the source link),
-   never a second doc for the same concept. Record every MERGE-vs-mint decision in the plan.
+2. **Against the existing bundle.** Before minting, look for the doc that already covers this
+   unit — in this order, because the two lookups do not carry the same confidence:
+
+   1. **Exact, by origin.** `grep -rn 'source_uri: <the unit's URI>' docs/`. A hit is a doc
+      minted from *this very unit* — on an earlier run, or earlier in this one when a previous
+      slice already minted it. Nothing was recognised and nothing was judged: the URIs are equal
+      or they are not. This is the lookup `source_uri:` exists for. Two **overlapping seeds** are
+      not this case: they carry different URIs, so this lookup can never match them, and item 1
+      above has already collapsed them by prose before it runs.
+   2. **Approximate, by concept.** No hit → `Grep` the bundle by title, slug, and any
+      repo-specific term. A doc found this way covers the same concept from a *different* origin,
+      or from none at all, so calling it the same concept is a judgement — present it as one.
+
+   Either way the unit is a **MERGE** target — enrich that doc (fill missing keys, add detail,
+   add the source link), never a second doc for the same concept. Record every MERGE-vs-mint
+   decision in the plan, **and which of the two lookups produced it**, so the human reads an
+   exact match and a resemblance as the different claims they are.
 3. **Glossary.** A term the source defines that the glossary already lists is a MERGE into the
    existing entry (sharpen/keep the link), per homes.md §Enriching the glossary.
 
