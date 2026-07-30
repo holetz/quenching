@@ -4,6 +4,8 @@ title: Add provenance and idempotent re-ingestion to quenching-docs-import
 verification: per-section
 priority: {level: 28, criticality: medium, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
+approved: {date: 2026-07-30}
+branch: {base: main, work: plan/add-import-provenance}
 ---
 
 # Add provenance and idempotent re-ingestion to quenching-docs-import
@@ -371,9 +373,10 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
 
 ### 1. O contrato da chave
 
-- [ ] 1.1 Escrever o contrato de `source_uri:` em `sources.md` §Attribution — formato do valor, só `/docs:import` estampa, `source:` segue sendo prosa autoral, e a linha de atribuição no corpo passa a carregar a data da leitura
+- [x] 1.1 Escrever o contrato de `source_uri:` em `sources.md` §Attribution — formato do valor, só `/docs:import` estampa, `source:` segue sendo prosa autoral, e a linha de atribuição no corpo passa a carregar a data da leitura
       files: plugins/quenching/assets/references/docs-import/sources.md
       verify: grep -n source_uri plugins/quenching/assets/references/docs-import/sources.md
+      subject: plan/add-import-provenance: 1.1 Escrever o contrato de source_uri: em sources.md §Attribution
 - [ ] 1.2 Trocar §Dedup item 2 de `sources.md` para começar pela consulta exata à `source_uri:` no bundle e só depois cair no grep por título, slug e termo
       files: plugins/quenching/assets/references/docs-import/sources.md
 - [ ] 1.3 Acrescentar `source_uri` à lista de chaves extras do perfil em `okf-spec.md` §Frontmatter, ao lado de `audience`, `authority`, `source` e `maintainer`
