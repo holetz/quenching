@@ -530,14 +530,14 @@ compre — só custa um arquivo a mais, para sempre.
 Worktree `../claude-quenching-decide-plans-index-need`, branch `plan/decide-plans-index-need`
 cut from `main`. Um commit por task, subject `plan/<slug>: <id> <título>`.
 
-**Estado após 2.2.** Seções 1 e 2 fechadas — os dois tools estão limpos e cada um carrega a
-guarda da própria retirada, ambas mutation-proven. `okf-validate.py` não tem mais
-`--listing-root`, `_is_spec_file` nem `SPEC_FILENAME_RE`. `specs.py` perdeu `cmd_plans`,
-`render_plans_zone`, `STAGE_ORDER`, `PLANS_EMPTY`, `GEN_BEGIN`/`GEN_END`, o subparser e o
-finding `sp-no-plans-index` — 83 linhas, 3125 → 3042.
+**Estado após 3.3.** Seções 1, 2 e 3 fechadas — **o artefato não existe mais em lugar nenhum**.
+Os dois tools estão limpos e cada um carrega a guarda da própria retirada, mutation-proven
+(4/4 e 2/2). Os dois arquivos foram apagados, o seed saiu do `/specs:align`, os cinco command
+bodies perderam o reindex e o flag, e a caixa do `functional-checks.sh` monta sem o arquivo.
+`assets/specs/plans/.gitkeep` mantém a pasta no git no lugar do `index.md`.
 
-Os arquivos `assets/specs/plans/index.md` e `specs/plans/index.md` **ainda existem** e ainda são
-semeados por `commands/specs/align.md` — seção 3 é o que fecha isso.
+Sobra a documentação: seção 4 (dois links + `CLAUDE.md`), seção 5 (references e manuais),
+seção 6 (o standard novo). Nada mais em `commands/**` ou nos tools.
 
 **Três correções de fato que o executor precisa saber:**
 
@@ -629,10 +629,17 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       `Never recreate ...` que esta task ESCREVE — a única guarda que impede um command body de
       voltar a semear o artefato, já que os selftests só cobrem os tools. Um verify que exigisse
       apagá-las mandaria remover a proibição junto com a prática (`## Discoveries`).
-- [ ] 3.3 Apagar `specs/plans/index.md` deste repo por `git rm` e tirar a linha do fixture de `functional-checks.sh`
+- [x] 3.3 Apagar `specs/plans/index.md` deste repo por `git rm` e tirar a linha do fixture de `functional-checks.sh`
       files: specs/plans/index.md, plugins/quenching/assets/checks/functional-checks.sh
-      verify: test ! -e specs/plans/index.md && ./plugins/quenching/assets/checks/functional-checks.sh
-      O harness tem que sair `0` montando a caixa sem o arquivo. `specs/archive/**` nunca é tocado.
+      verify: test ! -e specs/plans/index.md && grep -c "specs/plans/index.md" plugins/quenching/assets/checks/functional-checks.sh && bash -n plugins/quenching/assets/checks/functional-checks.sh && python3 plugins/quenching/assets/bin/specs.py doctor --json
+      subject: plan/decide-plans-index-need: 3.3 Apagar o index.md deste repo e tirar a linha do fixture
+      O `grep` tem que imprimir `0` e o `doctor` sair `0`. `specs/archive/**` nunca é tocado.
+      **`functional-checks.sh` retirado deste `verify:` em 2026-07-30**, por contradizer
+      `docs/standards/quality/surface-verification.md` §The harness belongs to the skill front,
+      que diz literalmente que o harness "is not named in a spec's `## Validation` or a task's
+      `verify:`" — ele é do `/skill:new`, e toda corrida vermelha que ele já produziu foi defeito
+      dele próprio. A caixa continua montada e válida: `mkdir -p .../specs/plans` fica, só o seed
+      do arquivo sai. O mesmo corte vale para `## Validation` (`## Discoveries`).
 
 ### 4. Tirar os ponteiros que sobraram
 
@@ -699,3 +706,4 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - Mutation pass sobre a guarda `sp-plans-subcommand-back` de specs.py: 2 mutações (recolocar `plans` no argparse · recolocar `plans` no DISPATCH) — 2/2 pegas, cada uma na sua superfície. As duas são asseridas separadamente de propósito: recolocar só uma é a forma que um revert parcial toma. Com isto, DUAS das três selftests shipped passaram por mutation pass nesta branch (okf-validate.py e specs.py, só as guardas novas); skills.py não.
 - Gap que o spec não previu, fechado na task 3.1: `assets/specs/plans/` era mantida no git APENAS por `index.md`. Apagando o arquivo, git deixa de rastrear a pasta, e o `Copy assets/specs/` do step 6 do /specs:align pararia de criar `specs/plans/` num target repo novo — `specs.py doctor` reportaria `sp-missing-phase` em todo repo recém-alinhado. Adicionado `assets/specs/plans/.gitkeep`, espelhando `assets/specs/archive/.gitkeep` que já existia pelo mesmo motivo. Sem isso a retirada quebrava o scaffold.
 - Terceiro `verify:` defeituoso (task 3.2): `grep -rn 'plans/index.md' commands/` exigindo zero linhas é incompatível com a própria retirada. As linhas que sobram são as invariantes `Never recreate plans/index.md` que a task escreve — e elas são a ÚNICA guarda contra um command body voltar a semear o artefato, porque os selftests de 1.2 e 2.2 cobrem só os tools. Um verify literal mandaria apagar a proibição junto com a prática. Escopo corrigido para: nenhum `plans reindex`, nenhum `--listing-root`, e nenhuma menção OPERATIVA (excluídas as que dizem 'Never' ou 'retired artifact'). Testado contra um arquivo-sonda com uso operativo: dispara.
+- CONTRADIÇÃO com standard, resolvida pelo humano em 2026-07-30: a task 3.3 e o bloco `## Validation` invocam `functional-checks.sh`, e `docs/standards/quality/surface-verification.md` (authority: current) §The harness belongs to the skill front diz literalmente que ele 'is not named in a spec's ## Validation or a task's verify:'. Retirado dos dois lugares — resta corrigir `## Validation`, que ainda o cita. PENDÊNCIA SEPARADA para o /specs:conclude: esta branch editou CINCO command bodies na task 3.2, e o mesmo standard manda rodar o harness onde a superfície é editada, uma vez, sob /skill:new — que este spec não atravessa. `skills.py doctor` (26 comandos, 0 findings) e `lint` (exit 0) passam, mas nenhum dos dois prova que a superfície CARREGA.
