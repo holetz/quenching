@@ -1174,22 +1174,69 @@ def retired_log_failures() -> list[str]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# the retired `--listing-root` mode
+# --------------------------------------------------------------------------- #
+# `plans/index.md` was retired whole, and with it the only caller of the mode that
+# scanned a non-bundle tree. The mode's failure is the mirror of the log's: re-adding
+# it is a one-line change that nothing else complains about, and the tree it used to
+# skip would go silently unjudged again. So the fixture is a tree the OLD mode
+# validated CLEAN — a spec beside a plain listing — and demands the checker judge it
+# now, because a bundle is the only thing this tool validates.
+RETIRED_LISTING_ROOT_FIXTURE = {
+    "index.md": "# Plans\n\n- [a spec](2026-07-28-a-spec.md)\n",
+    "2026-07-28-a-spec.md": ("---\nslug: a-spec\ntitle: A spec\n"
+                             "verification: per-section\n---\n\n# A spec\n"),
+}
+
+
+def retired_listing_root_failures() -> list[str]:
+    """Prove the mode is gone, and that retiring it did not touch the reservation.
+
+    NOTE on the third assertion. The spec that ordered this retirement asserts
+    `index.md` is in `hard_block_exempt()`; it never was, and must not be. `log.md` is
+    exempt because a retired artifact is judged by nothing, but `index.md` is still
+    *produced* by the bundle, and denying an `index.md` that carries a concept `type`
+    is the PreToolUse gate's whole job. Exempting it is the mutation this line catches."""
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for relpath, text in RETIRED_LISTING_ROOT_FIXTURE.items():
+            pathlib.Path(os.path.join(tmp, relpath)).write_text(text, encoding="utf-8")
+        findings = validate_tree(tmp)
+    codes = {code for sev, rel, code, msg in findings if rel == "2026-07-28-a-spec.md"}
+    if "missing-type" not in codes:
+        out.append("retired-listing-root: a spec file went unjudged — the `_is_spec_file` "
+                   f"skip is back (codes: {sorted(codes)})")
+    # the parameter is the mode; a caller cannot reach a mode the signature cannot express
+    params = validate_tree.__code__.co_varnames[:validate_tree.__code__.co_argcount]
+    if "listing_root" in params:
+        out.append("retired-listing-root: `validate_tree` still takes `listing_root`")
+    if "index.md" not in RESERVED:
+        out.append("retired-listing-root: `index.md` left RESERVED — retiring a mode is "
+                   "never unreserving a name")
+    if hard_block_exempt("index.md"):
+        out.append("retired-listing-root: `index.md` entered the PreToolUse skip — a typed "
+                   "index.md would stop being denied")
+    return out
+
+
 def run_selftest(as_json: bool) -> int:
-    """The canonical frontmatter cases plus the retirement fixture, run against this
+    """The canonical frontmatter cases plus the retirement fixtures, run against this
     checker's own parser and its own tree walk.
 
     The other two tools already had a `selftest`; this one had none, and it is the
     tool with the widest blast radius — a hook firing on every `docs/**` write in
     every target repo. A rule it cannot prove it implements is a rule it should not
     have been given."""
-    failures = canonical_case_failures() + retired_log_failures()
-    cases = len(CANONICAL_CASES) + 1
+    failures = (canonical_case_failures() + retired_log_failures()
+                + retired_listing_root_failures())
+    cases = len(CANONICAL_CASES) + 2
     if as_json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
     else:
         print(f"okf-validate selftest — {len(CANONICAL_CASES)} canonical frontmatter case(s) "
-              "+ the retired-log fixture")
+              "+ the retired-log and retired-listing-root fixtures")
         for f in failures:
             print(f"  FAIL {f}")
         print(f"  {'PASS' if not failures else str(len(failures)) + ' FAILED'}")
