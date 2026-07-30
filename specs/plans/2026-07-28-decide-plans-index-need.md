@@ -530,16 +530,21 @@ compre — só custa um arquivo a mais, para sempre.
 Worktree `../claude-quenching-decide-plans-index-need`, branch `plan/decide-plans-index-need`
 cut from `main`. Um commit por task, subject `plan/<slug>: <id> <título>`.
 
-**Estado após 1.3.** Seção 1 fechada: `okf-validate.py` não tem mais `--listing-root`,
-`_is_spec_file` nem `SPEC_FILENAME_RE`; `validate_file`/`_validate_text`/`validate_tree`
-perderam o parâmetro. A guarda nova é `retired_listing_root_failures()`, com fixture próprio.
-`specs.py` ainda tem `cmd_plans` — seção 2.
+**Estado após 2.1.** Seções 1 e 2.1 fechadas. `okf-validate.py` não tem mais `--listing-root`,
+`_is_spec_file` nem `SPEC_FILENAME_RE`; a guarda nova é `retired_listing_root_failures()`.
+`specs.py` perdeu `cmd_plans`, `render_plans_zone`, `STAGE_ORDER`, `PLANS_EMPTY`,
+`GEN_BEGIN`/`GEN_END`, o subparser e o finding `sp-no-plans-index` — 83 linhas, 3125 → 3042.
+Falta `specs.py selftest` afirmar a retirada (2.2). Os arquivos `assets/specs/plans/index.md` e
+`specs/plans/index.md` **ainda existem** — seção 3.
 
 **Três correções de fato que o executor precisa saber:**
 
-1. `okf-validate.py` **não tem `--help`** — `--help` cai num scan normal do bundle. Todo
-   `verify:` na forma `okf-validate.py --help | grep -c X` é vácuo e imprime `0` sempre.
-   `specs.py` **tem** argparse, então o `verify:` da task 2.1 é real.
+1. **Dois `verify:` estavam defeituosos, em direções opostas**, e foram corrigidos nas tasks 1.1
+   e 2.1 (autorizado pelo humano em 2026-07-30). `okf-validate.py` **não tem `--help`** — cai num
+   scan normal do bundle, então `--help | grep -c X` nunca falha. E `specs.py --help | grep -c
+   plans` nunca passa: `plans/` é pasta real citada no help de `new`, `promote` e `migrate`.
+   **Regra ao corrigir um `verify:`: a substituição tem de ser pelo menos tão forte, medida contra
+   o blob anterior à task.** As duas atuais discriminam (3→0 e 1→0).
 2. `index.md` **nunca esteve** em `hard_block_exempt()` — só em `RESERVED`, e tem de continuar
    fora do skip: negar um `index.md` com `type` de conceito é a função do gate PreToolUse.
    O spec afirma o contrário em `## Proposal`, `## Design` §3, `## Validation` e na task 1.2.
@@ -565,16 +570,21 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 - [x] 1.1 Remover o modo `--listing-root` e `_is_spec_file` de `okf-validate.py`, preservando `index-orphan` e `index-broken-link` para o bundle
       files: plugins/quenching/assets/hooks/okf-validate.py
-      verify: python3 plugins/quenching/assets/hooks/okf-validate.py --help | grep -c listing-root
+      verify: grep -c "listing_root: bool" plugins/quenching/assets/hooks/okf-validate.py
       subject: plan/decide-plans-index-need: 1.1 Remover o modo --listing-root e _is_spec_file de okf-validate.py
-      Tem que imprimir `0`. `index.md` continua em `RESERVED` e em `hard_block_exempt()` — retirar
-      nunca é desreservar.
+      Tem que imprimir `0` — conta as três assinaturas que carregavam o modo. `index.md` continua
+      em `RESERVED` — retirar nunca é desreservar. **Correção medida em 2026-07-30:** `index.md`
+      nunca esteve em `hard_block_exempt()` e não pode entrar — negar um `index.md` com `type` de
+      conceito é a função do gate PreToolUse (`## Discoveries`).
 - [x] 1.2 Acrescentar a `okf-validate.py selftest` a asserção de que `--listing-root` saiu enquanto `index.md` segue em `RESERVED` e em `hard_block_exempt()`
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs
       subject: plan/decide-plans-index-need: 1.2 Acrescentar a okf-validate.py selftest a guarda da retirada
       É a guarda que `docs/standards/architecture/retiring-a-reserved-artifact.md` §The guard exige:
-      tem que falhar se alguém reintroduzir o flag ou tirar o nome da reserva.
+      tem que falhar se alguém reintroduzir o flag ou tirar o nome da reserva. Escrita como
+      `retired_listing_root_failures()`, quatro asserções, mutation pass 4/4 (`## Discoveries`).
+      A quarta afirma que `index.md` **não** está em `hard_block_exempt()`, ao contrário do que
+      o título desta task diz.
 - [x] 1.3 Tirar do `CLAUDE.md` e de `assets/README.md` as duas receitas que invocam o flag retirado
       files: CLAUDE.md, plugins/quenching/assets/README.md
       verify: grep -rn -- "--listing-root" CLAUDE.md plugins/quenching/assets/README.md
@@ -584,10 +594,13 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 2. Retirar a zona e o subcomando de `specs.py`
 
-- [ ] 2.1 Remover `cmd_plans`, `render_plans_zone`, `PLANS_EMPTY`, o subparser `plans` e os findings `sp-no-generated-zone` e `sp-no-plans-index` de `specs.py`
+- [x] 2.1 Remover `cmd_plans`, `render_plans_zone`, `PLANS_EMPTY`, o subparser `plans` e os findings `sp-no-generated-zone` e `sp-no-plans-index` de `specs.py`
       files: plugins/quenching/assets/bin/specs.py
-      verify: python3 plugins/quenching/assets/bin/specs.py --help | grep -c plans
-      Tem que imprimir `0`. `sp-no-plans-index` sai junto desta vez: o arquivo deixa de ser
+      verify: python3 plugins/quenching/assets/bin/specs.py --help | grep -cE '^ +plans +'
+      subject: plan/decide-plans-index-need: 2.1 Remover a zona e o subcomando plans de specs.py
+      Tem que imprimir `0` — conta a LINHA do subcomando, não a palavra: `plans/` é uma pasta real
+      citada no help de `new`, `promote` e `migrate`, então um `grep -c plans` cru imprime `3` mesmo
+      com a retirada correta (`## Discoveries`). `sp-no-plans-index` sai junto desta vez: o arquivo deixa de ser
       esperado, então um finding por ausência dele seria um checker de um artefato retirado.
 - [ ] 2.2 Acrescentar a `specs.py selftest` a asserção de que `plans reindex` não existe mais na superfície do tool
       files: plugins/quenching/assets/bin/specs.py
@@ -671,3 +684,5 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - okf-validate.py has NO `--help` handler — `--help` falls through to a normal bundle scan of the default docsDir. The `verify:` of task 1.1 (`--help | grep -c listing-root`) therefore printed `0` BEFORE the change too: it is vacuous and cannot fail either way. Same vacuity in `## Validation`. A load-bearing check is `grep -c -- listing_root <file>`. (specs.py DOES have argparse --help, so task 2.1's verify is real.)
 - `index.md` was NEVER in `hard_block_exempt()` — that predicate covers EXEMPT (CLAUDE.md/AGENTS.md/QUENCHING.md) plus log.md and README.md. `index.md` is in RESERVED only, and is deliberately NOT hard-block-exempt: the PreToolUse gate's whole job is denying an index.md that carries a concept `type`. The claim appears in `## Proposal`, `## Design` §3, `## Validation` and task 1.2's body; only the RESERVED half is true. Task 1.2's assertion was written against what is actually true.
 - Mutation pass run against the new `retired_listing_root_failures()` guard, per docs/standards/quality/selftest-mutation.md: 4 mutations (re-add the _is_spec_file skip · re-add the listing_root param · drop index.md from RESERVED · add index.md to hard_block_exempt) — 4/4 CAUGHT, each failing exactly ONE assertion, which is the discriminating signal that standard asks for. This is the first of the three shipped tools to clear the pass; okf-validate.py's OTHER selftest legs (12 canonical cases + retired-log) were NOT mutation-checked, so the standard's graduation gate to `current` is not met by this spec alone.
+- Task 2.1's `verify:` (`specs.py --help | grep -c plans` expecting 0) is defective in the OPPOSITE direction to 1.1's: it can never pass on a CORRECT implementation. `plans/` is a real folder named in three other subcommands' help text (new: 'capture a spec into plans/', promote: 'plans/ -> archive/', migrate: 'backlog/ + ready/ -> plans/'), so it prints 3. The subcommand IS gone, proved by the spec's own `## Validation` line: `specs.py plans reindex` -> exit 2, 'invalid choice: plans'. A correct assertion is that exit code, or `grep -cE '^ +plans '`.
+- Para o sibling `split-specs-py-backlog-renderer` (colisão nomeada em `## Risks`): a remoção de `cmd_plans` + `render_plans_zone` + `STAGE_ORDER` + `PLANS_EMPTY` tira 83 linhas de specs.py — 3125 -> 3042. Aquele spec queria EXTRAIR a função para baixar o arquivo do limiar de ~1.200 linhas; a extração agora não tem alvo, e 3042 segue muito acima do limiar, então o problema dele continua inteiro e precisa de outro corte. Esta retirada não o resolve, só remove uma das opções.
