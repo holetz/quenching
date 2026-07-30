@@ -536,9 +536,10 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       subject: plan/decide-plans-index-need: 1.1 Remover o modo --listing-root e _is_spec_file de okf-validate.py
       Tem que imprimir `0`. `index.md` continua em `RESERVED` e em `hard_block_exempt()` — retirar
       nunca é desreservar.
-- [ ] 1.2 Acrescentar a `okf-validate.py selftest` a asserção de que `--listing-root` saiu enquanto `index.md` segue em `RESERVED` e em `hard_block_exempt()`
+- [x] 1.2 Acrescentar a `okf-validate.py selftest` a asserção de que `--listing-root` saiu enquanto `index.md` segue em `RESERVED` e em `hard_block_exempt()`
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs
+      subject: plan/decide-plans-index-need: 1.2 Acrescentar a okf-validate.py selftest a guarda da retirada
       É a guarda que `docs/standards/architecture/retiring-a-reserved-artifact.md` §The guard exige:
       tem que falhar se alguém reintroduzir o flag ou tirar o nome da reserva.
 - [ ] 1.3 Tirar do `CLAUDE.md` e de `assets/README.md` as duas receitas que invocam o flag retirado
@@ -635,3 +636,4 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 - okf-validate.py has NO `--help` handler — `--help` falls through to a normal bundle scan of the default docsDir. The `verify:` of task 1.1 (`--help | grep -c listing-root`) therefore printed `0` BEFORE the change too: it is vacuous and cannot fail either way. Same vacuity in `## Validation`. A load-bearing check is `grep -c -- listing_root <file>`. (specs.py DOES have argparse --help, so task 2.1's verify is real.)
 - `index.md` was NEVER in `hard_block_exempt()` — that predicate covers EXEMPT (CLAUDE.md/AGENTS.md/QUENCHING.md) plus log.md and README.md. `index.md` is in RESERVED only, and is deliberately NOT hard-block-exempt: the PreToolUse gate's whole job is denying an index.md that carries a concept `type`. The claim appears in `## Proposal`, `## Design` §3, `## Validation` and task 1.2's body; only the RESERVED half is true. Task 1.2's assertion was written against what is actually true.
+- Mutation pass run against the new `retired_listing_root_failures()` guard, per docs/standards/quality/selftest-mutation.md: 4 mutations (re-add the _is_spec_file skip · re-add the listing_root param · drop index.md from RESERVED · add index.md to hard_block_exempt) — 4/4 CAUGHT, each failing exactly ONE assertion, which is the discriminating signal that standard asks for. This is the first of the three shipped tools to clear the pass; okf-validate.py's OTHER selftest legs (12 canonical cases + retired-log) were NOT mutation-checked, so the standard's graduation gate to `current` is not met by this spec alone.
