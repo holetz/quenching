@@ -7,7 +7,7 @@ tags: [agents, language, communication, harness]
 timestamp: 2026-07-30
 audience: both
 authority: background
-source: spec plan/declare-repo-body-language — binds the loose "the repo's language" clause that six standards and shipped references deferred to without any of them defining it
+source: spec plan/declare-repo-body-language — binds the loose language clause that six standards and shipped references deferred to without any of them defining it
 maintainer: quenching
 ---
 
