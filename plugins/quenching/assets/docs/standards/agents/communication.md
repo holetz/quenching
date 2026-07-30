@@ -112,7 +112,7 @@ drawn explicitly:
 | Ground | Owner | This doc |
 | --- | --- | --- |
 | What one command promises, refuses and routes elsewhere | that command's own body and `description` | never restates it |
-| The mechanics of actually asking — how a question is posed, accumulated and applied | [`specs-develop/questions.md` §The four shared mechanics](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) | cites it |
+| The mechanics of actually asking — how a question is posed, accumulated and applied | the spec tooling that drives the asking — in a quenching-managed repo, its `specs-develop/questions.md` §The four shared mechanics | cites it |
 | How commands, hooks and agent definitions are classified, authored, budgeted and swept | the repo's `docs/standards/automation/` subject | cites it |
 
 What is left — and what this doc owns — is only what holds in **every** task, command or not. That
