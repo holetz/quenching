@@ -414,8 +414,9 @@ Estado da árvore após a seção 1 (o contrato da chave), que um executor novo 
 
 ### 2. O comando
 
-- [ ] 2.1 Fazer a etapa 2 de `import.md` classificar cada unidade como nova ou já importada pela consulta exata à `source_uri:`, antes do grep por prosa
+- [x] 2.1 Fazer a etapa 2 de `import.md` classificar cada unidade como nova ou já importada pela consulta exata à `source_uri:`, antes do grep por prosa
       files: plugins/quenching/commands/docs/import.md
+      subject: plan/add-import-provenance: 2.1 etapa 2 classifica cada unidade pela consulta exata à source_uri
 - [ ] 2.2 Fazer a etapa 3 mostrar a classificação de cada unidade no plano único, com a URI que a motivou, tornando a decisão duplicar-versus-enriquecer visível antes do OK
       files: plugins/quenching/commands/docs/import.md
 - [ ] 2.3 Fazer a etapa 4 estampar `source_uri:` em cada doc criado e escrever a linha de atribuição no corpo com a data da leitura
@@ -443,3 +444,7 @@ Estado da árvore após a seção 1 (o contrato da chave), que um executor novo 
 
 - [ ] 5.1 Rodar o bloco mecânico inteiro de `## Validation` e registrar cada saída
 - [ ] 5.2 Executar e registrar o walkthrough manual de reimportação descrito em `## Validation`, dizendo no relatório que o check foi manual
+
+## Discoveries
+
+- A asserção de `## Validation` "grep -n 'context: fork' import.md → nada, sempre" é falsa por construção: a própria invariante que proíbe a chave contém a string (linha 96, `- **Never add \`context: fork\`.**`). O grep literal devolve essa linha antes e depois desta spec. O que o check quer dizer é "a chave não aparece no frontmatter"; escrito como está, ele nunca pode passar.

@@ -48,11 +48,16 @@ Read the source; write nothing yet.
 
 ### 2. Extract → classify → dedup
 Break the source into **knowledge units** (one concept each). Classify every unit into
-home + `type` + mold via homes.md §Classification. **Dedup** within the source *and* against
-the existing bundle (`Grep` for an existing doc/term) — a unit that already has a home is a
-**MERGE** target, not a new doc. For a large source, fan **one `Task` sub-agent per source
+home + `type` + mold via homes.md §Classification.
+
+Then **dedup** exactly as [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)
+§Dedup fixes it — within the source, then against the bundle, and against the bundle **by exact
+`source_uri` before resemblance**. What this step owes step 3 is the verdict that ordering
+produces: every unit leaves here labelled **new**, **already imported** (an exact URI hit — the
+doc it hit is the MERGE target), or **resembles an existing doc** (a judgement, not a match),
+carrying the URI or the term that decided it. For a large source, fan **one `Task` sub-agent per source
 slice** out to return **compact unit candidates** (home / `type` / path / one-line + source
-anchor), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
+anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
 a doc (correctable), unlike `/docs:import-memory` (see the model policy in
 [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model)).
