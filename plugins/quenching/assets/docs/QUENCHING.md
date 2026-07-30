@@ -90,7 +90,9 @@ There is **no `decisions/` home**: an agreed-but-unproven decision is a `standar
 Required: `type`. Recommended (missing → warning): `title`, `description`, `resource`,
 `timestamp`. `standards/` docs additionally carry `authority: current|background`. `resource` is
 always **derived** from what the doc concerns — a `file:line` anchor, an asset URI — and is
-**never invented**.
+**never invented**. A doc created by `/docs:import` carries one key more, `source_uri:` — the
+exact URI of the source unit it came from, written by that command alone. No other command mints,
+infers or backfills it, and a doc with no external origin simply does not have it.
 
 ### Language
 
@@ -154,7 +156,14 @@ The batch fan-out of `add`. Reads local files/folders or URLs, extracts knowledg
 classifies each into its home, dedupes within the source **and** against what the bundle already
 holds, presents **one** ingestion plan, then mints every doc under the same insert procedure.
 Web ingestion is **bounded** (seed list + host allowlist + page cap — never an open crawl).
-Minted docs are attributed to the source and enter as `authority: background` until proven here.
+
+Dedup against the bundle runs **by exact origin before resemblance**. Every doc the command
+creates is stamped with `source_uri:` — the source unit's exact URI — so a later run finds the
+doc it already minted for that unit by grepping for it, instead of recognizing prose it wrote
+itself. The plan therefore labels each unit **new**, **already imported** (an exact URI hit, so
+an enrich rather than a second doc), or **resembles an existing doc** (a judgement you are being
+asked to check), and shows the URI or the term behind each. Minted docs enter as
+`authority: background` until proven here.
 **Additive only — it never deletes.** Requires an existing bundle; run `/docs:align` first.
 
 ### `/docs:import-memory` — drain the agent's project memory
