@@ -15,6 +15,7 @@ rule sits here as `authority: background` (no separate decisions home). One stan
 | Doc | Covers |
 | --- | --- |
 | [align-surface.md](align-surface.md) | The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, and the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle |
+| [generated-listings.md](generated-listings.md) | A derived listing only pays for itself when a program can prove it is fresh — the decision criterion is whether a command already answers the same question on demand, the docs/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides |
 | [plugin-layout.md](plugin-layout.md) | commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path |
 | [read-only-views.md](read-only-views.md) | A front's read-only view is a separate command holding no write tools, never a dry-run mode on the command that writes — because allowed-tools is granted per command, so a mode flag can only ever be a promise the grant does not enforce |
 | [retiring-a-reserved-artifact.md](retiring-a-reserved-artifact.md) | A reserved filename that is retired keeps its slot in RESERVED and its skip in the hard block; only its checker goes, because unreserving it silently converts every surviving file into a malformed concept doc |
