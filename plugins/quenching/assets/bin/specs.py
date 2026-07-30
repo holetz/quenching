@@ -152,11 +152,6 @@ BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
 STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
 
-GEN_BEGIN = "<!-- BEGIN GENERATED"
-GEN_END = "<!-- END GENERATED -->"
-PLANS_EMPTY = ("_(no specs captured — this listing is regenerated deterministically "
-               "from `plans/*.md`)_")
-
 # --------------------------------------------------------------------------- #
 # embedded assets (fallbacks when the sibling asset files are absent)
 # Keep in lockstep with assets/specs/schema.json and assets/specs/templates/spec.md.
@@ -2853,10 +2848,6 @@ def cmd_doctor(args, root: str) -> int:
         if not os.path.isdir(os.path.join(root, ph)):
             findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
                                      path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
-    if not os.path.isfile(os.path.join(root, "plans", "index.md")):
-        findings.append(_finding("sp-no-plans-index", "warn", "no plans/index.md",
-                                 remedy="install assets/specs/plans/index.md"))
-
     # A v2 folder that still holds specs is the one shape `list` reads correctly but
     # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
     for folder in LEGACY_PHASES:
@@ -2918,76 +2909,6 @@ def _emit_doctor(args, root: str, findings: list[dict]) -> int:
         if not findings:
             print("  OK — workspace conforms.")
     return 1 if errors else 0
-
-
-STAGE_ORDER = ("executing", "approved", "ready", "refined", "designed", "proposed",
-               "captured", "plans")
-
-
-def render_plans_zone(rows: list[dict]) -> str:
-    """The GENERATED zone of `plans/index.md`, grouped by DERIVED stage.
-
-    This tool owns the format — the zone is rebuilt from disk, never hand-edited, so a
-    listing can never drift from what the folder actually holds."""
-    if not rows:
-        return PLANS_EMPTY
-    counts = {st: sum(1 for r in rows if r["stage"] == st) for st in STAGE_ORDER}
-    head = f"**{len(rows)} spec{'s' if len(rows) != 1 else ''}**"
-    parts = [f"{counts[st]} {st}" for st in STAGE_ORDER if counts[st]]
-    lines = [head + (" · " + " · ".join(parts) if parts else ""), ""]
-    for st in STAGE_ORDER:
-        group = sorted((r for r in rows if r["stage"] == st), key=lambda r: r["file"])
-        if not group:
-            continue
-        lines += [f"### {st.capitalize()}", "",
-                  "| Spec | Title | Since |", "| --- | --- | --- |"]
-        for r in group:
-            lines.append(f"| [{r['slug']}]({r['file']}) | {r['title']} | {r['date']} |")
-        lines.append("")
-    return "\n".join(lines).rstrip()
-
-
-def cmd_plans(args, root: str) -> int:
-    index = os.path.join(root, "plans", "index.md")
-    text = read_text(index)
-    if text is None:
-        emit(args.json, {"ok": False, "code": "sp-no-plans-index",
-                         "message": "no plans/index.md to reindex"},
-             "error: no plans/index.md to reindex")
-        return 1
-    rows = []
-    # The CANONICAL phase, not the folder name — otherwise this filters on a phase that no
-    # longer exists, silently returns nothing, and rewrites the zone as empty.
-    for s in spec_files(root, "plans"):
-        raw = read_text(s["path"]) or ""
-        fm = parse_frontmatter(raw)
-        rows.append({
-            "slug": s["slug"], "file": s["file"], "date": s["date"],
-            "title": fm.get("title", titleize(s["slug"])),
-            "stage": derive_stage(s, parse_sections(body_after_frontmatter(raw)), fm,
-                                  parse_tasks(raw)),
-        })
-    begin = text.find(GEN_BEGIN)
-    end = text.find(GEN_END)
-    if begin < 0 or end < 0 or end < begin:
-        emit(args.json, {"ok": False, "code": "sp-no-generated-zone",
-                         "message": "plans/index.md has no BEGIN/END GENERATED zone"},
-             "error: plans/index.md has no BEGIN/END GENERATED zone")
-        return 1
-    head_end = text.find("-->", begin)
-    if head_end < 0:
-        emit(args.json, {"ok": False, "code": "sp-no-generated-zone",
-                         "message": "the BEGIN GENERATED comment is unterminated"},
-             "error: the BEGIN GENERATED comment is unterminated")
-        return 1
-    new_text = (text[:head_end + 3] + "\n" + render_plans_zone(rows) + "\n" + text[end:])
-    write_text(index, new_text)
-    emit(args.json, {"ok": True, "specs": len(rows),
-                     "stages": {st: sum(1 for r in rows if r["stage"] == st)
-                                for st in STAGE_ORDER
-                                if any(r["stage"] == st for r in rows)}},
-         f"reindexed plans/index.md — {len(rows)} spec(s)")
-    return 0
 
 
 # --------------------------------------------------------------------------- #
@@ -3063,9 +2984,6 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     add_json(sub.add_parser("selftest", help="prove the embedded schema and template "
                                              "have not drifted from their asset files"))
 
-    sp = add_json(sub.add_parser("plans", help="plans/index.md maintenance"))
-    sp.add_argument("plans_cmd", choices=["reindex"])
-
     sp = add_json(sub.add_parser("migrate", help="one-way fold to the current layout "
                                                  "(v1 → v3, and backlog/ + ready/ → plans/)"))
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
@@ -3087,7 +3005,6 @@ DISPATCH: dict = {
     "config": cmd_config,
     "doctor": cmd_doctor,
     "selftest": cmd_selftest,
-    "plans": cmd_plans,
     "migrate": cmd_migrate,
 }
 
