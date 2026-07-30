@@ -87,10 +87,21 @@ source. Never present imported material as proven local practice: that is the
 
 1. **Within the source.** Two sections describing the same concept collapse into one unit
    (merge their detail); do not mint duplicates.
-2. **Against the existing bundle.** Before minting, `Grep` the bundle for an existing doc on
-   the same concept (by title, slug, and any repo-specific term). If one exists, the unit is a
-   **MERGE** target — enrich that doc (fill missing keys, add detail, add the source link),
-   never a second doc for the same concept. Record every MERGE-vs-mint decision in the plan.
+2. **Against the existing bundle.** Before minting, look for the doc that already covers this
+   unit — in this order, because the two lookups do not carry the same confidence:
+
+   1. **Exact, by origin.** `grep -rn 'source_uri: <the unit's URI>' docs/`. A hit is a doc
+      minted from *this very unit* — on an earlier run, or earlier in this one, when two seeds
+      overlapped. Nothing was recognised and nothing was judged: the URIs are equal or they are
+      not. This is the lookup `source_uri:` exists for.
+   2. **Approximate, by concept.** No hit → `Grep` the bundle by title, slug, and any
+      repo-specific term. A doc found this way covers the same concept from a *different* origin,
+      or from none at all, so calling it the same concept is a judgement — present it as one.
+
+   Either way the unit is a **MERGE** target — enrich that doc (fill missing keys, add detail,
+   add the source link), never a second doc for the same concept. Record every MERGE-vs-mint
+   decision in the plan, **and which of the two lookups produced it**, so the human reads an
+   exact match and a resemblance as the different claims they are.
 3. **Glossary.** A term the source defines that the glossary already lists is a MERGE into the
    existing entry (sharpen/keep the link), per homes.md §Enriching the glossary.
 
