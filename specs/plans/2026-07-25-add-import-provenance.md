@@ -371,7 +371,7 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
 
 ## Handoff
 
-Estado da árvore após a seção 2 (o comando), que um executor novo não deriva sozinho:
+Estado da árvore após a seção 3 (o manual do operador), que um executor novo não deriva sozinho:
 
 - **Isolamento:** worktree em `../claude-quenching-add-import-provenance`, branch
   `plan/add-import-provenance`, cortado de `main` em `9c289f1`. O checkout principal
@@ -381,20 +381,21 @@ Estado da árvore após a seção 2 (o comando), que um executor novo não deriv
   que o commit `193578c` havia apagado. Reinstalado em 4.4.0 **sem ser versionado**, nos dois
   checkouts, para manter os commits desta spec dentro do escopo declarado. Decidir em
   `/specs:conclude` se ele deve ser commitado.
-- **Seções 1 e 2 fechadas e verdes.** O contrato mora em `sources.md` §Attribution; `okf-spec.md`
-  lista a chave; `homes.md` marca-a como fora do mold; e `import.md` classifica na etapa 2,
-  mostra o veredito no plano da etapa 3, estampa na etapa 4 e ficou com **uma** única menção de
-  atribuição — a citação da linha 17. `doctor` 26 comandos sem findings, `lint` exit 0.
-- **Contagem que a seção 4 vai cobrar:** `grep -rl source_uri plugins/quenching/` devolve **4**
-  caminhos agora e deve terminar em exatamente **5** — falta `assets/docs/QUENCHING.md`
-  (tarefa 3.1). Um sexto arquivo é a falha que `## Design` §Decisão 2 existe para evitar.
-- **Cuidado ao editar `import.md`:** a tarefa 2.4 deixou o arquivo com exatamente uma linha
-  contendo `attribut`, e `## Validation` cobra esse número. Qualquer texto novo ali que use a
-  palavra quebra o check — cite `sources.md` pelo arquivo, sem nomear a seção.
+- **Seções 1, 2 e 3 fechadas e verdes.** A contagem que `## Validation` cobra já bate:
+  `grep -rl source_uri plugins/quenching/` devolve **exatamente os cinco** caminhos esperados —
+  `sources.md`, `import.md`, `okf-spec.md`, `homes.md`, `assets/docs/QUENCHING.md` — e nenhum
+  arquivo em `assets/templates/`. Um sexto é a falha que `## Design` §Decisão 2 existe para evitar.
+- **Cuidado ao editar `import.md`:** o arquivo tem exatamente **uma** linha contendo `attribut`
+  (a citação da linha 17) e `## Validation` cobra esse número. Texto novo ali que use a palavra
+  quebra o check — cite `sources.md` pelo arquivo, sem nomear a seção.
 - **Descoberta registrada:** a asserção `grep -n 'context: fork' import.md → nada, sempre` de
   `## Validation` é falsa por construção — a própria invariante que proíbe a chave contém a
   string. Resolver em `/specs:develop` ou aceitar na revisão do branch.
-- **Próxima tarefa:** 3.1, em `assets/docs/QUENCHING.md`.
+- **Próxima tarefa:** 4.1 — a emenda em `docs/standards/quality/bundle-verification.md`, o único
+  arquivo desta spec fora de `plugins/`. É o doc declarado em `## Impact`, mantém
+  `authority: current`, e o seu `timestamp` precisa ir para hoje (2026-07-30): o bundle deste repo
+  carrega oito WARN de `stale-doc` pré-existentes, um deles nesse arquivo, e o portão é **zero
+  erros**, não zero avisos.
 ## Tasks
 
 ### 1. O contrato da chave
@@ -435,9 +436,10 @@ Estado da árvore após a seção 2 (o comando), que um executor novo não deriv
 
 ### 3. O manual do operador
 
-- [ ] 3.1 Atualizar `assets/docs/QUENCHING.md` — a seção `/docs:import` e o parágrafo de chaves de frontmatter da linha 90 — descrevendo a chave e a classificação nova versus já importada
+- [x] 3.1 Atualizar `assets/docs/QUENCHING.md` — a seção `/docs:import` e o parágrafo de chaves de frontmatter da linha 90 — descrevendo a chave e a classificação nova versus já importada
       files: plugins/quenching/assets/docs/QUENCHING.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs
+      subject: plan/add-import-provenance: 3.1 atualizar QUENCHING.md com a chave e a classificação
 
 ### 4. O standard
 
