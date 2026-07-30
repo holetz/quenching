@@ -535,3 +535,18 @@ um squash teria imposto.
 - Duas descobertas seguem abertas e não são desta spec: a contagem de `stale-doc` que `## Validation`
   cita envelheceu (oito → doze em `main`), e o `resource-unresolved` de
   `standards/automation/agents.md` (`.claude/agents/**` não casa nada).
+
+### Destilado para `docs/` no fechamento
+
+- `docs/standards/quality/bundle-verification.md` §Accepted gaps — a lacuna aceita da procedência
+  (tarefa 4.1), mais a quarta entrada sobre a seed colapsada (revisão do branch).
+- `docs/standards/quality/bundle-verification.md` §What is machine-checked — a contagem advisory que
+  sobe sozinha em qualquer branch que edite um caminho governado (docs emergentes, Discovery 3).
+- `docs/standards/architecture/shared-mold-keys.md` — `## Design` §Decisão 2 promovida a standard,
+  `authority: current`: um mold compartilhado é um convite a preencher, então uma chave que só um
+  escritor pode escrever fica fora dele. O precedente do `resource:` é a segunda instância.
+- `docs/knowledge/glossary.md` — duas entradas: **Origin key (`source_uri`)** e **Shared mold**.
+
+Bump de versão 4.4.0 → 4.4.1 nos seis artefatos do lockstep mais `session.py`, conforme
+`docs/standards/ci-cd/versioning-release.md` §When the bump happens. Patch: nenhum comando novo,
+nenhum rename, nenhuma lógica de script alterada.
