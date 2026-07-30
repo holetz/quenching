@@ -99,6 +99,15 @@ Apply the [docs-harness/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/referen
 cites the existing doc (`Grep docs/` to confirm coverage); a **FLAG** quotes both sides of the
 contradiction.
 
+**The language declaration line is always KEEP.** A root harness line of the form
+`Language: <tag> — the contract is docs/standards/agents/communication.md` is a value plus a
+citation, not a fact restated from somewhere else: there is nothing to move, and the doc it cites
+is already its one home. To a thinning pass it looks exactly like collapsible residue, and no
+validator notices it going missing — harness files are exempt from the bundle checks — so this rule
+is the only thing standing between it and a silent deletion. **Never** classify it MOVE or DEDUPE,
+never rewrite it into a paraphrase of the rule it cites, and never let a second configuration key
+onto it.
+
 ### 4. Sweep the blast radius
 Per `/docs:align`'s migration doctrine
 ([docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md) §3–4):
@@ -131,8 +140,9 @@ with this skill's deltas kept inline:
 ### 7. Rewrite each harness file from its mold
 Root from `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/claude-root.md`, a subfolder from
 `.../harness/claude-subfolder.md`. Structure and links are canonical English; prose may follow the
-repo's language. UNROUTABLE and FLAG-pending units stay under a clearly marked residue section.
-**No frontmatter, ever.**
+repo's language. The root file's language declaration line is carried through **verbatim** — a mold
+is a shape, not a filter, and step 3 already settled that the line is KEEP. UNROUTABLE and
+FLAG-pending units stay under a clearly marked residue section. **No frontmatter, ever.**
 
 ### 8. Verify and report
 **Resolve EVERY link** in every rewritten harness file (the validator won't). Confirm no moved fact
@@ -147,6 +157,8 @@ clean; confirm each moved doc is indexed and logged. Report counts: **moved** (b
 - Never silently drop a unit; never file secrets or personal notes into shared `docs/`.
 - Never leave a lying pointer — **every** link in a rewritten harness file resolves before the run ends.
 - Never give a harness file frontmatter or a `type` (okf-spec §strict-7 — they are exempt).
+- Never drop or paraphrase the root file's language declaration line — it is KEEP by rule (step 3),
+  and nothing downstream would report its loss.
 - Never skip the single up-front plan + confirmation; a product-code edit confirms on its own. A
   cycle-authorized run (convergence.md §contract) replaces the batch gate with narration — never the
   product-code item's own OK — and a pre-collected table is delta-rechecked before any write.
