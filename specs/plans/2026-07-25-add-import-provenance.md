@@ -371,28 +371,30 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
 
 ## Handoff
 
-Estado da árvore após a seção 1 (o contrato da chave), que um executor novo não deriva sozinho:
+Estado da árvore após a seção 2 (o comando), que um executor novo não deriva sozinho:
 
 - **Isolamento:** worktree em `../claude-quenching-add-import-provenance`, branch
   `plan/add-import-provenance`, cortado de `main` em `9c289f1`. O checkout principal
   `~/Projects/claude-quenching` está sendo usado por **outra sessão Claude Code em paralelo**,
   que edita `specs/plans/2026-07-28-decide-plans-index-need.md` — não commitar nada de lá.
 - **Hook local:** `.claude/settings.json` (versionado) aponta para `.claude/hooks/okf-validate.py`,
-  que o commit `193578c` havia apagado. O arquivo foi reinstalado em 4.4.0 **sem ser versionado**,
-  nos dois checkouts, para manter os commits desta spec dentro do escopo declarado. Decidir em
+  que o commit `193578c` havia apagado. Reinstalado em 4.4.0 **sem ser versionado**, nos dois
+  checkouts, para manter os commits desta spec dentro do escopo declarado. Decidir em
   `/specs:conclude` se ele deve ser commitado.
-- **Seção 1 fechada e verde:** o contrato de `source_uri:` mora em `sources.md` §Attribution;
-  §Dedup item 2 tenta a URI exata antes do grep por prosa; `okf-spec.md` §Frontmatter lista a
-  chave; `homes.md` marca-a como fora do mold. O portão da seção passou inteiro — okf-validate nos
-  dois bundles embarcados, `doctor` com 26 comandos e zero findings, `lint` em exit 0, três
-  selftests verdes.
-- **Contagem que a seção 4 vai cobrar:** `grep -rl source_uri plugins/quenching/` devolve **3**
-  caminhos agora e deve terminar em exatamente **5** — faltam `commands/docs/import.md` (seção 2) e
-  `assets/docs/QUENCHING.md` (seção 3). Um sexto arquivo é a falha que `## Design` §Decisão 2
-  existe para evitar.
-- **Próxima tarefa:** 2.1, em `commands/docs/import.md`. A seção 2 termina com 2.4, que corta a
-  doutrina duplicada até `grep -ic attribut` devolver exatamente 1 naquele arquivo — hoje devolve 3.
-
+- **Seções 1 e 2 fechadas e verdes.** O contrato mora em `sources.md` §Attribution; `okf-spec.md`
+  lista a chave; `homes.md` marca-a como fora do mold; e `import.md` classifica na etapa 2,
+  mostra o veredito no plano da etapa 3, estampa na etapa 4 e ficou com **uma** única menção de
+  atribuição — a citação da linha 17. `doctor` 26 comandos sem findings, `lint` exit 0.
+- **Contagem que a seção 4 vai cobrar:** `grep -rl source_uri plugins/quenching/` devolve **4**
+  caminhos agora e deve terminar em exatamente **5** — falta `assets/docs/QUENCHING.md`
+  (tarefa 3.1). Um sexto arquivo é a falha que `## Design` §Decisão 2 existe para evitar.
+- **Cuidado ao editar `import.md`:** a tarefa 2.4 deixou o arquivo com exatamente uma linha
+  contendo `attribut`, e `## Validation` cobra esse número. Qualquer texto novo ali que use a
+  palavra quebra o check — cite `sources.md` pelo arquivo, sem nomear a seção.
+- **Descoberta registrada:** a asserção `grep -n 'context: fork' import.md → nada, sempre` de
+  `## Validation` é falsa por construção — a própria invariante que proíbe a chave contém a
+  string. Resolver em `/specs:develop` ou aceitar na revisão do branch.
+- **Próxima tarefa:** 3.1, em `assets/docs/QUENCHING.md`.
 ## Tasks
 
 ### 1. O contrato da chave
@@ -427,8 +429,9 @@ Estado da árvore após a seção 1 (o contrato da chave), que um executor novo 
       files: plugins/quenching/commands/docs/import.md
       verify: test 1 -eq $(grep -ic attribut plugins/quenching/commands/docs/import.md)
       subject: plan/add-import-provenance: 2.4 cortar a doutrina duplicada de atribuição em import.md
-- [ ] 2.5 Conferir que a superfície não mudou de identidade — 26 comandos, sem findings, e lint em exit 0
+- [x] 2.5 Conferir que a superfície não mudou de identidade — 26 comandos, sem findings, e lint em exit 0
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/add-import-provenance: 2.5 conferir que a superfície não mudou de identidade
 
 ### 3. O manual do operador
 
