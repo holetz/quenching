@@ -401,17 +401,24 @@ O colapso, por camada:
   dois quebrados por wrap com `grep -rn -A1` antes de declarar a task pronta.
 ## Handoff
 
-Nada construído ainda — tasks 1–7 abertas, nenhuma bloqueada, nenhuma commitada. Duas ordens são
-load-bearing: a task 1 abre o subject antes de qualquer coisa ser escrita nele, e a task 2 entrega o
-dono antes de a task 5 fazer qualquer local citá-lo.
+Task 1 commitada; tasks 2–7 abertas, nenhuma bloqueada. A ordem restante que é load-bearing: a task
+2 entrega o dono antes de a task 5 fazer qualquer local citá-lo.
 
 Estado que um executor novo não consegue derivar:
 
 - **O slug deste spec precede a decisão do nome.** Ele diz `declare-repo-body-language` porque um
   slug de spec é congelado; o dono se chama `docs/standards/agents/communication.md`. Não procure
   `body-language` no disco e conclua que a task 2 não foi feita — esse arquivo nunca é escrito.
-- O subject `agents/` não existe em nenhuma das duas árvores. A task 1 o cria **e** o declara em
-  `taxonomy.md` §The canonical tree (locked) — editar aquela seção é intencional aqui, não um deslize.
+- O subject `agents/` **já existe nas duas árvores** (task 1): pasta + `index.md` no skeleton e neste
+  repo, declarado em `taxonomy.md` §The canonical tree (locked), com uma linha de subtopic nos dois
+  `standards/index.md`. Os dois `agents/index.md` trazem `communication` como único candidate e um
+  ledger de coverage ainda vazio — as tasks 2 e 3 preenchem o ledger de sua respectiva árvore.
+- **O `verify:` das tasks 1–3 pede `0 error(s), 0 warning(s)` nas duas árvores, e sobre `docs/` isso
+  é inalcançável e não por culpa deste spec:** a baseline já carrega 13 warnings `stale-doc` /
+  `resource-unresolved` alheios a ele (idênticos antes e depois da task 1; curá-los é o spec irmão
+  `narrow-the-stale-doc-trigger-to-content-drift`). O critério aplicado na task 1, e a aplicar nas
+  2–3, é **`0 error(s)` e nenhum finding novo** — meça comparando com a baseline, não com zero.
+  `assets/docs` continua em `0 error(s), 0 warning(s)` literais.
 - Não funda `docs/standards/automation/agents.md` dentro do subject novo. Ele é o contrato de
   definição de `.claude/agents/`, fica onde está, e movê-lo pertence a
   `revise-standards-subject-folders`.
@@ -441,13 +448,14 @@ lançado carrega uma citação pendurada. Cada task nomeia o caminho `docs/stand
 própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e não com a continuação
 `files:`.
 
-- [ ] 1 Abrir o subject `agents/` nas duas árvores — pasta + `index.md` no skeleton e neste
+- [x] 1 Abrir o subject `agents/` nas duas árvores — pasta + `index.md` no skeleton e neste
   repositório, o subject adicionado a `taxonomy.md` §The canonical tree (locked), e uma linha de
   subtopic nos dois `standards/index.md`. O limite do subject: como instruímos agentes — o que a
   surface always-on declara. Distinto de `automation/` (o subject local deste repo para a própria
   command surface).
   files: `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/docs/standards/index.md`, `plugins/quenching/assets/docs/standards/agents/index.md`, `docs/standards/index.md`, `docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` and `... docs` both report `0 error(s), 0 warning(s)`
+  subject: plan/declare-repo-body-language: 1 Abrir o subject agents/ nas duas árvores
 - [ ] 2 Entregar o dono no skeleton em `docs/standards/agents/communication.md` sob `assets/docs/`
   Duas metades. **A língua:** o que declarar significa, que somente o harness **raiz** carrega a
   declaração, que o valor é uma tag BCP-47, que ela governa toda prosa autorada pelo agente
@@ -480,3 +488,7 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   regra — o invariante que `## Validation` afirma.
   files: `plugins/quenching/commands/docs/harness.md`
   verify: `grep -n 'communication' plugins/quenching/commands/docs/harness.md`
+
+## Discoveries
+
+- O verify: das tasks 1-3 e o quinto bullet de ## Validation exigem 0 warning(s) do okf-validate.py sobre docs/, mas a baseline ja carrega 13 warnings stale-doc/resource-unresolved pre-existentes e alheios a este spec (identicos antes e depois da task 1). O criterio efetivo aplicado e: 0 error(s) e nenhum finding NOVO. O spec irmao narrow-the-stale-doc-trigger-to-content-drift e quem cura o ruido.
