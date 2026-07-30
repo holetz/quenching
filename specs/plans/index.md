@@ -81,7 +81,7 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**34 specs** · 2 executing · 31 ready · 1 captured
+**33 specs** · 2 executing · 30 ready · 1 captured
 
 ### Executing
 
@@ -94,7 +94,6 @@ closing out unbuilt work looks like.
 
 | Spec | Title | Since |
 | --- | --- | --- |
-| [add-import-provenance](2026-07-25-add-import-provenance.md) | Add provenance and idempotent re-ingestion to quenching-docs-import | 2026-07-25 |
 | [decide-agents-md-harness-default](2026-07-25-decide-agents-md-harness-default.md) | Decide whether AGENTS.md becomes the default harness target | 2026-07-25 |
 | [decide-plan-quick-skill](2026-07-25-decide-plan-quick-skill.md) | Decide whether quenching-specs-plan-quick is still needed | 2026-07-25 |
 | [decide-sp-unrefined-severity](2026-07-25-decide-sp-unrefined-severity.md) | Decide whether sp-unrefined should escalate to error | 2026-07-25 |
