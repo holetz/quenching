@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-30}
 approved: {date: 2026-07-30}
 branch: {base: main, work: plan/add-import-provenance}
 reviewed: {date: 2026-07-30}
+outcome: done
 ---
 
 # Add provenance and idempotent re-ingestion to quenching-docs-import
@@ -468,3 +469,69 @@ trabalho revelou, o merge e a distilação. Estado que não se deriva da árvore
 - Efeito colateral estrutural de qualquer spec que toque `plugins/quenching/**`: os commits refrescam o último commit dos `resource` que vários standards governam, então a contagem de `stale-doc` **sobe** durante a construção (12 → 14 aqui) mesmo sem nenhum doc ficar errado. É advisory e fora de todo portão, mas convém dizer no relatório em vez de deixar parecer regressão.
 - Furo no contrato de `source_uri:` que o walkthrough expôs: uma unidade **colapsada de duas seeds** (§Dedup item 1, dedup dentro da fonte) recebe UMA só URI, porque a chave é single-valued por contrato ("One value on one line"). A URI da segunda seed nunca é estampada, então numa reimportação ela **não** casa por URI e cai na busca por semelhança — exatamente o reconhecimento que a spec queria substituir. Medido em 2026-07-30: `source/api-notes.md:3` colapsada em `handbook.md:3` não casou na rodada 2. Decidir se a chave vira lista, se cada seed colapsada ganha a sua linha no corpo, ou se o furo é aceito e registrado. **Resolvido na revisão do branch (2026-07-30):** aceito e registrado, como quarta entrada de `docs/standards/quality/bundle-verification.md` §Accepted gaps — uma chave list-valued compraria a exatidão daquela seed ao preço da propriedade de que toda consulta depende.
 - `## Design` §Decisão 5 afirma que a consulta exata já se paga na PRIMEIRA rodada, porque duas seeds sobrepostas produzem o mesmo problema de alvo de MERGE dentro de uma execução. O walkthrough não sustenta isso: duas seeds sobrepostas têm URIs **diferentes**, logo a consulta exata nunca as casa — quem as junta é o dedup por prosa dentro da fonte (§Dedup item 1). O valor real da chave é mesmo na REIMPORTAÇÃO, que é a suposição de que a Decisão 5 tentou desacoplar a entrega. O argumento da Decisão 5 precisa ser corrigido ou retirado; o que ele defende (a entrega não depender de reimportação) fica sem sustentação empírica. **Resolvido na revisão do branch (2026-07-30):** a mesma afirmação tinha vazado para o produto — `sources.md` §Dedup 2.1 dizia "earlier in this one, when two seeds overlapped" — e foi corrigida lá para o caso que de fato casa por URI (uma slice anterior já mintou a unidade), dizendo explicitamente que duas seeds sobrepostas **não** são esse caso. `## Design` §Decisão 5 fica como está, registro honesto do que foi decidido na época; `## Outcome` diz que o argumento não sobreviveu à medição.
+
+## Outcome
+
+Entregue e mesclado em `main`. As treze tarefas foram construídas; a revisão do branch em
+2026-07-30 acrescentou três correções e um doc emergente.
+
+**Estratégia de merge: commit de merge (`--no-ff`).** Os quinze commits por tarefa continuam em
+`main`, então todos os treze `subject:` registrados em `## Tasks` resolvem direto da base. O branch
+`plan/add-import-provenance` pode ser apagado sem custo nenhum para o registro — ao contrário do que
+um squash teria imposto.
+
+### O que foi entregue
+
+- **O contrato de `source_uri:`, com um dono só:** `sources.md` §Attribution. A URI exata da unidade
+  de origem, single-valued, uma linha — porque é isso que faz da consulta um teste de igualdade em
+  vez de um parse. Separada de `source:`, que continua sendo prosa sobre quem originou a regra.
+- **§Dedup passou a consultar por origem exata antes de semelhança**, e o plano da etapa 3 rotula
+  cada unidade **new**, **already imported** (acerto por URI) ou **resembles an existing doc** (um
+  juízo) — mostrando a evidência de cada um, porque só o terceiro pede confiança do humano.
+- **A doutrina duplicada de atribuição foi cortada**, que é o que o §Corollary de
+  `bundle-verification.md` exige quando uma regra ganha um dono: de quatro lugares para um dono e
+  três citações. Medido: `grep -in attribut import.md` foi de 3 linhas para 1, e essa 1 é a citação.
+- `okf-spec.md` lista `source_uri` entre as chaves extras do perfil; `homes.md` marca que ela fica
+  **fora** do mold compartilhado de propósito; `QUENCHING.md` documenta a chave e a classificação
+  de três vias para o operador.
+- `bundle-verification.md` ganhou §Accepted gaps — a saída que o próprio standard autorizava e não
+  tinha casa.
+
+### O que a revisão do branch mudou (2026-07-30)
+
+- `sources.md` §Dedup 2.1 afirmava que um acerto exato pode vir de duas seeds sobrepostas na mesma
+  execução. O walkthrough mediu o contrário e a frase foi corrigida — ver o ponto sobre a Decisão 5
+  abaixo.
+- O furo das seeds colapsadas foi **aceito e registrado** como quarta entrada de §Accepted gaps, em
+  vez de ficar como uma decisão em aberto sem rastro.
+- O item de `## Validation` sobre `context: fork` era falso por construção e nunca poderia passar;
+  passou a inspecionar só o frontmatter.
+- Doc emergente: `bundle-verification.md` §What is machine-checked ganhou o parágrafo sobre a
+  contagem advisory que sobe sozinha em qualquer branch que edite um caminho governado (12 → 14
+  aqui), para que o delta não seja lido como regressão.
+
+### O que ficou de fora
+
+- **O digest de conteúdo**, deliberadamente — é a metade que o enunciado original pedia, e
+  `## Open Decisions` registra como se decide (buscar a mesma página duas vezes com `WebFetch` e
+  comparar) em vez de decidir no escuro.
+- **`Bash` para `/docs:import`**, não decidido e não necessário aqui. O critério é segurança, não
+  conveniência: o comando ingere conteúdo externo não confiável.
+- **`/docs:import-memory` estampar `source_uri:`** — fica para quem tocar naquele comando, que apaga
+  a memória de origem depois do doc aterrissar.
+- **A exatidão da seed colapsada**, aceita como lacuna e não fechada.
+
+### O que o próximo leitor precisa saber
+
+- **O argumento da `## Design` §Decisão 5 não sobreviveu à medição.** Ela dizia que a consulta exata
+  já se paga na primeira rodada, porque duas seeds sobrepostas produzem o mesmo problema de alvo de
+  MERGE dentro de uma execução. Não produzem: seeds sobrepostas carregam URIs **diferentes**, logo a
+  consulta exata nunca as casa, e o §Dedup item 1 já as colapsou por prosa antes. O valor real da
+  chave é mesmo na **reimportação**. A Decisão 5 foi deixada como está — registro honesto do que foi
+  decidido na época — mas a conclusão que ela defendia (a entrega não depender de reimportação) ficou
+  sem sustentação empírica, e a mesma afirmação foi corrigida onde tinha vazado para o produto.
+- **Não existe fixture de import neste repositório.** A única evidência de que o caminho funciona é o
+  walkthrough manual da tarefa 5.2, e `## Validation` declara isso como manual em vez de omitir.
+- Duas descobertas seguem abertas e não são desta spec: a contagem de `stale-doc` que `## Validation`
+  cita envelheceu (oito → doze em `main`), e o `resource-unresolved` de
+  `standards/automation/agents.md` (`.claude/agents/**` não casa nada).
