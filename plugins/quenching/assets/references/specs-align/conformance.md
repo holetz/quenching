@@ -11,11 +11,10 @@ and are cited here, never restated.
 
 This is the `specs/` analogue of
 [`docs-align/conformance.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
-Two checkers cover it and neither is prose: `specs.py doctor` and `specs.py validate` cover the
-workspace and every spec file (both `--json`, strict exit codes); `okf-validate.py specs/plans
---listing-root` covers the **listing** and nothing else (§What checks the plans listing). Only the
-genuinely workspace-specific property — the zone-matches-disk check — is verified by the sweep
-beyond what the tools report.
+**Two checkers cover it, both programs, and there is no third:** `specs.py doctor` and
+`specs.py validate` cover the workspace and every spec file (both `--json`, strict exit codes).
+Nothing is left for the sweep to verify by reading — see §The convergence condition for why that
+matters more than it sounds.
 
 The whole `specs/` front is **plugin-owned**: unlike the old `openspec/` surface (half of which
 belonged to an external CLI), there is no CLI-owned/quenching-managed ownership line here. The
@@ -31,7 +30,7 @@ the never-delete-on-a-guess and code-coupled-renames-gate-individually rules the
 - [Migrating an older workspace](#migrating-an-older-workspace)
 - [Migrating a legacy `openspec/` workspace (`sp-legacy-workspace`)](#migrating-a-legacy-openspec-workspace-sp-legacy-workspace)
 - [Findings the sweep REPORTS (never auto-closes)](#findings-the-sweep-reports-never-auto-closes)
-- [What checks the plans listing](#what-checks-the-plans-listing)
+- [The OKF validator is never pointed at `specs/`](#the-okf-validator-is-never-pointed-at-specs)
 - [The convergence condition](#the-convergence-condition)
 
 ## The probe — this front's two commands
@@ -72,8 +71,7 @@ work would be the worst outcome the probe can produce.
 specs/
   QUENCHING.md                 # the operator manual (payload — not a spec)
   plans/                       # a spec's whole active life: captured → … → ready → executing
-    index.md                   # frontmatter-free listing + GENERATED zone
-    YYYY-MM-DD-<slug>.md       # ONE spec per file
+    YYYY-MM-DD-<slug>.md       # ONE spec per file — no listing file; `specs.py list` derives it
   archive/                     # done or abandoned (`outcome:` tells them apart)
     YYYY-MM-DD-<slug>.md
     YYYY-MM-DD-<name>/         # v1 plan folders — HISTORICAL, never migrated
@@ -97,7 +95,7 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 
 | Code | Fires when | Fix |
 | --- | --- | --- |
-| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + the `plans/` seed + template + schema). Declining ends the run. |
+| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + the operator manual + template + schema). Declining ends the run. |
 | `sp-v2-layout` **(tool)** | `backlog/` or `ready/` still holds specs | Run **`specs.py migrate`** (§Migrating an older workspace). It moves every file into `plans/` unrenamed. |
 | `sp-v1-leftover` **(tool)** | A three-file plan folder sits at the specs root | Run **`specs.py migrate`** — the same command folds it into one file. |
 | `sp-stray-dir` **(tool)** | A directory sits inside `plans/` | Unmigrated v1 work. Same remedy: `specs.py migrate`. Never fires inside `archive/`. |
@@ -109,10 +107,6 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 | `sp-missing-frontmatter` **(tool)** | `slug`, `title`, or `verification` absent | Stamp it (MERGE — fill what is missing, preserve what is filled, including third-party keys). |
 | `sp-bad-verification` **(tool)** | `verification` outside the three declared values | Set the default (`per-section`) and say so, or take the value the human states. |
 | `sp-duplicate-slug` **(tool)** | Two files resolve to one slug | Rename one. **Always blast-radius-swept**: a slug is what every command and cross-reference names, so it leaks into branch names, PR titles, CI, and scripts. Code-coupled → its own confirmation. |
-| `sp-no-plans-index` **(tool)** | `plans/index.md` absent | Seed from `${CLAUDE_PLUGIN_ROOT}/assets/specs/plans/index.md`. Every repo has active work — unlike an OKF home, it is not evidence-gated. |
-| `sp-index-frontmatter` | `plans/index.md` carries frontmatter | Strip it — a reserved, frontmatter-free listing, the same rule an OKF `index.md` follows. |
-| `sp-no-generated-zone` **(tool)** | `plans/index.md` has no `<!-- BEGIN GENERATED -->` … `<!-- END GENERATED -->` markers | `specs.py plans reindex` installs the zone without touching the fixed prose. |
-| `sp-zone-stale` | The GENERATED zone disagrees with `plans/*.md` on disk | `specs.py plans reindex` regenerates it deterministically from disk. Never hand-edit inside the markers. |
 | `sp-shadow-skill` | `.claude/skills/openspec-<x>/SKILL.md` carries `metadata.generatedBy` **and** the plugin ships a command covering it | Propose removal in the plan; the batch OK covers it. Legacy migration only. |
 | `sp-shadow-command` | `.claude/commands/opsx/*.md` is a CLI-generated wrapper for a plugin-shipped command | Propose removal alongside its skill. |
 | `sp-shadow-diverged` | A shadow copy exists but its body **differs** from the plugin's | **Keep and report** with the observed divergence — a repo may have deliberately forked it. Removal only on the human's explicit word. |
@@ -200,27 +194,34 @@ are one file, so v1's `sp-ledger-orphan` / `sp-ledger-in-flight` describe nothin
 active folder there is no promote to police between stages: reaching the ready set is derived, and
 the only promote left is the gated one into `archive/`.
 
-## What checks the plans listing
+## The OKF validator is never pointed at `specs/`
 
-`okf-validate.py specs/plans --listing-root` checks the **listing**: `index.md` held to the
-plain-listing rule (frontmatter-free, no broken links, no orphans).
-
-It does **not** check the spec files, and must not be pointed at them expecting a verdict. A spec
+There is no listing here for it to check, and there never was a spec file it could judge. A spec
 carries `slug`/`title`/`verification` and deliberately **no OKF `type:`** — it is not a concept
 doc, it lives outside the bundle, and `specs.py validate` (the canonical heading set, the gates,
 filename conformance, slug identity) is a far stronger contract than type-presence. Stamping an OKF
 type on a spec purely to satisfy a validator that does not model it would be the second source of
 truth this front exists to avoid.
 
-**So the sweep runs both and reads each for what it owns:** `specs.py validate` for the specs,
-`okf-validate.py … --listing-root` for `index.md`.
+`plans/index.md` is a **retired artifact**. It once carried a GENERATED zone, and four codes
+(`sp-no-plans-index`, `sp-index-frontmatter`, `sp-no-generated-zone`, `sp-zone-stale`) policed it.
+All four are gone, along with the `--listing-root` mode that read them. The sweep neither creates
+nor deletes a surviving copy in a target repo
+([`retiring-a-reserved-artifact.md`](/docs/standards/architecture/retiring-a-reserved-artifact.md)
+§The consequence for disposition).
 
 ## The convergence condition
 
 The workspace is conformant when `specs.py doctor` and `specs.py validate` both exit 0 or report
-only codes from the REPORTS table, `okf-validate.py specs/plans --listing-root` exits 0, the
-GENERATED zone matches disk, and neither phase folder holds a directory. Anything left is either
-authoring or a cycle action, each named with the command that closes it.
+only codes from the REPORTS table. That is the whole condition — two programs, two exit codes.
+
+**It is stated that way on purpose.** It used to carry a clause no program could evaluate: "the
+GENERATED zone matches disk". Nothing computed it — `specs.py` never emitted a `changed` field for
+a command to read — so the one clause that could actually rot was the one left to a human's eye,
+and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
+[`generated-listings.md`](/docs/standards/architecture/generated-listings.md); the narrower lesson
+belongs here: **a convergence condition may only name what a checker decides.** A clause a program
+cannot evaluate is not a stricter standard, it is an unverified one.
 
 That is the same condition the probe checks at the start — which is exactly why a second align over
 an already-aligned workspace stops on two tool calls.

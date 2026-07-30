@@ -665,8 +665,9 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       Mantém §Resolving the tool e §The `specs/` front records itself, que não falam da zona. O H1
       passa a nomear o que sobrou. A renomeação do arquivo é a entrada aberta de
       `## Open Decisions` — 18 arquivos o citam, e o default é manter o nome.
-- [ ] 5.2 Remover `sp-no-generated-zone`, `sp-zone-stale`, `sp-no-plans-index` e `sp-index-frontmatter` de `conformance.md` e reescrever a condição de convergência do front
+- [x] 5.2 Remover `sp-no-generated-zone`, `sp-zone-stale`, `sp-no-plans-index` e `sp-index-frontmatter` de `conformance.md` e reescrever a condição de convergência do front
       files: plugins/quenching/assets/references/specs-align/conformance.md
+      subject: plan/decide-plans-index-need: 5.2 Remover os quatro codigos da zona e reescrever a convergencia
       A condição nova cita só `specs.py doctor` e `specs.py validate` — o que um programa decide.
 - [ ] 5.3 Tirar a cláusula `--listing-root` do contrato de convergência e da tabela de verificadores por front
       files: plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/align/sweep-doctrine.md
