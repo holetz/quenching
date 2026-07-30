@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-30}
 approved: {date: 2026-07-30}
 branch: {base: main, work: plan/add-import-provenance}
 reviewed: {date: 2026-07-30}
+merge: {strategy: merge-commit, subject: "plan/add-import-provenance: merge (merge-commit)"}
 outcome: done
 ---
 
