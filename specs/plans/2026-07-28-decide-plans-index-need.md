@@ -532,14 +532,32 @@ compre — só custa um arquivo a mais, para sempre.
 Worktree `../claude-quenching-decide-plans-index-need`, branch `plan/decide-plans-index-need`
 cut from `main`. Um commit por task, subject `plan/<slug>: <id> <título>`.
 
-**Estado após 3.3.** Seções 1, 2 e 3 fechadas — **o artefato não existe mais em lugar nenhum**.
-Os dois tools estão limpos e cada um carrega a guarda da própria retirada, mutation-proven
-(4/4 e 2/2). Os dois arquivos foram apagados, o seed saiu do `/specs:align`, os cinco command
-bodies perderam o reindex e o flag, e a caixa do `functional-checks.sh` monta sem o arquivo.
-`assets/specs/plans/.gitkeep` mantém a pasta no git no lugar do `index.md`.
+**Estado final do `/specs:execute`: 17/18, uma bloqueada.** A retirada está completa e verificada.
+O artefato não existe em lugar nenhum, os dois tools carregam a guarda da própria retirada
+(mutation-proven, 4/4 e 2/2), a reference virou `specs-front.md`, e
+`docs/standards/architecture/generated-listings.md` está escrito em `authority: current`.
 
-Sobra a documentação: seção 4 (dois links + `CLAUDE.md`), seção 5 (references e manuais),
-seção 6 (o standard novo). Nada mais em `commands/**` ou nos tools.
+**7.1 está BLOQUEADA, não falhada** — o bump de versão é do `/specs:conclude` step 5, per
+`versioning-release.md`. Nada foi alterado nos seis artefatos.
+
+**O que o `/specs:conclude` precisa saber, em ordem de importância:**
+
+1. **`main` avançou 22 commits durante este build** e está em **4.4.1**; esta branch foi cortada de
+   `1ed05c4` e carrega **4.4.0**. O bump parte de 4.4.1. Colisão provável nos seis arquivos de
+   versão — exatamente o cenário que `versioning-release.md` §Why not a task descreve.
+2. **`main` ganhou `docs/standards/architecture/shared-mold-keys.md`**, na MESMA subject folder do
+   standard escrito aqui. As duas branches inseriram linha na mesma tabela de
+   `architecture/index.md` e na zona GENERATED de `standards/index.md` — conferir depois do merge.
+3. **A superfície de comandos não foi provada por processo fresco.** Sete command bodies foram
+   editados (`create`, `triage`, `align`, `status`, `import-memory` na 3.2; `create`/`triage` de
+   novo na 4.1) e mais 17 arquivos tiveram citação reescrita pela renomeação. `skills.py doctor`
+   (26/0) e `lint` (0) passam, mas nenhum dos dois prova que a superfície CARREGA —
+   `surface-verification.md` exige `functional-checks.sh` sob `/skill:new`, que este spec não
+   atravessa. Decisão do humano: avaliar no branch review.
+4. **`## Validation` ainda cita `functional-checks.sh`** e ainda usa os greps largos que quatro
+   tasks tiveram de corrigir. Está desalinhado com o `## Tasks` corrigido.
+5. **`stale-doc` subiu de 22 para 23** no bundle: esta branch tocou `resource`s de standards cujo
+   `timestamp` não foi restampado. Candidato ao estágio de docs emergentes.
 
 **Três correções de fato que o executor precisa saber:**
 
@@ -707,11 +725,12 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 7. Fechar as obrigações de release
 
-- [ ] 7.1 Acertar o lockstep de versão entre `VERSION` e os três scripts
+- [!] 7.1 Acertar o lockstep de versão entre `VERSION` e os três scripts — blocked: Contradiz docs/standards/ci-cd/versioning-release.md (authority: current) §When the bump happens, que diz que um bump nunca e task e que /specs:execute nunca faz um — e do /specs:conclude step 5, imediatamente antes do merge. Decisao do humano em 2026-07-30. Agravado durante o build: main avancou para 4.4.1, entao o bump desta branch parte de 4.4.1 e nao de 4.4.0, que e exatamente o cenario de colisao que aquele standard usa para justificar a regra.
       verify: cat plugins/quenching/VERSION && python3 plugins/quenching/assets/bin/specs.py --version && python3 plugins/quenching/assets/bin/skills.py --version && python3 plugins/quenching/assets/hooks/okf-validate.py --version
       As quatro saídas têm que concordar.
-- [ ] 7.2 Rodar a validação inteira de `## Validation` e registrar a saída de cada comando
+- [x] 7.2 Rodar a validação inteira de `## Validation` e registrar a saída de cada comando
       verify: python3 plugins/quenching/assets/bin/specs.py validate --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
+      subject: plan/decide-plans-index-need: 7.2 Rodar a validacao inteira e registrar a saida
 
 ## Discoveries
 
