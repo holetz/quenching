@@ -2752,6 +2752,22 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="capture_form() must stamp the entry-gate headings "
                                         "and nothing else"))
 
+    # The retirement of `plans/index.md`: the artifact is gone, so the subcommand that
+    # rebuilt its GENERATED zone must not come back. Asserted against BOTH surfaces a
+    # caller can reach — argparse decides what the CLI accepts, DISPATCH decides what
+    # actually runs — because re-adding either alone is the shape a partial revert takes.
+    # Self-contained, and checked before the early return: an installed copy is where a
+    # resurrected subcommand would otherwise go unnoticed for months.
+    _, _sub = build_parser()
+    for surface, present in (("the argparse surface", "plans" in _sub.choices),
+                             ("DISPATCH", "plans" in DISPATCH)):
+        if present:
+            findings.append(_finding("sp-plans-subcommand-back", "error",
+                                     f"`plans` is back in {surface} — the listing it "
+                                     f"reindexed was retired, so nothing is left to rebuild",
+                                     remedy="`plans/index.md` is a retired artifact: no "
+                                            "command produces it and none may reindex it"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
