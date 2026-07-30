@@ -104,6 +104,14 @@ correct — code moves under a rule that did not change. Folding it into the mus
 that set unusable, because every mature bundle carries one. A check that cannot distinguish "wrong"
 from "worth a look" belongs here or nowhere.
 
+**A rising advisory count is not evidence of anything.** `stale-doc` compares a doc's `timestamp`
+against the last commit touching its `resource`, so any branch that edits a governed path *raises*
+the count as it goes: the resource moved, the rule did not. This is structural, not a symptom —
+a branch cannot touch code a standard governs without ageing that standard by this measure.
+Measured 2026-07-30: a branch editing only `plugins/quenching/**` took this bundle from 12
+`stale-doc` warnings to 14 without one doc becoming wrong. Read the gate as **zero errors**, never
+as a warning total, and name the delta in a report rather than letting it read as a regression.
+
 ## What stays a skill's prose self-check
 
 Machine checks answer *shape*. They cannot answer:
