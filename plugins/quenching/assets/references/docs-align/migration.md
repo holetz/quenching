@@ -87,7 +87,7 @@ untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Comp
 ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
 `Idea` → `Task`, `Developed into` → `Outcome`). The DERIVED
 `<!-- BEGIN/END GENERATED -->` zone is installed/regenerated per
-[`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md);
+[`specs-create/specs-front.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md);
 an index that predates the markers gains them without touching the fixed prose around them. A
 legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies **before**
 the hand-off in §1e, while the files are still OKF-stamped task docs.

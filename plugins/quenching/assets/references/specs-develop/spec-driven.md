@@ -54,7 +54,7 @@ is `approved:` in frontmatter, so the fact survived and the folder did not.
 
 `plans/` is **not** part of the OKF `docs/` bundle, so `okf-validate.py` does not scan it (it is
 checked with `--listing-root`; see
-[plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)).
+[specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)).
 
 There is **one truth**, not two: a spec does not edit a separate "main spec" store — it writes the
 durable rule directly into `docs/standards/`, honestly `authority`-graded. There is no delta,
@@ -334,8 +334,8 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 ### Resolving the tool
 
-Each `/specs:*` command resolves the script by the same fallback the listing zone uses
-([plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)): the plugin path
+Each `/specs:*` command resolves the script by the same fallback
+([specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)): the plugin path
 `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then a copy installed into the target's
 `.claude/hooks/specs.py`, and if neither resolves, the declared manual check — do the same rule by
 hand and **say in the report that the check was manual**, never silently skip it. Invoke with

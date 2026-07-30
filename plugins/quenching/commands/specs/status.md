@@ -23,7 +23,7 @@ live in
 every `sp-*` code and what the sweep would do about it in
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md);
 the listing check in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
 All three are **cited, never restated** — this command owns no contract of its own, which is the
 point.
 
@@ -56,7 +56,7 @@ point.
 
 ### 1. Resolve the tool + workspace
 Resolve `specs.py` by the fallback in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Resolving the tool (plugin path → the target's `.claude/hooks/specs.py` → the declared manual
 check, saying so in the report), invoked via `python3`/`py`. Resolve the `specs/` root at the repo
 root.
