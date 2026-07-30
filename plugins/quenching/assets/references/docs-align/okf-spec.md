@@ -31,7 +31,10 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
   summary) · `resource` (URI uniquely identifying the underlying asset) · `tags` (YAML list)
   · `timestamp` (ISO 8601 of last change).
 - Producers **MAY** add any additional keys (this plugin's `audience`/`authority`/`source`/
-  `maintainer` are such extra keys).
+  `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/docs:import`
+  alone and by no other command; its contract — the exact-URI value, and why it is separate from
+  the authorial prose in `source` — is owned by
+  [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) §Attribution.
 
 ## Concept `type`
 
