@@ -7,6 +7,7 @@ refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-29}
 branch: {base: main, work: plan/declare-repo-body-language}
 reviewed: {date: 2026-07-30}
+outcome: done
 ---
 
 # Declare the repo's communication language and conduct in docs/standards so every command reads it for free
@@ -530,3 +531,44 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
 - As tasks 1-2 fizeram docs/standards/architecture/plugin-layout.md acusar stale-doc: o resource dele cobre plugins/quenching/assets/**, e este spec escreve ali. O contrato do doc nao mudou - so o glob foi tocado. Nao foi silenciado com bump de timestamp; e o mesmo gatilho que narrow-the-stale-doc-trigger-to-content-drift existe para estreitar. Baseline docs/: 13 warnings em main, 14 a partir da task 1.
 - O primeiro bullet de ## Validation espera que o grep 'the repo.s language' retorne cinco locais citando o dono. Depois da task 5 ele retorna ZERO: os cinco colapsados deixaram de conter a frase, e a unica ocorrencia viva - a declaracao autocontida de okf-spec.md - esta quebrada por wrap e escapa ao padrao de uma linha. O invariante util virou um par: grep da frase = alarme de reenunciacao NOVA (deve dar so okf-spec, via -A1); grep de 'agents/communication.md' = as cinco citacoes. Vale corrigir a redacao do bullet no conclude.
 - Uma decima-primeira reenunciacao, fora do censo de ## Open Decisions: plugins/quenching/commands/docs/harness.md passo 7 diz 'Structure and links are canonical English; prose may follow the repo's language'. Nao foi colapsada - e body de comando, a mesma categoria que o censo deixou para um spec de follow-up. Some-a ao censo quando aquele spec for escrito.
+
+## Outcome
+
+**Entregue como `done`, merjado em `main` por merge commit** — os sete commits por task ficam na
+base, e todo `subject:` registrado em `## Tasks` resolve a partir dela sem que a branch precise
+sobreviver.
+
+**O que entrou.** O subject `standards/agents/` passou a existir nas duas árvores — o bundle deste
+repo e o skeleton entregue em `plugins/quenching/assets/docs/` — cada uma com seu `index.md` e com
+o dono único `communication.md`. O doc tem duas metades: a **língua**, que cada repo declara por uma
+tag BCP-47 em uma linha do harness raiz, e a **conduta**, que é constante e nenhum repo sobrescreve.
+Este repo virou o primeiro consumidor da regra que entrega: `CLAUDE.md` declara `pt-BR`. Os seis
+locais que reenunciavam a regra passaram a citá-la; `okf-spec.md` manteve a sua deliberadamente
+autocontida, com a nota que explica o porquê — um format spec que defere a um doc de dentro do
+bundle de um repo específico deixa de ser autodescritivo. `/docs:align` ganhou a pergunta única na
+adoção, e `/docs:harness` ganhou a regra de que a linha é **KEEP** — a única coisa entre ela e uma
+deleção silenciosa, já que arquivos de harness são isentos das checagens do bundle.
+
+**O que ficou de fora, e onde está registrado.** O censo de `## Open Decisions` deixou para um spec
+de follow-up as reenunciações que vivem **fora** de `docs/` e `assets/references/`; a
+`## Discoveries` acrescentou a décima-primeira, em `commands/docs/harness.md` passo 7. Declarar uma
+tag **não** retraduz o que já está escrito — isso é migração, e é outro trabalho. E nada
+máquina-checa nada disto, por construção: um validador não identifica a língua de um documento.
+
+**Dois achados da revisão de branch entraram antes do merge.** Os bullets 1 e 5 de `## Validation`
+não eram executáveis como escritos — o primeiro procurava a frase que os seis locais deixaram de
+conter, o segundo exigia `0 warning(s)` sobre `docs/`, que nunca foi atingível — e foram corrigidos
+para os critérios realmente aplicáveis. A citação por `${CLAUDE_PLUGIN_ROOT}` na tabela de conduta
+foi corrigida nas duas cópias, cada uma na forma certa para seu contexto. O que esse segundo achado
+revelou virou a única doc emergente deste conclude: a emenda a
+`docs/standards/architecture/plugin-layout.md` §*A mold cites nothing it does not also install*,
+cujo escopo nomeava só `assets/templates/**` quando o raciocínio cobre toda árvore que um align
+copia para um repo alvo.
+
+**O que o próximo leitor precisa saber.** O ruído de `stale-doc` em `docs/` **não** é deste spec: a
+baseline em `main` já carregava 13, e o critério aplicado durante toda a execução foi `0 error(s)` e
+nenhum finding novo, comparado doc-a-doc e nunca por contagem. `narrow-the-stale-doc-trigger-to-content-drift`
+é quem cura esse ruído. Pela mesma razão ficou como está o `resource: docs/**, specs/**` de
+`communication.md`, hoje o único resource do bundle que aponta para as árvores de conteúdo do repo
+em vez de para `plugins/quenching/**`: ele vai acusar `stale-doc` no primeiro commit sob `docs/` ou
+`specs/` depois deste merge, e isso é esperado.
