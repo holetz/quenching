@@ -4,6 +4,8 @@ title: Reassess whether specs/plans/index.md is needed
 verification: per-section
 priority: {level: 6, criticality: medium, date: 2026-07-29}
 refined: {mode: adversarial, date: 2026-07-30}
+approved: {date: 2026-07-30}
+branch: {base: main, work: plan/decide-plans-index-need}
 ---
 
 # Reassess whether specs/plans/index.md is needed
