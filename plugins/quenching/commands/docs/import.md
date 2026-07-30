@@ -84,7 +84,13 @@ For each planned unit, run homes.md end to end: fill the mold (§The frontmatter
 within-home relative), update the folder's `index.md` (§Updating `index.md`), and enrich the
 glossary if it introduced a repo-specific term (§Enriching the glossary). Fan **one `Task`
 executor per slice** out for scale — the executors write docs; the **orchestrator alone** keeps
-each `index.md` honest and resolves cross-slice dedup. Attribute each doc to its source.
+each `index.md` honest and resolves cross-slice dedup.
+
+Stamp `source_uri:` on every doc this run **creates** — the unit's exact URI, the one key
+homes.md's mold deliberately leaves out — and, when the source is a stable URL, write the body
+line naming it **with the date it was read**, exactly as
+[sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) specifies. A doc
+being **enriched** already carries the `source_uri:` that found it; MERGE never rewrites it.
 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
