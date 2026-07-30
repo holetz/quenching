@@ -10,18 +10,16 @@ stay conformant.
 
 TWO ENTRY MODES
 ---------------
-1. **CLI**  `okf-validate.py <bundle-or-docs-dir> [--json] [--listing-root]`
+1. **CLI**  `okf-validate.py <bundle-or-docs-dir> [--json]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
    This is what `quenching-docs-align`/`quenching-docs-add` invoke and what the plugin's own
    verification runs over `assets/docs/`.
-   `--listing-root` validates a quenching-managed tree that is **not** an OKF bundle
-   root — today that means `specs/backlog/`. The scanned directory's `index.md` is
-   then held to the plain-listing rule (frontmatter-free, ERROR if it carries any)
-   instead of the bundle-root rule (`okf_version` expected), and the `bundle-no-index`
-   SHOULD is dropped. Everything else — concept docs need a non-empty `type`, no index
-   carries a `type`, links resolve, nothing is orphaned — applies unchanged. This is
-   what lets the backlog skills replace a prose self-check with a real check.
+   This checker validates OKF bundles and nothing else. The `specs/` front is owned
+   end-to-end by `specs.py validate`, which holds a spec to its own contract (canonical
+   heading set, stage gates, filename conformance, slug identity) — a contract that has
+   no `type:` in it. Pointing this checker at a spec tree would report defects the specs
+   front forbids fixing.
 
 2. **HOOK**  (no path arg → reads the hook JSON on stdin)
    Dispatches on `hook_event_name`:
@@ -984,8 +982,7 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
     return findings
 
 
-def validate_file(path: str, bundle_root: str,
-                  listing_root: bool = False) -> list[tuple[str, str, str, str]]:
+def validate_file(path: str, bundle_root: str) -> list[tuple[str, str, str, str]]:
     """Return findings for one file as (severity, rel, code, message). Reads the
     file itself — the single-file entry point (PostToolUse); whole-tree callers
     go through `_build_corpus` + `_validate_text` instead."""
@@ -993,17 +990,12 @@ def validate_file(path: str, bundle_root: str,
         text = pathlib.Path(path).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         return [("ERROR", os.path.basename(path), "unreadable", f"cannot read file: {exc}")]
-    return _validate_text(path, text, bundle_root, listing_root)
+    return _validate_text(path, text, bundle_root)
 
 
 def _validate_text(path: str, text: str, bundle_root: str,
-                   listing_root: bool = False,
                    with_stale: bool = False) -> list[tuple[str, str, str, str]]:
     """Findings for one file whose text is already in hand (no disk read).
-
-    `listing_root` marks a scan whose root is NOT an OKF bundle root (a
-    quenching-managed sub-tree such as `specs/backlog/`): its `index.md` is a plain
-    listing like any other, so the bundle-root exemption never applies.
 
     `with_stale` enables `stale-doc`, and **defaults to off**: it shells out to
     `git log` once per doc, which is fine for an on-demand sweep and unacceptable
@@ -1014,8 +1006,7 @@ def _validate_text(path: str, text: str, bundle_root: str,
     if base in EXEMPT:
         raw = []
     elif base == "index.md":
-        is_root = (not listing_root) and \
-            os.path.dirname(os.path.abspath(path)) == os.path.abspath(bundle_root)
+        is_root = os.path.dirname(os.path.abspath(path)) == os.path.abspath(bundle_root)
         raw = check_index(text, is_root)
     elif base == "log.md":
         raw = []  # retired: reserved, recognized, never judged — see THE CONFORMANCE CORE
@@ -1033,40 +1024,12 @@ def _validate_text(path: str, text: str, bundle_root: str,
     return [(sev, rel, code, msg) for (sev, code, msg) in raw]
 
 
-SPEC_FILENAME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
-
-
-def _is_spec_file(path: str, text: str) -> bool:
-    """True for a spec-lifecycle file (`specs/<phase>/YYYY-MM-DD-<slug>.md`).
-
-    A spec is NOT an OKF concept doc: it lives outside the bundle, carries
-    `slug`/`title`/`verification` instead of a `type`, and is checked far more strictly by
-    `specs.py validate` (canonical heading set, phase gates, filename conformance, slug
-    identity). Holding it to the bundle's `type:` rule would report a defect that the specs
-    front's own contract forbids fixing — stamping an OKF type on a spec would be exactly
-    the second source of truth that front exists to avoid.
-
-    Detection is deliberately conjunctive: the v2 filename pattern AND the frontmatter keys
-    only a spec carries, so a genuinely untyped concept doc that merely happens to sit under
-    a date-prefixed name is still reported."""
-    if not SPEC_FILENAME_RE.match(os.path.basename(path)):
-        return False
-    head = text[:600]
-    return ("slug:" in head) and ("verification:" in head)
-
-
 def validate_tree(bundle_root: str, deadline: float | None = None,
                    ignore_globs: tuple[str, ...] = (),
-                   listing_root: bool = False,
                    with_stale: bool = False):
     """Validate the whole bundle from ONE read pass. Returns the findings list,
     or **None** when `deadline` (a `time.monotonic()` instant) expired mid-walk —
-    hook mode aborts silently; CLI mode passes no deadline.
-
-    `listing_root=True` scans a quenching-managed sub-tree (`specs/backlog/`) rather
-    than an OKF bundle root: the root `index.md` is held to the plain-listing rule, the
-    `bundle-no-index` SHOULD is dropped, and **spec-lifecycle files are skipped entirely**
-    (see `_is_spec_file`)."""
+    hook mode aborts silently; CLI mode passes no deadline."""
     findings: list[tuple[str, str, str, str]] = []
     root = pathlib.Path(bundle_root)
     if not root.is_dir():
@@ -1078,12 +1041,10 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
         text = corpus[path]
         if text is None:
             findings.append(("ERROR", os.path.basename(path), "unreadable", "cannot read file"))
-        elif listing_root and _is_spec_file(path, text):
-            continue      # not an OKF concept doc — `specs.py validate` owns it
         else:
-            findings.extend(_validate_text(path, text, bundle_root, listing_root, with_stale))
-    # bundle-level SHOULDs — a listing-root sub-tree is not a bundle and owes none of them
-    if not listing_root and not (root / "index.md").exists():
+            findings.extend(_validate_text(path, text, bundle_root, with_stale))
+    # bundle-level SHOULDs
+    if not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
     # whole-tree structural integrity (missing/broken/orphaned listings)
     findings.extend(validate_structure(bundle_root, corpus))
@@ -1241,7 +1202,6 @@ def run_cli(argv: list[str]) -> int:
         return 0
     cfg = _load_config()
     as_json = "--json" in argv
-    listing_root = "--listing-root" in argv
     paths = [a for a in argv if not a.startswith("-")]
     # intercepted before the target resolves — this CLI reads its first positional as
     # a directory, so a bare subcommand would otherwise be scanned as a path
@@ -1251,8 +1211,7 @@ def run_cli(argv: list[str]) -> int:
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # no deadline in CLI mode — always a full scan
     # `with_stale` only here: CLI is the one mode that may shell out to git per doc
-    findings = validate_tree(target, ignore_globs=ignore_globs, listing_root=listing_root,
-                             with_stale=True)
+    findings = validate_tree(target, ignore_globs=ignore_globs, with_stale=True)
     if as_json:
         print(json.dumps([
             {"severity": s, "path": r, "code": c, "message": m} for s, r, c, m in findings
