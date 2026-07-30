@@ -613,9 +613,10 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 3. Parar de produzir o artefato, e apagá-lo
 
-- [ ] 3.1 Apagar `assets/specs/plans/index.md` e remover o passo de seed de `commands/specs/align.md`
+- [x] 3.1 Apagar `assets/specs/plans/index.md` e remover o passo de seed de `commands/specs/align.md`
       files: plugins/quenching/assets/specs/plans/index.md, plugins/quenching/commands/specs/align.md
       verify: test ! -e plugins/quenching/assets/specs/plans/index.md && grep -c "assets/specs/plans/index.md" plugins/quenching/commands/specs/align.md
+      subject: plan/decide-plans-index-need: 3.1 Apagar o seed e remover o passo de seed do align
       O `grep` tem que imprimir `0`. Sem asset não há o que semear — é o que torna a retirada
       irreversível por sweep.
 - [ ] 3.2 Remover o passo de reindex e as menções a `--listing-root` dos cinco command bodies que os têm
@@ -690,3 +691,4 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - Task 2.1's `verify:` (`specs.py --help | grep -c plans` expecting 0) is defective in the OPPOSITE direction to 1.1's: it can never pass on a CORRECT implementation. `plans/` is a real folder named in three other subcommands' help text (new: 'capture a spec into plans/', promote: 'plans/ -> archive/', migrate: 'backlog/ + ready/ -> plans/'), so it prints 3. The subcommand IS gone, proved by the spec's own `## Validation` line: `specs.py plans reindex` -> exit 2, 'invalid choice: plans'. A correct assertion is that exit code, or `grep -cE '^ +plans '`.
 - Para o sibling `split-specs-py-backlog-renderer` (colisão nomeada em `## Risks`): a remoção de `cmd_plans` + `render_plans_zone` + `STAGE_ORDER` + `PLANS_EMPTY` tira 83 linhas de specs.py — 3125 -> 3042. Aquele spec queria EXTRAIR a função para baixar o arquivo do limiar de ~1.200 linhas; a extração agora não tem alvo, e 3042 segue muito acima do limiar, então o problema dele continua inteiro e precisa de outro corte. Esta retirada não o resolve, só remove uma das opções.
 - Mutation pass sobre a guarda `sp-plans-subcommand-back` de specs.py: 2 mutações (recolocar `plans` no argparse · recolocar `plans` no DISPATCH) — 2/2 pegas, cada uma na sua superfície. As duas são asseridas separadamente de propósito: recolocar só uma é a forma que um revert parcial toma. Com isto, DUAS das três selftests shipped passaram por mutation pass nesta branch (okf-validate.py e specs.py, só as guardas novas); skills.py não.
+- Gap que o spec não previu, fechado na task 3.1: `assets/specs/plans/` era mantida no git APENAS por `index.md`. Apagando o arquivo, git deixa de rastrear a pasta, e o `Copy assets/specs/` do step 6 do /specs:align pararia de criar `specs/plans/` num target repo novo — `specs.py doctor` reportaria `sp-missing-phase` em todo repo recém-alinhado. Adicionado `assets/specs/plans/.gitkeep`, espelhando `assets/specs/archive/.gitkeep` que já existia pelo mesmo motivo. Sem isso a retirada quebrava o scaffold.

@@ -160,8 +160,7 @@ single confirmation; each code-coupled rename awaits its own.
 Copy `assets/specs/` and install `specs.py` if approved; run the legacy fold, then
 `specs.py migrate`, if approved — **never hand-fold**, and report every folder the tool kept; apply
 each tool-stated repair; rename the confirmed files and update every reference site alongside its
-individually confirmed rename; seed `specs/plans/index.md` from
-`${CLAUDE_PLUGIN_ROOT}/assets/specs/plans/index.md` when missing; install the operator manual from
+individually confirmed rename; install the operator manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/specs/QUENCHING.md` to `specs/QUENCHING.md` under the four-branch
 manual-install rule in [/docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never
 restated — same banner, same version fill, same never-clobber-a-de-bannered-copy branch); stamp the
