@@ -377,8 +377,9 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
       files: plugins/quenching/assets/references/docs-import/sources.md
       verify: grep -n source_uri plugins/quenching/assets/references/docs-import/sources.md
       subject: plan/add-import-provenance: 1.1 Escrever o contrato de source_uri: em sources.md §Attribution
-- [ ] 1.2 Trocar §Dedup item 2 de `sources.md` para começar pela consulta exata à `source_uri:` no bundle e só depois cair no grep por título, slug e termo
+- [x] 1.2 Trocar §Dedup item 2 de `sources.md` para começar pela consulta exata à `source_uri:` no bundle e só depois cair no grep por título, slug e termo
       files: plugins/quenching/assets/references/docs-import/sources.md
+      subject: plan/add-import-provenance: 1.2 §Dedup começa pela consulta exata à source_uri
 - [ ] 1.3 Acrescentar `source_uri` à lista de chaves extras do perfil em `okf-spec.md` §Frontmatter, ao lado de `audience`, `authority`, `source` e `maintainer`
       files: plugins/quenching/assets/references/docs-align/okf-spec.md
 - [ ] 1.4 Marcar em `homes.md` §The frontmatter stamp, em uma linha e sem acrescentar a chave ao bloco, que `source_uri:` é escrita apenas por `/docs:import` e nunca inventada pelos outros comandos que citam o bloco
