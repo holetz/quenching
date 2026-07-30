@@ -6,6 +6,7 @@ priority: {level: 16, criticality: high, date: 2026-07-29}
 refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-29}
 branch: {base: main, work: plan/declare-repo-body-language}
+reviewed: {date: 2026-07-30}
 ---
 
 # Declare the repo's communication language and conduct in docs/standards so every command reads it for free
@@ -183,10 +184,26 @@ parafraseia a regra).
   que entrega a regra seja também seu primeiro consumidor
 ## Validation
 
-- `grep -rn "the repo.s language" docs/ plugins/quenching/assets/references/` retorna os cinco locais
-  que citam o dono e **nenhuma** reenunciação da regra, mais a declaração autocontida deliberada de
-  `okf-spec.md`. Uma sexta reenunciação **dentro dessas duas árvores** é falha; as reenunciações que
-  vivem fora delas estão registradas em `## Open Decisions` e não pertencem a este invariante.
+- O invariante do colapso é um **par** de greps, não um só: os seis locais deixaram de conter a
+  frase — é isso que colapsar significa — então procurá-la não os encontra mais.
+
+  O **alarme de reenunciação nova** precisa casar a frase mesmo quebrada por wrap, e por isso
+  ancora na continuação em vez de na linha inteira:
+
+      grep -rn -B1 'repo.s language\|^ *language\*\*' docs/ plugins/quenching/assets/references/
+
+  Ele retorna **exatamente dois**: a prosa do próprio dono
+  (`docs/standards/agents/communication.md`, que é onde a regra vive) e a declaração autocontida
+  deliberada de `okf-spec.md`. Um terceiro acerto dentro dessas duas árvores é reenunciação nova, e
+  é falha.
+
+  O **censo das citações** é o grep complementar,
+  `grep -rn 'agents/communication.md' docs/ plugins/quenching/assets/references/`: os seis locais
+  que citam o dono, mais a nota de ponteiro do próprio `okf-spec.md` e a linha derivada de
+  `standards/index.md` — esta última listagem gerada, não citação.
+
+  As reenunciações que vivem **fora** dessas duas árvores estão registradas em `## Open Decisions` e
+  não pertencem a este invariante.
 - A metade da etiqueta de `docs/standards/agents/communication.md` **cita**
   `plugins/quenching/assets/references/specs-develop/questions.md` §The four shared mechanics e os
   docs de `docs/standards/automation/`, e não reenuncia nenhum deles. Uma reenunciação aqui é o único
@@ -199,8 +216,14 @@ parafraseia a regra).
   dentro de §The canonical tree (locked), e os dois arquivos `standards/index.md` carregam sua linha de
   subtopic. Um subject que existe em disco mas não na árvore travada é a não conformidade que este
   spec está corrigindo, não um estado que ele possa deixar para trás.
-- `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` e o mesmo em `docs`
-  reportam ambos `0 error(s), 0 warning(s)` com o novo subject e o novo doc de standards no lugar.
+- `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` reporta
+  `0 error(s), 0 warning(s)` com o novo subject e o novo doc de standards no lugar. Sobre `docs/` o
+  critério é **`0 error(s)` e nenhum finding novo**, comparado **doc-a-doc** contra a mesma execução
+  em `main` e nunca por contagem: a baseline já carrega 13 warnings `stale-doc`/`resource-unresolved`
+  alheios a este spec, e o número sobe sozinho conforme as datas de commit rolam sob os globs de
+  `resource:` existentes. O spec irmão `narrow-the-stale-doc-trigger-to-content-drift` é quem cura
+  esse ruído; silenciá-lo aqui com bump de `timestamp:` seria a mentira que ele existe para evitar.
+
 ## Design
 
 **Regra e valor são dois fatos diferentes, cada um em um lugar só.** A linha do harness carrega o
