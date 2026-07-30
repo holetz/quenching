@@ -9,7 +9,7 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*), AskUs
 **Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Claude Code plan
 file. With neither, glob `~/.claude/plans/*.md`; if that is empty too, ask what to capture.
 
-Creates ONE spec in [`specs/plans/`](${CLAUDE_PLUGIN_ROOT}/assets/specs/plans/index.md). That folder is a spec's
+Creates ONE spec in `specs/plans/`. That folder is a spec's
 whole active life, so what is created here is what gets built: this command creates the file,
 `/specs:develop` fills its sections, `/specs:execute` builds it, and `/specs:conclude` closes it
 out under the same basename. Nothing here to retire, hand off, or reconcile — and no ledger.
