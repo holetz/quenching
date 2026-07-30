@@ -443,10 +443,11 @@ Estado da árvore após a seção 3 (o manual do operador), que um executor novo
 
 ### 4. O standard
 
-- [ ] 4.1 Escrever a emenda em `docs/standards/quality/bundle-verification.md`, mantendo `authority: current`: a lacuna aceita da atribuição, e a regra de que a deriva da fonte não é verificável dentro de um validador que nunca busca nada
+- [x] 4.1 Escrever a emenda em `docs/standards/quality/bundle-verification.md`, mantendo `authority: current`: a lacuna aceita da atribuição, e a regra de que a deriva da fonte não é verificável dentro de um validador que nunca busca nada
       files: docs/standards/quality/bundle-verification.md
       pattern: docs/standards/quality/bundle-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs | grep -q '0 error(s)'
+      subject: plan/add-import-provenance: 4.1 a lacuna aceita da procedência em bundle-verification.md
 
 ### 5. Verificação
 
@@ -456,3 +457,5 @@ Estado da árvore após a seção 3 (o manual do operador), que um executor novo
 ## Discoveries
 
 - A asserção de `## Validation` "grep -n 'context: fork' import.md → nada, sempre" é falsa por construção: a própria invariante que proíbe a chave contém a string (linha 96, `- **Never add \`context: fork\`.**`). O grep literal devolve essa linha antes e depois desta spec. O que o check quer dizer é "a chave não aparece no frontmatter"; escrito como está, ele nunca pode passar.
+- `## Validation` afirma que `okf-validate.py docs` devolve oito WARN de `stale-doc` pré-existentes. Medido em 2026-07-30 sobre `main` (9c289f1), são **doze**, mais um `resource-unresolved` em `standards/automation/agents.md` (`.claude/agents/**` não casa nada) que a spec não menciona. O número da spec envelheceu; o portão declarado (zero erros) continua válido e nenhum dos dois é desta spec.
+- Efeito colateral estrutural de qualquer spec que toque `plugins/quenching/**`: os commits refrescam o último commit dos `resource` que vários standards governam, então a contagem de `stale-doc` **sobe** durante a construção (12 → 14 aqui) mesmo sem nenhum doc ficar errado. É advisory e fora de todo portão, mas convém dizer no relatório em vez de deixar parecer regressão.
