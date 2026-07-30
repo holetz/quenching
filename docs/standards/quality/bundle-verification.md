@@ -63,6 +63,15 @@ nothing in this front can:
   forbidden outright above; born at WARN it would fire on every authored doc that legitimately has
   no external origin — permanent noise, which is the same criterion that keeps
   `TYPES_WITHOUT_RESOURCE` exempt.
+- **A unit collapsed from several seeds carries only one origin.** `sources.md` §Dedup item 1
+  merges two source sections describing the same concept into a single unit, but `source_uri:` is
+  single-valued by contract — one value on one line is what makes the exact lookup an equality
+  test rather than a parse. The surviving unit is stamped with one seed's URI, so on a later
+  import the *other* seed misses that lookup and falls through to resemblance, which is the
+  judgement the key exists to avoid. Measured 2026-07-30: a unit collapsed out of two overlapping
+  local seeds matched by concept, not by URI, on the second run. Accepted rather than closed — a
+  list-valued key would buy that one seed its exactness at the cost of the property every lookup
+  depends on.
 
 What was done instead is the cut the corollary demands. The rule that an imported doc records where
 it came from used to be written in **four** places — `sources.md`, `/docs:import` twice over, and

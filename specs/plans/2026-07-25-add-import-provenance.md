@@ -6,6 +6,7 @@ priority: {level: 28, criticality: medium, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
 approved: {date: 2026-07-30}
 branch: {base: main, work: plan/add-import-provenance}
+reviewed: {date: 2026-07-30}
 ---
 
 # Add provenance and idempotent re-ingestion to quenching-docs-import
@@ -183,7 +184,11 @@ externa real, então a validação é deliberadamente dividida: o que é mecâni
   `grep -rl source_uri plugins/quenching/` devolve exatamente cinco caminhos: `sources.md`,
   `import.md`, `okf-spec.md`, `homes.md` e `assets/docs/QUENCHING.md`. Um sexto arquivo é a
   falha que `## Design` §Decisão 2 existe para evitar.
-- `grep -n 'context: fork' plugins/quenching/commands/docs/import.md` → nada, sempre.
+- A chave não está no **frontmatter** de `import.md`:
+  `awk '/^---$/{n++; next} n==1' plugins/quenching/commands/docs/import.md | grep -c 'context:'`
+  → **0**. O grep literal por `context: fork` sobre o arquivo inteiro **não** serve: a própria
+  invariante que proíbe a chave contém a string, então ele devolve essa linha antes e depois desta
+  spec e nunca pode passar. Ver `## Discoveries`.
 - Sobre o bundle **deste** repositório, o portão é **zero erros**, não zero avisos:
   `python3 plugins/quenching/assets/hooks/okf-validate.py docs` já devolve oito WARN de `stale-doc`
   pré-existentes, incluindo um em `standards/quality/bundle-verification.md`, e `stale-doc` é
@@ -458,8 +463,8 @@ trabalho revelou, o merge e a distilação. Estado que não se deriva da árvore
 
 ## Discoveries
 
-- A asserção de `## Validation` "grep -n 'context: fork' import.md → nada, sempre" é falsa por construção: a própria invariante que proíbe a chave contém a string (linha 96, `- **Never add \`context: fork\`.**`). O grep literal devolve essa linha antes e depois desta spec. O que o check quer dizer é "a chave não aparece no frontmatter"; escrito como está, ele nunca pode passar.
+- A asserção de `## Validation` "grep -n 'context: fork' import.md → nada, sempre" é falsa por construção: a própria invariante que proíbe a chave contém a string (linha 96, `- **Never add \`context: fork\`.**`). O grep literal devolve essa linha antes e depois desta spec. O que o check quer dizer é "a chave não aparece no frontmatter"; escrito como está, ele nunca pode passar. **Resolvido na revisão do branch (2026-07-30):** o item de `## Validation` passou a inspecionar só o frontmatter, via `awk '/^---$/{n++; next} n==1' … | grep -c 'context:'` → 0.
 - `## Validation` afirma que `okf-validate.py docs` devolve oito WARN de `stale-doc` pré-existentes. Medido em 2026-07-30 sobre `main` (9c289f1), são **doze**, mais um `resource-unresolved` em `standards/automation/agents.md` (`.claude/agents/**` não casa nada) que a spec não menciona. O número da spec envelheceu; o portão declarado (zero erros) continua válido e nenhum dos dois é desta spec.
 - Efeito colateral estrutural de qualquer spec que toque `plugins/quenching/**`: os commits refrescam o último commit dos `resource` que vários standards governam, então a contagem de `stale-doc` **sobe** durante a construção (12 → 14 aqui) mesmo sem nenhum doc ficar errado. É advisory e fora de todo portão, mas convém dizer no relatório em vez de deixar parecer regressão.
-- Furo no contrato de `source_uri:` que o walkthrough expôs: uma unidade **colapsada de duas seeds** (§Dedup item 1, dedup dentro da fonte) recebe UMA só URI, porque a chave é single-valued por contrato ("One value on one line"). A URI da segunda seed nunca é estampada, então numa reimportação ela **não** casa por URI e cai na busca por semelhança — exatamente o reconhecimento que a spec queria substituir. Medido em 2026-07-30: `source/api-notes.md:3` colapsada em `handbook.md:3` não casou na rodada 2. Decidir se a chave vira lista, se cada seed colapsada ganha a sua linha no corpo, ou se o furo é aceito e registrado.
-- `## Design` §Decisão 5 afirma que a consulta exata já se paga na PRIMEIRA rodada, porque duas seeds sobrepostas produzem o mesmo problema de alvo de MERGE dentro de uma execução. O walkthrough não sustenta isso: duas seeds sobrepostas têm URIs **diferentes**, logo a consulta exata nunca as casa — quem as junta é o dedup por prosa dentro da fonte (§Dedup item 1). O valor real da chave é mesmo na REIMPORTAÇÃO, que é a suposição de que a Decisão 5 tentou desacoplar a entrega. O argumento da Decisão 5 precisa ser corrigido ou retirado; o que ele defende (a entrega não depender de reimportação) fica sem sustentação empírica.
+- Furo no contrato de `source_uri:` que o walkthrough expôs: uma unidade **colapsada de duas seeds** (§Dedup item 1, dedup dentro da fonte) recebe UMA só URI, porque a chave é single-valued por contrato ("One value on one line"). A URI da segunda seed nunca é estampada, então numa reimportação ela **não** casa por URI e cai na busca por semelhança — exatamente o reconhecimento que a spec queria substituir. Medido em 2026-07-30: `source/api-notes.md:3` colapsada em `handbook.md:3` não casou na rodada 2. Decidir se a chave vira lista, se cada seed colapsada ganha a sua linha no corpo, ou se o furo é aceito e registrado. **Resolvido na revisão do branch (2026-07-30):** aceito e registrado, como quarta entrada de `docs/standards/quality/bundle-verification.md` §Accepted gaps — uma chave list-valued compraria a exatidão daquela seed ao preço da propriedade de que toda consulta depende.
+- `## Design` §Decisão 5 afirma que a consulta exata já se paga na PRIMEIRA rodada, porque duas seeds sobrepostas produzem o mesmo problema de alvo de MERGE dentro de uma execução. O walkthrough não sustenta isso: duas seeds sobrepostas têm URIs **diferentes**, logo a consulta exata nunca as casa — quem as junta é o dedup por prosa dentro da fonte (§Dedup item 1). O valor real da chave é mesmo na REIMPORTAÇÃO, que é a suposição de que a Decisão 5 tentou desacoplar a entrega. O argumento da Decisão 5 precisa ser corrigido ou retirado; o que ele defende (a entrega não depender de reimportação) fica sem sustentação empírica. **Resolvido na revisão do branch (2026-07-30):** a mesma afirmação tinha vazado para o produto — `sources.md` §Dedup 2.1 dizia "earlier in this one, when two seeds overlapped" — e foi corrigida lá para o caso que de fato casa por URI (uma slice anterior já mintou a unidade), dizendo explicitamente que duas seeds sobrepostas **não** são esse caso. `## Design` §Decisão 5 fica como está, registro honesto do que foi decidido na época; `## Outcome` diz que o argumento não sobreviveu à medição.
