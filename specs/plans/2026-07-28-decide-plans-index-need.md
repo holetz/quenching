@@ -649,9 +649,10 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       subject: plan/decide-plans-index-need: 4.1 Tirar o link das duas citacoes de specs/plans/
       Não pode imprimir nenhuma linha. A frase ao redor de cada link explica a pasta em duas frases
       e não precisa mandar o leitor a lugar nenhum — decidido em `## Design`.
-- [ ] 4.2 Corrigir o link `specs/plans/index.md` do `CLAUDE.md`
+- [x] 4.2 Corrigir o link `specs/plans/index.md` do `CLAUDE.md`
       files: CLAUDE.md
       verify: grep -c "plans/index.md" CLAUDE.md
+      subject: plan/decide-plans-index-need: 4.2 Corrigir o link plans/index.md do CLAUDE.md
       Tem que imprimir `0`. Usar `/docs:harness`.
 
 ### 5. Atualizar as references e os manuais que descrevem o artefato retirado
