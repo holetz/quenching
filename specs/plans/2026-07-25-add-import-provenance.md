@@ -417,8 +417,9 @@ Estado da árvore após a seção 1 (o contrato da chave), que um executor novo 
 - [x] 2.1 Fazer a etapa 2 de `import.md` classificar cada unidade como nova ou já importada pela consulta exata à `source_uri:`, antes do grep por prosa
       files: plugins/quenching/commands/docs/import.md
       subject: plan/add-import-provenance: 2.1 etapa 2 classifica cada unidade pela consulta exata à source_uri
-- [ ] 2.2 Fazer a etapa 3 mostrar a classificação de cada unidade no plano único, com a URI que a motivou, tornando a decisão duplicar-versus-enriquecer visível antes do OK
+- [x] 2.2 Fazer a etapa 3 mostrar a classificação de cada unidade no plano único, com a URI que a motivou, tornando a decisão duplicar-versus-enriquecer visível antes do OK
       files: plugins/quenching/commands/docs/import.md
+      subject: plan/add-import-provenance: 2.2 a etapa 3 mostra a classificação de cada unidade no plano
 - [ ] 2.3 Fazer a etapa 4 estampar `source_uri:` em cada doc criado e escrever a linha de atribuição no corpo com a data da leitura
       files: plugins/quenching/commands/docs/import.md
 - [ ] 2.4 Cortar a doutrina duplicada de atribuição — as linhas 33 e 73 passam a citar `sources.md` em vez de reafirmar a regra, restando uma única menção no arquivo

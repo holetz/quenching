@@ -64,8 +64,17 @@ a doc (correctable), unlike `/docs:import-memory` (see the model policy in
 
 ### 3. Present ONE ingestion plan → gate on ONE OK
 Show the **complete** plan: every doc to **mint** or **enrich** with its home, `type`, path,
-one-line summary, and source anchor; the dedup decisions; and, for a web source, the
-seed/cap/allowlist and what was left unfetched. A single OK executes the whole batch. A
+one-line summary, and source anchor; and, for a web source, the seed/cap/allowlist and what was
+left unfetched.
+
+Every row also carries **why** it is a mint rather than an enrich — the step-2 verdict, with the
+evidence under it: **new** (no URI hit and nothing resembling it); **already imported**, showing
+the matching `source_uri:` and the doc it hit; or **resembles an existing doc**, showing the
+title, slug or term that matched and the doc it matched. The last is the only one the human is
+really being asked to check — an exact URI match needs no trust and a resemblance does, and
+rendering the two identically is how a wrong MERGE hides inside a batch OK.
+
+A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
 confirmation item (mirrors `/docs:align`) — never folded into the batch OK.
 
