@@ -60,8 +60,8 @@ because this command worked harder at it.
   every later command refuse (exit 2).
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
   answer: sharpen the existing spec instead, or pick a different slug.
-- **The zone is derived, never hand-edited.** `plans/index.md`'s listing is rebuilt exclusively by
-  `specs.py plans reindex`, only between the GENERATED markers.
+- **The folder is the listing.** There is no index to update — `specs.py list` derives what
+  `plans/` holds from disk on demand, so creating a spec is one file write and nothing else.
 - **A Claude Code plan file is read-only.** Never move, edit, or delete `~/.claude/plans/*.md` —
   it stays where Claude Code put it.
 
@@ -132,10 +132,9 @@ specs.py section <slug> Problem --write   # body on stdin
 writing others around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
-### 7. Regenerate the derived zone
-Call `specs.py plans reindex`. The tool owns the zone format and rebuilds it deterministically from
-the specs on disk, grouped by derived stage, only between the GENERATED markers.
-**Done when:** the zone lists the new spec.
+**Nothing to regenerate.** The file on disk IS the record — `specs.py list` and `specs.py status`
+derive what `plans/` holds when asked, so a spec becomes visible the moment it is written. No
+listing is rebuilt here, and none may be: `plans/index.md` is a retired artifact.
 
 **Nothing is written into `docs/`.** Creating a spec used to append a line to the bundle's
 `docs/log.md`; that artifact is retired, and the spec's own frontmatter already records when it
@@ -147,15 +146,13 @@ overwhelming majority of runs, and paying to read `knowledge/glossary.md` on a p
 is "seconds" is the wrong trade. A term a spec genuinely coins is caught by
 `/docs:glossary-backfill`, or by `/docs:define` when the human says the word matters.
 
-### 8. Check
-Run `specs.py validate --spec <slug>` (the spec's own conformance) and
-`okf-validate.py specs/plans --listing-root` (the **listing** only — a spec carries no OKF `type:`
-and the bundle validator is not pointed at it, per
-[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)).
-Then confirm the one thing neither sees: the zone matches disk.
-**Done when:** both checks are clean, or the residue is reported verbatim.
+### 7. Check
+Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check. The OKF
+validator is never pointed at `specs/`: a spec carries no OKF `type:`, per
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
+**Done when:** the check is clean, or the residue is reported verbatim.
 
-### 9. Report
+### 8. Report
 Name the spec (`plans/YYYY-MM-DD-<slug>.md`) and its slug. On the plan-file path, add which
 sections were filled from which part of the source, the task count derived, which sections carry an
 explicit none — and say plainly that the source file was **read, never moved or deleted**. Name the
@@ -204,8 +201,8 @@ must reach the ready gate**; `/specs:develop` takes it the rest of the way.
   worse than a refusal, because identity *is* the slug.
 - Never rename a spec to change its date. The prefix records when it was born.
 - Never move, edit, or delete a `~/.claude/plans/*.md` file.
-- Never hand-edit inside the GENERATED markers (call `specs.py plans reindex`), and never add
-  frontmatter to `plans/index.md`.
+- Never create or refresh a `plans/index.md`. The artifact is retired, and `specs.py list` derives
+  the same listing from disk on demand.
 - Never stamp an OKF `type:` on a spec to quiet the bundle validator.
 - Never create a spec into a legacy `backlog/` or `ready/` folder — report and name
   `specs.py migrate`.

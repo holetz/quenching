@@ -71,9 +71,8 @@ that `/specs:align` would migrate it.
 specs.py doctor --json
 specs.py validate --json
 specs.py list --json
-okf-validate.py specs/plans --listing-root
 ```
-Then `Glob` `specs/plans/*.md` and read their frontmatter (the records), read `plans/index.md`, read
+Then `Glob` `specs/plans/*.md` and read their frontmatter (the records), read
 `docs/index.md` for `okf_version`, and — only under a suspected legacy migration — `Glob` the
 `openspec/` tree and the shadow copies (`.claude/skills/openspec-*/SKILL.md`,
 `.claude/commands/opsx/*.md`).
