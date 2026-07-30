@@ -371,31 +371,31 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
 
 ## Handoff
 
-Estado da árvore após a seção 3 (o manual do operador), que um executor novo não deriva sozinho:
+As treze tarefas estão construídas, verificadas e commitadas — uma por commit, treze commits em
+`plan/add-import-provenance`. O que falta é `/specs:conclude`: a revisão do branch, os `docs/` que o
+trabalho revelou, o merge e a distilação. Estado que não se deriva da árvore:
 
-- **Isolamento:** worktree em `../claude-quenching-add-import-provenance`, branch
-  `plan/add-import-provenance`, cortado de `main` em `9c289f1`. O checkout principal
-  `~/Projects/claude-quenching` está sendo usado por **outra sessão Claude Code em paralelo**,
-  que edita `specs/plans/2026-07-28-decide-plans-index-need.md` — não commitar nada de lá.
-- **Hook local:** `.claude/settings.json` (versionado) aponta para `.claude/hooks/okf-validate.py`,
-  que o commit `193578c` havia apagado. Reinstalado em 4.4.0 **sem ser versionado**, nos dois
-  checkouts, para manter os commits desta spec dentro do escopo declarado. Decidir em
-  `/specs:conclude` se ele deve ser commitado.
-- **Seções 1, 2 e 3 fechadas e verdes.** A contagem que `## Validation` cobra já bate:
-  `grep -rl source_uri plugins/quenching/` devolve **exatamente os cinco** caminhos esperados —
-  `sources.md`, `import.md`, `okf-spec.md`, `homes.md`, `assets/docs/QUENCHING.md` — e nenhum
-  arquivo em `assets/templates/`. Um sexto é a falha que `## Design` §Decisão 2 existe para evitar.
-- **Cuidado ao editar `import.md`:** o arquivo tem exatamente **uma** linha contendo `attribut`
-  (a citação da linha 17) e `## Validation` cobra esse número. Texto novo ali que use a palavra
-  quebra o check — cite `sources.md` pelo arquivo, sem nomear a seção.
-- **Descoberta registrada:** a asserção `grep -n 'context: fork' import.md → nada, sempre` de
-  `## Validation` é falsa por construção — a própria invariante que proíbe a chave contém a
-  string. Resolver em `/specs:develop` ou aceitar na revisão do branch.
-- **Próxima tarefa:** 4.1 — a emenda em `docs/standards/quality/bundle-verification.md`, o único
-  arquivo desta spec fora de `plugins/`. É o doc declarado em `## Impact`, mantém
-  `authority: current`, e o seu `timestamp` precisa ir para hoje (2026-07-30): o bundle deste repo
-  carrega oito WARN de `stale-doc` pré-existentes, um deles nesse arquivo, e o portão é **zero
-  erros**, não zero avisos.
+- **Isolamento:** worktree em `../claude-quenching-add-import-provenance`, cortado de `main` em
+  `9c289f1`. O checkout principal `~/Projects/claude-quenching` está sendo usado por **outra sessão
+  Claude Code em paralelo**, que edita `specs/plans/2026-07-28-decide-plans-index-need.md`. Rebasear
+  ou mergear a partir de lá sem olhar essa árvore suja é o risco desta spec.
+- **Uma mudança fora do escopo declarado, deliberadamente NÃO commitada.**
+  `.claude/settings.json` (versionado) aponta para `.claude/hooks/okf-validate.py`, que o commit
+  `193578c` apagou sem tirar a fiação — todo `Write|Edit` e todo `Stop` do repo disparavam um hook
+  inexistente. O arquivo foi reinstalado em 4.4.0 **sem ser versionado**, nos dois checkouts, para
+  manter os treze commits dentro dos arquivos que `## Impact` declara. **Decidir em `/specs:conclude`**
+  se ele entra no repo, se a fiação sai de `settings.json`, ou se fica local.
+- **Duas falhas de desenho encontradas pelo walkthrough**, em `## Discoveries`: a unidade colapsada
+  de duas seeds carrega só uma `source_uri:`, e o argumento da `## Design` §Decisão 5 não se
+  sustenta. Nenhuma das duas invalida o que foi entregue, e as duas são material de revisão de
+  branch — não de mais uma tarefa aqui.
+- **Portões, na última medição (2026-07-30):** okf-validate 0/0 nos dois bundles embarcados; `docs`
+  do repo com **0 error(s)**, 15 warning(s) — todos advisory, sendo 14 `stale-doc` e um
+  `resource-unresolved` pré-existente; `doctor` com 26 comandos e zero findings; `lint` exit 0; os
+  três selftests verdes. A base `main` já trazia 12 + 1.
+- **Não exercitado, e não exercitável aqui:** o comando `/docs:import` registrado. O registry é
+  montado no início da sessão, então o corpo editado só carrega numa sessão nova. A primeira sessão
+  depois do merge deve rodar `/skill:new` ou uma importação real antes de confiar na superfície.
 ## Tasks
 
 ### 1. O contrato da chave
