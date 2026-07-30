@@ -619,10 +619,16 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       subject: plan/decide-plans-index-need: 3.1 Apagar o seed e remover o passo de seed do align
       O `grep` tem que imprimir `0`. Sem asset não há o que semear — é o que torna a retirada
       irreversível por sweep.
-- [ ] 3.2 Remover o passo de reindex e as menções a `--listing-root` dos cinco command bodies que os têm
+- [x] 3.2 Remover o passo de reindex e as menções a `--listing-root` dos cinco command bodies que os têm
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/triage.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/status.md, plugins/quenching/commands/docs/import-memory.md
-      verify: grep -rn -- "plans reindex\|--listing-root\|plans/index.md" plugins/quenching/commands/
-      Não pode imprimir nenhuma linha. `status.md:76` também lê o arquivo — essa leitura sai.
+      verify: grep -rn -- "plans reindex\|--listing-root" plugins/quenching/commands/; grep -rn "plans/index\.md" plugins/quenching/commands/ | grep -v "assets/specs/plans/index.md" | grep -v "Never \|retired artifact"
+      subject: plan/decide-plans-index-need: 3.2 Remover o reindex e o flag dos cinco command bodies
+      Nenhum dos dois pode imprimir linha. `status.md:76` também lê o arquivo — essa leitura sai.
+      **Escopo corrigido em 2026-07-30:** o grep cru de `plans/index.md` era largo demais em duas
+      direções. Casava os dois links do seed, que são da task 4.1; e casava as próprias linhas
+      `Never recreate ...` que esta task ESCREVE — a única guarda que impede um command body de
+      voltar a semear o artefato, já que os selftests só cobrem os tools. Um verify que exigisse
+      apagá-las mandaria remover a proibição junto com a prática (`## Discoveries`).
 - [ ] 3.3 Apagar `specs/plans/index.md` deste repo por `git rm` e tirar a linha do fixture de `functional-checks.sh`
       files: specs/plans/index.md, plugins/quenching/assets/checks/functional-checks.sh
       verify: test ! -e specs/plans/index.md && ./plugins/quenching/assets/checks/functional-checks.sh
@@ -692,3 +698,4 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - Para o sibling `split-specs-py-backlog-renderer` (colisão nomeada em `## Risks`): a remoção de `cmd_plans` + `render_plans_zone` + `STAGE_ORDER` + `PLANS_EMPTY` tira 83 linhas de specs.py — 3125 -> 3042. Aquele spec queria EXTRAIR a função para baixar o arquivo do limiar de ~1.200 linhas; a extração agora não tem alvo, e 3042 segue muito acima do limiar, então o problema dele continua inteiro e precisa de outro corte. Esta retirada não o resolve, só remove uma das opções.
 - Mutation pass sobre a guarda `sp-plans-subcommand-back` de specs.py: 2 mutações (recolocar `plans` no argparse · recolocar `plans` no DISPATCH) — 2/2 pegas, cada uma na sua superfície. As duas são asseridas separadamente de propósito: recolocar só uma é a forma que um revert parcial toma. Com isto, DUAS das três selftests shipped passaram por mutation pass nesta branch (okf-validate.py e specs.py, só as guardas novas); skills.py não.
 - Gap que o spec não previu, fechado na task 3.1: `assets/specs/plans/` era mantida no git APENAS por `index.md`. Apagando o arquivo, git deixa de rastrear a pasta, e o `Copy assets/specs/` do step 6 do /specs:align pararia de criar `specs/plans/` num target repo novo — `specs.py doctor` reportaria `sp-missing-phase` em todo repo recém-alinhado. Adicionado `assets/specs/plans/.gitkeep`, espelhando `assets/specs/archive/.gitkeep` que já existia pelo mesmo motivo. Sem isso a retirada quebrava o scaffold.
+- Terceiro `verify:` defeituoso (task 3.2): `grep -rn 'plans/index.md' commands/` exigindo zero linhas é incompatível com a própria retirada. As linhas que sobram são as invariantes `Never recreate plans/index.md` que a task escreve — e elas são a ÚNICA guarda contra um command body voltar a semear o artefato, porque os selftests de 1.2 e 2.2 cobrem só os tools. Um verify literal mandaria apagar a proibição junto com a prática. Escopo corrigido para: nenhum `plans reindex`, nenhum `--listing-root`, e nenhuma menção OPERATIVA (excluídas as que dizem 'Never' ou 'retired artifact'). Testado contra um arquivo-sonda com uso operativo: dispara.

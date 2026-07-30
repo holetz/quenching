@@ -165,8 +165,9 @@ First **orient, bounded** — three `Read`s and two `Glob`s, no shell, so it beh
 every platform. Never enumerate the whole tree (`catalog/` and `reference/repositories/` will
 overflow the session):
 
-- `Read` — `docs/standards/index.md`, `docs/knowledge/index.md`, `specs/plans/index.md` (the
-  honest listings; a missing file just means that home is empty).
+- `Read` — `docs/standards/index.md` and `docs/knowledge/index.md` (the honest listings; a missing
+  file just means that home is empty). For what `specs/plans/` already holds, `specs.py list --json`
+  derives it from disk — there is no listing file to read.
 - `Glob` — `docs/standards/*/index.md` and `docs/knowledge/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
@@ -192,8 +193,8 @@ with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
   line is `**Creation**: [<title>](/docs/<path>.md) — migrated from project memory`.
 - A **unit of work** row instead follows the `/specs:create` path: run `specs.py new <slug>` and
-  write the memory's content into `## Problem` and nothing else, regenerate the listing zone with
-  `specs.py plans reindex`, and run the on-write self-check per
+  write the memory's content into `## Problem` and nothing else, then `specs.py validate --spec
+  <slug>` as the self-check per
   [specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
   (the OKF hook does not cover `specs/`); the bundle-log line is
   `**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — migrated from project memory`.
