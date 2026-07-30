@@ -451,7 +451,8 @@ Estado da árvore após a seção 3 (o manual do operador), que um executor novo
 
 ### 5. Verificação
 
-- [ ] 5.1 Rodar o bloco mecânico inteiro de `## Validation` e registrar cada saída
+- [x] 5.1 Rodar o bloco mecânico inteiro de `## Validation` e registrar cada saída
+      subject: plan/add-import-provenance: 5.1 rodar o bloco mecânico de ## Validation e registrar as saídas
 - [ ] 5.2 Executar e registrar o walkthrough manual de reimportação descrito em `## Validation`, dizendo no relatório que o check foi manual
 
 ## Discoveries
