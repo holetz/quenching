@@ -12,7 +12,6 @@ never split it. The file lives in ONE folder until it is closed, and is never re
 
     specs/
       plans/                     # ACTIVE — captured -> proposed -> designed -> refined
-        index.md                 # listing with a GENERATED zone (see `plans reindex`)
         2026-07-25-<slug>.md     #          -> ready -> approved -> executing
       archive/                   # done or abandoned, told apart by `outcome:` frontmatter
         2026-06-30-<slug>.md
@@ -2436,13 +2435,11 @@ def cmd_migrate(args, root: str) -> int:
                 print(f"      kept, still holds: {', '.join(m['strays'])}")
         for k in kept_dirs:
             print(f"  kept (not empty): {k}")
-        if not args.dry_run:
-            print("  next: specs.py plans reindex")
     return 0
 
 
 # --------------------------------------------------------------------------- #
-# validate / doctor / plans reindex
+# validate / doctor
 # --------------------------------------------------------------------------- #
 def _finding(code: str, severity: str, message: str, **extra) -> dict:
     return {"code": code, "severity": severity, "message": message, **extra}

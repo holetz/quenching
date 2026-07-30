@@ -30,7 +30,7 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 | --- | --- | --- |
 | `docs/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `knowledge/glossary.md` term-lookup seed | the target's `docs/`, only the homes that apply |
 | `docs/QUENCHING.md` | the **operator manual** for the `docs/` front — commands, confirmation rules, the hook, recipes, finding-code troubleshooting | `docs/QUENCHING.md` |
-| `specs/plans/index.md` | the **active-spec zone** seed (the listing with its `GENERATED` markers) | `specs/plans/` |
+| `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `specs.py list` derives it from disk | `specs/plans/` |
 | `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `specs/archive/` |
 | `specs/QUENCHING.md` | the **operator manual** for the `specs/` front — the spec lifecycle, the `/specs:*` commands, the `specs.py` tool, the OKF bridge | `specs/QUENCHING.md` |
 | `claude/QUENCHING.md` | the **operator manual** for the `.claude/` front — the taxonomy axis, mirroring, the rule + registry, hook/settings hygiene | `.claude/QUENCHING.md` |

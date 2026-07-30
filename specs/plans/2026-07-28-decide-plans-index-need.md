@@ -678,12 +678,20 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       A árvore de layout de `spec-driven.md:38` perde a linha do `index.md`, `:56-57` perde a
       cláusula `--listing-root`, `:217` perde a zona da lista de agrupadores e `:312` perde a linha
       do subcomando na tabela do tool.
-- [ ] 5.5 Corrigir os manuais e READMEs que descrevem a zona ou o flag
+- [x] 5.5 Corrigir os manuais e READMEs que descrevem a zona ou o flag
       files: plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md, plugins/quenching/README.md, specs/QUENCHING.md
-      verify: grep -rn -- "plans reindex\|--listing-root\|render_plans_zone\|plans/index.md" plugins/quenching/ CLAUDE.md specs/QUENCHING.md
-      Não pode imprimir nenhuma linha. `assets/specs/QUENCHING.md` é o seed e `specs/QUENCHING.md` a
-      cópia deste repo — as duas ficam obsoletas juntas. `assets/claude/QUENCHING.md:179` cita o
-      arquivo como precedente da regra anti-drift do registry; a regra fica, o precedente muda.
+      verify: grep -rn -- "plans reindex\|--listing-root\|render_plans_zone\|plans/index.md" plugins/quenching/ CLAUDE.md specs/QUENCHING.md | grep -vi "retired\|are gone\|the retirement of\|never recreate\|never create or refresh\|none may be" | grep -v "README.md:6[0-9][0-9]:"
+      subject: plan/decide-plans-index-need: 5.5 Corrigir os manuais e READMEs que descrevem a zona ou o flag
+      Não pode imprimir nenhuma linha: **nenhum uso VIVO**. As menções que sobram são de duas
+      classes que têm de sobreviver. (1) As notícias de retirada e as proibições `Never recreate`
+      — a única guarda contra um body voltar a semear o artefato. (2) **O changelog da 0.19.0 em
+      `README.md:625`**, que registra que aquela release ganhou `--listing-root`. Era verdade
+      então; reescrever falsificaria um registro de release, pela mesma doutrina que mantém
+      `specs/archive/**` intocado. `assets/specs/QUENCHING.md` é o seed e `specs/QUENCHING.md` a
+      cópia deste repo — as duas ficam obsoletas juntas, incluindo a linha da tabela de
+      troubleshooting que mandava rodar um reindex. `assets/claude/QUENCHING.md:179` citava o
+      arquivo como precedente da regra anti-drift do registry; a regra fica, e o precedente passa a
+      ser o contraste — a zona do registry se paga, a de `plans/` não se pagava.
 
 ### 6. Escrever a regra durável
 
@@ -715,3 +723,4 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - Gap que o spec não previu, fechado na task 3.1: `assets/specs/plans/` era mantida no git APENAS por `index.md`. Apagando o arquivo, git deixa de rastrear a pasta, e o `Copy assets/specs/` do step 6 do /specs:align pararia de criar `specs/plans/` num target repo novo — `specs.py doctor` reportaria `sp-missing-phase` em todo repo recém-alinhado. Adicionado `assets/specs/plans/.gitkeep`, espelhando `assets/specs/archive/.gitkeep` que já existia pelo mesmo motivo. Sem isso a retirada quebrava o scaffold.
 - Terceiro `verify:` defeituoso (task 3.2): `grep -rn 'plans/index.md' commands/` exigindo zero linhas é incompatível com a própria retirada. As linhas que sobram são as invariantes `Never recreate plans/index.md` que a task escreve — e elas são a ÚNICA guarda contra um command body voltar a semear o artefato, porque os selftests de 1.2 e 2.2 cobrem só os tools. Um verify literal mandaria apagar a proibição junto com a prática. Escopo corrigido para: nenhum `plans reindex`, nenhum `--listing-root`, e nenhuma menção OPERATIVA (excluídas as que dizem 'Never' ou 'retired artifact'). Testado contra um arquivo-sonda com uso operativo: dispara.
 - CONTRADIÇÃO com standard, resolvida pelo humano em 2026-07-30: a task 3.3 e o bloco `## Validation` invocam `functional-checks.sh`, e `docs/standards/quality/surface-verification.md` (authority: current) §The harness belongs to the skill front diz literalmente que ele 'is not named in a spec's ## Validation or a task's verify:'. Retirado dos dois lugares — resta corrigir `## Validation`, que ainda o cita. PENDÊNCIA SEPARADA para o /specs:conclude: esta branch editou CINCO command bodies na task 3.2, e o mesmo standard manda rodar o harness onde a superfície é editada, uma vez, sob /skill:new — que este spec não atravessa. `skills.py doctor` (26 comandos, 0 findings) e `lint` (exit 0) passam, mas nenhum dos dois prova que a superfície CARREGA.
+- Quarto `verify:` corrigido (task 5.5), e o de consequência mais grave: o grep cru varria `plugins/quenching/` inteiro, incluindo o CHANGELOG do README em `:625`, que registra que a release 0.19.0 ganhou `--listing-root`. Aquilo era verdade então — obedecer o verify ao pé da letra teria falsificado um registro de release, exatamente o que a doutrina de `specs/archive/** é história` proíbe. Escopo corrigido para excluir changelog e notícias de retirada. NOTA: ao escrever o filtro, um `grep -v 'Never '` largo demais ESCONDEU um leftover real — a linha da tabela de troubleshooting dos dois QUENCHING.md que ainda mandava rodar `plans reindex`. Achado por classificação manual de cada hit, não pelo filtro. Filtro de exclusão é um risco de falso-negativo, e tem de ser conferido item a item.

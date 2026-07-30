@@ -175,8 +175,10 @@ The registry's `<!-- GENERATED:BEGIN -->` … `<!-- GENERATED:END -->` zone hold
 surface, never a plugin's.
 
 **Never hand-edit inside those markers.** Curated prose lives outside them and is never touched
-by regeneration. Only `/skill:new` and `/skill:align` write the zone — the same anti-drift rule
-that governs `specs/plans/index.md`.
+by regeneration. Only `/skill:new` and `/skill:align` write the zone. This zone earns its keep
+because nothing else derives the registry; `specs/plans/` went the other way — its listing
+duplicated what `specs.py list` already read from disk, so the artifact was retired rather than
+guarded.
 
 ---
 
