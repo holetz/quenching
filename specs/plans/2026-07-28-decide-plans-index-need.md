@@ -530,12 +530,14 @@ compre — só custa um arquivo a mais, para sempre.
 Worktree `../claude-quenching-decide-plans-index-need`, branch `plan/decide-plans-index-need`
 cut from `main`. Um commit por task, subject `plan/<slug>: <id> <título>`.
 
-**Estado após 2.1.** Seções 1 e 2.1 fechadas. `okf-validate.py` não tem mais `--listing-root`,
-`_is_spec_file` nem `SPEC_FILENAME_RE`; a guarda nova é `retired_listing_root_failures()`.
-`specs.py` perdeu `cmd_plans`, `render_plans_zone`, `STAGE_ORDER`, `PLANS_EMPTY`,
-`GEN_BEGIN`/`GEN_END`, o subparser e o finding `sp-no-plans-index` — 83 linhas, 3125 → 3042.
-Falta `specs.py selftest` afirmar a retirada (2.2). Os arquivos `assets/specs/plans/index.md` e
-`specs/plans/index.md` **ainda existem** — seção 3.
+**Estado após 2.2.** Seções 1 e 2 fechadas — os dois tools estão limpos e cada um carrega a
+guarda da própria retirada, ambas mutation-proven. `okf-validate.py` não tem mais
+`--listing-root`, `_is_spec_file` nem `SPEC_FILENAME_RE`. `specs.py` perdeu `cmd_plans`,
+`render_plans_zone`, `STAGE_ORDER`, `PLANS_EMPTY`, `GEN_BEGIN`/`GEN_END`, o subparser e o
+finding `sp-no-plans-index` — 83 linhas, 3125 → 3042.
+
+Os arquivos `assets/specs/plans/index.md` e `specs/plans/index.md` **ainda existem** e ainda são
+semeados por `commands/specs/align.md` — seção 3 é o que fecha isso.
 
 **Três correções de fato que o executor precisa saber:**
 
@@ -602,9 +604,10 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
       citada no help de `new`, `promote` e `migrate`, então um `grep -c plans` cru imprime `3` mesmo
       com a retirada correta (`## Discoveries`). `sp-no-plans-index` sai junto desta vez: o arquivo deixa de ser
       esperado, então um finding por ausência dele seria um checker de um artefato retirado.
-- [ ] 2.2 Acrescentar a `specs.py selftest` a asserção de que `plans reindex` não existe mais na superfície do tool
+- [x] 2.2 Acrescentar a `specs.py selftest` a asserção de que `plans reindex` não existe mais na superfície do tool
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/decide-plans-index-need: 2.2 Acrescentar a specs.py selftest a guarda do subcomando
       Escrita para falhar se alguém reintroduzir o subcomando — a segunda perna da guarda que
       `retiring-a-reserved-artifact.md` §The guard exige.
 
@@ -686,3 +689,4 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - Mutation pass run against the new `retired_listing_root_failures()` guard, per docs/standards/quality/selftest-mutation.md: 4 mutations (re-add the _is_spec_file skip · re-add the listing_root param · drop index.md from RESERVED · add index.md to hard_block_exempt) — 4/4 CAUGHT, each failing exactly ONE assertion, which is the discriminating signal that standard asks for. This is the first of the three shipped tools to clear the pass; okf-validate.py's OTHER selftest legs (12 canonical cases + retired-log) were NOT mutation-checked, so the standard's graduation gate to `current` is not met by this spec alone.
 - Task 2.1's `verify:` (`specs.py --help | grep -c plans` expecting 0) is defective in the OPPOSITE direction to 1.1's: it can never pass on a CORRECT implementation. `plans/` is a real folder named in three other subcommands' help text (new: 'capture a spec into plans/', promote: 'plans/ -> archive/', migrate: 'backlog/ + ready/ -> plans/'), so it prints 3. The subcommand IS gone, proved by the spec's own `## Validation` line: `specs.py plans reindex` -> exit 2, 'invalid choice: plans'. A correct assertion is that exit code, or `grep -cE '^ +plans '`.
 - Para o sibling `split-specs-py-backlog-renderer` (colisão nomeada em `## Risks`): a remoção de `cmd_plans` + `render_plans_zone` + `STAGE_ORDER` + `PLANS_EMPTY` tira 83 linhas de specs.py — 3125 -> 3042. Aquele spec queria EXTRAIR a função para baixar o arquivo do limiar de ~1.200 linhas; a extração agora não tem alvo, e 3042 segue muito acima do limiar, então o problema dele continua inteiro e precisa de outro corte. Esta retirada não o resolve, só remove uma das opções.
+- Mutation pass sobre a guarda `sp-plans-subcommand-back` de specs.py: 2 mutações (recolocar `plans` no argparse · recolocar `plans` no DISPATCH) — 2/2 pegas, cada uma na sua superfície. As duas são asseridas separadamente de propósito: recolocar só uma é a forma que um revert parcial toma. Com isto, DUAS das três selftests shipped passaram por mutation pass nesta branch (okf-validate.py e specs.py, só as guardas novas); skills.py não.
