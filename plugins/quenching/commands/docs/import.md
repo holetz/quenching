@@ -30,7 +30,9 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 - **Anti-fabrication.** Mint only what the source actually supports. A rule not proven in the
   **target's own** code enters as `authority: background` (a proposal), never
   `authority: current`. Never invent a `resource:` — derive it from the source (a glob set of
-  what the doc governs, or the URL). Every minted doc is **attributed** to its source.
+  what the doc governs, or the URL) — and never invent a `source_uri:` either: it is the unit's
+  real URI, or it is absent. How each doc records where it came from is sources.md's to state,
+  cited at the top of this file and deliberately not repeated here.
 - **MERGE, never clobber.** A unit that maps to an existing doc/term is an **enrich** target —
   fill missing keys, sharpen the body — never overwrite a filled field or a filled body.
 - **Never ingest transient / secret / PII.** Skip credentials, tokens, personal data, and
