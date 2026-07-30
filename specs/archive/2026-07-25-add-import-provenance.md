@@ -4,6 +4,11 @@ title: Add provenance and idempotent re-ingestion to quenching-docs-import
 verification: per-section
 priority: {level: 28, criticality: medium, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
+approved: {date: 2026-07-30}
+branch: {base: main, work: plan/add-import-provenance}
+reviewed: {date: 2026-07-30}
+merge: {strategy: merge-commit, subject: "plan/add-import-provenance: merge (merge-commit)"}
+outcome: done
 ---
 
 # Add provenance and idempotent re-ingestion to quenching-docs-import
@@ -181,7 +186,11 @@ externa real, então a validação é deliberadamente dividida: o que é mecâni
   `grep -rl source_uri plugins/quenching/` devolve exatamente cinco caminhos: `sources.md`,
   `import.md`, `okf-spec.md`, `homes.md` e `assets/docs/QUENCHING.md`. Um sexto arquivo é a
   falha que `## Design` §Decisão 2 existe para evitar.
-- `grep -n 'context: fork' plugins/quenching/commands/docs/import.md` → nada, sempre.
+- A chave não está no **frontmatter** de `import.md`:
+  `awk '/^---$/{n++; next} n==1' plugins/quenching/commands/docs/import.md | grep -c 'context:'`
+  → **0**. O grep literal por `context: fork` sobre o arquivo inteiro **não** serve: a própria
+  invariante que proíbe a chave contém a string, então ele devolve essa linha antes e depois desta
+  spec e nunca pode passar. Ver `## Discoveries`.
 - Sobre o bundle **deste** repositório, o portão é **zero erros**, não zero avisos:
   `python3 plugins/quenching/assets/hooks/okf-validate.py docs` já devolve oito WARN de `stale-doc`
   pré-existentes, incluindo um em `standards/quality/bundle-verification.md`, e `stale-doc` é
@@ -367,49 +376,178 @@ procedência que morava lá foi realocada para o `## Outcome` da spec arquivada.
   aquela spec mover a pasta de assunto, o caminho declarado em `## Impact` muda com ela; esta spec
   não escolhe a pasta nem antecipa a mudança.
 
+## Handoff
+
+As treze tarefas estão construídas, verificadas e commitadas — uma por commit, treze commits em
+`plan/add-import-provenance`. O que falta é `/specs:conclude`: a revisão do branch, os `docs/` que o
+trabalho revelou, o merge e a distilação. Estado que não se deriva da árvore:
+
+- **Isolamento:** worktree em `../claude-quenching-add-import-provenance`, cortado de `main` em
+  `9c289f1`. O checkout principal `~/Projects/claude-quenching` está sendo usado por **outra sessão
+  Claude Code em paralelo**, que edita `specs/plans/2026-07-28-decide-plans-index-need.md`. Rebasear
+  ou mergear a partir de lá sem olhar essa árvore suja é o risco desta spec.
+- **Uma mudança fora do escopo declarado, deliberadamente NÃO commitada.**
+  `.claude/settings.json` (versionado) aponta para `.claude/hooks/okf-validate.py`, que o commit
+  `193578c` apagou sem tirar a fiação — todo `Write|Edit` e todo `Stop` do repo disparavam um hook
+  inexistente. O arquivo foi reinstalado em 4.4.0 **sem ser versionado**, nos dois checkouts, para
+  manter os treze commits dentro dos arquivos que `## Impact` declara. **Decidir em `/specs:conclude`**
+  se ele entra no repo, se a fiação sai de `settings.json`, ou se fica local.
+- **Duas falhas de desenho encontradas pelo walkthrough**, em `## Discoveries`: a unidade colapsada
+  de duas seeds carrega só uma `source_uri:`, e o argumento da `## Design` §Decisão 5 não se
+  sustenta. Nenhuma das duas invalida o que foi entregue, e as duas são material de revisão de
+  branch — não de mais uma tarefa aqui.
+- **Portões, na última medição (2026-07-30):** okf-validate 0/0 nos dois bundles embarcados; `docs`
+  do repo com **0 error(s)**, 15 warning(s) — todos advisory, sendo 14 `stale-doc` e um
+  `resource-unresolved` pré-existente; `doctor` com 26 comandos e zero findings; `lint` exit 0; os
+  três selftests verdes. A base `main` já trazia 12 + 1.
+- **Não exercitado, e não exercitável aqui:** o comando `/docs:import` registrado. O registry é
+  montado no início da sessão, então o corpo editado só carrega numa sessão nova. A primeira sessão
+  depois do merge deve rodar `/skill:new` ou uma importação real antes de confiar na superfície.
 ## Tasks
 
 ### 1. O contrato da chave
 
-- [ ] 1.1 Escrever o contrato de `source_uri:` em `sources.md` §Attribution — formato do valor, só `/docs:import` estampa, `source:` segue sendo prosa autoral, e a linha de atribuição no corpo passa a carregar a data da leitura
+- [x] 1.1 Escrever o contrato de `source_uri:` em `sources.md` §Attribution — formato do valor, só `/docs:import` estampa, `source:` segue sendo prosa autoral, e a linha de atribuição no corpo passa a carregar a data da leitura
       files: plugins/quenching/assets/references/docs-import/sources.md
       verify: grep -n source_uri plugins/quenching/assets/references/docs-import/sources.md
-- [ ] 1.2 Trocar §Dedup item 2 de `sources.md` para começar pela consulta exata à `source_uri:` no bundle e só depois cair no grep por título, slug e termo
+      subject: plan/add-import-provenance: 1.1 Escrever o contrato de source_uri: em sources.md §Attribution
+- [x] 1.2 Trocar §Dedup item 2 de `sources.md` para começar pela consulta exata à `source_uri:` no bundle e só depois cair no grep por título, slug e termo
       files: plugins/quenching/assets/references/docs-import/sources.md
-- [ ] 1.3 Acrescentar `source_uri` à lista de chaves extras do perfil em `okf-spec.md` §Frontmatter, ao lado de `audience`, `authority`, `source` e `maintainer`
+      subject: plan/add-import-provenance: 1.2 §Dedup começa pela consulta exata à source_uri
+- [x] 1.3 Acrescentar `source_uri` à lista de chaves extras do perfil em `okf-spec.md` §Frontmatter, ao lado de `audience`, `authority`, `source` e `maintainer`
       files: plugins/quenching/assets/references/docs-align/okf-spec.md
-- [ ] 1.4 Marcar em `homes.md` §The frontmatter stamp, em uma linha e sem acrescentar a chave ao bloco, que `source_uri:` é escrita apenas por `/docs:import` e nunca inventada pelos outros comandos que citam o bloco
+      subject: plan/add-import-provenance: 1.3 source_uri na lista de chaves extras do perfil em okf-spec.md
+- [x] 1.4 Marcar em `homes.md` §The frontmatter stamp, em uma linha e sem acrescentar a chave ao bloco, que `source_uri:` é escrita apenas por `/docs:import` e nunca inventada pelos outros comandos que citam o bloco
       files: plugins/quenching/assets/references/docs-add/homes.md
       verify: test -z "$(grep -rl source_uri plugins/quenching/assets/templates/)"
+      subject: plan/add-import-provenance: 1.4 marcar em homes.md que source_uri é escrita só pelo import
 
 ### 2. O comando
 
-- [ ] 2.1 Fazer a etapa 2 de `import.md` classificar cada unidade como nova ou já importada pela consulta exata à `source_uri:`, antes do grep por prosa
+- [x] 2.1 Fazer a etapa 2 de `import.md` classificar cada unidade como nova ou já importada pela consulta exata à `source_uri:`, antes do grep por prosa
       files: plugins/quenching/commands/docs/import.md
-- [ ] 2.2 Fazer a etapa 3 mostrar a classificação de cada unidade no plano único, com a URI que a motivou, tornando a decisão duplicar-versus-enriquecer visível antes do OK
+      subject: plan/add-import-provenance: 2.1 etapa 2 classifica cada unidade pela consulta exata à source_uri
+- [x] 2.2 Fazer a etapa 3 mostrar a classificação de cada unidade no plano único, com a URI que a motivou, tornando a decisão duplicar-versus-enriquecer visível antes do OK
       files: plugins/quenching/commands/docs/import.md
-- [ ] 2.3 Fazer a etapa 4 estampar `source_uri:` em cada doc criado e escrever a linha de atribuição no corpo com a data da leitura
+      subject: plan/add-import-provenance: 2.2 a etapa 3 mostra a classificação de cada unidade no plano
+- [x] 2.3 Fazer a etapa 4 estampar `source_uri:` em cada doc criado e escrever a linha de atribuição no corpo com a data da leitura
       files: plugins/quenching/commands/docs/import.md
-- [ ] 2.4 Cortar a doutrina duplicada de atribuição — as linhas 33 e 73 passam a citar `sources.md` em vez de reafirmar a regra, restando uma única menção no arquivo
+      subject: plan/add-import-provenance: 2.3 a etapa 4 estampa source_uri e a data da leitura
+- [x] 2.4 Cortar a doutrina duplicada de atribuição — as linhas 33 e 73 passam a citar `sources.md` em vez de reafirmar a regra, restando uma única menção no arquivo
       files: plugins/quenching/commands/docs/import.md
       verify: test 1 -eq $(grep -ic attribut plugins/quenching/commands/docs/import.md)
-- [ ] 2.5 Conferir que a superfície não mudou de identidade — 26 comandos, sem findings, e lint em exit 0
+      subject: plan/add-import-provenance: 2.4 cortar a doutrina duplicada de atribuição em import.md
+- [x] 2.5 Conferir que a superfície não mudou de identidade — 26 comandos, sem findings, e lint em exit 0
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/add-import-provenance: 2.5 conferir que a superfície não mudou de identidade
 
 ### 3. O manual do operador
 
-- [ ] 3.1 Atualizar `assets/docs/QUENCHING.md` — a seção `/docs:import` e o parágrafo de chaves de frontmatter da linha 90 — descrevendo a chave e a classificação nova versus já importada
+- [x] 3.1 Atualizar `assets/docs/QUENCHING.md` — a seção `/docs:import` e o parágrafo de chaves de frontmatter da linha 90 — descrevendo a chave e a classificação nova versus já importada
       files: plugins/quenching/assets/docs/QUENCHING.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs
+      subject: plan/add-import-provenance: 3.1 atualizar QUENCHING.md com a chave e a classificação
 
 ### 4. O standard
 
-- [ ] 4.1 Escrever a emenda em `docs/standards/quality/bundle-verification.md`, mantendo `authority: current`: a lacuna aceita da atribuição, e a regra de que a deriva da fonte não é verificável dentro de um validador que nunca busca nada
+- [x] 4.1 Escrever a emenda em `docs/standards/quality/bundle-verification.md`, mantendo `authority: current`: a lacuna aceita da atribuição, e a regra de que a deriva da fonte não é verificável dentro de um validador que nunca busca nada
       files: docs/standards/quality/bundle-verification.md
       pattern: docs/standards/quality/bundle-verification.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs | grep -q '0 error(s)'
+      subject: plan/add-import-provenance: 4.1 a lacuna aceita da procedência em bundle-verification.md
 
 ### 5. Verificação
 
-- [ ] 5.1 Rodar o bloco mecânico inteiro de `## Validation` e registrar cada saída
-- [ ] 5.2 Executar e registrar o walkthrough manual de reimportação descrito em `## Validation`, dizendo no relatório que o check foi manual
+- [x] 5.1 Rodar o bloco mecânico inteiro de `## Validation` e registrar cada saída
+      subject: plan/add-import-provenance: 5.1 rodar o bloco mecânico de ## Validation e registrar as saídas
+- [x] 5.2 Executar e registrar o walkthrough manual de reimportação descrito em `## Validation`, dizendo no relatório que o check foi manual
+      subject: plan/add-import-provenance: 5.2 walkthrough manual de reimportação, executado e registrado
+
+## Discoveries
+
+- A asserção de `## Validation` "grep -n 'context: fork' import.md → nada, sempre" é falsa por construção: a própria invariante que proíbe a chave contém a string (linha 96, `- **Never add \`context: fork\`.**`). O grep literal devolve essa linha antes e depois desta spec. O que o check quer dizer é "a chave não aparece no frontmatter"; escrito como está, ele nunca pode passar. **Resolvido na revisão do branch (2026-07-30):** o item de `## Validation` passou a inspecionar só o frontmatter, via `awk '/^---$/{n++; next} n==1' … | grep -c 'context:'` → 0.
+- `## Validation` afirma que `okf-validate.py docs` devolve oito WARN de `stale-doc` pré-existentes. Medido em 2026-07-30 sobre `main` (9c289f1), são **doze**, mais um `resource-unresolved` em `standards/automation/agents.md` (`.claude/agents/**` não casa nada) que a spec não menciona. O número da spec envelheceu; o portão declarado (zero erros) continua válido e nenhum dos dois é desta spec.
+- Efeito colateral estrutural de qualquer spec que toque `plugins/quenching/**`: os commits refrescam o último commit dos `resource` que vários standards governam, então a contagem de `stale-doc` **sobe** durante a construção (12 → 14 aqui) mesmo sem nenhum doc ficar errado. É advisory e fora de todo portão, mas convém dizer no relatório em vez de deixar parecer regressão.
+- Furo no contrato de `source_uri:` que o walkthrough expôs: uma unidade **colapsada de duas seeds** (§Dedup item 1, dedup dentro da fonte) recebe UMA só URI, porque a chave é single-valued por contrato ("One value on one line"). A URI da segunda seed nunca é estampada, então numa reimportação ela **não** casa por URI e cai na busca por semelhança — exatamente o reconhecimento que a spec queria substituir. Medido em 2026-07-30: `source/api-notes.md:3` colapsada em `handbook.md:3` não casou na rodada 2. Decidir se a chave vira lista, se cada seed colapsada ganha a sua linha no corpo, ou se o furo é aceito e registrado. **Resolvido na revisão do branch (2026-07-30):** aceito e registrado, como quarta entrada de `docs/standards/quality/bundle-verification.md` §Accepted gaps — uma chave list-valued compraria a exatidão daquela seed ao preço da propriedade de que toda consulta depende.
+- `## Design` §Decisão 5 afirma que a consulta exata já se paga na PRIMEIRA rodada, porque duas seeds sobrepostas produzem o mesmo problema de alvo de MERGE dentro de uma execução. O walkthrough não sustenta isso: duas seeds sobrepostas têm URIs **diferentes**, logo a consulta exata nunca as casa — quem as junta é o dedup por prosa dentro da fonte (§Dedup item 1). O valor real da chave é mesmo na REIMPORTAÇÃO, que é a suposição de que a Decisão 5 tentou desacoplar a entrega. O argumento da Decisão 5 precisa ser corrigido ou retirado; o que ele defende (a entrega não depender de reimportação) fica sem sustentação empírica. **Resolvido na revisão do branch (2026-07-30):** a mesma afirmação tinha vazado para o produto — `sources.md` §Dedup 2.1 dizia "earlier in this one, when two seeds overlapped" — e foi corrigida lá para o caso que de fato casa por URI (uma slice anterior já mintou a unidade), dizendo explicitamente que duas seeds sobrepostas **não** são esse caso. `## Design` §Decisão 5 fica como está, registro honesto do que foi decidido na época; `## Outcome` diz que o argumento não sobreviveu à medição.
+
+## Outcome
+
+Entregue e mesclado em `main`. As treze tarefas foram construídas; a revisão do branch em
+2026-07-30 acrescentou três correções e um doc emergente.
+
+**Estratégia de merge: commit de merge (`--no-ff`).** Os quinze commits por tarefa continuam em
+`main`, então todos os treze `subject:` registrados em `## Tasks` resolvem direto da base. O branch
+`plan/add-import-provenance` pode ser apagado sem custo nenhum para o registro — ao contrário do que
+um squash teria imposto.
+
+### O que foi entregue
+
+- **O contrato de `source_uri:`, com um dono só:** `sources.md` §Attribution. A URI exata da unidade
+  de origem, single-valued, uma linha — porque é isso que faz da consulta um teste de igualdade em
+  vez de um parse. Separada de `source:`, que continua sendo prosa sobre quem originou a regra.
+- **§Dedup passou a consultar por origem exata antes de semelhança**, e o plano da etapa 3 rotula
+  cada unidade **new**, **already imported** (acerto por URI) ou **resembles an existing doc** (um
+  juízo) — mostrando a evidência de cada um, porque só o terceiro pede confiança do humano.
+- **A doutrina duplicada de atribuição foi cortada**, que é o que o §Corollary de
+  `bundle-verification.md` exige quando uma regra ganha um dono: de quatro lugares para um dono e
+  três citações. Medido: `grep -in attribut import.md` foi de 3 linhas para 1, e essa 1 é a citação.
+- `okf-spec.md` lista `source_uri` entre as chaves extras do perfil; `homes.md` marca que ela fica
+  **fora** do mold compartilhado de propósito; `QUENCHING.md` documenta a chave e a classificação
+  de três vias para o operador.
+- `bundle-verification.md` ganhou §Accepted gaps — a saída que o próprio standard autorizava e não
+  tinha casa.
+
+### O que a revisão do branch mudou (2026-07-30)
+
+- `sources.md` §Dedup 2.1 afirmava que um acerto exato pode vir de duas seeds sobrepostas na mesma
+  execução. O walkthrough mediu o contrário e a frase foi corrigida — ver o ponto sobre a Decisão 5
+  abaixo.
+- O furo das seeds colapsadas foi **aceito e registrado** como quarta entrada de §Accepted gaps, em
+  vez de ficar como uma decisão em aberto sem rastro.
+- O item de `## Validation` sobre `context: fork` era falso por construção e nunca poderia passar;
+  passou a inspecionar só o frontmatter.
+- Doc emergente: `bundle-verification.md` §What is machine-checked ganhou o parágrafo sobre a
+  contagem advisory que sobe sozinha em qualquer branch que edite um caminho governado (12 → 14
+  aqui), para que o delta não seja lido como regressão.
+
+### O que ficou de fora
+
+- **O digest de conteúdo**, deliberadamente — é a metade que o enunciado original pedia, e
+  `## Open Decisions` registra como se decide (buscar a mesma página duas vezes com `WebFetch` e
+  comparar) em vez de decidir no escuro.
+- **`Bash` para `/docs:import`**, não decidido e não necessário aqui. O critério é segurança, não
+  conveniência: o comando ingere conteúdo externo não confiável.
+- **`/docs:import-memory` estampar `source_uri:`** — fica para quem tocar naquele comando, que apaga
+  a memória de origem depois do doc aterrissar.
+- **A exatidão da seed colapsada**, aceita como lacuna e não fechada.
+
+### O que o próximo leitor precisa saber
+
+- **O argumento da `## Design` §Decisão 5 não sobreviveu à medição.** Ela dizia que a consulta exata
+  já se paga na primeira rodada, porque duas seeds sobrepostas produzem o mesmo problema de alvo de
+  MERGE dentro de uma execução. Não produzem: seeds sobrepostas carregam URIs **diferentes**, logo a
+  consulta exata nunca as casa, e o §Dedup item 1 já as colapsou por prosa antes. O valor real da
+  chave é mesmo na **reimportação**. A Decisão 5 foi deixada como está — registro honesto do que foi
+  decidido na época — mas a conclusão que ela defendia (a entrega não depender de reimportação) ficou
+  sem sustentação empírica, e a mesma afirmação foi corrigida onde tinha vazado para o produto.
+- **Não existe fixture de import neste repositório.** A única evidência de que o caminho funciona é o
+  walkthrough manual da tarefa 5.2, e `## Validation` declara isso como manual em vez de omitir.
+- Duas descobertas seguem abertas e não são desta spec: a contagem de `stale-doc` que `## Validation`
+  cita envelheceu (oito → doze em `main`), e o `resource-unresolved` de
+  `standards/automation/agents.md` (`.claude/agents/**` não casa nada).
+
+### Destilado para `docs/` no fechamento
+
+- `docs/standards/quality/bundle-verification.md` §Accepted gaps — a lacuna aceita da procedência
+  (tarefa 4.1), mais a quarta entrada sobre a seed colapsada (revisão do branch).
+- `docs/standards/quality/bundle-verification.md` §What is machine-checked — a contagem advisory que
+  sobe sozinha em qualquer branch que edite um caminho governado (docs emergentes, Discovery 3).
+- `docs/standards/architecture/shared-mold-keys.md` — `## Design` §Decisão 2 promovida a standard,
+  `authority: current`: um mold compartilhado é um convite a preencher, então uma chave que só um
+  escritor pode escrever fica fora dele. O precedente do `resource:` é a segunda instância.
+- `docs/knowledge/glossary.md` — duas entradas: **Origin key (`source_uri`)** e **Shared mold**.
+
+Bump de versão 4.4.0 → 4.4.1 nos seis artefatos do lockstep mais `session.py`, conforme
+`docs/standards/ci-cd/versioning-release.md` §When the bump happens. Patch: nenhum comando novo,
+nenhum rename, nenhuma lógica de script alterada.
