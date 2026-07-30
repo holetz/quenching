@@ -91,9 +91,11 @@ source. Never present imported material as proven local practice: that is the
    unit — in this order, because the two lookups do not carry the same confidence:
 
    1. **Exact, by origin.** `grep -rn 'source_uri: <the unit's URI>' docs/`. A hit is a doc
-      minted from *this very unit* — on an earlier run, or earlier in this one, when two seeds
-      overlapped. Nothing was recognised and nothing was judged: the URIs are equal or they are
-      not. This is the lookup `source_uri:` exists for.
+      minted from *this very unit* — on an earlier run, or earlier in this one when a previous
+      slice already minted it. Nothing was recognised and nothing was judged: the URIs are equal
+      or they are not. This is the lookup `source_uri:` exists for. Two **overlapping seeds** are
+      not this case: they carry different URIs, so this lookup can never match them, and item 1
+      above has already collapsed them by prose before it runs.
    2. **Approximate, by concept.** No hit → `Grep` the bundle by title, slug, and any
       repo-specific term. A doc found this way covers the same concept from a *different* origin,
       or from none at all, so calling it the same concept is a judgement — present it as one.
