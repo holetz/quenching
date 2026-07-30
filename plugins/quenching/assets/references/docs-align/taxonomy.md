@@ -20,8 +20,9 @@ docs/                          # OKF bundle root
   standards/                   # "how WE do it" (current) — a conformant sub-bundle
     index.md                   # reserved listing + DERIVED "Current docs" tables (BEGIN/END GENERATED)
     CLAUDE.md                  # thin agent-facing pointer (auto-loaded; harness file, not a concept)
-    architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
+    agents/ architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
                                #   each: index.md + one standard per file (type: standard)
+                               #   agents/ = how we INSTRUCT agents, not agent definitions
   catalog/                     # our data — <system>/{index.md, access.md} · <catalog>/<schema>.md · <schema>/<table>.md
   vision/                      # direction by area — <area>.md (type: vision)
   documentation/               # product docs (Diátaxis prose) — getting-started/ how-to/ reference/ concepts/ (type: documentation)
