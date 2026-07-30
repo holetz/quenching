@@ -12,6 +12,12 @@ shape of the system in [../architecture/](../architecture/index.md). One standar
 not sub-folders); each carries `type: standard` + a derived `resource:`; add each to
 [../index.md](../index.md).
 
+## Current docs
+
+| Doc | Covers |
+| --- | --- |
+| [communication.md](communication.md) | The language a repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds in every repo whether or not a language is declared |
+
 ## Candidate sub-standards
 
 Break this subject **one concept per file**. The method evaluates each candidate against
@@ -24,4 +30,4 @@ records the rest below as deferrals (never a silent skip):
 Per-subject ledger the verify gate reads. A subject is "done" only when every candidate is
 **present or listed here** with a one-line why.
 
-- _(none yet — fill on population)_
+- [communication.md](communication.md) — the declared language and the conduct constant (present)

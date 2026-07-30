@@ -40,5 +40,11 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
        | --- | --- |
        | [imports.md](code/imports.md) | <the doc's description:> |
 -->
-_(fill in as standards are created — these tables are regenerated deterministically from the real files)_
+### agents/
+
+| Doc | Covers |
+| --- | --- |
+| [communication.md](agents/communication.md) | The language a repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds in every repo whether or not a language is declared |
+
+_(other subjects fill in as standards are created — these tables are regenerated deterministically from the real files)_
 <!-- END GENERATED -->
