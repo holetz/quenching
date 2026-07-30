@@ -5,6 +5,7 @@ verification: per-section
 priority: {level: 16, criticality: high, date: 2026-07-29}
 refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-29}
+branch: {base: main, work: plan/declare-repo-body-language}
 ---
 
 # Declare the repo's communication language and conduct in docs/standards so every command reads it for free
@@ -429,8 +430,8 @@ Estado que um executor novo não consegue derivar:
   listagem quebrados e docs órfãos. Logo o `verify:` das tasks 1–3 reporta
   `0 error(s), 0 warning(s)` mesmo com a zona sem o grupo `### agents/`. Regenere a zona nas duas
   árvores dentro da própria task em que o doc aterra.
-- Esta sessão roda sem branch `plan/`: a isolação foi declinada porque a branch designada da sessão é
-  mandatória. Nenhum registro `branch` é estampado, e os commits aterram nessa branch.
+- A isolação está tomada: `plan/declare-repo-body-language`, cortada de `main`, no worktree
+  `.claude/worktrees/declare-repo-body-language-a66245`. O registro `branch` está estampado.
 - `verification: per-section` — verifique no limite de cada task, conforme o `verify:` daquela task.
 ## Tasks
 
