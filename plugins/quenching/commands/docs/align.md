@@ -4,7 +4,7 @@ argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
 
-# /docs:align — force the knowledge base into OKF shape, and keep filling it
+# /quenching:docs:align — force the knowledge base into OKF shape, and keep filling it
 
 **Input**: `$ARGUMENTS` (optionally a `docs/` path or a scope; omit to align the whole bundle).
 
@@ -52,13 +52,13 @@ Read it as this command's doctrine. What follows is only what is **specific to `
   pass cap and a no-progress guard
   ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
-  `/docs:import-memory`, `/docs:harness` and `/docs:glossary-backfill` through the `Skill` tool
+  `/quenching:docs:import-memory`, `/quenching:docs:harness` and `/quenching:docs:glossary-backfill` through the `Skill` tool
   under their registry names (`quenching:docs:import-memory`, …). Each runs under its own doctrine
   and its own code-coupled confirmations. If a stage's behaviour must change, change that command.
 - **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle, and
   no cheap signal proves it has work — so it is gated on a free proxy and **offered** with its cost
   (sweep-doctrine §Probe before the inventory). Everything else this command does is probed.
-- **Per-item commands are stage tools, not stages.** `/docs:add`, `/docs:learn`, `/docs:define`
+- **Per-item commands are stage tools, not stages.** `/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`
   each act on ONE item a human states, and a loop pass has no fresh human input — so they are never
   stages. They are what the stages already delegate to. A content gap only they can close is
   **surfaced** in the report, never fabricated.
@@ -165,8 +165,8 @@ plan was rejected and nothing was written.
   `knowledge/index.md` (it is the only pre-seeded concept doc the skeleton ships).
 - **Install the operator manual** — copy `${CLAUDE_PLUGIN_ROOT}/assets/docs/QUENCHING.md` to
   `<docs>/QUENCHING.md`, replacing the banner's `<VERSION>` placeholder with the plugin's
-  `VERSION` file. **This is the manual-install rule the other two fronts cite** (`/specs:align`,
-  `/skill:align`) — same four branches, their own asset and destination:
+  `VERSION` file. **This is the manual-install rule the other two fronts cite** (`/quenching:specs:align`,
+  `/quenching:skill:align`) — same four branches, their own asset and destination:
   - **absent** → install;
   - **present, banner stamp older than the plugin** → overwrite (nothing repo-specific is lost —
     the manual is static payload);
@@ -241,7 +241,7 @@ one, read it and move on rather than asking again.
 `.github/workflows/docs.yml` (opt-in, platform-specific). The `.pages` nav files ship **with** the
 `documentation/` skeleton (step 4), so nav needs no separate install.
 
-This is the **first install only**. The site layer's owner is `/docs:documentation:build`: every
+This is the **first install only**. The site layer's owner is `/quenching:docs:documentation:build`: every
 later update, nav regeneration, config merge, and build verification is **its** job. If the install
 is anything more than stamping two absent files — a customized `mkdocs.yml` to merge, a `docs_dir`
 pointing elsewhere, `.pages` files no longer matching the tree — hand off to that command instead of
@@ -251,8 +251,11 @@ was skipped.
 
 ### 6. Run the content stages that have work, in order
 Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,
-`quenching:docs:harness`. A bare `/docs:harness` is what a human types, not what the Skill tool
-resolves. Declare the cycle-authorization mode to each
+`quenching:docs:harness`. Three citation forms exist, and which one is correct depends on **where
+the command comes from**, never on who reads it: `quenching:docs:harness` is what the `Skill` tool
+resolves; `/quenching:docs:harness` is what a human types wherever this is installed as a plugin;
+the bare form `/<front>:<verb>`, carrying no plugin prefix, resolves **only** where that command
+file lives in the target repo's own `.claude/commands/`. Declare the cycle-authorization mode to each
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization), and **skip any stage the probe found empty**:
 

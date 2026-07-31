@@ -4,13 +4,13 @@ argument-hint: [spec slug, or nothing to infer it]
 allowed-tools: Read, Grep, Glob, Edit, Bash, AskUserQuestion
 ---
 
-# /specs:isolate — one spec, one branch
+# /quenching:specs:isolate — one spec, one branch
 
 **Input**: `$ARGUMENTS` — optionally a spec slug. Omitted → infer from the conversation or from the
 branch already checked out; vague or ambiguous → you MUST prompt.
 
 Takes **or reports** isolation for ONE spec. Isolation used to be a privilege of building, created
-inside `/specs:execute` and available nowhere else — but creating and developing a spec also write
+inside `/quenching:specs:execute` and available nowhere else — but creating and developing a spec also write
 into `specs/plans/` and dirty the tree, and a spec sometimes ought to be born on the branch that
 will carry its work.
 
@@ -24,13 +24,13 @@ The spec-driven facts — the layout, the derived stages, the record vocabulary,
 surface — live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 
-**This command never merges.** The merge stays inside `/specs:conclude`, behind that command's
+**This command never merges.** The merge stays inside `/quenching:specs:conclude`, behind that command's
 review and archive gates. A merge invocable on its own could run against a spec nobody reviewed and
 nothing archived, and would have to duplicate every refusal `conclude` already owns. There is no
 single verb covering "take isolation" and "merge", which is the evidence they are two actions.
 
 **This command never writes code and never touches `## Tasks`.** It moves a spec onto a branch and
-records that it did; building is `/specs:execute`.
+records that it did; building is `/quenching:specs:execute`.
 
 ## Resolving the tool
 
@@ -175,7 +175,7 @@ that disagrees with `work` is a finding to report, not a value to correct.
 Show the spec, the form taken, the base and work branches, the worktree path when there is one,
 whether a `worktreeSetup` was declared and how it exited, whether the spec file was carried onto
 the branch, and the record as stamped. Then name the command
-that comes next — `/specs:develop` for a spec still being shaped, `/specs:execute` for one ready to
+that comes next — `/quenching:specs:develop` for a spec still being shaped, `/quenching:specs:execute` for one ready to
 build — and stop.
 **Done when:** the summary is shown and the next command has been named.
 
@@ -202,7 +202,7 @@ build — and stop.
 - One plan → one OK before anything is created. Creating a branch is cheap; creating it unasked is
   not.
 - Stamp `branch:` only when isolation was actually taken, and never over an existing record.
-- Never merge, never review, never archive — those are `/specs:conclude`, with their own gates.
+- Never merge, never review, never archive — those are `/quenching:specs:conclude`, with their own gates.
 - Never write code, never touch `## Tasks`, never tick a box.
 - Never run a `worktreeSetup` that was not displayed verbatim in the plan block the human answered,
   and never run one anywhere but inside the worktree just created. A setup that fails is reported;

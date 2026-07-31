@@ -4,7 +4,7 @@ argument-hint: [what-the-hook-should-catch]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
 
-# /skill:hook:new — wire ONE scoped hook
+# /quenching:skill:hook:new — wire ONE scoped hook
 
 **Input**: `$ARGUMENTS` (what the hook should catch — a behavior, a rule, an observed
 failure).
@@ -23,7 +23,7 @@ ladder, and the policy defaults live in
 - **The rule governs; the plan proposes.** In a target repo the rule is
   `docs/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
-  write the hook only, suggest `/docs:align` once.
+  write the hook only, suggest `/quenching:docs:align` once.
 - **One plan, one OK, nothing before.** The check, the rung, the handler, the cost claim,
   the action, and every file appear in ONE plan; a declined plan writes nothing.
 - **MERGE, never clobber.** A `settings.json` block is merged into the existing file; a
@@ -39,7 +39,7 @@ ladder, and the policy defaults live in
 Read `docs/standards/automation/hooks.md` and confirm the bundle (`docs/index.md` carries
 `okf_version`). Rule present → it governs (a repo delta there beats the plugin default).
 Absent + bundle → plan its creation from the mold. No bundle → note the tail as skipped and
-plan the `/docs:align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching:docs:align` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Name what the hook catches

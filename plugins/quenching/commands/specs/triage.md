@@ -4,7 +4,7 @@ argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
-# /specs:triage — rank the front, once, on one confirmation
+# /quenching:specs:triage — rank the front, once, on one confirmation
 
 **Input**: `$ARGUMENTS` — optionally one slug to limit the sweep; omit to rank everything in
 `plans/`.
@@ -13,12 +13,12 @@ The prioritization sweep. It reads every spec in
 `specs/plans/`, proposes ONE ordered list, and — on a single
 confirmation — writes each spec's `priority` record.
 
-**This is the only command that ranks.** `/specs:continue` consumes what this writes: with no
+**This is the only command that ranks.** `/quenching:specs:continue` consumes what this writes: with no
 `priority` anywhere and nothing in flight, its ordering falls back to age alone, which is an
 ordering and not a judgment. Triage is what turns it into one.
 
 **It ranks and nothing else.** It does not close specs out, resolve `## Discoveries`, or decide
-that anything is finished — those are `/specs:conclude` and `/specs:develop`'s discoveries bank.
+that anything is finished — those are `/quenching:specs:conclude` and `/quenching:specs:develop`'s discoveries bank.
 A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages and the `specs.py` surface live in
@@ -75,7 +75,7 @@ command writes it.
 - **Unranked is a valid state.** A spec this sweep cannot honestly place stays unranked — no forced
   ordinal. Say which ones, and why.
 - **Never remove, never close, never infer completion.** Triage moves no file and archives nothing.
-  A spec that will not be built is `/specs:conclude --outcome abandoned`, on the human's word, and
+  A spec that will not be built is `/quenching:specs:conclude --outcome abandoned`, on the human's word, and
   staleness is never evidence of it — a spec untouched for a year may be waiting on a vendor.
 - **Nothing but the record is written.** Ranking touches each spec's `priority` frontmatter and no
   other file — there is no listing to refresh, because `specs.py list` derives one on demand.
@@ -85,7 +85,7 @@ command writes it.
 ## Workflow
 
 ### 1. Read the front directly
-Find `specs/plans/` at the target repo root. Missing → stop and offer `/specs:create`, which
+Find `specs/plans/` at the target repo root. Missing → stop and offer `/quenching:specs:create`, which
 installs the seed. Then:
 ```bash
 specs.py list --json                    # every spec, its folder, its derived stage
@@ -137,7 +137,7 @@ bundle — the log this used to append to is retired.
 
 ### 6. Report
 The ordered list as it now stands, what changed and why, which specs stayed unranked, and the
-observations from step 2 with the command each routes to. Close by naming `/specs:continue` — the
+observations from step 2 with the command each routes to. Close by naming `/quenching:specs:continue` — the
 consumer of what this just wrote.
 **Done when:** the summary is shown.
 

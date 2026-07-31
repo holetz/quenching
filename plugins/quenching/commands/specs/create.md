@@ -4,14 +4,14 @@ argument-hint: [what to capture, or a path to a plan file]
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
-# /specs:create — put one spec in `plans/`
+# /quenching:specs:create — put one spec in `plans/`
 
 **Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Claude Code plan
 file. With neither, glob `~/.claude/plans/*.md`; if that is empty too, ask what to capture.
 
 Creates ONE spec in `specs/plans/`. That folder is a spec's
 whole active life, so what is created here is what gets built: this command creates the file,
-`/specs:develop` fills its sections, `/specs:execute` builds it, and `/specs:conclude` closes it
+`/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and `/quenching:specs:conclude` closes it
 out under the same basename. Nothing here to retire, hand off, or reconcile — and no ledger.
 
 The date prefix is stamped **once, here**, and never rewritten: `promote` moves the file without
@@ -36,8 +36,8 @@ what you were given, and nothing more.**
 
 Both obey the same prohibition — **zero interrogation**. Never ask for scope, tasks, design, or a
 verification policy. What was not said is left out, and an absent heading is a *not-yet*, not an
-omission. The gates get walked by `/specs:develop`; the hard questions get asked by
-`/specs:develop` too. Neither belongs here.
+omission. The gates get walked by `/quenching:specs:develop`; the hard questions get asked by
+`/quenching:specs:develop` too. Neither belongs here.
 
 The difference between the two rows is **not** effort spent thinking — it is only how much the
 input already contained. A rich plan file gets more sections because it *has* more sections, never
@@ -115,7 +115,7 @@ specs.py new <slug> --title "<title>" [--verification per-task|per-section|end-o
 ```
 Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it.
 `--verification` is passed **only** if the source stated a policy; otherwise the default stands and
-`/specs:develop` can set it later.
+`/quenching:specs:develop` can set it later.
 **Done when:** `plans/YYYY-MM-DD-<slug>.md` exists and the tool exited 0.
 
 ### 6. Write the sections
@@ -144,7 +144,7 @@ was captured. `specs/` stands on its own.
 this one deliberately does not. A new spec names work, not a concept — the step was a no-op in the
 overwhelming majority of runs, and paying to read `knowledge/glossary.md` on a path whose contract
 is "seconds" is the wrong trade. A term a spec genuinely coins is caught by
-`/docs:glossary-backfill`, or by `/docs:define` when the human says the word matters.
+`/quenching:docs:glossary-backfill`, or by `/quenching:docs:define` when the human says the word matters.
 
 ### 7. Check
 Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check. The OKF
@@ -156,12 +156,12 @@ validator is never pointed at `specs/`: a spec carries no OKF `type:`, per
 Name the spec (`plans/YYYY-MM-DD-<slug>.md`) and its slug. On the plan-file path, add which
 sections were filled from which part of the source, the task count derived, which sections carry an
 explicit none — and say plainly that the source file was **read, never moved or deleted**. Name the
-next step: `/specs:develop <slug>` to take it further, or `/specs:continue` to be told what to do
+next step: `/quenching:specs:develop <slug>` to take it further, or `/quenching:specs:continue` to be told what to do
 next across the whole front.
 
 **Isolation is forwarded, never offered.** If the human asks for a branch or a worktree — now, or
 because they want the spec to live on the branch that will carry its work — name
-`/specs:isolate <slug>` as the next command. It owns the branch name, the worktree placement and the
+`/quenching:specs:isolate <slug>` as the next command. It owns the branch name, the worktree placement and the
 `branch: {base, work}` record. Do **not** raise it unprompted: a new prompt in one of the two
 most-run commands costs friction for everyone to serve the minority who isolate this early.
 **Done when:** the summary is shown.
@@ -188,7 +188,7 @@ literal string.**
 
 A plan that carries none of the middle rows produces a spec with `## Problem` and `## Proposal`
 and stops — which is the correct outcome, not a failure. **There is no rule that a converted plan
-must reach the ready gate**; `/specs:develop` takes it the rest of the way.
+must reach the ready gate**; `/quenching:specs:develop` takes it the rest of the way.
 
 ## Invariants to never violate
 

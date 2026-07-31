@@ -148,7 +148,7 @@ Two of these sections are load-bearing for machinery, not just for thinking:
 - **`## Validation`** is the fallback for a task with no `verify:` line.
 - **`## Impact`** is machine-parsed (see below). Removing the heading silently disables a check.
 - **`## Overview`** is warn-only, like `## Handoff` — never required for the `ready` gate — and it
-  is the section `/specs:develop` writes LAST, once every other section has settled, even though it
+  is the section `/quenching:specs:develop` writes LAST, once every other section has settled, even though it
   reads first in the file.
 
 ## The gates and the stage-scoped explicit-none rule
@@ -166,7 +166,7 @@ omission; it is a *not-yet*.
 
 **`ready` is a derived stage, not a folder, and it refuses nothing.** Filling those ten sections is
 what makes a spec ready; no file moves, so there is nothing to refuse. It is a **floor** that
-`/specs:execute` reports against — and the tool simply has no task to hand out until the ten are
+`/quenching:specs:execute` reports against — and the tool simply has no task to hand out until the ten are
 filled, which is where the old promote's teeth went. The human's OK to build is a separate fact,
 `approved:`, asked for inline rather than encoded in a folder.
 
@@ -284,7 +284,7 @@ what makes one file safe under parallelism — one writer, mechanical writes.
 
 Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
 not the executor's. They are born in the origin spec's `## Discoveries` and resolved in place by
-`/specs:develop`'s discoveries bank — `promoted: <new-slug>`, `folded: <section>`, or
+`/quenching:specs:develop`'s discoveries bank — `promoted: <new-slug>`, `folded: <section>`, or
 `dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
 `## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it on four of
@@ -344,7 +344,7 @@ hand and **say in the report that the check was manual**, never silently skip it
 ## Boundary: `specs/` vs the OKF `docs/` bundle
 
 **This section is the single normative owner of the boundary.** Everywhere it comes up —
-`/specs:align`'s conformance codes, `distill.md`'s what-crosses table, `homes.md`'s
+`/quenching:specs:align`'s conformance codes, `distill.md`'s what-crosses table, `homes.md`'s
 spec-vs-vision tie-breaker, the `QUENCHING.md` operator manuals — cites it.
 
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
@@ -352,7 +352,7 @@ spec-vs-vision tie-breaker, the `QUENCHING.md` operator manuals — cites it.
   it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/knowledge/` — generic understanding. A spec writes its durable rule **directly** into
-  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/specs:conclude`
+  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching:specs:conclude`
   routes what the work merely *revealed*
   ([distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)) — never by bulk
   copy.

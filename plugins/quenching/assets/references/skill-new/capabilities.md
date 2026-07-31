@@ -1,9 +1,9 @@
 # The execution profile — strategic capability use, priced
 
 Every Claude Code lever a command, agent, or hook may use, each stated three ways: what it
-buys, what it costs, and the default. `/skill:new` walks this file when choosing a mint's
-profile; `/skill:hook:new` and `/skill:agent:new` apply their sections; the doctrine audit in
-`/skill:align` §7 reads unjustified levers against it. Thresholds and finding
+buys, what it costs, and the default. `/quenching:skill:new` walks this file when choosing a mint's
+profile; `/quenching:skill:hook:new` and `/quenching:skill:agent:new` apply their sections; the doctrine audit in
+`/quenching:skill:align` §7 reads unjustified levers against it. Thresholds and finding
 codes live in `skills.py` and `docs/standards/automation/skills.md` — this file names the code,
 never the number.
 
@@ -256,4 +256,4 @@ the same page in reverse: `skills.py` reports the mechanically decidable slice
 `sk-agent-no-description`), and the doctrine audit reads what no parser can — a fork that
 forks away its own context, a hook whose cost claim no longer holds, an agent whose
 description routes nothing — each reported with the command that fixes it
-(`/skill:new`, `/skill:hook:new`, `/skill:agent:new`), never rewritten in place.
+(`/quenching:skill:new`, `/quenching:skill:hook:new`, `/quenching:skill:agent:new`), never rewritten in place.
