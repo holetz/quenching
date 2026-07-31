@@ -29,6 +29,7 @@ restates the number, so the rule and its checker cannot drift apart.
 | Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value` |
 | `context: fork` never beside a mid-flow gate | `lint` | `sk-fork-gate` (error) |
 | `effort`/`context` values Claude Code can parse | `lint` | `sk-profile-value` |
+| A plugin's commands are cited in a form that resolves | `lint` | `sk-bare-citation` |
 | **The no-op test, sediment, sprawl, positive prescription** | **a reader** | — |
 | **Every non-default lever carries a stated buy** | **a reader** | — |
 
