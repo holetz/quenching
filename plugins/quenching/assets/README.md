@@ -112,6 +112,6 @@ warnings**.
 
 1. **Copy** only the homes that apply (a repo without data gets no `catalog/`).
 2. **Adapt** boundary lines and the derived listings to the repo; keep the surface **English**
-   (only `audience: human` docs follow the repo's language).
+   (folder names, slugs, keys, enums) — body prose follows the repo's language.
 3. **Never** overwrite a target's generated artifacts (AUTO-GENERATED catalog, manifests).
 4. If the repo already had an equivalent, **deprecate it** — do not remove without OK.

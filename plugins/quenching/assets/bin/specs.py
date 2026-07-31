@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.4.3"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.4.4"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -290,6 +290,10 @@ verification: <VERIFICATION>
 
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
+     *(`standards/agents/communication.md` owns that language rule for a repo whose bundle has
+     one. This template states it self-contained rather than citing it: `/specs:align` is native
+     and installs here into repos that never adopted the bundle, where that path resolves to
+     nothing.)*
 
      AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
      `## Design` are for the human — examples and plain language belong there.
