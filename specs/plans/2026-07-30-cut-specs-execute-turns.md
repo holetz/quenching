@@ -416,8 +416,9 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 - [x] 4.2 Reescrever `artifacts.md` §`## Handoff` — small, and refreshed on events
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
       subject: plan/cut-specs-execute-turns: 4.2 artifacts.md §## Handoff na cadência de quatro eventos
-- [ ] 4.3 Reescrever o parágrafo do refresh em `spec-driven.md` §The executor contract
+- [x] 4.3 Reescrever o parágrafo do refresh em `spec-driven.md` §The executor contract
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
+      subject: plan/cut-specs-execute-turns: 4.3 spec-driven.md §The executor contract na cadência nova
 - [ ] 4.4 Reescrever a remediação de `sp-handoff-empty` em `conformance.md`
       files: plugins/quenching/assets/references/specs-align/conformance.md
 - [ ] 4.5 Provar com um check multilinha que a frase antiga não sobreviveu em nenhum dos quatro arquivos
