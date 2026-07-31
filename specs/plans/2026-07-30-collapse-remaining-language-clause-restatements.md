@@ -4,6 +4,7 @@ title: Collapse Remaining Language Clause Restatements
 verification: per-section
 refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
+reviewed: {date: 2026-07-31}
 ---
 
 # Collapse Remaining Language Clause Restatements
@@ -134,8 +135,10 @@ anuncia treze headings canônicos contra quatorze — e carrega a mesma cláusul
 reinstalação, não de reenunciação, mas é o mesmo arquivo do censo e fica dentro.
 
 **Nada novo em `docs/standards/`.** O critério já tem dono; escrevê-lo uma segunda vez seria, uma
-camada acima, o defeito que este spec existe para curar. Depois disto o censo está fechado: cada
-local ou cita o dono, ou carrega por escrito a razão de não citar.
+camada acima, o defeito que este spec existe para curar. Depois disto cada local **do censo** ou
+cita o dono, ou carrega por escrito a razão de não citar — mas o censo **não fecha** por isso: a
+revisão de branch mediu dezenove ocorrências em dezessete arquivos contra os quatorze da tabela.
+Ver `## Design` §O que a revisão de branch acrescentou.
 
 ## Out of Scope
 
@@ -185,19 +188,36 @@ permanece, e o critério é `0 error(s)` e nenhum finding novo, doc-a-doc.
 
 ## Validation
 
-- **O censo vivo.** `grep -rn -A1 "repo.s language" --include='*.md' --include='*.py' plugins/ docs/`
-  devolve **exatamente** os quatorze locais da tabela de `## Design`. O `-A1` não é opcional: a
-  ocorrência de `okf-spec.md` está quebrada por wrap e escapa a um padrão de uma linha — foi assim
-  que o invariante do spec anterior deixou de medir o que afirmava. Um décimo-quinto acerto é
-  reenunciação nova, e é falha. **Um acerto a menos também é falha**, porque este spec decidiu que
-  os dez ficam.
+- **O censo vivo.** Um padrão de **uma linha** não mede este conjunto, e `-A1` não conserta isso:
+  ele estende um acerto já encontrado, e a ocorrência de `okf-spec.md` está quebrada por wrap
+  (`the repo's` / `language` em linhas distintas), então não há acerto a estender. O escopo também
+  precisa incluir `specs/`, que está fora de `plugins/ docs/`. O invariante é este:
+
+  ```bash
+  python3 - <<'PY'
+  import re, pathlib
+  pat = re.compile(r"repo'?s\s+language", re.S)
+  files = [p for r in ('plugins', 'docs') for p in pathlib.Path(r).rglob('*')
+           if p.suffix in ('.md', '.py')] + [pathlib.Path('specs/QUENCHING.md')]
+  hits = {str(p): len(pat.findall(p.read_text(encoding='utf-8', errors='replace')))
+          for p in sorted(set(files))}
+  hits = {k: v for k, v in hits.items() if v}
+  print(sum(hits.values()), 'acertos /', len(hits), 'arquivos')
+  PY
+  ```
+
+  Medido em 2026-07-31, com a base já mergeada: **19 acertos / 17 arquivos**. Um acerto a mais é
+  reenunciação nova, e é falha; **um a menos também é falha**, porque este spec decidiu que os
+  lembretes ficam. O número 14 que este bullet declarava batia por coincidência aritmética — ver
+  `## Discoveries`.
 - **As três notas existem.**
   `grep -n 'agents/communication.md' plugins/quenching/assets/specs/templates/spec.md plugins/quenching/assets/bin/specs.py plugins/quenching/assets/specs/QUENCHING.md`
   → um acerto em cada arquivo.
-- **As gêmeas não se afastaram.** O diff dos dois blocos de guidance — de `THE STAGE-SCOPED
-  EXPLICIT-NONE RULE` até o fim de `AUDIENCE` — é vazio entre `assets/bin/specs.py` e
-  `assets/specs/templates/spec.md`. Este é o único invariante do spec que divergiria em silêncio, e
-  ele é medido no limite da task 2 e em nenhum outro momento; ver `## Risks`.
+- **As gêmeas não se afastaram.** `python3 plugins/quenching/assets/bin/specs.py selftest` compara
+  `TEMPLATE_SPEC` com `assets/specs/templates/spec.md` **byte-a-byte** e falha com o diff quando
+  divergem (`specs.py:246` e `:2791`, sob o comentário `EDIT BOTH OR NEITHER`). O invariante é
+  durável e roda no lockstep das surfaces — não um diff manual medido no limite da task 2, como
+  este spec supôs ao ser escrito; ver `## Open Decisions`.
 - **Nenhum lembrete estreita a regra.**
   `grep -n 'audience: human' plugins/quenching/assets/README.md` não devolve nenhuma linha sobre a
   cláusula da língua. O escopo que o dono declara é toda prosa autorada pelo agente, e um lembrete
@@ -238,6 +258,28 @@ estava errado. Este é o estado medido, com o veredito de cada um:
 | `assets/references/docs-align/okf-spec.md:113` | sim (format spec) | conserva — **corrigir a nota**, que afirma um colapso total falso |
 | `specs/QUENCHING.md:355` | cópia instalada | **sincronizar** com o mold (treze headings vs quatorze) |
 
+### O que a revisão de branch acrescentou (2026-07-31)
+
+A tabela acima ainda estava incompleta. Medida pelo invariante multiline de `## Validation`, a
+população real é **19 acertos em 17 arquivos**, e dois arquivos inteiros nunca entraram em censo
+nenhum — nem no original, nem no reconferido:
+
+| Local | Sai do plugin? | Veredito |
+| --- | --- | --- |
+| `plugins/quenching/assets/docs/QUENCHING.md` | sim — `/docs:align` | lembrete de fronteira, fica **sem nota** |
+| `docs/QUENCHING.md` | cópia instalada | idem, e **atrasada em v4.2.0** contra `VERSION` 4.4.2 |
+
+Ambos passam o guarda-corpo da task 1: uma cláusula, nenhum fato que `communication.md` enuncia,
+nenhum estreitamento. **E a nota dos três não se aplica aqui** — que é a distinção que o censo
+original não tinha como fazer. O front `specs/` é nativo e instala em repositório sem bundle
+algum, mas `/docs:align` copia este manual **junto com** o skeleton que contém
+`docs/standards/agents/communication.md`: no alvo, o caminho resolve. Sair do plugin não é o teste;
+sair **sem o dono** é.
+
+A defasagem de `docs/QUENCHING.md` é a segunda instância da Open Decision *Nada nota um manual
+instalado atrasado*, e não é consertada aqui: sincronizá-la é trabalho de `/docs:align`, e este
+spec escopou o front `specs/`.
+
 ### Por que os molds de harness não contam como texto entregue
 
 `assets/templates/harness/claude-root.md:62` abre com
@@ -276,11 +318,12 @@ neither". A nota entra nos dois no mesmo commit, ou em nenhum.
 
 ## Open Decisions
 
-- **O invariante das gêmeas ganha um check mecânico?** Este spec o prova por um diff rodado no
-  limite da task 2; depois do arquivamento nada o roda. Uma asserção em `specs.py selftest` seria
-  durável, e foi rejeitada aqui por proporção: custa código na ferramenta e entra no lockstep das
-  sete surfaces, para um spec que são seis edições. **Como será decidido:** por um spec próprio, e o
-  gatilho é factual — a primeira vez que as duas gêmeas forem encontradas divergentes.
+- **O invariante das gêmeas ganha um check mecânico? — RESOLVIDA: já tinha.** Esta decisão foi
+  redigida sobre um fato falso. `specs.py selftest` **já** compara `TEMPLATE_SPEC` com
+  `assets/specs/templates/spec.md` byte-a-byte e falha com o diff (`specs.py:246` e `:2791`, sob o
+  comentário `EDIT BOTH OR NEITHER`). Não há spec próprio a abrir nem gatilho a esperar: o custo
+  que ela pesou — código na ferramenta, entrada no lockstep — já estava pago quando ela foi
+  escrita. Encontrado na execução, confirmado na revisão de branch.
 - **Nada nota um manual instalado atrasado.** `specs/QUENCHING.md` estava atrás do mold — treze
   headings contra quatorze — e nenhuma máquina notou: `QUENCHING.md` é `EXEMPT` em
   `okf-validate.py`, e o refresh só ocorre quando alguém roda `/specs:align`. O spec irmão
@@ -304,8 +347,9 @@ neither". A nota entra nos dois no mesmo commit, ou em nenhum.
   task inteira ensinando `/docs:harness` que ela é KEEP. **Aceito, com a detecção nomeada:** o
   segundo bullet de `## Validation` é a única detecção que existe, e ele só roda quando alguém o
   roda. A mitigação real é a nota dizer *por que* inline, de modo que apagá-la exija ler a razão.
-- **As gêmeas se afastam depois do arquivamento.** O diff roda no limite da task 2 e nunca mais.
-  **Risco aceito**, com a alternativa registrada em `## Open Decisions` e o gatilho que a reabre.
+- **As gêmeas se afastam depois do arquivamento — risco inexistente.** Escrito sob o mesmo fato
+  falso do bullet acima: `specs.py selftest` compara as duas byte-a-byte a cada execução do
+  lockstep, então nada nunca dependeu do diff manual da task 2. Ver `## Open Decisions`.
 - **A tabela de `## Design` defasa.** Os números de linha morrem na primeira edição acima deles —
   foi assim que o censo do spec anterior envelheceu, e é por isso que este spec teve de reconferir
   tudo. **Mitigado por construção:** o invariante é o grep do primeiro bullet de `## Validation`,
@@ -391,5 +435,6 @@ e não com a continuação `files:`.
 
 ## Discoveries
 
-- A Open Decision 'o invariante das gêmeas ganha um check mecânico?' já está resolvida: specs.py selftest compara TEMPLATE_SPEC com assets/specs/templates/spec.md byte-a-byte (specs.py:246 e :2790) e o próprio comentário do código diz 'EDIT BOTH OR NEITHER'. O check é durável, roda no lockstep, e não precisa de spec próprio — a decisão pode ser fechada como já-feita.
-- O invariante do censo em ## Validation nao mede o que afirma. O grep declarado (uma linha, escopo plugins/ docs/) nunca pegou okf-spec.md, cuja ocorrencia esta quebrada por wrap ('the repo's' / 'language' em linhas distintas) — e -A1 nao a recupera, so mostra a linha seguinte de um acerto ja encontrado. Tambem nao cobre specs/QUENCHING.md, que esta fora de plugins/ e docs/. E learn.md conta dois acertos num arquivo so. Medido: 13 acertos / 12 arquivos antes deste spec, 14 / 13 depois — o +1 e a nova prosa de plugin-layout.md (task 1), nao um lembrete novo. O numero 14 do verify da task 5 bate por coincidencia aritmetica, nao porque o conjunto seja o da tabela. Um censo que meca de fato precisa de grep multiline e de incluir specs/.
+- **RESOLVIDA na revisão de branch** (em `## Open Decisions` e `## Risks`). A Open Decision 'o invariante das gêmeas ganha um check mecânico?' já está resolvida: specs.py selftest compara TEMPLATE_SPEC com assets/specs/templates/spec.md byte-a-byte (specs.py:246 e :2790) e o próprio comentário do código diz 'EDIT BOTH OR NEITHER'. O check é durável, roda no lockstep, e não precisa de spec próprio — a decisão pode ser fechada como já-feita.
+- **RESOLVIDA na revisão de branch** — o invariante de `## Validation` foi reescrito multiline e com `specs/` no escopo (19 acertos / 17 arquivos), e a lição virou `docs/standards/quality/bundle-verification.md` §Um invariante de grep mede o que o grep alcança. O invariante do censo em ## Validation nao mede o que afirma. O grep declarado (uma linha, escopo plugins/ docs/) nunca pegou okf-spec.md, cuja ocorrencia esta quebrada por wrap ('the repo's' / 'language' em linhas distintas) — e -A1 nao a recupera, so mostra a linha seguinte de um acerto ja encontrado. Tambem nao cobre specs/QUENCHING.md, que esta fora de plugins/ e docs/. E learn.md conta dois acertos num arquivo so. Medido: 13 acertos / 12 arquivos antes deste spec, 14 / 13 depois — o +1 e a nova prosa de plugin-layout.md (task 1), nao um lembrete novo. O numero 14 do verify da task 5 bate por coincidencia aritmetica, nao porque o conjunto seja o da tabela. Um censo que meca de fato precisa de grep multiline e de incluir specs/.
+- **ABERTA — pertence a `/docs:align`, não a este spec.** `docs/QUENCHING.md`, a cópia instalada do manual do front `docs/` neste repositório, está em `v4.2.0` contra `VERSION` 4.4.2 — e carrega a mesma cláusula da língua, sem ter entrado em censo nenhum. É a **segunda** instância da Open Decision *Nada nota um manual instalado atrasado*, que até aqui tinha uma só: dois manuais de payload, dois desatualizados, nenhuma máquina notando. Sincronizá-la é um `/docs:align`, fora do escopo deste spec; o que ela acrescenta é a evidência de que a classe tem mais de um membro, que era exatamente o que aquela decisão precisava para ser dimensionada.
