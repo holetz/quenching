@@ -121,8 +121,10 @@ print(n)
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
 #   - a command that reports on a workspace ("/specs:status") wants one to report on.
-# So every box gets a migration, a minimal bundle and an empty plans zone: the smallest repo
+# So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
+# The folder alone is the workspace — `plans/index.md` is a retired artifact, and `specs.py`
+# derives the listing from disk, so seeding one would only re-create what was withdrawn.
 newbox () {
   mkdir -p "$1/.claude" "$1/db/migrations" "$1/docs/standards" "$1/specs/plans"
   printf '{}\n' > "$1/.claude/settings.json"
@@ -131,7 +133,6 @@ newbox () {
   printf -- '---\nokf_version: "0.1"\n---\n\n# Documentation\n\n- [standards/](standards/index.md)\n' \
     > "$1/docs/index.md"
   printf '# Standards\n' > "$1/docs/standards/index.md"
-  printf '# Plans\n' > "$1/specs/plans/index.md"
   ( cd "$1" && git init -q . && printf '# scratch\n' > README.md && git add -A && git commit -qm init )
 }
 

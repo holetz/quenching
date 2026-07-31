@@ -153,7 +153,7 @@ beats a clean-looking run that quietly dropped something.
 | Front | Align | Verifier |
 | --- | --- | --- |
 | `docs/` | `/docs:align` | `okf-validate.py <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `specs/` | `/specs:align` | `specs.py doctor` + `specs.py validate`, plus `okf-validate.py specs/plans --listing-root` for the listing |
+| `specs/` | `/specs:align` | `specs.py doctor` + `specs.py validate` — the whole condition; the OKF validator is never pointed at `specs/` |
 | `.claude/` | `/skill:align` | `skills.py lint` + `skills.py doctor`, plus `skills.py registry reindex` reporting `changed: false` for the zone |
 
 Each front's verifier is now a **program**, and that is the point: a rule whose only check is a

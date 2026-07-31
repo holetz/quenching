@@ -371,10 +371,10 @@ task line's own metadata grammar, never in a sidecar:
 - [!] 2.3 Implement the gate check — blocked: waiting on the vendor SDK
 ```
 
-`plans/index.md` carries a `<!-- BEGIN GENERATED -->` … `<!-- END GENERATED -->` zone rebuilt
-**deterministically** by `specs.py plans reindex`: counts, then one table per **derived stage**
-(oldest-first inside each, so stale specs surface). **Never hand-edit inside that zone** and
-never add frontmatter to `plans/index.md`.
+`plans/` carries **no listing file**. `specs.py list` derives what the folder holds — slugs,
+derived stages, task progress — by reading it on demand, so nothing has to be regenerated after a
+write and nothing can fall out of date. `plans/index.md` is a retired artifact: no command creates
+or refreshes one, and a copy surviving from an older install is left exactly as found.
 
 ---
 
@@ -395,7 +395,6 @@ code and the JSON, never on prose.
 | `specs.py task --spec <slug> --check ID [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip a checkbox mechanically; `--commit` writes the sha onto the task line |
 | `specs.py discover <slug> "<text>"` | append one line to `## Discoveries` |
 | `specs.py parallel --spec <slug> [--json]` | prove a `[P]` group's `files:` are disjoint; exit 1 if not |
-| `specs.py plans reindex` | regenerate the `plans/index.md` GENERATED zone by derived stage |
 | `specs.py promote <slug> [--outcome done\|abandoned] [--force]` | the one hop, `plans/` → `archive/`; **exit 2** with what is missing |
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
@@ -430,10 +429,9 @@ to run next. Or `/specs:status` for the full picture without touching anything. 
 **Deciding not to build something.** `/specs:conclude` with `outcome: abandoned`, never `done`.
 Done distils its decisions as adopted knowledge; abandoned does not.
 
-**Health check.** `specs.py doctor && specs.py validate`, plus
-`okf-validate.py specs/plans --listing-root` for the **listing**. Read each for what it owns: a
-spec carries no OKF `type:` (it is not a concept doc), so the bundle validator checks `index.md`
-and `specs.py validate` checks the specs.
+**Health check.** `specs.py doctor && specs.py validate` — the whole of it. The OKF validator is
+never pointed at `specs/`: a spec carries no OKF `type:` (it is not a concept doc), and
+`specs.py validate` is its contract.
 
 | Symptom | What is going on |
 | --- | --- |
@@ -444,7 +442,7 @@ and `specs.py validate` checks the specs.
 | `promote` refuses with open boxes | The outcome is `done` and the work is not. Finish them, pass `--force` if you know why, or switch to `outcome: abandoned`. |
 | Two commands both refuse with "slug matches 2 files" | Two specs resolve to the same slug. Identity IS the slug — rename one. |
 | A task went quiet and nothing says why | It should not have. `--block` requires `--reason`, and the reason is written into the line: `- [!] 2.3 … — blocked: <why>`. |
-| `plans/index.md` disagrees with the files | Its generated zone is stale — `specs.py plans reindex` rebuilds it from disk. Never hand-edit inside the markers. |
+| `plans/index.md` exists and disagrees with the files | It is a **retired artifact** left over from an older install. Nothing regenerates it and nothing reads it — `specs.py list` is the live listing. Delete it or keep it; no sweep will touch it either way. |
 | An archived spec's `commit:` shas do not resolve | The spec was squash-merged and its branch deleted. The `merge:` record says which strategy ran; keep the branch next time — `conclude` offers exactly that on a squash. |
 | `python3: command not found` | Install Python 3, or use `py` on Windows. This front needs nothing else — no Node, no npm package. |
 | I still have an `openspec/` folder | Legacy external-CLI workspace. `/specs:align` migrates it one-way (§10). |

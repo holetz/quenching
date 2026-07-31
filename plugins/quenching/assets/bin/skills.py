@@ -1554,7 +1554,7 @@ def compare_versions(installed: str | None, shipped: str) -> str:
     different facts and only one of them is a repo that thinks it is protected.
 
     Both directions are reported because both are silent. Resolution is plugin-first
-    (plans-zone.md §Resolving the tool) while every align deliberately leaves a NEWER
+    (specs-front.md §Resolving the tool) while every align deliberately leaves a NEWER
     installed copy alone — so an `ahead` copy is code that is never executed and never
     repaired, and both halves of that are correct behaviour saying nothing."""
     if installed is None:

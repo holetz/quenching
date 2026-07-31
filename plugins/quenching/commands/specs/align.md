@@ -22,8 +22,8 @@ only when something is already broken.
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
 fourteen canonical sections, the derived stages and the `specs.py` surface in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the listing-zone format and on-write check in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).
+the tool fallback and the front's on-write check in
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
 findings it fixes versus only reports, and the migrations — is
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
@@ -73,7 +73,7 @@ Read it as this command's doctrine. What follows is only what is **specific to `
 
 ### 1. Probe — the two calls that decide whether anything else runs
 Resolve `specs.py` by the fallback in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Resolving the tool, invoked via `python3` or `py`. Resolve the `specs/` root at the repo root,
 then:
 ```bash
@@ -104,7 +104,7 @@ full sweep.
 
 ### 2. Inventory (read-only)
 Only now, and writing nothing: `specs.py list --json` (slugs, folders, derived stages, task
-progress); `Glob` `specs/plans/*.md` and read `plans/index.md`; `Glob` a legacy `openspec/` tree
+progress); `Glob` `specs/plans/*.md`; `Glob` a legacy `openspec/` tree
 (to detect `sp-legacy-workspace`) and read it if present; `Glob`
 `.claude/skills/openspec-*/SKILL.md` and `.claude/commands/opsx/*.md` (shadow copies, relevant only
 under a legacy migration); read `docs/index.md` for `okf_version`.
@@ -160,8 +160,7 @@ single confirmation; each code-coupled rename awaits its own.
 Copy `assets/specs/` and install `specs.py` if approved; run the legacy fold, then
 `specs.py migrate`, if approved — **never hand-fold**, and report every folder the tool kept; apply
 each tool-stated repair; rename the confirmed files and update every reference site alongside its
-individually confirmed rename; seed `specs/plans/index.md` from
-`${CLAUDE_PLUGIN_ROOT}/assets/specs/plans/index.md` when missing; install the operator manual from
+individually confirmed rename; install the operator manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/specs/QUENCHING.md` to `specs/QUENCHING.md` under the four-branch
 manual-install rule in [/docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never
 restated — same banner, same version fill, same never-clobber-a-de-bannered-copy branch); stamp the
@@ -171,14 +170,10 @@ delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migr
 
 ### 7. Verify, log, report
 Re-run the probe's two commands — clean, or the residual message reported verbatim (a REPORTS-table
-code is a clean result, not a failure). Regenerate the `plans/index.md` GENERATED zone with
-`specs.py plans reindex`, then run `okf-validate.py specs/plans --listing-root` — exit 0, no
-`index-broken-link` / `index-orphan`. **Read each checker for what it owns**
-([conformance](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md) §What checks the
-plans listing): `specs.py validate` for the spec files, the OKF checker for `index.md` alone — a
-spec carries no OKF `type:` and pointing the bundle validator at one proves nothing. Then confirm
-the one thing neither tool sees: the zone matches disk. The OKF hook is docs-scoped by config, so
-it does not fire on `specs/`; this run is the coverage.
+code is a clean result, not a failure). Those two are the whole verification: `specs.py doctor` for
+the workspace's shape and `specs.py validate` for the spec files, both deciding on an exit code.
+There is no listing to regenerate and no second checker to point at `specs/` — the OKF validator
+owns the `docs/` bundle alone, and a spec carries no OKF `type:` for it to judge.
 
 This sweep writes nothing into the `docs/` bundle — the `specs/` front records itself, and the
 bundle log it used to append to is retired. Report the counts **and** the reported-not-applied
@@ -207,10 +202,10 @@ residue, each with the command that closes it.
   the path's first commit; otherwise report and leave the name alone.
 - Never delete a **diverged** shadow copy, and never touch any `.claude/` skill or command outside
   `openspec-*` / `opsx/` under a legacy migration — that surface is `/skill:align`'s.
-- Never hand-edit inside the `plans/index.md` GENERATED markers, never add frontmatter to
-  `plans/index.md`, and never leave the zone stale.
-- Never stamp an OKF `type:` on a spec file to quiet the bundle validator — the checker is pointed
-  at the listing, not at the specs.
+- Never recreate `plans/index.md`. The artifact is retired: no command produces it, and one
+  surviving in a target repo is left exactly as found — neither refreshed nor deleted.
+- Never stamp an OKF `type:` on a spec file to quiet the bundle validator — that validator owns the
+  `docs/` bundle, and is never pointed at `specs/`.
 - Never overwrite a `specs/QUENCHING.md` whose `quenching` banner a human removed — keep it and
   report it.
 - Never invent a repair the tool did not state.

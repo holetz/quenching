@@ -10,7 +10,7 @@ allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuest
 `plans/`.
 
 The prioritization sweep. It reads every spec in
-[`specs/plans/`](${CLAUDE_PLUGIN_ROOT}/assets/specs/plans/index.md), proposes ONE ordered list, and — on a single
+`specs/plans/`, proposes ONE ordered list, and — on a single
 confirmation — writes each spec's `priority` record.
 
 **This is the only command that ranks.** `/specs:continue` consumes what this writes: with no
@@ -23,8 +23,8 @@ A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the listing-zone format and the on-write check in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md);
+the tool fallback and the front's on-write check in
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md);
 the shared log procedure in
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). All cited, never
 restated.
@@ -32,7 +32,7 @@ restated.
 ## Resolving the tool
 
 Resolve `specs.py` and `okf-validate.py` by the fallback in
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
@@ -77,8 +77,8 @@ command writes it.
 - **Never remove, never close, never infer completion.** Triage moves no file and archives nothing.
   A spec that will not be built is `/specs:conclude --outcome abandoned`, on the human's word, and
   staleness is never evidence of it — a spec untouched for a year may be waiting on a vendor.
-- **The zone is derived.** `plans/index.md`'s listing is rebuilt exclusively by
-  `specs.py plans reindex`, only between the GENERATED markers.
+- **Nothing but the record is written.** Ranking touches each spec's `priority` frontmatter and no
+  other file — there is no listing to refresh, because `specs.py list` derives one on demand.
 - **No sub-agents.** A front is small by nature and a spec's frontmatter is a few lines; the
   orchestrator reads and writes everything itself.
 
@@ -126,19 +126,14 @@ approved fields, never rewrite the frontmatter wholesale (`slug`, `title`, `veri
 other record must survive). Stamp `date` on every write.
 **Done when:** each approved row is on disk and no unapproved row was touched.
 
-### 5. Regenerate, log, check
+### 5. Check
 ```bash
-specs.py plans reindex
-okf-validate.py specs/plans --listing-root
+specs.py validate --json
 ```
-`plans reindex` rebuilds the GENERATED zone from disk (read its `changed` field to know whether it
-wrote). Nothing is written into the `docs/` bundle: the ranking lives in each spec's own
-`priority` record, and the bundle log this used to append to is retired.
-
-The validator must exit 0 with no `index-broken-link` / `index-orphan`. The hook is docs-scoped by
-config and never fires here, so this run is the coverage.
-**Done when:** the zone matches disk, and the validator is clean or its residue is reported
-verbatim.
+That is the whole check, and it must exit 0. Nothing else was written: the ranking lives in each
+spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `docs/`
+bundle — the log this used to append to is retired.
+**Done when:** the validator is clean, or its residue is reported verbatim.
 
 ### 6. Report
 The ordered list as it now stands, what changed and why, which specs stayed unranked, and the
@@ -157,7 +152,7 @@ consumer of what this just wrote.
   execute, or conclude.
 - Never remove a spec, move a spec, tick a checkbox, or resolve a `## Discoveries` line.
 - Never infer completion or abandonment, and never treat staleness as evidence of either.
-- Never hand-edit inside the GENERATED markers (call `specs.py plans reindex`), and never add
-  frontmatter to `plans/index.md`.
-- Never fan out sub-agents, and never re-implement the listing check in prose — run
-  `okf-validate.py --listing-root` and report what it says.
+- Never create or refresh a `plans/index.md`. The artifact is retired; `specs.py list` derives the
+  same listing from disk on demand.
+- Never fan out sub-agents, and never re-implement a check in prose — run `specs.py validate` and
+  report what it says.

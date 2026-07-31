@@ -55,7 +55,7 @@ code.
 plus the path — that idiom word-splits on bash and silently fails on zsh, so it passes where it is
 written and breaks in the target repo. The rule, the measured evidence and the one correct
 abbreviation are
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Write the resolved path literally on every invocation.
 
 ## Workflow

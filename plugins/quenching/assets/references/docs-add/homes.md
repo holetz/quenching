@@ -108,9 +108,10 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sou
   (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit
   inside the markers.
 
-(The `specs/plans/index.md` GENERATED zone is **not** part of this OKF insert procedure —
-`specs/` lives outside the bundle; that zone is owned by the `/specs:*` commands, in
-[`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md).)
+(`specs/plans/` has no listing to update and is **not** part of this OKF insert procedure —
+`specs/` lives outside the bundle, and `specs.py list` derives what the folder holds from disk on
+demand. See
+[`specs-create/specs-front.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).)
 
 ## Enriching the glossary (tail step, every capture)
 

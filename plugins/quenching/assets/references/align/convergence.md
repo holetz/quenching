@@ -84,8 +84,7 @@ Let a pass be **empty** when every applicable stage reports "nothing to do." Let
 **clean** when its own verifier passes: `okf-validate.py <docs> --json` exiting 0 **and**
 reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `docs/` (these are
 WARN — exit 0 alone does not prove them clear, read the findings); `specs.py doctor` +
-`specs.py validate` clean **and** `okf-validate.py specs/plans --listing-root` clean by
-the same read-the-findings rule, for `specs/`; `skills.py lint` + `skills.py doctor` exiting 0
+`specs.py validate` clean, and nothing else, for `specs/`; `skills.py lint` + `skills.py doctor` exiting 0
 **and** `skills.py registry reindex` reporting `changed: false` for `.claude/`.
 
 - **Converged (stop, success):** a pass is **empty** *and* the front is **clean**. This is the

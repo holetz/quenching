@@ -4,6 +4,8 @@ title: Reassess whether specs/plans/index.md is needed
 verification: per-section
 priority: {level: 6, criticality: medium, date: 2026-07-29}
 refined: {mode: adversarial, date: 2026-07-30}
+approved: {date: 2026-07-30}
+branch: {base: main, work: plan/decide-plans-index-need}
 ---
 
 # Reassess whether specs/plans/index.md is needed
@@ -434,12 +436,14 @@ compre — só custa um arquivo a mais, para sempre.
 - ~~**`sp-index-frontmatter` sobrevive como regra de prosa, ou a lacuna é aceita e registrada?**~~
   **MOOT:** sem artefato produzido não há frontmatter para checar, nem lacuna para registrar. O
   código sai junto com o modo `--listing-root` que o emitia.
-- **NOVA — o nome `assets/references/specs-create/plans-zone.md` descreve um artefato retirado.** O
-  arquivo sobrevive: §Resolving the tool e §The `specs/` front records itself não falam da zona, e
-  a primeira é citada por **18 arquivos** do plugin. O nome, porém, passa a nomear o que não existe.
-  **Como se decide:** o humano escolhe quando a task 5.1 rodar; o default é **manter o nome**,
-  porque renomear uma reference com 18 citações é mudança de superfície com raio próprio e não é o
-  assunto deste spec (`## Out of Scope`).
+- ~~**NOVA — o nome `assets/references/specs-create/plans-zone.md` descreve um artefato
+  retirado.**~~ **RESOLVIDA 2026-07-30, contra o default:** renomeado para `specs-front.md`. O
+  humano escolheu o nome mais largo, que cobre as três seções sobreviventes — §The folder is the
+  listing, §Resolving the tool e §The `specs/` front records itself — em vez de `tool-resolution.md`,
+  que nomearia só a dominante. Renomeação code-coupled, aplicada atômica no commit da task 5.1: 21
+  sítios de citação medidos, 17 arquivos do plugin reescritos, `plans-zone` a zero, e as quatro
+  frases que descreviam a citação como "the listing-zone format" corrigidas junto. As 225 citações
+  em link markdown do plugin resolvem.
 ## Risks
 
 - **Retirar o artefato sem retirar `--listing-root` no mesmo movimento.** Medido em 2026-07-30: com
@@ -515,6 +519,64 @@ compre — só custa um arquivo a mais, para sempre.
   histórico, a zona é determinística, e não há estado nenhum para migrar de volta: um único reindex
   a reconstruiria do disco sem perda. A assimetria é o argumento — a remoção é reversível, e a
   staleness que ela mata não é detectável.
+## Handoff
+
+<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+
+     The context an executor needs and cannot derive: the state of play, the conventions in
+     force, what was already tried. Small by construction — it is sent with EVERY task.
+
+     Refresh is bound to EVENTS, not judgment: the orchestrator rewrites this after each
+     committed task. Staleness is this section's failure mode. -->
+
+Worktree `../claude-quenching-decide-plans-index-need`, branch `plan/decide-plans-index-need`
+cut from `main`. Um commit por task, subject `plan/<slug>: <id> <título>`.
+
+**Estado final do `/specs:execute`: 17/18, uma bloqueada.** A retirada está completa e verificada.
+O artefato não existe em lugar nenhum, os dois tools carregam a guarda da própria retirada
+(mutation-proven, 4/4 e 2/2), a reference virou `specs-front.md`, e
+`docs/standards/architecture/generated-listings.md` está escrito em `authority: current`.
+
+**7.1 está BLOQUEADA, não falhada** — o bump de versão é do `/specs:conclude` step 5, per
+`versioning-release.md`. Nada foi alterado nos seis artefatos.
+
+**O que o `/specs:conclude` precisa saber, em ordem de importância:**
+
+1. **`main` avançou 22 commits durante este build** e está em **4.4.1**; esta branch foi cortada de
+   `1ed05c4` e carrega **4.4.0**. O bump parte de 4.4.1. Colisão provável nos seis arquivos de
+   versão — exatamente o cenário que `versioning-release.md` §Why not a task descreve.
+2. **`main` ganhou `docs/standards/architecture/shared-mold-keys.md`**, na MESMA subject folder do
+   standard escrito aqui. As duas branches inseriram linha na mesma tabela de
+   `architecture/index.md` e na zona GENERATED de `standards/index.md` — conferir depois do merge.
+3. **A superfície de comandos não foi provada por processo fresco.** Sete command bodies foram
+   editados (`create`, `triage`, `align`, `status`, `import-memory` na 3.2; `create`/`triage` de
+   novo na 4.1) e mais 17 arquivos tiveram citação reescrita pela renomeação. `skills.py doctor`
+   (26/0) e `lint` (0) passam, mas nenhum dos dois prova que a superfície CARREGA —
+   `surface-verification.md` exige `functional-checks.sh` sob `/skill:new`, que este spec não
+   atravessa. Decisão do humano: avaliar no branch review.
+4. **`## Validation` ainda cita `functional-checks.sh`** e ainda usa os greps largos que quatro
+   tasks tiveram de corrigir. Está desalinhado com o `## Tasks` corrigido.
+5. **`stale-doc` subiu de 22 para 23** no bundle: esta branch tocou `resource`s de standards cujo
+   `timestamp` não foi restampado. Candidato ao estágio de docs emergentes.
+
+**Três correções de fato que o executor precisa saber:**
+
+1. **Dois `verify:` estavam defeituosos, em direções opostas**, e foram corrigidos nas tasks 1.1
+   e 2.1 (autorizado pelo humano em 2026-07-30). `okf-validate.py` **não tem `--help`** — cai num
+   scan normal do bundle, então `--help | grep -c X` nunca falha. E `specs.py --help | grep -c
+   plans` nunca passa: `plans/` é pasta real citada no help de `new`, `promote` e `migrate`.
+   **Regra ao corrigir um `verify:`: a substituição tem de ser pelo menos tão forte, medida contra
+   o blob anterior à task.** As duas atuais discriminam (3→0 e 1→0).
+2. `index.md` **nunca esteve** em `hard_block_exempt()` — só em `RESERVED`, e tem de continuar
+   fora do skip: negar um `index.md` com `type` de conceito é a função do gate PreToolUse.
+   O spec afirma o contrário em `## Proposal`, `## Design` §3, `## Validation` e na task 1.2.
+3. Task 7.1 está **bloqueada por contrato**: `docs/standards/ci-cd/versioning-release.md`
+   §When the bump happens proíbe bump como task — é do `/specs:conclude` step 5.
+
+**Convenção adotada:** toda guarda de selftest escrita aqui passa por mutation pass
+(`docs/standards/quality/selftest-mutation.md`) antes do commit; o resultado vai em
+`## Discoveries`.
+
 ## Tasks
 
 Cada primeira linha é a task inteira e se lê sozinha — `specs.py next` entrega só ela ao executor.
@@ -528,93 +590,134 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 1. Retirar `--listing-root` primeiro
 
-- [ ] 1.1 Remover o modo `--listing-root` e `_is_spec_file` de `okf-validate.py`, preservando `index-orphan` e `index-broken-link` para o bundle
+- [x] 1.1 Remover o modo `--listing-root` e `_is_spec_file` de `okf-validate.py`, preservando `index-orphan` e `index-broken-link` para o bundle
       files: plugins/quenching/assets/hooks/okf-validate.py
-      verify: python3 plugins/quenching/assets/hooks/okf-validate.py --help | grep -c listing-root
-      Tem que imprimir `0`. `index.md` continua em `RESERVED` e em `hard_block_exempt()` — retirar
-      nunca é desreservar.
-- [ ] 1.2 Acrescentar a `okf-validate.py selftest` a asserção de que `--listing-root` saiu enquanto `index.md` segue em `RESERVED` e em `hard_block_exempt()`
+      verify: grep -c "listing_root: bool" plugins/quenching/assets/hooks/okf-validate.py
+      subject: plan/decide-plans-index-need: 1.1 Remover o modo --listing-root e _is_spec_file de okf-validate.py
+      Tem que imprimir `0` — conta as três assinaturas que carregavam o modo. `index.md` continua
+      em `RESERVED` — retirar nunca é desreservar. **Correção medida em 2026-07-30:** `index.md`
+      nunca esteve em `hard_block_exempt()` e não pode entrar — negar um `index.md` com `type` de
+      conceito é a função do gate PreToolUse (`## Discoveries`).
+- [x] 1.2 Acrescentar a `okf-validate.py selftest` a asserção de que `--listing-root` saiu enquanto `index.md` segue em `RESERVED` e em `hard_block_exempt()`
       files: plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py plugins/quenching/assets/docs
+      subject: plan/decide-plans-index-need: 1.2 Acrescentar a okf-validate.py selftest a guarda da retirada
       É a guarda que `docs/standards/architecture/retiring-a-reserved-artifact.md` §The guard exige:
-      tem que falhar se alguém reintroduzir o flag ou tirar o nome da reserva.
-- [ ] 1.3 Tirar do `CLAUDE.md` e de `assets/README.md` as duas receitas que invocam o flag retirado
+      tem que falhar se alguém reintroduzir o flag ou tirar o nome da reserva. Escrita como
+      `retired_listing_root_failures()`, quatro asserções, mutation pass 4/4 (`## Discoveries`).
+      A quarta afirma que `index.md` **não** está em `hard_block_exempt()`, ao contrário do que
+      o título desta task diz.
+- [x] 1.3 Tirar do `CLAUDE.md` e de `assets/README.md` as duas receitas que invocam o flag retirado
       files: CLAUDE.md, plugins/quenching/assets/README.md
       verify: grep -rn -- "--listing-root" CLAUDE.md plugins/quenching/assets/README.md
+      subject: plan/decide-plans-index-need: 1.3 Tirar as receitas que invocam o flag retirado
       Não pode imprimir nenhuma linha. Uma receita que aponta para o que não existe é pior que
       nenhuma. Usar `/docs:harness` para o `CLAUDE.md`.
 
 ### 2. Retirar a zona e o subcomando de `specs.py`
 
-- [ ] 2.1 Remover `cmd_plans`, `render_plans_zone`, `PLANS_EMPTY`, o subparser `plans` e os findings `sp-no-generated-zone` e `sp-no-plans-index` de `specs.py`
+- [x] 2.1 Remover `cmd_plans`, `render_plans_zone`, `PLANS_EMPTY`, o subparser `plans` e os findings `sp-no-generated-zone` e `sp-no-plans-index` de `specs.py`
       files: plugins/quenching/assets/bin/specs.py
-      verify: python3 plugins/quenching/assets/bin/specs.py --help | grep -c plans
-      Tem que imprimir `0`. `sp-no-plans-index` sai junto desta vez: o arquivo deixa de ser
+      verify: python3 plugins/quenching/assets/bin/specs.py --help | grep -cE '^ +plans +'
+      subject: plan/decide-plans-index-need: 2.1 Remover a zona e o subcomando plans de specs.py
+      Tem que imprimir `0` — conta a LINHA do subcomando, não a palavra: `plans/` é uma pasta real
+      citada no help de `new`, `promote` e `migrate`, então um `grep -c plans` cru imprime `3` mesmo
+      com a retirada correta (`## Discoveries`). `sp-no-plans-index` sai junto desta vez: o arquivo deixa de ser
       esperado, então um finding por ausência dele seria um checker de um artefato retirado.
-- [ ] 2.2 Acrescentar a `specs.py selftest` a asserção de que `plans reindex` não existe mais na superfície do tool
+- [x] 2.2 Acrescentar a `specs.py selftest` a asserção de que `plans reindex` não existe mais na superfície do tool
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/decide-plans-index-need: 2.2 Acrescentar a specs.py selftest a guarda do subcomando
       Escrita para falhar se alguém reintroduzir o subcomando — a segunda perna da guarda que
       `retiring-a-reserved-artifact.md` §The guard exige.
 
 ### 3. Parar de produzir o artefato, e apagá-lo
 
-- [ ] 3.1 Apagar `assets/specs/plans/index.md` e remover o passo de seed de `commands/specs/align.md`
+- [x] 3.1 Apagar `assets/specs/plans/index.md` e remover o passo de seed de `commands/specs/align.md`
       files: plugins/quenching/assets/specs/plans/index.md, plugins/quenching/commands/specs/align.md
       verify: test ! -e plugins/quenching/assets/specs/plans/index.md && grep -c "assets/specs/plans/index.md" plugins/quenching/commands/specs/align.md
+      subject: plan/decide-plans-index-need: 3.1 Apagar o seed e remover o passo de seed do align
       O `grep` tem que imprimir `0`. Sem asset não há o que semear — é o que torna a retirada
       irreversível por sweep.
-- [ ] 3.2 Remover o passo de reindex e as menções a `--listing-root` dos cinco command bodies que os têm
+- [x] 3.2 Remover o passo de reindex e as menções a `--listing-root` dos cinco command bodies que os têm
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/triage.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/status.md, plugins/quenching/commands/docs/import-memory.md
-      verify: grep -rn -- "plans reindex\|--listing-root\|plans/index.md" plugins/quenching/commands/
-      Não pode imprimir nenhuma linha. `status.md:76` também lê o arquivo — essa leitura sai.
-- [ ] 3.3 Apagar `specs/plans/index.md` deste repo por `git rm` e tirar a linha do fixture de `functional-checks.sh`
+      verify: grep -rn -- "plans reindex\|--listing-root" plugins/quenching/commands/; grep -rn "plans/index\.md" plugins/quenching/commands/ | grep -v "assets/specs/plans/index.md" | grep -v "Never \|retired artifact"
+      subject: plan/decide-plans-index-need: 3.2 Remover o reindex e o flag dos cinco command bodies
+      Nenhum dos dois pode imprimir linha. `status.md:76` também lê o arquivo — essa leitura sai.
+      **Escopo corrigido em 2026-07-30:** o grep cru de `plans/index.md` era largo demais em duas
+      direções. Casava os dois links do seed, que são da task 4.1; e casava as próprias linhas
+      `Never recreate ...` que esta task ESCREVE — a única guarda que impede um command body de
+      voltar a semear o artefato, já que os selftests só cobrem os tools. Um verify que exigisse
+      apagá-las mandaria remover a proibição junto com a prática (`## Discoveries`).
+- [x] 3.3 Apagar `specs/plans/index.md` deste repo por `git rm` e tirar a linha do fixture de `functional-checks.sh`
       files: specs/plans/index.md, plugins/quenching/assets/checks/functional-checks.sh
-      verify: test ! -e specs/plans/index.md && ./plugins/quenching/assets/checks/functional-checks.sh
-      O harness tem que sair `0` montando a caixa sem o arquivo. `specs/archive/**` nunca é tocado.
+      verify: test ! -e specs/plans/index.md && grep -c "specs/plans/index.md" plugins/quenching/assets/checks/functional-checks.sh && bash -n plugins/quenching/assets/checks/functional-checks.sh && python3 plugins/quenching/assets/bin/specs.py doctor --json
+      subject: plan/decide-plans-index-need: 3.3 Apagar o index.md deste repo e tirar a linha do fixture
+      O `grep` tem que imprimir `0` e o `doctor` sair `0`. `specs/archive/**` nunca é tocado.
+      **`functional-checks.sh` retirado deste `verify:` em 2026-07-30**, por contradizer
+      `docs/standards/quality/surface-verification.md` §The harness belongs to the skill front,
+      que diz literalmente que o harness "is not named in a spec's `## Validation` or a task's
+      `verify:`" — ele é do `/skill:new`, e toda corrida vermelha que ele já produziu foi defeito
+      dele próprio. A caixa continua montada e válida: `mkdir -p .../specs/plans` fica, só o seed
+      do arquivo sai. O mesmo corte vale para `## Validation` (`## Discoveries`).
 
 ### 4. Tirar os ponteiros que sobraram
 
-- [ ] 4.1 Tirar o link das duas citações de `specs/plans/` em `create.md:12` e `triage.md:13`, deixando texto puro
+- [x] 4.1 Tirar o link das duas citações de `specs/plans/` em `create.md:12` e `triage.md:13`, deixando texto puro
       files: plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/triage.md
       verify: grep -rn "assets/specs/plans" plugins/quenching/commands/
+      subject: plan/decide-plans-index-need: 4.1 Tirar o link das duas citacoes de specs/plans/
       Não pode imprimir nenhuma linha. A frase ao redor de cada link explica a pasta em duas frases
       e não precisa mandar o leitor a lugar nenhum — decidido em `## Design`.
-- [ ] 4.2 Corrigir o link `specs/plans/index.md` do `CLAUDE.md`
+- [x] 4.2 Corrigir o link `specs/plans/index.md` do `CLAUDE.md`
       files: CLAUDE.md
       verify: grep -c "plans/index.md" CLAUDE.md
+      subject: plan/decide-plans-index-need: 4.2 Corrigir o link plans/index.md do CLAUDE.md
       Tem que imprimir `0`. Usar `/docs:harness`.
 
 ### 5. Atualizar as references e os manuais que descrevem o artefato retirado
 
-- [ ] 5.1 Cortar de `plans-zone.md` as seções §The GENERATED zone e §The on-write check, e resolver o nome do arquivo com o humano
+- [x] 5.1 Cortar de `plans-zone.md` as seções §The GENERATED zone e §The on-write check, e resolver o nome do arquivo com o humano
       files: plugins/quenching/assets/references/specs-create/plans-zone.md
+      subject: plan/decide-plans-index-need: 5.1 Cortar as duas secoes da zona e renomear para specs-front.md
       Mantém §Resolving the tool e §The `specs/` front records itself, que não falam da zona. O H1
       passa a nomear o que sobrou. A renomeação do arquivo é a entrada aberta de
       `## Open Decisions` — 18 arquivos o citam, e o default é manter o nome.
-- [ ] 5.2 Remover `sp-no-generated-zone`, `sp-zone-stale`, `sp-no-plans-index` e `sp-index-frontmatter` de `conformance.md` e reescrever a condição de convergência do front
+- [x] 5.2 Remover `sp-no-generated-zone`, `sp-zone-stale`, `sp-no-plans-index` e `sp-index-frontmatter` de `conformance.md` e reescrever a condição de convergência do front
       files: plugins/quenching/assets/references/specs-align/conformance.md
+      subject: plan/decide-plans-index-need: 5.2 Remover os quatro codigos da zona e reescrever a convergencia
       A condição nova cita só `specs.py doctor` e `specs.py validate` — o que um programa decide.
-- [ ] 5.3 Tirar a cláusula `--listing-root` do contrato de convergência e da tabela de verificadores por front
+- [x] 5.3 Tirar a cláusula `--listing-root` do contrato de convergência e da tabela de verificadores por front
       files: plugins/quenching/assets/references/align/convergence.md, plugins/quenching/assets/references/align/sweep-doctrine.md
-- [ ] 5.4 Corrigir `spec-driven.md`, `docs-add/homes.md`, `docs-align/migration.md` e o comentário de `skills.py:1557`
+      subject: plan/decide-plans-index-need: 5.3 Tirar a clausula do flag da convergencia e da tabela de verificadores
+- [x] 5.4 Corrigir `spec-driven.md`, `docs-add/homes.md`, `docs-align/migration.md` e o comentário de `skills.py:1557`
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/references/docs-add/homes.md, plugins/quenching/assets/references/docs-align/migration.md, plugins/quenching/assets/bin/skills.py
+      subject: plan/decide-plans-index-need: 5.4 Corrigir spec-driven, homes, migration e o comentario de skills.py
       A árvore de layout de `spec-driven.md:38` perde a linha do `index.md`, `:56-57` perde a
       cláusula `--listing-root`, `:217` perde a zona da lista de agrupadores e `:312` perde a linha
       do subcomando na tabela do tool.
-- [ ] 5.5 Corrigir os manuais e READMEs que descrevem a zona ou o flag
+- [x] 5.5 Corrigir os manuais e READMEs que descrevem a zona ou o flag
       files: plugins/quenching/assets/specs/QUENCHING.md, plugins/quenching/assets/claude/QUENCHING.md, plugins/quenching/README.md, specs/QUENCHING.md
-      verify: grep -rn -- "plans reindex\|--listing-root\|render_plans_zone\|plans/index.md" plugins/quenching/ CLAUDE.md specs/QUENCHING.md
-      Não pode imprimir nenhuma linha. `assets/specs/QUENCHING.md` é o seed e `specs/QUENCHING.md` a
-      cópia deste repo — as duas ficam obsoletas juntas. `assets/claude/QUENCHING.md:179` cita o
-      arquivo como precedente da regra anti-drift do registry; a regra fica, o precedente muda.
+      verify: grep -rn -- "plans reindex\|--listing-root\|render_plans_zone\|plans/index.md" plugins/quenching/ CLAUDE.md specs/QUENCHING.md | grep -vi "retired\|are gone\|the retirement of\|never recreate\|never create or refresh\|none may be" | grep -v "README.md:6[0-9][0-9]:"
+      subject: plan/decide-plans-index-need: 5.5 Corrigir os manuais e READMEs que descrevem a zona ou o flag
+      Não pode imprimir nenhuma linha: **nenhum uso VIVO**. As menções que sobram são de duas
+      classes que têm de sobreviver. (1) As notícias de retirada e as proibições `Never recreate`
+      — a única guarda contra um body voltar a semear o artefato. (2) **O changelog da 0.19.0 em
+      `README.md:625`**, que registra que aquela release ganhou `--listing-root`. Era verdade
+      então; reescrever falsificaria um registro de release, pela mesma doutrina que mantém
+      `specs/archive/**` intocado. `assets/specs/QUENCHING.md` é o seed e `specs/QUENCHING.md` a
+      cópia deste repo — as duas ficam obsoletas juntas, incluindo a linha da tabela de
+      troubleshooting que mandava rodar um reindex. `assets/claude/QUENCHING.md:179` citava o
+      arquivo como precedente da regra anti-drift do registry; a regra fica, e o precedente passa a
+      ser o contraste — a zona do registry se paga, a de `plans/` não se pagava.
 
 ### 6. Escrever a regra durável
 
-- [ ] 6.1 Escrever `docs/standards/architecture/generated-listings.md` via `/docs:add`, em `authority: current`
+- [x] 6.1 Escrever `docs/standards/architecture/generated-listings.md` via `/docs:add`, em `authority: current`
       files: docs/standards/architecture/generated-listings.md
       pattern: docs/standards/architecture/retiring-a-reserved-artifact.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/decide-plans-index-need: 6.1 Escrever docs/standards/architecture/generated-listings.md
       Conteúdo: uma listagem gerada só se paga quando um programa consegue provar que ela está
       fresca; o critério de decisão (existe um comando que deriva o mesmo fato do disco sob
       demanda?); e os `index.md` do bundle `docs/` como o contraexemplo que delimita a regra.
@@ -622,8 +725,23 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 
 ### 7. Fechar as obrigações de release
 
-- [ ] 7.1 Acertar o lockstep de versão entre `VERSION` e os três scripts
+- [!] 7.1 Acertar o lockstep de versão entre `VERSION` e os três scripts — blocked: Contradiz docs/standards/ci-cd/versioning-release.md (authority: current) §When the bump happens, que diz que um bump nunca e task e que /specs:execute nunca faz um — e do /specs:conclude step 5, imediatamente antes do merge. Decisao do humano em 2026-07-30. Agravado durante o build: main avancou para 4.4.1, entao o bump desta branch parte de 4.4.1 e nao de 4.4.0, que e exatamente o cenario de colisao que aquele standard usa para justificar a regra.
       verify: cat plugins/quenching/VERSION && python3 plugins/quenching/assets/bin/specs.py --version && python3 plugins/quenching/assets/bin/skills.py --version && python3 plugins/quenching/assets/hooks/okf-validate.py --version
       As quatro saídas têm que concordar.
-- [ ] 7.2 Rodar a validação inteira de `## Validation` e registrar a saída de cada comando
+- [x] 7.2 Rodar a validação inteira de `## Validation` e registrar a saída de cada comando
       verify: python3 plugins/quenching/assets/bin/specs.py validate --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
+      subject: plan/decide-plans-index-need: 7.2 Rodar a validacao inteira e registrar a saida
+
+## Discoveries
+
+- okf-validate.py has NO `--help` handler — `--help` falls through to a normal bundle scan of the default docsDir. The `verify:` of task 1.1 (`--help | grep -c listing-root`) therefore printed `0` BEFORE the change too: it is vacuous and cannot fail either way. Same vacuity in `## Validation`. A load-bearing check is `grep -c -- listing_root <file>`. (specs.py DOES have argparse --help, so task 2.1's verify is real.)
+- `index.md` was NEVER in `hard_block_exempt()` — that predicate covers EXEMPT (CLAUDE.md/AGENTS.md/QUENCHING.md) plus log.md and README.md. `index.md` is in RESERVED only, and is deliberately NOT hard-block-exempt: the PreToolUse gate's whole job is denying an index.md that carries a concept `type`. The claim appears in `## Proposal`, `## Design` §3, `## Validation` and task 1.2's body; only the RESERVED half is true. Task 1.2's assertion was written against what is actually true.
+- Mutation pass run against the new `retired_listing_root_failures()` guard, per docs/standards/quality/selftest-mutation.md: 4 mutations (re-add the _is_spec_file skip · re-add the listing_root param · drop index.md from RESERVED · add index.md to hard_block_exempt) — 4/4 CAUGHT, each failing exactly ONE assertion, which is the discriminating signal that standard asks for. This is the first of the three shipped tools to clear the pass; okf-validate.py's OTHER selftest legs (12 canonical cases + retired-log) were NOT mutation-checked, so the standard's graduation gate to `current` is not met by this spec alone.
+- Task 2.1's `verify:` (`specs.py --help | grep -c plans` expecting 0) is defective in the OPPOSITE direction to 1.1's: it can never pass on a CORRECT implementation. `plans/` is a real folder named in three other subcommands' help text (new: 'capture a spec into plans/', promote: 'plans/ -> archive/', migrate: 'backlog/ + ready/ -> plans/'), so it prints 3. The subcommand IS gone, proved by the spec's own `## Validation` line: `specs.py plans reindex` -> exit 2, 'invalid choice: plans'. A correct assertion is that exit code, or `grep -cE '^ +plans '`.
+- Para o sibling `split-specs-py-backlog-renderer` (colisão nomeada em `## Risks`): a remoção de `cmd_plans` + `render_plans_zone` + `STAGE_ORDER` + `PLANS_EMPTY` tira 83 linhas de specs.py — 3125 -> 3042. Aquele spec queria EXTRAIR a função para baixar o arquivo do limiar de ~1.200 linhas; a extração agora não tem alvo, e 3042 segue muito acima do limiar, então o problema dele continua inteiro e precisa de outro corte. Esta retirada não o resolve, só remove uma das opções.
+- Mutation pass sobre a guarda `sp-plans-subcommand-back` de specs.py: 2 mutações (recolocar `plans` no argparse · recolocar `plans` no DISPATCH) — 2/2 pegas, cada uma na sua superfície. As duas são asseridas separadamente de propósito: recolocar só uma é a forma que um revert parcial toma. Com isto, DUAS das três selftests shipped passaram por mutation pass nesta branch (okf-validate.py e specs.py, só as guardas novas); skills.py não.
+- Gap que o spec não previu, fechado na task 3.1: `assets/specs/plans/` era mantida no git APENAS por `index.md`. Apagando o arquivo, git deixa de rastrear a pasta, e o `Copy assets/specs/` do step 6 do /specs:align pararia de criar `specs/plans/` num target repo novo — `specs.py doctor` reportaria `sp-missing-phase` em todo repo recém-alinhado. Adicionado `assets/specs/plans/.gitkeep`, espelhando `assets/specs/archive/.gitkeep` que já existia pelo mesmo motivo. Sem isso a retirada quebrava o scaffold.
+- Terceiro `verify:` defeituoso (task 3.2): `grep -rn 'plans/index.md' commands/` exigindo zero linhas é incompatível com a própria retirada. As linhas que sobram são as invariantes `Never recreate plans/index.md` que a task escreve — e elas são a ÚNICA guarda contra um command body voltar a semear o artefato, porque os selftests de 1.2 e 2.2 cobrem só os tools. Um verify literal mandaria apagar a proibição junto com a prática. Escopo corrigido para: nenhum `plans reindex`, nenhum `--listing-root`, e nenhuma menção OPERATIVA (excluídas as que dizem 'Never' ou 'retired artifact'). Testado contra um arquivo-sonda com uso operativo: dispara.
+- CONTRADIÇÃO com standard, resolvida pelo humano em 2026-07-30: a task 3.3 e o bloco `## Validation` invocam `functional-checks.sh`, e `docs/standards/quality/surface-verification.md` (authority: current) §The harness belongs to the skill front diz literalmente que ele 'is not named in a spec's ## Validation or a task's verify:'. Retirado dos dois lugares — resta corrigir `## Validation`, que ainda o cita. PENDÊNCIA SEPARADA para o /specs:conclude: esta branch editou CINCO command bodies na task 3.2, e o mesmo standard manda rodar o harness onde a superfície é editada, uma vez, sob /skill:new — que este spec não atravessa. `skills.py doctor` (26 comandos, 0 findings) e `lint` (exit 0) passam, mas nenhum dos dois prova que a superfície CARREGA.
+- Quarto `verify:` corrigido (task 5.5), e o de consequência mais grave: o grep cru varria `plugins/quenching/` inteiro, incluindo o CHANGELOG do README em `:625`, que registra que a release 0.19.0 ganhou `--listing-root`. Aquilo era verdade então — obedecer o verify ao pé da letra teria falsificado um registro de release, exatamente o que a doutrina de `specs/archive/** é história` proíbe. Escopo corrigido para excluir changelog e notícias de retirada. NOTA: ao escrever o filtro, um `grep -v 'Never '` largo demais ESCONDEU um leftover real — a linha da tabela de troubleshooting dos dois QUENCHING.md que ainda mandava rodar `plans reindex`. Achado por classificação manual de cada hit, não pelo filtro. Filtro de exclusão é um risco de falso-negativo, e tem de ser conferido item a item.
+- PARA O /specs:conclude — `main` avançou 22 commits durante este build: o spec `add-import-provenance` foi concluído e mergeado, e trouxe o bump 4.4.0 -> 4.4.1 nos seis artefatos + session.py. Esta branch foi cortada de 1ed05c4 e ainda carrega 4.4.0. Consequências: (1) o merge vai precisar de rebase/merge de main, com colisão provável nos seis arquivos de versão, exatamente o cenário que versioning-release.md §Why not a task descreve; (2) o bump desta branch parte de 4.4.1, não de 4.4.0; (3) main ganhou `docs/standards/architecture/shared-mold-keys.md`, que vive na MESMA subject folder do standard escrito na task 6.1 — conferir a listagem do `architecture/index.md` depois do merge, porque as duas branches inseriram linhas na mesma tabela.

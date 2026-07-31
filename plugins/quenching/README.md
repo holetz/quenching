@@ -349,8 +349,7 @@ The front's align + installer, **probe-first**: `specs.py doctor` + `validate` r
 anything is read, so a conformant workspace costs two tool calls and stops. Otherwise: ONE plan →
 one OK. It **fixes**: the scaffold (copies the native `assets/specs/` payload when absent),
 installs `specs.py` into `.claude/hooks/`, applies the remedies the tools declare, normalizes
-spec and archive names, stamps missing frontmatter, regenerates the `plans/index.md` zone via
-`specs.py plans reindex`, and **folds older layouts** — the v2 `backlog/`+`ready/` split and the
+spec and archive names, stamps missing frontmatter, and **folds older layouts** — the v2 `backlog/`+`ready/` split and the
 v1 three-file plans — into `plans/` (`specs.py migrate`; basenames unchanged, `archive/**` never
 touched). It also **migrates a legacy `openspec/` workspace** one-way, losing interop with the
 external CLI by design.
@@ -380,8 +379,8 @@ docs/                    # OKF bundle root
 ```
 
 The **spec workspace** lives **outside** this bundle, at `specs/` (`plans/` +
-`archive/`, one `YYYY-MM-DD-<slug>.md` per spec; `plans/index.md` carries a derived listing
-zone) — a quenching-managed sibling created by `/specs:create` and ranked by `/specs:triage`,
+`archive/`, one `YYYY-MM-DD-<slug>.md` per spec, and no listing file — `specs.py list` derives
+what the folder holds) — a quenching-managed sibling created by `/specs:create` and ranked by `/specs:triage`,
 not scanned by the OKF validator. An
 agreed-but-unproven decision is a `standard` with `authority: background` (there is no separate
 `decisions/` home).

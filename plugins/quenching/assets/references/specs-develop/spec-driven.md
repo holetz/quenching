@@ -35,7 +35,6 @@ The front lives at the target repo root (never inside `docs/`):
 ```
 specs/
   plans/                       # a spec's whole active life: captured through executing
-    index.md                   # listing with a GENERATED zone, grouped by derived stage
     2026-07-25-session-tokens.md
     2026-07-14-rate-limiting.md
   archive/                     # done or abandoned, told apart by `outcome:` frontmatter
@@ -52,9 +51,10 @@ reproduces: *a human said go*. Everything else it implied — that the spec is c
 build — is computable from the sections themselves, and now is (§Derived stages). The human's word
 is `approved:` in frontmatter, so the fact survived and the folder did not.
 
-`plans/` is **not** part of the OKF `docs/` bundle, so `okf-validate.py` does not scan it (it is
-checked with `--listing-root`; see
-[plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)).
+`plans/` is **not** part of the OKF `docs/` bundle, and `okf-validate.py` is never pointed at it:
+a spec carries no OKF `type:`, and `specs.py validate` is its contract (see
+[specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)). The folder
+carries **no listing file** — `specs.py list` derives what it holds from disk on demand.
 
 There is **one truth**, not two: a spec does not edit a separate "main spec" store — it writes the
 durable rule directly into `docs/standards/`, honestly `authority`-graded. There is no delta,
@@ -214,8 +214,8 @@ Resolution is **last match wins**, so a spec always reports the most advanced st
 asks inline and stamps rather than refusing. `executing` sorts last because it dominates all of
 them.
 
-`specs.py list`, `specs.py next --front` and the `plans/index.md` GENERATED zone all group by these
-stages.
+`specs.py list` and `specs.py next --front` both group by these stages, deriving them from disk
+on every call.
 
 ## `## Impact` — the one parsed declaration
 
@@ -309,7 +309,6 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | `specs.py task --spec <slug> --check ID [--subject LINE] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically |
 | `specs.py discover <slug> <text>` | append one line to `## Discoveries` |
 | `specs.py parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
-| `specs.py plans reindex` | regenerate the `plans/index.md` GENERATED zone, grouped by derived stage |
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
 | `specs.py doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
 | `specs.py migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
@@ -334,8 +333,8 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 ### Resolving the tool
 
-Each `/specs:*` command resolves the script by the same fallback the listing zone uses
-([plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)): the plugin path
+Each `/specs:*` command resolves the script by the same fallback
+([specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)): the plugin path
 `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then a copy installed into the target's
 `.claude/hooks/specs.py`, and if neither resolves, the declared manual check — do the same rule by
 hand and **say in the report that the check was manual**, never silently skip it. Invoke with

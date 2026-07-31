@@ -86,12 +86,12 @@ OKF v0.11 renamed the backlog item concept: a `backlog/*.md` carrying the legacy
 `priority`/`tags` keys are NOT backfilled — an untriaged legacy item simply stays
 untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Completed
 ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
-`Idea` → `Task`, `Developed into` → `Outcome`). The DERIVED
-`<!-- BEGIN/END GENERATED -->` zone is installed/regenerated per
-[`specs-create/plans-zone.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md);
-an index that predates the markers gains them without touching the fixed prose around them. A
-legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies **before**
-the hand-off in §1e, while the files are still OKF-stamped task docs.
+`Idea` → `Task`, `Developed into` → `Outcome`). **No GENERATED zone is installed or regenerated
+in it:** §1e moves this folder into the `specs/` front, which carries no listing file at all
+(`specs.py list` derives what `plans/` holds from disk), so a zone written here would be a
+listing nobody produces and nobody reads. A legacy mold reference `backlog/idea.md` maps to
+`backlog/task.md`. This restamp applies **before** the hand-off in §1e, while the files are still
+OKF-stamped task docs.
 
 ### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → the `specs/` front
 
