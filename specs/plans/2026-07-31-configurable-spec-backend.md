@@ -363,9 +363,10 @@ trabalho em que se está.
 - [x] 3.2 Lockfile serializando processos `specs.py` concorrentes sobre a worktree de specs
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 3.2 lockfile serializando escritores sobre a worktree de specs
-- [ ] 3.3 Exercitar o ciclo completo em workspace descartável: new → status/next/section/task →
+- [x] 3.3 Exercitar o ciclo completo em workspace descartável: new → status/next/section/task →
       promote, com a árvore de trabalho permanecendo limpa
       verify: git status --porcelain vazio ao fim do ciclo
+      subject: plan/configurable-spec-backend: 3.3 ciclo completo em workspace descartavel com arvore limpa
 
 ### 4. Backend github
 
