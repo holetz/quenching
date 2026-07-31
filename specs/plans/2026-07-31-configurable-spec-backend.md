@@ -388,8 +388,9 @@ trabalho em que se está.
       por sha, preservando por que o subject foi escolhido antes
       verify: python3 assets/hooks/okf-validate.py docs
       subject: plan/configurable-spec-backend: 4.4 reescreve task-execution.md — anchor por sha, subject aditivo
-- [ ] 4.5 Reescrever docs/standards/workflows/plan-git-record.md §The task→commit link
+- [x] 4.5 Reescrever docs/standards/workflows/plan-git-record.md §The task→commit link
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/configurable-spec-backend: 4.5 reescreve plan-git-record.md — o link task-commit e o sha
 - [ ] 4.6 E2E real neste repositório: criar spec de teste, escrever três seções, criar e ticar duas
       tasks, promover, remover a issue; os JSONs devem bater com os do backend `files`
 
