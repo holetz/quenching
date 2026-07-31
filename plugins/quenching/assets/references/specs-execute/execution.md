@@ -1,6 +1,6 @@
 # The execution contract — verify, review, commit, delegate
 
-The owner of **how** `/specs:execute` builds one task. The command body owns the workflow
+The owner of **how** `/quenching:specs:execute` builds one task. The command body owns the workflow
 (select → isolate → read → loop → hand off); this file owns the mechanics of the loop, and the body
 cites it rather than restating it.
 
@@ -9,7 +9,7 @@ nothing in between and nothing after. A task that was never run, never reviewed,
 committed leaves a checkbox that claims more than the repo can show.
 
 **Where this contract stops.** It ends at the last task's commit. Reviewing the whole branch,
-writing the `docs/` the work *revealed*, merging, and archiving belong to `/specs:conclude` — a
+writing the `docs/` the work *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — a
 different scale of judgment, needing a different confirmation, and resumable on its own. This file
 never reaches past the loop.
 
@@ -38,9 +38,9 @@ never `git init` a repo on the human's behalf.
 ## Isolation is somebody else's job
 
 Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all belong to
-**`/specs:isolate`** and its reference,
+**`/quenching:specs:isolate`** and its reference,
 [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
-§Recording the isolation. `/specs:execute` delegates to that command and never reimplements it, because isolation is not a privilege of
+§Recording the isolation. `/quenching:specs:execute` delegates to that command and never reimplements it, because isolation is not a privilege of
 building: a spec can be isolated at creation or during development just as legitimately.
 
 Two things the loop below still needs from it:
@@ -54,7 +54,7 @@ Nothing in this file stamps that record, reads it as authoritative, or corrects 
 
 ## The verification policy
 
-Declared per spec in the frontmatter (`verification`), written by `/specs:develop`, read by
+Declared per spec in the frontmatter (`verification`), written by `/quenching:specs:develop`, read by
 `specs.py status --spec <slug> --json`. **Execute never decides when to test** — the spec's author
 is the only party who knows whether this repo's suite takes four seconds or forty minutes.
 
@@ -71,12 +71,12 @@ finding to report, not a silent pass** — say plainly that the task was impleme
 **A check that spawns billed agent sessions does not belong in a `verify:` line.** A `verify:` runs
 per task *and again on every retry of the loop below*, so a suite that costs money per invocation
 is multiplied by exactly the thing this loop is for. Those belong in `## Validation`, which
-`/specs:conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
+`/quenching:specs:conclude` runs **once**, as its pre-merge gate. When a task's `verify:` names one anyway,
 say so and run the narrowest scope the tool offers rather than the whole suite by reflex — and
 report the substitution, because a narrowed check is a narrowed claim.
 
 **A harness that proves the *command surface* loads belongs to neither.** It is owned by the
-command that edits the surface — `/skill:new`, or `/skill:eval` for a description — and running it
+command that edits the surface — `/quenching:skill:new`, or `/quenching:skill:eval` for a description — and running it
 from the spec cycle charges every spec for a front most of them never touch.
 
 ## The validation loop
@@ -132,7 +132,7 @@ Cheap, per task, over that task's diff only (`git diff`). Four questions, not a 
 
 Fix what it finds **before** committing, so the commit is the reviewed version. This is
 deliberately *not* a full code review: it runs per task, and a three-line change must not cost a
-full-diff read. The whole-branch review runs once, and it belongs to `/specs:conclude`.
+full-diff read. The whole-branch review runs once, and it belongs to `/quenching:specs:conclude`.
 
 ## The commit — one per task, carrying its own ticked box
 
@@ -196,7 +196,7 @@ force-push. Unlike a sha it also **survives a rebase**, so the one merge strateg
 destroy every recorded link no longer does.
 
 **Squash is the one caveat, and `conclude` owns it.** A squashed merge leaves the per-task commits
-reachable only from the branch — which is why `/specs:conclude` records `merge: {strategy, subject}`
+reachable only from the branch — which is why `/quenching:specs:conclude` records `merge: {strategy, subject}`
 and, on a squash, offers to keep the branch. Nothing in this loop needs to know; recording the
 subject honestly is the whole job here.
 
@@ -220,8 +220,8 @@ specs.py discover "<slug>" "<what was found, one line>"
 
 It is captured **indiscriminately**: whether it is worth acting on is a later judgment, and asking
 the executor to make it mid-task is how a finding gets dropped for being inconvenient. The lines
-are resolved by `/specs:develop`'s discoveries bank, and the doc an emergent finding deserves is
-written by `/specs:conclude` at distillation.
+are resolved by `/quenching:specs:develop`'s discoveries bank, and the doc an emergent finding deserves is
+written by `/quenching:specs:conclude` at distillation.
 
 Two failure modes this line exists to prevent, and they pull in opposite directions: a build that
 stops to author a standard nobody asked for, and a build that silently loses what it learned.
@@ -238,7 +238,7 @@ A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 - the task writes nothing under `docs/`.
 
 Pin it to the session model. **Never `haiku`** — it is writing production code, and the model
-policy for that is the same one that protects `/docs:import-memory`'s classifiers.
+policy for that is the same one that protects `/quenching:docs:import-memory`'s classifiers.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation offer, every
 confirmation, every `specs.py task --check` flip, every `specs.py task --block` marker, every
@@ -253,8 +253,8 @@ cannot present the mid-flow confirmations every sweep depends on — the convers
 human's OK would be out of reach.
 
 Dispatching a `Task` for a bounded, file-scoped unit of work does the opposite: **the orchestrator
-stays in the live conversation**, exactly where `/docs:glossary-backfill` and
-`/docs:import` already dispatch from. One moves the decision-maker out of reach; the
+stays in the live conversation**, exactly where `/quenching:docs:glossary-backfill` and
+`/quenching:docs:import` already dispatch from. One moves the decision-maker out of reach; the
 other sends a worker out and keeps the decision-maker in place. They are different mechanisms
 about different things, and no future sweep should "fix" one into the other.
 

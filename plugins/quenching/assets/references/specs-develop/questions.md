@@ -1,6 +1,6 @@
 # The question banks — what `develop` asks, and how
 
-The owner of **what** `/specs:develop` asks and **when it stops**. The command body owns the loop
+The owner of **what** `/quenching:specs:develop` asks and **when it stops**. The command body owns the loop
 (resolve → derive → ask → one edit → re-derive); this file owns the banks and the mechanics they
 share, and the body never restates it.
 

@@ -4,11 +4,11 @@ argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Read, Grep, Glob, Write, Edit, Task
 ---
 
-# /skill:align — force the automation surface onto the taxonomy
+# /quenching:skill:align — force the automation surface onto the taxonomy
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to sweep the whole automation surface).
 
-The sweep counterpart of `/skill:new`: where the mint keeps each **new** command
+The sweep counterpart of `/quenching:skill:new`: where the mint keeps each **new** command
 conformant, this one converges everything that **already exists** — including a surface still
 built as `skills/<name>/SKILL.md` + a mirrored wrapper, which it **collapses to one file per
 entry point** (§6 below) — and then **reads every surviving body against the writing doctrine**
@@ -37,7 +37,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
   `.claude/commands/opsx/` are legacy CLI artifacts a prior `openspec init` left behind — a
-  native `specs/` repo has none. When present they belong to `/specs:align`, which
+  native `specs/` repo has none. When present they belong to `/quenching:specs:align`, which
   removes them when migrating a legacy `openspec/` workspace
   ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
   §Shadow copies). Inventory them only to **note** them; never classify them onto the axis,
@@ -45,7 +45,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 - **A body is audited, never rewritten.** The shared MERGE rule says bodies are preserved; on this
   front that is the whole point — the migration changes only names, placement, and
   description/frontmatter conformance. §7 then **reads** each body and reports what it finds with
-  the `/skill:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
+  the `/quenching:skill:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
   needs the human whose intent the command encodes — the same anti-fabrication boundary every
   align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
   §Align conformance; report the cycle).
@@ -57,7 +57,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 - **The wider `.claude/` is inventoried, never migrated.** `.claude/agents/*.md` and the
   hooks wired in `settings.json` and in command frontmatter are **report-only** surfaces:
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
-  that owns it (`/skill:agent:new`, `/skill:hook:new`) — no rename, no move, no write, so
+  that owns it (`/quenching:skill:agent:new`, `/quenching:skill:hook:new`) — no rename, no move, no write, so
   the confirmed plan's write set stays exactly the command surface's.
 - **The registry ends the run honest.** `skills.py registry reindex` regenerates the GENERATED
   zone from the post-migration surface, and a second run reporting `changed: false` is what
@@ -134,9 +134,9 @@ to a full sweep.
 those is a pair awaiting collapse** — pair each with the wrapper whose body invokes it (the
 `quenching:<name>` or bare `<name>` reference), and record a skill with no wrapper, or a
 wrapper naming no skill, as an item needing a human decision rather than a mechanical merge.
-Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/specs:align`'s
+Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/quenching:specs:align`'s
 (Doctrine §the legacy `openspec-*` surface); list them as *out of scope, owned by
-`/specs:align`* and drop them from the working set, including from the tool's findings.
+`/quenching:specs:align`* and drop them from the working set, including from the tool's findings.
 
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §axis — several unrelated folders
@@ -192,13 +192,13 @@ Run it from the **plugin path**: an installed copy would answer from the same st
 is being asked about, and refuses (exit 2) instead. Act on this front's row (`skills.py`):
 `behind` → overwrite; `absent` → the copy above; `ahead` → left alone and **reported**, because it
 means the target is ahead of this plugin, which is a fact to state, not a regression to force. The
-same one call is what `/specs:align` reads for `specs.py` and `/docs:align` for `okf-validate.py`,
+same one call is what `/quenching:specs:align` reads for `specs.py` and `/quenching:docs:align` for `okf-validate.py`,
 so a run of any one of them can report the other two fronts' drift without a second probe.
 
 Then install the operator manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/claude/QUENCHING.md` to `.claude/QUENCHING.md` under the
 four-branch manual-install rule in
-[/docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never restated).
+[/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never restated).
 **Done when:** every confirmed row is applied, and `.claude/hooks/skills.py` is present at a
 version at least the plugin's (or its being newer is reported).
 
@@ -254,9 +254,9 @@ numbered steps end) and nothing else. Every verdict above stays with the orchest
 collector reports text, never a doctrine finding, because "this body has no positive prescription"
 is a claim about behaviour and the same read that makes it must also weigh the fix.
 
-Report each finding as `command · violated rule · one-line evidence · the /skill:new invocation
+Report each finding as `command · violated rule · one-line evidence · the /quenching:skill:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
-that surface is `/specs:align`'s here as everywhere. Never rewrite a body to close a finding.
+that surface is `/quenching:specs:align`'s here as everywhere. Never rewrite a body to close a finding.
 **Done when:** every surviving body carries a verdict — a finding with its fix invocation, or
 clean — and nothing was written.
 
@@ -284,7 +284,7 @@ In an OKF repo, confirm the registry is indexed, per
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every `sk-*` finding that survived the run, by code; and §7's doctrine findings, listed
-apart, each with its `/skill:new`. Say plainly when the front converged in one pass — that is the
+apart, each with its `/quenching:skill:new`. Say plainly when the front converged in one pass — that is the
 expected outcome here, not a shortfall. **Done when:** `doctor` and `lint` exit 0 or each surviving
 finding is named with its code, the second `registry reindex` reports `changed: false`, and the
 counts and the doctrine findings are reported.
@@ -295,7 +295,7 @@ counts and the doctrine findings are reported.
   cycle-authorized run replaces only the batch gate with narration — never a code-coupled
   item's own OK.
 - Never rename, reclassify, or remove a legacy `openspec-*` skill or an `opsx/` wrapper — that
-  surface is `/specs:align`'s; note it and move on.
+  surface is `/quenching:specs:align`'s; note it and move on.
 - Never alter a body's prose — only its title line, its input contract, its citation paths,
   its placement, and its frontmatter conformance. A collapse MOVES a body; it never edits it, and
   §7 only reads it.

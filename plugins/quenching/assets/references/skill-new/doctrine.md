@@ -1,7 +1,7 @@
 # The command-writing doctrine
 
-How a command file earns its place in a target repo's context. `/skill:new` applies this
-doctrine to every command it mints or edits; `/skill:align` cites it when judging
+How a command file earns its place in a target repo's context. `/quenching:skill:new` applies this
+doctrine to every command it mints or edits; `/quenching:skill:align` cites it when judging
 conformance gaps. Adapted from mattpocock/skills' `writing-great-skills`, folded into this
 plugin's own constraints (the description caps, the bundled-reference pattern, the plan → OK
 gate).
@@ -29,6 +29,7 @@ restates the number, so the rule and its checker cannot drift apart.
 | Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value` |
 | `context: fork` never beside a mid-flow gate | `lint` | `sk-fork-gate` (error) |
 | `effort`/`context` values Claude Code can parse | `lint` | `sk-profile-value` |
+| A plugin's commands are cited in a form that resolves | `lint` | `sk-bare-citation` |
 | **The no-op test, sediment, sprawl, positive prescription** | **a reader** | — |
 | **Every non-default lever carries a stated buy** | **a reader** | — |
 

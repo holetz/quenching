@@ -1,11 +1,11 @@
 # Homes — routing table + the index procedure
 
-How `/docs:add` decides **where** a new concept goes, **which** `type` it carries, **which**
+How `/quenching:docs:add` decides **where** a new concept goes, **which** `type` it carries, **which**
 mold fills it, and **how** to keep the `index.md` honest. **This file is the single owner of
 the insert procedure** — stamp (§The frontmatter stamp) → index (§Updating `index.md`) →
 glossary (§Enriching the glossary) → self-check (§Self-check) — and every skill that inserts
-a doc (`/docs:add`, `/docs:learn`, `/docs:harness`,
-`/docs:import-memory`) cites these sections instead of restating them; only each skill's own
+a doc (`/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:harness`,
+`/quenching:docs:import-memory`) cites these sections instead of restating them; only each skill's own
 safety deltas stay inline in its SKILL.md. The full home boundaries and tree live in
 `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`; the checks in
 `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`.
@@ -55,7 +55,7 @@ Ask **"what IS this, relative to us?"**:
   the change is active, and its durable outcome lands as a `standard` at archive time.
 - **spec vs vision:** a **parked unit of work** is a **spec** and does **not** belong in this
   bundle at all — it lives at `specs/plans/`, outside it, so route the capture to
-  `/specs:create`. A **settled direction** with no deadline is a `vision` and stays here. The
+  `/quenching:specs:create`. A **settled direction** with no deadline is a `vision` and stays here. The
   full `specs/` ↔ `docs/` boundary — which tree answers which question, and why they never
   duplicate content — is owned once by
   [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -89,7 +89,7 @@ source: <origin/author>
 maintainer: <owner>
 ```
 
-**Not in the mold, deliberately:** `source_uri:` — written by `/docs:import` alone, never invented
+**Not in the mold, deliberately:** `source_uri:` — written by `/quenching:docs:import` alone, never invented
 by the commands citing this block, and simply absent on a doc with no external origin. Its
 contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)
 §Attribution.
@@ -102,7 +102,7 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sou
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
 - **Never** add frontmatter to an `index.md` (the root's `okf_version` is the only exception,
-  and `/docs:align` owns it).
+  and `/quenching:docs:align` owns it).
 - **`standards/index.md`** has a DERIVED zone: rebuild only what is between
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` by scanning `standards/**/*.md`
   (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit
@@ -134,10 +134,10 @@ term that belongs in the glossary** and, if so, enrich it:
   the concept doc; the glossary points to it. Do not touch `knowledge/index.md` for this —
   the glossary is already listed there.
 
-This is the same tail step `/docs:learn`, `/docs:add`, and
-`/docs:import-memory` each run; the on-demand single-term counterpart is the
-`/docs:define` skill, and the whole-bundle bulk counterpart — sweeping every doc
-already in `docs/` for terms the glossary never caught — is `/docs:glossary-backfill`.
+This is the same tail step `/quenching:docs:learn`, `/quenching:docs:add`, and
+`/quenching:docs:import-memory` each run; the on-demand single-term counterpart is the
+`/quenching:docs:define` skill, and the whole-bundle bulk counterpart — sweeping every doc
+already in `docs/` for terms the glossary never caught — is `/quenching:docs:glossary-backfill`.
 
 ## Self-check before finishing
 

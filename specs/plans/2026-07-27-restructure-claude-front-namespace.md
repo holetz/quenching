@@ -704,3 +704,7 @@ linha e só ela, então uma task que continua na linha seguinte chega pela metad
 - [ ] 5.4 Rodar as assertivas 1 a 4 de `## Validation` e conferir contra o baseline de 1.1: 26 comandos, nenhuma finding must-fix nova, `git grep` vazio, cinco versões iguais, três selftests limpos
 - [ ] 5.5 Rodar `functional-checks.sh` e depois `--only 3`, uma única vez, com a superfície já final — é a assertiva cobrada, e um `exit 2` não é um pass
       verify: plugins/quenching/assets/checks/functional-checks.sh --only 3
+
+## Discoveries
+
+- O item de ## Out of Scope 'Prefixar citações voltadas a humanos com quenching:' foi fechado citando commands/docs/align.md:237, que declarava a forma bare como 'what a human types'. Essa alegação era falsa com o plugin instalado como plugin e foi corrigida por correct-command-citation-form (2026-07-31): três formas, e a bare resolve apenas onde o comando mora no .claude/commands/ do repo-alvo. commands/** e assets/references/** já foram varridos e o finding sk-bare-citation (WARN) guarda a regra. O item precisa ser reavaliado sobre a evidência nova, não sobre a frase antiga.

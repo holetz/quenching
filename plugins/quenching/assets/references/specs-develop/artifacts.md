@@ -8,7 +8,7 @@ cited, never restated here — this file is only the *writing* guidance: what be
 heading, how to write an honest explicit none, and how to shape `## Tasks`.
 
 There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
-while it is built (`/specs:execute`), and `## Impact` is where it *declares* that scope. Two things
+while it is built (`/quenching:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
 in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed sub-heading of
 `## Impact` — and everything else is prose for a human reviewer.
 
@@ -87,7 +87,7 @@ first in the file: only the authoring order within a pass is last, never its pos
 - **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
   contracts the design must not contradict (the relevant `docs/standards/`, the existing code
   shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
-  material `/specs:conclude` later distils.
+  material `/quenching:specs:conclude` later distils.
 - **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
   the reason it lost. Per-decision alternatives stay inside `## Design`; this section is for the
   ones that would have changed the spec's shape. **The rejected ones and why they lost are the
@@ -147,7 +147,7 @@ The implementation checklist `specs.py` parses: checkboxes `- [ ] <id> <text>` g
 `### N. <Section>` headings. `specs.py task --spec <slug> --check <id>` flips a box mechanically —
 never hand-edit the checkbox character.
 
-Shape it so `/specs:execute` can walk it top to bottom:
+Shape it so `/quenching:specs:execute` can walk it top to bottom:
 
 - **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → docs).
   Each item is one reviewable unit of work — small enough to check off honestly, large enough not
@@ -163,8 +163,8 @@ Shape it so `/specs:execute` can walk it top to bottom:
   is written and self-checks clean" is a task, not an implicit hope.
 
 Do not put `docs/knowledge/` captures or glossary terms in `## Tasks` as durable content — those
-route through `/docs:learn` / `/docs:define`; a task may *name* the capture
-(`- [ ] 5.2 Capture the retry-budget gotcha via /docs:learn`) but the knowledge itself lives in its
+route through `/quenching:docs:learn` / `/quenching:docs:define`; a task may *name* the capture
+(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching:docs:learn`) but the knowledge itself lives in its
 OKF home, never in the checklist.
 
 ## Execution metadata — optional, indented, additive
@@ -210,14 +210,14 @@ disjunction, parallel execution trades wall-clock for merge conflicts and loses 
 
 `per-task` / `per-section` (default) / `end-of-plan`, recorded in frontmatter. It answers *when* the
 checks run; `verify:` answers *what* runs. Declaring it during definition is what keeps
-`/specs:execute` from having to guess, or from stopping mid-build to ask.
+`/quenching:specs:execute` from having to guess, or from stopping mid-build to ask.
 
 ## `## Discoveries` and `## Outcome`
 
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
 `specs.py discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
-inconvenient. Each line is resolved **in place** by `/specs:develop`'s discoveries bank, so
+inconvenient. Each line is resolved **in place** by `/quenching:specs:develop`'s discoveries bank, so
 provenance is never lost:
 
 ```markdown

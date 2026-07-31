@@ -4,7 +4,7 @@ argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 ---
 
-# /specs:conclude — review, archive, distil, merge
+# /quenching:specs:conclude — review, archive, distil, merge
 
 **Input**: `$ARGUMENTS` — the spec slug, and optionally its outcome.
 
@@ -19,7 +19,7 @@ make this impossible was the `merge:` record itself: a merge sha exists only *af
 the stamp and the distillation were stranded on the base branch behind it. Recording the merge
 **subject** instead — known before the merge — leaves nothing that must be written afterwards.
 
-**Why this is not part of `/specs:execute`.** Every step here is a different scale of judgment from
+**Why this is not part of `/quenching:specs:execute`.** Every step here is a different scale of judgment from
 building a task: the branch review reads the whole diff rather than one task's, the merge is
 irreversible and needs its own confirmation, and the distillation is the single bridge into
 `docs/`. Bolting them onto the end of the build meant a run that died after task nine had to redo
@@ -45,7 +45,7 @@ Resolve `specs.py` by the fallback in
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
-**Why `Bash` is unrestricted here.** Like `/specs:execute`, this command drives the target repo's
+**Why `Bash` is unrestricted here.** Like `/quenching:specs:execute`, this command drives the target repo's
 `git` — the branch diff, the merge, the branch cleanup — and re-runs the repo's own checks to
 gate the merge. Its read-only siblings are scoped to `python3`/`py`.
 
@@ -350,7 +350,7 @@ for an abandonment — that nothing was adopted and what became of the branch.
 quoted. It left a directory on disk, and this report is the only place the human learns it is gone
 — an unreported removal is indistinguishable from one that never ran.
 
-Name any `## Discoveries` line still unresolved: those are `/specs:develop`'s discoveries bank to
+Name any `## Discoveries` line still unresolved: those are `/quenching:specs:develop`'s discoveries bank to
 close, and they are easiest to lose at exactly this moment.
 **Done when:** path, outcome, records, the worktree's fate, and both `docs/` passes are all
 reported.
