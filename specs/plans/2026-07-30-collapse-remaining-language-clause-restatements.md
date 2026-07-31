@@ -323,7 +323,7 @@ depois da task 3, ou a cópia instalada é sincronizada duas vezes. A task 1 nom
 `docs/standards/**` na própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha
 e não com a continuação `files:`.
 
-- [ ] 1 Emendar `docs/standards/architecture/plugin-layout.md` §A mold cites nothing it does not
+- [x] 1 Emendar `docs/standards/architecture/plugin-layout.md` §A mold cites nothing it does not
   also install com o teste que separa lembrete de fronteira de reenunciação — o critério de
   propriedade e o guarda-corpo verificável, ambos redigidos em `## Risks`. Uma árvore só; o doc não
   existe no skeleton.
