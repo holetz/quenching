@@ -217,11 +217,25 @@ standard via `/docs:add`, or the spec via `/specs:develop`); attempts stop conve
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
-### 6. Refresh `## Handoff` as events, not as judgment
-After each committed task, rewrite `## Handoff` to the state of play a fresh executor would need
-and cannot derive. It is sent with every task, so keep it small; staleness is its failure mode, and
-binding the refresh to the commit is what stops it going stale.
-**Done when:** `## Handoff` describes the tree as it stands after the last commit.
+### 6. Refresh `## Handoff` on four events, never on judgment
+Rewrite `## Handoff` to the state of play a fresh executor would need **and cannot derive** — on
+exactly four events:
+
+- the run **pauses**;
+- a task is written **blocked**;
+- a **discovery** is recorded;
+- the run's **last commit** lands.
+
+Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
+already in `git log` and in the `subjects` `status` returns, so the Handoff is not the resumption
+trail and must not be rewritten as one. It is sent with every task, so keep it small.
+
+**Not after every committed task.** Measured on a 13-task run, that cadence produced rewrites that
+were ~90% identical to one another. And do not substitute a judgment — "rewrite it when the
+underivable state changed" is the rule that already failed, because an unattended run never judges
+that something went stale. Each trigger above is a moment this body *just finished doing
+something*, never one where it appraises something.
+**Done when:** `## Handoff` describes the tree as it stands after the run's last commit.
 
 ### 7. Report, and hand off
 Show the spec, the isolation and its `branch` record, tasks completed this session, overall
