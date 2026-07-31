@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Always-on context budget
-description: What a command surface costs before anything fires — the two description caps, what the description may carry, the per-surface ceiling, and the disable-model-invocation exit that lets a typed-only command cost nothing at all
+description: What a command surface costs before anything fires — the two description caps, what the description may carry, the per-surface ceiling, and the disable-model-invocation exit that lets a typed-only command cost nothing at all; and the other half — what a body costs once it fires, where every turn re-sends the whole conversation so a block costs tokens × turns remaining
 resource: plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-07-29
+timestamp: 2026-07-31
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31)
 maintainer: quenching
 ---
 
@@ -225,3 +225,38 @@ That is a decision for measured hit rates, not for the next person who happens t
 `budget` reports `approxTokens` as characters ÷ 4. It is a rule of thumb for the report, not a
 tokenizer count, and no decision should turn on the last digit. The useful signal is the direction
 and the order of magnitude.
+
+## The other half: what a body costs once it does fire
+
+The budget above is what loads *before* anything fires. Once a command runs, a second cost applies
+that the description caps say nothing about, and it is not linear: **every turn re-sends the whole
+conversation**, so a block of context is paid once for each turn that follows it. Its true cost is
+`tokens × turns remaining`, not `tokens`.
+
+Measured on one `/quenching:specs:execute` run of 344 turns — 17.4M token-turns of integral:
+
+| What | Tokens | Turns it was re-sent | Integral | Share |
+| --- | --- | --- | --- | --- |
+| one `Read` of the spec file, at turn 13 | 7,735 | 331 | 2.56M | **15%** |
+| all 6 `Read` calls | ~22k | — | 6.09M | **35%** |
+| all 67 `Bash` results | ~13k | — | 2.63M | 15% |
+
+The ordering is the finding: **six reads outweighed sixty-seven shell calls by more than two to
+one**, because they were larger and arrived earlier. A cheap-looking call made early is more
+expensive than a costly one made late.
+
+Two consequences follow, and the second is the larger:
+
+- **Read the section, not the file.** In the same run both patterns were used. Three references
+  read whole cost 2.86M token-turns; three read by section — via `grep`/`python` slicing, and via
+  `specs.py section`, which already exists — landed inside the shell-call total at roughly a
+  thousandth of that each, and served the identical edits. For a spec file specifically,
+  `specs.py section` returns the six sections an executor needs for 37% fewer tokens than the file,
+  which carries ~37 lines of template comment identical in every spec.
+- **Shorten the window before shortening the reads.** Since the integral grows with the square of
+  the turn count, two sessions of 172 turns cost about half of one session of 344 for the same
+  work. Where a resumption record already exists — `## Handoff` plus `git log`, per
+  [../workflows/task-execution.md](../workflows/task-execution.md) — stopping at a section boundary
+  and resuming fresh is the largest single reduction available, and it needs no tooling.
+
+This is one run's measurement, like the ceiling above, and inherits the same `background` grading.
