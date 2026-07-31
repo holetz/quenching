@@ -371,6 +371,13 @@ Estado que nada deriva:
   `sp-task-meta-dispatch` para segurar essa linha. A mutation pass de `selftest-mutation.md` rodou
   **quatro** mutações contra as asserções novas, cada uma falhando exatamente a que ataca — o
   registro que aquele standard pede que viva no commit está no corpo do commit de 5.1.
+- **A 6.2 está `[!]`: o transcript do baseline sumiu.** `985b372b-348c-4911-a5dd-146ca0b4ab7b` não
+  está em `~/.claude/projects` (1200 varridos). Os números do `## Problem` — 93 tool calls, 16
+  exatos mais 77 de limite superior, `closed: false` — continuam citáveis como o que foi medido em
+  2026-07-30, mas **não são remensuráveis**, e nada nesta run os reconfirmou. Quem for fazer a run
+  "depois" da `## Validation` herda um baseline que não pode mais ser re-lido: ou o trata como
+  figura de arquivo, ou mede um baseline novo. A `## Validation` já não subtrai, então isso não
+  invalida o desenho da prova — encolhe o que resta do lado "antes".
 
 Convenções em vigor:
 
@@ -459,7 +466,7 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 - [x] 6.1 Rodar a bateria do CLAUDE.md — os três `selftest`, `okf-validate.py` sobre `assets/docs` e o `docs/` do repo, `skills.py doctor` e `lint`
       verify: cd plugins/quenching && python3 assets/bin/specs.py selftest && python3 assets/bin/skills.py selftest && python3 assets/hooks/okf-validate.py selftest && python3 assets/hooks/okf-validate.py assets/docs && python3 assets/bin/skills.py --root . doctor --json
       subject: plan/cut-specs-execute-turns: 6.1 a bateria do CLAUDE.md verde
-- [ ] 6.2 Medir com `session.py` o par cru do baseline da run `985b372b` e registrá-lo em `## Validation`
+- [!] 6.2 Medir com `session.py` o par cru do baseline da run `985b372b` e registrá-lo em `## Validation` — blocked: o transcript 985b372b-348c-4911-a5dd-146ca0b4ab7b nao existe mais em ~/.claude/projects (1200 transcripts varridos, nenhum casa); session.py nao tem o que ler e o par cru do baseline nao e' remensuravel
       files: specs/plans/2026-07-30-cut-specs-execute-turns.md
 
 ## Discoveries
