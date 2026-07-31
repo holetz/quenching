@@ -326,8 +326,9 @@ trabalho em que se está.
       promote/validate — com o backend `files` como implementação de referência
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 2.1 define a interface de backend com files como referencia
-- [ ] 2.2 Backend fake in-memory, exercitável sem rede e sem disco
+- [x] 2.2 Backend fake in-memory, exercitável sem rede e sem disco
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 2.2 backend fake in-memory sobre a derivacao compartilhada
 - [ ] 2.3 Rodar a lista canônica de casos do selftest contra `files` E contra o fake, exigindo
       resultado idêntico
       verify: python3 assets/bin/specs.py selftest
