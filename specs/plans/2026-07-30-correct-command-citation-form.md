@@ -322,8 +322,9 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 - [x] 3.2 Corrigir as 183 citações bare em `assets/references/**`
       files: plugins/quenching/assets/references
       subject: plan/correct-command-citation-form: 3.2 sweep de assets/references/**
-- [ ] 3.3 Devolver a evidência a `restructure-claude-front-namespace` por `specs.py discover`, reabrindo o item de `## Out of Scope`
+- [x] 3.3 Devolver a evidência a `restructure-claude-front-namespace` por `specs.py discover`, reabrindo o item de `## Out of Scope`
       files: specs/plans/2026-07-27-restructure-claude-front-namespace.md
+      subject: plan/correct-command-citation-form: 3.3 discovery em restructure-claude-front-namespace
 
 ### 4. A prova
 
