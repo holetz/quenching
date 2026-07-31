@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-07-31
@@ -25,6 +25,21 @@ and a commit cannot separate the task's diff from an unrelated edit already sitt
 The human may override, in which case the first commit carries the pre-existing changes **and the
 report says so**. Not a git repo → no isolation and no commits, stated once; never `git init` on
 the human's behalf.
+
+### Dispatching a stage mid-flow costs the run its attribution
+
+A command that hands a step to another command pays a price beyond the turns: the transcript's
+`attributionSkill` pointer moves to the stage and, measured, almost never comes back — so the
+conducting run's own remaining work is filed under the stage it dispatched. What that does to any
+later count is owned by
+[../automation/session-evidence.md](../automation/session-evidence.md) §What a command's run cost —
+the stage is `closed: false`, its counts become an upper bound, and `mayIncludeTurnsFrom` names the
+misread. **Cite that rule; never restate it here.**
+
+The consequence for this contract is narrow and practical: **check before dispatching**. A step
+whose delegate would report "nothing to do" is pure cost twice over — the turns, and the run's
+attribution. Where there genuinely is something to delegate, dispatch anyway and accept the upper
+bound; the delegate owns the work, and a measurement that says so is better than one that guesses.
 
 ## Verification is declared per spec, never decided mid-implementation
 
@@ -63,6 +78,23 @@ Here nothing is misread — the matcher simply cannot express the thing being pr
 cannot express its claim reports success indistinguishable from the real one. **Falsify the check
 before trusting it**, and treat "it passed" as evidence only once "it failed on purpose" is on the
 record.
+
+### A task's `verify:` is scoped at authoring time, never filtered at the gate
+
+What runs at a gate is decided by each task's `verify:`; the `verification` policy decides only
+*when* the gate fires. So a gate that re-runs a check whose inputs the section could not have
+touched is not a defect in the policy — it is a `verify:` that was written wider than its task.
+
+Measured: on a 13-task run the same three selftests ran at the close of section 1 and again at
+task 5.1, because tasks in two sections each declared all three, while the spec itself stated that
+no script changed in between. The body obeyed exactly what the spec asked for.
+
+The fix belongs at the origin. **Write each `verify:` scoped to what that task could break** — not
+to what the repo can check. The alternative, a gate that skips a declared `verify:` because it
+judges the inputs unchanged, is a judgment about correctness made at build time, and this contract
+already refuses judgment as a trigger (§A cadence trigger can never be a judgment). Scoping at
+authoring needs no judgment while building and holds for every future spec, not only the measured
+one.
 
 ## A blocked task is a visible marker, not a hidden counter
 
