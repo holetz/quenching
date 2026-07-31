@@ -4,10 +4,10 @@ title: Task execution contract
 description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation]
-timestamp: 2026-07-28
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit-with-subject ordering by the move-conclude-merge-last plan (task 5.3), reverted to the sha anchor by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28)
 maintainer: quenching
 ---
 
@@ -128,23 +128,51 @@ plan/<slug>: <task-id> <task title>
 walk it step by step. N tasks piled into one uncommitted blob gives none of that, and makes the
 isolation taken at the start buy nothing.
 
-The heading is now literally true. The anchor written back onto the task line is the commit's
-**subject**, not its sha — [plan-git-record.md](plan-git-record.md) §The task→commit link is the
-commit's own subject — and a subject is known *before* the commit exists. So the box is ticked
-first and the commit carries it:
+### The anchor is the sha, where no backend co-branches with the code
+
+The anchor written back onto the task line is the commit's **sha** —
+[plan-git-record.md](plan-git-record.md) §The task→commit link — recorded by
+`specs.py task --check <id> --commit <sha>` **after** the commit exists:
+
+```bash
+git add <the task's files> <the spec file> && git commit -m "<subject>"
+specs.py task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
+```
+
+This is possible today because [the configurable spec backend](../architecture/spec-backend.md) guarantees no
+backend lets a spec share a branch with the code being committed: the `files` backend writes to its
+own dedicated specs branch (§Backend files below), and an external backend writes outside git
+entirely. Neither needs the anchor to land in a file versioned on the code branch, which is the one
+constraint that made a sha impossible before.
+
+### What this reverses, and what it does not yet cover
+
+**Subject-before-commit was the prior standard, for a reason that was real and is recorded here
+rather than erased.** Under a sha anchor, the tick had to follow the commit it recorded, so every
+task cost a second, bookkeeping commit, and "one commit per task" was an aspiration the mechanism
+contradicted. Adopting the commit's **subject** instead — known before the commit exists — let the
+tick land inside the same commit it describes:
 
 ```bash
 specs.py task --spec <slug> --check <id> --subject "<subject>"
 git add <the task's files> <the spec file> && git commit -m "<subject>"
 ```
 
-Under the sha anchor this was impossible: the tick had to follow the commit it recorded, so every
-task cost a second, bookkeeping commit and "one commit per task" was an aspiration the mechanism
-contradicted. Those commits no longer exist.
+**That mechanism did not go away, and is not deprecated.** `task --commit` is additive to
+`task --subject`, never a replacement — both are accepted, together or alone, by the same command.
+A repository whose specs still live on the code branch has not stopped needing the reason subject
+was chosen for: this repository's own `plans/`/`archive/` remain on the code branch at the time of
+writing — the migration of an already-populated `specs/` to the dedicated branch is explicitly
+deferred, never automatic ([spec-backend.md](../architecture/spec-backend.md) §The selected backend is the source
+of truth) — and every spec here still ticks
+with `--subject`, before the commit, for exactly the reason this section used to give as the whole
+rule. The sha anchor is the target for a backend that does not co-branch; it is not yet a fact
+about every repository running this tool.
 
-If the commit fails, **undo the tick** so no box claims a commit that does not exist. If a
-`commit-msg` hook *replaced* the subject, report the drift as a finding and write nothing —
-repairing the record after the commit is the ordering this contract exists to prevent.
+Whichever anchor a given commit is carrying, the discipline is the same: if the commit fails,
+**undo the tick** so no box claims a commit that does not exist. If a `commit-msg` hook *replaced*
+the subject, report the drift as a finding and write nothing — repairing the record after the
+commit is the ordering this contract exists to prevent, under either anchor.
 
 ### Hard rules
 
