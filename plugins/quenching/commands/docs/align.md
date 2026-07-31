@@ -251,11 +251,9 @@ was skipped.
 
 ### 6. Run the content stages that have work, in order
 Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,
-`quenching:docs:harness`. Three citation forms exist, and which one is correct depends on **where
-the command comes from**, never on who reads it: `quenching:docs:harness` is what the `Skill` tool
-resolves; `/quenching:docs:harness` is what a human types wherever this is installed as a plugin;
-the bare form `/<front>:<verb>`, carrying no plugin prefix, resolves **only** where that command
-file lives in the target repo's own `.claude/commands/`. Declare the cycle-authorization mode to each
+`quenching:docs:harness`. Which of the three citation forms is correct, and the condition on each,
+is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §Citing a
+command's. Declare the cycle-authorization mode to each
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization), and **skip any stage the probe found empty**:
 
