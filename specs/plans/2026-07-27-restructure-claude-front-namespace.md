@@ -753,13 +753,17 @@ está em `claude/restructure-claude-front-namespace-5f2333`, worktree
 `.claude/worktrees/correct-command-citation-form-044087/`, cortado de `main` (`813bf33`). O nome não
 segue `plan/<slug>`, então `specs.py next --front` **não** vê este spec como em voo.
 
-**Nada de código foi tocado ainda.** As duas tasks feitas escreveram só no arquivo do spec.
+**Grupo 1 fechado. Nenhum `git mv` ainda — nenhum caminho mudou.** A única mudança de produto até
+aqui é a 1.3: `assets/references/align/sweep-doctrine.md` ganhou **§7 Citing a command** (e o antigo
+§7 *End honest* virou §8), e os dois inlines em `commands/docs/align.md` §6 e `commands/align.md` §3
+foram trocados por citação `${CLAUDE_PLUGIN_ROOT}` dele. Âncoras nesse arquivo são citadas **por
+nome**, nunca por número, e foi isso que tornou a renumeração segura.
 
 **A decisão de 1.2 abriu um buraco em `## Tasks`, e ele bloqueia o grupo 5.** Renomear
 `skills.py` → `automation.py` e `sk-` → `au-` são +355 strings que nenhuma das 26 tasks enuncia, e a
 5.3 declara nomear o verificador "conforme a decisão de 1.2" sem que exista task que o renomeie.
-Escrever esse grupo é `/quenching:specs:develop`. Fazê-lo **antes** do grupo 2 é o que mantém a regra "mover e
-recitar é UMA task, nunca duas": as tasks 2.1, 2.5 e 2.6 já editam o conteúdo de `assets/bin/skills.py`,
+Escrever esse grupo é `/quenching:specs:develop`, e fazê-lo **antes** do grupo 2 é o que mantém a regra
+"mover e recitar é UMA task": as tasks 2.1, 2.5 e 2.6 já editam o conteúdo de `assets/bin/skills.py`,
 e renomear o arquivo num grupo posterior parte esse par.
 
 **Baseline das seis assertivas, medido na árvore intacta em 2026-07-31** (task 1.1). É contra estes
@@ -777,6 +781,9 @@ números que "não piorou" é conferido em 5.4:
 | 5 · `assets/specs/plans --listing-root` | 0 error(s), **1 warning(s)** (`bundle-no-index`) |
 | 5 · selftests | `skills` PASS · `specs` PASS (12 casos) · `okf-validate` PASS |
 | — · `skills.py budget` | `total: 12875` — o invariante que prova que o sweep não vazou para `description:` |
+
+Reconferido na fronteira do grupo 1 (após 1.3): `doctor` 26 / sem findings, `lint` exit 0 com os
+**mesmos** 35 findings do baseline — nenhum `sk-*` novo.
 
 **O pathspec de `## Validation` está quebrado e a assertiva 3 nunca passa como está.**
 `':!plugins/quenching/assets/evals/*/*/*/runs/'` não exclui nada — `git grep` casa o padrão contra o
@@ -811,10 +818,11 @@ linha e só ela, então uma task que continua na linha seguinte chega pela metad
 - [x] 1.2 Resolver a primeira pergunta de `## Open Decisions` (renomear `skills.py` e os códigos `sk-*`?) e gravar a resposta com a razão na seção, incluindo a inconsistência aceita se a resposta for não
       files: specs/plans/2026-07-27-restructure-claude-front-namespace.md
       subject: plan/restructure-claude-front-namespace: 1.2 Resolver a primeira pergunta de ## Open Decisions e gravar a resposta com a razão
-- [ ] 1.3 Extrair para `assets/references/align/sweep-doctrine.md` a versão condensada das três formas de citação que hoje está inline nos dois aligns, e trocar os dois inlines por uma citação `${CLAUDE_PLUGIN_ROOT}` desse dono
+- [x] 1.3 Extrair para `assets/references/align/sweep-doctrine.md` a versão condensada das três formas de citação que hoje está inline nos dois aligns, e trocar os dois inlines por uma citação `${CLAUDE_PLUGIN_ROOT}` desse dono
       files: plugins/quenching/assets/references/align/sweep-doctrine.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/align.md
       pattern: plugins/quenching/assets/references/align/convergence.md
       verify: grep -c 'sweep-doctrine.md' plugins/quenching/commands/docs/align.md plugins/quenching/commands/align.md
+      subject: plan/restructure-claude-front-namespace: 1.3 Extrair para sweep-doctrine.md a versão condensada das três formas de citação
 
 ### 2. A árvore de comandos — sete movimentos, cada um com as suas citações
 
