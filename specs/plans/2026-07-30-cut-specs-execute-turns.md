@@ -366,6 +366,11 @@ Estado que nada deriva:
 - **A run está usando a cadência nova de `## Handoff`** (os quatro eventos), escrita na task 1.1 —
   o corpo que a sessão carrega em memória é o antigo, porque o registro da superfície é montado no
   início da sessão.
+- **A task 5.1 corrigiu um bug que a spec não previu**: o despacho de metadata de task terminava em
+  `else: verify = val`, então `constraint:` sequestrava o `verify:`. O `selftest` ganhou
+  `sp-task-meta-dispatch` para segurar essa linha. A mutation pass de `selftest-mutation.md` rodou
+  **quatro** mutações contra as asserções novas, cada uma falhando exatamente a que ataca — o
+  registro que aquele standard pede que viva no commit está no corpo do commit de 5.1.
 
 Convenções em vigor:
 
@@ -440,9 +445,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 
 ### 5. `constraint:` e o escopo de `verify:` nas referências
 
-- [ ] 5.1 Admitir `constraint:` em `TASK_META_RE` (`specs.py:127`) e cobrir o campo no `selftest`
+- [x] 5.1 Admitir `constraint:` em `TASK_META_RE` (`specs.py:127`) e cobrir o campo no `selftest`
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/cut-specs-execute-turns: 5.1 constraint: na gramática de metadata, e o despacho exaustivo
 - [ ] 5.2 Documentar `constraint:` (inerte, com o motivo) e a regra de escopo de `verify:` em `artifacts.md` §Execution metadata
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'`constraint:`',pathlib.Path('plugins/quenching/assets/references/specs-develop/artifacts.md').read_text(),re.S) else 1)"
@@ -457,3 +463,4 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 ## Discoveries
 
 - O verify: da task 4.5 tem falso negativo: em artifacts.md a frase era 'after **each committed\ntask**' e o regex 'after\s+each\s+committed\s+task' nao casa por causa do ** inline. Provado contra HEAD~3: frase presente, regex nao encontra. O check passaria com 1 dos 4 alvos intocado — o mesmo defeito que task-execution.md §A verify: that cannot fail proves nothing ja registra, agora com marcacao inline em vez de quebra de linha. Um check sobre prosa precisa normalizar marcacao, nao so whitespace.
+- Admitir constraint: em TASK_META_RE expos um fallthrough latente no parser de tasks (specs.py:1168): o despacho terminava em 'else: verify = val', entao QUALQUER chave nova na gramatica vira o verify da task. Provado: uma task com 'constraint:' depois de 'verify:' devolvia verify='nao toque em src/b.ts' — o loop rodaria prosa como comando de shell. Corrigido para despacho exaustivo (elif key == 'verify'), com constraint deliberadamente sem arm. A licao generaliza: admitir uma chave na gramatica e' metade do trabalho; a outra metade e' o despacho, e um 'else' final e' um sequestro esperando a proxima chave.
