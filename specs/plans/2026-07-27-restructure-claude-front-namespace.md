@@ -558,16 +558,45 @@ não o bundle OKF. Manter o comando sob `/docs:` é violação permanente de um 
 
 ## Open Decisions
 
-- **`skills.py` é renomeado, e os seus códigos de finding `sk-*` mudam?** É a ferramenta que verifica
-  o front `automation` e carrega o substantivo retirado no nome do arquivo, nas findings e em todo
-  consumidor de `--json`. A pergunta importa mais do que parecia: o próprio `## Design` §*O front é
-  nomeado pelo trabalho, não pela árvore* rejeitou `claude` como nome do front porque seria "um
-  segundo nome para uma coisa que já tem um" — e manter `skills.py`/`sk-*` sob um front chamado
-  `automation` **é** esse mesmo segundo nome, permanente, no único lugar que repositórios-alvo leem
-  por `--json`. Decidido por: precificar a renomeação contra o fato de que `specs.py` e
-  `okf-validate.py` são nomeados pelos seus fronts, e de que os códigos aparecem em alvos instalados
-  que este plugin não consegue reescrever. Qualquer resposta é aceitável; o que não é aceitável é
-  registrá-la como neutra. Resolver antes de o grupo 1 de `## Tasks` começar.
+- **RESOLVIDA em 2026-07-31 (task 1.2) — `skills.py` é renomeado, e os seus códigos de finding `sk-*`
+  mudam?** **Sim, os dois.** `skills.py` passa a ser `automation.py` e o prefixo `sk-` passa a ser
+  `au-` nos 40 códigos.
+
+  A pergunta era se a ferramenta que verifica o front `automation` pode continuar carregando no nome
+  do arquivo, nas findings e em todo consumidor de `--json` o substantivo que o front está retirando.
+  **A razão que decidiu** é a do próprio `## Design` §*O front é nomeado pelo trabalho, não pela
+  árvore*, que rejeitou `claude` como nome do front por ser "um segundo nome para uma coisa que já
+  tem um": manter `skills.py`/`sk-*` sob um front chamado `automation` **é** exatamente esse segundo
+  nome — e permanente, no único lugar que repositórios-alvo leem por `--json`. `specs.py` e
+  `okf-validate.py` são nomeados pelos seus fronts; a exceção seria só desta ferramenta, e nada a
+  justifica.
+
+  **O preço, medido em 2026-07-31 na árvore intacta, foi pago de olhos abertos:**
+
+  | O que renomear | Strings | Arquivos |
+  | --- | --- | --- |
+  | `skills.py` → `automation.py` | 161 | 48 |
+  | prefixo `sk-` → `au-` (40 códigos) | 194 | 29 (61 dentro do próprio arquivo) |
+
+  São **+355 strings** sobre as 278 que o spec já prometia — a varredura **mais que dobra**, e com
+  ela o risco de `## Risks` §*A renomeação pela metade é silenciosa*.
+
+  **Três consequências aceitas, nenhuma delas neutra:**
+
+  1. `automation.py` é o **sexto artefato do lockstep** e muda de nome, então
+     `docs/standards/ci-cd/versioning-release.md` e todo probe que resolve a ferramenta por caminho
+     precisam segui-lo.
+  2. **`.claude/hooks/skills.py` fica órfão em todo alvo já instalado.** O align recopia a ferramenta
+     (`commands/skill/align.md:183`), então o alvo *ganha* `automation.py` no próximo align — mas
+     nada apaga o arquivo antigo, e enquanto os dois coexistirem a cadeia de resolução
+     (`${CLAUDE_PLUGIN_ROOT}` → `.claude/hooks/`) pode achar o obsoleto.
+  3. **Todo consumidor de `--json` num alvo que filtre por `sk-` para de casar, sem aviso.** Não há
+     alias e não há período de transição — `command-surface.md` §*The surface invariant, and clean
+     renames* proíbe os dois.
+
+  **Esta decisão não é coberta por nenhuma das 26 tasks.** Ver `## Discoveries`: `## Tasks` precisa
+  ganhar o grupo que executa a renomeação, e a 5.3 (que nomeia o verificador "conforme a decisão de
+  1.2") depende dele.
 - **`retire-skill-vocabulary` fecha como superado, ou se estreita para a prosa de `docs/` que só ele
   encontrou?** Ele descobriu independentemente quatro referências obsoletas em `docs/standards/` e
   `docs/knowledge/glossary.md` que nenhuma renomeação de caminho alcança. Decidido por: conferir,
@@ -724,43 +753,36 @@ está em `claude/restructure-claude-front-namespace-5f2333`, worktree
 `.claude/worktrees/correct-command-citation-form-044087/`, cortado de `main` (`813bf33`). O nome não
 segue `plan/<slug>`, então `specs.py next --front` **não** vê este spec como em voo.
 
-**Baseline das seis assertivas, medido na árvore intacta em 2026-07-31** (task 1.1, commit
-`c950e1f`+1). É contra estes números que "não piorou" é conferido em 5.4:
+**Nada de código foi tocado ainda.** As duas tasks feitas escreveram só no arquivo do spec.
+
+**A decisão de 1.2 abriu um buraco em `## Tasks`, e ele bloqueia o grupo 5.** Renomear
+`skills.py` → `automation.py` e `sk-` → `au-` são +355 strings que nenhuma das 26 tasks enuncia, e a
+5.3 declara nomear o verificador "conforme a decisão de 1.2" sem que exista task que o renomeie.
+Escrever esse grupo é `/quenching:specs:develop`. Fazê-lo **antes** do grupo 2 é o que mantém a regra "mover e
+recitar é UMA task, nunca duas": as tasks 2.1, 2.5 e 2.6 já editam o conteúdo de `assets/bin/skills.py`,
+e renomear o arquivo num grupo posterior parte esse par.
+
+**Baseline das seis assertivas, medido na árvore intacta em 2026-07-31** (task 1.1). É contra estes
+números que "não piorou" é conferido em 5.4:
 
 | Assertiva | Baseline |
 | --- | --- |
 | 1 · `skills.py doctor` | `commands: 26`, `findings: []` |
 | 1 · `skills.py lint` | exit 0 · 35 findings: `sk-trigger-position` 11, `sk-no-boundary` 10, `sk-step-criterion` 9, `sk-unscoped-bash` 5. **`sk-bare-citation`: 0** |
 | 2 · `okf-validate.py docs` | exit 0 · **0 error(s), 25 warning(s)** — todas `stale-doc`. `resource-unresolved`: **0**. `glossary-broken-link`: **0** |
-| 3 · grep da forma antiga | **278 hits em 59 arquivos** — dos quais **26 vivem em `runs/**`** (ver o defeito abaixo) |
-| 4 · grep da forma bare | **376 hits em 60 arquivos** — dos quais 3 em `runs/**` |
+| 3 · grep da forma antiga | **278 hits / 59 arquivos** — **252 / 55** excluindo `runs/**` de verdade |
+| 4 · grep da forma bare | **376 hits / 60 arquivos** — **373** excluindo `runs/**` de verdade |
 | 5 · lockstep | `4.4.2` nos cinco: VERSION, `specs.py`, `skills.py`, `okf-validate.py`, `session.py` |
 | 5 · `assets/docs` | 0 error(s), 0 warning(s) |
 | 5 · `assets/specs/plans --listing-root` | 0 error(s), **1 warning(s)** (`bundle-no-index`) |
 | 5 · selftests | `skills` PASS · `specs` PASS (12 casos) · `okf-validate` PASS |
 | — · `skills.py budget` | `total: 12875` — o invariante que prova que o sweep não vazou para `description:` |
 
-**Três números de `## Validation` estão desatualizados e não foram corrigidos** (corrigi-los é edição
-de spec, fora do `files:` de 1.1):
-
-- diz "o bundle já carrega **14 warnings** hoje" — são **25**;
-- diz que as duas entradas `resource-unresolved` pré-existentes "continuam lá" — hoje há **zero**;
-- assertiva 5 espera `assets/specs/plans` com 0 warnings — hoje devolve 1 (`bundle-no-index`),
-  pré-existente e alheio a este spec.
-
-**DEFEITO que impede a assertiva 3 de jamais passar.** O pathspec
-`':!plugins/quenching/assets/evals/*/*/*/runs/'`, usado nas assertivas 3 e 4, **não exclui nada**:
-`git grep` casa o padrão contra o caminho inteiro, e ele para em `runs/`. Medido: 26 dos 278 hits da
-assertiva 3 estão dentro de `runs/**`, que `## Out of Scope` declara byte-idêntico e que nenhuma task
-reescreve. Como está escrita, a assertiva 3 **nunca volta vazia** e o spec sempre se lê como
-"renomeado pela metade". A forma que funciona, medida (0 arquivos de `runs/` no resultado):
-
-```
-':(glob,exclude)plugins/quenching/assets/evals/**/runs/**'
-```
-
-Excluindo `runs/**` de verdade, o baseline real da assertiva 3 é **252 hits**, e o da 4, **373**.
-
+**O pathspec de `## Validation` está quebrado e a assertiva 3 nunca passa como está.**
+`':!plugins/quenching/assets/evals/*/*/*/runs/'` não exclui nada — `git grep` casa o padrão contra o
+caminho inteiro. A forma que funciona, medida:
+`':(glob,exclude)plugins/quenching/assets/evals/**/runs/**'`. Detalhe e os três números de
+`## Validation` que já envelheceram estão em `## Discoveries`.
 ## Tasks
 
 Cinco grupos, em ordem de dependência. Nenhuma task é marcada `[P]`: praticamente toda uma reescreve
@@ -786,8 +808,9 @@ linha e só ela, então uma task que continua na linha seguinte chega pela metad
 - [x] 1.1 Registrar o baseline das seis assertivas de `## Validation` na árvore intacta — hits e arquivos dos dois greps, warnings de bundle, findings `sk-*` atuais, `total` do budget — para que "não piorou" seja verificável
       verify: git grep -nE '/skill:|quenching:skill|commands/skill|references/skill-|evals/skill|/docs:harness' -- ':!specs/' | wc -l
       subject: plan/restructure-claude-front-namespace: 1.1 Registrar o baseline das seis assertivas de ## Validation na árvore intacta
-- [ ] 1.2 Resolver a primeira pergunta de `## Open Decisions` (renomear `skills.py` e os códigos `sk-*`?) e gravar a resposta com a razão na seção, incluindo a inconsistência aceita se a resposta for não
+- [x] 1.2 Resolver a primeira pergunta de `## Open Decisions` (renomear `skills.py` e os códigos `sk-*`?) e gravar a resposta com a razão na seção, incluindo a inconsistência aceita se a resposta for não
       files: specs/plans/2026-07-27-restructure-claude-front-namespace.md
+      subject: plan/restructure-claude-front-namespace: 1.2 Resolver a primeira pergunta de ## Open Decisions e gravar a resposta com a razão
 - [ ] 1.3 Extrair para `assets/references/align/sweep-doctrine.md` a versão condensada das três formas de citação que hoje está inline nos dois aligns, e trocar os dois inlines por uma citação `${CLAUDE_PLUGIN_ROOT}` desse dono
       files: plugins/quenching/assets/references/align/sweep-doctrine.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/align.md
       pattern: plugins/quenching/assets/references/align/convergence.md
@@ -855,3 +878,4 @@ linha e só ela, então uma task que continua na linha seguinte chega pela metad
 - O item de ## Out of Scope 'Prefixar citações voltadas a humanos com quenching:' foi fechado citando commands/docs/align.md:237, que declarava a forma bare como 'what a human types'. Essa alegação era falsa com o plugin instalado como plugin e foi corrigida por correct-command-citation-form (2026-07-31): três formas, e a bare resolve apenas onde o comando mora no .claude/commands/ do repo-alvo. commands/** e assets/references/** já foram varridos e o finding sk-bare-citation (WARN) guarda a regra. O item precisa ser reavaliado sobre a evidência nova, não sobre a frase antiga. -> folded: Out of Scope
 - O pathspec ':!plugins/quenching/assets/evals/*/*/*/runs/' das assertivas 3 e 4 de ## Validation nao exclui nada — git grep casa o padrao contra o caminho inteiro e ele para em runs/. Medido em 2026-07-31: 26 dos 278 hits da assertiva 3 vivem em runs/**, que ## Out of Scope declara byte-identico. Como esta escrita, a assertiva 3 NUNCA volta vazia e o spec sempre se le como renomeado pela metade. A forma que funciona e ':(glob,exclude)plugins/quenching/assets/evals/**/runs/**' (0 arquivos de runs/ no resultado); com ela o baseline real e 252 hits na 3 e 373 na 4. Corrigir as duas assertivas e edicao de spec, fora do files: da task 1.1.
 - Tres numeros de ## Validation envelheceram antes do grupo 1: diz que o bundle carrega 14 warnings (sao 25, todas stale-doc), diz que as duas entradas resource-unresolved pre-existentes continuam la (hoje ha zero), e a assertiva 5 espera assets/specs/plans com 0 warnings (devolve 1, bundle-no-index, pre-existente e alheio a este spec).
+- A resposta de 1.2 (renomear skills.py -> automation.py E o prefixo sk- -> au-) nao e coberta por nenhuma das 26 tasks: sao +355 strings em 48+29 arquivos que nenhum enunciado de grupo 1 a 5 alcanca, e a 5.3 declara nomear o verificador 'conforme a decisao de 1.2' sem que exista task que o renomeie. ## Tasks precisa de um grupo novo, escrito por /quenching:specs:develop, antes que 5.3 e 5.4 possam ser honestas. Tambem arrasta o lockstep: automation.py e o sexto artefato e versioning-release.md o nomeia.
