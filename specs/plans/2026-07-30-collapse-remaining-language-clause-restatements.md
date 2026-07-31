@@ -315,6 +315,35 @@ neither". A nota entra nos dois no mesmo commit, ou em nenhum.
   legitimamente, porque a task 1 edita o próprio doc — mas não confunda isso com licença para
   silenciar o ruído da baseline com bump de timestamp em outros docs.
 
+## Handoff
+
+<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+
+     The context an executor needs and cannot derive: the state of play, the conventions in
+     force, what was already tried. Small by construction — it is sent with EVERY task.
+
+     Refresh is bound to EVENTS, not judgment: the orchestrator rewrites this after each
+     committed task. Staleness is this section's failure mode. -->
+
+As seis tasks estão commitadas, uma por commit, em
+`claude/collapse-language-clause-restatements-3daf9f` — **isolação declinada**, então não há record
+`branch:` e o nome da branch não segue `plan/<slug>`. Base: `main`.
+
+Estado do tree após o último commit: limpo. Nada bloqueado, nada pendente das tasks.
+
+O que um executor precisa saber e não deriva:
+
+- **Duas discoveries abertas**, ambas de `## Validation` / `## Open Decisions` e nenhuma resolvida
+  aqui: o invariante do censo não mede o que afirma, e o check mecânico das gêmeas já existe em
+  `specs.py selftest`. Ver `## Discoveries`.
+- **O verify da task 5 passou com 14 acertos por coincidência aritmética.** O conjunto medido não é
+  o da tabela de `## Design`: `okf-spec.md` nunca entrou (wrap) e `specs/QUENCHING.md` está fora do
+  escopo do grep; o 14º é a prosa nova de `plugin-layout.md`. Não tratar aquele número como prova.
+- **Um `stale-doc` do skeleton é ruído de baseline, não deste spec.**
+  `assets/docs/standards/agents/communication.md` tem `timestamp: 2026-07-30`, e o commit base
+  `8844703` já era de 2026-07-31 tocando `specs/**`. Não silenciar com bump.
+- A cópia instalada `specs/QUENCHING.md` é agora byte-a-byte o mold com `<VERSION>` → `4.4.2`.
+
 ## Tasks
 
 Ordenadas, e a ordem é load-bearing três vezes: a task 1 escreve o critério antes de a task 5
