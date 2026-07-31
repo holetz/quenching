@@ -403,9 +403,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
       files: plugins/quenching/commands/specs/execute.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'task --check.{0,120}&&.{0,120}git commit',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S) else 1)"
       subject: plan/cut-specs-execute-turns: 3.1 os atos d-g do passo 5 como uma chamada encadeada
-- [ ] 3.2 Alinhar `execution.md` §The commit ao encadeamento, sem mover a ordenação tick-antes-do-commit
+- [x] 3.2 Alinhar `execution.md` §The commit ao encadeamento, sem mover a ordenação tick-antes-do-commit
       files: plugins/quenching/assets/references/specs-execute/execution.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'task --check.{0,120}&&.{0,120}git commit',pathlib.Path('plugins/quenching/assets/references/specs-execute/execution.md').read_text(),re.S) else 1)"
+      subject: plan/cut-specs-execute-turns: 3.2 execution.md §The commit alinhado ao encadeamento
 
 ### 4. A cadência nova nos quatro lugares que hoje dizem a antiga
 

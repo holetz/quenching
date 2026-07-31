@@ -163,10 +163,22 @@ After the self-review passes, **decide the subject, tick the box with it, then c
 is the point: the subject is known before the commit exists, so the checkbox travels *inside* the
 commit that implements it.
 
+Run it as **one chained call**, gate included:
+
 ```bash
-specs.py task --spec "<slug>" --check <id> --subject "<subject>"
-git add <the task's files> <the spec file> && git commit -m "<subject>"
+<the task's verify:> \
+  && specs.py task --check <id> --spec "<slug>" --subject "<subject>" \
+  && git add <the task's files> <the spec file> \
+  && git commit -m "<subject>" \
+  && git log -1 --format=%s
 ```
+
+**The `&&` is the ordering.** Written as four separate calls the sequence was a rule the body had
+to be obeyed to hold; chained, it is enforced by the shell — verify before the tick, the tick
+before the commit, and a broken link short-circuiting every link after it, which is exactly the
+failure behaviour the separate form documented and the chained form gets for free. Nothing about
+what is guaranteed moved; only the number of calls did. When the spec's declared policy says this
+task is not a gate, the chain simply starts at `specs.py task`.
 
 Stage the task's declared `files:` **and the spec file**, never the whole tree — `git add -A` also
 picks up whatever an editor or a tool wrote while the task ran, which is the same contamination
@@ -201,11 +213,8 @@ one uncommitted blob gives none of that, and the isolation offer buys nothing.
 - **Never amend or rewrite an earlier task's commit**, and never force-push.
 - If the repo has no git, skip committing entirely and say so once.
 
-Then **assert the subject survived**, and report rather than repair:
-
-```bash
-git log -1 --format=%s        # must equal what was recorded
-```
+The chain's last link **asserts the subject survived**, and the rule is report rather than repair:
+its `git log -1 --format=%s` must equal what was recorded.
 
 The subject lands on the task line as `subject: <line>`, in the indented metadata grammar `files:`
 and `verify:` already use, and resolves with `git log --grep=<subject> --fixed-strings`. A
