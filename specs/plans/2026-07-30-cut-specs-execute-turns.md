@@ -371,6 +371,12 @@ Estado que nada deriva:
   `sp-task-meta-dispatch` para segurar essa linha. A mutation pass de `selftest-mutation.md` rodou
   **quatro** mutações contra as asserções novas, cada uma falhando exatamente a que ataca — o
   registro que aquele standard pede que viva no commit está no corpo do commit de 5.1.
+- **Duas das quatro descobertas são da metade *contexto*, não desta spec.** A medição da própria run
+  desta sessão (344 turnos, 17,4M tokens-turno) produziu duas: `specs.py section` já existe e o
+  passo 4 não o usa (-37,4% na leitura da spec), e a integral é quadrática nos turnos, o que faz de
+  "uma sessão por seção" o maior corte disponível. A segunda alimenta a `## Open Decisions` de
+  `reduce-execute-conclude-cost` — "a doutrina cite a seção, não o arquivo vira um spec?" — que
+  pedia exatamente essa comparação. Nenhuma foi construída aqui, por escopo.
 - **A 6.2 está `[!]`: o transcript do baseline sumiu.** `985b372b-348c-4911-a5dd-146ca0b4ab7b` não
   está em `~/.claude/projects` (1200 varridos). Os números do `## Problem` — 93 tool calls, 16
   exatos mais 77 de limite superior, `closed: false` — continuam citáveis como o que foi medido em
@@ -473,3 +479,5 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 
 - O verify: da task 4.5 tem falso negativo: em artifacts.md a frase era 'after **each committed\ntask**' e o regex 'after\s+each\s+committed\s+task' nao casa por causa do ** inline. Provado contra HEAD~3: frase presente, regex nao encontra. O check passaria com 1 dos 4 alvos intocado — o mesmo defeito que task-execution.md §A verify: that cannot fail proves nothing ja registra, agora com marcacao inline em vez de quebra de linha. Um check sobre prosa precisa normalizar marcacao, nao so whitespace.
 - Admitir constraint: em TASK_META_RE expos um fallthrough latente no parser de tasks (specs.py:1168): o despacho terminava em 'else: verify = val', entao QUALQUER chave nova na gramatica vira o verify da task. Provado: uma task com 'constraint:' depois de 'verify:' devolvia verify='nao toque em src/b.ts' — o loop rodaria prosa como comando de shell. Corrigido para despacho exaustivo (elif key == 'verify'), com constraint deliberadamente sem arm. A licao generaliza: admitir uma chave na gramatica e' metade do trabalho; a outra metade e' o despacho, e um 'else' final e' um sequestro esperando a proxima chave.
+- O passo 4 manda ler a spec com Read no caminho que status resolveu, mas specs.py section <slug> <heading> JA EXISTE e entrega uma secao so. Medido nesta run: as 6 secoes que o passo 4 exige custam 5.358 tokens via section contra 8.555 do arquivo inteiro (-37,4%), porque o arquivo carrega ~37 linhas de comentario HTML do template, identicas em toda spec e sem informacao sobre esta. Na integral desta sessao isso foi ~1,06M tokens-turno, 6% do total. A ferramenta esta la; o corpo nao a usa.
+- A integral de contexto e' quadratica nos turnos: um Read no turno 13 e' repago em todos os 331 turnos seguintes. Medido nesta run de 344 turnos: 17,4M tokens-turno, dos quais a leitura da spec sozinha foi 2,56M (15%) e os 6 Reads somaram 35%. O corte estrutural maior nao e' ler menos e' encurtar a janela — duas sessoes de 172 turnos custam ~metade de uma de 344 pelo mesmo trabalho. O ## Handoff ja e' o mecanismo de retomada; nenhum comando oferece a quebra.
