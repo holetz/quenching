@@ -12,6 +12,7 @@ branch:
   work: plan/cut-specs-execute-turns
 reviewed:
   date: 2026-07-31
+outcome: done
 ---
 
 # Cut /specs:execute's turn count through body wording
@@ -483,3 +484,52 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 - Admitir constraint: em TASK_META_RE expos um fallthrough latente no parser de tasks (specs.py:1168): o despacho terminava em 'else: verify = val', entao QUALQUER chave nova na gramatica vira o verify da task. Provado: uma task com 'constraint:' depois de 'verify:' devolvia verify='nao toque em src/b.ts' — o loop rodaria prosa como comando de shell. Corrigido para despacho exaustivo (elif key == 'verify'), com constraint deliberadamente sem arm. A licao generaliza: admitir uma chave na gramatica e' metade do trabalho; a outra metade e' o despacho, e um 'else' final e' um sequestro esperando a proxima chave.
 - O passo 4 manda ler a spec com Read no caminho que status resolveu, mas specs.py section <slug> <heading> JA EXISTE e entrega uma secao so. Medido nesta run: as 6 secoes que o passo 4 exige custam 5.358 tokens via section contra 8.555 do arquivo inteiro (-37,4%), porque o arquivo carrega ~37 linhas de comentario HTML do template, identicas em toda spec e sem informacao sobre esta. Na integral desta sessao isso foi ~1,06M tokens-turno, 6% do total. A ferramenta esta la; o corpo nao a usa.
 - A integral de contexto e' quadratica nos turnos: um Read no turno 13 e' repago em todos os 331 turnos seguintes. Medido nesta run de 344 turnos: 17,4M tokens-turno, dos quais a leitura da spec sozinha foi 2,56M (15%) e os 6 Reads somaram 35%. O corte estrutural maior nao e' ler menos e' encurtar a janela — duas sessoes de 172 turnos custam ~metade de uma de 344 pelo mesmo trabalho. O ## Handoff ja e' o mecanismo de retomada; nenhum comando oferece a quebra.
+
+## Outcome
+
+**Construído e adotado.** Os cinco achados do `## Problem` viraram redação de corpo mais as duas
+regras que a redação move:
+
+- o passo 2 de `/specs:execute` **checa antes de despachar** `/specs:isolate`, lê tudo o que o loop
+  precisa numa chamada, e ganhou um probe de hooks fiados que resolvem no disco;
+- os atos d–h do passo 5 viraram **uma cadeia `&&`** por task — a ordenação que era regra a obedecer
+  passou a ser imposta pelo shell;
+- a cadência do `## Handoff` passou a ser **quatro eventos** (pausa · task bloqueada · descoberta
+  registrada · último commit), concordando nos quatro lugares que declaravam a antiga;
+- `docs/standards/workflows/task-execution.md` é o dono da cadência **e do motivo dela**, mais a
+  regra de que `verify:` é escopado na autoria — citando `session-evidence.md` para a perda de
+  medição em vez de a redeclarar;
+- `constraint:` entrou inerte na gramática de metadata de task.
+
+**Merge: `merge-commit` (`--no-ff`)**, então os 20 commits ficam em `main` e os 15 `subject:`
+registrados resolvem de lá. A branch não precisa sobreviver para que resolvam.
+
+**Uma discrepância que o próximo leitor precisa saber:** o record `branch` carimba
+`base: claude/quenching-specs-execute-turns-4ff7e4`, e o merge foi para **`main`**. A base gravada
+era a branch da worktree do harness onde a spec nasceu; ela não é consumida por ninguém e `main`
+havia andado 16 commits. O record é write-once e foi deixado como está — ele registra fielmente de
+onde a branch foi cortada, que é o fato que nada recupera depois do merge.
+
+**O que ficou de fora.** A task 6.2 está `[!]`: ela mandava medir com `session.py` o par cru do
+baseline da run `985b372b`, e esse transcript não existe mais em `~/.claude/projects` (1200
+varridos). Os números do `## Problem` seguem citáveis como o que foi medido em 2026-07-30, mas **não
+são remensuráveis**, e nada nesta run os reconfirmou. Não foram copiados para `## Validation`:
+copiar uma figura não é medi-la.
+
+**A `## Validation` continua sendo trabalho futuro, por desenho.** Nada sob `commands/**` é testável
+na sessão que o escreve — o registro da superfície é montado no início da sessão. A prova é uma run
+seguinte de `/specs:execute` sobre um spec de tamanho comparável, reportando os dois pares crus sem
+subtrair. Com o baseline agora irrecuperável, quem medir ou trata os números de 2026-07-30 como
+figura de arquivo, ou mede um baseline novo.
+
+**Dois follow-ups, medidos e não construídos.** A run mediu a si mesma (344 turnos, 17,4M
+tokens-turno) e achou dois cortes que são da metade *contexto*, não desta spec: `specs.py section`
+já existe e o passo 4 não o usa (−37,4% na leitura da spec), e a integral é quadrática nos turnos,
+o que faz de "uma sessão por seção" o maior corte disponível. O segundo alimenta a
+`## Open Decisions` de `reduce-execute-conclude-cost` — "a doutrina cite a seção, não o arquivo vira
+um spec?" — que pedia exatamente essa comparação. Ambos estão em `## Discoveries` e foram
+deliberadamente deixados para uma spec própria.
+
+**Dois defeitos encontrados durante o build**, ambos destilados em `docs/standards/`: um `verify:`
+com falso negativo por marcação inline, e um fallthrough `else: verify = val` que fazia
+`constraint:` sequestrar o `verify:` da task. O segundo teria feito o loop rodar prosa como shell.
