@@ -273,27 +273,39 @@ trabalho em que se está.
   bodies serem reescritos. Se a interface se revelar errada na seção 4, a superfície ainda está
   intacta e o custo é uma seção.
 - Cinco standards são reescritos, três deles narrando decisões anteriores. A reescrita preserva a
-  narrativa antiga como "o que foi revertido"; `docs/standards/workflows/worktree-setup.md`
-  §"Why a config file, in a front that had none" agora é o exemplo já feito, não só o modelo.
+  narrativa antiga como "o que foi revertido"; `worktree-setup.md` §"Why a config file" já foi
+  feito assim e é o exemplo a imitar.
 - Nenhuma edição em `commands/**` é testável na sessão que a escreve — o registry é montado no
   início da sessão. A seção 5 termina com `doctor`, não com um teste funcional.
 
-**Estado após a seção 1 (config), toda commitada:**
+**Estado após 3.1 (seções 1 e 2 completas, verificadas):**
 
-- `.claude/worktrees/` está ignorado no `.gitignore` versionado. Antes só o estava por
-  `.git/info/exclude`, que é local — um clone limpo não tinha a proteção.
-- `specs.py` expõe `worktree_dir_ignored(cwd)` (pergunta ao git, resolve contra o top level) e
-  `worktree_guard(ignored)` (política pura, exit 2). **Ninguém os chama ainda** — a task 3.1 é o
-  consumidor, e deve chamá-los antes de `git worktree add`.
-- `load_config` lê `.claude/quenching.json` no raiz do repo, via `find_repo_root`. Chaves:
-  `backend` (default `files`), `specsBranch` (default `specs`), `worktreeSetup`. Devolve também
-  `unknownBackend` e `legacyPath`, ambos consumidos pelo `doctor`.
-- Quatro findings de config no `doctor`: `sp-config-unparseable`, `sp-config-unknown-key`,
-  `sp-config-unknown-backend`, `sp-config-legacy-location`.
-- Este repositório não tem `.claude/quenching.json` — roda inteiro nos defaults, o que é o caso
-  normal e o que o selftest assere.
-- A seleção de backend ainda não existe: `cfg["backend"]` é lido e reportado, mas nada ramifica
-  sobre ele. Esse é o trabalho da seção 2.
+- **Config** — `.claude/quenching.json` no raiz do repo: `backend` (default `files`),
+  `specsBranch` (default `specs`), `worktreeSetup`. Quatro findings de config no `doctor`. Este
+  repo não tem o arquivo: roda todo nos defaults.
+- **Interface** — `SpecBackend` expõe cinco primitivas sobre o documento canônico
+  (`list_specs`/`read_spec`/`write_spec`/`create_spec`/`move_spec`). Os verbos da CLI são código
+  compartilhado sobre elas; `resolve_one` e `derive_info` são puras e usadas por todos. Um backend
+  que derivar qualquer coisa por conta própria está quebrado.
+- **`open_backend(root)`** resolve o backend e **recusa exit 2** um declarado e não implementado —
+  nunca cai para `files`.
+- **`MemoryBackend`** é o outro lado da igualdade; `BACKEND_CASES` (8 casos) roda os dois no
+  selftest e exige resultado idêntico fora de `path` e `text`. Ele guarda o filename porque a data
+  vem do nome do arquivo, não do frontmatter.
+- **`show`** entrega índice por default, `--section`/`--task` repetíveis, e o documento inteiro só
+  com `--full`, que recusa combinar com seletor.
+- **Worktree de specs** em `.claude/worktrees/<branch>`, criada sob demanda com `--orphan`,
+  consumindo os guardas de 1.1. `resolve_files_root` responde sem git nos três casos que não podem
+  virar worktree — o que preserva um `specs/` já populado como store pré-migração.
+
+**Armadilhas conhecidas, registradas como discoveries:**
+
+- `cmd_list` ainda lê `read_text(s["path"])` direto, contornando o backend. **Corrigir antes da
+  4.1**, ou `list` quebra no `github`.
+- O campo `root` do JSON emite o root declarado, não o resolvido — mente num repo migrado (seção 5).
+- `doctor` lê o root direto e reportaria `sp-no-workspace` falsamente num repo migrado.
+- Falta ao selftest a asserção genérica de que `parser.choices == DISPATCH`.
+- `cmd_promote` ainda checa destino ocupado por `os.path.exists` sobre caminho derivado do root.
 ## Tasks
 
 ### 1. Configuração
@@ -348,8 +360,9 @@ trabalho em que se está.
       reutilizada; a branch de specs é criada vazia se não existir
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 3.1 worktree persistente para a branch de specs
-- [ ] 3.2 Lockfile serializando processos `specs.py` concorrentes sobre a worktree de specs
+- [x] 3.2 Lockfile serializando processos `specs.py` concorrentes sobre a worktree de specs
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 3.2 lockfile serializando escritores sobre a worktree de specs
 - [ ] 3.3 Exercitar o ciclo completo em workspace descartável: new → status/next/section/task →
       promote, com a árvore de trabalho permanecendo limpa
       verify: git status --porcelain vazio ao fim do ciclo
@@ -411,3 +424,5 @@ trabalho em que se está.
 - O selftest so tem a asercao especifica sp-plans-subcommand-back; falta uma generica de que set(parser.choices) == set(DISPATCH). Um subcomando registrado em so uma das duas superficies passaria despercebido.
 - Num repo migrado, o campo 'root' do JSON mente: todo comando emite o root declarado por find_specs_root, nao o resolvido pela worktree de specs. Sao ~12 call sites de emit e o valor pode ser consumido pelos bodies — pertence a secao 5.
 - doctor le o root direto, sem open_backend (de proposito: diagnosticar nao pode criar worktree). Num repo migrado ele reporta sp-no-workspace falsamente. Precisa de um modo resolve-mas-nao-crie.
+- Um workspace pre-migracao (specs/ na arvore de codigo) NAO e serializado: o lock guarda a worktree de specs, e nao ha onde por um lock que o git ignore na arvore de codigo. Medido: 6 escritores concorrentes dao 4-de-6 sem worktree e 6-de-6 com. Os 49 specs DESTE repo estao nesse estado ate serem migrados.
+- migrate nao e classificado como escritor de proposito (reescreve o layout do workspace declarado, nunca a worktree), mas num repo ja migrado ele opera sobre um specs/ que nao existe mais — mesma familia do gap do doctor.
