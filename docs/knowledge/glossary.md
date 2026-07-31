@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-30
+timestamp: 2026-07-31
 audience: both
 authority: current
 source: quenching skeleton
@@ -73,6 +73,13 @@ sentence, and **link out** rather than explaining in full here.
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
   unblocks it.
+- [**Boundary reminder**](../standards/architecture/plugin-layout.md) — a one-clause line that
+  states the *edge* of a rule the citing place already owns, seen from the other side (`/docs:add`
+  saying the slug is canonical English while the body follows the repo's language), as opposed to a
+  restatement, which repeats a fact the citing place neither owns nor can change. It is legitimate
+  by the **ownership test** and stays legitimate only under the **verifiable guardrail** — one
+  clause, no fact the owner states, and never a narrowing; the third is what caught
+  `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
   frontmatter entry stamped by `/specs:isolate` at the moment isolation is taken, write-once.
   `work` is derivable while the branch is checked out; **`base` is not** — after the merge, git
