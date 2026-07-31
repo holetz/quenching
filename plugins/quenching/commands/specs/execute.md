@@ -57,33 +57,72 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 "Building spec: `<slug>`" and how to override.
 **Done when:** one spec in `plans/` is resolved.
 
-### 2. Require a clean tree, then delegate the isolation
-**The precondition comes first.** `git status --porcelain` non-empty → **refuse to start**, per
+### 2. Take the tree, the isolation and the state in one read
+**The precondition comes first.** Everything this step needs is read in **one call** — the tree, the
+isolation ref, the spec's own state (which step 3 reads anyway, so it is read here once), and the
+environment probe below, which belongs in this same call:
+
+```bash
+git status --porcelain
+git branch --list "plan/<slug>"
+specs.py status --spec "<slug>" --json
+# and the hook probe of 2b, in this same call
+```
+
+`git status --porcelain` non-empty → **refuse to start**, per
 [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
 precondition. Offer to commit or stash. The human may override; then the first commit carries the
 pre-existing changes and the report says so.
 
-Then **hand isolation to `/quenching:specs:isolate`** (the `Skill` tool) rather than reimplementing it: it
-owns the branch and worktree forms, the `plan/<slug>` name, the `branch: {base, work}` stamp and
-its write-once rule. It is not exclusive to building — a spec may already have been isolated at
-creation or during development, in which case that command reports the existing branch and stamps
-nothing new.
+**Then check before dispatching.** `branch --list plan/<slug>` printing a ref, or the `branch`
+record already present in the `status` payload, means the spec **is already isolated** — go
+straight to the loop and dispatch nothing. `/quenching:specs:isolate` would report the existing
+branch and stamp nothing new, so the call buys nothing and costs twice: the turns, and the run's
+own attribution, per
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Isolation is
+somebody else's job.
 
-Read the result before the first task: a spec whose branch is **alive but checked out elsewhere**
-is being built somewhere else, and starting here would fork the work. Say so and stop.
+**Nothing to check out → hand isolation to `/quenching:specs:isolate`** (the `Skill` tool) rather
+than reimplementing it: it owns the branch and worktree forms, the `plan/<slug>` name, the
+`branch: {base, work}` stamp and its write-once rule. Delegating less is not the point — checking
+first is; when there is something to isolate, that command is still the only thing that takes it.
+
+Either way, read the state before the first task: a spec whose branch is **alive but checked out
+elsewhere** (`git worktree list`, or a ref this checkout is not on) is being built somewhere else,
+and starting here would fork the work. Say so and stop.
 
 Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
-**Done when:** the tree is clean (or the override is on the record), and isolation has been taken,
-reported as already held, or declined.
 
-### 3. Read the spec's state, and settle the approval
+**2b. Probe the environment before writing any code.** A hook wired in `.claude/settings.json`
+whose script no longer exists on disk fails *every* commit this loop makes, and it fails as a hook
+error rather than as a missing file — so it gets diagnosed at the first commit, ad hoc, in about
+ten calls. Ask the question once instead, in the same call as the reads above:
+
 ```bash
-specs.py status --spec "<slug>" --json
+python3 -c "
+import json, pathlib, re
+p = pathlib.Path('.claude/settings.json')
+d = json.loads(p.read_text()) if p.exists() else {}
+cmds = [h.get('command','') for g in d.get('hooks',{}).values() for e in g for h in e.get('hooks',[])]
+gone = sorted({t for c in cmds for t in re.findall(r'[\w./\$\{\}-]+\.(?:py|sh|js|ts)', c)
+               if not pathlib.Path(re.sub(r'\\\$\{?CLAUDE_PROJECT_DIR\}?/?', '', t)).exists()})
+print('unresolved hook targets:', gone or 'none')"
 ```
-Read the derived stage, the section states, task progress, the blocked tasks, the recorded subjects,
-and **`verification`** — the spec's declared policy, which decides when the suite runs so this
-command never has to.
+
+Anything other than `none` → **report it before the first task**, name the hook and the missing
+path, and let the human decide: fix the wiring, or build knowing every commit will trip it. Never
+route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent, and the
+probe costs nothing.
+
+**Done when:** the tree is clean (or the override is on the record), isolation has been taken,
+found already held, or declined, and any unresolved hook has been reported.
+
+### 3. Settle the approval, off the state step 2 already read
+The `specs.py status --json` payload is **already in hand** from step 2 — do not read it again.
+From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
+subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
+this command never has to.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
   stamp `approved: {date}` on a yes. **Never refuse over it** — refusing would rebuild the folder
@@ -135,40 +174,43 @@ c. **Write only the `docs/` this task names.** A `docs/standards/` path declared
    no authoring. The line between the two, and why it falls there, is §Declared versus emergent
    `docs/`.
 
-d. **Verify, per the spec's declared policy** (§The validation loop). On a failure that stops
-   converging, write it blocked with its reason —
-   `specs.py task --spec "<slug>" --block <id> --reason "<why>"` — and move on. Never weaken the
-   check to make it pass.
+d. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
+   dead code — and fix what it finds. This happens on the written diff, *before* the chain below,
+   so what the chain commits is already the reviewed version.
 
-e. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
-   dead code — and fix what it finds *before* committing.
+e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Commit messages, or the
+   target's own convention where it declares one — and put it in both places it appears:
 
-f. **Decide the subject, then tick the box with it** — mechanically, never by string surgery. The
-   subject follows [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
-   §Commit messages, or the target's own convention where it declares one:
    ```bash
-   specs.py task --spec "<slug>" --check <id> --subject "plan/<slug>: <id> <title>"
+   <the task's verify:> \
+     && specs.py task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
+     && git add <the task's declared files> <the spec file> \
+     && git commit -m "plan/<slug>: <id> <title>" \
+     && git log -1 --format=%s
    ```
-   The subject is known **before** the commit, which is the whole reason it is the anchor: ticking
-   first means the box travels *inside* the commit it describes, and the per-task bookkeeping
-   commit disappears.
 
-g. **Commit that task alone**, staging its declared files **and the spec file**, under exactly the
-   subject just recorded. One task is one commit, carrying the code and its ticked box together.
+   **The `&&` is the ordering**, not a shortcut around it. Every guarantee the four separate acts
+   carried is still enforced, and now mechanically rather than by the body being obeyed in sequence:
+   verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
+   that implements it, and any link failing short-circuits every link after it. Run `verify:` only
+   when the spec's declared policy says this task is a gate (§The verification policy); otherwise
+   the chain starts at `specs.py task`.
 
-h. **Assert the subject survived**, and report rather than repair:
-   ```bash
-   git log -1 --format=%s        # must equal what step f recorded
-   ```
-   A `commit-msg` hook that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
-   recorded subject resolvable as a substring — that is fine and needs nothing. A hook that
-   **replaces** the subject breaks the link: **report it as a finding and write nothing.** Editing
-   the record now would put a write after the commit again, which is exactly what this ordering
-   removed.
+f. **Read the chain's tail, and act on which link broke:**
 
-   If the commit itself fails — a failing hook, nothing staged — **undo the tick**
-   (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist,
-   then report the failure. Never `--no-verify` your way past it.
+   - **`verify:` failed** → nothing was ticked and nothing was committed; the chain stopped at link
+     one. Read the failure, change the code, run it again. When attempts stop converging, write it
+     blocked with its reason — `specs.py task --spec "<slug>" --block <id> --reason "<why>"` — and
+     move on. **Never weaken the check to make it pass.**
+   - **The commit failed** — a rejecting hook, nothing staged — → the tick already landed, so
+     **undo it** (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that
+     does not exist, then report the failure. Never `--no-verify` your way past it.
+   - **The final `git log -1 --format=%s` does not equal the recorded subject** → a `commit-msg`
+     hook rewrote it. One that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
+     recorded subject resolvable as a substring — fine, and needs nothing. One that **replaces** it
+     breaks the task→commit link: **report it as a finding and write nothing.** Editing the record
+     now would put a write after the commit again, which is exactly what this ordering removed.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
@@ -176,11 +218,25 @@ standard via `/quenching:docs:add`, or the spec via `/quenching:specs:develop`);
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
-### 6. Refresh `## Handoff` as events, not as judgment
-After each committed task, rewrite `## Handoff` to the state of play a fresh executor would need
-and cannot derive. It is sent with every task, so keep it small; staleness is its failure mode, and
-binding the refresh to the commit is what stops it going stale.
-**Done when:** `## Handoff` describes the tree as it stands after the last commit.
+### 6. Refresh `## Handoff` on four events, never on judgment
+Rewrite `## Handoff` to the state of play a fresh executor would need **and cannot derive** — on
+exactly four events:
+
+- the run **pauses**;
+- a task is written **blocked**;
+- a **discovery** is recorded;
+- the run's **last commit** lands.
+
+Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
+already in `git log` and in the `subjects` `status` returns, so the Handoff is not the resumption
+trail and must not be rewritten as one. It is sent with every task, so keep it small.
+
+**Not after every committed task.** Measured on a 13-task run, that cadence produced rewrites that
+were ~90% identical to one another. And do not substitute a judgment — "rewrite it when the
+underivable state changed" is the rule that already failed, because an unattended run never judges
+that something went stale. Each trigger above is a moment this body *just finished doing
+something*, never one where it appraises something.
+**Done when:** `## Handoff` describes the tree as it stands after the run's last commit.
 
 ### 7. Report, and hand off
 Show the spec, the isolation and its `branch` record, tasks completed this session, overall
@@ -199,10 +255,11 @@ the command and stop. Paused → say why and wait.
 
 Task 3/7 — 3.2 <task title>
   files: src/middleware/auth.ts, src/config/limits.ts
-✓ verify: pnpm test middleware/ — passed
 ✓ self-review: clean
-✓ checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
-✓ committed a1b2c3d — subject matches
+✓ chain: verify && check && commit
+    verify: pnpm test middleware/ — passed
+    checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
+    committed a1b2c3d — subject matches
 ```
 
 ## Hard rules — no exceptions, and no "just this once"
@@ -222,8 +279,10 @@ front of you before the loop starts:
 
 ## Invariants to never violate
 
-- Require a clean tree before the first code change; delegate isolation to `/quenching:specs:isolate`,
-  recommend it, never impose it, and never reimplement it here.
+- Require a clean tree before the first code change; **check whether the spec is already isolated
+  before dispatching**, and where it is not, delegate isolation to `/quenching:specs:isolate` —
+  recommend it, never impose it, and never reimplement it here. Checking first is not delegating
+  less.
 - Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the

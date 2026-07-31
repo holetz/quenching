@@ -137,9 +137,19 @@ The context an executor needs and cannot derive: the state of play, the conventi
 was already tried. **Small by construction** — it is sent with every task, and it does not carry
 the human sections.
 
-It is warned on (not gated) once the ready gate is met, and it is rewritten after **each committed
-task** rather than when someone judges it stale. Staleness is this section's only failure mode, and
-an event-bound rule is the one cure that survives an unattended run.
+It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
+the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
+— rather than when someone judges it stale. Staleness is this section's only failure mode, and an
+event-bound rule is the one cure that survives an unattended run.
+
+Each of those four is a moment the executor *just finished doing something*, never one where it
+appraises something: that is the property that makes the rule survivable unattended, and it is what
+any future edit has to preserve. The cadence they replaced was one rewrite per committed task,
+which on a measured 13-task run produced rewrites ~90% identical to one another — the section is
+sent with every task, so a near-identical rewrite is paid for on both sides and buys nothing on
+either. What a resumed run can derive on its own — which tasks are done, which commit carried each
+— lives in `git log` and in the `subjects` `specs.py status` returns; this section carries only
+what nothing derives.
 
 ## `## Tasks`
 
@@ -184,12 +194,29 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 | `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
 | `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation` |
+| `constraint:` | a bound on HOW this task may be done — a file it must not touch, an approach already ruled out | **nothing reads it yet.** Admitted by the grammar and handed through untouched; its only plausible consumer is an executor sub-agent briefing itself, and the decision to dispatch one belongs elsewhere. Write it where an executor would otherwise have to guess; it costs nothing when unread |
 | `subject:` | the SUBJECT of the commit that implements this task | **written by the tool, never by hand** (`task --check --subject`), so code and spec stay linked without a trailer inside the commit message. Known before the commit exists, which is what lets the box travel inside it |
 
-Write the first three where they earn their place — a task touching three known files with an
-obvious test command deserves all three; a one-line doc edit deserves none. Metadata that restates
+Write the first four where they earn their place — a task touching three known files with an
+obvious test command deserves them; a one-line doc edit deserves none. Metadata that restates
 the task text is noise. `subject:` is not written by an author at all; it appears when the task is
 ticked.
+
+**Scope each `verify:` to what its own task could break** — not to what the repo can check. The
+policy decides *when* a gate fires; the `verify:` lines decide *what* runs there, so a gate that
+re-runs a check whose inputs the section could not have touched is a `verify:` written too wide,
+not a policy to be filtered at build time. Measured: on a 13-task run the same three selftests ran
+at the close of section 1 and again at task 5.1, because tasks in two sections each declared all
+three, while the spec itself stated no script changed in between. The body obeyed exactly what was
+written. Fixing it at authoring needs no judgment while building and holds for every spec; the
+alternative — a gate that skips a declared check because it judges the inputs unchanged — is a
+correctness judgment made mid-build, which this front refuses everywhere else.
+
+And **a `verify:` that cannot fail proves nothing when it passes.** Run each one against the tree
+*before* the fix and require it to exit non-zero; only then does its later exit 0 mean the task did
+something. Over prose this is not hypothetical: a check has passed while its target was untouched
+because the phrase wrapped across a line, and again because inline `**` sat between two words. A
+check over prose reads the whole file and normalizes markup and whitespace before matching.
 
 **`[P]` marks a task parallel-eligible**, written right after the id:
 
