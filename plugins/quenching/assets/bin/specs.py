@@ -124,8 +124,14 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|subject|commit)\s*:\s*(.+?)\s*$",
+TASK_META_KEYS = ("files", "pattern", "verify", "constraint", "subject", "commit")
+TASK_META_RE = re.compile(rf"^\s+({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
+# `constraint:` is INERT by design: the grammar admits it and `next` hands it through, but no
+# command reads it. Its only consumer would be an executor sub-agent briefing itself, and the
+# decision to dispatch one belongs to another spec — so the field lands first and the decision
+# stays untouched. A field nobody reads costs one alternation and moves no turn.
+#
 # The anchor is written into a one-line grammar and read back, so the only hard requirement
 # is that it holds text and stays on its line. `commit:` is the older form of the same
 # field — still READ from specs written before the anchor became the subject, never written
@@ -1165,8 +1171,12 @@ def parse_tasks(text: str) -> list[dict]:
                 subject, subject_off = val, off
             elif key == "commit":
                 commit, commit_off = val, off
-            else:
+            elif key == "verify":
                 verify = val
+            # `constraint:` is admitted by the grammar and read by nothing — the inert field.
+            # This arm is why the dispatch is exhaustive rather than an `else: verify = val`:
+            # under the open form, a `constraint:` line following `verify:` overwrote it, and
+            # the loop would have run that prose as the task's shell command.
         out.append({
             "index": idx,
             "id": idm.group(1) if idm else None,
@@ -2768,6 +2778,45 @@ def cmd_selftest(args, root: str) -> int:
                                      f"reindexed was retired, so nothing is left to rebuild",
                                      remedy="`plans/index.md` is a retired artifact: no "
                                             "command produces it and none may reindex it"))
+
+    # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
+    # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
+    # undocumented one does not — a grammar that admits everything admits the prose under a task.
+    for key in TASK_META_KEYS:
+        m = TASK_META_RE.match(f"{DEFAULT_META_INDENT}{key}: value")
+        if not m or m.group(1).lower() != key:
+            findings.append(_finding("sp-task-meta-key", "error",
+                                     f"`{key}:` is a documented task metadata key that "
+                                     f"TASK_META_RE no longer parses",
+                                     remedy="TASK_META_KEYS and the grammar documented in "
+                                            "assets/references/specs-develop/artifacts.md "
+                                            "§Execution metadata move together"))
+    for bad, why in ((f"{DEFAULT_META_INDENT}notakey: value", "an undocumented key"),
+                     ("files: value", "an unindented line")):
+        if TASK_META_RE.match(bad):
+            findings.append(_finding("sp-task-meta-key", "error",
+                                     f"TASK_META_RE accepts {why} — the grammar is closed on "
+                                     f"both the key list and the indent",
+                                     remedy="metadata is indented under its checkbox and drawn "
+                                            "from TASK_META_KEYS; anything else is prose"))
+
+    # Admitting a key into the grammar is only half the job — the dispatch has to place it.
+    # `constraint:` is inert, so the arm that reads it is *no arm at all*, and the failure this
+    # asserts is what an `else: verify = val` fallthrough did: a `constraint:` line after
+    # `verify:` silently became the task's verify command, and the loop would have run that
+    # prose as shell. Ordering matters to the fixture — constraint must follow verify.
+    probe = parse_tasks("## Tasks\n\n### 1. X\n\n"
+                        "- [ ] 1.1 t\n"
+                        "      verify: THE-REAL-CHECK\n"
+                        "      constraint: prose that is not a command\n")
+    if not probe or probe[0].get("verify") != "THE-REAL-CHECK":
+        findings.append(_finding("sp-task-meta-dispatch", "error",
+                                 "a `constraint:` line overwrote the task's `verify:` — an "
+                                 "inert key reached the verify arm, so the loop would run "
+                                 "prose as the task's shell command",
+                                 remedy="the metadata dispatch is exhaustive: every key in "
+                                        "TASK_META_KEYS gets its own arm or is deliberately "
+                                        "unread — never a trailing `else` that catches it"))
 
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
