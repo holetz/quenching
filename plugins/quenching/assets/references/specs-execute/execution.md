@@ -52,6 +52,29 @@ Two things the loop below still needs from it:
 
 Nothing in this file stamps that record, reads it as authoritative, or corrects it.
 
+### Delegating is owed; dispatching unconditionally is not
+
+Delegation and dispatch are not the same act. A spec that is **already isolated** — its
+`plan/<slug>` ref alive, or the `branch` record already stamped — has nothing left to take, and
+`/specs:isolate` invoked against it does exactly what it promises: it reports the existing branch
+and stamps nothing. **Check first, and skip the call in that case.** Checking is `git branch --list
+"plan/<slug>"` plus the `branch` record already inside the `status --json` the loop reads anyway,
+and it decides the question without moving anything.
+
+The saving is not only turns. Dispatching a stage also costs the run its own **attribution**: the
+transcript's pointer moves to the stage and, measured, almost never comes back, so the conducting
+run's remaining work is filed under the command it dispatched. What that does to a later count is
+owned by `docs/standards/automation/session-evidence.md` §What a command's run cost — the stage
+comes back `closed: false`, its counts become an upper bound, and `mayIncludeTurnsFrom` names the
+misread. Cite that rule; never restate it.
+
+**The residual case is real and is paid, not avoided.** When there genuinely is something to
+isolate, `/specs:isolate` is still the only thing that takes it — the branch form, the
+`plan/<slug>` name and the `branch: {base, work}` stamp stay entirely its own, and the invariant
+"delegate isolation … never reimplement it here" is untouched. That run loses its own attribution
+and is measured as an upper bound. That is the honest cost of a real delegation, written here so it
+is not rediscovered at each retro.
+
 ## The verification policy
 
 Declared per spec in the frontmatter (`verification`), written by `/specs:develop`, read by
