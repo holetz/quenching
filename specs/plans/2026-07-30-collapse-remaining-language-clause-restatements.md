@@ -347,7 +347,7 @@ e não com a continuação `files:`.
   files: `plugins/quenching/assets/references/docs-align/okf-spec.md`
   verify: `grep -n 'every other statement' plugins/quenching/assets/references/docs-align/okf-spec.md` → nenhum acerto
   subject: plan/collapse-remaining-language-clause-restatements: 4 Corrigir a nota falsa de okf-spec
-- [ ] 5 Varrer os dez lembretes de fronteira da tabela de `## Design` contra o guarda-corpo da task
+- [x] 5 Varrer os dez lembretes de fronteira da tabela de `## Design` contra o guarda-corpo da task
   1, corrigindo os que acrescentam um fato do dono ou estreitam o escopo. `assets/README.md` é o
   único hoje conhecido; reportar o número efetivamente corrigido, e registrar como discovery
   qualquer caso em que o teste não decida.
@@ -363,3 +363,4 @@ e não com a continuação `files:`.
 ## Discoveries
 
 - A Open Decision 'o invariante das gêmeas ganha um check mecânico?' já está resolvida: specs.py selftest compara TEMPLATE_SPEC com assets/specs/templates/spec.md byte-a-byte (specs.py:246 e :2790) e o próprio comentário do código diz 'EDIT BOTH OR NEITHER'. O check é durável, roda no lockstep, e não precisa de spec próprio — a decisão pode ser fechada como já-feita.
+- O invariante do censo em ## Validation nao mede o que afirma. O grep declarado (uma linha, escopo plugins/ docs/) nunca pegou okf-spec.md, cuja ocorrencia esta quebrada por wrap ('the repo's' / 'language' em linhas distintas) — e -A1 nao a recupera, so mostra a linha seguinte de um acerto ja encontrado. Tambem nao cobre specs/QUENCHING.md, que esta fora de plugins/ e docs/. E learn.md conta dois acertos num arquivo so. Medido: 13 acertos / 12 arquivos antes deste spec, 14 / 13 depois — o +1 e a nova prosa de plugin-layout.md (task 1), nao um lembrete novo. O numero 14 do verify da task 5 bate por coincidencia aritmetica, nao porque o conjunto seja o da tabela. Um censo que meca de fato precisa de grep multiline e de incluir specs/.
