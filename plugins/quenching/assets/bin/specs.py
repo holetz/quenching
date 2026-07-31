@@ -1319,6 +1319,117 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
     return info, {}
 
 
+# --------------------------------------------------------------------------- #
+# the spec backend
+# --------------------------------------------------------------------------- #
+class SpecBackend:
+    """Where a repo's specs actually live. One implementation per target; every command
+    above talks to this and never to a path.
+
+    THE INTERFACE IS THE DOCUMENT, NOT THE VERBS. `status`, `show`, `section`, `task`,
+    `discover`, `promote` and `validate` are shared code layered on the five primitives
+    below — they are not methods each backend reimplements. That is what makes "every
+    backend behaves identically" provable by construction rather than by hoping three
+    parsers agree: the canonical markdown document is the contract, the derivation of
+    stages, gates, records and tasks happens once, and a backend's only job is to produce
+    that document and to store it again.
+
+    A backend is therefore free to serialise natively — `## Tasks` as sub-issues, sections
+    as fields — provided it reassembles the canonical document on read. The hybrid
+    serialisation lives inside each external implementation, exactly where it belongs, and
+    it can never drift the JSON the CLI prints.
+
+    Granular reading is unaffected by this split, because the cost it addresses is the
+    agent's context and not I/O: `show --section` hands back one heading whether or not the
+    backend had to fetch the whole document to find it."""
+
+    name = "abstract"
+
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        """Every spec descriptor, oldest first within each phase."""
+        raise NotImplementedError
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        """`(info, err)` — the canonical document plus everything derived from it, or a
+        ready-to-emit refusal. Never raises for an unknown or ambiguous slug."""
+        raise NotImplementedError
+
+    def write_spec(self, info: dict, text: str) -> None:
+        """Replace one spec's whole document with `text`."""
+        raise NotImplementedError
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        """Store a new spec and return the locator a report can show a human."""
+        raise NotImplementedError
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
+        raise NotImplementedError
+
+
+class FilesBackend(SpecBackend):
+    """Specs as markdown files under the specs workspace. The reference implementation:
+    when the interface and this backend disagree, this backend is right, because it is the
+    one whose behaviour every other backend is asserted against."""
+
+    name = "files"
+
+    def __init__(self, root: str) -> None:
+        self.root = root
+
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        return spec_files(self.root, phase)
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        return load_spec(self.root, slug)
+
+    def write_spec(self, info: dict, text: str) -> None:
+        write_text(info["path"], text)
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        dest_dir = os.path.join(self.root, phase)
+        os.makedirs(dest_dir, exist_ok=True)
+        path = os.path.join(dest_dir, filename)
+        write_text(path, text)
+        return path
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        dest_dir = os.path.join(self.root, dest_phase)
+        os.makedirs(dest_dir, exist_ok=True)
+        dest = os.path.join(dest_dir, info["file"])
+        os.rename(info["path"], dest)
+        return dest
+
+
+_BACKEND_CACHE: dict[str, SpecBackend] = {}
+
+
+def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
+    """The backend this workspace declares, or a ready-to-emit refusal.
+
+    Memoised per root because resolving it reads the config from disk, and a single command
+    asks for it more than once. The cache holds no mutable state — a backend is its root and
+    nothing else — so this is a lookup table, not a session.
+
+    A backend named in the config but not yet implemented refuses with exit 2 rather than
+    falling back to `files`. Silently writing specs to the local filesystem for a repo that
+    asked for GitHub is the one failure that loses work instead of reporting it."""
+    if root in _BACKEND_CACHE:
+        return _BACKEND_CACHE[root], {}
+    cfg = load_config(root)
+    name = cfg["backend"]
+    if name == "files":
+        backend: SpecBackend = FilesBackend(root)
+    else:
+        return None, {
+            "code": "sp-backend-unavailable", "exit": 2, "backend": name,
+            "message": f"backend '{name}' is declared in {CONFIG_FILE} but this copy of "
+                       f"specs.py does not implement it yet — no spec was read or written",
+        }
+    _BACKEND_CACHE[root] = backend
+    return backend, {}
+
+
 def record_keys(schema: dict | None = None) -> list[str]:
     """The optional frontmatter records, in the schema's declared order.
 
@@ -1417,7 +1528,12 @@ def cmd_new(args, root: str) -> int:
                          "message": f"'{args.name}' does not reduce to a kebab-case slug"},
              f"error: '{args.name}' does not reduce to a kebab-case slug")
         return 2
-    _, matches = resolve_slug(root, slug)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    # Asked of the backend, not of the filesystem: a slug already taken in GitHub must
+    # refuse here exactly as one already taken on disk does.
+    matches = [s for s in backend.list_specs() if s["slug"] == slug]
     if matches:
         m = matches[0]
         emit(args.json, {"ok": False, "code": "sp-slug-exists", "slug": slug,
@@ -1428,14 +1544,11 @@ def cmd_new(args, root: str) -> int:
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{today()}-{slug}.md"
-    dest_dir = os.path.join(root, "plans")
-    os.makedirs(dest_dir, exist_ok=True)
     body = (capture_form()
             .replace("<SLUG>", slug)
             .replace("<TITLE>", title)
             .replace("<VERIFICATION>", policy))
-    path = os.path.join(dest_dir, name)
-    write_text(path, body)
+    path = backend.create_spec("plans", name, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
           "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
@@ -1446,7 +1559,10 @@ def cmd_new(args, root: str) -> int:
 
 
 def cmd_list(args, root: str) -> int:
-    specs = spec_files(root)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    specs = backend.list_specs()
     rows = []
     for s in specs:
         text = read_text(s["path"]) or ""
@@ -1492,7 +1608,10 @@ def _next_phase(phase: str, schema: dict | None = None) -> str | None:
 
 
 def cmd_status(args, root: str) -> int:
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     checked, blocked, total = task_progress(info["tasks"])
@@ -1610,7 +1729,10 @@ def cmd_section(args, root: str) -> int:
 
     An executor is handed a task line and `## Handoff`, never the whole spec; this is the
     command that slices it without an LLM re-reading and rewriting the file."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     heading = _match_heading(args.heading)
@@ -1636,7 +1758,7 @@ def cmd_section(args, root: str) -> int:
     block = (f"## {heading}\n\n{content.strip()}\n"
              if content.strip() else section_guidance(heading))
     new_text, action = upsert_section(info, heading, block)
-    write_text(info["path"], new_text)
+    backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
           "path": os.path.relpath(info["path"], os.path.dirname(root)).replace(os.sep, "/")},
@@ -1675,7 +1797,10 @@ def cmd_promote(args, root: str) -> int:
     The file is MOVED, never renamed: the date prefix was stamped at capture and the
     basename is the spec's identity for its whole lifecycle. Git detects the rename by
     content, so `git log --follow` reads as one history without this tool shelling out."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     dest = args.to or _next_phase(info["phase"])
@@ -1739,8 +1864,7 @@ def cmd_promote(args, root: str) -> int:
                  "\n  pass --force to archive anyway, or --outcome abandoned")
             return 2
 
-    dest_dir = os.path.join(root, dest)
-    dest_path = os.path.join(dest_dir, info["file"])
+    dest_path = os.path.join(root, dest, info["file"])
     rel = f"{dest}/{info['file']}"
     if args.dry_run:
         emit(args.json,
@@ -1755,10 +1879,12 @@ def cmd_promote(args, root: str) -> int:
                          "message": f"{rel} already exists"},
              f"error: {rel} already exists")
         return 1
-    os.makedirs(dest_dir, exist_ok=True)
+    # The outcome is stamped BEFORE the hop, so the document that moves already carries it —
+    # a backend whose move is not atomic must never be able to land an archived spec with no
+    # outcome on it.
     if outcome:
-        write_text(info["path"], set_frontmatter_key(info["text"], "outcome", outcome))
-    os.rename(info["path"], dest_path)
+        backend.write_spec(info, set_frontmatter_key(info["text"], "outcome", outcome))
+    backend.move_spec(info, dest)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "from": info["folder"], "to": dest,
           "outcome": outcome, "dest": rel, "warn": gates["warn"]},
@@ -1781,7 +1907,10 @@ def cmd_task(args, root: str) -> int:
     `--block` writes the reason into the line itself. That visibility is the whole point:
     v1 kept an attempt counter in `.specs.json` that nobody read, and a task went quiet
     after five failures with no trace of why."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block
@@ -1851,7 +1980,7 @@ def cmd_task(args, root: str) -> int:
         for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
                            if o is not None), reverse=True):
             del lines[off]
-    write_text(info["path"], "".join(lines))
+    backend.write_spec(info, "".join(lines))
 
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
     emit(args.json,
@@ -2042,7 +2171,11 @@ def _next_front(args, root: str) -> int:
     branch with no record, and a record outlives the branch it names."""
     schema = load_schema()
     heads, current = _git_refs(root)
-    cands = [_candidate(s, schema, heads, current) for s in spec_files(root, "plans")]
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    cands = [_candidate(s, schema, heads, current)
+             for s in backend.list_specs("plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
     for c in cands:
@@ -2102,7 +2235,10 @@ def cmd_next(args, root: str) -> int:
                                     "or --front for the ranked candidate list"},
              "error: pass --spec <slug>, or --front")
         return 1
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
@@ -2182,7 +2318,10 @@ def cmd_parallel(args, root: str) -> int:
     """Prove a `[P]` group's `files:` sets are disjoint — MECHANICALLY, never judged in
     prose. A group with an undeclared `files:` is ineligible: nothing can be proven about
     a task that never said what it touches."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     findings = []
@@ -2223,7 +2362,10 @@ def cmd_discover(args, root: str) -> int:
     Captured INDISCRIMINATELY during execution — whether a discovery is worth acting on is
     triage's judgment, not the executor's, and the cost of asking mid-build is a human
     interrupted for something that may not matter."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     entry = f"- {args.text.strip()}"
@@ -2233,7 +2375,7 @@ def cmd_discover(args, root: str) -> int:
     else:
         block = f"## Discoveries\n\n{entry}\n"
     new_text, _ = upsert_section(info, "Discoveries", block)
-    write_text(info["path"], new_text)
+    backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "entry": args.text.strip()},
          f"recorded in ## Discoveries: {args.text.strip()}")
@@ -2686,7 +2828,10 @@ def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
 
 
 def cmd_validate(args, root: str) -> int:
-    specs = spec_files(root)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    specs = backend.list_specs()
     findings: list[dict] = []
 
     seen: dict[str, list[str]] = {}
