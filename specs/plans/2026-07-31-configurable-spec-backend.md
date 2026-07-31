@@ -384,9 +384,10 @@ trabalho em que se está.
       que falha é reportado, nunca deixado implícito
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 4.3 anchor por sha — task --commit aditivo, falha reportada nunca implicita
-- [ ] 4.4 Reescrever docs/standards/workflows/task-execution.md §One commit per task para o anchor
+- [x] 4.4 Reescrever docs/standards/workflows/task-execution.md §One commit per task para o anchor
       por sha, preservando por que o subject foi escolhido antes
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/configurable-spec-backend: 4.4 reescreve task-execution.md — anchor por sha, subject aditivo
 - [ ] 4.5 Reescrever docs/standards/workflows/plan-git-record.md §The task→commit link
       verify: python3 assets/hooks/okf-validate.py docs
 - [ ] 4.6 E2E real neste repositório: criar spec de teste, escrever três seções, criar e ticar duas
