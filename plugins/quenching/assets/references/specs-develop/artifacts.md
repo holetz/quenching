@@ -137,9 +137,19 @@ The context an executor needs and cannot derive: the state of play, the conventi
 was already tried. **Small by construction** — it is sent with every task, and it does not carry
 the human sections.
 
-It is warned on (not gated) once the ready gate is met, and it is rewritten after **each committed
-task** rather than when someone judges it stale. Staleness is this section's only failure mode, and
-an event-bound rule is the one cure that survives an unattended run.
+It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
+the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
+— rather than when someone judges it stale. Staleness is this section's only failure mode, and an
+event-bound rule is the one cure that survives an unattended run.
+
+Each of those four is a moment the executor *just finished doing something*, never one where it
+appraises something: that is the property that makes the rule survivable unattended, and it is what
+any future edit has to preserve. The cadence they replaced was one rewrite per committed task,
+which on a measured 13-task run produced rewrites ~90% identical to one another — the section is
+sent with every task, so a near-identical rewrite is paid for on both sides and buys nothing on
+either. What a resumed run can derive on its own — which tasks are done, which commit carried each
+— lives in `git log` and in the `subjects` `specs.py status` returns; this section carries only
+what nothing derives.
 
 ## `## Tasks`
 
