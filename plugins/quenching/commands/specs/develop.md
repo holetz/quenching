@@ -4,7 +4,7 @@ argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
-# /specs:develop — ask one spec the questions its stage calls for
+# /quenching:specs:develop — ask one spec the questions its stage calls for
 
 **Input**: `$ARGUMENTS` — a spec slug, or a description of what to work on.
 
@@ -60,9 +60,9 @@ so nothing here writes a delta and nothing later syncs one.
 - **Read `docs/` before writing.** The relevant `docs/standards/` and `knowledge/glossary.md` are
   binding on wording, so a spec does not contradict a rule the repo already agreed on or invent a
   second name for a thing that already has one.
-- **Never edit code.** If the work implies code changes, that is `/specs:execute`. If a request
+- **Never edit code.** If the work implies code changes, that is `/quenching:specs:execute`. If a request
   changes the spec's *intent* rather than sharpening it, say so and offer a fresh
-  `/specs:create` instead of quietly rewriting what was already agreed.
+  `/quenching:specs:create` instead of quietly rewriting what was already agreed.
 
 ## Workflow
 
@@ -146,11 +146,11 @@ or the same bank selected again with nothing left to ask → go to step 8.
 ### 8. Report
 The spec and the bank(s) that ran; how many questions were asked and answered; the sections edited;
 the records stamped; the routed offers and whether each was taken; the stage before and after; and
-the next step — `/specs:execute <slug>` once `approved` is stamped, `/specs:develop <slug>` again
-for the next bank, or `/specs:continue` to be told what the whole front wants next.
+the next step — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
+for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
 
 **Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
-tree, so the human may want it on a branch — when they ask, name `/specs:isolate <slug>` as the
+tree, so the human may want it on a branch — when they ask, name `/quenching:specs:isolate <slug>` as the
 next command. It owns the branch name and the `branch: {base, work}` record. Never raise it unprompted; this
 command's job is questions, and a prompt about git in the middle of one is friction for everyone.
 **Done when:** the summary is shown.
@@ -158,10 +158,10 @@ command's job is questions, and a prompt about git in the middle of one is frict
 ## Invariants to never violate
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
-  `/specs:execute`.
-- **Never write into `docs/`.** A durable rule a question surfaces routes to `/docs:add`, an
-  understanding to `/docs:learn`, a term to `/docs:define`, an out-of-scope follow-up to
-  `/specs:create` — **offered, never auto-written**. The rules a spec *proves* are written during
+  `/quenching:specs:execute`.
+- **Never write into `docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
+  understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define`, an out-of-scope follow-up to
+  `/quenching:specs:create` — **offered, never auto-written**. The rules a spec *proves* are written during
   execution, not during definition.
 - Never write a section without showing it and getting the human's word first.
 - Never write anything mid-bank — accumulate, then apply once.

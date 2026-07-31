@@ -1,11 +1,11 @@
 # Distill — the OKF bridge from a concluded spec to `docs/`
 
-How `/specs:conclude` offers to carry the **durable** knowledge a spec produced into the repo's
+How `/quenching:specs:conclude` offers to carry the **durable** knowledge a spec produced into the repo's
 OKF `docs/` bundle. This is **the single bridge** between the two systems: the archive side keeps
 its own history (the archived spec IS the record of what was proposed, designed and done); the OKF
 side receives **only** what outlives the spec and was not already written into `docs/` while it was
 built. Nothing is bulk-copied. The insert mechanics (stamp → index → glossary → self-check)
-live with `/docs:add`
+live with `/quenching:docs:add`
 ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) — this file only
 decides **what crosses** and cites that procedure for **how**.
 
@@ -13,11 +13,11 @@ decides **what crosses** and cites that procedure for **how**.
 
 | The spec produced… | Cross? | OKF home / route |
 | --- | --- | --- |
-| a rule a task **explicitly named** under `## Impact` | **no** | `/specs:execute` **already wrote it into `docs/standards/`** as part of that task — nothing to do here. There is no separate spec store to sync |
+| a rule a task **explicitly named** under `## Impact` | **no** | `/quenching:specs:execute` **already wrote it into `docs/standards/`** as part of that task — nothing to do here. There is no separate spec store to sync |
 | a **decision** (rationale + considered alternatives, usually in `## Design`) not yet captured as a standard | yes | `standards/<subject>/<concept>.md` (`type: standard`; `authority: current` if the spec proved it, else `background`) — there is no separate ADR home |
 | **generic understanding** gained (domain insight, mental model, a learning from implementation) | yes | `knowledge/<subject>/<slug>.md` (`type: knowledge`) |
 | a **repo-specific term** the spec coined or clarified | yes | an entry in `knowledge/glossary.md` (§Enriching the glossary in homes.md) |
-| a **follow-up** the spec surfaced but did not pursue | yes | a fresh spec in `specs/plans/` via `/specs:create` — outside the `docs/` bundle, and never stamped with an OKF `type:` |
+| a **follow-up** the spec surfaced but did not pursue | yes | a fresh spec in `specs/plans/` via `/quenching:specs:create` — outside the `docs/` bundle, and never stamped with an OKF `type:` |
 | `## Proposal` / `## Design` / `## Tasks` as documents | no | they are the archive's history; copying them into `docs/` duplicates a source of truth |
 | task checklists, progress notes, transient debugging chatter | no | transient by nature |
 
@@ -38,7 +38,7 @@ Boundary tie-breakers **within** `docs/` (standards vs knowledge vs reference) a
 
 ## Two moments, one table
 
-The table above decides **what** crosses. `/specs:conclude` applies it **twice**, at two moments
+The table above decides **what** crosses. `/quenching:specs:conclude` applies it **twice**, at two moments
 that differ only in when the doc has to exist:
 
 | Moment | What it catches | Where it lands |
@@ -71,12 +71,12 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    else durable, is normal; say so and skip to done.
 2. **One plan, one OK.** Present the candidate list as a single distillation plan and ask one
    confirmation. The user may strike items. If the OKF bundle is missing (no `docs/index.md` with
-   `okf_version`), offer `/docs:align` first, or skip distillation entirely — never scaffold ad hoc.
+   `okf_version`), offer `/quenching:docs:align` first, or skip distillation entirely — never scaffold ad hoc.
 3. **Mint each approved doc** under the insert procedure
    ([homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)): fill the home's mold, stamp the
    frontmatter (`resource` may cite the archived spec path — it exists, so the link is derived, not
    invented; `source:` names the spec), update the home's `index.md`, enrich the glossary when a
-   term warrants it. A follow-up instead goes through `/specs:create` into `specs/plans/` (outside
+   term warrants it. A follow-up instead goes through `/quenching:specs:create` into `specs/plans/` (outside
    the `docs/` bundle).
 4. **Narrate the bridge in the archived spec's `## Outcome`.** One line per minted doc —
    `distilled: [<title>](/docs/<path>.md) — <what it carries>` — appended to the `## Outcome`

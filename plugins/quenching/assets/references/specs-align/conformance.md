@@ -1,4 +1,4 @@
-# The canonical `specs/` workspace + the exact checks `/specs:align` applies
+# The canonical `specs/` workspace + the exact checks `/quenching:specs:align` applies
 
 The single owner of the **specs-workspace conformance contract**: what a canonical `specs/`
 surface looks like, the probe that decides whether the sweep runs at all, the finding codes it
@@ -164,7 +164,7 @@ Both folds share two guarantees:
 
 Retained unchanged, and still the only place `openspec/` is touched: `openspec/` → `specs/`; each
 `openspec/specs/<capability>/spec.md` folded into `docs/standards/` by a **human-chosen** cut (no
-OKF bundle → the fold stops and `/docs:align` is suggested first); `config.yaml` removed; the delta
+OKF bundle → the fold stops and `/quenching:docs:align` is suggested first); `config.yaml` removed; the delta
 folders discarded once folded or confirmed obsolete; non-diverged shadow copies and `/opsx:*`
 wrappers removed. **Interop with the external OpenSpec CLI is lost — say so before applying.** A
 legacy workspace runs this fold first, then `specs.py migrate`.
@@ -178,14 +178,14 @@ conformance.
 | Code | Fires when | Owner |
 | --- | --- | --- |
 | `sp-empty-section` | A canonical heading is present with an empty body — malformed, at any stage | The human. Filling it, even with `- none — <reason>`, is **authoring an answer**: only they know whether it is empty because nothing applies or because nobody thought about it. |
-| `sp-gate-unmet` | A spec is missing a section its own gate requires | The human, via `/specs:develop` (which asks rather than fills). |
+| `sp-gate-unmet` | A spec is missing a section its own gate requires | The human, via `/quenching:specs:develop` (which asks rather than fills). |
 | `sp-stray-heading` | A `##` heading outside the canonical fourteen | The human — folding a stray into a canonical section is a judgment about what it *meant*. |
-| `sp-overview-missing` | A spec meets the whole ready gate but carries an empty `## Overview` | `/specs:develop` — written last, once every other section has settled. |
-| `sp-handoff-empty` | A spec being executed has an empty `## Handoff` | `/specs:execute`, which refreshes it after each committed task. |
+| `sp-overview-missing` | A spec meets the whole ready gate but carries an empty `## Overview` | `/quenching:specs:develop` — written last, once every other section has settled. |
+| `sp-handoff-empty` | A spec being executed has an empty `## Handoff` | `/quenching:specs:execute`, which refreshes it after each committed task. |
 | `sp-impact-uncovered` | A `docs/standards/**.md` path declared under `## Impact` that no `## Tasks` item names | The human — add the task, or drop the declaration. Which of the two is correct is a judgment, so the sweep never picks. |
-| `sp-unrefined` | A spec meets the whole ready gate but carries no `refined` record | `/specs:develop`'s adversarial bank. **Never gates** — a spec may always be built unrefined. |
+| `sp-unrefined` | A spec meets the whole ready gate but carries no `refined` record | `/quenching:specs:develop`'s adversarial bank. **Never gates** — a spec may always be built unrefined. |
 | `sp-no-outcome` | An `archive/` spec carries no `outcome:` | The human — `done` and `abandoned` are opposite facts, and nothing can infer which was meant. |
-| `sp-spec-complete` | Every `## Tasks` box in a spec is `- [x]` | `/specs:conclude`. This sweep never archives. |
+| `sp-spec-complete` | Every `## Tasks` box in a spec is `- [x]` | `/quenching:specs:conclude`. This sweep never archives. |
 | `sp-spec-blocked` | A spec carries `- [!]` tasks | The human — the reason is already written in the line. |
 | `sp-spec-stale` | A spec untouched for **90 days** with open tasks | Report with the age; the human decides. Staleness is evidence, never a verdict — a spec untouched for a year may be waiting on a vendor. |
 
