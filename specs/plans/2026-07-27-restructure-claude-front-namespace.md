@@ -4,6 +4,7 @@ title: Rename the /skill namespace to /automation and split it into artifact con
 verification: per-section
 priority: {level: 19, criticality: medium, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
+approved: {date: 2026-07-31}
 ---
 
 # Rename the /skill namespace to /automation and split it into artifact contexts
@@ -712,6 +713,54 @@ descrições always-on continuam existindo, não reescreve o README além das st
 fecha nenhum spec irmão. Quem mergear por último paga a reescrita mecânica no rebase, que é o custo
 que a alternativa "dividir em dois specs" tornaria recorrente.
 
+## Handoff
+
+Estado da árvore após o último commit. Reescrito a cada task; o que está aqui é o que um executor
+novo não consegue derivar.
+
+**Isolação.** O humano escolheu **in place** em 2026-07-31, então o spec **não** carrega registro
+`branch:` — de propósito, e `/quenching:specs:conclude` vai precisar que lhe digam o branch. O trabalho
+está em `claude/restructure-claude-front-namespace-5f2333`, worktree
+`.claude/worktrees/correct-command-citation-form-044087/`, cortado de `main` (`813bf33`). O nome não
+segue `plan/<slug>`, então `specs.py next --front` **não** vê este spec como em voo.
+
+**Baseline das seis assertivas, medido na árvore intacta em 2026-07-31** (task 1.1, commit
+`c950e1f`+1). É contra estes números que "não piorou" é conferido em 5.4:
+
+| Assertiva | Baseline |
+| --- | --- |
+| 1 · `skills.py doctor` | `commands: 26`, `findings: []` |
+| 1 · `skills.py lint` | exit 0 · 35 findings: `sk-trigger-position` 11, `sk-no-boundary` 10, `sk-step-criterion` 9, `sk-unscoped-bash` 5. **`sk-bare-citation`: 0** |
+| 2 · `okf-validate.py docs` | exit 0 · **0 error(s), 25 warning(s)** — todas `stale-doc`. `resource-unresolved`: **0**. `glossary-broken-link`: **0** |
+| 3 · grep da forma antiga | **278 hits em 59 arquivos** — dos quais **26 vivem em `runs/**`** (ver o defeito abaixo) |
+| 4 · grep da forma bare | **376 hits em 60 arquivos** — dos quais 3 em `runs/**` |
+| 5 · lockstep | `4.4.2` nos cinco: VERSION, `specs.py`, `skills.py`, `okf-validate.py`, `session.py` |
+| 5 · `assets/docs` | 0 error(s), 0 warning(s) |
+| 5 · `assets/specs/plans --listing-root` | 0 error(s), **1 warning(s)** (`bundle-no-index`) |
+| 5 · selftests | `skills` PASS · `specs` PASS (12 casos) · `okf-validate` PASS |
+| — · `skills.py budget` | `total: 12875` — o invariante que prova que o sweep não vazou para `description:` |
+
+**Três números de `## Validation` estão desatualizados e não foram corrigidos** (corrigi-los é edição
+de spec, fora do `files:` de 1.1):
+
+- diz "o bundle já carrega **14 warnings** hoje" — são **25**;
+- diz que as duas entradas `resource-unresolved` pré-existentes "continuam lá" — hoje há **zero**;
+- assertiva 5 espera `assets/specs/plans` com 0 warnings — hoje devolve 1 (`bundle-no-index`),
+  pré-existente e alheio a este spec.
+
+**DEFEITO que impede a assertiva 3 de jamais passar.** O pathspec
+`':!plugins/quenching/assets/evals/*/*/*/runs/'`, usado nas assertivas 3 e 4, **não exclui nada**:
+`git grep` casa o padrão contra o caminho inteiro, e ele para em `runs/`. Medido: 26 dos 278 hits da
+assertiva 3 estão dentro de `runs/**`, que `## Out of Scope` declara byte-idêntico e que nenhuma task
+reescreve. Como está escrita, a assertiva 3 **nunca volta vazia** e o spec sempre se lê como
+"renomeado pela metade". A forma que funciona, medida (0 arquivos de `runs/` no resultado):
+
+```
+':(glob,exclude)plugins/quenching/assets/evals/**/runs/**'
+```
+
+Excluindo `runs/**` de verdade, o baseline real da assertiva 3 é **252 hits**, e o da 4, **373**.
+
 ## Tasks
 
 Cinco grupos, em ordem de dependência. Nenhuma task é marcada `[P]`: praticamente toda uma reescreve
@@ -734,8 +783,9 @@ linha e só ela, então uma task que continua na linha seguinte chega pela metad
 
 ### 1. Contrato e decisão, antes de qualquer movimento
 
-- [ ] 1.1 Registrar o baseline das seis assertivas de `## Validation` na árvore intacta — hits e arquivos dos dois greps, warnings de bundle, findings `sk-*` atuais, `total` do budget — para que "não piorou" seja verificável
+- [x] 1.1 Registrar o baseline das seis assertivas de `## Validation` na árvore intacta — hits e arquivos dos dois greps, warnings de bundle, findings `sk-*` atuais, `total` do budget — para que "não piorou" seja verificável
       verify: git grep -nE '/skill:|quenching:skill|commands/skill|references/skill-|evals/skill|/docs:harness' -- ':!specs/' | wc -l
+      subject: plan/restructure-claude-front-namespace: 1.1 Registrar o baseline das seis assertivas de ## Validation na árvore intacta
 - [ ] 1.2 Resolver a primeira pergunta de `## Open Decisions` (renomear `skills.py` e os códigos `sk-*`?) e gravar a resposta com a razão na seção, incluindo a inconsistência aceita se a resposta for não
       files: specs/plans/2026-07-27-restructure-claude-front-namespace.md
 - [ ] 1.3 Extrair para `assets/references/align/sweep-doctrine.md` a versão condensada das três formas de citação que hoje está inline nos dois aligns, e trocar os dois inlines por uma citação `${CLAUDE_PLUGIN_ROOT}` desse dono
@@ -803,3 +853,5 @@ linha e só ela, então uma task que continua na linha seguinte chega pela metad
 ## Discoveries
 
 - O item de ## Out of Scope 'Prefixar citações voltadas a humanos com quenching:' foi fechado citando commands/docs/align.md:237, que declarava a forma bare como 'what a human types'. Essa alegação era falsa com o plugin instalado como plugin e foi corrigida por correct-command-citation-form (2026-07-31): três formas, e a bare resolve apenas onde o comando mora no .claude/commands/ do repo-alvo. commands/** e assets/references/** já foram varridos e o finding sk-bare-citation (WARN) guarda a regra. O item precisa ser reavaliado sobre a evidência nova, não sobre a frase antiga. -> folded: Out of Scope
+- O pathspec ':!plugins/quenching/assets/evals/*/*/*/runs/' das assertivas 3 e 4 de ## Validation nao exclui nada — git grep casa o padrao contra o caminho inteiro e ele para em runs/. Medido em 2026-07-31: 26 dos 278 hits da assertiva 3 vivem em runs/**, que ## Out of Scope declara byte-identico. Como esta escrita, a assertiva 3 NUNCA volta vazia e o spec sempre se le como renomeado pela metade. A forma que funciona e ':(glob,exclude)plugins/quenching/assets/evals/**/runs/**' (0 arquivos de runs/ no resultado); com ela o baseline real e 252 hits na 3 e 373 na 4. Corrigir as duas assertivas e edicao de spec, fora do files: da task 1.1.
+- Tres numeros de ## Validation envelheceram antes do grupo 1: diz que o bundle carrega 14 warnings (sao 25, todas stale-doc), diz que as duas entradas resource-unresolved pre-existentes continuam la (hoje ha zero), e a assertiva 5 espera assets/specs/plans com 0 warnings (devolve 1, bundle-no-index, pre-existente e alheio a este spec).
