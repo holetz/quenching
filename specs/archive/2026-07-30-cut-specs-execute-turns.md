@@ -12,6 +12,9 @@ branch:
   work: plan/cut-specs-execute-turns
 reviewed:
   date: 2026-07-31
+merge:
+  strategy: merge-commit
+  subject: "plan/cut-specs-execute-turns: merge (merge-commit)"
 outcome: done
 ---
 
