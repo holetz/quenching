@@ -75,8 +75,11 @@ sentence, and **link out** rather than explaining in full here.
   unblocks it.
 - [**Boundary reminder**](../standards/architecture/plugin-layout.md) — a one-clause line that
   states the *edge* of a rule the citing place already owns, seen from the other side (`/docs:add`
-  saying the slug is canonical English while the body follows the repo's language), as opposed to a
-  restatement, which repeats a fact the citing place neither owns nor can change. It is legitimate
+  saying the slug is canonical English while the body prose follows whatever language the repo
+  declared), as opposed to a restatement, which repeats a fact the citing place neither owns nor
+  can change. Note the paraphrase: writing the clause verbatim here would make this entry one more
+  member of the census it describes — see
+  [prose-sweeps.md](../standards/quality/prose-sweeps.md) §*Write the mention as a placeholder*. It is legitimate
   by the **ownership test** and stays legitimate only under the **verifiable guardrail** — one
   clause, no fact the owner states, and never a narrowing; the third is what caught
   `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
