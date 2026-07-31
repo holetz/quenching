@@ -18,6 +18,9 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
   it as a content gap: the sidecar that adds the signal without changing a return type, why the
   finding is a warn, and why a lossy transform never ships without the diagnostic for it.
+* [prose-sweeps.md](prose-sweeps.md) — a mechanical find-and-replace over prose corrupts exactly the
+  sentences that talk *about* the form being swept, the checker that guards the sweep reports them
+  clean, and the mitigation is to write a mention as a placeholder rather than an instance.
 * [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
   an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
   prove, and the gate the three shipped selftests have not yet cleared.

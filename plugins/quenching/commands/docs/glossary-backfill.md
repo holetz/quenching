@@ -4,35 +4,35 @@ argument-hint: [optional-home-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---
 
-# /docs:glossary-backfill — backfill the glossary from the whole bundle
+# /quenching:docs:glossary-backfill — backfill the glossary from the whole bundle
 
 **Input**: `$ARGUMENTS` (an optional home/slice to scope the sweep; omit to scan the whole bundle).
 
 Sweeps the canonical OKF bundle's **entire** `docs/` tree — every doc already sitting there,
-written before the glossary existed, migrated in by `/docs:align`, or hand-authored — for
+written before the glossary existed, migrated in by `/quenching:docs:align`, or hand-authored — for
 repo-specific terms that were never fed into
 [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md), and backfills them in one
 consolidated pass. This is a **retroactive, whole-bundle** sweep, not a capture: it never
 writes a `knowledge/` concept doc and never asks the human what a term means — those stay
-`/docs:learn`'s job. The glossary format and the shared **Enriching the glossary**
-procedure live with `/docs:add`
+`/quenching:docs:learn`'s job. The glossary format and the shared **Enriching the glossary**
+procedure live with `/quenching:docs:add`
 ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)); the
-`type` vocabulary and conformance rules with `/docs:align`
+`type` vocabulary and conformance rules with `/quenching:docs:align`
 ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)). The fan-out convention
 (bounded recon, sliced `Task` agents, compact partials, one merged plan) follows
-`/docs:import-memory`, the only other skill in this plugin that uses `Task`.
+`/quenching:docs:import-memory`, the only other skill in this plugin that uses `Task`.
 
 ## Doctrine
 
 - **Sweep, don't recapture.** A retroactive, bulk pass over what the bundle *already says* —
   never asks the human "what does this mean," never authors a `knowledge/` doc itself (that
-  stays exclusively `/docs:learn`'s job).
+  stays exclusively `/quenching:docs:learn`'s job).
 - **Bounded reconnaissance, sliced fan-out.** List doc paths cheaply first (`Glob`/`find`, no
   bodies). Slice by top-level home by default (further splitting a large home to ~15–20
   docs/agent). One `Task` sub-agent per slice reads only its slice's docs and returns compact
   `{term, one-sentence definition, candidate doc path}` candidates — never full bodies back
-  to the orchestrator. Apply the same caution `/docs:import-memory` applies to
+  to the orchestrator. Apply the same caution `/quenching:docs:import-memory` applies to
   `catalog/**` and `reference/repositories/**`: list-only by default (skip body scanning),
   reported as excluded, opt-in only.
 - **One glossary, one writer.** Sub-agents only propose; the orchestrator is the sole editor
@@ -41,13 +41,13 @@ procedure live with `/docs:add`
   words; a slice agent drops a candidate it can't honestly derive rather than guessing.
 - **An unlinked entry is a valid, permanent state** — not a gap to chase, no escalation.
 - **Plan first, one confirmation.** Merge every slice into ONE consolidated list before any
-  write (mirrors `/docs:align`/`/docs:import-memory`'s posture). **Exception —
-  cycle-authorized runs:** invoked as a stage of `/docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  write (mirrors `/quenching:docs:align`/`/quenching:docs:import-memory`'s posture). **Exception —
+  cycle-authorized runs:** invoked as a stage of `/quenching:docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the
   consolidated plan is presented as narration, not a gate — this skill has no code-coupled
   items, so cycle-authorized means zero pauses.
 - **MERGE, never clobber; keep it sorted; skip what's already listed** — identical contract
-  to `/docs:define` Step 4, in the bullet syntax from
+  to `/quenching:docs:define` Step 4, in the bullet syntax from
   [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md).
 
 ## Workflow
@@ -55,7 +55,7 @@ procedure live with `/docs:add`
 ### 1. Locate the glossary and read the baseline
 Find `docs/knowledge/glossary.md` (the bundle root may be a variant — resolve it as the other
 skills do). If the `knowledge/` home or the glossary seed is missing, stop and offer
-`/docs:align` to install the skeleton, then resume. Read the current entries once — this
+`/quenching:docs:align` to install the skeleton, then resume. Read the current entries once — this
 is the dedupe baseline every slice's candidates get checked against.
 
 ### 2. List the bundle, bounded
@@ -114,4 +114,4 @@ plus this skill's own gate: the list is still sorted and its links resolve.
 - Never blindly descend into `catalog/**` or `reference/repositories/**` — list-only by
   default, reported as excluded, opt-in only.
 - Never author a `knowledge/` concept doc or ask the human what a term means — that is
-  `/docs:learn`'s job, not this skill's.
+  `/quenching:docs:learn`'s job, not this skill's.

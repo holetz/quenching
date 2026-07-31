@@ -60,8 +60,13 @@ SUBCOMMANDS
                   per numbered step, unscoped `Bash`, invocation-control coherence, and
                   the execution profile's decidable slice (`sk-fork-gate`,
                   `sk-profile-value`).
+                  Plus, on a surface carrying `.claude-plugin/plugin.json`, the citation
+                  form (`sk-bare-citation`): a plugin's commands are namespaced, so a
+                  bare `/front:verb` in prose resolves nowhere. Read from the body
+                  ALONE, which is what keeps a `description:` out of it.
                   `path` accepts a command file, a commands/ directory, or a surface
-                  root; it defaults to the resolved surface.
+                  root; it defaults to the resolved surface. A surface root also brings
+                  in `assets/references/**` — prose the same session reads.
   doctor          the surface's shape: every command carries a non-empty `description`,
                   no two resolve to the same `/` path, and every path segment is
                   kebab-case. That invariant is what replaced the bijection — with one
@@ -111,6 +116,14 @@ VERSION = "4.4.2"  # lockstep with the plugin VERSION file, plugin.json, specs.p
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
 HOOKS_DIR = "hooks"
+
+# The prose checks reach `assets/references/**` as well as `commands/**`, decided by count:
+# of the 519 bare command citations this surface carried on 2026-07-30, 183 lived under
+# `assets/references/`, so a scope stopping at `commands/` leaves 35% of the prose with no
+# net — and a reference is read by the same session that reads the body citing it, so a
+# body and its reference disagreeing is exactly the drift worth catching. A surface with no
+# such directory (every target repo's `.claude/`) contributes nothing and reports nothing.
+REFERENCES_DIR = os.path.join("assets", "references")
 
 SURFACE_MISSING = "—"
 
@@ -172,6 +185,15 @@ REGISTRY_RELPATH = ("docs", "documentation", "reference", "automation.md")
 ZONE_BEGIN = "<!-- GENERATED:BEGIN -->"
 ZONE_END = "<!-- GENERATED:END -->"
 EMPTY_CELL = "—"
+
+PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
+
+# A slash citation carrying at least one `:` — `/docs:add`, `/docs:documentation:build`. The
+# lookbehind rejects a citation already prefixed by a path or a scheme (`https://`,
+# `${CLAUDE_PLUGIN_ROOT}/…`), and requiring a segment after the `:` keeps a bare namespace
+# (`/skill:`) out: naming the namespace is not citing a command.
+CITATION_RE = re.compile(r"(?<![\w:/-])/([a-z0-9-]+(?::[a-z0-9-]+)+)")
+CITATION_SAMPLE = 3      # examples carried in the message; the count carries the rest
 
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 QUOTED_RE = re.compile(r"[\"“]([^\"”]{2,}?)[\"”]")
@@ -629,6 +651,27 @@ def discover_commands(commands_dir: str) -> list[dict]:
     return sorted(out, key=lambda c: c["command"])
 
 
+def discover_references(references_dir: str) -> list[dict]:
+    """Every `<references_dir>/**/*.md` — the shared procedure a command body cites by
+    absolute path instead of restating. These are NOT entry points and carry no
+    invocation: they are prose the prose checks read, nothing more."""
+    if not os.path.isdir(references_dir):
+        return []
+    out = []
+    for dirpath, _dirnames, filenames in os.walk(references_dir):
+        for fn in sorted(filenames):
+            if not fn.endswith(".md"):
+                continue
+            path = os.path.join(dirpath, fn)
+            text = read_text(path) or ""
+            out.append({
+                "path": path,
+                "relpath": rel(path, references_dir),
+                "body": body_after_frontmatter(text),
+            })
+    return sorted(out, key=lambda r: r["relpath"])
+
+
 def load_surface(root: str) -> dict:
     return {
         "root": root,
@@ -901,24 +944,76 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
     return out
 
 
-def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict]]:
-    """(base, commands). Accepts a single command file, a commands/ directory, or a
-    surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
-    all mean what they read like."""
+def plugin_prefix(root: str) -> str | None:
+    """The registry prefix this surface's commands carry, from `<root>/.claude-plugin/
+    plugin.json`. `None` says the surface is a target repo's own `.claude/` — where a
+    command file IS in `.claude/commands/`, the bare form is the one that resolves, and
+    the citation check has nothing to say."""
+    text = read_text(os.path.join(root, PLUGIN_MANIFEST))
+    if text is None:
+        return None
+    try:
+        name = json.loads(text).get("name")
+    except (ValueError, AttributeError):
+        return None
+    return name.strip() if isinstance(name, str) and name.strip() else None
+
+
+def bare_citations(body: str, invocations: set[str]) -> list[str]:
+    """The bare `/front:verb` citations in `body` that name a command of THIS surface, in
+    order of appearance and without repeats.
+
+    `body` is the text after the frontmatter, so a citation inside `description:` cannot
+    reach here — the boundary is the parse, never a pattern that has to be kept in step
+    with one."""
+    seen: list[str] = []
+    for m in CITATION_RE.finditer(body):
+        cite = "/" + m.group(1)
+        if cite in invocations and cite not in seen:
+            seen.append(cite)
+    return seen
+
+
+def lint_citations(prefix: str, body: str, invocations: set[str], where: dict) -> list[dict]:
+    """One finding per file, never one per citation: a surface mid-sweep carries hundreds,
+    and a report nobody can read is a report nobody acts on."""
+    bare = bare_citations(body, invocations)
+    if not bare:
+        return []
+    shown = ", ".join(f"`{c}`" for c in bare[:CITATION_SAMPLE])
+    more = f" (+{len(bare) - CITATION_SAMPLE} more)" if len(bare) > CITATION_SAMPLE else ""
+    return [finding("sk-bare-citation", "warn",
+                    f"{plural(len(bare), 'bare command citation')} in the body — {shown}{more}. "
+                    f"These commands come from the `{prefix}` plugin, so the form that resolves "
+                    f"is `{prefix}:<front>:<verb>` for the Skill tool and "
+                    f"`/{prefix}:<front>:<verb>` for a human; the bare form resolves only where "
+                    "the command file lives in the target repo's own .claude/commands/",
+                    citations=bare, **where)]
+
+
+def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict], list[dict]]:
+    """(base, commands, references). Accepts a single command file, a commands/ directory,
+    or a surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
+    all mean what they read like.
+
+    The references ride along only when the base IS a surface root: linting one file, or a
+    bare `commands/` directory, is a scope the caller named and this never widens it."""
     if not path_arg:
-        return root, discover_commands(os.path.join(root, COMMANDS_DIR))
+        return (root, discover_commands(os.path.join(root, COMMANDS_DIR)),
+                discover_references(os.path.join(root, REFERENCES_DIR)))
     target = os.path.abspath(path_arg)
     if os.path.isfile(target):
         parent = os.path.dirname(target)
         return parent, [c for c in discover_commands(parent)
-                        if os.path.abspath(c["path"]) == target]
+                        if os.path.abspath(c["path"]) == target], []
     if os.path.isdir(os.path.join(target, COMMANDS_DIR)):
-        return target, discover_commands(os.path.join(target, COMMANDS_DIR))
-    return target, discover_commands(target)
+        return (target, discover_commands(os.path.join(target, COMMANDS_DIR)),
+                discover_references(os.path.join(target, REFERENCES_DIR)))
+    return target, discover_commands(target), []
 
 
 def cmd_lint(args, root: str) -> int:
-    base, commands = resolve_lint_targets(args.path, root)
+    base, commands, references = resolve_lint_targets(args.path, root)
     if not commands:
         return report_findings(args, f"skills lint — {base}", {"root": base, "commandCount": 0},
                                [finding("sk-no-commands", "error",
@@ -927,8 +1022,29 @@ def cmd_lint(args, root: str) -> int:
     findings: list[dict] = []
     for cmd in commands:
         findings.extend(lint_command(cmd, base))
-    return report_findings(args, f"skills lint — {base} ({plural(len(commands), 'command')})",
-                           {"root": base, "commandCount": len(commands)}, findings)
+
+    prefix = plugin_prefix(root)
+    if prefix:
+        # What counts as a command of this surface is a property of the SURFACE, never of
+        # the scope asked for — deriving it from `commands` would make `lint <one file>`
+        # blind to every citation naming a sibling.
+        invocations = {c["command"] for c in
+                       (commands if base == root
+                        else discover_commands(os.path.join(root, COMMANDS_DIR)))}
+        for cmd in commands:
+            findings.extend(lint_citations(prefix, cmd["body"], invocations,
+                                           {"command": cmd["command"],
+                                            "path": rel(cmd["path"], base)}))
+        for ref in references:
+            findings.extend(lint_citations(prefix, ref["body"], invocations,
+                                           {"command": SURFACE_MISSING,
+                                            "path": rel(ref["path"], base)}))
+
+    header = f"skills lint — {base} ({plural(len(commands), 'command')}"
+    header += f", {plural(len(references), 'reference')})" if references else ")"
+    return report_findings(args, header,
+                           {"root": base, "commandCount": len(commands),
+                            "referenceCount": len(references)}, findings)
 
 
 register("lint", lambda sp: sp.add_argument(
@@ -1188,6 +1304,37 @@ EXPECTED_DRIFT = {
     "pluginonly": {"sk-tool-absent"},   # the hook only — never the two CLIs
 }
 
+# The citation check and the boundary that makes it safe to run. `cites-bare` carries a
+# bare citation in its BODY *and* another inside `description:`; asserting the exact list
+# is what proves the frontmatter one never reached the check — the risk `## Risks` names,
+# a sweep leaking into always-on metadata, is exactly this boundary failing. `resolvable`
+# carries every form that DOES resolve — the registry name, the plugin-prefixed slash, a
+# bare namespace naming no verb, and a URL — and must stay silent.
+CITATION_FIXTURE = {
+    "docs/cites-bare.md":
+        "---\ndescription: A bare /docs:hollow here is frontmatter, and must never fire.\n"
+        "---\n\nHand off to /docs:add once the doc is written.\n",
+    "docs/cites-resolvable.md":
+        "---\ndescription: The control.\n---\n\n"
+        "Invoke `plugfix:docs:add` through the Skill tool, or type /plugfix:docs:add. The\n"
+        "/docs: namespace names no verb, and https://example.com/docs:add is a URL.\n",
+}
+
+# the same check reaching `assets/references/**` — the scope decided by count, and the only
+# evidence that the reference tree is linted at all
+CITATION_REFERENCE_FIXTURE = {"docs-add/homes.md": "Route the rest to /docs:hollow.\n"}
+
+# a manifest is what makes a surface a PLUGIN, and the check fires only for one: on a target
+# repo's own `.claude/`, the command file really is in `.claude/commands/` and the bare form
+# is the one that resolves
+CITATION_MANIFEST = {".claude-plugin/plugin.json": '{"name": "plugfix"}\n'}
+
+EXPECTED_CITATIONS = {
+    "/docs:cites-bare": ["/docs:add"],
+    "/docs:cites-resolvable": [],
+    "references/docs-add/homes.md": ["/docs:hollow"],
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -1202,11 +1349,15 @@ def cmd_selftest(args, root: str) -> int:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
-        for relpath, text in {**FIXTURE, **HOOK_FIXTURE}.items():
+        for relpath, text in {**FIXTURE, **HOOK_FIXTURE, **CITATION_FIXTURE}.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
-        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE}.items():
+        for relpath, text in CITATION_REFERENCE_FIXTURE.items():
+            path = os.path.join(tmp, REFERENCES_DIR, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE, **CITATION_MANIFEST}.items():
             path = os.path.join(tmp, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
@@ -1240,6 +1391,20 @@ def cmd_selftest(args, root: str) -> int:
                 if f["code"].startswith("sk-hook-"):
                     hook_got[c["command"]].add(f["code"])
 
+        prefix = plugin_prefix(tmp)
+        invocations = {c["command"] for c in surface["commands"]}
+        citation_got = {c["command"]: bare_citations(c["body"], invocations)
+                        for c in surface["commands"] if c["command"] in EXPECTED_CITATIONS}
+        for ref in discover_references(os.path.join(tmp, REFERENCES_DIR)):
+            citation_got[f"references/{ref['relpath']}"] = bare_citations(ref["body"], invocations)
+        # the finding's own shape: WARN, never ERROR (bundle-verification.md), and one per
+        # file rather than one per citation
+        cites_bare = next(c for c in surface["commands"] if c["command"] == "/docs:cites-bare")
+        fired = lint_citations(prefix, cites_bare["body"], invocations,
+                               {"command": cites_bare["command"]}) if prefix else []
+        # a target repo's own surface carries no manifest, so the same body must stay silent
+        target_silent = plugin_prefix(os.path.join(tmp, "clean", CLAUDE_DIR)) is None
+
     failures = canonical_case_failures()
     for command, codes in EXPECTED.items():
         if got.get(command) != codes:
@@ -1260,11 +1425,24 @@ def cmd_selftest(args, root: str) -> int:
     if not refusal_armed:
         failures.append("drift: an installed copy's own directory resolved as a plugin root — "
                         "the exit-2 refusal is not armed")
+    if prefix != "plugfix":
+        failures.append(f"citations: the manifest's name read as {prefix!r}, not 'plugfix' — "
+                        "the check cannot name the form that resolves")
+    for where, cites in EXPECTED_CITATIONS.items():
+        if citation_got.get(where) != cites:
+            failures.append(f"{where}: expected citations {cites}, got {citation_got.get(where)}")
+    if [(f["code"], f["severity"]) for f in fired] != [("sk-bare-citation", "warn")]:
+        failures.append(f"citations: expected one sk-bare-citation at warn, got "
+                        f"{[(f['code'], f['severity']) for f in fired]}")
+    if not target_silent:
+        failures.append("citations: a surface with no plugin manifest resolved a prefix — "
+                        "the check would fire where the bare form is the correct one")
 
-    # + 2: the two conformant controls that must stay clean (/docs:add, agents/good.md),
-    # and the drift refusal, which is a case with no fixture row of its own
+    # + 3: the two conformant controls that must stay clean (/docs:add, agents/good.md) and
+    # the drift refusal, none of which has a fixture row of its own; + 2 for the citation
+    # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
-             + len(EXPECTED_DRIFT) + 3)
+             + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5)
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))

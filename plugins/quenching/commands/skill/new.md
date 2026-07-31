@@ -4,7 +4,7 @@ argument-hint: [skill-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
 
-# /skill:new — mint ONE conformant command, registry included
+# /quenching:skill:new — mint ONE conformant command, registry included
 
 **Input**: `$ARGUMENTS` (the command to create or edit — a name or a description of what it should do).
 
@@ -18,7 +18,7 @@ body itself is written lives in [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/as
 what a command may strategically use — fork, pins, hooks, the invocation controls — and what
 each lever costs lives in
 [skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md) —
-this skill owns all three, and `/skill:align` cites them. Molds live at
+this skill owns all three, and `/quenching:skill:align` cites them. Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
 
 ## Doctrine
@@ -30,14 +30,14 @@ this skill owns all three, and `/skill:align` cites them. Molds live at
   never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `docs/index.md` without `okf_version`
   (or absent) means: write the command file only, skip registry/glossary/log silently, and
-  suggest `/docs:align` **once**.
+  suggest `/quenching:docs:align` **once**.
 - **One plan, one OK, nothing before.** Classification, names, every file to be written,
   and the OKF tail appear in ONE plan; no file is created or modified before the single
   confirmation. A declined plan writes nothing.
 - **MERGE, never clobber.** An edit preserves the skill's body and any hand-written
   content; only the gap being fixed changes. This skill never deletes a skill.
 - **The registry zone is regenerated, never composed.** `skills.py registry reindex` owns the
-  zone's format; this skill and `/skill:align` are the two that invoke it, and neither
+  zone's format; this skill and `/quenching:skill:align` are the two that invoke it, and neither
   writes between the markers by hand. Composing a derived table and then diffing it against its
   own source is one reader checking its own arithmetic.
 
@@ -64,7 +64,7 @@ abbreviation are
 Read `docs/standards/automation/skills.md` and confirm the bundle
 (`docs/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
 present → add "create the rule from `automation/skills-standard.md`" to the plan. No
-bundle → note the tail as skipped and plan the `/docs:align` suggestion.
+bundle → note the tail as skipped and plan the `/quenching:docs:align` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
 ### 2. Classify on the axis
@@ -153,7 +153,7 @@ unreachable, a `${CLAUDE_PLUGIN_ROOT}` placeholder never expands, or a citation 
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
 changed, since each check is a billed session. In this plugin that is
-`assets/checks/functional-checks.sh` (default subset for a body; `/skill:eval` for a description).
+`assets/checks/functional-checks.sh` (default subset for a body; `/quenching:skill:eval` for a description).
 **Where the repo ships none, say plainly that the command is written but unproven until a fresh
 session** — never report a linter's exit 0 as evidence that the surface loaded.
 
