@@ -784,7 +784,27 @@ def read_text(path: str) -> str | None:
 
 
 def write_text(path: str, text: str) -> None:
-    pathlib.Path(path).write_text(text, encoding="utf-8")
+    """Replace a file's whole content ATOMICALLY — a reader never sees half a spec.
+
+    Write-then-rename rather than `Path.write_text`, which truncates first: a reader landing in
+    the window between the truncate and the write gets an empty or torn document. That window
+    is why this is here rather than left alone — `SpecsLock` serialises WRITERS ONLY, and the
+    argument for letting readers run unlocked is exactly that a write is never observable
+    half-done. `os.replace` is atomic on POSIX and on Windows.
+
+    The temp file is created in the SAME directory, so the rename never crosses a filesystem,
+    and carries the pid, so two writers cannot collide on the temp name even where no lock
+    covers them (a workspace still in the code tree has no worktree and takes no lock)."""
+    p = pathlib.Path(path)
+    tmp = p.with_name(f".{p.name}.tmp-{os.getpid()}")
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, p)
+    finally:
+        try:
+            tmp.unlink()      # a no-op after a successful replace; cleanup after a failure
+        except OSError:
+            pass
 
 
 def load_schema() -> dict:
@@ -2605,7 +2625,23 @@ def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
 
     Otherwise the specs live on the specs branch, and the worktree is created on demand. The
     workspace keeps its own basename inside it, so `SPECS_ROOT=<x>/design` resolves to
-    `<worktree>/design` and the layout is the same on both sides of the migration."""
+    `<worktree>/design` and the layout is the same on both sides of the migration.
+
+    Memoised per declared root: the answer costs subprocesses, and it is asked twice per
+    writing command — once by `writer_lock`, once by `open_backend`. The cache is what makes
+    the lock and the backend point at the SAME worktree by construction rather than by two
+    resolutions agreeing."""
+    if root in _FILES_ROOT_CACHE:
+        return _FILES_ROOT_CACHE[root]
+    out = _resolve_files_root(root, cfg)
+    _FILES_ROOT_CACHE[root] = out
+    return out
+
+
+_FILES_ROOT_CACHE: dict[str, tuple[str, dict]] = {}
+
+
+def _resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
     if _inside_worktree_dir(root) or _holds_phase_folder(root):
         return root, {}
     top = _repo_main_worktree(root)
@@ -2615,6 +2651,20 @@ def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
     if err:
         return root, err
     return os.path.join(path, os.path.basename(os.path.normpath(root)) or "specs"), {}
+
+
+def files_specs_worktree(root: str, cfg: dict) -> tuple[str | None, dict]:
+    """The specs worktree the `files` backend resolved to, or `None` when it did not use one.
+
+    `None` is not a failure — it is the pre-migration workspace still sitting in the code tree,
+    which is a legal and currently common state. Anything that guards the worktree has to be
+    able to tell the two apart without triggering a second resolution."""
+    target, err = resolve_files_root(root, cfg)
+    if err:
+        return None, err
+    if os.path.abspath(target) == os.path.abspath(root):
+        return None, {}
+    return os.path.dirname(os.path.abspath(target)), {}
 
 
 def files_root_failures() -> list[str]:
@@ -2648,6 +2698,304 @@ def files_root_failures() -> list[str]:
     if got_path != want:
         out.append(f"a namespaced branch resolved to {got_path!r}, not {want!r} — a `/` in the "
                    f"branch name must not deepen the worktree path")
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# the specs worktree lock — one writer at a time, per worktree
+# --------------------------------------------------------------------------- #
+LOCK_SUFFIX = ".lock"
+LOCK_WAIT_SECONDS = 10.0
+LOCK_POLL_SECONDS = 0.05
+
+
+def specs_lock_path(worktree: str) -> str:
+    """`<…>/.claude/worktrees/<name>.lock` — BESIDE the worktree, never inside it.
+
+    Inside, the lock would be untracked content in the one tree whose whole job is to hold a
+    clean, committable set of specs, and every `git status` run there would report the tool's
+    own bookkeeping. Beside, it is already covered by the `.claude/worktrees/` ignore rule that
+    `worktree_guard` refuses to run without — so the lock costs no new ignore line, and cannot
+    dirty the code tree either."""
+    return os.path.normpath(worktree) + LOCK_SUFFIX
+
+
+def _lock_holder(path: str) -> dict:
+    """Who the lock file says is holding it. An unreadable or unparseable lock comes back as an
+    empty record rather than as an error: the file existing is the lock, and its contents are
+    only ever used to describe the holder to a human or to prove it is gone."""
+    try:
+        obj = json.loads(read_text(path) or "")
+        return obj if isinstance(obj, dict) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _holder_is_gone(info: dict) -> bool:
+    """True ONLY when this process can prove the recorded holder no longer exists.
+
+    AGE IS NEVER THE REASON. "The lock is old, so I will take it" is the tempting rule and the
+    wrong one: a `promote` on a slow filesystem and a crashed process look identical through a
+    timestamp, and the fast case for guessing wrong is two writers in the same document. Age
+    appears in the refusal message as information for the human and never as a decision.
+
+    Proof, and the three things that make it unavailable:
+
+      another host      a pid is meaningless off the machine that issued it, and a specs
+                        worktree on a network share can legitimately be held from elsewhere.
+      not POSIX         `os.kill(pid, 0)` is a liveness probe on POSIX and NOT on Windows,
+                        where `os.kill` terminates the target whatever signal it is handed.
+                        A probe that kills the process it asks about is not a probe.
+      pid alive, or not ours  `ProcessLookupError` is the only answer that proves absence.
+                        `PermissionError` means it is running under another user, which is
+                        alive. Pid reuse can only make a dead holder look ALIVE, which errs
+                        toward refusing — the safe direction."""
+    import socket
+    if os.name != "posix":
+        return False
+    if str(info.get("host") or "") != socket.gethostname():
+        return False
+    try:
+        pid = int(info.get("pid") or 0)
+    except (TypeError, ValueError):
+        return False
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    except (OSError, OverflowError):
+        return False
+    return False
+
+
+class SpecsLock:
+    """Serialises the `specs.py` invocations that WRITE into one specs worktree.
+
+    THE SCOPE IS THE WHOLE COMMAND, not the write syscall. Every writing command is a
+    read-modify-write — `task --check` reads the document, flips one character, writes the
+    whole file back — so a lock held only around the write would still let two processes read
+    the same document and each store its own edit over the other's. Nothing would look corrupt
+    and one tick would simply be gone, which is the worse failure: it leaves no trace.
+
+    ONE LOCK PER WORKTREE, because the worktree is the resource. Two agents ticking tasks on
+    DIFFERENT specs do contend under this, and that is right rather than unfortunate: they
+    share one checkout of one branch, and the next thing that touches it commits everything in
+    it. Contention costs milliseconds — the work under the lock is one parse and one rename.
+
+    `O_CREAT | O_EXCL` is the primitive, not `fcntl` and not `msvcrt.locking`: exclusive create
+    is one syscall with the same meaning on POSIX and on Windows, and this tool ships to both
+    (`_force_utf8_output` is here for the same reason). The cost is a file left behind when a
+    process dies, which is what `_holder_is_gone` answers; the gain is a lock with no platform
+    branch inside it.
+
+    READERS TAKE NO LOCK. `list`, `status`, `show`, `next`, `validate` and `doctor` are the
+    commands a skill calls most, several of them per turn, and putting them in a queue behind a
+    writer would make the lock the front's throughput limit. What makes that safe is not luck:
+    `write_text` replaces a document by rename, so a reader sees the old text or the new one and
+    never a half-written file."""
+
+    def __init__(self, path: str, label: str = "") -> None:
+        self.path = path
+        self.label = label
+        self.held = False
+
+    def acquire(self, wait: float = LOCK_WAIT_SECONDS) -> dict:
+        """`{}` once held, or a ready-to-emit refusal naming the holder. Never raises, never
+        waits forever: a bounded wait absorbs the normal case, where the process ahead is
+        finishing a rename, and anything beyond it is reported to whoever can act on it."""
+        import socket
+        import time
+        deadline = time.monotonic() + max(0.0, wait)
+        record = json.dumps({"pid": os.getpid(), "host": socket.gethostname(),
+                             "command": self.label, "since": _now_iso(),
+                             "tool": f"specs.py {VERSION}"}, ensure_ascii=False)
+        while True:
+            try:
+                os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+                fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            except FileExistsError:
+                pass
+            except OSError as e:
+                return {"code": "sp-lock-unwritable", "exit": 2, "path": self.path,
+                        "message": f"could not create the specs worktree lock at "
+                                   f"'{self.path}': {e}"}
+            else:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    fh.write(record)
+                self.held = True
+                return {}
+
+            holder = _lock_holder(self.path)
+            if _holder_is_gone(holder):
+                try:
+                    os.remove(self.path)      # PROVEN dead — not merely old
+                except OSError:
+                    pass                      # someone else got there first, or we may not
+            else:
+                time.sleep(LOCK_POLL_SECONDS)
+            if time.monotonic() >= deadline:
+                return self._refusal(holder, wait)
+
+    def _refusal(self, holder: dict, waited: float) -> dict:
+        who = (f"pid {holder.get('pid')} on {holder.get('host')}"
+               if holder.get("pid") else "an unidentified process")
+        what = f" running `{holder['command']}`" if holder.get("command") else ""
+        since = f" since {holder['since']}" if holder.get("since") else ""
+        return {
+            "code": "sp-specs-locked", "exit": 2, "path": self.path, "holder": holder,
+            "waited": round(waited, 2),
+            "message": f"the specs worktree is locked by {who}{what}{since} — waited "
+                       f"{waited:g}s and gave up; nothing was written. If that process is gone, "
+                       f"delete '{self.path}'",
+        }
+
+    def release(self) -> None:
+        """Drop the lock. Idempotent and silent about a file already gone — a release that
+        raised would turn a successful write into a nonzero exit in the `finally` that runs
+        after it."""
+        if not self.held:
+            return
+        self.held = False
+        try:
+            os.remove(self.path)
+        except OSError:
+            pass
+
+    def __enter__(self) -> "SpecsLock":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.release()
+
+
+def _now_iso() -> str:
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+# Every subcommand that can MODIFY a spec. `list`/`status`/`show`/`next`/`parallel`/`validate`/
+# `config`/`doctor`/`selftest` are absent because they only read.
+WRITING_COMMANDS = ("new", "task", "discover", "section", "promote")
+
+
+def command_writes(args) -> bool:
+    """Whether THIS invocation will modify a spec — the scope the lock is taken for.
+
+    Per invocation and not per subcommand: `section` without `--write` and `promote --dry-run`
+    read and report, and queueing them behind a writer would put the lock in front of the two
+    reads a skill makes most.
+
+    `migrate` is deliberately absent. It rewrites the DECLARED workspace's own folder layout —
+    the pre-migration `specs/` in the code tree — and never touches the specs worktree, so the
+    worktree's lock would guard nothing it writes."""
+    cmd = getattr(args, "cmd", "")
+    if cmd in ("new", "task", "discover"):
+        return True
+    if cmd == "section":
+        return bool(getattr(args, "write", False))
+    if cmd == "promote":
+        return not bool(getattr(args, "dry_run", False))
+    return False
+
+
+def writer_lock(args, root: str) -> tuple[SpecsLock | None, dict]:
+    """The lock this invocation must hold before it runs, or `(None, {})` when it needs none.
+
+    Three ways to need none, each a fact about where the specs are rather than a policy:
+
+      the command only reads    see `command_writes`.
+      an external backend       GitHub and Azure Boards serialise on their own server; a local
+                                file could not make a remote write atomic and would only add a
+                                second thing to get stuck.
+      no specs worktree         a pre-migration workspace in the code tree has nowhere to put a
+                                lock that git ignores, and an untracked file there is exactly
+                                the breakage `worktree_guard` exists to prevent. It is left
+                                unserialised knowingly — that workspace is the state this
+                                backend exists to end, and adding a second untracked artifact
+                                to it would buy safety for a layout on its way out at the price
+                                of the clean-tree gate `/specs:execute` runs under."""
+    if not command_writes(args):
+        return None, {}
+    cfg = load_config(root)
+    if cfg["backend"] != DEFAULT_BACKEND:
+        return None, {}
+    worktree, err = files_specs_worktree(root, cfg)
+    if err:
+        return None, err
+    if worktree is None:
+        return None, {}
+    lock = SpecsLock(specs_lock_path(worktree), label=_invocation_label(args))
+    return lock, lock.acquire()
+
+
+def _invocation_label(args) -> str:
+    """A short, honest name for what is holding the lock — the subcommand and the spec it is
+    writing. Read by a human staring at a refusal, so it names the spec rather than echoing the
+    whole argv, which would carry `--json` and other noise into the message."""
+    spec = getattr(args, "spec", None) or getattr(args, "title", None) or ""
+    return f"{getattr(args, 'cmd', '?')} {spec}".strip()
+
+
+def lock_failures() -> list[str]:
+    """The lock's invariants, checked rather than asserted in prose.
+
+    The direction that is asserted here is the DANGEROUS one: a lock that is taken while
+    someone holds it, or a holder judged gone on evidence that does not prove it, silently
+    loses a human's edit. Both are decidable with no repository and no second process.
+
+    The opposite direction — a genuinely dead holder being reclaimed — is exercised in a
+    disposable repository and NOT here, because asserting it needs a pid that is provably dead,
+    and the only cheap way to get one is a process that just exited, whose pid the operating
+    system may reuse. A selftest that fails once a month teaches people to ignore it."""
+    import socket
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "specs.lock")
+        first = SpecsLock(path, label="task alpha")
+        if first.acquire(wait=0.0):
+            out.append("a free lock refused to be acquired")
+        if not os.path.isfile(path):
+            out.append("acquiring left no lock file, so nothing marks the worktree as held")
+
+        second = SpecsLock(path, label="promote alpha")
+        err = second.acquire(wait=0.0)
+        if err.get("code") != "sp-specs-locked" or err.get("exit") != 2:
+            out.append(f"a held lock was acquired again (got {err.get('code')!r}) — two "
+                       f"writers in one worktree is the whole failure this prevents")
+        if str(err.get("holder", {}).get("pid")) != str(os.getpid()):
+            out.append(f"the refusal names holder {err.get('holder')!r}, not the process that "
+                       f"actually holds it")
+
+        first.release()
+        if os.path.exists(path):
+            out.append("releasing left the lock file behind, which wedges the next writer")
+        if second.acquire(wait=0.0):
+            out.append("a released lock could not be re-acquired")
+        second.release()
+
+    live = {"pid": os.getpid(), "host": socket.gethostname()}
+    if _holder_is_gone(live):
+        out.append("this very process was judged gone — the liveness proof is inverted")
+    if not _holder_is_gone({"pid": 1, "host": "a-host-that-is-not-this-one"}):
+        pass          # correct: another host is unknowable, never reclaimed
+    else:
+        out.append("a holder on another host was judged gone — a pid does not travel")
+    if _holder_is_gone({"host": socket.gethostname()}) or \
+            _holder_is_gone({"pid": 0, "host": socket.gethostname()}):
+        out.append("a holder with no usable pid was judged gone — absence of evidence is not "
+                   "proof of death")
+
+    reads = argparse.Namespace(cmd="section", write=False, spec="x")
+    writes = argparse.Namespace(cmd="section", write=True, spec="x")
+    if command_writes(reads) or not command_writes(writes):
+        out.append("`section` is classified wrong — the lock follows the invocation, not the "
+                   "subcommand")
+    for cmd in ("list", "status", "show", "next", "parallel", "validate", "config",
+                "doctor", "selftest"):
+        if command_writes(argparse.Namespace(cmd=cmd)):
+            out.append(f"`{cmd}` takes the writer lock, but it only reads")
     return out
 
 
@@ -3600,6 +3948,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "already inside a worktree, a populated pre-migration "
                                         "workspace, no repository at all"))
 
+    # The lock, asserted in the direction that loses work: taken while held, or a holder judged
+    # gone on evidence that does not prove it. Both decide silently, and both end in an edit
+    # nobody can find afterwards.
+    for failure in lock_failures():
+        findings.append(_finding("sp-lock-broken", "error",
+                                 f"the specs worktree lock is unsound — {failure}",
+                                 remedy="one writer per worktree, held for the whole command; "
+                                        "a lock is only ever reclaimed on proof the holder is "
+                                        "gone, never on its age"))
+
     # The claim the configurable-backend design rests on, checked rather than asserted in
     # prose. Runs before the early return: an installed copy is exactly where a backend that
     # quietly started deriving its own stages would go unnoticed.
@@ -3697,7 +4055,8 @@ def cmd_selftest(args, root: str) -> int:
         print(f"  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
               f"the entry-gate headings, the {len(BACKEND_CASES)} backend cases agree between "
               f"`files` and `memory`, the config defaults hold with nothing declared, the files "
-              f"root reaches for no specs worktree where there must not be one, and the "
+              f"root reaches for no specs worktree where there must not be one, the worktree "
+              f"lock admits one writer and reclaims nothing it cannot prove dead, and the "
               f"embedded schema and template match their asset files.")
     return 1 if errors else 0
 
@@ -3951,7 +4310,19 @@ def main(argv: list[str]) -> int:
     if not hasattr(args, "json"):
         args.json = False
     root = find_specs_root(args.root)
-    return DISPATCH[args.cmd](args, root)
+    # The lock is taken HERE and not inside the backend, because the unit it protects is the
+    # whole command: every writing subcommand reads a document, edits it and writes it back,
+    # and a lock that only spanned the write would let two of them read the same text and each
+    # store its own edit over the other's. `finally` and not `atexit`: the lock must be gone by
+    # the time the process reports its exit code, so whatever runs next sees a free worktree.
+    lock, err = writer_lock(args, root)
+    if err:
+        return emit_err(args.json, err)
+    try:
+        return DISPATCH[args.cmd](args, root)
+    finally:
+        if lock is not None:
+            lock.release()
 
 
 if __name__ == "__main__":
