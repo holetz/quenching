@@ -66,8 +66,9 @@ derived fact earns no such mirror.
 `## Design`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`, `## Handoff`,
 `## Tasks`, `## Discoveries`, `## Outcome`.
 
-**Headings are a parsed contract** — canonical English, exactly as written; body prose follows the
-repo's language. A heading outside the set is a stray and `validate` flags it.
+**Headings are a parsed contract** — canonical English, exactly as written. A heading outside the
+set is a stray and `validate` flags it. Which language a spec's body is written in belongs to
+[../agents/communication.md](../agents/communication.md), not here.
 
 Two are load-bearing for machinery, not only for thinking:
 

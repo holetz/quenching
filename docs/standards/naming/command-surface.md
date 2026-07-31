@@ -116,4 +116,5 @@ should-trigger / should-not-trigger rates, per [../automation/context-budget.md]
 ## Canonical English surface
 
 Command paths, folder names, frontmatter keys, and `type` values are canonical English (cross-repo
-greppable). Body prose may follow the repo's language; identifier-derived slugs stay verbatim.
+greppable); identifier-derived slugs stay verbatim. Which language the body prose is written in is
+not this doc's rule — [../agents/communication.md](../agents/communication.md) owns it.

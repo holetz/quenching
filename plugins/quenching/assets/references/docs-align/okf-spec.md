@@ -113,6 +113,11 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    values, and the `type` vocabulary. Frontmatter is English; **body prose MAY follow the repo's
    language**. Identifier-derived slugs (catalog tables/schemas, repo names)
    stay **verbatim** — the slug is the greppable key to the asset.
+   *(`standards/agents/communication.md` is the owner of that language rule for a bundle that has
+   one, and every other statement of it in this plugin was collapsed into a citation. This one
+   stays self-contained deliberately: a format spec is what other implementers read to build
+   against, and one that defers to a doc living inside a particular repo's bundle stops being
+   self-describing.)*
 7. **Harness files** `CLAUDE.md`/`AGENTS.md` are navigation pointers, **not** OKF concepts —
    exempt from the `type` requirement. The validator skips them entirely; the `/docs:harness`
    skill keeps them thin and honest (moving inlined knowledge into its home and verifying every

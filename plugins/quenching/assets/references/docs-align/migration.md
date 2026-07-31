@@ -37,7 +37,8 @@ Convergence applies one level down — a variant **subfolder** is a smell too:
 `plataforma/`→`platform/` · `arquitetura/`→`architecture/` · `qualidade/`→`quality/` ·
 `servicos/`→ the fitting subject (usually `platform/`, or split by content). The folder name +
 frontmatter (keys, enums, and the `title:`/`description:` free-text on this agent-facing
-surface) become canonical English; the **body prose MAY stay in the repo's language**.
+surface) become canonical English. **A migration never translates body prose** — which language it
+is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 
 ### 1b. File-slug translation + prefix-cluster folding
 

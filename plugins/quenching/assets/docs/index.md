@@ -9,7 +9,8 @@ bundle. Each **home** has a fixed name and a single purpose; anyone moving betwe
 repositories that adopt this method finds the **same tree in the same place**. This
 `index.md` is the bundle's front door (a reserved listing — the only one that carries
 frontmatter, and only `okf_version`). Folder names and frontmatter keys are canonical
-English kebab-case; only `audience: human` material follows the repo's language.
+English kebab-case; all prose the agent authors follows the repo's declared language —
+[standards/agents/communication.md](/docs/standards/agents/communication.md) owns that rule.
 
 ## Homes
 

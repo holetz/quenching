@@ -5,6 +5,10 @@ verification: per-section
 priority: {level: 16, criticality: high, date: 2026-07-29}
 refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-29}
+branch: {base: main, work: plan/declare-repo-body-language}
+reviewed: {date: 2026-07-30}
+merge: {strategy: merge-commit, subject: "plan/declare-repo-body-language: merge (merge-commit)"}
+outcome: done
 ---
 
 # Declare the repo's communication language and conduct in docs/standards so every command reads it for free
@@ -182,10 +186,26 @@ parafraseia a regra).
   que entrega a regra seja também seu primeiro consumidor
 ## Validation
 
-- `grep -rn "the repo.s language" docs/ plugins/quenching/assets/references/` retorna os cinco locais
-  que citam o dono e **nenhuma** reenunciação da regra, mais a declaração autocontida deliberada de
-  `okf-spec.md`. Uma sexta reenunciação **dentro dessas duas árvores** é falha; as reenunciações que
-  vivem fora delas estão registradas em `## Open Decisions` e não pertencem a este invariante.
+- O invariante do colapso é um **par** de greps, não um só: os seis locais deixaram de conter a
+  frase — é isso que colapsar significa — então procurá-la não os encontra mais.
+
+  O **alarme de reenunciação nova** precisa casar a frase mesmo quebrada por wrap, e por isso
+  ancora na continuação em vez de na linha inteira:
+
+      grep -rn -B1 'repo.s language\|^ *language\*\*' docs/ plugins/quenching/assets/references/
+
+  Ele retorna **exatamente dois**: a prosa do próprio dono
+  (`docs/standards/agents/communication.md`, que é onde a regra vive) e a declaração autocontida
+  deliberada de `okf-spec.md`. Um terceiro acerto dentro dessas duas árvores é reenunciação nova, e
+  é falha.
+
+  O **censo das citações** é o grep complementar,
+  `grep -rn 'agents/communication.md' docs/ plugins/quenching/assets/references/`: os seis locais
+  que citam o dono, mais a nota de ponteiro do próprio `okf-spec.md` e a linha derivada de
+  `standards/index.md` — esta última listagem gerada, não citação.
+
+  As reenunciações que vivem **fora** dessas duas árvores estão registradas em `## Open Decisions` e
+  não pertencem a este invariante.
 - A metade da etiqueta de `docs/standards/agents/communication.md` **cita**
   `plugins/quenching/assets/references/specs-develop/questions.md` §The four shared mechanics e os
   docs de `docs/standards/automation/`, e não reenuncia nenhum deles. Uma reenunciação aqui é o único
@@ -198,8 +218,14 @@ parafraseia a regra).
   dentro de §The canonical tree (locked), e os dois arquivos `standards/index.md` carregam sua linha de
   subtopic. Um subject que existe em disco mas não na árvore travada é a não conformidade que este
   spec está corrigindo, não um estado que ele possa deixar para trás.
-- `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` e o mesmo em `docs`
-  reportam ambos `0 error(s), 0 warning(s)` com o novo subject e o novo doc de standards no lugar.
+- `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` reporta
+  `0 error(s), 0 warning(s)` com o novo subject e o novo doc de standards no lugar. Sobre `docs/` o
+  critério é **`0 error(s)` e nenhum finding novo**, comparado **doc-a-doc** contra a mesma execução
+  em `main` e nunca por contagem: a baseline já carrega 13 warnings `stale-doc`/`resource-unresolved`
+  alheios a este spec, e o número sobe sozinho conforme as datas de commit rolam sob os globs de
+  `resource:` existentes. O spec irmão `narrow-the-stale-doc-trigger-to-content-drift` é quem cura
+  esse ruído; silenciá-lo aqui com bump de `timestamp:` seria a mentira que ele existe para evitar.
+
 ## Design
 
 **Regra e valor são dois fatos diferentes, cada um em um lugar só.** A linha do harness carrega o
@@ -400,37 +426,50 @@ O colapso, por camada:
   dois quebrados por wrap com `grep -rn -A1` antes de declarar a task pronta.
 ## Handoff
 
-Nada construído ainda — tasks 1–7 abertas, nenhuma bloqueada, nenhuma commitada. Duas ordens são
-load-bearing: a task 1 abre o subject antes de qualquer coisa ser escrita nele, e a task 2 entrega o
-dono antes de a task 5 fazer qualquer local citá-lo.
+**As sete tasks estão commitadas, nenhuma bloqueada.** O que resta é `/specs:conclude`: revisar a
+branch inteira, escrever o `docs/` que o trabalho revelou, resolver as quatro linhas de
+`## Discoveries`, arquivar e mergear. Duas delas pedem correção de redação **no próprio spec** antes
+do arquivamento — o primeiro e o quinto bullet de `## Validation`, cujos greps não medem o que
+afirmam medir.
+
+**Este repositório declara `pt-BR`** (task 3, escolhido pelo humano). A partir daí a prosa autorada
+pelo agente aqui segue a tag — body de doc e de spec, mensagem de commit, e também resposta,
+pergunta e relatório. Os docs em inglês já escritos ficam como estão: traduzi-los é `## Out of Scope`.
 
 Estado que um executor novo não consegue derivar:
 
 - **O slug deste spec precede a decisão do nome.** Ele diz `declare-repo-body-language` porque um
   slug de spec é congelado; o dono se chama `docs/standards/agents/communication.md`. Não procure
   `body-language` no disco e conclua que a task 2 não foi feita — esse arquivo nunca é escrito.
-- O subject `agents/` não existe em nenhuma das duas árvores. A task 1 o cria **e** o declara em
-  `taxonomy.md` §The canonical tree (locked) — editar aquela seção é intencional aqui, não um deslize.
+- O subject `agents/` existe nas duas árvores (task 1) e **o dono já aterrou nas duas** (tasks 2 e
+  3), com o ledger de coverage de cada `agents/index.md` preenchido e a zona `GENERATED` dos dois
+  `standards/index.md` regenerada com o grupo `### agents/`.
+- **As duas cópias do dono não são byte-idênticas, e isso é intencional.** A do skeleton fala de "a
+  plugin's own command surface" e cita a árvore de standards genericamente; a deste repo cita
+  `../naming/command-surface.md`, `../automation/index.md` e `plugins/quenching/commands/**` por
+  caminho real. Ao editar uma, decida conscientemente se a outra acompanha.
+- **O `verify:` das tasks 1–3 pede `0 error(s), 0 warning(s)` nas duas árvores, e sobre `docs/` isso
+  é inalcançável e não por culpa deste spec:** `main` já trazia 13 warnings `stale-doc` /
+  `resource-unresolved` alheios a ele. O critério aplicado foi **`0 error(s)` e nenhum finding
+  novo**; meça contra a baseline, não contra zero. `assets/docs` fica em `0 error(s), 0 warning(s)`
+  literais. Desde a task 1 são **14**: escrever sob `plugins/quenching/assets/**` fez
+  `architecture/plugin-layout.md` acusar `stale-doc` sem que seu contrato mudasse (ver
+  `## Discoveries`) — não silencie com bump de timestamp.
 - Não funda `docs/standards/automation/agents.md` dentro do subject novo. Ele é o contrato de
   definição de `.claude/agents/`, fica onde está, e movê-lo pertence a
   `revise-standards-subject-folders`.
-- O doc dono não existe em lugar algum ainda. As duas escritas são criações, e cada uma tem **duas
-  metades**: a língua (uma tag BCP-47 declarada por repositório) e a etiqueta de comunicação
-  (constante, não configurável, e escrita citando `questions.md` e `docs/standards/automation/` em
-  vez de reenunciá-los — o invariante do segundo bullet de `## Validation`).
 - Os seis locais ainda reenunciam a regra literalmente. `okf-spec.md` é o que conserva sua declaração
   — não o colapse.
 - `docs/index.md` e `plugins/quenching/assets/docs/index.md` ainda limitam a regra a
   `audience: human`; a task 4 as amplia para toda prosa autorada pelo agente. Lê-los antes da task 4
   dá a redação de antes da decisão.
-- Os dois `standards/index.md` carregam uma zona `## Current docs` entre `BEGIN GENERATED` e
-  `END GENERATED`, agrupada por subject e reconstruída a partir do disco. **Nada a valida:**
-  `okf-validate.py` não conhece o conjunto de subjects e checa apenas `dir-no-index`, links de
-  listagem quebrados e docs órfãos. Logo o `verify:` das tasks 1–3 reporta
-  `0 error(s), 0 warning(s)` mesmo com a zona sem o grupo `### agents/`. Regenere a zona nas duas
-  árvores dentro da própria task em que o doc aterra.
-- Esta sessão roda sem branch `plan/`: a isolação foi declinada porque a branch designada da sessão é
-  mandatória. Nenhum registro `branch` é estampado, e os commits aterram nessa branch.
+- **Nada valida a zona `GENERATED` dos `standards/index.md`:** `okf-validate.py` não conhece o
+  conjunto de subjects e checa apenas `dir-no-index`, links de listagem quebrados e docs órfãos. Se
+  uma task futura acrescentar um doc de standards, regenere a zona dentro da própria task — o
+  `verify:` não vai reclamar. As tasks 2 e 3 tocaram o `standards/index.md` de sua árvore por essa
+  razão, embora ele não conste do `files:` declarado de nenhuma das duas.
+- A isolação está tomada: `plan/declare-repo-body-language`, cortada de `main`, no worktree
+  `.claude/worktrees/declare-repo-body-language-a66245`. O registro `branch` está estampado.
 - `verification: per-section` — verifique no limite de cada task, conforme o `verify:` daquela task.
 ## Tasks
 
@@ -440,14 +479,15 @@ lançado carrega uma citação pendurada. Cada task nomeia o caminho `docs/stand
 própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e não com a continuação
 `files:`.
 
-- [ ] 1 Abrir o subject `agents/` nas duas árvores — pasta + `index.md` no skeleton e neste
+- [x] 1 Abrir o subject `agents/` nas duas árvores — pasta + `index.md` no skeleton e neste
   repositório, o subject adicionado a `taxonomy.md` §The canonical tree (locked), e uma linha de
   subtopic nos dois `standards/index.md`. O limite do subject: como instruímos agentes — o que a
   surface always-on declara. Distinto de `automation/` (o subject local deste repo para a própria
   command surface).
   files: `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/docs/standards/index.md`, `plugins/quenching/assets/docs/standards/agents/index.md`, `docs/standards/index.md`, `docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` and `... docs` both report `0 error(s), 0 warning(s)`
-- [ ] 2 Entregar o dono no skeleton em `docs/standards/agents/communication.md` sob `assets/docs/`
+  subject: plan/declare-repo-body-language: 1 Abrir o subject agents/ nas duas árvores
+- [x] 2 Entregar o dono no skeleton em `docs/standards/agents/communication.md` sob `assets/docs/`
   Duas metades. **A língua:** o que declarar significa, que somente o harness **raiz** carrega a
   declaração, que o valor é uma tag BCP-47, que ela governa toda prosa autorada pelo agente
   (artefato e conversa) com as duas exclusões de `## Out of Scope`, e que o silêncio significa
@@ -457,25 +497,79 @@ própria linha do checkbox, porque `sp-impact-uncovered` casa com aquela linha e
   pelo uso.
   files: `plugins/quenching/assets/docs/standards/agents/communication.md`, `plugins/quenching/assets/docs/standards/agents/index.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py assets/docs` → `0 error(s), 0 warning(s)`, and the `## Validation` citation grep shows the etiquette half citing and not restating
-- [ ] 3 Instalar o mesmo dono em `docs/standards/agents/communication.md` no bundle deste repo, e
+  subject: plan/declare-repo-body-language: 2 Entregar o dono no skeleton
+- [x] 3 Instalar o mesmo dono em `docs/standards/agents/communication.md` no bundle deste repo, e
   declarar a language deste próprio repositório no harness raiz — o dogfood que o spec alega. A
   linha carrega a tag e uma citação, e nada mais.
   files: `docs/standards/agents/communication.md`, `docs/standards/agents/index.md`, `CLAUDE.md`
   verify: `python3 plugins/quenching/assets/hooks/okf-validate.py docs` → `0 error(s), 0 warning(s)`
-- [ ] 4 Reconciliar as duas linhas de index que limitam a regra a `audience: human` com a decisão
+  subject: plan/declare-repo-body-language: 3 Instalar o dono neste repo e declarar pt-BR
+- [x] 4 Reconciliar as duas linhas de index que limitam a regra a `audience: human` com a decisão
   deste spec de que ela governa toda prosa autorada pelo agente.
   files: `docs/index.md`, `plugins/quenching/assets/docs/index.md`
   verify: `grep -n 'audience: human' docs/index.md plugins/quenching/assets/docs/index.md` shows no
+  subject: plan/declare-repo-body-language: 4 Reconciliar as duas linhas de index
   language clause narrowed by audience
-- [ ] 5 Colapsar os seis locais que reenunciam a regra para que citem o dono; `okf-spec.md` conserva
+- [x] 5 Colapsar os seis locais que reenunciam a regra para que citem o dono; `okf-spec.md` conserva
   sua declaração autocontida com a razão registrada inline.
   files: `docs/standards/naming/command-surface.md`, `docs/standards/workflows/plan-artifacts.md`, `plugins/quenching/assets/references/specs-develop/spec-driven.md`, `plugins/quenching/assets/references/docs-align/taxonomy.md`, `plugins/quenching/assets/references/docs-align/migration.md`, `plugins/quenching/assets/references/docs-align/okf-spec.md`
   verify: the `## Validation` grep returns five citing sites and no restatement
-- [ ] 6 Ensinar `/docs:align` a perguntar a language uma vez na adoção e escrever a linha no
+  subject: plan/declare-repo-body-language: 5 Colapsar os seis locais para citarem o dono
+- [x] 6 Ensinar `/docs:align` a perguntar a language uma vez na adoção e escrever a linha no
   arquivo de harness raiz — a tag e uma citação, nunca uma segunda chave de configuração.
   files: `plugins/quenching/commands/docs/align.md`
   verify: `grep -n 'communication' plugins/quenching/commands/docs/align.md`
-- [ ] 7 Ensinar `/docs:harness` que a linha da declaração é um KEEP e nunca deve parafrasear a
+  subject: plan/declare-repo-body-language: 6 Ensinar /docs:align a perguntar a language
+- [x] 7 Ensinar `/docs:harness` que a linha da declaração é um KEEP e nunca deve parafrasear a
   regra — o invariante que `## Validation` afirma.
   files: `plugins/quenching/commands/docs/harness.md`
   verify: `grep -n 'communication' plugins/quenching/commands/docs/harness.md`
+  subject: plan/declare-repo-body-language: 7 Ensinar /docs:harness que a linha e KEEP
+
+## Discoveries
+
+- O verify: das tasks 1-3 e o quinto bullet de ## Validation exigem 0 warning(s) do okf-validate.py sobre docs/, mas a baseline ja carrega 13 warnings stale-doc/resource-unresolved pre-existentes e alheios a este spec (identicos antes e depois da task 1). O criterio efetivo aplicado e: 0 error(s) e nenhum finding NOVO. O spec irmao narrow-the-stale-doc-trigger-to-content-drift e quem cura o ruido.
+- As tasks 1-2 fizeram docs/standards/architecture/plugin-layout.md acusar stale-doc: o resource dele cobre plugins/quenching/assets/**, e este spec escreve ali. O contrato do doc nao mudou - so o glob foi tocado. Nao foi silenciado com bump de timestamp; e o mesmo gatilho que narrow-the-stale-doc-trigger-to-content-drift existe para estreitar. Baseline docs/: 13 warnings em main, 14 a partir da task 1.
+- O primeiro bullet de ## Validation espera que o grep 'the repo.s language' retorne cinco locais citando o dono. Depois da task 5 ele retorna ZERO: os cinco colapsados deixaram de conter a frase, e a unica ocorrencia viva - a declaracao autocontida de okf-spec.md - esta quebrada por wrap e escapa ao padrao de uma linha. O invariante util virou um par: grep da frase = alarme de reenunciacao NOVA (deve dar so okf-spec, via -A1); grep de 'agents/communication.md' = as cinco citacoes. Vale corrigir a redacao do bullet no conclude.
+- Uma decima-primeira reenunciacao, fora do censo de ## Open Decisions: plugins/quenching/commands/docs/harness.md passo 7 diz 'Structure and links are canonical English; prose may follow the repo's language'. Nao foi colapsada - e body de comando, a mesma categoria que o censo deixou para um spec de follow-up. Some-a ao censo quando aquele spec for escrito.
+
+## Outcome
+
+**Entregue como `done`, merjado em `main` por merge commit** — os sete commits por task ficam na
+base, e todo `subject:` registrado em `## Tasks` resolve a partir dela sem que a branch precise
+sobreviver.
+
+**O que entrou.** O subject `standards/agents/` passou a existir nas duas árvores — o bundle deste
+repo e o skeleton entregue em `plugins/quenching/assets/docs/` — cada uma com seu `index.md` e com
+o dono único `communication.md`. O doc tem duas metades: a **língua**, que cada repo declara por uma
+tag BCP-47 em uma linha do harness raiz, e a **conduta**, que é constante e nenhum repo sobrescreve.
+Este repo virou o primeiro consumidor da regra que entrega: `CLAUDE.md` declara `pt-BR`. Os seis
+locais que reenunciavam a regra passaram a citá-la; `okf-spec.md` manteve a sua deliberadamente
+autocontida, com a nota que explica o porquê — um format spec que defere a um doc de dentro do
+bundle de um repo específico deixa de ser autodescritivo. `/docs:align` ganhou a pergunta única na
+adoção, e `/docs:harness` ganhou a regra de que a linha é **KEEP** — a única coisa entre ela e uma
+deleção silenciosa, já que arquivos de harness são isentos das checagens do bundle.
+
+**O que ficou de fora, e onde está registrado.** O censo de `## Open Decisions` deixou para um spec
+de follow-up as reenunciações que vivem **fora** de `docs/` e `assets/references/`; a
+`## Discoveries` acrescentou a décima-primeira, em `commands/docs/harness.md` passo 7. Declarar uma
+tag **não** retraduz o que já está escrito — isso é migração, e é outro trabalho. E nada
+máquina-checa nada disto, por construção: um validador não identifica a língua de um documento.
+
+**Dois achados da revisão de branch entraram antes do merge.** Os bullets 1 e 5 de `## Validation`
+não eram executáveis como escritos — o primeiro procurava a frase que os seis locais deixaram de
+conter, o segundo exigia `0 warning(s)` sobre `docs/`, que nunca foi atingível — e foram corrigidos
+para os critérios realmente aplicáveis. A citação por `${CLAUDE_PLUGIN_ROOT}` na tabela de conduta
+foi corrigida nas duas cópias, cada uma na forma certa para seu contexto. O que esse segundo achado
+revelou virou a única doc emergente deste conclude: a emenda a
+`docs/standards/architecture/plugin-layout.md` §*A mold cites nothing it does not also install*,
+cujo escopo nomeava só `assets/templates/**` quando o raciocínio cobre toda árvore que um align
+copia para um repo alvo.
+
+**O que o próximo leitor precisa saber.** O ruído de `stale-doc` em `docs/` **não** é deste spec: a
+baseline em `main` já carregava 13, e o critério aplicado durante toda a execução foi `0 error(s)` e
+nenhum finding novo, comparado doc-a-doc e nunca por contagem. `narrow-the-stale-doc-trigger-to-content-drift`
+é quem cura esse ruído. Pela mesma razão ficou como está o `resource: docs/**, specs/**` de
+`communication.md`, hoje o único resource do bundle que aponta para as árvores de conteúdo do repo
+em vez de para `plugins/quenching/**`: ele vai acusar `stale-doc` no primeiro commit sob `docs/` ou
+`specs/` depois deste merge, e isso é esperado.

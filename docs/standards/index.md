@@ -19,6 +19,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 ## Subtopics
 
+* [agents/](agents/index.md) — how we instruct agents: the language our prose is written in, and the conduct expected of the agent writing it
 * [architecture/](architecture/index.md) — system structure + architectural patterns (patterns live here)
 * [automation/](automation/index.md) — the Claude Code skill + command surface (classification, authoring, alignment)
 * [code/](code/index.md) — code conventions, imports, lint, pins, SYMBOL naming
@@ -40,6 +41,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
        | --- | --- |
        | [imports.md](code/imports.md) | <the doc's description:> |
 -->
+### agents/
+
+| Doc | Covers |
+| --- | --- |
+| [communication.md](agents/communication.md) | The language this repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds whether or not a language is declared |
+
 ### architecture/
 
 | Doc | Covers |

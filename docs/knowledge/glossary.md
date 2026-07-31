@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-26
+timestamp: 2026-07-30
 audience: both
 authority: current
 source: quenching skeleton
@@ -133,6 +133,14 @@ sentence, and **link out** rather than explaining in full here.
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
   is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Climbed only when the rung
   below cannot express the check.
+- [**Language declaration**](../standards/agents/communication.md) — the single line on a repo's
+  **root** harness file naming one BCP-47 tag (`Language: pt-BR — the contract is …`), which governs
+  all prose the agent authors, conversation as much as artifact. It carries a value and a citation
+  and nothing else: never a paraphrase of the rule it cites, and never a second configuration key.
+  Only the root file counts, because only that one is in context at session start — the property the
+  form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
+  constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/docs:harness` classing
+  the line **KEEP** is the only thing between it and a silent deletion.
 - [**Merge record**](../standards/workflows/plan-git-record.md) — the `merge: {strategy, subject}`
   frontmatter entry stamped by `/specs:conclude`, write-once, **on the work branch before the
   merge** — which is what makes the merge that command's last action and leaves nothing to be

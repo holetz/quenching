@@ -6,6 +6,8 @@ A Claude Code **plugin marketplace** holding one plugin, `quenching`
 shape. There is no application code, no build step and no test framework — the repo is markdown
 command bodies plus three dependency-free stdlib Python tools.
 
+Language: pt-BR — the contract is [docs/standards/agents/communication.md](docs/standards/agents/communication.md).
+
 ## Operating this repo
 
 **Command bodies are the source code.** `commands/**/*.md` and `assets/references/**/*.md` are
