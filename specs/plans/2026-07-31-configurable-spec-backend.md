@@ -266,10 +266,11 @@ trabalho em que se está.
 
 ### 1. Configuração
 
-- [ ] 1.1 Ignorar `.claude/worktrees/` no `.gitignore` e fazer o `specs.py` recusar (exit 2) criar
+- [x] 1.1 Ignorar `.claude/worktrees/` no `.gitignore` e fazer o `specs.py` recusar (exit 2) criar
       a worktree de specs se o caminho não estiver ignorado
       files: .gitignore, plugins/quenching/assets/bin/specs.py
       verify: git status --porcelain fica vazio após uma operação do backend files
+      subject: plan/configurable-spec-backend: 1.1 ignora .claude/worktrees/ e recusa worktree nao ignorada
 - [ ] 1.2 Ler `.claude/quenching.json` no `specs.py` — a chave `backend`, o nome da branch de specs
       (per ## Open Decisions) e o `worktreeSetup` migrado de `specs/config.json`
       files: plugins/quenching/assets/bin/specs.py
