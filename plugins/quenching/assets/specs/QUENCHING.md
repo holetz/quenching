@@ -378,6 +378,9 @@ Fourteen canonical headings, in this order: `## Overview`, `## Problem`, `## Pro
 `## Open Decisions`, `## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
 **Headings are a parsed contract** — canonical English, exactly as written; body prose follows
 your repo's language. A heading outside the set is a stray and `validate` flags it.
+*(`standards/agents/communication.md` owns that language rule for a repo whose bundle has one.
+This manual states it self-contained rather than citing it: `/specs:align` is native and installs
+here into repos that never adopted the bundle, where that path resolves to nothing.)*
 
 A heading is required only once **its own gate** is reached — before that, its absence is a
 *not-yet*, not an omission. That is what keeps a freshly created spec four lines long instead of

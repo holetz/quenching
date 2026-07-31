@@ -336,7 +336,7 @@ e não com a continuação `files:`.
   files: `plugins/quenching/assets/specs/templates/spec.md`, `plugins/quenching/assets/bin/specs.py`
   verify: o diff dos dois blocos de guidance é vazio, e `grep -n 'agents/communication.md'` devolve um acerto em cada
   subject: plan/collapse-remaining-language-clause-restatements: 2 Nota nas duas gemeas de template
-- [ ] 3 Escrever a mesma nota em `plugins/quenching/assets/specs/QUENCHING.md`, o terceiro artefato
+- [x] 3 Escrever a mesma nota em `plugins/quenching/assets/specs/QUENCHING.md`, o terceiro artefato
   que sai do plugin.
   files: `plugins/quenching/assets/specs/QUENCHING.md`
   verify: `grep -n 'agents/communication.md' plugins/quenching/assets/specs/QUENCHING.md` → 1 acerto
