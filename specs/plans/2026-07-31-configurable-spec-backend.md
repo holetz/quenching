@@ -200,6 +200,13 @@ trabalho em que se está.
   lockfile serializa processos concorrentes. **`.claude/worktrees/` precisa estar ignorado**, e a
   CLI recusa criar a worktree se não estiver: uma worktree untracked quebraria o gate de árvore
   limpa de `/specs:execute` — o backend sabotaria a si mesmo.
+- **Decidido (task 1.2): a branch de specs é configurável, com default `specs`.** A chave
+  `specsBranch` em `.claude/quenching.json`; ausente, o backend `files` usa `specs`. Fixo seria mais
+  barato, mas `specs` é um nome curto e plausível de já existir num repo alvo, e um backend que
+  colide com uma branch alheia falha na primeira operação sem recurso. Namespaced (`quenching/specs`)
+  evita a colisão e custa legibilidade a todo repo que não tinha o problema. Configurável paga o
+  custo apenas onde ele existe. A confirmação prometida — o primeiro repo alvo real — segue de pé:
+  se nenhum precisar do override, a chave é candidata a ser retirada.
 ## Alternatives Considered
 
 - **Externo como projeção read-only:** rejeitada — o time quer read-write completo (gerir o spec
@@ -271,10 +278,11 @@ trabalho em que se está.
       files: .gitignore, plugins/quenching/assets/bin/specs.py
       verify: git status --porcelain fica vazio após uma operação do backend files
       subject: plan/configurable-spec-backend: 1.1 ignora .claude/worktrees/ e recusa worktree nao ignorada
-- [ ] 1.2 Ler `.claude/quenching.json` no `specs.py` — a chave `backend`, o nome da branch de specs
+- [x] 1.2 Ler `.claude/quenching.json` no `specs.py` — a chave `backend`, o nome da branch de specs
       (per ## Open Decisions) e o `worktreeSetup` migrado de `specs/config.json`
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
+      subject: plan/configurable-spec-backend: 1.2 le .claude/quenching.json — backend, specsBranch, worktreeSetup
 - [ ] 1.3 Reapontar os findings `sp-config-unparseable` e `sp-config-unknown-key` para o novo local
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
