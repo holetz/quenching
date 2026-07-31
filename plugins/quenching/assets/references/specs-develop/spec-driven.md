@@ -117,8 +117,8 @@ There is no attempt counter and no `.specs.json`. Both are gone.
 ## The fourteen sections
 
 The canonical set, in canonical order. **Headings are a parsed contract** — canonical English, like
-frontmatter keys — while body prose follows the repo's language. A heading outside this set is a
-**stray** and `validate` flags it.
+frontmatter keys. A heading outside this set is a **stray** and `validate` flags it. Which language
+the body prose is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 
 | # | Heading | Phase | Audience |
 | --- | --- | --- | --- |

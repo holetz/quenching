@@ -4,7 +4,7 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-07-29
+timestamp: 2026-07-30
 audience: both
 authority: current
 source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28)
@@ -125,10 +125,18 @@ listing from being flattened. Same input, two encodings, two jobs — do not rec
 ### A mold cites nothing it does not also install
 
 The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves.
-Anything under `assets/templates/**` is the opposite case: a mold is copied **into a target repo**,
-which has none of this repository's `docs/`. A cross-reference to
+Anything an align **copies into a target repo** is the opposite case: the copy lands in a repo that
+has none of this repository's `docs/`, and may have none of this plugin either. A cross-reference to
 `quality/surface-verification.md` is correct in the plugin's own bundle and dangles in every repo
 cut from the mold.
+
+**The test is "does a copy of this leave the plugin?", not which folder it sits in.** Three trees
+answer yes today — `assets/templates/**` (the harness and front-matter molds),
+`assets/docs/**` (the OKF skeleton and the operator manual, both copied by `/docs:align`) and
+`assets/specs/templates/**` — and a fourth added later inherits the rule without amending this
+list. Naming one folder was how a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed:
+the reasoning covered it, the wording did not, and nothing else checks. **No validator catches
+this** — a path that fails to resolve reads as ordinary prose, so the rule is the only guard.
 
 So **a template states its caveat self-contained**, citing only what the same align installs
 alongside it. This is why a mold and the plugin's own copy of the same standard legitimately differ

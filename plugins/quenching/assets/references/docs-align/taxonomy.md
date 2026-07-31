@@ -20,8 +20,9 @@ docs/                          # OKF bundle root
   standards/                   # "how WE do it" (current) — a conformant sub-bundle
     index.md                   # reserved listing + DERIVED "Current docs" tables (BEGIN/END GENERATED)
     CLAUDE.md                  # thin agent-facing pointer (auto-loaded; harness file, not a concept)
-    architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
+    agents/ architecture/ code/ naming/ data-modeling/ ci-cd/ workflows/ mlops/ quality/ platform/
                                #   each: index.md + one standard per file (type: standard)
+                               #   agents/ = how we INSTRUCT agents, not agent definitions
   catalog/                     # our data — <system>/{index.md, access.md} · <catalog>/<schema>.md · <schema>/<table>.md
   vision/                      # direction by area — <area>.md (type: vision)
   documentation/               # product docs (Diátaxis prose) — getting-started/ how-to/ reference/ concepts/ (type: documentation)
@@ -116,8 +117,9 @@ survived an earlier alignment.
   whether the axis is real and expected to grow.**
 - **Structure is canonical English; content may be local.** Folder names **and file slugs**,
   frontmatter keys, enum values, and the `type` vocabulary are English (cross-repo greppable) —
-  `nomenclatura-variaveis.md` → `naming/variables.md`. Frontmatter stays English; **body prose
-  MAY follow the repo's language.** **Identifier-derived slugs are verbatim, never translated:**
+  `nomenclatura-variaveis.md` → `naming/variables.md`. Frontmatter stays English; which language
+  the body prose is written in is owned by `standards/agents/communication.md` in this same
+  bundle. **Identifier-derived slugs are verbatim, never translated:**
   a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>` the
   real repo — translating them would break the greppable tie to the asset.
 - **Links:** relative **within** a home; absolute from the bundle root (`/docs/...`) when

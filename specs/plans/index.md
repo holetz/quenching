@@ -81,13 +81,12 @@ closing out unbuilt work looks like.
      still the scaffold comment `specs.py new` wrote. It is the phase name standing in for
      a stage, which is what "nobody has written anything yet" looks like.
 -->
-**33 specs** · 2 executing · 30 ready · 1 captured
+**33 specs** · 1 executing · 30 ready · 2 captured
 
 ### Executing
 
 | Spec | Title | Since |
 | --- | --- | --- |
-| [declare-repo-body-language](2026-07-28-declare-repo-body-language.md) | Declare the repo's communication language and conduct in docs/standards so every command reads it for free | 2026-07-28 |
 | [restore-routing-info-on-docs-commands](2026-07-28-restore-routing-info-on-docs-commands.md) | Restore trigger phrases and boundaries on the nine bare /docs:* descriptions | 2026-07-28 |
 
 ### Ready
@@ -129,6 +128,7 @@ closing out unbuilt work looks like.
 
 | Spec | Title | Since |
 | --- | --- | --- |
+| [collapse-remaining-language-clause-restatements](2026-07-30-collapse-remaining-language-clause-restatements.md) | Collapse Remaining Language Clause Restatements | 2026-07-30 |
 | [cut-specs-execute-turns](2026-07-30-cut-specs-execute-turns.md) | Cut /specs:execute's turn count through body wording | 2026-07-30 |
 <!-- END GENERATED -->
 
