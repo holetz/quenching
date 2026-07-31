@@ -147,6 +147,14 @@ sentence, and **link out** rather than explaining in full here.
   committed to the base after it. The strategy was a human choice and the subject names the merge
   commit it is about to produce; recording both is what tells a future reader whether the per-task
   subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
+- [**Origin key** (`source_uri`)](../standards/quality/bundle-verification.md) — the frontmatter key
+  holding the **exact** URI or path of the source unit an imported doc was minted from, written by
+  `/docs:import` and by no other command; a doc with no external origin simply does not have it.
+  Single-valued, one line, no prose — that is what makes finding the doc that already covers a unit
+  an equality test (`grep -rn 'source_uri: <uri>'`) instead of the model recognising prose it wrote
+  itself. Distinct from `source:`, which stays prose about who originated a rule. Nothing checks the
+  value: truthfulness is decidable only against the source at the instant it was read, and a unit
+  collapsed from several seeds carries only one origin — both recorded as **accepted gaps**.
 - [**Parse honesty**](../standards/quality/parse-honesty.md) — the obligation that a verifier names
   its own parse failure rather than reporting it as a content gap. The episode that earned it: a
   command `description` truncated at a `#` surfaced as `sk-no-description` — a statement true of the
@@ -201,6 +209,12 @@ sentence, and **link out** rather than explaining in full here.
   session-wide hook — the top rung, and a finding (`sk-hook-unmatched`) unless the reason nothing
   narrower suffices is stated where it is wired. `skills.py` holds rung 1 and rung 2 to the same
   checks from one implementation.
+- [**Shared mold**](../standards/architecture/shared-mold-keys.md) — a frontmatter key block owned
+  once and cited by several commands, so each mints a doc from the same stamp instead of restating
+  it (`docs-add/homes.md` §The frontmatter stamp, cited by four). Because a mold is a *fill-in
+  invitation*, a key only one writer may legitimately set stays **out** of it and lives with that
+  writer's own contract — an annotation inside the mold is not equivalent, as the `resource:`
+  precedent showed. The test is not "may this be absent?" but "may this citer write it at all?".
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.

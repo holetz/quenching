@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Bundle verification
-description: What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, and the resource glob-set format
+description: What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
 resource: plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/commands/docs/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-07-28
+timestamp: 2026-07-30
 audience: both
 authority: current
 source: docs-verification-layer plan (sections 2-4)
@@ -38,6 +38,47 @@ violation of the rule it was meant to demonstrate, for as long as only prose gua
 **Corollary.** When a check lands, the prose it replaces gets *cut*, not kept as belt-and-braces.
 Two enforcers for one invariant is how they drift.
 
+## Accepted gaps, recorded as such
+
+The other honest option above, and the one that needs a home — an accepted gap that is merely
+*believed* is indistinguishable from an oversight. An invariant belongs here when it is real, when
+no deterministic check can reach it, and when the reason is **structural rather than unfinished
+work**.
+
+**Import provenance is an identity, not a derivation anything here can verify.** `/docs:import`
+stamps `source_uri:` — the exact URI of the source unit — on every doc it creates, and that key is
+what a later run greps to find the doc it already minted for that unit. Nothing checks it, and
+nothing in this front can:
+
+- **Whether the value is truthful** is decidable only against the source, at the instant it was
+  read. This validator never fetches anything: its hook paths spawn no subprocess, and its CLI mode
+  shells out only to `git`, read-only. A stamped URI is therefore trusted the way a `source:` line
+  is trusted — by the run that wrote it.
+- **Whether the source has since changed** is not merely unchecked, it is uncheckable *here*.
+  "Unchanged versus changed" requires fetching the source and comparing; a checker that never
+  fetches can only compare a doc against itself. Drift detection, if it is ever built, belongs to
+  the run that already holds the unit in context — the import itself — and not to the validator.
+  This is the general rule: **a check may only be asked for what its own inputs can decide.**
+- **An absent or malformed `source_uri:` is deliberately not a finding.** Born at ERROR it is
+  forbidden outright above; born at WARN it would fire on every authored doc that legitimately has
+  no external origin — permanent noise, which is the same criterion that keeps
+  `TYPES_WITHOUT_RESOURCE` exempt.
+- **A unit collapsed from several seeds carries only one origin.** `sources.md` §Dedup item 1
+  merges two source sections describing the same concept into a single unit, but `source_uri:` is
+  single-valued by contract — one value on one line is what makes the exact lookup an equality
+  test rather than a parse. The surviving unit is stamped with one seed's URI, so on a later
+  import the *other* seed misses that lookup and falls through to resemblance, which is the
+  judgement the key exists to avoid. Measured 2026-07-30: a unit collapsed out of two overlapping
+  local seeds matched by concept, not by URI, on the second run. Accepted rather than closed — a
+  list-valued key would buy that one seed its exactness at the cost of the property every lookup
+  depends on.
+
+What was done instead is the cut the corollary demands. The rule that an imported doc records where
+it came from used to be written in **four** places — `sources.md`, `/docs:import` twice over, and
+the operator manual. It now has one owner, `sources.md` §Attribution, and the other three cite it.
+Removing three restatements is worth more than a fifth would have been, and this entry is what
+makes the remaining hole *known* rather than merely unfilled.
+
 ## What is machine-checked, and at which severity
 
 | Class | Codes | Severity | Blocking? |
@@ -62,6 +103,14 @@ what a **sweep fixes**, not what a **validator escalates**.
 correct — code moves under a rule that did not change. Folding it into the must-fix set would make
 that set unusable, because every mature bundle carries one. A check that cannot distinguish "wrong"
 from "worth a look" belongs here or nowhere.
+
+**A rising advisory count is not evidence of anything.** `stale-doc` compares a doc's `timestamp`
+against the last commit touching its `resource`, so any branch that edits a governed path *raises*
+the count as it goes: the resource moved, the rule did not. This is structural, not a symptom —
+a branch cannot touch code a standard governs without ageing that standard by this measure.
+Measured 2026-07-30: a branch editing only `plugins/quenching/**` took this bundle from 12
+`stale-doc` warnings to 14 without one doc becoming wrong. Read the gate as **zero errors**, never
+as a warning total, and name the delta in a report rather than letting it read as a regression.
 
 ## What stays a skill's prose self-check
 

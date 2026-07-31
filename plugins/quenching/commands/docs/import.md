@@ -30,7 +30,9 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 - **Anti-fabrication.** Mint only what the source actually supports. A rule not proven in the
   **target's own** code enters as `authority: background` (a proposal), never
   `authority: current`. Never invent a `resource:` — derive it from the source (a glob set of
-  what the doc governs, or the URL). Every minted doc is **attributed** to its source.
+  what the doc governs, or the URL) — and never invent a `source_uri:` either: it is the unit's
+  real URI, or it is absent. How each doc records where it came from is sources.md's to state,
+  cited at the top of this file and deliberately not repeated here.
 - **MERGE, never clobber.** A unit that maps to an existing doc/term is an **enrich** target —
   fill missing keys, sharpen the body — never overwrite a filled field or a filled body.
 - **Never ingest transient / secret / PII.** Skip credentials, tokens, personal data, and
@@ -48,19 +50,33 @@ Read the source; write nothing yet.
 
 ### 2. Extract → classify → dedup
 Break the source into **knowledge units** (one concept each). Classify every unit into
-home + `type` + mold via homes.md §Classification. **Dedup** within the source *and* against
-the existing bundle (`Grep` for an existing doc/term) — a unit that already has a home is a
-**MERGE** target, not a new doc. For a large source, fan **one `Task` sub-agent per source
+home + `type` + mold via homes.md §Classification.
+
+Then **dedup** exactly as [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)
+§Dedup fixes it — within the source, then against the bundle, and against the bundle **by exact
+`source_uri` before resemblance**. What this step owes step 3 is the verdict that ordering
+produces: every unit leaves here labelled **new**, **already imported** (an exact URI hit — the
+doc it hit is the MERGE target), or **resembles an existing doc** (a judgement, not a match),
+carrying the URI or the term that decided it. For a large source, fan **one `Task` sub-agent per source
 slice** out to return **compact unit candidates** (home / `type` / path / one-line + source
-anchor), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
+anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
 a doc (correctable), unlike `/docs:import-memory` (see the model policy in
 [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model)).
 
 ### 3. Present ONE ingestion plan → gate on ONE OK
 Show the **complete** plan: every doc to **mint** or **enrich** with its home, `type`, path,
-one-line summary, and source anchor; the dedup decisions; and, for a web source, the
-seed/cap/allowlist and what was left unfetched. A single OK executes the whole batch. A
+one-line summary, and source anchor; and, for a web source, the seed/cap/allowlist and what was
+left unfetched.
+
+Every row also carries **why** it is a mint rather than an enrich — the step-2 verdict, with the
+evidence under it: **new** (no URI hit and nothing resembling it); **already imported**, showing
+the matching `source_uri:` and the doc it hit; or **resembles an existing doc**, showing the
+title, slug or term that matched and the doc it matched. The last is the only one the human is
+really being asked to check — an exact URI match needs no trust and a resemblance does, and
+rendering the two identically is how a wrong MERGE hides inside a batch OK.
+
+A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
 confirmation item (mirrors `/docs:align`) — never folded into the batch OK.
 
@@ -70,7 +86,13 @@ For each planned unit, run homes.md end to end: fill the mold (§The frontmatter
 within-home relative), update the folder's `index.md` (§Updating `index.md`), and enrich the
 glossary if it introduced a repo-specific term (§Enriching the glossary). Fan **one `Task`
 executor per slice** out for scale — the executors write docs; the **orchestrator alone** keeps
-each `index.md` honest and resolves cross-slice dedup. Attribute each doc to its source.
+each `index.md` honest and resolves cross-slice dedup.
+
+Stamp `source_uri:` on every doc this run **creates** — the unit's exact URI, the one key
+homes.md's mold deliberately leaves out — and, when the source is a stable URL, write the body
+line naming it **with the date it was read**, exactly as
+[sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) specifies. A doc
+being **enriched** already carries the `source_uri:` that found it; MERGE never rewrites it.
 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
