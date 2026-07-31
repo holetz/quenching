@@ -287,8 +287,9 @@ trabalho em que se está.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/configurable-spec-backend: 1.3 reaponta os findings de config para .claude/quenching.json
-- [ ] 1.4 Escrever docs/standards/workflows/plugin-configuration.md (authority: current once proved)
+- [x] 1.4 Escrever docs/standards/workflows/plugin-configuration.md (authority: current once proved)
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/configurable-spec-backend: 1.4 escreve o standard de configuracao do plugin
 - [ ] 1.5 Reescrever docs/standards/workflows/worktree-setup.md para o novo caminho da config,
       preservando a narrativa da decisão que ele reverte
       verify: python3 assets/hooks/okf-validate.py docs
