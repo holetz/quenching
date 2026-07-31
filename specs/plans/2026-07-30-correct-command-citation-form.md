@@ -282,6 +282,18 @@ uma alegação falsa governando 687 sites.
   `description:`; este declara não tocar. `ACCEPTED e medido`: a fronteira está em `## Out of Scope` e
   é verificada pelo `total` inalterado do `budget`.
 
+## Handoff
+
+Estado da árvore após o último commit (`f753b5d`), na branch `claude/correct-command-citation-form-044087`:
+
+- **A regra está escrita em dois lugares e cada um sabe o seu papel.** `docs/standards/naming/command-surface.md` §The path IS the identity é a sede (tabela das três formas com a condição de cada uma); `commands/docs/align.md` e `commands/align.md` carregam a versão condensada porque o corpo viaja para repos-alvo, onde o `docs/` deste repo não existe.
+- **O check é `sk-bare-citation` (WARN), em `skills.py`.** Alcança `commands/**` e `assets/references/**` — decidido pela contagem, 183 dos 519 sítios estavam em `assets/`. Só dispara quando `<root>/.claude-plugin/plugin.json` existe: num `.claude/` de repo-alvo a forma bare é a correta e o check fica mudo. Lê o corpo **após** o frontmatter, então `description:` está fora por construção, não por regex.
+- **O sweep está completo nos dois trechos declarados**: 0 citações bare no corpo, 79 intactas dentro de `description:` (`## Out of Scope`).
+- **O `total` do budget não se moveu: 12875 antes e depois.** O `budget` sai com exit 1 porque o teto (12726) já estava estourado antes deste trabalho — é o número que `route-commands-without-always-on-descriptions` existe para baixar, não uma regressão daqui.
+- **Dois sítios precisaram de escrita à mão depois do sweep mecânico**, porque neles a forma bare é o *objeto do discurso* e não uma citação: `commands/docs/align.md` §6 e `commands/align.md` §3. Ambos agora usam a forma genérica `/<front>:<verb>`, que não casa o regex do check.
+- **Nada de versão foi tocado** — o lockstep se move uma vez, em `/quenching:specs:conclude`.
+- **A evidência voltou para `restructure-claude-front-namespace`** como discovery: o item de `## Out of Scope` daquele spec foi fechado citando a frase que este corrigiu.
+
 ## Tasks
 
 Serial, sem `[P]`: o grupo 2 depende da regra que o 1 escreve, o 3 depende dos dois, e o 4 mede o
@@ -328,5 +340,6 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 
 ### 4. A prova
 
-- [ ] 4.1 Rodar o bloco inteiro de `## Validation` e registrar cada saída, incluindo o `total` do budget inalterado
+- [x] 4.1 Rodar o bloco inteiro de `## Validation` e registrar cada saída, incluindo o `total` do budget inalterado
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/correct-command-citation-form: 4.1 bloco de Validation registrado
