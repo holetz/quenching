@@ -471,7 +471,16 @@ guarda-corpo, não por contagem. Os 48 specs congelados não retroagem por const
 em censo nenhum. É a segunda instância da Open Decision *Nada nota um manual instalado atrasado*, e
 sincronizá-la é trabalho de `/docs:align` — registrada como discovery aberta.
 
-**O que o próximo leitor precisa saber.** O release **4.4.3** sai com este merge, e ele deixa
+**A colisão de versão aconteceu, e foi resolvida como o standard previa.** Este conclude bumpou
+para `4.4.3`; enquanto ele rodava, o spec `cut-specs-execute-turns` concluiu, bumpou para o **mesmo
+`4.4.3`** e mergeou primeiro. A segunda passagem de `main` para esta branch conflitou em
+`VERSION` — e só nele, porque os outros seis mudaram para o mesmo valor dos dois lados e o git os
+aceitou em silêncio, que é a metade traiçoeira do modo de falha. Resolvido rebumpando os sete para
+**4.4.4**, a partir da base efetivamente mergeada. É a demonstração literal do segundo bullet de
+[versioning-release.md](../../docs/standards/ci-cd/versioning-release.md) §*Why not a task*, e a
+razão pela qual o bump é ato do merge e não task.
+
+**O que o próximo leitor precisa saber.** O release **4.4.4** sai com este merge, e ele deixa
 `specs/QUENCHING.md` — que a task 6 acabara de sincronizar em 4.4.2 — atrás do banner outra vez.
 Isso é por construção e não é drift de conteúdo: o `<VERSION>` do banner é preenchido no copy time,
 então a cópia se re-stampa no próximo `/specs:align`. E a estratégia foi **merge commit**, não
