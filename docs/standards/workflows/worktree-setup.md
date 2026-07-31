@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Worktree setup contract
-description: The `specs/config.json` contract — the one recognised key, where the file lives, what its absence means, who runs the declared command and with which cwd, and why the consent is the isolation offer rather than a prompt of its own
+description: The `worktreeSetup` hook — what it is for, where it is declared now that the plugin's config moved to `.claude/quenching.json`, what its absence means, who runs the declared command and with which cwd, why the consent is the isolation offer rather than a prompt of its own, and the record of why the specs front took a config file at all
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-isolate/git.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-07-29
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: prefer-worktree-isolation plan (task 4.2)
+source: prefer-worktree-isolation plan (task 4.2), relocated by configurable-spec-backend plan (task 1.5)
 maintainer: quenching
 ---
 
@@ -18,43 +18,34 @@ no `.venv/`, no `.env`, no build output. In a repository with installed dependen
 recommended isolation the one that breaks at the first `verify:`. This standard is the one hook
 that closes that gap, and the bounds that keep a hook from becoming a configuration system.
 
-## One file, one key
-
-```
-specs/config.json
-```
-
-At the **root of the specs workspace**, beside `plans/` and `archive/` — not in `docs/`, which is a
-different bundle with a different owner, and not at the repo root, which belongs to the target.
+## Where it is declared
 
 ```json
 {"worktreeSetup": "./scripts/wt-setup.sh"}
 ```
 
-`worktreeSetup` is the **only** recognised key. It holds a shell command, run as written.
+In `.claude/quenching.json` at the **repo root**, the plugin's single configuration home. The file
+itself — every recognised key, the defaults, the reading rules, and the findings that judge a
+malformed one — is owned by [plugin-configuration.md](plugin-configuration.md). This standard owns
+only what the key *means*.
 
-Read by `specs.py` with `json.load` — a plain object, no new format, no prose to parse. The file is
-also exempt from the stray-file check at the workspace root, alongside `QUENCHING.md` and
-`schema.json`.
+`worktreeSetup` holds a shell command, run as written.
 
 ## Absence is the normal case, and never a finding
 
 | State | `worktreeSetup` | Is it a finding? |
 | --- | --- | --- |
-| no `config.json` | `null` | no |
-| file present, key absent | `null` | no |
+| nothing declared | `null` | no |
 | the declared command does not resolve | `null` in effect — reported as not run | no |
-| an unrecognised key | `null` | **`sp-config-unknown-key`** (warn) |
-| malformed JSON | `null` | **`sp-config-unparseable`** (warn) |
+| the key misspelt (`worktree_setup`) | `null` | **`sp-config-unknown-key`** (warn) |
 
-Most repositories declare nothing, so declaring nothing must cost nothing — `specs.py config`
-exits 0 with `worktreeSetup: null` and no output worth reading.
+Most repositories declare nothing, so declaring nothing must cost nothing — `specs.py config` exits
+0 with `worktreeSetup: null` and no output worth reading.
 
-**The two warnings exist for one failure mode**: `worktree_setup` written where `worktreeSetup` was
-expected. That file is valid JSON, the key is simply never read, the setup silently never runs, and
-the human concludes the feature is broken. Both findings are `warn`, never `error` — a workspace
-with a malformed config is still a workspace, and every other command still works. Neither is ever
-raised as a raw traceback: a truncated JSON file is a finding, not an exception.
+**The misspelling is the failure mode the finding exists for**: the file is valid JSON, the key is
+simply never read, the setup silently never runs, and the human concludes the feature is broken. It
+is `warn` and never `error` — a repository with a malformed config is still a repository, and every
+other command still works. Neither it nor a truncated JSON file is ever raised as a raw traceback.
 
 ## Who runs it, and where
 
@@ -62,9 +53,9 @@ raised as a raw traceback: a truncated JSON file is a finding, not an exception.
 newly created worktree**. The cwd is the entire point: the tree that lacks the dependencies is the
 tree that must install them.
 
-`specs.py` reads the value and never executes it. That split is not ceremony — the workspace root
-is the only thing `specs.py` knows, and whether the command resolves can only be judged relative to
-the new worktree, whose path `specs.py` is never told. The check belongs where the answer exists.
+`specs.py` reads the value and never executes it. That split is not ceremony — whether the command
+resolves can only be judged relative to the new worktree, whose path `specs.py` is never told. The
+check belongs where the answer exists.
 
 **A failing setup never undoes the worktree.** The worktree exists either way; whether it is usable
 is a fact to report, not a reason to tear down a tree that may already hold the human's chosen
@@ -74,6 +65,10 @@ rather than executed and blamed on the shell.
 
 Only `/specs:isolate` runs it, and only on creation. Re-running setup over a worktree that already
 exists is a second entry point for the same hook and is deliberately not offered.
+
+**This hook is not the specs backend's worktree.** The `files` backend keeps its own persistent
+worktree for the dedicated specs branch, created on demand and never set up: it holds spec files,
+not a build. `worktreeSetup` runs for the *isolation* worktree a human works in, and nowhere else.
 
 ## The consent is the isolation offer, not a prompt of its own
 
@@ -92,9 +87,10 @@ having been displayed first.**
 
 ## Why a config file, in a front that had none
 
-This reverses a recorded decision, and the reversal is stated rather than quietly made. The specs
-front deliberately had no configuration: `specs.py` loads its schema and templates from
-`assets/specs/` when adjacent and from embedded constants otherwise, never from the target.
+This section is the record of an earlier reversal, kept because the argument still decides things.
+The specs front deliberately had no configuration: `specs.py` loads its schema and templates from
+`assets/specs/` when adjacent and from embedded constants otherwise, never from the target. Taking
+a config file at all reversed that.
 
 The alternatives were real. `specs/worktree-setup.sh`, whose mere existence would be the
 declaration, is deterministic by a single `stat` and has no format to get wrong — but it can hold
@@ -103,6 +99,18 @@ the read-if-present contract already used for a target's git conventions — but
 to parse markdown frontmatter to find an executable, and mixes the home of *contracts* with an
 operational pointer.
 
-An extensible declarative file wins the moment there is a second parameter. Until there is, the
-schema is **one key**, and the two doctor findings above are what keep "extensible" from meaning
-"silently ignores whatever you typed".
+An extensible declarative file wins the moment there is a second parameter, and the schema was held
+to **one key** until there was one. That moment arrived: `backend` and `specsBranch` are the second
+and third, and they are why the shape chosen here was the right bet.
+
+### What has since been revised, and what has not
+
+The **file** moved — `specs/config.json` became `.claude/quenching.json`, for reasons that did not
+exist when this section was first written and that are recorded in
+[plugin-configuration.md](plugin-configuration.md) §Why it left the specs workspace. The original
+argument placed it inside the specs workspace precisely to keep it out of the repo root; what
+changed is that a repository may now have no specs workspace at all.
+
+The **conclusion** did not move. One extensible declarative file, a schema of named keys, and
+findings that keep "extensible" from meaning "silently ignores whatever you typed" — that is the
+part this section argued for, and it is the part still in force. Only its address changed.
