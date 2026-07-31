@@ -315,9 +315,10 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 
 ### 3. O sweep
 
-- [ ] 3.1 Corrigir as citações bare nos corpos de `commands/**`, fora das `description:`
+- [x] 3.1 Corrigir as citações bare nos corpos de `commands/**`, fora das `description:`
       files: plugins/quenching/commands
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/correct-command-citation-form: 3.1 sweep dos corpos de commands/**
 - [ ] 3.2 Corrigir as 183 citações bare em `assets/references/**`
       files: plugins/quenching/assets/references
 - [ ] 3.3 Devolver a evidência a `restructure-claude-front-namespace` por `specs.py discover`, reabrindo o item de `## Out of Scope`
