@@ -181,7 +181,7 @@ conformance.
 | `sp-gate-unmet` | A spec is missing a section its own gate requires | The human, via `/quenching:specs:develop` (which asks rather than fills). |
 | `sp-stray-heading` | A `##` heading outside the canonical fourteen | The human — folding a stray into a canonical section is a judgment about what it *meant*. |
 | `sp-overview-missing` | A spec meets the whole ready gate but carries an empty `## Overview` | `/quenching:specs:develop` — written last, once every other section has settled. |
-| `sp-handoff-empty` | A spec being executed has an empty `## Handoff` | `/quenching:specs:execute`, which refreshes it after each committed task. |
+| `sp-handoff-empty` | A spec being executed has an empty `## Handoff` | `/quenching:specs:execute`, which refreshes it on four events — a pause, a blocked task, a recorded discovery, the run's last commit. |
 | `sp-impact-uncovered` | A `docs/standards/**.md` path declared under `## Impact` that no `## Tasks` item names | The human — add the task, or drop the declaration. Which of the two is correct is a judgment, so the sweep never picks. |
 | `sp-unrefined` | A spec meets the whole ready gate but carries no `refined` record | `/quenching:specs:develop`'s adversarial bank. **Never gates** — a spec may always be built unrefined. |
 | `sp-no-outcome` | An `archive/` spec carries no `outcome:` | The human — `done` and `abandoned` are opposite facts, and nothing can infer which was meant. |

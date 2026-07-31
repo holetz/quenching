@@ -287,10 +287,11 @@ not the executor's. They are born in the origin spec's `## Discoveries` and reso
 `/quenching:specs:develop`'s discoveries bank — `promoted: <new-slug>`, `folded: <section>`, or
 `dismissed: <reason>` — so provenance is never lost and the human pays the decision cost in batch.
 
-`## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it after each
-committed task. Staleness is this section's failure mode, and an event-bound rule is the only cure
-that survives unattended runs — `validate` warns when a spec past the ready gate has an empty
-`## Handoff`.
+`## Handoff` refresh is **bound to events, not judgment**: the orchestrator rewrites it on four of
+them — the run pauses, a task is written blocked, a discovery is recorded, the run's last commit
+lands — and on nothing else. Each names an act the executor just performed, never an assessment it
+has to make, which is what lets the rule hold in an unattended run; staleness is this section's
+failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`.
 
 ## The `specs.py` tool surface
 
