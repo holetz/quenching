@@ -1627,6 +1627,14 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
             # writing them beside the code is the state this backend exists to end.
             return None, err
         backend: SpecBackend = FilesBackend(target)
+    elif name == "github":
+        gh, err = open_github_backend(root)
+        if err:
+            # `gh` missing, nobody logged in, or no repository to point at. Each is an
+            # exit-2 refusal for the same reason the worktree failures above are: nothing
+            # falls back to `files` when the repo asked for GitHub.
+            return None, err
+        backend = gh                                        # type: ignore[assignment]
     else:
         return None, {
             "code": "sp-backend-unavailable", "exit": 2, "backend": name,
@@ -1635,6 +1643,431 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
         }
     _BACKEND_CACHE[root] = backend
     return backend, {}
+
+
+# --------------------------------------------------------------------------- #
+# the github backend — transport over the `gh` CLI
+# --------------------------------------------------------------------------- #
+# `gh`'s own exit code for "no host is authenticated", distinct from the 1 it uses for an
+# API that answered with an error. Telling the two apart is the whole point of shelling out
+# to `gh` instead of speaking HTTP: one is fixed by `gh auth login`, the other is not.
+GH_NOT_AUTHENTICATED = 4
+# OURS, never one of gh's: the binary is not on PATH, so no process ever started.
+GH_MISSING = 127
+
+
+class GhRefusal(Exception):
+    """A `gh` call that failed, carried to the CLI boundary as a ready-to-emit refusal.
+
+    THREE OF THE FIVE PRIMITIVES RETURN A LOCATOR AND NOT `(value, err)` — `write_spec`,
+    `create_spec` and `move_spec` were shaped around a backend that cannot fail halfway.
+    A network target can, and the contract is "never a traceback", so the failure travels
+    as an exception carrying the refusal already built and is converted exactly once, in
+    `main`. Widening the interface instead would make every backend and every command pay,
+    in every signature, for a failure mode only the external backends have."""
+
+    def __init__(self, err: dict) -> None:
+        super().__init__(err.get("message", "gh failed"))
+        self.err = err
+
+
+def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    """Exit code, stdout AND stderr of one `gh` command.
+
+    A SIBLING of `_git_run`, deliberately not a reuse of it. The two binaries fail
+    differently and the difference IS the contract here: `gh` answers "nobody is logged in"
+    with its own exit 4 and a body-less stderr, and "GitHub said no" with exit 1 plus an
+    `HTTP <code>` line, while the JSON explaining why goes to STDOUT. A runner that
+    flattened those to "nonzero" could not tell a human to run `gh auth login` rather than
+    to check the repository name.
+
+    A missing binary comes back as `GH_MISSING` rather than as an exception, so the one
+    failure a user is most likely to hit is an ordinary return value on the path every
+    caller already handles — never a traceback out of a `subprocess` call.
+
+    A cwd that does not exist is an error and NOT a fallback to `"."`, for the same reason
+    `_git_run` refuses it: `gh repo view` reads the git remote of wherever it runs, so the
+    fallback would resolve some other repository and then write specs into it.
+
+    60s and not git's 30: this is a round trip to api.github.com, not a local object
+    lookup, and a paginated listing of a busy repository legitimately takes seconds."""
+    import subprocess
+    if not os.path.isdir(cwd):
+        return 1, "", f"not a directory: {cwd}"
+    try:
+        out = subprocess.run(["gh", *argv], capture_output=True, text=True, timeout=60,
+                             cwd=cwd, input=stdin)
+        return out.returncode, out.stdout, out.stderr
+    except FileNotFoundError as e:
+        return GH_MISSING, "", str(e)
+    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+        return 1, "", str(e)
+
+
+def _gh_said(stdout: str, stderr: str) -> str:
+    """The one line worth quoting back from a failed `gh` call.
+
+    `gh api` SPLITS A FAILURE ACROSS BOTH STREAMS: stderr carries its own one-liner
+    (`gh: Not Found (HTTP 404)`) and stdout carries GitHub's JSON body, whose `message` is
+    the half that says why — "API rate limit exceeded for user ID 1" against a bare
+    "HTTP 403". Quoting only stderr loses the reason; quoting only stdout loses the status
+    code, and loses everything for the failures that never reach the API at all."""
+    head = next((ln.strip() for ln in (stderr or "").splitlines() if ln.strip()), "")
+    # gh prefixes its own one-liners with `gh: `, and every refusal built from this already
+    # says "gh said" — kept, the message reads "gh said: gh: Not Found".
+    head = head[4:].strip() if head.startswith("gh: ") else head
+    detail = ""
+    try:
+        obj = json.loads(stdout or "")
+        if isinstance(obj, dict) and isinstance(obj.get("message"), str):
+            detail = obj["message"].strip()
+    except (json.JSONDecodeError, TypeError, ValueError):
+        detail = ""
+    if detail and detail.lower() not in head.lower():
+        return f"{head} — {detail}" if head else detail
+    return head or "gh failed without saying why"
+
+
+def gh_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
+    """Every way a `gh` call can fail, as an exit-2 refusal a human can act on.
+
+    THREE OUTCOMES, THREE DIFFERENT REMEDIES, and separating them is the reason this
+    backend is a subprocess and not an HTTP client: the binary is missing (install it),
+    the binary is there but nobody is logged in (`gh auth login`), or GitHub itself said
+    no (read what it said). Collapsing them into "github failed" would leave the first two
+    looking like an outage and send a human hunting a network problem that is not there.
+
+    Authentication is recognised by TWO signals, not one. `gh api` exits 4 when no host is
+    configured at all, but a configured host holding a revoked or wrong token gets as far
+    as the API and comes back as an ordinary exit 1 with `HTTP 401` — the same shape as a
+    404, and the wrong remedy for it.
+
+    Always exit 2, always a refusal and never a finding: nothing was read and nothing was
+    written, which is a different statement from "the specs have a problem"."""
+    if code == GH_MISSING:
+        return {
+            "code": "sp-gh-missing", "exit": 2, "action": action,
+            "message": "backend 'github' needs the `gh` CLI and it is not on PATH — install "
+                       "GitHub CLI (https://cli.github.com), then run `gh auth login`; no "
+                       "spec was read or written",
+        }
+    said = _gh_said(stdout, stderr)
+    if code == GH_NOT_AUTHENTICATED or "HTTP 401" in (stderr or "") \
+            or "gh auth login" in (stderr or ""):
+        return {
+            "code": "sp-gh-unauthenticated", "exit": 2, "action": action, "gh": said,
+            "message": f"`gh` is installed but not authenticated for this repository — run "
+                       f"`gh auth login`; gh said: {said}",
+        }
+    return {
+        "code": "sp-gh-api-error", "exit": 2, "action": action, "gh": said, "ghExit": code,
+        "message": f"github refused {action} — gh said: {said}",
+    }
+
+
+GH_REMOTE_RE = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
+
+
+def resolve_github_repo(cwd: str) -> tuple[str, dict]:
+    """`owner/name` for the repository this checkout points at, or a refusal.
+
+    ASK `gh` FIRST, because it answers the question the API will actually be called with:
+    it resolves the remote gh itself would use, honours the `gh repo set-default` a human
+    set for a fork, and surfaces the auth failure at RESOLUTION time rather than three
+    calls later in the middle of a write.
+
+    The git remote is the fallback and not the primary for exactly that reason — it is a
+    string, not an answer: on a fork, `origin` names the fork rather than the repository
+    the issues live in. It is kept because a checkout whose gh-to-git integration fails
+    (no git on PATH, a checkout gh cannot attribute) still has a legible answer, and
+    refusing there would be refusing over a detail of how gh finds the remote.
+
+    Never guesses a repository it cannot name. A wrong answer here does not fail — it
+    silently reads and writes somebody else's issues."""
+    code, out, err = _gh_run(cwd, "repo", "view", "--json", "nameWithOwner",
+                             "--jq", ".nameWithOwner")
+    if code == 0 and out.strip():
+        return out.strip(), {}
+    # The two failures the remote cannot repair — no binary, nobody logged in — refuse here
+    # with their own remedy instead of degrading into "could not resolve the repository".
+    if code in (GH_MISSING, GH_NOT_AUTHENTICATED) or "gh auth login" in (err or ""):
+        return "", gh_refusal("resolving the repository", code, out, err)
+    url = _git(cwd, "remote", "get-url", "origin").strip()
+    m = GH_REMOTE_RE.search(url) if url else None
+    if m:
+        return f"{m.group(1)}/{m.group(2)}", {}
+    return "", {
+        "code": "sp-gh-repo-unresolved", "exit": 2, "remote": url or None,
+        "gh": _gh_said(out, err),
+        "message": f"backend 'github' could not tell which repository holds the specs — "
+                   f"`gh repo view` failed ({_gh_said(out, err)}) and origin "
+                   f"({url or 'absent'}) is not a github.com remote; add one, or pick the "
+                   f"repository with `gh repo set-default`",
+    }
+
+
+# PROVISIONAL SERIALISATION — task 4.2 replaces it with the hybrid one (`## Tasks` as
+# sub-issues, the records as labels or body fields). Until then one issue carries the whole
+# canonical document verbatim in its body, behind a marker line.
+#
+# The marker exists to carry the FILENAME, and the filename exists to carry the date. A
+# spec's date is stamped once by `new` into its basename and never recomputed — the
+# `MemoryBackend` docstring records that deriving it from anything else is precisely the
+# divergence the equality check caught the first time a second backend was written. GitHub
+# has no filename, so the document's own store has to hold it, and an HTML comment is the
+# one place in a markdown body that survives a round trip through the issue editor while
+# staying invisible to a human reading the issue.
+#
+# The marker is also what makes a spec issue distinguishable from an ordinary one: a repo's
+# issue tracker belongs to its humans, and a backend that treated every open issue as a spec
+# would list the bug reports and then write over them.
+GH_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)\s*-->[ \t]*\r?\n")
+
+
+def gh_wrap(filename: str, text: str) -> str:
+    return f"<!-- quenching-spec: {filename} -->\n{text}"
+
+
+def gh_unwrap(body: str) -> tuple[str, str]:
+    """`(filename, document)` for a spec issue, or `("", "")` for any other issue.
+
+    Line endings are normalised on the way in. GitHub stores and returns issue bodies with
+    CRLF, so a document written as LF comes back different from what was stored — every
+    section parse, every diff and the round-trip equality would all read that as content
+    having changed."""
+    body = (body or "").replace("\r\n", "\n")
+    m = GH_MARKER_RE.match(body)
+    return (m.group(1), body[m.end():]) if m else ("", "")
+
+
+class GitHubBackend(SpecBackend):
+    """Specs as GitHub issues, reached through `gh api` in a subprocess.
+
+    ONE ISSUE IS ONE SPEC, and the phase is the issue's own state: open is `plans`, closed
+    is `archive`. That mapping is not a shortcut — it is the same fact told once. A label
+    would be a second declaration of a phase the tracker already knows, and the two would
+    diverge the first time somebody closed an issue from the web UI.
+
+    It derives NOTHING. `resolve_one` picks the spec, `derive_info` produces the stages,
+    gates, records and tasks, exactly as they are produced for a file on disk; this class
+    turns issues into the canonical document and back and does no more than that.
+
+    The listing is fetched once per process and cached, which is a local cache and NOT a
+    store: it is not authoritative, nothing outside this object reads it, and every write
+    drops it. It exists because the CLI asks for the listing more than once per command,
+    and each ask is a network round trip."""
+
+    name = "github"
+
+    def __init__(self, repo: str, cwd: str) -> None:
+        self.repo = repo
+        self.cwd = cwd
+        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, issue, document
+
+    # -- transport ---------------------------------------------------------- #
+    def _api(self, action: str, *argv: str, stdin: str | None = None):
+        """One `gh api` call, parsed. Raises `GhRefusal` for every way it can fail."""
+        code, out, err = _gh_run(self.cwd, "api", *argv, stdin=stdin)
+        if code != 0:
+            raise GhRefusal(gh_refusal(action, code, out, err))
+        try:
+            return json.loads(out or "null")
+        except json.JSONDecodeError as e:
+            # Not an API error — gh exited 0 and handed back something unparseable. Named
+            # separately so it can never be read as "GitHub said no".
+            raise GhRefusal({
+                "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "message": f"`gh api` exited 0 while {action} but its output is not JSON: {e}",
+            }) from e
+
+    def _write_api(self, action: str, method: str, path: str, payload: dict):
+        """A mutating call, with the payload on STDIN rather than in argv.
+
+        `--input -` and not `-f body=…`: a spec document is kilobytes of markdown with
+        newlines, quotes and backticks in it, and every one of those is a way for argv
+        quoting to corrupt what lands in the issue."""
+        return self._api(action, "-X", method, path, "--input", "-",
+                         stdin=json.dumps(payload))
+
+    # -- the listing, fetched once ------------------------------------------- #
+    def _load(self) -> list[tuple[dict, int, str]]:
+        if self._rows is not None:
+            return self._rows
+        # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
+        # is not a JSON document. state=all: `archive` is the closed half of the tracker,
+        # so a default (open-only) listing would report every archived spec as missing.
+        pages = self._api("listing the repository's issues", "--paginate", "--slurp",
+                          f"repos/{self.repo}/issues?state=all&per_page=100")
+        rows: list[tuple[dict, int, str]] = []
+        for page in (pages or []):
+            for issue in (page or []):
+                if not isinstance(issue, dict) or "pull_request" in issue:
+                    # GitHub models a pull request AS an issue, so `/issues` answers with
+                    # both. A PR can never be a spec, and one that happened to carry the
+                    # marker would otherwise be listed and then written over.
+                    continue
+                filename, doc = gh_unwrap(issue.get("body") or "")
+                m = SPEC_FILE_RE.match(filename)
+                if not m:
+                    continue
+                phase = "archive" if issue.get("state") == "closed" else "plans"
+                rows.append(({
+                    # The SAME key set `spec_files` returns and nothing more — an extra key
+                    # here is a field some command comes to depend on and that the files
+                    # backend does not have. `legacy` is False by construction: the v2
+                    # folder split never existed here.
+                    "phase": phase, "folder": phase, "legacy": False, "file": filename,
+                    "path": issue.get("html_url")
+                            or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
+                    "date": m.group(1), "slug": m.group(2),
+                }, int(issue.get("number") or 0), doc))
+        self._rows = rows
+        return rows
+
+    def _invalidate(self) -> None:
+        self._rows = None
+
+    def _issue_number(self, slug: str) -> int:
+        for descriptor, number, _ in self._load():
+            if descriptor["slug"] == slug:
+                return number
+        raise GhRefusal({
+            "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
+            "message": f"spec '{slug}' was in the listing and is not there any more — the "
+                       f"issue was deleted or transferred while this command ran; nothing "
+                       f"was written",
+        })
+
+    # -- the five primitives -------------------------------------------------- #
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        rows = [dict(d) for d, _, _ in self._load()
+                if phase is None or d["phase"] == phase]
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        rows = self._load()
+        spec, err = resolve_one(self.list_specs(), slug)
+        if err:
+            return None, err
+        doc = next(d for descriptor, _, d in rows if descriptor["slug"] == slug)
+        return derive_info(spec, doc), {}
+
+    def write_spec(self, info: dict, text: str) -> None:
+        number = self._issue_number(info["slug"])
+        self._write_api(f"updating issue #{number}", "PATCH",
+                        f"repos/{self.repo}/issues/{number}",
+                        {"title": gh_issue_title(info["slug"], text),
+                         "body": gh_wrap(info["file"], text)})
+        self._invalidate()
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        m = SPEC_FILE_RE.match(filename)
+        issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
+                                {"title": gh_issue_title(m.group(2) if m else filename, text),
+                                 "body": gh_wrap(filename, text)})
+        number = int((issue or {}).get("number") or 0)
+        url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        if phase == "archive":
+            # Created open and then closed, because "closed" is not a state an issue can be
+            # born in. Two calls for a case `new` never takes — only a migration does.
+            self._set_state(number, "closed")
+        self._invalidate()
+        return url
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        number = self._issue_number(info["slug"])
+        issue = self._set_state(number, "closed" if dest_phase == "archive" else "open")
+        self._invalidate()
+        return (issue or {}).get("html_url") \
+            or f"https://github.com/{self.repo}/issues/{number}"
+
+    def _set_state(self, number: int, state: str):
+        return self._write_api(f"setting issue #{number} to {state}", "PATCH",
+                               f"repos/{self.repo}/issues/{number}", {"state": state})
+
+
+def gh_issue_title(slug: str, text: str) -> str:
+    """What a human sees in the issue list: the spec's own title, or the slug titleised.
+
+    The title is a PROJECTION of the document and never a second source — it is rewritten
+    from the frontmatter on every write, so renaming a spec in its `title:` field renames
+    the issue, and editing the issue title in the web UI is undone by the next write rather
+    than silently becoming a competing name."""
+    return str(parse_frontmatter(text).get("title") or titleize(slug))
+
+
+def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
+    """The `github` backend for this workspace, or the refusal that says why not.
+
+    Resolution happens HERE and not in `GitHubBackend.__init__`, so the cost — one `gh`
+    round trip — is paid by the first command that actually needs a spec, on the same
+    "on demand" rule `open_backend` applies to the files worktree. It is also what makes
+    the missing-binary and not-logged-in refusals arrive at the START of a command instead
+    of halfway through a write."""
+    cwd = find_repo_root(root)
+    repo, err = resolve_github_repo(cwd)
+    if err:
+        return None, err
+    return GitHubBackend(repo, cwd), {}
+
+
+GH_REFUSAL_CASES = (
+    # (label, gh exit, stdout, stderr, expected code) — the literal streams `gh` 2.97
+    # produces, captured by running it. Every one is exit 2: a refusal, never a finding.
+    ("no binary on PATH", GH_MISSING, "", "", "sp-gh-missing"),
+    ("no host authenticated", GH_NOT_AUTHENTICATED, "",
+     "To get started with GitHub CLI, please run:  gh auth login\n",
+     "sp-gh-unauthenticated"),
+    ("a revoked token", 1, '{"message":"Bad credentials","status":"401"}',
+     "gh: Bad credentials (HTTP 401)\n", "sp-gh-unauthenticated"),
+    ("a repository that is not there", 1, '{"message":"Not Found","status":"404"}',
+     "gh: Not Found (HTTP 404)\n", "sp-gh-api-error"),
+    ("rate limited", 1,
+     '{"message":"API rate limit exceeded for user ID 1.","status":"403"}',
+     "gh: API rate limit exceeded (HTTP 403)\n", "sp-gh-api-error"),
+)
+
+
+def gh_refusal_failures() -> list[str]:
+    """The transport's classifier, asserted against gh's real output.
+
+    THE ONE THING THIS BACKEND PROMISES BEFORE IT PROMISES ANYTHING ELSE is that no failure
+    reaches a human as a traceback and that each one arrives with the remedy that fixes it.
+    That promise lives entirely in `gh_refusal`, it is decided by string matching on another
+    program's stderr, and a `gh` release that reworded one line would break it silently —
+    so the cases hold the literal streams rather than a paraphrase of them.
+
+    Self-contained: no network, no `gh`, no repository. It runs on an installed copy, which
+    is exactly where a classifier quietly reduced to "github failed" would go unnoticed."""
+    failures: list[str] = []
+    for label, code, out, err, want in GH_REFUSAL_CASES:
+        got = gh_refusal("reading a spec", code, out, err)
+        if got.get("code") != want:
+            failures.append(f"{label}: classified as {got.get('code')!r}, not {want!r}")
+        if got.get("exit") != 2:
+            failures.append(f"{label}: exits {got.get('exit')!r}, and a refusal is exit 2")
+        if not str(got.get("message") or "").strip():
+            failures.append(f"{label}: refused with an empty message")
+    # The remedy each refusal has to carry, checked as text because that is what a human
+    # reads. A missing binary that did not name `gh auth login` would leave the reader
+    # installing the CLI and stopping there.
+    for code, needle in ((GH_MISSING, "gh auth login"),
+                         (GH_NOT_AUTHENTICATED, "gh auth login")):
+        msg = gh_refusal("reading a spec", code, "", "")["message"]
+        if needle not in msg:
+            failures.append(f"exit {code}: the refusal does not name `{needle}` — {msg}")
+    # The round trip the whole provisional serialisation rests on, including the CRLF
+    # GitHub actually stores bodies with.
+    doc = "---\ntitle: Alpha\n---\n\n## Problem\n\nUm problema.\n"
+    for label, body in (("as written", gh_wrap("2026-01-01-alpha.md", doc)),
+                        ("as GitHub returns it",
+                         gh_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
+        name, back = gh_unwrap(body)
+        if (name, back) != ("2026-01-01-alpha.md", doc):
+            failures.append(f"marker round trip {label}: got {(name, back)!r}")
+    if gh_unwrap("An ordinary bug report.\n") != ("", ""):
+        failures.append("an issue with no marker was read as a spec")
+    return failures
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -1708,6 +2141,19 @@ def ready_report(info: dict, schema: dict | None = None) -> dict:
 # --------------------------------------------------------------------------- #
 # output
 # --------------------------------------------------------------------------- #
+def display_locator(locator: str, root: str) -> str:
+    """A backend's locator as a report should print it.
+
+    `path` is the ONE field the backends are allowed to differ on — a filesystem path for
+    `files`, an issue URL for `github` — and only one of the two is a path. Making a URL
+    relative to the workspace produces a string that is neither, and that no reader can
+    follow: `../../../https:/github.com/o/r/issues/2`. A remote locator is already the
+    address a human would open, so it is printed exactly as the backend gave it."""
+    if "://" in locator:
+        return locator
+    return os.path.relpath(locator, os.path.dirname(root)).replace(os.sep, "/")
+
+
 def emit(as_json: bool, obj: dict, human: str) -> None:
     if as_json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
@@ -1759,7 +2205,7 @@ def cmd_new(args, root: str) -> int:
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
           "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
-          "path": os.path.relpath(path, os.path.dirname(root)).replace(os.sep, "/")},
+          "path": display_locator(path, root)},
          f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
          f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
     return 0
@@ -1772,17 +2218,29 @@ def cmd_list(args, root: str) -> int:
     specs = backend.list_specs()
     rows = []
     for s in specs:
-        text = read_text(s["path"]) or ""
-        fm = parse_frontmatter(text)
-        sections = parse_sections(body_after_frontmatter(text))
-        tasks = parse_tasks(text)
-        checked, blocked, total = task_progress(tasks)
+        # ASKED OF THE BACKEND, never of the path. This was the last command reading
+        # `read_text(s["path"])` directly, which worked only because the files backend's
+        # locator happens to be a filesystem path — against GitHub it is an issue URL, and
+        # `list` would have reported every spec as empty rather than failing.
+        info, rerr = backend.read_spec(s["slug"])
+        if rerr or info is None:
+            # The only refusal reachable here is an ambiguous slug — the slug came from the
+            # listing, so it cannot be unknown — and `list` is exactly the command a human
+            # runs to SEE that duplicate. The row survives, derived from an empty document
+            # so every field still comes from the one shared derivation, and `unreadable`
+            # says so rather than letting the spec look empty. `validate` names it
+            # sp-duplicate-slug.
+            info, unreadable = derive_info(s, ""), (rerr or {}).get("code")
+        else:
+            unreadable = None
+        checked, blocked, total = task_progress(info["tasks"])
         rows.append({
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
             "legacy": s["legacy"], "file": s["file"], "date": s["date"],
-            "title": fm.get("title", titleize(s["slug"])),
-            "stage": derive_stage(s, sections, fm, tasks),
-            "outcome": fm.get("outcome") or None,
+            "title": info["frontmatter"].get("title", titleize(s["slug"])),
+            "stage": info["stage"],
+            "outcome": info["frontmatter"].get("outcome") or None,
+            "unreadable": unreadable,
             "tasks": {"checked": checked, "blocked": blocked, "total": total},
         })
     if args.json:
@@ -1805,7 +2263,8 @@ def cmd_list(args, root: str) -> int:
                     if r["tasks"]["total"] else "")
             blk = f" · {r['tasks']['blocked']} blocked" if r["tasks"]["blocked"] else ""
             oc = f" · {r['outcome']}" if r["outcome"] else ""
-            print(f"    {r['date']}  {r['slug']:<28} [{r['stage']}]{prog}{blk}{oc}")
+            un = f" · {r['unreadable']} (nothing derived)" if r["unreadable"] else ""
+            print(f"    {r['date']}  {r['slug']:<28} [{r['stage']}]{prog}{blk}{oc}{un}")
     return 0
 
 
@@ -1968,7 +2427,7 @@ def cmd_section(args, root: str) -> int:
     backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
-          "path": os.path.relpath(info["path"], os.path.dirname(root)).replace(os.sep, "/")},
+          "path": display_locator(info["path"], root)},
          f"{action} ## {heading} in {info['phase']}/{info['file']}")
     return 0
 
@@ -3968,6 +4427,17 @@ def cmd_selftest(args, root: str) -> int:
                                         "derives nothing; a difference outside `path` and "
                                         "`text` means one of them is deriving its own"))
 
+    # The `github` transport's promise that no failure reaches a human as a traceback, and
+    # that each one arrives with the remedy that fixes it. Asserted against gh's literal
+    # stderr, so a reworded release breaks the check rather than the refusal. Needs no
+    # network and no `gh`, and runs before the early return for the same reason the rest do.
+    for failure in gh_refusal_failures():
+        findings.append(_finding("sp-gh-refusal-broken", "error",
+                                 f"the gh transport misreports a failure — {failure}",
+                                 remedy="a missing binary, an unauthenticated one and an API "
+                                        "error are three refusals with three remedies; all "
+                                        "exit 2 and none is a traceback"))
+
     # The config defaults, asserted where nothing is declared. A repo that declares nothing
     # is the overwhelmingly common case, so a loader that started returning `None` for the
     # backend would break every such repo while every configured one kept working — the
@@ -4056,8 +4526,9 @@ def cmd_selftest(args, root: str) -> int:
               f"the entry-gate headings, the {len(BACKEND_CASES)} backend cases agree between "
               f"`files` and `memory`, the config defaults hold with nothing declared, the files "
               f"root reaches for no specs worktree where there must not be one, the worktree "
-              f"lock admits one writer and reclaims nothing it cannot prove dead, and the "
-              f"embedded schema and template match their asset files.")
+              f"lock admits one writer and reclaims nothing it cannot prove dead, the "
+              f"{len(GH_REFUSAL_CASES)} gh transport failures each refuse with their own "
+              f"remedy, and the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
@@ -4320,6 +4791,12 @@ def main(argv: list[str]) -> int:
         return emit_err(args.json, err)
     try:
         return DISPATCH[args.cmd](args, root)
+    except GhRefusal as e:
+        # THE ONE PLACE A TRANSPORT FAILURE BECOMES AN EXIT CODE. An external backend can
+        # fail in the middle of a primitive that has no error channel, and the contract is
+        # a legible refusal and never a traceback — so the failure is raised where it
+        # happens, carrying the message already built, and converted exactly once here.
+        return emit_err(args.json, e.err)
     finally:
         if lock is not None:
             lock.release()
