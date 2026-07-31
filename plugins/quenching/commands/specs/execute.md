@@ -57,33 +57,49 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 "Building spec: `<slug>`" and how to override.
 **Done when:** one spec in `plans/` is resolved.
 
-### 2. Require a clean tree, then delegate the isolation
-**The precondition comes first.** `git status --porcelain` non-empty → **refuse to start**, per
+### 2. Take the tree, the isolation and the state in one read
+**The precondition comes first.** Read all four facts the loop needs in a single call — the tree,
+the isolation ref, the spec's own state (which step 3 reads anyway, so it is read here once), and
+the environment probe of step 2b:
+
+```bash
+git status --porcelain
+git branch --list "plan/<slug>"
+specs.py status --spec "<slug>" --json
+```
+
+`git status --porcelain` non-empty → **refuse to start**, per
 [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
 precondition. Offer to commit or stash. The human may override; then the first commit carries the
 pre-existing changes and the report says so.
 
-Then **hand isolation to `/specs:isolate`** (the `Skill` tool) rather than reimplementing it: it
-owns the branch and worktree forms, the `plan/<slug>` name, the `branch: {base, work}` stamp and
-its write-once rule. It is not exclusive to building — a spec may already have been isolated at
-creation or during development, in which case that command reports the existing branch and stamps
-nothing new.
+**Then check before dispatching.** `branch --list plan/<slug>` printing a ref, or the `branch`
+record already present in the `status` payload, means the spec **is already isolated** — go
+straight to the loop and dispatch nothing. `/specs:isolate` would report the existing branch and
+stamp nothing new, so the call buys nothing and costs twice: the turns, and the run's own
+attribution, per
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Isolation is
+somebody else's job.
 
-Read the result before the first task: a spec whose branch is **alive but checked out elsewhere**
-is being built somewhere else, and starting here would fork the work. Say so and stop.
+**Nothing to check out → hand isolation to `/specs:isolate`** (the `Skill` tool) rather than
+reimplementing it: it owns the branch and worktree forms, the `plan/<slug>` name, the
+`branch: {base, work}` stamp and its write-once rule. Delegating less is not the point — checking
+first is; when there is something to isolate, that command is still the only thing that takes it.
+
+Either way, read the state before the first task: a spec whose branch is **alive but checked out
+elsewhere** (`git worktree list`, or a ref this checkout is not on) is being built somewhere else,
+and starting here would fork the work. Say so and stop.
 
 Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
 **Done when:** the tree is clean (or the override is on the record), and isolation has been taken,
-reported as already held, or declined.
+found already held, or declined.
 
-### 3. Read the spec's state, and settle the approval
-```bash
-specs.py status --spec "<slug>" --json
-```
-Read the derived stage, the section states, task progress, the blocked tasks, the recorded subjects,
-and **`verification`** — the spec's declared policy, which decides when the suite runs so this
-command never has to.
+### 3. Settle the approval, off the state step 2 already read
+The `specs.py status --json` payload is **already in hand** from step 2 — do not read it again.
+From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
+subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
+this command never has to.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
   stamp `approved: {date}` on a yes. **Never refuse over it** — refusing would rebuild the folder

@@ -384,9 +384,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 
 ### 2. O passo 2 — checar antes de despachar
 
-- [ ] 2.1 Fazer o passo 2 de `/specs:execute` checar o record `branch` e `git branch --list plan/<slug>` antes de invocar `/specs:isolate`
+- [x] 2.1 Fazer o passo 2 de `/specs:execute` checar o record `branch` e `git branch --list plan/<slug>` antes de invocar `/specs:isolate`
       files: plugins/quenching/commands/specs/execute.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'branch --list\s+plan/',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S) else 1)"
+      subject: plan/cut-specs-execute-turns: 2.1 o passo 2 checa a isolação antes de despachar
 - [ ] 2.2 Registrar a mesma regra em `execution.md` §Isolation is somebody else's job, com o caso residual que perde a medição da run
       files: plugins/quenching/assets/references/specs-execute/execution.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'already isolated.*?session-evidence',pathlib.Path('plugins/quenching/assets/references/specs-execute/execution.md').read_text(),re.S|re.I) else 1)"
