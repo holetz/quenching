@@ -2,6 +2,11 @@
 slug: cut-specs-execute-turns
 title: Cut /specs:execute's turn count through body wording
 verification: per-section
+refined:
+  mode: gate
+  date: 2026-07-31
+approved:
+  date: 2026-07-31
 ---
 
 # Cut /specs:execute's turn count through body wording
@@ -49,16 +54,21 @@ verification: per-section
 Uma run de `/specs:execute` custa `turnos × contexto`. Este spec ataca a metade **turnos**, e por um
 mecanismo barato: a redação do próprio comando pede mais chamadas de ferramenta do que as garantias
 que ele oferece exigem. O `## Problem` reúne a evidência de uma run real de 13 tasks e cinco lugares
-onde isso acontece; a `## Proposal` diz o que passa a ser verdade em cada um deles.
+onde isso acontece; a `## Proposal` diz o que passa a ser verdade em cada um deles, e `## Tasks` os
+constrói em seis seções, do contrato para os corpos.
 
 A distinção que organiza o resto está em `## Design` D1: quatro dos cinco achados são texto que pode
 mudar sem que garantia nenhuma se mova, e um — quando o `## Handoff` é reescrito — é mudança de
-contrato, que por isso vira regra escrita junto com o seu motivo. `## Out of Scope` marca a fronteira
-com o spec irmão `reduce-execute-conclude-cost`, dono da metade **contexto**, e registra também o
-maior corte disponível que este spec deliberadamente não faz.
+contrato, que por isso vira regra escrita junto com o seu motivo. `## Impact` declara o único
+`docs/standards/` que este spec escreve. `## Out of Scope` marca a fronteira com o spec irmão
+`reduce-execute-conclude-cost`, dono da metade **contexto**, e registra também o maior corte
+disponível que este spec deliberadamente não faz.
 
-`## Validation` explica por que a prova é medida em turnos e não em chamadas de ferramenta, e
-`## Risks` registra o que acontece se essa diferença for grande.
+`## Validation` explica por que a prova é medida em turnos e não em chamadas de ferramenta — e por
+que ela **não subtrai**: o número de antes é um limite superior e o de depois seria exato, e a
+diferença entre os dois mediria a medição em vez do comando. `## Open Decisions` guarda as duas
+coisas que só a run seguinte decide, e `## Risks` registra o preço dessa honestidade — o spec sabe a
+direção do seu efeito sem saber o tamanho.
 
 ## Problem
 
@@ -135,9 +145,10 @@ Depois desta entrega:
   ordenação que o corpo já exige, e uma falha em qualquer elo interrompe os seguintes.
 - A cadência do `## Handoff` passa a ser **dirigida a quatro eventos** — pausa, task bloqueada,
   descoberta registrada, último commit da run — em vez de por task commitada.
-- `docs/standards/workflows/task-execution.md` passa a ser dono dessa cadência **e do motivo dela**,
-  mais o que se perde quando um comando precisa mesmo despachar um stage no meio do fluxo: a própria
-  medição, que passa a ser reportada como limite superior.
+- `docs/standards/workflows/task-execution.md` passa a ser dono dessa cadência **e do motivo dela**.
+  O que se perde quando um comando precisa mesmo despachar um stage no meio do fluxo — a medição, que
+  vira limite superior — já é de `docs/standards/automation/session-evidence.md` §What a command's
+  run cost, e é **citado** de lá, nunca redeclarado.
 - `artifacts.md` §Execution metadata e o standard passam a dizer que **`verify:` é escopado ao que
   aquela task pôde quebrar**, então um portão de seção deixa de rerodar checks cujos insumos a seção
   não tocou.
@@ -174,6 +185,33 @@ Depois desta entrega:
 - **`functional-checks.sh` como validação deste spec.** O `CLAUDE.md` é explícito: o harness pertence
   à frente skill e não vai na `## Validation` de um spec.
 
+## Impact
+
+### Standards this spec will write into docs/standards/
+
+- `docs/standards/workflows/task-execution.md` — a cadência do `## Handoff` dirigida a quatro
+  eventos, com o motivo pelo qual um gatilho de cadência não pode ser julgamento; e a regra de que
+  `verify:` é escopado na autoria ao que aquela task pôde quebrar.
+
+### Standards at `authority: background` this spec may resolve
+
+- `docs/standards/automation/session-evidence.md` — já é dona da perda de atribuição num dispatch e
+  da regra do limite superior. Este spec não a reescreve nem a promove: o passo 2 novo produz uma
+  run `closed: true` onde hoje há `closed: false`, que é a primeira evidência a favor dela. Promover
+  a `current` é de quem a mediu.
+
+### Product code this spec expects to touch
+
+- `plugins/quenching/commands/specs/execute.md` — passos 2, 5 (atos d–g) e 6
+- `plugins/quenching/assets/references/specs-execute/execution.md` — §Isolation is somebody else's
+  job, §The commit
+- `plugins/quenching/assets/references/specs-develop/artifacts.md` — §`## Handoff`, §Execution
+  metadata
+- `plugins/quenching/assets/references/specs-develop/spec-driven.md` — §The executor contract
+- `plugins/quenching/assets/references/specs-align/conformance.md` — a remediação de
+  `sp-handoff-empty`
+- `plugins/quenching/assets/bin/specs.py` — `TASK_META_RE` (:127) e o `selftest`
+
 ## Validation
 
 A prova é **uma comparação de turnos**, não de tool calls. A integral de custo é `turnos × contexto`,
@@ -181,13 +219,23 @@ e a pior run medida de `/specs:execute` foram 299 turnos contra as 93 chamadas d
 as duas métricas não são intercambiáveis, e um corte reportado na errada não prova nada sobre a que
 custa.
 
-- Rodar `/specs:execute` sobre um spec de tamanho comparável antes e depois, e comparar os **turnos
-  atribuídos** que `session.py` devolve para a run.
-- Reportar junto a razão **turnos/tool calls** das duas runs. É o número que julga o resultado: ele
-  diz que fração do corte medido em chamadas chegou à métrica que custa.
-- Toda figura carrega o `closed` / `mayIncludeTurnsFrom` que `session.py` já anexa. Depois do passo 2
-  novo, uma run sobre um spec já isolado deve vir `closed: true` — o que é por si só a prova do
-  achado 5.
+**Este spec não subtrai.** O baseline disponível é `closed: false` — 16 chamadas exatas mais 77 de
+limite superior — e o achado 5 prevê que a run "depois" venha `closed: true`. Subtrair um número
+exato de um limite superior mede duas coisas de uma vez, a redação nova e a mudança de regime da
+medição, e credita a segunda à primeira. Nenhuma afirmação da forma "cortou N turnos" é feita.
+
+- Rodar `/specs:execute` sobre um spec de tamanho comparável antes e depois, e reportar os **dois
+  pares crus** — turnos atribuídos e tool calls de cada run — cada um carregando o `closed` /
+  `mayIncludeTurnsFrom` que `session.py` anexa. O rótulo viaja com o número: quem quiser subtrair vê
+  o que está subtraindo.
+- Reportar a razão **turnos/tool calls** de cada lado. Estável significa que o corte em chamadas
+  chegou aos turnos na mesma proporção; em alta significa que ficou nas chamadas. É um sinal de
+  direção, não um tamanho de efeito, e é reportado como sinal.
+- Reportar o flip de `closed` **isolado**, como prova do achado 5 — nunca somado ao corte, porque ele
+  é a medição passando a enxergar, não o comando gastando menos.
+- Cada task de edição de prosa carrega um `verify:` próprio que lê o arquivo inteiro com `re.DOTALL`,
+  **provado a sair 1 contra a árvore antes da edição**. Nenhum `grep` de linha única sobre prosa: a
+  frase que quebra de linha é a falha que `docs/standards/workflows/task-execution.md` já registra.
 - `python3 assets/bin/specs.py selftest` cobre `constraint:` (exit 0), `skills.py doctor` e `lint`
   seguem limpos, e `okf-validate.py assets/docs` mais o `docs/` do repo seguem em 0 error(s).
 
@@ -266,12 +314,28 @@ custo de o campo poder ficar sem consumidor, registrado em `## Risks`.
   reabrir a definição dele atrasa os dois. E os mecanismos são diferentes — lá é contexto e
   instrumento, aqui é redação de corpo.
 
+## Open Decisions
+
+- **Qual spec serve de alvo da run "depois" da `## Validation`.** Não é escolhível agora: exige um
+  spec `ready` de tamanho comparável ao baseline (~13 tasks) que ainda não tenha sido construído.
+  **Como se decide:** na hora de medir, tomando de `plans/` o spec `ready` cuja contagem de tasks
+  mais se aproxima de 13; se nenhum estiver dentro de ±3, a comparação é reportada com a diferença
+  de tamanho declarada, nunca silenciada.
+- **O que conta como sucesso, agora que a `## Validation` não subtrai.** Sem "cortou N turnos" não há
+  número-alvo, e fixar um antes de medir é inventar o resultado. **Como se decide:** lendo, depois da
+  run "depois", a razão turnos/tool calls dos dois lados mais o flip de `closed` — razão estável ou
+  em queda com `closed: true` é o resultado que o spec buscava; razão em alta significa que o corte
+  ficou nas chamadas e não chegou aos turnos, e isso é reportado como tal em vez de reenquadrado.
+
 ## Risks
 
 - **O corte pode ser pequeno na métrica que importa.** Toda evidência do `## Problem` está em tool
   calls, e a integral de custo está em turnos. Se as chamadas forem uma fração pequena dos turnos, ~23
-  cortadas de 93 viram poucos por cento da integral. **Mitigação:** a razão turnos/chamadas é medida e
-  reportada (`## Validation`), então o spec relata o tamanho real do seu efeito em vez de o presumir.
+  cortadas de 93 viram poucos por cento da integral. **PARCIALMENTE ACEITO** — a razão turnos/chamadas
+  é medida e reportada dos dois lados (`## Validation`), o que dá a **direção** do efeito; mas a
+  `## Validation` deliberadamente não subtrai, então o **tamanho** fica não quantificado. Trocar uma
+  sub-quantificação honesta por um número inflado pela mudança de regime da medição seria o pior dos
+  dois negócios, e é a troca que este spec recusa.
 - **`constraint:` pode ficar no schema sem consumidor.** O campo entra inerte e depende de o spec
   irmão decidir usá-lo no passo 5b. **ACCEPTED** — custa uma alternância de regex e três linhas de
   doc, e se o irmão o recusar, removê-lo é uma linha; o custo de carregá-lo é menor que o de
@@ -283,3 +347,82 @@ custo de o campo poder ficar sem consumidor, registrado em `## Risks`.
 - **Nada disto é testável na sessão que o escreve** — o registro da superfície é montado no início da
   sessão, então nenhuma mudança sob `commands/**` é verificável ali. **ACCEPTED**, e é precisamente a
   razão de a `## Validation` ser uma run seguinte e não um check.
+
+## Handoff
+
+Nada foi construído; sem `branch`, sem `priority`.
+
+Convenções em vigor:
+
+- `docs/standards/**` e as referências do plugin são prosa em **inglês**; o corpo deste spec é pt-BR.
+- Todo `verify:` de task de prosa lê o arquivo inteiro com `re.DOTALL` e **precisa sair 1 contra a
+  árvore antes da edição**. `grep` de linha única sobre prosa é proibido aqui.
+- Caminhos nos `verify:` são relativos à raiz do repo.
+- Nada toca `session.py`, o passo 5b, nem `functional-checks.sh`. O bump de versão é do
+  `/specs:conclude` passo 5, nunca uma task.
+
+Os quatro lugares que declaram a cadência antiga, todos com a mesma frase "after each committed
+task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`## Handoff` ·
+`specs-develop/spec-driven.md` §The executor contract · `specs-align/conformance.md`
+(`sp-handoff-empty`).
+
+## Tasks
+
+### 1. O contrato em docs/standards/
+
+- [ ] 1.1 Escrever a cadência de `## Handoff` por quatro eventos em `docs/standards/workflows/task-execution.md`, com o motivo — um gatilho de cadência não pode ser julgamento
+      files: docs/standards/workflows/task-execution.md
+      verify: python3 -c "import re,pathlib,sys;t=pathlib.Path('docs/standards/workflows/task-execution.md').read_text();sys.exit(0 if re.search(r'Handoff.{0,40}cadence.{0,40}events',t,re.S|re.I) and re.search(r'blocked task.*?discovery recorded',t,re.S|re.I) else 1)"
+- [ ] 1.2 Escrever em `docs/standards/workflows/task-execution.md` que `verify:` é escopado na autoria, citando `session-evidence.md` para a perda de medição em vez de a redeclarar
+      files: docs/standards/workflows/task-execution.md
+      verify: python3 -c "import re,pathlib,sys;t=pathlib.Path('docs/standards/workflows/task-execution.md').read_text();sys.exit(0 if re.search(r'session-evidence\.md',t,re.S) and re.search(r'verify:.{0,80}scoped',t,re.S|re.I) else 1)"
+
+### 2. O passo 2 — checar antes de despachar
+
+- [ ] 2.1 Fazer o passo 2 de `/specs:execute` checar o record `branch` e `git branch --list plan/<slug>` antes de invocar `/specs:isolate`
+      files: plugins/quenching/commands/specs/execute.md
+      verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'branch --list\s+plan/',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S) else 1)"
+- [ ] 2.2 Registrar a mesma regra em `execution.md` §Isolation is somebody else's job, com o caso residual que perde a medição da run
+      files: plugins/quenching/assets/references/specs-execute/execution.md
+      verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'already isolated.*?session-evidence',pathlib.Path('plugins/quenching/assets/references/specs-execute/execution.md').read_text(),re.S|re.I) else 1)"
+- [ ] 2.3 Acrescentar ao passo 2 o probe de ambiente de uma linha — todo hook fiado em `.claude/settings.json` resolve no disco?
+      files: plugins/quenching/commands/specs/execute.md
+      verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'settings\.json.{0,200}hook',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S|re.I) else 1)"
+
+### 3. O passo 5 encadeado
+
+- [ ] 3.1 Reescrever os atos d–g do passo 5 como UMA chamada encadeada por task, com o `&&` impondo a ordenação que o corpo já exige
+      files: plugins/quenching/commands/specs/execute.md
+      verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'task --check.{0,120}&&.{0,120}git commit',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S) else 1)"
+- [ ] 3.2 Alinhar `execution.md` §The commit ao encadeamento, sem mover a ordenação tick-antes-do-commit
+      files: plugins/quenching/assets/references/specs-execute/execution.md
+      verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'task --check.{0,120}&&.{0,120}git commit',pathlib.Path('plugins/quenching/assets/references/specs-execute/execution.md').read_text(),re.S) else 1)"
+
+### 4. A cadência nova nos quatro lugares que hoje dizem a antiga
+
+- [ ] 4.1 Reescrever o passo 6 de `/specs:execute` para os quatro eventos
+      files: plugins/quenching/commands/specs/execute.md
+- [ ] 4.2 Reescrever `artifacts.md` §`## Handoff` — small, and refreshed on events
+      files: plugins/quenching/assets/references/specs-develop/artifacts.md
+- [ ] 4.3 Reescrever o parágrafo do refresh em `spec-driven.md` §The executor contract
+      files: plugins/quenching/assets/references/specs-develop/spec-driven.md
+- [ ] 4.4 Reescrever a remediação de `sp-handoff-empty` em `conformance.md`
+      files: plugins/quenching/assets/references/specs-align/conformance.md
+- [ ] 4.5 Provar com um check multilinha que a frase antiga não sobreviveu em nenhum dos quatro arquivos
+      verify: python3 -c "import re,pathlib,sys;p=['plugins/quenching/commands/specs/execute.md','plugins/quenching/assets/references/specs-develop/artifacts.md','plugins/quenching/assets/references/specs-develop/spec-driven.md','plugins/quenching/assets/references/specs-align/conformance.md'];sys.exit(1 if any(re.search(r'after\s+each\s+committed\s+task',pathlib.Path(f).read_text(),re.S|re.I) for f in p) else 0)"
+
+### 5. `constraint:` e o escopo de `verify:` nas referências
+
+- [ ] 5.1 Admitir `constraint:` em `TASK_META_RE` (`specs.py:127`) e cobrir o campo no `selftest`
+      files: plugins/quenching/assets/bin/specs.py
+      verify: python3 plugins/quenching/assets/bin/specs.py selftest
+- [ ] 5.2 Documentar `constraint:` (inerte, com o motivo) e a regra de escopo de `verify:` em `artifacts.md` §Execution metadata
+      files: plugins/quenching/assets/references/specs-develop/artifacts.md
+      verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'`constraint:`',pathlib.Path('plugins/quenching/assets/references/specs-develop/artifacts.md').read_text(),re.S) else 1)"
+
+### 6. Fecho
+
+- [ ] 6.1 Rodar a bateria do CLAUDE.md — os três `selftest`, `okf-validate.py` sobre `assets/docs` e o `docs/` do repo, `skills.py doctor` e `lint`
+      verify: cd plugins/quenching && python3 assets/bin/specs.py selftest && python3 assets/bin/skills.py selftest && python3 assets/hooks/okf-validate.py selftest && python3 assets/hooks/okf-validate.py assets/docs && python3 assets/bin/skills.py --root . doctor --json
+- [ ] 6.2 Medir com `session.py` o par cru do baseline da run `985b372b` e registrá-lo em `## Validation`
+      files: specs/plans/2026-07-30-cut-specs-execute-turns.md
