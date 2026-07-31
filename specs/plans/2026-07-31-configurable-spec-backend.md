@@ -207,6 +207,17 @@ trabalho em que se está.
   evita a colisão e custa legibilidade a todo repo que não tinha o problema. Configurável paga o
   custo apenas onde ele existe. A confirmação prometida — o primeiro repo alvo real — segue de pé:
   se nenhum precisar do override, a chave é candidata a ser retirada.
+- **Refinado (task 2.1): a interface de backend carrega o documento, não os verbos.** O `## Design`
+  listava `list/status/show/section/task/discover/promote/validate` como a interface. Implementados
+  como métodos por backend, cada implementação reparsearia as catorze seções, e "todos operam
+  identicamente" seria provado só por teste — três parsers que podem divergir. A interface entregue
+  são cinco primitivas sobre o documento canônico (`list_specs`, `read_spec`, `write_spec`,
+  `create_spec`, `move_spec`); os oito verbos são código compartilhado sobre elas. A afirmação
+  central passa a valer **por construção**. A serialização híbrida não é perdida: um backend externo
+  serializa nativo como quiser desde que remonte o documento canônico na leitura — que é exatamente
+  "a serialização híbrida vive dentro de cada implementação externa". A leitura granular também não:
+  o custo que ela endereça é o **contexto** do agente, não I/O, então `show --section` devolve uma
+  seção mesmo que o backend tenha buscado o documento inteiro.
 ## Alternatives Considered
 
 - **Externo como projeção read-only:** rejeitada — o time quer read-write completo (gerir o spec
@@ -311,9 +322,10 @@ trabalho em que se está.
 
 ### 2. Interface de backend
 
-- [ ] 2.1 Definir a interface de backend em specs.py — list/status/show/section/task/discover/
+- [x] 2.1 Definir a interface de backend em specs.py — list/status/show/section/task/discover/
       promote/validate — com o backend `files` como implementação de referência
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 2.1 define a interface de backend com files como referencia
 - [ ] 2.2 Backend fake in-memory, exercitável sem rede e sem disco
       files: plugins/quenching/assets/bin/specs.py
 - [ ] 2.3 Rodar a lista canônica de casos do selftest contra `files` E contra o fake, exigindo
@@ -386,3 +398,7 @@ trabalho em que se está.
       verify: cat VERSION && python3 assets/bin/specs.py --version
 - [ ] 7.3 Atualizar plugins/quenching/README.md — os três backends, a config e o custo do binário
       files: plugins/quenching/README.md
+
+## Discoveries
+
+- cmd_promote ainda checa sp-dest-exists por os.path.exists sobre um caminho derivado do root — sem sentido num backend externo. A checagem de destino ocupado precisa virar pergunta ao backend na secao 4.
