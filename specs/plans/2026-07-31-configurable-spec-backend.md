@@ -333,10 +333,11 @@ trabalho em que se está.
       resultado idêntico
       verify: python3 assets/bin/specs.py selftest
       subject: plan/configurable-spec-backend: 2.3 lista canonica de casos rodando contra files e contra o fake
-- [ ] 2.4 Leitura granular: `show --spec <slug> [--section <Heading> | --task <id>]`, com o
+- [x] 2.4 Leitura granular: `show --spec <slug> [--section <Heading> | --task <id>]`, com o
       documento inteiro apenas sob pedido explícito
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
+      subject: plan/configurable-spec-backend: 2.4 leitura granular — show por secao e por task
 - [ ] 2.5 Escrever docs/standards/architecture/spec-backend.md (authority: current once proved)
       verify: python3 assets/hooks/okf-validate.py docs
 
@@ -404,3 +405,5 @@ trabalho em que se está.
 ## Discoveries
 
 - cmd_promote ainda checa sp-dest-exists por os.path.exists sobre um caminho derivado do root — sem sentido num backend externo. A checagem de destino ocupado precisa virar pergunta ao backend na secao 4.
+- cmd_list ainda le read_text(s['path']) direto, contornando backend.read_spec — o unico comando que sobrou assim. Funciona no backend files e quebra em qualquer externo; corrigir antes da task 4.1 exercitar list no github.
+- O selftest so tem a asercao especifica sp-plans-subcommand-back; falta uma generica de que set(parser.choices) == set(DISPATCH). Um subcomando registrado em so uma das duas superficies passaria despercebido.

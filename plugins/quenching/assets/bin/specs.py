@@ -2163,6 +2163,166 @@ def cmd_task(args, root: str) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# granular reading
+# --------------------------------------------------------------------------- #
+# The reader's view of a task. `metaInsertAt`, `metaIndent`, `subjectLineno` and
+# `commitLineno` are deliberately NOT here: they are the offsets `task` upserts by, and
+# handing them to a reader is an invitation to do the string surgery `task` exists to
+# prevent. `lineno` stays, because locating a task in the file is reading, not writing.
+SHOWN_TASK_KEYS = ("index", "id", "state", "checked", "blocked", "reason", "text",
+                   "section", "parallel", "files", "pattern", "verify", "subject",
+                   "commit", "lineno")
+
+
+def _task_view(t: dict) -> dict:
+    return {k: t[k] for k in SHOWN_TASK_KEYS}
+
+
+def _show_index(info: dict) -> dict:
+    """The MAP of one spec — which sections exist, how big each is, which task ids there are.
+
+    Bounded by the fourteen headings and the task count no matter how long the document is,
+    which is what makes it affordable as the default. It also makes the NEXT call exact: a
+    caller that knows the heading spellings and the task ids never has to read the document
+    to find out what it may ask for."""
+    return {
+        "sections": [{"heading": h,
+                      "state": section_state(info["sections"], h),
+                      "lines": len(info["sections"].get(h, {}).get("lines", []))}
+                     for h in canonical_headings()],
+        "strays": stray_headings(info["sections"]),
+        "tasks": [{"id": t["id"], "index": t["index"], "state": t["state"], "text": t["text"]}
+                  for t in info["tasks"]],
+    }
+
+
+def _show_human(obj: dict, info: dict) -> str:
+    head = (f"{obj['slug']} — {obj['title']}\n"
+            f"  {info['folder']}/{info['file']}  [{obj['stage']}]")
+    if obj["view"] == "full":
+        return info["text"].rstrip("\n")
+    marks = {"filled": "✓", "empty": "!", "absent": "·"}
+    out = [head]
+    if obj["view"] == "index":
+        out.append(f"  sections ({sum(1 for s in obj['sections'] if s['state'] != 'absent')}"
+                   f"/{len(obj['sections'])} present)")
+        for s in obj["sections"]:
+            size = f"  {s['lines']} line(s)" if s["state"] != "absent" else ""
+            out.append(f"    {marks[s['state']]} ## {s['heading']}{size}")
+        if obj["strays"]:
+            out.append(f"  strays: {', '.join(obj['strays'])}")
+        if obj["tasks"]:
+            out.append(f"  tasks ({len(obj['tasks'])})")
+            for t in obj["tasks"]:
+                out.append(f"    [{t['state']}] {t['text']}")
+        out.append(f"  read one: specs.py show --spec {obj['slug']} --section <Heading> "
+                   f"| --task <id>   (--full for the whole document)")
+        return "\n".join(out)
+    for s in obj["sections"]:
+        if s["state"] == "absent":
+            out.append(f"\n(## {s['heading']} is absent)")
+            continue
+        out.append(f"\n## {s['heading']}\n{s['body'].strip()}")
+    for t in obj["tasks"]:
+        out.append(f"\n- [{t['state']}] {t['text']}")
+        for key in ("files", "pattern", "verify", "subject", "commit"):
+            val = t[key]
+            if val:
+                val = ", ".join(val) if isinstance(val, list) else val
+                out.append(f"      {key}: {val}")
+    return "\n".join(out)
+
+
+def cmd_show(args, root: str) -> int:
+    """Read ONE section, ONE task, or the map of what is there — the whole document only
+    when it is asked for by name.
+
+    THE COST THIS ADDRESSES IS THE AGENT'S CONTEXT, NOT I/O. A backend may well have fetched
+    the entire document to answer `--section Handoff`, and that is fine — reading a file
+    twice is free. What is not free is an executor handed fourteen sections in order to edit
+    one: it carries the other thirteen through every remaining turn of its conversation and
+    pays for them again on each. So the DEFAULT IS THE INDEX AND NEVER THE DOCUMENT, and
+    `--full` exists precisely so that the whole document has to be typed on purpose.
+
+    `section` stays the read/write pair for one heading. This is the read-only view that also
+    reaches tasks and answers several slices in ONE call — which is the difference that
+    matters when the alternative is four invocations or one whole document.
+
+    An unknown canonical spelling is a REFUSAL (exit 2), not an empty body: a caller that
+    mistypes `Handof` must find out, and returning nothing would read as `the section is
+    empty` — a fact about the spec rather than about the request. An absent-but-canonical
+    heading and an unknown task id are findings (exit 1), the same as an unknown slug."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+
+    wanted_sections = list(args.section or [])
+    wanted_tasks = list(args.task or [])
+    if args.full and (wanted_sections or wanted_tasks):
+        # Two different cost profiles in one request. Silently letting one win would hand
+        # back the whole document to a caller that asked for a slice, which is the exact
+        # failure this command exists to make impossible.
+        emit(args.json,
+             {"ok": False, "code": "sp-conflicting-selection",
+              "message": "--full asks for the whole document and --section/--task for a "
+                         "slice of it — pass one or the other"},
+             "error: --full does not combine with --section/--task")
+        return 2
+
+    headings: list[str] = []
+    for raw in wanted_sections:
+        heading = _match_heading(raw)
+        if not heading:
+            emit(args.json,
+                 {"ok": False, "code": "sp-stray-heading", "heading": raw,
+                  "canonical": canonical_headings(),
+                  "message": f"'{raw}' is not one of the fourteen canonical headings"},
+                 f"error: '{raw}' is not a canonical heading")
+            return 2
+        if heading not in headings:
+            headings.append(heading)
+
+    tasks: list[dict] = []
+    for ident in wanted_tasks:
+        t = _find_task(info["tasks"], ident)
+        if not t:
+            emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
+                             "message": f"no task '{ident}' in {info['slug']}"},
+                 f"error: no task '{ident}' in {info['slug']}")
+            return 1
+        tasks.append(_task_view(t))
+
+    view = "full" if args.full else ("slice" if (headings or tasks) else "index")
+    obj = {"ok": True, "slug": info["slug"],
+           "title": info["frontmatter"].get("title", ""),
+           "stage": info["stage"], "phase": info["phase"], "folder": info["folder"],
+           "file": info["file"], "view": view}
+    code = 0
+    if view == "full":
+        obj["document"] = info["text"]
+        obj["lines"] = len(info["text"].splitlines())
+    elif view == "slice":
+        obj["sections"] = [
+            {"heading": h, "state": section_state(info["sections"], h),
+             "lines": len(info["sections"].get(h, {}).get("lines", [])),
+             "body": info["sections"].get(h, {}).get("body", "")}
+            for h in headings]
+        obj["tasks"] = tasks
+        # An absent canonical heading is legal — its phase was never reached — so it is
+        # reported as a finding and not as a refusal, exactly as `section` does on read.
+        if any(s["state"] == "absent" for s in obj["sections"]):
+            obj["ok"] = False
+            code = 1
+    else:
+        obj.update(_show_index(info))
+    emit(args.json, obj, _show_human(obj, info))
+    return code
+
+
 CRITICALITY_RANK = {"critical": 0, "high": 1, "medium": 2, "normal": 2, "low": 3}
 
 
@@ -3424,6 +3584,18 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
 
+    sp = add_json(sub.add_parser("show", help="granular read: ONE section or task, the map "
+                                              "by default, the document only with --full"))
+    sp.add_argument("--spec", required=True)
+    sp.add_argument("--section", action="append", metavar="HEADING",
+                    help="one canonical heading's body; repeatable, so a slice that spans "
+                         "two sections is one call and not two")
+    sp.add_argument("--task", action="append", metavar="ID",
+                    help="one task's line and metadata, by id or index; repeatable")
+    sp.add_argument("--full", action="store_true",
+                    help="the WHOLE document — never the default, because every caller "
+                         "that did not need it pays for it in context on every later turn")
+
     sp = add_json(sub.add_parser("section", help="read or write ONE section"))
     sp.add_argument("spec")
     sp.add_argument("heading")
@@ -3483,6 +3655,7 @@ DISPATCH: dict = {
     "new": cmd_new,
     "list": cmd_list,
     "status": cmd_status,
+    "show": cmd_show,
     "section": cmd_section,
     "promote": cmd_promote,
     "task": cmd_task,
