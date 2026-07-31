@@ -283,9 +283,10 @@ trabalho em que se está.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/configurable-spec-backend: 1.2 le .claude/quenching.json — backend, specsBranch, worktreeSetup
-- [ ] 1.3 Reapontar os findings `sp-config-unparseable` e `sp-config-unknown-key` para o novo local
+- [x] 1.3 Reapontar os findings `sp-config-unparseable` e `sp-config-unknown-key` para o novo local
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
+      subject: plan/configurable-spec-backend: 1.3 reaponta os findings de config para .claude/quenching.json
 - [ ] 1.4 Escrever docs/standards/workflows/plugin-configuration.md (authority: current once proved)
       verify: python3 assets/hooks/okf-validate.py docs
 - [ ] 1.5 Reescrever docs/standards/workflows/worktree-setup.md para o novo caminho da config,

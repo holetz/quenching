@@ -3014,6 +3014,25 @@ def cmd_doctor(args, root: str) -> int:
                                  f"{CONFIG_FILE} declares `{key}`, which nothing reads",
                                  path=CONFIG_FILE, key=key,
                                  remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+    if cfg["unknownBackend"]:
+        findings.append(_finding("sp-config-unknown-backend", "warn",
+                                 f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "
+                                 f"which is not one this tool implements — `{cfg['backend']}` "
+                                 f"is in effect instead",
+                                 path=CONFIG_FILE, backend=cfg["unknownBackend"],
+                                 remedy=f"the implemented backend(s): {', '.join(BACKENDS)}"))
+    # The config moved to `.claude/`, and a repo that upgrades without moving its file is the
+    # one shape where every command keeps working while nothing it declared is read — the
+    # silence the two findings above exist to prevent, reappearing one directory over. Named
+    # here rather than merged in load_config: two configs with no stated winner is worse than
+    # one that is plainly stranded.
+    if cfg["legacyPath"]:
+        findings.append(_finding("sp-config-legacy-location", "warn",
+                                 f"`specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
+                                 f"longer read — the plugin's config is {CONFIG_FILE}",
+                                 path=f"specs/{LEGACY_CONFIG_FILE}",
+                                 remedy=f"move its keys into {CONFIG_FILE} and delete it; "
+                                        f"whatever it declares is doing nothing today"))
 
     leftovers = _v1_leftovers(root)
     for name in leftovers:
@@ -3024,7 +3043,11 @@ def cmd_doctor(args, root: str) -> int:
                                         f"specs/archive/** is never touched)"))
     for entry in sorted(os.listdir(root)):
         full = os.path.join(root, entry)
-        if os.path.isfile(full) and entry not in ("QUENCHING.md", "schema.json", CONFIG_FILE) \
+        # `config.json` stays exempt even though nothing reads it any more: it has its own
+        # finding above, which says where it went. Reporting it as a stray would offer
+        # "move it into a phase folder", which is the one thing that must not happen to it.
+        if os.path.isfile(full) \
+                and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
                 and not entry.startswith("."):
             findings.append(_finding("sp-stray-file", "warn",
                                      f"stray file at the specs root: {entry}", path=entry,
