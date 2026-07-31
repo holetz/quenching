@@ -251,8 +251,11 @@ was skipped.
 
 ### 6. Run the content stages that have work, in order
 Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,
-`quenching:docs:harness`. A bare `/docs:harness` is what a human types, not what the Skill tool
-resolves. Declare the cycle-authorization mode to each
+`quenching:docs:harness`. Three citation forms exist, and which one is correct depends on **where
+the command comes from**, never on who reads it: `quenching:docs:harness` is what the `Skill` tool
+resolves; `/quenching:docs:harness` is what a human types wherever this is installed as a plugin;
+a bare `/docs:harness` resolves **only** where that command file lives in the target repo's own
+`.claude/commands/`. Declare the cycle-authorization mode to each
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization), and **skip any stage the probe found empty**:
 
