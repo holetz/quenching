@@ -338,8 +338,9 @@ trabalho em que se está.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/configurable-spec-backend: 2.4 leitura granular — show por secao e por task
-- [ ] 2.5 Escrever docs/standards/architecture/spec-backend.md (authority: current once proved)
+- [x] 2.5 Escrever docs/standards/architecture/spec-backend.md (authority: current once proved)
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/configurable-spec-backend: 2.5 escreve o standard da interface de backend
 
 ### 3. Backend files em branch dedicada
 
