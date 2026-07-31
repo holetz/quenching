@@ -114,7 +114,9 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    language**. Identifier-derived slugs (catalog tables/schemas, repo names)
    stay **verbatim** — the slug is the greppable key to the asset.
    *(`standards/agents/communication.md` is the owner of that language rule for a bundle that has
-   one, and every other statement of it in this plugin was collapsed into a citation. This one
+   one. Every **normative** statement of it in this plugin was collapsed into a citation; the
+   boundary reminders that survive do so by decision, under
+   `standards/architecture/plugin-layout.md` §A boundary reminder is not a restatement. This one
    stays self-contained deliberately: a format spec is what other implementers read to build
    against, and one that defers to a doc living inside a particular repo's bundle stops being
    self-describing.)*
