@@ -293,10 +293,11 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
       files: plugins/quenching/commands/docs/align.md
       verify: grep -c 'quenching:docs:harness' plugins/quenching/commands/docs/align.md
       subject: plan/correct-command-citation-form: 1.1 três formas de citação em align.md
-- [ ] 1.2 Emendar `docs/standards/naming/command-surface.md` §The path IS the identity com as três formas, mantendo `authority: current`
+- [x] 1.2 Emendar `docs/standards/naming/command-surface.md` §The path IS the identity com as três formas, mantendo `authority: current`
       files: docs/standards/naming/command-surface.md
       pattern: docs/standards/naming/command-surface.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs | grep -q '0 error(s)'
+      subject: plan/correct-command-citation-form: 1.2 três formas em command-surface.md
 
 ### 2. O check
 
