@@ -1437,45 +1437,140 @@ class MemoryBackend(SpecBackend):
 
     name = "memory"
 
-    def __init__(self, docs: dict[str, tuple[str, str]] | None = None) -> None:
-        # slug -> (phase, document). The filename is derived, never stored, so a spec here
-        # cannot drift from the naming rule the files backend enforces by construction.
-        self.docs: dict[str, tuple[str, str]] = dict(docs or {})
+    def __init__(self) -> None:
+        # slug -> (phase, filename, document). THE FILENAME IS STORED, not derived: the
+        # files backend reads a spec's date out of its filename, where `new` stamped it once
+        # and never again. A backend that recomputed the date from anything else would hand
+        # back a different one for the same spec — which is precisely the divergence the
+        # equality check caught the first time this was written.
+        self.docs: dict[str, tuple[str, str, str]] = {}
 
     def _descriptor(self, slug: str) -> dict:
         # The SAME key set `spec_files` returns, and nothing more. An extra key here would
         # be a field some command could come to depend on and that the files backend would
-        # then not have — the divergence the selftest's equality exists to catch, planted
-        # by the very backend meant to catch it.
-        phase, text = self.docs[slug]
-        date = str(parse_frontmatter(text).get("date") or today())
-        return {"phase": phase, "folder": phase, "legacy": False,
-                "file": f"{date}-{slug}.md", "path": f"memory://{phase}/{slug}",
-                "date": date, "slug": slug}
+        # then not have.
+        phase, filename, _ = self.docs[slug]
+        m = SPEC_FILE_RE.match(filename)
+        return {"phase": phase, "folder": phase, "legacy": False, "file": filename,
+                "path": f"memory://{phase}/{filename}",
+                "date": m.group(1) if m else "", "slug": m.group(2) if m else slug}
 
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [self._descriptor(s) for s in sorted(self.docs)
+        rows = [self._descriptor(s) for s in self.docs
                 if phase is None or self.docs[s][0] == phase]
-        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["date"], r["slug"]))
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         spec, err = resolve_one(self.list_specs(), slug)
         if err:
             return None, err
-        return derive_info(spec, self.docs[slug][1]), {}
+        return derive_info(spec, self.docs[spec["slug"]][2]), {}
 
     def write_spec(self, info: dict, text: str) -> None:
-        self.docs[info["slug"]] = (self.docs[info["slug"]][0], text)
+        phase, filename, _ = self.docs[info["slug"]]
+        self.docs[info["slug"]] = (phase, filename, text)
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
-        slug = str(parse_frontmatter(text).get("slug") or "")
-        self.docs[slug] = (phase, text)
-        return f"memory://{phase}/{slug}"
+        m = SPEC_FILE_RE.match(filename)
+        slug = m.group(2) if m else filename
+        self.docs[slug] = (phase, filename, text)
+        return f"memory://{phase}/{filename}"
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
-        slug = info["slug"]
-        self.docs[slug] = (dest_phase, self.docs[slug][1])
-        return f"memory://{dest_phase}/{slug}"
+        _, filename, text = self.docs[info["slug"]]
+        self.docs[info["slug"]] = (dest_phase, filename, text)
+        return f"memory://{dest_phase}/{filename}"
+
+
+BACKEND_CASES = (
+    ("list an empty store", lambda b: _listing(b)),
+    ("create, then list", lambda b: _case_create(b)),
+    ("read what was created", lambda b: _observable(b.read_spec("alpha")[0])),
+    ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
+    ("write a section, then re-read", lambda b: _case_write(b)),
+    ("tick a task", lambda b: _case_task(b)),
+    ("move to archive", lambda b: _case_move(b)),
+    ("list after the move", lambda b: _listing(b)),
+)
+
+
+def _listing(b: "SpecBackend") -> list[dict]:
+    """A listing minus `path` — the one field the locator is allowed to differ on."""
+    return [{k: v for k, v in s.items() if k != "path"} for s in b.list_specs()]
+
+
+def _case_doc(slug: str = "alpha") -> str:
+    return (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
+            .replace("<VERIFICATION>", "per-task"))
+
+
+def _observable(info: dict | None) -> dict:
+    """One spec's info minus the two fields a backend is SUPPOSED to disagree on.
+
+    `path` is the locator — a filesystem path here, a URL there — and `text` is echoed back
+    verbatim from what was written, so neither can distinguish a correct backend from a
+    broken one. Everything else must match exactly, including the derived stage."""
+    if info is None:
+        return {}
+    return {k: v for k, v in info.items() if k not in ("path", "text")}
+
+
+def _case_create(b: "SpecBackend") -> list[dict]:
+    b.create_spec("plans", "2026-01-01-alpha.md", _case_doc())
+    return _listing(b)
+
+
+def _case_write(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    block, _ = upsert_section(info, "Problem", "## Problem\n\nUm problema.\n")
+    b.write_spec(info, block)
+    return _observable(b.read_spec("alpha")[0])
+
+
+def _case_task(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    block, _ = upsert_section(info, "Tasks", "## Tasks\n\n- [x] 1.1 feito\n")
+    b.write_spec(info, block)
+    info, _ = b.read_spec("alpha")
+    return {"progress": task_progress(info["tasks"]), "stage": info["stage"]}
+
+
+def _case_move(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    b.move_spec(info, "archive")
+    return _observable(b.read_spec("alpha")[0])
+
+
+def backend_equivalence_failures() -> list[str]:
+    """Run the canonical case list against `files` and against `memory`, and name every
+    case where they disagree.
+
+    THIS IS THE PROOF OF THE CENTRAL CLAIM. "Every backend behaves identically" is the
+    sentence the whole configurable-backend design rests on, and a sentence nobody checks is
+    a wish. Two backends sharing nothing but the interface — one on real files in a temp
+    directory, one in a dict — must produce byte-identical results for every case but the
+    locator.
+
+    Self-contained: `tempfile` is stdlib and the documents come from the embedded template,
+    so this runs on an installed copy with no assets beside it."""
+    import tempfile
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        root = os.path.join(tmp, "specs")
+        os.makedirs(os.path.join(root, "plans"))
+        os.makedirs(os.path.join(root, "archive"))
+        files: SpecBackend = FilesBackend(root)
+        memory: SpecBackend = MemoryBackend()
+        for label, case in BACKEND_CASES:
+            try:
+                got_f, got_m = case(files), case(memory)
+            except Exception as e:                      # noqa: BLE001 — reported, not raised
+                failures.append(f"{label}: raised {type(e).__name__}: {e}")
+                continue
+            if json.dumps(got_f, sort_keys=True, default=str) != \
+                    json.dumps(got_m, sort_keys=True, default=str):
+                failures.append(f"{label}: files={got_f!r} memory={got_m!r}")
+    return failures
 
 
 _BACKEND_CACHE: dict[str, SpecBackend] = {}
@@ -3091,6 +3186,16 @@ def cmd_selftest(args, root: str) -> int:
                                  f"is a refusal the human must fix, not a finding to report",
                                  remedy="exit 2 is this tool's refusal code; 1 is findings"))
 
+    # The claim the configurable-backend design rests on, checked rather than asserted in
+    # prose. Runs before the early return: an installed copy is exactly where a backend that
+    # quietly started deriving its own stages would go unnoticed.
+    for failure in backend_equivalence_failures():
+        findings.append(_finding("sp-backend-divergence", "error",
+                                 f"backends disagree — {failure}",
+                                 remedy="every backend supplies the canonical document and "
+                                        "derives nothing; a difference outside `path` and "
+                                        "`text` means one of them is deriving its own"))
+
     # The config defaults, asserted where nothing is declared. A repo that declares nothing
     # is the overwhelmingly common case, so a loader that started returning `None` for the
     # backend would break every such repo while every configured one kept working — the
@@ -3175,9 +3280,10 @@ def cmd_selftest(args, root: str) -> int:
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print("  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
-              "the entry-gate headings, and the embedded schema and template match their "
-              "asset files.")
+        print(f"  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
+              f"the entry-gate headings, the {len(BACKEND_CASES)} backend cases agree between "
+              f"`files` and `memory`, the config defaults hold with nothing declared, and the "
+              f"embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
