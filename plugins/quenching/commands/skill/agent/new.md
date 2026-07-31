@@ -4,7 +4,7 @@ argument-hint: [agent-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
 
-# /skill:agent:new — mint ONE subagent definition
+# /quenching:skill:agent:new — mint ONE subagent definition
 
 **Input**: `$ARGUMENTS` (the agent to create or edit — a name or a description of the work
 to delegate).
@@ -13,7 +13,7 @@ Creates or edits **ONE FILE** in the target repo's agent surface — `.claude/ag
 a definition whose description routes delegation to it and whose body is its system prompt.
 The delegation economics and the definition contract live in
 [skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md)
-§Subagents — owned by `/skill:new`'s doctrine set and applied here. The mold is
+§Subagents — owned by `/quenching:skill:new`'s doctrine set and applied here. The mold is
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/agent.md`.
 
 ## Doctrine
@@ -23,7 +23,7 @@ The delegation economics and the definition contract live in
   Absent + OKF bundle present → the plan offers creating it from
   `automation/agents-standard.md`, born `authority: background`; never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `docs/index.md` without `okf_version` (or
-  absent) means: write the definition only, skip the OKF tail silently, suggest `/docs:align`
+  absent) means: write the definition only, skip the OKF tail silently, suggest `/quenching:docs:align`
   **once**.
 - **One plan, one OK, nothing before.** The delegation buy, the name, the profile, every
   file, and the tail appear in ONE plan; a declined plan writes nothing.
@@ -38,7 +38,7 @@ The delegation economics and the definition contract live in
 Read `docs/standards/automation/agents.md` and confirm the bundle (`docs/index.md` carries
 `okf_version`). Rule present → it governs. Rule absent, bundle present → add "create the rule
 from `automation/agents-standard.md`" to the plan. No bundle → note the tail as skipped and
-plan the `/docs:align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching:docs:align` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Apply the delegation test
@@ -46,7 +46,7 @@ Per [capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabili
 §Subagents: the work qualifies when its returned summary is much smaller than the work
 itself, when slices run in parallel, or when its tool set must be narrower than the
 conversation's. Work that fails the test is a command or an inline step — say so and route
-to `/skill:new` instead of minting a wrapper around nothing. **Done when:** the delegation
+to `/quenching:skill:new` instead of minting a wrapper around nothing. **Done when:** the delegation
 buy is stated in one line, or the request is rerouted.
 
 ### 3. Derive the name, check collisions
