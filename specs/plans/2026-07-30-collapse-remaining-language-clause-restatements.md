@@ -330,7 +330,7 @@ e não com a continuação `files:`.
   files: `docs/standards/architecture/plugin-layout.md`
   verify: `grep -n 'lembrete\|boundary reminder' docs/standards/architecture/plugin-layout.md` mostra os dois testes, e `python3 plugins/quenching/assets/hooks/okf-validate.py docs` → 0 error(s), nenhum finding novo doc-a-doc
   subject: plan/collapse-remaining-language-clause-restatements: 1 Emendar plugin-layout com o teste do lembrete de fronteira
-- [ ] 2 Escrever a nota nas duas gêmeas, no mesmo commit — nomeia
+- [x] 2 Escrever a nota nas duas gêmeas, no mesmo commit — nomeia
   `standards/agents/communication.md` como dono e diz por que este local não cita: o front `specs/`
   é nativo e roda em repositório sem bundle.
   files: `plugins/quenching/assets/specs/templates/spec.md`, `plugins/quenching/assets/bin/specs.py`
@@ -359,3 +359,7 @@ e não com a continuação `files:`.
   files: `specs/QUENCHING.md`
   verify: `grep -n 'Fourteen canonical headings' specs/QUENCHING.md` → 1 acerto, e a nota da task 3 presente
   subject: plan/collapse-remaining-language-clause-restatements: 6 Sincronizar a copia instalada do manual
+
+## Discoveries
+
+- A Open Decision 'o invariante das gêmeas ganha um check mecânico?' já está resolvida: specs.py selftest compara TEMPLATE_SPEC com assets/specs/templates/spec.md byte-a-byte (specs.py:246 e :2790) e o próprio comentário do código diz 'EDIT BOTH OR NEITHER'. O check é durável, roda no lockstep, e não precisa de spec próprio — a decisão pode ser fechada como já-feita.
