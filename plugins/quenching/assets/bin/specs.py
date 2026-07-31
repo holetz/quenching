@@ -1583,6 +1583,15 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     asks for it more than once. The cache holds no mutable state — a backend is its root and
     nothing else — so this is a lookup table, not a session.
 
+    THIS IS WHERE "ON DEMAND" IS MADE TRUE for the `files` backend's specs worktree, and the
+    reason it is here rather than in `FilesBackend.__init__`. Every command that reads or
+    writes a spec passes through here and nothing else does — `doctor`, `config` and `selftest`
+    never open a backend — so the worktree is created by the first command that actually needs
+    the specs and never as a side effect of a diagnostic. A constructor could not make that
+    distinction: `FilesBackend(root)` is also how the equivalence cases instantiate it over a
+    bare temp directory with no repository, which must keep costing nothing and touching
+    nothing.
+
     A backend named in the config but not yet implemented refuses with exit 2 rather than
     falling back to `files`. Silently writing specs to the local filesystem for a repo that
     asked for GitHub is the one failure that loses work instead of reporting it."""
@@ -1591,7 +1600,13 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     cfg = load_config(root)
     name = cfg["backend"]
     if name == "files":
-        backend: SpecBackend = FilesBackend(root)
+        target, err = resolve_files_root(root, cfg)
+        if err:
+            # A worktree that could not be created — unignored, occupied, or refused by git.
+            # Nothing falls back to the declared root: the specs are on the specs branch, and
+            # writing them beside the code is the state this backend exists to end.
+            return None, err
+        backend: SpecBackend = FilesBackend(target)
     else:
         return None, {
             "code": "sp-backend-unavailable", "exit": 2, "backend": name,
@@ -2405,6 +2420,235 @@ def worktree_guard(ignored: bool, rel: str = SPECS_WORKTREE_DIR) -> dict:
                    f"backend creates its specs worktree there; an untracked worktree breaks "
                    f"the clean-tree gate /specs:execute requires before its first task",
     }
+
+
+# --------------------------------------------------------------------------- #
+# the persistent specs worktree — where the `files` backend puts the specs branch
+# --------------------------------------------------------------------------- #
+def _git_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    """Exit code, stdout AND stderr of one git command — the two halves `_git` throws away.
+
+    A SIBLING of `_git`, never a change to it: every existing caller reads `""` as "this repo
+    has no git facts", which is a real state and never an error. Creating a worktree needs the
+    opposite reading — the difference between "the branch is not there" and "git could not
+    answer" is what decides whether a branch gets created — and it needs git's own message to
+    quote back in a refusal.
+
+    A cwd that does not exist is `127` and no subprocess, where `_git` falls back to `"."`.
+    That fallback is harmless when the answer is only ever read as a fact; here it would run
+    `git worktree add` in whatever directory the process happens to sit in."""
+    import subprocess
+    if not os.path.isdir(cwd):
+        return 127, "", f"not a directory: {cwd}"
+    try:
+        out = subprocess.run(["git", *argv], capture_output=True, text=True, timeout=30,
+                             cwd=cwd, input=stdin)
+        return out.returncode, out.stdout, out.stderr
+    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+        return 127, "", str(e)
+
+
+def _repo_main_worktree(start: str) -> str:
+    """The MAIN checkout of the repository `start` belongs to, or `""` when git cannot say.
+
+    The main checkout and NOT `--show-toplevel`, because the specs worktree is ONE per
+    repository and is reused: asked from inside a plan worktree, `--show-toplevel` answers with
+    that plan worktree, so the backend would try to grow a second specs worktree per branch
+    under development — each one wanting the same branch, which git refuses outright. Every
+    linked worktree agrees on `--git-common-dir`, so it is the one answer that makes "created
+    on demand and reused" true from anywhere in the repo.
+
+    `start` may not exist yet (the default specs root is `<cwd>/specs` whether or not it is
+    there), so the question is asked from the nearest ancestor that does."""
+    d = os.path.abspath(start)
+    while not os.path.isdir(d):
+        parent = os.path.dirname(d)
+        if parent == d:
+            return ""
+        d = parent
+    common = _git(d, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    # `--path-format` landed in git 2.31; on an older one the flag itself fails, and the main
+    # checkout is still the right answer for every repo that has no linked worktree.
+    top = os.path.dirname(common) if common else _git(d, "rev-parse", "--show-toplevel").strip()
+    return top if top and os.path.isdir(top) else ""
+
+
+def specs_worktree_path(top: str, branch: str) -> str:
+    """Where the specs branch is checked out — one fixed, derivable path per branch.
+
+    Derived rather than recorded: a path this tool can recompute from the branch name needs no
+    state file, and a second process finds the SAME worktree instead of creating a rival one.
+    `/` becomes `-` so a namespaced branch (`quenching/specs`) stays one directory deep and can
+    never nest inside another worktree's path."""
+    return os.path.join(top, SPECS_WORKTREE_DIR, branch.replace("/", "-").strip("-") or "specs")
+
+
+def _create_empty_branch(top: str, branch: str) -> tuple[int, str]:
+    """Point `branch` at a commit whose tree is EMPTY, for a git too old for `--orphan`.
+
+    `git worktree add --orphan` (git 2.42) leaves the branch unborn, which is emptier still and
+    is what this prefers. Below that version the same intent costs three plumbing calls and
+    lands one root commit holding nothing — the specs branch still shares no history and no
+    file with the code branches, which is the property the whole design rests on.
+
+    `mktree` over empty input is the empty tree without depending on `/dev/null` or on a
+    hardcoded hash, which differs between a sha1 and a sha256 repository."""
+    code, tree, err = _git_run(top, "mktree", stdin="")
+    if code != 0:
+        return code, err
+    code, commit, err = _git_run(top, "commit-tree", tree.strip(),
+                                 "-m", f"quenching: initialise the {branch} branch", stdin="")
+    if code != 0:
+        return code, err
+    code, _, err = _git_run(top, "branch", branch, commit.strip())
+    return code, err
+
+
+def specs_worktree(top: str, branch: str) -> tuple[str, dict]:
+    """The checkout of the specs branch the `files` backend reads and writes — reused when it
+    is already there, created on demand when it is not. Returns `(path, err)`.
+
+    PERSISTENT, not per-command: the branch is checked out once and left in place, so the cost
+    of the whole design is one `git worktree add` in a repository's life and one `os.path.isdir`
+    per command afterwards. A worktree created and removed around every call would pay a
+    checkout per `status`.
+
+    THE GUARD RUNS BEFORE ANYTHING IS CREATED, and only on the creation path. An unignored
+    worktree is untracked content in the working tree, which breaks the clean-tree gate
+    `/specs:execute` demands before its first task — the backend would sabotage the command
+    that drives it. That damage is done by the `git worktree add`, so that is what the guard
+    stands in front of; the reuse path creates nothing and pays no subprocess for it.
+
+    The branch is created EMPTY when it does not exist. Not branched off the current HEAD: a
+    specs branch sharing history with the code is the very thing the backend exists to undo,
+    and one that starts with the whole repository in it would put every code file one merge
+    away from the specs."""
+    path = specs_worktree_path(top, branch)
+    if os.path.isdir(path):
+        # The reuse test is `--show-toplevel`, NOT `--is-inside-work-tree`: this path sits
+        # inside the repository by construction, so "are you in a work tree" answers `true` for
+        # any ordinary directory left there and the backend would happily write specs into a
+        # folder that belongs to the code branch. Only a real linked worktree answers with its
+        # OWN path as the top level.
+        if os.path.realpath(_git(path, "rev-parse", "--show-toplevel").strip() or os.sep) \
+                == os.path.realpath(path):
+            return path, {}
+        return path, {
+            "code": "sp-worktree-unusable", "exit": 2, "path": path, "branch": branch,
+            "message": f"'{path}' exists but git does not know it as a worktree — the files "
+                       f"backend will not write specs into a directory it cannot attribute to "
+                       f"the '{branch}' branch; move it aside or `git worktree repair`",
+        }
+
+    refusal = worktree_guard(worktree_dir_ignored(top))
+    if refusal:
+        return path, refusal
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    exists, _, _ = _git_run(top, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}")
+    if exists == 0:
+        code, _, err = _git_run(top, "worktree", "add", path, branch)
+    else:
+        code, _, err = _git_run(top, "worktree", "add", "--orphan", "-b", branch, path)
+        if code != 0 and not os.path.isdir(path):
+            # Either `--orphan` is not understood (git < 2.42) or the add failed outright. The
+            # `isdir` test is what tells the two apart without parsing git's prose: a refused
+            # flag creates nothing, so retrying the long way is safe; anything that got as far
+            # as making the directory is reported instead of being retried on top of itself.
+            code, err = _create_empty_branch(top, branch)
+            if code == 0:
+                code, _, err = _git_run(top, "worktree", "add", path, branch)
+    if code != 0 or not os.path.isdir(path):
+        return path, {
+            "code": "sp-worktree-failed", "exit": 2, "path": path, "branch": branch,
+            "git": err.strip(),
+            "message": f"could not check out the specs branch '{branch}' at '{path}' — git "
+                       f"said: {err.strip() or 'nothing'}",
+        }
+    return path, {}
+
+
+def _inside_worktree_dir(path: str, rel: str = SPECS_WORKTREE_DIR) -> bool:
+    """Whether `path` already sits under a worktree directory, so nothing nests another one
+    inside it. Compared segment by segment rather than as a substring — a repository legitimately
+    named `.claude/worktrees-archive` is not a worktree."""
+    parts = os.path.abspath(path).split(os.sep)
+    want = rel.split("/")
+    return any(parts[i:i + len(want)] == want for i in range(len(parts)))
+
+
+def _holds_phase_folder(root: str) -> bool:
+    return any(os.path.isdir(os.path.join(root, p)) for p in PHASE_DIRS)
+
+
+def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
+    """Which directory the `files` backend actually operates on: the workspace as declared, or
+    the persistent worktree of the specs branch. Returns `(root, err)`.
+
+    Three shapes answer WITHOUT git, and they answer first — which is what keeps the resolution
+    free for everything that is not a migrated repository, and what lets the backend be
+    exercised over a bare temp directory with no repository at all:
+
+      already inside a worktree   nothing nests a worktree in a worktree; the specs branch is
+                                  already the tree underfoot.
+      the workspace is populated  a `specs/` holding phase folders in the code tree is the
+                                  PRE-MIGRATION store and stays authoritative until a human
+                                  moves it. Switching silently would make every repository that
+                                  upgrades this tool look like it had lost every spec it has —
+                                  the loudest regression this change could ship, and the one
+                                  this repository would have taken on the very next `list`.
+                                  Moving those files is deliberate work (`## Out of Scope`),
+                                  so the presence of the old store is the honest signal that it
+                                  has not happened yet.
+      no repository               there is no branch to check out, so there is nowhere else the
+                                  specs could be.
+
+    Otherwise the specs live on the specs branch, and the worktree is created on demand. The
+    workspace keeps its own basename inside it, so `SPECS_ROOT=<x>/design` resolves to
+    `<worktree>/design` and the layout is the same on both sides of the migration."""
+    if _inside_worktree_dir(root) or _holds_phase_folder(root):
+        return root, {}
+    top = _repo_main_worktree(root)
+    if not top:
+        return root, {}
+    path, err = specs_worktree(top, cfg.get("specsBranch") or DEFAULT_SPECS_BRANCH)
+    if err:
+        return root, err
+    return os.path.join(path, os.path.basename(os.path.normpath(root)) or "specs"), {}
+
+
+def files_root_failures() -> list[str]:
+    """The shapes `resolve_files_root` must answer without reaching for git, checked rather
+    than asserted in prose.
+
+    Every one of them is a case where creating a worktree would be WRONG, and the cost of
+    getting it wrong is not a bad answer but a branch and a checkout appearing in someone's
+    repository. Self-contained — a temp directory and pure path arithmetic, so this runs on an
+    installed copy with no repository staged."""
+    import tempfile
+    cfg = {"specsBranch": DEFAULT_SPECS_BRANCH}
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        populated = os.path.join(tmp, "specs")
+        os.makedirs(os.path.join(populated, "plans"))
+        got, err = resolve_files_root(populated, cfg)
+        if got != populated or err:
+            out.append(f"a populated workspace resolved to {got!r} (err={err.get('code')!r}), "
+                       f"not to itself — the pre-migration store must stay authoritative")
+
+        nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", "specs")
+        os.makedirs(nested)
+        got, err = resolve_files_root(nested, cfg)
+        if got != nested or err:
+            out.append(f"a workspace already inside {SPECS_WORKTREE_DIR}/ resolved to {got!r} "
+                       f"(err={err.get('code')!r}) — nothing nests a worktree in a worktree")
+
+    want = os.path.join("/repo", SPECS_WORKTREE_DIR, "quenching-specs")
+    got_path = specs_worktree_path("/repo", "quenching/specs")
+    if got_path != want:
+        out.append(f"a namespaced branch resolved to {got_path!r}, not {want!r} — a `/` in the "
+                   f"branch name must not deepen the worktree path")
+    return out
 
 
 def _git_refs(root: str) -> tuple[set[str], str | None]:
@@ -3346,6 +3590,16 @@ def cmd_selftest(args, root: str) -> int:
                                  f"is a refusal the human must fix, not a finding to report",
                                  remedy="exit 2 is this tool's refusal code; 1 is findings"))
 
+    # The three shapes that must NEVER reach for a specs worktree. Getting one of them wrong
+    # does not produce a bad answer — it produces a branch and a checkout in a repository that
+    # asked for neither, or a workspace full of specs reported as empty.
+    for failure in files_root_failures():
+        findings.append(_finding("sp-files-root-drift", "error",
+                                 f"the files root resolved wrong — {failure}",
+                                 remedy="resolve_files_root answers the git-free shapes first: "
+                                        "already inside a worktree, a populated pre-migration "
+                                        "workspace, no repository at all"))
+
     # The claim the configurable-backend design rests on, checked rather than asserted in
     # prose. Runs before the early return: an installed copy is exactly where a backend that
     # quietly started deriving its own stages would go unnoticed.
@@ -3442,7 +3696,8 @@ def cmd_selftest(args, root: str) -> int:
     if not findings:
         print(f"  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
               f"the entry-gate headings, the {len(BACKEND_CASES)} backend cases agree between "
-              f"`files` and `memory`, the config defaults hold with nothing declared, and the "
+              f"`files` and `memory`, the config defaults hold with nothing declared, the files "
+              f"root reaches for no specs worktree where there must not be one, and the "
               f"embedded schema and template match their asset files.")
     return 1 if errors else 0
 

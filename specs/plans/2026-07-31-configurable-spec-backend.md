@@ -344,9 +344,10 @@ trabalho em que se está.
 
 ### 3. Backend files em branch dedicada
 
-- [ ] 3.1 Worktree persistente em `.claude/worktrees/` para a branch de specs, criada sob demanda e
+- [x] 3.1 Worktree persistente em `.claude/worktrees/` para a branch de specs, criada sob demanda e
       reutilizada; a branch de specs é criada vazia se não existir
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 3.1 worktree persistente para a branch de specs
 - [ ] 3.2 Lockfile serializando processos `specs.py` concorrentes sobre a worktree de specs
       files: plugins/quenching/assets/bin/specs.py
 - [ ] 3.3 Exercitar o ciclo completo em workspace descartável: new → status/next/section/task →
@@ -408,3 +409,5 @@ trabalho em que se está.
 - cmd_promote ainda checa sp-dest-exists por os.path.exists sobre um caminho derivado do root — sem sentido num backend externo. A checagem de destino ocupado precisa virar pergunta ao backend na secao 4.
 - cmd_list ainda le read_text(s['path']) direto, contornando backend.read_spec — o unico comando que sobrou assim. Funciona no backend files e quebra em qualquer externo; corrigir antes da task 4.1 exercitar list no github.
 - O selftest so tem a asercao especifica sp-plans-subcommand-back; falta uma generica de que set(parser.choices) == set(DISPATCH). Um subcomando registrado em so uma das duas superficies passaria despercebido.
+- Num repo migrado, o campo 'root' do JSON mente: todo comando emite o root declarado por find_specs_root, nao o resolvido pela worktree de specs. Sao ~12 call sites de emit e o valor pode ser consumido pelos bodies — pertence a secao 5.
+- doctor le o root direto, sem open_backend (de proposito: diagnosticar nao pode criar worktree). Num repo migrado ele reporta sp-no-workspace falsamente. Precisa de um modo resolve-mas-nao-crie.
