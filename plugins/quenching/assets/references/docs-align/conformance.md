@@ -13,8 +13,8 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
-| `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/docs:harness`, not the validator) |
-| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/docs:align` for `docs/`, not authored knowledge) |
+| `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/quenching:docs:harness`, not the validator) |
+| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/quenching:docs:align` for `docs/`, not authored knowledge) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
@@ -54,7 +54,7 @@ the line with a fixture bundle carrying two surviving logs.
 Deterministic directory/index checks the validator runs over the **whole tree** (not on a
 single-file `PostToolUse`). All **WARN** — OKF says a consumer MUST tolerate broken links and
 MAY synthesize a missing `index.md`, so these never fail conformance; the **skills treat them
-as must-fix** in their own verify gate (a bundle `/docs:align` leaves behind has none). Dirs whose
+as must-fix** in their own verify gate (a bundle `/quenching:docs:align` leaves behind has none). Dirs whose
 name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node_modules/`,
 `__pycache__/`, …), are pruned from this walk.
 
@@ -121,7 +121,7 @@ opt-in **PreToolUse** (`hardBlock: true`) denies writing an `index.md` with a `t
 concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
 (`docsDir`/`warnAsError`/`blockOnFail`/`hardBlock`/`deadlineMs`).
 
-## Verify gate (Step 5 of /docs:align)
+## Verify gate (Step 5 of /quenching:docs:align)
 
 A bundle is **aligned** when `okf-validate.py <docs>` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
