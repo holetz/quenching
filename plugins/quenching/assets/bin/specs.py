@@ -1242,6 +1242,15 @@ def parse_tasks(text: str) -> list[dict]:
             "verify": verify,
             "subject": subject,
             "commit": commit,
+            # ONE PAST the task's own last line — checkbox plus every indented metadata
+            # line under it, exactly the span `block_end` already tracked to find the
+            # metadata. Exists so a caller can slice `lines[lineno:blockEndLineno]` and get
+            # the task's literal source text, verbatim, with nothing re-rendered. The
+            # `github` backend is the first reader: a task's raw block IS what a sub-issue
+            # stores, so `checked`/`blocked` round-trip by re-parsing the same text through
+            # THIS function again on read, rather than the backend inventing its own
+            # encoding of state.
+            "blockEndLineno": base + block_end,
             # where the anchor line is, and where one would go — so `task` upserts it
             # mechanically instead of the caller doing string surgery on the file. Both
             # forms are tracked because both are read: nothing writes `commit:` any more,
@@ -1806,21 +1815,22 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
     }
 
 
-# PROVISIONAL SERIALISATION — task 4.2 replaces it with the hybrid one (`## Tasks` as
-# sub-issues, the records as labels or body fields). Until then one issue carries the whole
-# canonical document verbatim in its body, behind a marker line.
+# HYBRID SERIALISATION (task 4.2) — `## Tasks` becomes sub-issues, one per task; every
+# other section stays as markdown in the parent issue's body, exactly as 4.1 left it.
 #
-# The marker exists to carry the FILENAME, and the filename exists to carry the date. A
-# spec's date is stamped once by `new` into its basename and never recomputed — the
-# `MemoryBackend` docstring records that deriving it from anything else is precisely the
-# divergence the equality check caught the first time a second backend was written. GitHub
-# has no filename, so the document's own store has to hold it, and an HTML comment is the
-# one place in a markdown body that survives a round trip through the issue editor while
-# staying invisible to a human reading the issue.
+# THE PARENT ISSUE BODY HOLDS "THE SHELL": the canonical document with `## Tasks`'s own
+# body emptied. The marker on it exists to carry the FILENAME, and the filename exists to
+# carry the date. A spec's date is stamped once by `new` into its basename and never
+# recomputed — the `MemoryBackend` docstring records that deriving it from anything else is
+# precisely the divergence the equality check caught the first time a second backend was
+# written. GitHub has no filename, so the document's own store has to hold it, and an HTML
+# comment is the one place in a markdown body that survives a round trip through the issue
+# editor while staying invisible to a human reading the issue.
 #
 # The marker is also what makes a spec issue distinguishable from an ordinary one: a repo's
 # issue tracker belongs to its humans, and a backend that treated every open issue as a spec
-# would list the bug reports and then write over them.
+# would list the bug reports and then write over them. The same reasoning applies one level
+# down to a task's own marker, below.
 GH_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)\s*-->[ \t]*\r?\n")
 
 
@@ -1840,6 +1850,110 @@ def gh_unwrap(body: str) -> tuple[str, str]:
     return (m.group(1), body[m.end():]) if m else ("", "")
 
 
+def gh_tasks_shell(text: str) -> str:
+    """The canonical document with `## Tasks`'s own body emptied down to the bare heading.
+
+    Built with `upsert_section` — the SAME splice every command already writes a section
+    through — rather than a bespoke one for this backend. The tasks themselves move to
+    sub-issues; nothing about a `## Tasks` heading with no body under it is backend-specific
+    enough to earn its own splicing code."""
+    sections = parse_sections(body_after_frontmatter(text))
+    if "Tasks" not in sections:
+        return text
+    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks", "## Tasks\n\n")
+    return new_text
+
+
+def gh_task_key(task: dict) -> str:
+    """The identity a task keeps across writes, so `write_spec` updates a sub-issue instead
+    of retiring one and minting a new one for the same task.
+
+    The explicit `id` (`4.1`, `4.2`, …) when the document carries one — it is the identity
+    every OTHER surface already resolves a task by (`specs.py task <id>`, `_find_task`).
+    Positional `#<index>` is the fallback for a task with none, and it is honest about its
+    own weakness: reordering an id-less task changes its index and this backend reads that
+    as a different task, closing the old sub-issue and opening a new one. Every task in this
+    repository's own specs carries an explicit id; an id-less spec pays this cost, and only
+    on GitHub."""
+    return task["id"] or f"#{task['index']}"
+
+
+def gh_task_block(text: str, task: dict) -> str:
+    """One task's literal source — the checkbox line plus every indented metadata line
+    under it — sliced verbatim from `text` and never re-rendered from the parsed fields.
+
+    This is why a sub-issue needs no separate encoding for `checked` or `blocked`: the
+    slice already contains `- [x]` or `- [!] … — blocked: …`, and reading it back through
+    `parse_tasks` — the SAME shared derivation every backend uses — recovers the state.
+    A backend that instead re-serialised state from `task["checked"]` would be deriving
+    its own second notion of what a checkbox line looks like."""
+    lines = text.splitlines(keepends=True)
+    return "".join(lines[task["lineno"]:task["blockEndLineno"]])
+
+
+GH_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)\s*-->"
+                               r"[ \t]*\r?\n")
+
+
+def gh_wrap_task(key: str, index: int, block: str) -> str:
+    return f"<!-- quenching-task: key={key} index={index} -->\n{block}"
+
+
+def gh_unwrap_task(body: str) -> tuple[str, int, str]:
+    """`(key, index, block)` for a task sub-issue, or `("", -1, "")` for anything else.
+
+    `index` is what lets `read_spec` put the tasks back in DOCUMENT order rather than
+    creation order or GitHub's own listing order, which is neither: sub-issues can be
+    reprioritised in the UI, and a rebuild that trusted that order would silently reorder
+    the plan every time it was read back."""
+    body = (body or "").replace("\r\n", "\n")
+    m = GH_TASK_MARKER_RE.match(body)
+    return (m.group(1), int(m.group(2)), body[m.end():]) if m else ("", -1, "")
+
+
+def gh_wrap_task_removed(key: str, index: int, block: str) -> str:
+    """A task's sub-issue after the document stops carrying it.
+
+    Closing the sub-issue alone is NOT enough: `checked` already closes one for a task that
+    is done and still very much in the document, so "closed" cannot also mean "gone" without
+    the two colliding — a removed-but-once-checked task would come back from the very next
+    read, resurrected by its own leftover marker. Retiring the marker (this function) is
+    what makes `gh_unwrap_task` skip it: the text stays, for a human's audit trail, but it
+    no longer parses as `quenching-task:` — deliberately a PREFIX MISMATCH and not a new
+    marker `gh_unwrap_task` also has to know about, so one regex stays the single place a
+    body is read as an active task."""
+    return f"<!-- quenching-task-removed: key={key} index={index} -->\n{block}"
+
+
+def gh_rebuild_tasks_section(shell_text: str, task_bodies: list[str]) -> str:
+    """Splice the reconstructed `## Tasks` body — every sub-issue's raw block, in document
+    order — back into the shell `write_spec` emptied it into.
+
+    Each block is followed by a blank line. `parse_tasks` does not need it — a following
+    checkbox line ends the previous task's metadata scan on its own — but a human reading
+    the issue does, and `gh_task_block` never captured a trailing blank line in the first
+    place (its span ends where `parse_tasks` itself stops scanning), so without this every
+    task the github backend rebuilds would read as one unbroken paragraph.
+
+    `task_bodies` is already sorted by the caller; this function only concatenates and
+    upserts, so the ordering decision stays visible at the call site instead of buried in
+    a helper that also happens to sort."""
+    if not task_bodies:
+        return shell_text
+    sections = parse_sections(body_after_frontmatter(shell_text))
+    if "Tasks" not in sections:
+        return shell_text
+    # Blank line BETWEEN blocks, never after the last one — a trailing blank belongs to
+    # `upsert_section`'s own splice (it is what separates a REPLACED section from whatever
+    # follows it), and adding a second here is exactly the kind of divergence
+    # `backend_equivalence_failures` exists to catch: the files backend's document has no
+    # such line, so a github document that did would fail the byte-for-byte proof.
+    body = "\n\n".join(b.rstrip("\n") for b in task_bodies)
+    new_text, _ = upsert_section({"text": shell_text, "sections": sections}, "Tasks",
+                                 f"## Tasks\n\n{body}\n")
+    return new_text
+
+
 class GitHubBackend(SpecBackend):
     """Specs as GitHub issues, reached through `gh api` in a subprocess.
 
@@ -1848,21 +1962,40 @@ class GitHubBackend(SpecBackend):
     would be a second declaration of a phase the tracker already knows, and the two would
     diverge the first time somebody closed an issue from the web UI.
 
+    ONE TASK IS ONE SUB-ISSUE. Every other section stays as markdown in the parent's body
+    (the "shell" — see `gh_tasks_shell`), because only `## Tasks` has a native GitHub
+    counterpart with its own state and identity; a `## Design` or `## Risks` section has
+    no equivalent to move to and gains nothing by trying.
+
     It derives NOTHING. `resolve_one` picks the spec, `derive_info` produces the stages,
-    gates, records and tasks, exactly as they are produced for a file on disk; this class
-    turns issues into the canonical document and back and does no more than that.
+    gates, records and tasks, exactly as they are produced for a file on disk; `parse_tasks`
+    is the ONLY thing that ever decides a task is checked or blocked, on the shell and on a
+    sub-issue's raw block alike. This class turns issues (plus their sub-issues) into the
+    canonical document and back and does no more than that.
+
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE SHELL, none of them a label. Multi-field
+    records (`priority`, `branch`, `merge`, `refined`) have no honest single-string label
+    form — encoding `{level, criticality, complexity, date}` into a label name would invent
+    a second format only a new parser could read back, which is the backend deriving its
+    own encoding exactly where the interface forbids it. Keeping them in the shell costs
+    the records being invisible in the issue list without opening the issue — accepted,
+    because `parse_frontmatter` already reads them for free and a label would not remove
+    that read, only add a second, driftable copy beside it.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a
     store: it is not authoritative, nothing outside this object reads it, and every write
     drops it. It exists because the CLI asks for the listing more than once per command,
-    and each ask is a network round trip."""
+    and each ask is a network round trip. Sub-issues are fetched only for the ONE spec a
+    command actually reads — the same "granular by construction" reasoning `## Design`
+    applies to `show --section`, here applied to the transport itself: `list` never pays
+    for a body no command asked to see."""
 
     name = "github"
 
     def __init__(self, repo: str, cwd: str) -> None:
         self.repo = repo
         self.cwd = cwd
-        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, issue, document
+        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, issue, shell doc
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
@@ -1906,7 +2039,7 @@ class GitHubBackend(SpecBackend):
                     # both. A PR can never be a spec, and one that happened to carry the
                     # marker would otherwise be listed and then written over.
                     continue
-                filename, doc = gh_unwrap(issue.get("body") or "")
+                filename, shell = gh_unwrap(issue.get("body") or "")
                 m = SPEC_FILE_RE.match(filename)
                 if not m:
                     continue
@@ -1920,7 +2053,11 @@ class GitHubBackend(SpecBackend):
                     "path": issue.get("html_url")
                             or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
                     "date": m.group(1), "slug": m.group(2),
-                }, int(issue.get("number") or 0), doc))
+                    # `## Tasks`'s own body is NOT here — the shell only, deliberately: a
+                    # sub-issue fetch per listed spec would make `list` pay a per-spec
+                    # network cost for something no command asked to see. `read_spec` fetches
+                    # sub-issues for the one slug it was actually given.
+                }, int(issue.get("number") or 0), shell))
         self._rows = rows
         return rows
 
@@ -1949,24 +2086,31 @@ class GitHubBackend(SpecBackend):
         spec, err = resolve_one(self.list_specs(), slug)
         if err:
             return None, err
-        doc = next(d for descriptor, _, d in rows if descriptor["slug"] == slug)
-        return derive_info(spec, doc), {}
+        number, shell = next((n, d) for descriptor, n, d in rows
+                             if descriptor["slug"] == slug)
+        full_text = gh_rebuild_tasks_section(shell, self._task_bodies(number))
+        return derive_info(spec, full_text), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         number = self._issue_number(info["slug"])
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
                         {"title": gh_issue_title(info["slug"], text),
-                         "body": gh_wrap(info["file"], text)})
+                         "body": gh_wrap(info["file"], gh_tasks_shell(text))})
+        self._sync_tasks(number, text)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
                                 {"title": gh_issue_title(m.group(2) if m else filename, text),
-                                 "body": gh_wrap(filename, text)})
+                                 "body": gh_wrap(filename, gh_tasks_shell(text))})
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        # `capture_form` never stamps a `## Tasks` body, so this is a no-op for every spec
+        # `new` creates and only matters for the migration path that hands `create_spec` a
+        # document that already carries tasks.
+        self._sync_tasks(number, text)
         if phase == "archive":
             # Created open and then closed, because "closed" is not a state an issue can be
             # born in. Two calls for a case `new` never takes — only a migration does.
@@ -1984,6 +2128,67 @@ class GitHubBackend(SpecBackend):
     def _set_state(self, number: int, state: str):
         return self._write_api(f"setting issue #{number} to {state}", "PATCH",
                                f"repos/{self.repo}/issues/{number}", {"state": state})
+
+    # -- tasks as sub-issues --------------------------------------------------- #
+    def _task_bodies(self, parent_number: int) -> list[str]:
+        """Every task sub-issue's raw body, in DOCUMENT order — ready for
+        `gh_rebuild_tasks_section`, which only concatenates."""
+        subs = self._api(f"listing sub-issues of #{parent_number}",
+                         f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []
+        marked = []
+        for sub in subs:
+            key, index, block = gh_unwrap_task(sub.get("body") or "")
+            if key:      # an ordinary sub-issue a human added is not a task line
+                marked.append((index, block))
+        marked.sort(key=lambda pair: pair[0])
+        return [block for _, block in marked]
+
+    def _sync_tasks(self, parent_number: int, text: str) -> None:
+        """Make the parent's sub-issues match `text`'s `## Tasks` exactly: one sub-issue per
+        task, matched by `gh_task_key` so an update never mints a duplicate, and a task the
+        document no longer carries is CLOSED AND its marker retired — a normal `gh` token
+        cannot delete an issue, so closing is the closest a tracker gets to "no longer
+        active" (the same loss `files` accepts: a task removed from a file is simply gone
+        from the next `git log`). The marker must go too, and not just the state: `checked`
+        already means "closed" for a task very much still in the document, so closing alone
+        cannot ALSO mean "removed" without the two meanings colliding — a done-then-removed
+        task would resurrect itself on the next `read_spec`, which is exactly the bug this
+        two-part retirement exists to prevent."""
+        tasks = parse_tasks(text)
+        existing: dict[str, dict] = {}
+        for sub in self._api(f"listing sub-issues of #{parent_number}",
+                             f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []:
+            key, _, _ = gh_unwrap_task(sub.get("body") or "")
+            if key:
+                existing[key] = sub
+        seen: set[str] = set()
+        for t in tasks:
+            key = gh_task_key(t)
+            seen.add(key)
+            block = gh_task_block(text, t)
+            payload = {"title": t["text"], "body": gh_wrap_task(key, t["index"], block),
+                       "state": "closed" if t["checked"] else "open"}
+            if key in existing:
+                num = existing[key]["number"]
+                self._write_api(f"updating sub-issue #{num}", "PATCH",
+                                f"repos/{self.repo}/issues/{num}", payload)
+            else:
+                sub_issue = self._write_api("creating a sub-issue", "POST",
+                                            f"repos/{self.repo}/issues", payload)
+                # Creating an issue does not make it a CHILD of another — that relationship
+                # is a second call, keyed by the sub-issue's own `id` (not its `number`,
+                # which is the per-repo display number the first call already returned).
+                self._write_api(f"linking sub-issue #{sub_issue['number']}", "POST",
+                                f"repos/{self.repo}/issues/{parent_number}/sub_issues",
+                                {"sub_issue_id": sub_issue["id"]})
+        for key, sub in existing.items():
+            if key in seen:
+                continue
+            _, index, block = gh_unwrap_task(sub.get("body") or "")
+            self._write_api(f"retiring orphaned sub-issue #{sub['number']}", "PATCH",
+                            f"repos/{self.repo}/issues/{sub['number']}",
+                            {"state": "closed",
+                             "body": gh_wrap_task_removed(key, index, block)})
 
 
 def gh_issue_title(slug: str, text: str) -> str:
@@ -2056,8 +2261,8 @@ def gh_refusal_failures() -> list[str]:
         msg = gh_refusal("reading a spec", code, "", "")["message"]
         if needle not in msg:
             failures.append(f"exit {code}: the refusal does not name `{needle}` — {msg}")
-    # The round trip the whole provisional serialisation rests on, including the CRLF
-    # GitHub actually stores bodies with.
+    # The round trip the shell serialisation rests on, including the CRLF GitHub actually
+    # stores bodies with.
     doc = "---\ntitle: Alpha\n---\n\n## Problem\n\nUm problema.\n"
     for label, body in (("as written", gh_wrap("2026-01-01-alpha.md", doc)),
                         ("as GitHub returns it",
@@ -2067,6 +2272,85 @@ def gh_refusal_failures() -> list[str]:
             failures.append(f"marker round trip {label}: got {(name, back)!r}")
     if gh_unwrap("An ordinary bug report.\n") != ("", ""):
         failures.append("an issue with no marker was read as a spec")
+    return failures
+
+
+# The fields `parse_tasks` derives, minus the ones a rebuild is not expected to reproduce:
+# `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/`commitLineno` are
+# POSITIONS in a specific document, and the rebuilt document is flat (no `### N.` grouping —
+# see `gh_task_serialization_failures`'s docstring), so they are never asked to match.
+GH_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
+                         "files", "pattern", "verify", "subject", "commit")
+
+
+def gh_task_serialization_failures() -> list[str]:
+    """The claim the hybrid serialisation rests on: a task's checked/blocked state, its
+    text and its metadata survive shell → sub-issue → shell exactly, with `parse_tasks` —
+    the one shared derivation — doing the reading on both ends.
+
+    NOT ROUND-TRIPPED: `### N.` group headings. Grouping lives in the ORIGINAL document's
+    `## Tasks` body, which this backend empties into a flat list of sub-issues with no
+    heading of their own to remember — a known, declared gap versus `files`, not a silent
+    one; a spec with grouped tasks reads back flat on `github`. Nothing here hides that.
+
+    Self-contained: no network, no `gh`. Simulates CRLF storage the same way the marker
+    round trip above does, because a check that used clean LF would not catch a backend
+    that broke on what GitHub actually returns."""
+    doc = ("---\ntitle: Alpha\nverification: per-task\n---\n\n"
+          "## Problem\n\nAlgo.\n\n"
+          "## Tasks\n\n"
+          "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n\n"
+          "- [x] 1.2 segunda\n\n"
+          "- [!] 1.3 terceira — blocked: esperando review\n\n"
+          "- [ ] [P] quarta sem id\n\n"
+          "## Outcome\n\n")
+    tasks = parse_tasks(doc)
+    shell = gh_tasks_shell(doc)
+    failures: list[str] = []
+    if "1.1 primeira" in shell or "1.2 segunda" in shell:
+        failures.append("gh_tasks_shell left a checkbox behind — sub-issues would duplicate it")
+    if "## Outcome" not in shell or "## Problem" not in shell:
+        failures.append("gh_tasks_shell dropped a section other than Tasks")
+
+    keys = [gh_task_key(t) for t in tasks]
+    if keys != ["1.1", "1.2", "1.3", "#4"]:
+        failures.append(f"gh_task_key: got {keys!r}, expected explicit ids and one "
+                        f"positional fallback for the task with none")
+    if len(set(keys)) != len(keys):
+        failures.append(f"gh_task_key produced a collision: {keys!r}")
+
+    # Wrap each task's raw block as `_sync_tasks` would, store it through a CRLF round
+    # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
+    # a real sub-issue list.
+    stored = [gh_wrap_task(k, t["index"], gh_task_block(doc, t)).replace("\n", "\r\n")
+             for k, t in zip(keys, tasks)]
+    unwrapped = sorted((gh_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
+    for key, want_index, (got_key, got_index, _) in zip(keys, range(1, 5), unwrapped):
+        if (got_key, got_index) != (key, want_index):
+            failures.append(f"task marker round trip: got key={got_key!r} "
+                            f"index={got_index!r}, wanted key={key!r} index={want_index!r}")
+
+    rebuilt = gh_rebuild_tasks_section(shell, [block for _, _, block in unwrapped])
+    tasks2 = parse_tasks(rebuilt)
+    if len(tasks2) != len(tasks):
+        failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
+    else:
+        for before, after in zip(tasks, tasks2):
+            b = {k: before[k] for k in GH_TASK_SEMANTIC_KEYS}
+            a = {k: after[k] for k in GH_TASK_SEMANTIC_KEYS}
+            if b != a:
+                failures.append(f"task '{b['id'] or before['index']}' drifted: "
+                                f"before={b!r} after={a!r}")
+
+    # A retired (removed-from-document) task must NEVER come back on the next rebuild —
+    # this is the exact shape of a bug caught while writing this backend: closing a
+    # checked task's sub-issue without also retiring its marker let it resurrect itself,
+    # because `checked` and `removed` both wanted to mean "closed".
+    checked_block = gh_task_block(doc, tasks[1])   # "1.2 segunda", never checked in `doc`
+    removed = gh_wrap_task_removed("1.2", 2, checked_block).replace("\n", "\r\n")
+    if gh_unwrap_task(removed)[0]:
+        failures.append("a retired task's marker still parses as an active one — it would "
+                        "resurrect on the next read_spec")
     return failures
 
 
@@ -4438,6 +4722,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are three refusals with three remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # The hybrid serialisation's own claim: a task's checked/blocked state survives
+    # shell -> sub-issue -> shell, derived by `parse_tasks` on both ends and never by the
+    # backend's own notion of what a checkbox means.
+    for failure in gh_task_serialization_failures():
+        findings.append(_finding("sp-gh-task-serialization-broken", "error",
+                                 f"the github task serialisation misreads a task — {failure}",
+                                 remedy="a task's raw block is stored and re-parsed by the "
+                                        "same `parse_tasks` that reads a file — nothing "
+                                        "about checked/blocked/metadata is derived twice"))
+
     # The config defaults, asserted where nothing is declared. A repo that declares nothing
     # is the overwhelmingly common case, so a loader that started returning `None` for the
     # backend would break every such repo while every configured one kept working — the
@@ -4528,7 +4822,9 @@ def cmd_selftest(args, root: str) -> int:
               f"root reaches for no specs worktree where there must not be one, the worktree "
               f"lock admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh transport failures each refuse with their own "
-              f"remedy, and the embedded schema and template match their asset files.")
+              f"remedy, a task's shell -> sub-issue -> shell round trip reconstructs its "
+              f"checked/blocked state and metadata exactly, and the embedded schema and "
+              f"template match their asset files.")
     return 1 if errors else 0
 
 

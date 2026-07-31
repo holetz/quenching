@@ -218,6 +218,17 @@ trabalho em que se está.
   "a serialização híbrida vive dentro de cada implementação externa". A leitura granular também não:
   o custo que ela endereça é o **contexto** do agente, não I/O, então `show --section` devolve uma
   seção mesmo que o backend tenha buscado o documento inteiro.
+- **Decidido (task 4.2): os sete records de frontmatter permanecem no corpo da issue-mãe, nenhum
+  migra para label.** Medido contra o que a API oferece: os únicos labels que o repositório já tem
+  são os nove default do GitHub (`bug`, `documentation`, `enhancement`, …), e a API de labels não
+  carrega valor estruturado — só nome, cor e descrição. Quatro dos sete records têm mais de um
+  campo (`priority`: `level`/`criticality`/`complexity`/`date`; `branch`: `base`/`work`; `merge`:
+  `strategy`/`subject`; `refined`: `mode`/`date`); codificar isso num nome de label reintroduziria
+  um formato que só um parser novo entenderia — exatamente o backend derivando por conta própria
+  que a interface proíbe. Mantê-los no corpo reaproveita `parse_frontmatter`, a mesma função pura
+  que toda leitura já passa, sem um segundo lugar para sincronizar e sem risco de divergência entre
+  label e frontmatter. Custo aceito: os sete records ficam invisíveis na lista de issues do GitHub,
+  pesquisáveis só abrindo a issue ou via `gh api`.
 ## Alternatives Considered
 
 - **Externo como projeção read-only:** rejeitada — o time quer read-write completo (gerir o spec
@@ -267,45 +278,36 @@ trabalho em que se está.
 
 ## Handoff
 
-- O `specs.py` é stdlib-only e sem dependências, e continua sendo: o transporte externo é
-  `subprocess` sobre `gh`/`az`, nunca uma biblioteca HTTP.
+- O `specs.py` é stdlib-only e sem dependências: o transporte externo é `subprocess` sobre
+  `gh`/`az`, nunca uma biblioteca HTTP.
 - A ordem das seções é deliberada — o backend `github` prova a interface **antes** de os nove
-  bodies serem reescritos. Se a interface se revelar errada na seção 4, a superfície ainda está
-  intacta e o custo é uma seção.
-- Cinco standards são reescritos, três deles narrando decisões anteriores. A reescrita preserva a
-  narrativa antiga como "o que foi revertido"; `worktree-setup.md` §"Why a config file" já foi
-  feito assim e é o exemplo a imitar.
-- Nenhuma edição em `commands/**` é testável na sessão que a escreve — o registry é montado no
-  início da sessão. A seção 5 termina com `doctor`, não com um teste funcional.
+  bodies serem reescritos.
+- Nenhuma edição em `commands/**` é testável na sessão que a escreve. A seção 5 termina com
+  `doctor`, não com um teste funcional.
 
-**Estado após 3.1 (seções 1 e 2 completas, verificadas):**
+**Estado (seções 1, 2, 3 completas; seção 4 em andamento — 4.1 feita):**
 
-- **Config** — `.claude/quenching.json` no raiz do repo: `backend` (default `files`),
-  `specsBranch` (default `specs`), `worktreeSetup`. Quatro findings de config no `doctor`. Este
-  repo não tem o arquivo: roda todo nos defaults.
-- **Interface** — `SpecBackend` expõe cinco primitivas sobre o documento canônico
-  (`list_specs`/`read_spec`/`write_spec`/`create_spec`/`move_spec`). Os verbos da CLI são código
-  compartilhado sobre elas; `resolve_one` e `derive_info` são puras e usadas por todos. Um backend
-  que derivar qualquer coisa por conta própria está quebrado.
-- **`open_backend(root)`** resolve o backend e **recusa exit 2** um declarado e não implementado —
-  nunca cai para `files`.
-- **`MemoryBackend`** é o outro lado da igualdade; `BACKEND_CASES` (8 casos) roda os dois no
-  selftest e exige resultado idêntico fora de `path` e `text`. Ele guarda o filename porque a data
-  vem do nome do arquivo, não do frontmatter.
-- **`show`** entrega índice por default, `--section`/`--task` repetíveis, e o documento inteiro só
-  com `--full`, que recusa combinar com seletor.
-- **Worktree de specs** em `.claude/worktrees/<branch>`, criada sob demanda com `--orphan`,
-  consumindo os guardas de 1.1. `resolve_files_root` responde sem git nos três casos que não podem
-  virar worktree — o que preserva um `specs/` já populado como store pré-migração.
+- Config em `.claude/quenching.json`; interface `SpecBackend` (5 primitivas, sem derivação
+  própria); `MemoryBackend` prova igualdade no selftest; `show` granular; worktree persistente +
+  lock para o backend `files`, com árvore limpa provada em ciclo completo.
+- **`gh` está instalado e autenticado neste ambiente** (conta `holetz`, remote
+  `holetz/claude-quenching`), o que tornou possível verificar recusas e leituras contra o
+  repositório real sem escrever nele. **Nenhuma issue foi ou deve ser criada nele fora da task
+  4.6**, que exige confirmação humana explícita antes de rodar.
+- `GitHubBackend` (4.1): transporte via `gh api`, recusa exit 2 legível para binário ausente, não
+  autenticado, erro de API. `resolve_github_repo` nunca chuta o repositório. `cmd_list` corrigido
+  para usar o backend em vez de ler o path direto — era o último comando que contornava.
+- **4.2 em andamento**: serialização híbrida (`## Tasks` → sub-issues) e a Open Decision dos sete
+  records de frontmatter (labels vs. corpo vs. misto).
 
-**Armadilhas conhecidas, registradas como discoveries:**
-
-- `cmd_list` ainda lê `read_text(s["path"])` direto, contornando o backend. **Corrigir antes da
-  4.1**, ou `list` quebra no `github`.
-- O campo `root` do JSON emite o root declarado, não o resolvido — mente num repo migrado (seção 5).
-- `doctor` lê o root direto e reportaria `sp-no-workspace` falsamente num repo migrado.
-- Falta ao selftest a asserção genérica de que `parser.choices == DISPATCH`.
-- `cmd_promote` ainda checa destino ocupado por `os.path.exists` sobre caminho derivado do root.
+**Armadilhas conhecidas (discoveries registradas):**
+- `cmd_promote` checa destino ocupado via `os.path.exists` — inócuo mas sem sentido no `github`.
+- O campo `root` do JSON mente com backend externo.
+- `doctor` reportaria `sp-no-workspace` falsamente num repo sem `specs/` migrado.
+- Custo de rede do `github`: sem cache entre processos, ~33 chamadas por ciclo de 12 comandos.
+- Workspace pré-migração (specs/ na árvore de código) não é serializado pelo lock da worktree.
+- `migrate` não é classificado como escritor; num repo já migrado opera sobre um `specs/` que não
+  existe mais.
 ## Tasks
 
 ### 1. Configuração
@@ -374,9 +376,10 @@ trabalho em que se está.
       `gh auth login`
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 4.1 transporte gh api em subprocess com recusa exit 2 legivel
-- [ ] 4.2 Serialização híbrida — `## Tasks` vira sub-issues, as demais seções viram markdown no
+- [x] 4.2 Serialização híbrida — `## Tasks` vira sub-issues, as demais seções viram markdown no
       corpo; decidir e registrar per ## Open Decisions como os sete records se serializam
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 4.2 serializacao hibrida — tasks como sub-issues
 - [ ] 4.3 Anchor por sha: o commit acontece primeiro e a CLI grava o sha real na sub-issue; um tick
       que falha é reportado, nunca deixado implícito
       files: plugins/quenching/assets/bin/specs.py
