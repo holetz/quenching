@@ -7,6 +7,7 @@ refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-29}
 branch: {base: main, work: plan/declare-repo-body-language}
 reviewed: {date: 2026-07-30}
+merge: {strategy: merge-commit, subject: "plan/declare-repo-body-language: merge (merge-commit)"}
 outcome: done
 ---
 
