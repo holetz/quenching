@@ -5,6 +5,7 @@ verification: per-section
 approved: {date: 2026-07-31}
 branch: {base: main, work: claude/correct-command-citation-form-044087}
 reviewed: {date: 2026-07-31}
+outcome: done
 ---
 
 # Corrigir a forma de citação de comando — bare versus prefixada pelo plugin
