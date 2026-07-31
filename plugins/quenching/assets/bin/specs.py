@@ -1287,12 +1287,13 @@ def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
     return out
 
 
-def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
-    """Resolve a slug and read everything derivable from its file in one pass.
+def resolve_one(specs: list[dict], slug: str) -> tuple[dict | None, dict]:
+    """Pick one spec descriptor out of a listing by slug.
 
-    Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
-    ambiguous, so every command handles both the same way."""
-    spec, matches = resolve_slug(root, slug)
+    Pure over the listing, so every backend resolves a slug the same way and gets the same
+    two refusals — an ambiguous slug is exit 2 whether the duplicates are two files or two
+    issues. TWO MATCHES IS A REFUSAL, never a guess."""
+    matches = [s for s in specs if s["slug"] == slug]
     if len(matches) > 1:
         return None, {
             "code": "sp-ambiguous-slug", "exit": 2, "slug": slug,
@@ -1300,10 +1301,19 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
             "message": f"slug '{slug}' matches {len(matches)} files — "
                        f"{', '.join(m['phase'] + '/' + m['file'] for m in matches)}",
         }
-    if not spec:
+    if not matches:
         return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
                       "message": f"no spec with slug '{slug}'"}
-    text = read_text(spec["path"]) or ""
+    return matches[0], {}
+
+
+def derive_info(spec: dict, text: str) -> dict:
+    """Everything derivable from one spec's document, in one pass.
+
+    THE SINGLE DERIVATION. Every backend hands its canonical document here and gets the same
+    `info` back — frontmatter, sections, tasks, stage and policy. No backend derives any of
+    it, which is why "every backend behaves identically" is a property of the code rather
+    than a claim to be re-tested per target."""
     fm = parse_frontmatter(text)
     sections = parse_sections(body_after_frontmatter(text))
     tasks = parse_tasks(text)
@@ -1316,7 +1326,18 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
         "stage": derive_stage(spec, sections, fm, tasks),
         "verification": _policy(fm),
     })
-    return info, {}
+    return info
+
+
+def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
+    """Resolve a slug against the files workspace and derive its document.
+
+    Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
+    ambiguous, so every command handles both the same way."""
+    spec, err = resolve_one(spec_files(root), slug)
+    if err:
+        return None, err
+    return derive_info(spec, read_text(spec["path"]) or ""), {}
 
 
 # --------------------------------------------------------------------------- #
@@ -1399,6 +1420,62 @@ class FilesBackend(SpecBackend):
         dest = os.path.join(dest_dir, info["file"])
         os.rename(info["path"], dest)
         return dest
+
+
+class MemoryBackend(SpecBackend):
+    """Specs in a dict. No disk, no network, no repository to stage.
+
+    This exists to be the OTHER side of the selftest's equality: the canonical case list runs
+    against `files` and against this, and the two must agree. A backend that shares nothing
+    with the filesystem but the interface is the only honest way to prove the interface is
+    what the CLI depends on — if a command reaches around it to a path, this backend is where
+    that shows up, immediately and without a fixture.
+
+    It is deliberately NOT a cache and never reachable from the config: nothing a human can
+    declare selects it, because a store that forgets on exit must never be somewhere real
+    work can land."""
+
+    name = "memory"
+
+    def __init__(self, docs: dict[str, tuple[str, str]] | None = None) -> None:
+        # slug -> (phase, document). The filename is derived, never stored, so a spec here
+        # cannot drift from the naming rule the files backend enforces by construction.
+        self.docs: dict[str, tuple[str, str]] = dict(docs or {})
+
+    def _descriptor(self, slug: str) -> dict:
+        # The SAME key set `spec_files` returns, and nothing more. An extra key here would
+        # be a field some command could come to depend on and that the files backend would
+        # then not have — the divergence the selftest's equality exists to catch, planted
+        # by the very backend meant to catch it.
+        phase, text = self.docs[slug]
+        date = str(parse_frontmatter(text).get("date") or today())
+        return {"phase": phase, "folder": phase, "legacy": False,
+                "file": f"{date}-{slug}.md", "path": f"memory://{phase}/{slug}",
+                "date": date, "slug": slug}
+
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        rows = [self._descriptor(s) for s in sorted(self.docs)
+                if phase is None or self.docs[s][0] == phase]
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["date"], r["slug"]))
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        spec, err = resolve_one(self.list_specs(), slug)
+        if err:
+            return None, err
+        return derive_info(spec, self.docs[slug][1]), {}
+
+    def write_spec(self, info: dict, text: str) -> None:
+        self.docs[info["slug"]] = (self.docs[info["slug"]][0], text)
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        slug = str(parse_frontmatter(text).get("slug") or "")
+        self.docs[slug] = (phase, text)
+        return f"memory://{phase}/{slug}"
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        slug = info["slug"]
+        self.docs[slug] = (dest_phase, self.docs[slug][1])
+        return f"memory://{dest_phase}/{slug}"
 
 
 _BACKEND_CACHE: dict[str, SpecBackend] = {}
