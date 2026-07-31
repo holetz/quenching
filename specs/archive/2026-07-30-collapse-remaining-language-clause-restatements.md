@@ -5,6 +5,7 @@ verification: per-section
 refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
 reviewed: {date: 2026-07-31}
+outcome: done
 ---
 
 # Collapse Remaining Language Clause Restatements
@@ -438,3 +439,39 @@ e não com a continuação `files:`.
 - **RESOLVIDA na revisão de branch** (em `## Open Decisions` e `## Risks`). A Open Decision 'o invariante das gêmeas ganha um check mecânico?' já está resolvida: specs.py selftest compara TEMPLATE_SPEC com assets/specs/templates/spec.md byte-a-byte (specs.py:246 e :2790) e o próprio comentário do código diz 'EDIT BOTH OR NEITHER'. O check é durável, roda no lockstep, e não precisa de spec próprio — a decisão pode ser fechada como já-feita.
 - **RESOLVIDA na revisão de branch** — o invariante de `## Validation` foi reescrito multiline e com `specs/` no escopo (19 acertos / 17 arquivos), e a lição virou `docs/standards/quality/bundle-verification.md` §Um invariante de grep mede o que o grep alcança. O invariante do censo em ## Validation nao mede o que afirma. O grep declarado (uma linha, escopo plugins/ docs/) nunca pegou okf-spec.md, cuja ocorrencia esta quebrada por wrap ('the repo's' / 'language' em linhas distintas) — e -A1 nao a recupera, so mostra a linha seguinte de um acerto ja encontrado. Tambem nao cobre specs/QUENCHING.md, que esta fora de plugins/ e docs/. E learn.md conta dois acertos num arquivo so. Medido: 13 acertos / 12 arquivos antes deste spec, 14 / 13 depois — o +1 e a nova prosa de plugin-layout.md (task 1), nao um lembrete novo. O numero 14 do verify da task 5 bate por coincidencia aritmetica, nao porque o conjunto seja o da tabela. Um censo que meca de fato precisa de grep multiline e de incluir specs/.
 - **ABERTA — pertence a `/docs:align`, não a este spec.** `docs/QUENCHING.md`, a cópia instalada do manual do front `docs/` neste repositório, está em `v4.2.0` contra `VERSION` 4.4.2 — e carrega a mesma cláusula da língua, sem ter entrado em censo nenhum. É a **segunda** instância da Open Decision *Nada nota um manual instalado atrasado*, que até aqui tinha uma só: dois manuais de payload, dois desatualizados, nenhuma máquina notando. Sincronizá-la é um `/docs:align`, fora do escopo deste spec; o que ela acrescenta é a evidência de que a classe tem mais de um membro, que era exatamente o que aquela decisão precisava para ser dimensionada.
+
+## Outcome
+
+Entregue como `done` em 2026-07-31, mergeado em `main` por **merge commit** (`--no-ff`) a partir de
+`claude/collapse-language-clause-restatements-3daf9f`. A branch **não segue** `plan/<slug>` e não há
+record `branch:`: a isolação foi declinada quando o spec nasceu, e o worktree veio de outra via.
+Base `main`, trazida para a branch antes do gate — os commits de task ficaram preservados, cada um
+resolvível pelo `subject:` que sua linha registra.
+
+**O que shipou.** As seis tasks. A emenda em `docs/standards/architecture/plugin-layout.md`
+§*A boundary reminder is not a restatement* — o critério de propriedade e o guarda-corpo de três
+propriedades, que é o único dos dois que teria pego o defeito real. A nota inline nos três artefatos
+do front `specs/` que saem do plugin **sem levar o dono junto**
+(`assets/specs/templates/spec.md`, `assets/bin/specs.py`, `assets/specs/QUENCHING.md`). A correção
+do estreitamento em `assets/README.md`, que limitava a regra a `audience: human`. A correção da nota
+de `okf-spec.md`, que afirmava um colapso total que não aconteceu. A varredura dos dez lembretes de
+fronteira contra o guarda-corpo — **nenhum outro estreitava**. E a sincronização de
+`specs/QUENCHING.md`, que estava treze headings atrás do mold.
+
+**O que a revisão de branch acrescentou**, tudo na branch antes do merge. Seis afirmações falsas do
+próprio spec, corrigidas — ver `## Design` §O que a revisão de branch acrescentou. E o doc emergente
+`docs/standards/quality/bundle-verification.md` §*A grep invariant measures what the pattern
+reaches*: a lição de um invariante que devolveu 14 contra uma população real de 19, com o número
+batendo por coincidência aritmética.
+
+**O que ficou de fora, e por quê.** Os dez lembretes de fronteira ficam — decididos pelo
+guarda-corpo, não por contagem. Os 48 specs congelados não retroagem por construção. E o censo
+**não fechou**: `docs/QUENCHING.md` está atrás em v4.2.0 e carrega a mesma cláusula sem ter entrado
+em censo nenhum. É a segunda instância da Open Decision *Nada nota um manual instalado atrasado*, e
+sincronizá-la é trabalho de `/docs:align` — registrada como discovery aberta.
+
+**O que o próximo leitor precisa saber.** O release **4.4.3** sai com este merge, e ele deixa
+`specs/QUENCHING.md` — que a task 6 acabara de sincronizar em 4.4.2 — atrás do banner outra vez.
+Isso é por construção e não é drift de conteúdo: o `<VERSION>` do banner é preenchido no copy time,
+então a cópia se re-stampa no próximo `/specs:align`. E a estratégia foi **merge commit**, não
+squash: cada `subject:` registrado nas tasks continua resolvendo contra a história.
