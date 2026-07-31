@@ -92,8 +92,30 @@ and starting here would fork the work. Say so and stop.
 
 Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
-**Done when:** the tree is clean (or the override is on the record), and isolation has been taken,
-found already held, or declined.
+
+**2b. Probe the environment before writing any code.** A hook wired in `.claude/settings.json`
+whose script no longer exists on disk fails *every* commit this loop makes, and it fails as a hook
+error rather than as a missing file — so it gets diagnosed at the first commit, ad hoc, in about
+ten calls. Ask the question once instead, in the same call as the reads above:
+
+```bash
+python3 -c "
+import json, pathlib, re
+p = pathlib.Path('.claude/settings.json')
+d = json.loads(p.read_text()) if p.exists() else {}
+cmds = [h.get('command','') for g in d.get('hooks',{}).values() for e in g for h in e.get('hooks',[])]
+gone = sorted({t for c in cmds for t in re.findall(r'[\w./\$\{\}-]+\.(?:py|sh|js|ts)', c)
+               if not pathlib.Path(re.sub(r'\\\$\{?CLAUDE_PROJECT_DIR\}?/?', '', t)).exists()})
+print('unresolved hook targets:', gone or 'none')"
+```
+
+Anything other than `none` → **report it before the first task**, name the hook and the missing
+path, and let the human decide: fix the wiring, or build knowing every commit will trip it. Never
+route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent, and the
+probe costs nothing.
+
+**Done when:** the tree is clean (or the override is on the record), isolation has been taken,
+found already held, or declined, and any unresolved hook has been reported.
 
 ### 3. Settle the approval, off the state step 2 already read
 The `specs.py status --json` payload is **already in hand** from step 2 — do not read it again.

@@ -392,9 +392,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
       files: plugins/quenching/assets/references/specs-execute/execution.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'already isolated.*?session-evidence',pathlib.Path('plugins/quenching/assets/references/specs-execute/execution.md').read_text(),re.S|re.I) else 1)"
       subject: plan/cut-specs-execute-turns: 2.2 a regra do dispatch em execution.md, com o caso residual
-- [ ] 2.3 Acrescentar ao passo 2 o probe de ambiente de uma linha — todo hook fiado em `.claude/settings.json` resolve no disco?
+- [x] 2.3 Acrescentar ao passo 2 o probe de ambiente de uma linha — todo hook fiado em `.claude/settings.json` resolve no disco?
       files: plugins/quenching/commands/specs/execute.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'settings\.json.{0,200}hook',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S|re.I) else 1)"
+      subject: plan/cut-specs-execute-turns: 2.3 o probe de hooks fiados no passo 2
 
 ### 3. O passo 5 encadeado
 
