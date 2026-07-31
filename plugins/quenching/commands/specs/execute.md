@@ -58,14 +58,15 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 **Done when:** one spec in `plans/` is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
-**The precondition comes first.** Read all four facts the loop needs in a single call — the tree,
-the isolation ref, the spec's own state (which step 3 reads anyway, so it is read here once), and
-the environment probe of step 2b:
+**The precondition comes first.** Everything this step needs is read in **one call** — the tree, the
+isolation ref, the spec's own state (which step 3 reads anyway, so it is read here once), and the
+environment probe below, which belongs in this same call:
 
 ```bash
 git status --porcelain
 git branch --list "plan/<slug>"
 specs.py status --spec "<slug>" --json
+# and the hook probe of 2b, in this same call
 ```
 
 `git status --porcelain` non-empty → **refuse to start**, per
@@ -278,8 +279,9 @@ front of you before the loop starts:
 
 ## Invariants to never violate
 
-- Require a clean tree before the first code change; delegate isolation to `/specs:isolate`,
-  recommend it, never impose it, and never reimplement it here.
+- Require a clean tree before the first code change; **check whether the spec is already isolated
+  before dispatching**, and where it is not, delegate isolation to `/specs:isolate` — recommend it,
+  never impose it, and never reimplement it here. Checking first is not delegating less.
 - Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
