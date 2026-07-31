@@ -329,9 +329,10 @@ trabalho em que se está.
 - [x] 2.2 Backend fake in-memory, exercitável sem rede e sem disco
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 2.2 backend fake in-memory sobre a derivacao compartilhada
-- [ ] 2.3 Rodar a lista canônica de casos do selftest contra `files` E contra o fake, exigindo
+- [x] 2.3 Rodar a lista canônica de casos do selftest contra `files` E contra o fake, exigindo
       resultado idêntico
       verify: python3 assets/bin/specs.py selftest
+      subject: plan/configurable-spec-backend: 2.3 lista canonica de casos rodando contra files e contra o fake
 - [ ] 2.4 Leitura granular: `show --spec <slug> [--section <Heading> | --task <id>]`, com o
       documento inteiro apenas sob pedido explícito
       files: plugins/quenching/assets/bin/specs.py
