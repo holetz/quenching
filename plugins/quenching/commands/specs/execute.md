@@ -173,40 +173,43 @@ c. **Write only the `docs/` this task names.** A `docs/standards/` path declared
    no authoring. The line between the two, and why it falls there, is §Declared versus emergent
    `docs/`.
 
-d. **Verify, per the spec's declared policy** (§The validation loop). On a failure that stops
-   converging, write it blocked with its reason —
-   `specs.py task --spec "<slug>" --block <id> --reason "<why>"` — and move on. Never weaken the
-   check to make it pass.
+d. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
+   dead code — and fix what it finds. This happens on the written diff, *before* the chain below,
+   so what the chain commits is already the reviewed version.
 
-e. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
-   dead code — and fix what it finds *before* committing.
+e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Commit messages, or the
+   target's own convention where it declares one — and put it in both places it appears:
 
-f. **Decide the subject, then tick the box with it** — mechanically, never by string surgery. The
-   subject follows [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
-   §Commit messages, or the target's own convention where it declares one:
    ```bash
-   specs.py task --spec "<slug>" --check <id> --subject "plan/<slug>: <id> <title>"
+   <the task's verify:> \
+     && specs.py task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
+     && git add <the task's declared files> <the spec file> \
+     && git commit -m "plan/<slug>: <id> <title>" \
+     && git log -1 --format=%s
    ```
-   The subject is known **before** the commit, which is the whole reason it is the anchor: ticking
-   first means the box travels *inside* the commit it describes, and the per-task bookkeeping
-   commit disappears.
 
-g. **Commit that task alone**, staging its declared files **and the spec file**, under exactly the
-   subject just recorded. One task is one commit, carrying the code and its ticked box together.
+   **The `&&` is the ordering**, not a shortcut around it. Every guarantee the four separate acts
+   carried is still enforced, and now mechanically rather than by the body being obeyed in sequence:
+   verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
+   that implements it, and any link failing short-circuits every link after it. Run `verify:` only
+   when the spec's declared policy says this task is a gate (§The verification policy); otherwise
+   the chain starts at `specs.py task`.
 
-h. **Assert the subject survived**, and report rather than repair:
-   ```bash
-   git log -1 --format=%s        # must equal what step f recorded
-   ```
-   A `commit-msg` hook that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
-   recorded subject resolvable as a substring — that is fine and needs nothing. A hook that
-   **replaces** the subject breaks the link: **report it as a finding and write nothing.** Editing
-   the record now would put a write after the commit again, which is exactly what this ordering
-   removed.
+f. **Read the chain's tail, and act on which link broke:**
 
-   If the commit itself fails — a failing hook, nothing staged — **undo the tick**
-   (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist,
-   then report the failure. Never `--no-verify` your way past it.
+   - **`verify:` failed** → nothing was ticked and nothing was committed; the chain stopped at link
+     one. Read the failure, change the code, run it again. When attempts stop converging, write it
+     blocked with its reason — `specs.py task --spec "<slug>" --block <id> --reason "<why>"` — and
+     move on. **Never weaken the check to make it pass.**
+   - **The commit failed** — a rejecting hook, nothing staged — → the tick already landed, so
+     **undo it** (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that
+     does not exist, then report the failure. Never `--no-verify` your way past it.
+   - **The final `git log -1 --format=%s` does not equal the recorded subject** → a `commit-msg`
+     hook rewrote it. One that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
+     recorded subject resolvable as a substring — fine, and needs nothing. One that **replaces** it
+     breaks the task→commit link: **report it as a finding and write nothing.** Editing the record
+     now would put a write after the commit again, which is exactly what this ordering removed.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
@@ -237,10 +240,11 @@ the command and stop. Paused → say why and wait.
 
 Task 3/7 — 3.2 <task title>
   files: src/middleware/auth.ts, src/config/limits.ts
-✓ verify: pnpm test middleware/ — passed
 ✓ self-review: clean
-✓ checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
-✓ committed a1b2c3d — subject matches
+✓ chain: verify && check && commit
+    verify: pnpm test middleware/ — passed
+    checked 3.2 (subject: plan/<slug>: 3.2 <task title>)
+    committed a1b2c3d — subject matches
 ```
 
 ## Hard rules — no exceptions, and no "just this once"

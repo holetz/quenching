@@ -399,9 +399,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 
 ### 3. O passo 5 encadeado
 
-- [ ] 3.1 Reescrever os atos d–g do passo 5 como UMA chamada encadeada por task, com o `&&` impondo a ordenação que o corpo já exige
+- [x] 3.1 Reescrever os atos d–g do passo 5 como UMA chamada encadeada por task, com o `&&` impondo a ordenação que o corpo já exige
       files: plugins/quenching/commands/specs/execute.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'task --check.{0,120}&&.{0,120}git commit',pathlib.Path('plugins/quenching/commands/specs/execute.md').read_text(),re.S) else 1)"
+      subject: plan/cut-specs-execute-turns: 3.1 os atos d-g do passo 5 como uma chamada encadeada
 - [ ] 3.2 Alinhar `execution.md` §The commit ao encadeamento, sem mover a ordenação tick-antes-do-commit
       files: plugins/quenching/assets/references/specs-execute/execution.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'task --check.{0,120}&&.{0,120}git commit',pathlib.Path('plugins/quenching/assets/references/specs-execute/execution.md').read_text(),re.S) else 1)"
