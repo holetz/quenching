@@ -5,6 +5,7 @@ verification: per-section
 approved: {date: 2026-07-31}
 branch: {base: main, work: claude/correct-command-citation-form-044087}
 reviewed: {date: 2026-07-31}
+merge: {strategy: merge-commit, subject: "plan/correct-command-citation-form: merge (merge-commit)"}
 outcome: done
 ---
 
@@ -360,3 +361,7 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 2. **Um bug pré-existente foi achado na revisão da branch e deliberadamente não consertado aqui.** No modo texto, todo finding do `skills.py lint` imprime `-` onde deveria vir o comando: `report_findings` usa `label_key="skill"` por padrão, mas os findings do lint carregam a chave `command`. Atinge os dez códigos anteriores tanto quanto o novo; o modo `--json` está correto. É escopo de outra spec.
 3. **Dois sítios precisaram de escrita à mão depois do sweep mecânico**, porque neles a forma bare é o *objeto do discurso* e não uma citação: `commands/docs/align.md` §6 e `commands/align.md` §3. Ambos passaram a usar a forma genérica `/<front>:<verb>`, que não casa o regex do check. Qualquer sweep futuro sobre prosa herda essa armadilha.
 4. **A evidência voltou para `restructure-claude-front-namespace`** como discovery: o item de `## Out of Scope` daquele spec foi fechado citando a frase que este corrigiu, e precisa ser reavaliado sobre a evidência nova.
+
+**Destilado no conclude.** O item 3 acima virou um standard: `docs/standards/quality/prose-sweeps.md` (`authority: current`) — o que um sweep mecânico sobre prosa corrompe, por que o checker escrito para guardá-lo reporta esses sítios como limpos, e a forma-placeholder que sobrevive aos dois.
+
+**Nenhum bump de versão foi feito**, por decisão do humano no passo 5, contra o que `docs/standards/ci-cd/versioning-release.md` exige do merge. As sete versões seguem em `4.4.2` e este merge não reivindica release. O próximo spec a concluir bumpa por dois.
