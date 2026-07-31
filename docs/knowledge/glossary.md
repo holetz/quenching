@@ -128,6 +128,15 @@ sentence, and **link out** rather than explaining in full here.
 - [**Entry point**](../standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
   path IS its identity (`commands/docs/add.md` → `/docs:add`); since Claude Code merged commands
   into skills there is no second file to mirror, so there is nothing an entry point can drift from.
+- [**Generated listing**](../standards/architecture/generated-listings.md) — a file, or a marked
+  zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
+  of a fact the disk already carries, so it earns its keep only where nothing else derives that
+  fact **and** a checker can decide its freshness — staleness being its only failure mode, and a
+  silent one. The decision criterion is asked before any code: does a command already answer the
+  same question on demand? Yes → the listing is duplication and its checker is pure cost; no → the
+  listing IS the source and a checker is mandatory. The `docs/` bundle's `index.md` files are the
+  bounding counterexample: nothing else enumerates the bundle, so they keep their checks; the
+  retired `specs/plans/index.md` duplicated `specs.py list` and went with its four `sp-*` codes.
 - [**Handler ladder**](../standards/automation/hooks.md) — the ordering a hook's handler is chosen
   from, cheapest first: a deterministic `command` script (zero tokens on no-match), then a `prompt`
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event

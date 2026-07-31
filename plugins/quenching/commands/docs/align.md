@@ -29,7 +29,7 @@ The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/
 The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
 (`python3 okf-validate.py <docs-dir>` → exit 0 = conforms). Invoke it by its **literal quoted
 path** on every call, never through a shell variable holding the interpreter plus the path —
-[specs-create/plans-zone.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plans-zone.md)
+[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
 §Write the resolved path literally on every invocation.
 
 **Why `Bash` is unrestricted here.** The checker is invoked through `python3`, but a bundle-root

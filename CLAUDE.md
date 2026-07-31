@@ -23,9 +23,8 @@ cat VERSION
 python3 assets/bin/specs.py --version
 python3 assets/bin/skills.py --version
 python3 assets/hooks/okf-validate.py --version
-# the skeleton and the plans seed are conformant by construction
+# the shipped skeleton is conformant by construction
 python3 assets/hooks/okf-validate.py assets/docs                          # 0 error(s), 0 warning(s)
-python3 assets/hooks/okf-validate.py assets/specs/plans --listing-root    # 0 error(s), 0 warning(s)
 # the command surface
 python3 assets/bin/skills.py --root . doctor --json                       # 26 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings reported, not fatal)
@@ -89,8 +88,9 @@ validator finding → [docs/QUENCHING.md](docs/QUENCHING.md).
 - [docs/catalog/](docs/catalog/index.md), [docs/vision/](docs/vision/index.md) and
   [docs/documentation/](docs/documentation/index.md) exist but are empty — this repo has no data,
   and direction and the site layer have not been written.
-- [specs/plans/](specs/plans/index.md) — the spec workspace, a quenching-managed sibling
-  **outside** the `docs/` bundle.
+- `specs/plans/` — the spec workspace, a quenching-managed sibling **outside** the `docs/` bundle.
+  It carries no listing file: `python3 plugins/quenching/assets/bin/specs.py list` derives what the
+  folder holds from disk on demand.
 
 To create / edit / move knowledge (keeping the listing in sync), use the plugin's own
 commands: `/docs:add` for one doc, `/docs:define` for a glossary term, `/docs:align` to

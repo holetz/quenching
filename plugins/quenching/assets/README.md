@@ -30,7 +30,7 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 | --- | --- | --- |
 | `docs/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `knowledge/glossary.md` term-lookup seed | the target's `docs/`, only the homes that apply |
 | `docs/QUENCHING.md` | the **operator manual** for the `docs/` front — commands, confirmation rules, the hook, recipes, finding-code troubleshooting | `docs/QUENCHING.md` |
-| `specs/plans/index.md` | the **active-spec zone** seed (the listing with its `GENERATED` markers) | `specs/plans/` |
+| `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `specs.py list` derives it from disk | `specs/plans/` |
 | `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `specs/archive/` |
 | `specs/QUENCHING.md` | the **operator manual** for the `specs/` front — the spec lifecycle, the `/specs:*` commands, the `specs.py` tool, the OKF bridge | `specs/QUENCHING.md` |
 | `claude/QUENCHING.md` | the **operator manual** for the `.claude/` front — the taxonomy axis, mirroring, the rule + registry, hook/settings hygiene | `.claude/QUENCHING.md` |
@@ -82,7 +82,7 @@ its own docstring.
 The `docs/` tree is the **portable signature** — every repo the plugin aligns ends with the same
 homes, the same reserved `index.md` listings, the same `type` vocabulary. The skeleton is
 **conformant by construction**: `python3 hooks/okf-validate.py docs` over it reports **0 errors, 0
-warnings**, and so does `python3 hooks/okf-validate.py specs/plans --listing-root` over the seed.
+warnings**.
 
 ## How the commands use it
 
