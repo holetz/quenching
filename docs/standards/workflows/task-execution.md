@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
-tags: [workflows, specs, execution, verification, commits, delegation]
-timestamp: 2026-07-28
+description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
+tags: [workflows, specs, execution, verification, commits, delegation, handoff]
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30)
 maintainer: quenching
 ---
 
@@ -158,6 +158,42 @@ no "just this once":
   around. Same for `--no-gpg-sign`.
 - Never amend or rewrite an earlier task's commit; never force-push.
 - Never tick a checkbox for work that was not verified.
+
+## The Handoff refresh cadence is four events
+
+`## Handoff` carries the state of play a fresh executor would need and **cannot derive**: a parallel
+session in the checkout, an unversioned hook, a design flaw found mid-build. Everything a resumed
+run *can* derive — which tasks are done, which commit carried each one — already lives in `git log`
+and in the `subjects` `specs.py status` returns, so the Handoff is not the resumption trail and
+must not be rewritten as though it were.
+
+It is refreshed on exactly four events:
+
+| Event | Why it changes what nothing derives |
+| --- | --- |
+| the run **pauses** | the reason for stopping exists nowhere else |
+| a **blocked task** is written | the attempts and why they stopped converging are not in the diff |
+| a **discovery recorded** | a discovery is by definition a finding nothing else holds yet |
+| the run's **last commit** | that commit is where the next run picks up |
+
+The cadence it replaced was *after each committed task*. Measured on a 13-task run, four rewrites of
+~400 words each were **~90% identical** to one another: the section is sent with every task, so the
+cost is paid on both sides, and near-identical rewrites buy nothing on either.
+
+### A cadence trigger can never be a judgment
+
+The rule *that* one replaced was "rewrite it when it goes stale", and it failed for a structural
+reason: an unattended run never judges that something has gone stale. "Rewrite it when the
+underivable state changed" is the same failure wearing a different name — it asks the run to
+*evaluate* rather than to *observe*.
+
+The four triggers above are all moments the body has **just finished doing something**, never
+moments it appraises something. That is the property to preserve under any future edit: a trigger
+must name an act, not an assessment.
+
+Refreshing per `## N.` section, riding on the `verification` policy, was the strongest alternative —
+mechanical, judgment-free, and five rewrites instead of thirteen. It loses because it still rewrites
+when nothing changed.
 
 ## Delegation is permitted; the orchestrator never is
 
