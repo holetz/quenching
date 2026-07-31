@@ -17,7 +17,7 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 | [plan-lifecycle.md](plan-lifecycle.md) | The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, and the append-only archive rule for facts that did not exist at the move |
 | [plugin-configuration.md](plugin-configuration.md) | `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the three recognised keys and their defaults, why every way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged |
 | [task-execution.md](task-execution.md) | How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules |
-| [worktree-setup.md](worktree-setup.md) | The specs/config.json contract — the one recognised key, where the file lives, what its absence means, who runs the declared command and with which cwd, and why the consent is the isolation offer rather than a prompt of its own |
+| [worktree-setup.md](worktree-setup.md) | The `worktreeSetup` hook — what it is for, where it is declared now that the plugin's config moved to `.claude/quenching.json`, what its absence means, who runs the declared command and with which cwd, why the consent is the isolation offer rather than a prompt of its own, and the record of why the specs front took a config file at all |
 
 ## Candidate sub-standards
 

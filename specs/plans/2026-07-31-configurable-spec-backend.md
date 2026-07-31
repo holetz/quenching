@@ -262,13 +262,27 @@ trabalho em que se está.
   bodies serem reescritos. Se a interface se revelar errada na seção 4, a superfície ainda está
   intacta e o custo é uma seção.
 - Cinco standards são reescritos, três deles narrando decisões anteriores. A reescrita preserva a
-  narrativa antiga como "o que foi revertido" — este repo trata isso como contrato, e
-  `docs/standards/workflows/worktree-setup.md` §"Why a config file, in a front that had none" é o
-  modelo a imitar.
+  narrativa antiga como "o que foi revertido"; `docs/standards/workflows/worktree-setup.md`
+  §"Why a config file, in a front that had none" agora é o exemplo já feito, não só o modelo.
 - Nenhuma edição em `commands/**` é testável na sessão que a escreve — o registry é montado no
   início da sessão. A seção 5 termina com `doctor`, não com um teste funcional.
-- `.claude/worktrees/` **não** está ignorado hoje. A task 1.1 é pré-requisito de tudo na seção 3.
 
+**Estado após a seção 1 (config), toda commitada:**
+
+- `.claude/worktrees/` está ignorado no `.gitignore` versionado. Antes só o estava por
+  `.git/info/exclude`, que é local — um clone limpo não tinha a proteção.
+- `specs.py` expõe `worktree_dir_ignored(cwd)` (pergunta ao git, resolve contra o top level) e
+  `worktree_guard(ignored)` (política pura, exit 2). **Ninguém os chama ainda** — a task 3.1 é o
+  consumidor, e deve chamá-los antes de `git worktree add`.
+- `load_config` lê `.claude/quenching.json` no raiz do repo, via `find_repo_root`. Chaves:
+  `backend` (default `files`), `specsBranch` (default `specs`), `worktreeSetup`. Devolve também
+  `unknownBackend` e `legacyPath`, ambos consumidos pelo `doctor`.
+- Quatro findings de config no `doctor`: `sp-config-unparseable`, `sp-config-unknown-key`,
+  `sp-config-unknown-backend`, `sp-config-legacy-location`.
+- Este repositório não tem `.claude/quenching.json` — roda inteiro nos defaults, o que é o caso
+  normal e o que o selftest assere.
+- A seleção de backend ainda não existe: `cfg["backend"]` é lido e reportado, mas nada ramifica
+  sobre ele. Esse é o trabalho da seção 2.
 ## Tasks
 
 ### 1. Configuração
@@ -290,9 +304,10 @@ trabalho em que se está.
 - [x] 1.4 Escrever docs/standards/workflows/plugin-configuration.md (authority: current once proved)
       verify: python3 assets/hooks/okf-validate.py docs
       subject: plan/configurable-spec-backend: 1.4 escreve o standard de configuracao do plugin
-- [ ] 1.5 Reescrever docs/standards/workflows/worktree-setup.md para o novo caminho da config,
+- [x] 1.5 Reescrever docs/standards/workflows/worktree-setup.md para o novo caminho da config,
       preservando a narrativa da decisão que ele reverte
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/configurable-spec-backend: 1.5 reescreve worktree-setup.md para o novo caminho da config
 
 ### 2. Interface de backend
 
