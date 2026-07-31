@@ -4,10 +4,10 @@ title: Bundle verification
 description: What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
 resource: plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/commands/docs/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-07-30
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: docs-verification-layer plan (sections 2-4)
+source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19
 maintainer: quenching
 ---
 
@@ -37,6 +37,43 @@ violation of the rule it was meant to demonstrate, for as long as only prose gua
 
 **Corollary.** When a check lands, the prose it replaces gets *cut*, not kept as belt-and-braces.
 Two enforcers for one invariant is how they drift.
+
+## A grep invariant measures what the pattern reaches, not what the sentence claims
+
+The section above decides *whether* an invariant is owed a check. This one is about the check once
+written: a `grep` invariant states a population in prose and measures a different one, and nothing
+reports the gap — the command exits 0 either way.
+
+Measured 2026-07-31 on the language-clause census. The invariant read *"returns **exactly** the
+fourteen places in the table"* and was implemented as
+`grep -rn -A1 "repo.s language" --include='*.md' --include='*.py' plugins/ docs/`. It returned 14.
+The real population was **19 hits across 17 files**. Three whole files were unreachable, for two
+different mechanical reasons:
+
+- **Line wrap.** One occurrence had `the repo's` and `language` on separate lines. A single-line
+  pattern cannot match it, and `-A1` does not help: it extends a hit already found, so where there
+  is no hit there is nothing to extend. The spec had written `-A1` believing it did.
+- **Declared scope.** Two files sat outside `plugins/ docs/` — one of them the installed copy of a
+  manual, the exact artifact class the sweep existed to keep in sync.
+
+**The number agreed by arithmetic coincidence**, which is the part worth fearing. One file counted
+two hits and two files counted zero, so 14 came out of a set that was not the table's. A verify
+step passed, a human read "14", and the census was believed closed while two members had never
+been looked at.
+
+Three rules follow:
+
+1. **Print the population, not the count.** A check that lists file-and-count per hit makes a wrong
+   set visible; one that prints a total hides it behind a number that can be right for the wrong
+   reasons.
+2. **Match the parse, not a line.** Prose wraps. An invariant over prose is multiline
+   (`re.S`, `grep -z`) or it silently under-counts, and under-counting reads as *clean*.
+3. **State the scope as the set to be governed**, then check that the roots actually cover it. Here
+   `specs/` was governed and unscanned — the omission is invisible from inside the command.
+
+This is the mechanical sibling of the semantic failure in
+[prose-sweeps.md](prose-sweeps.md) §*The check that guards the sweep cannot catch this*: there the
+check reaches the site and reads it as clean, here it never reaches it at all. Both exit 0.
 
 ## Accepted gaps, recorded as such
 
