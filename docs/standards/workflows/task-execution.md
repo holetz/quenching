@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, the failure budget, commit-per-task, the two-level review split, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
-tags: [workflows, specs, execution, verification, commits, delegation]
-timestamp: 2026-07-28
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
+tags: [workflows, specs, execution, verification, commits, delegation, handoff]
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31)
 maintainer: quenching
 ---
 
@@ -25,6 +25,21 @@ and a commit cannot separate the task's diff from an unrelated edit already sitt
 The human may override, in which case the first commit carries the pre-existing changes **and the
 report says so**. Not a git repo → no isolation and no commits, stated once; never `git init` on
 the human's behalf.
+
+### Dispatching a stage mid-flow costs the run its attribution
+
+A command that hands a step to another command pays a price beyond the turns: the transcript's
+`attributionSkill` pointer moves to the stage and, measured, almost never comes back — so the
+conducting run's own remaining work is filed under the stage it dispatched. What that does to any
+later count is owned by
+[../automation/session-evidence.md](../automation/session-evidence.md) §What a command's run cost —
+the stage is `closed: false`, its counts become an upper bound, and `mayIncludeTurnsFrom` names the
+misread. **Cite that rule; never restate it here.**
+
+The consequence for this contract is narrow and practical: **check before dispatching**. A step
+whose delegate would report "nothing to do" is pure cost twice over — the turns, and the run's
+attribution. Where there genuinely is something to delegate, dispatch anyway and accept the upper
+bound; the delegate owns the work, and a measurement that says so is better than one that guesses.
 
 ## Verification is declared per spec, never decided mid-implementation
 
@@ -57,12 +72,39 @@ against the pre-fix tree the pattern found **1 of 3**, and the task would have t
 of its three targets untouched. Replaced with a multiline check, proven to exit 1 before the fix and
 0 after.
 
+The line break is not the only way this happens, and the second way is worse because the phrase
+looks contiguous. A check for `after\s+each\s+committed\s+task` found **3 of its 4** targets: in the
+fourth the phrase read `after **each committed task**`, and the inline `**` sits between two words
+that `\s+` expects to be adjacent. Same failure, no visible wrap. A third instance turned up in the
+same run, inside a check written to *review* the first two.
+
+**A check over prose normalizes before it matches** — strip `*`, `_` and backticks, collapse
+whitespace, then look for the phrase. Read the whole file, never a line at a time. A matcher shaped
+like the prose as it renders will keep missing the prose as it is written.
+
 This is the sibling of [../quality/parse-honesty.md](../quality/parse-honesty.md) from the other
 side: there, a tool misread its input and reported a confident finding about a string it never held.
 Here nothing is misread — the matcher simply cannot express the thing being proven, and a check that
 cannot express its claim reports success indistinguishable from the real one. **Falsify the check
 before trusting it**, and treat "it passed" as evidence only once "it failed on purpose" is on the
 record.
+
+### A task's `verify:` is scoped at authoring time, never filtered at the gate
+
+What runs at a gate is decided by each task's `verify:`; the `verification` policy decides only
+*when* the gate fires. So a gate that re-runs a check whose inputs the section could not have
+touched is not a defect in the policy — it is a `verify:` that was written wider than its task.
+
+Measured: on a 13-task run the same three selftests ran at the close of section 1 and again at
+task 5.1, because tasks in two sections each declared all three, while the spec itself stated that
+no script changed in between. The body obeyed exactly what the spec asked for.
+
+The fix belongs at the origin. **Write each `verify:` scoped to what that task could break** — not
+to what the repo can check. The alternative, a gate that skips a declared `verify:` because it
+judges the inputs unchanged, is a judgment about correctness made at build time, and this contract
+already refuses judgment as a trigger (§A cadence trigger can never be a judgment). Scoping at
+authoring needs no judgment while building and holds for every future spec, not only the measured
+one.
 
 ## A blocked task is a visible marker, not a hidden counter
 
@@ -158,6 +200,42 @@ no "just this once":
   around. Same for `--no-gpg-sign`.
 - Never amend or rewrite an earlier task's commit; never force-push.
 - Never tick a checkbox for work that was not verified.
+
+## The Handoff refresh cadence is four events
+
+`## Handoff` carries the state of play a fresh executor would need and **cannot derive**: a parallel
+session in the checkout, an unversioned hook, a design flaw found mid-build. Everything a resumed
+run *can* derive — which tasks are done, which commit carried each one — already lives in `git log`
+and in the `subjects` `specs.py status` returns, so the Handoff is not the resumption trail and
+must not be rewritten as though it were.
+
+It is refreshed on exactly four events:
+
+| Event | Why it changes what nothing derives |
+| --- | --- |
+| the run **pauses** | the reason for stopping exists nowhere else |
+| a **blocked task** is written | the attempts and why they stopped converging are not in the diff |
+| a **discovery recorded** | a discovery is by definition a finding nothing else holds yet |
+| the run's **last commit** | that commit is where the next run picks up |
+
+The cadence it replaced was *after each committed task*. Measured on a 13-task run, four rewrites of
+~400 words each were **~90% identical** to one another: the section is sent with every task, so the
+cost is paid on both sides, and near-identical rewrites buy nothing on either.
+
+### A cadence trigger can never be a judgment
+
+The rule *that* one replaced was "rewrite it when it goes stale", and it failed for a structural
+reason: an unattended run never judges that something has gone stale. "Rewrite it when the
+underivable state changed" is the same failure wearing a different name — it asks the run to
+*evaluate* rather than to *observe*.
+
+The four triggers above are all moments the body has **just finished doing something**, never
+moments it appraises something. That is the property to preserve under any future edit: a trigger
+must name an act, not an assessment.
+
+Refreshing per `## N.` section, riding on the `verification` policy, was the strongest alternative —
+mechanical, judgment-free, and five rewrites instead of thirteen. It loses because it still rewrites
+when nothing changed.
 
 ## Delegation is permitted; the orchestrator never is
 
