@@ -5,6 +5,7 @@ verification: per-section
 refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
 reviewed: {date: 2026-07-31}
+merge: {strategy: merge-commit, subject: "plan/collapse-remaining-language-clause-restatements: merge (merge-commit)"}
 outcome: done
 ---
 
