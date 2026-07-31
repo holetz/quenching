@@ -341,7 +341,7 @@ e não com a continuação `files:`.
   files: `plugins/quenching/assets/specs/QUENCHING.md`
   verify: `grep -n 'agents/communication.md' plugins/quenching/assets/specs/QUENCHING.md` → 1 acerto
   subject: plan/collapse-remaining-language-clause-restatements: 3 Nota no manual do front specs
-- [ ] 4 Corrigir a nota de `plugins/quenching/assets/references/docs-align/okf-spec.md`, que afirma
+- [x] 4 Corrigir a nota de `plugins/quenching/assets/references/docs-align/okf-spec.md`, que afirma
   um colapso total que não aconteceu — passa a dizer que os normativos foram colapsados e que os
   lembretes de fronteira permanecem por decisão.
   files: `plugins/quenching/assets/references/docs-align/okf-spec.md`
