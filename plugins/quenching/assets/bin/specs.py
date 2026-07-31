@@ -1863,6 +1863,46 @@ def _git(cwd: str, *argv: str) -> str:
         return ""
 
 
+SPECS_WORKTREE_DIR = ".claude/worktrees"
+
+
+def worktree_dir_ignored(cwd: str, rel: str = SPECS_WORKTREE_DIR) -> bool:
+    """Whether git ignores the path the `files` backend puts its specs worktree at.
+
+    `git check-ignore` prints the path when it is ignored and nothing when it is not, so the
+    existing `_git` — which swallows the exit code — answers this without a second helper. A
+    path that does not exist yet answers the same way, which is exactly what the guard needs:
+    the question is asked BEFORE `git worktree add`, never after.
+
+    Resolved against the repo top level, not against `cwd`: this tool's `cwd` is the specs
+    workspace, and `.claude/worktrees/` relative to `<repo>/specs/` is a different path that
+    would answer the wrong question. No git and no repo answer `False` — a tree git cannot
+    speak for is one where nothing can promise the worktree stays out of `git status`."""
+    top = _git(cwd, "rev-parse", "--show-toplevel").strip()
+    if not top:
+        return False
+    return bool(_git(top, "check-ignore", os.path.join(top, rel, "")).strip())
+
+
+def worktree_guard(ignored: bool, rel: str = SPECS_WORKTREE_DIR) -> dict:
+    """The refusal that stops the `files` backend sabotaging itself, or `{}` to proceed.
+
+    Pure policy over the one fact `worktree_dir_ignored` establishes, kept separate from it so
+    the decision is assertable without a repository to stage.
+
+    Exit 2 rather than a warning, and rather than writing the line itself: `.gitignore` belongs
+    to the target repo, and a tool that edits it uninvited to unblock its own feature is making
+    the human's decision for them. Naming the one line to add is the whole remedy."""
+    if ignored:
+        return {}
+    return {
+        "code": "sp-worktree-unignored", "exit": 2, "path": rel,
+        "message": f"git does not ignore '{rel}/' — add it to .gitignore before the files "
+                   f"backend creates its specs worktree there; an untracked worktree breaks "
+                   f"the clean-tree gate /specs:execute requires before its first task",
+    }
+
+
 def _git_refs(root: str) -> tuple[set[str], str | None]:
     """Every local branch, and the one checked out. Two calls for the WHOLE front, never
     one per spec — ranking twenty specs must not cost forty subprocesses.
@@ -2764,6 +2804,27 @@ def cmd_selftest(args, root: str) -> int:
                                      f"reindexed was retired, so nothing is left to rebuild",
                                      remedy="`plans/index.md` is a retired artifact: no "
                                             "command produces it and none may reindex it"))
+
+    # The guard that keeps the `files` backend from breaking the clean-tree gate it runs
+    # under. Asserted on the pure half, so it needs no repository staged and runs on an
+    # installed copy too — which is where a guard quietly downgraded to a warning, or to
+    # `{}` on both branches, would otherwise never be noticed.
+    for ignored, want in ((True, False), (False, True)):
+        got = worktree_guard(ignored)
+        if bool(got) is not want:
+            findings.append(_finding("sp-worktree-guard-broken", "error",
+                                     f"worktree_guard(ignored={ignored}) "
+                                     f"{'refused' if got else 'allowed'} — an unignored specs "
+                                     f"worktree must refuse, and an ignored one must proceed",
+                                     remedy="the guard is the only thing standing between the "
+                                            "files backend and the clean-tree gate it needs"))
+    refusal = worktree_guard(False)
+    if refusal.get("exit") != 2:
+        findings.append(_finding("sp-worktree-guard-broken", "error",
+                                 f"the unignored-worktree refusal exits "
+                                 f"{refusal.get('exit')!r}, not 2 — a missing `.gitignore` line "
+                                 f"is a refusal the human must fix, not a finding to report",
+                                 remedy="exit 2 is this tool's refusal code; 1 is findings"))
 
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
