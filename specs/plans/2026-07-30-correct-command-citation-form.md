@@ -304,9 +304,10 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 - [x] 2.1 Decidir e implementar o alcance do finding — `commands/**` só, ou também `assets/references/**` — conforme a segunda questão de `## Open Decisions`
       files: plugins/quenching/assets/bin/skills.py
       subject: plan/correct-command-citation-form: 2.1 alcance do check inclui assets/references
-- [ ] 2.2 Acrescentar o finding em WARN para citação de comando do plugin sem prefixo em prosa de hand-off, ignorando `description:`
+- [x] 2.2 Acrescentar o finding em WARN para citação de comando do plugin sem prefixo em prosa de hand-off, ignorando `description:`
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
+      subject: plan/correct-command-citation-form: 2.2 finding sk-bare-citation em WARN
 - [ ] 2.3 Acrescentar o caso ao `selftest` e provar que uma `description:` com citação bare NÃO dispara
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest

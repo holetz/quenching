@@ -181,6 +181,15 @@ ZONE_BEGIN = "<!-- GENERATED:BEGIN -->"
 ZONE_END = "<!-- GENERATED:END -->"
 EMPTY_CELL = "—"
 
+PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
+
+# A slash citation carrying at least one `:` — `/docs:add`, `/docs:documentation:build`. The
+# lookbehind rejects a citation already prefixed by a path or a scheme (`https://`,
+# `${CLAUDE_PLUGIN_ROOT}/…`), and requiring a segment after the `:` keeps a bare namespace
+# (`/skill:`) out: naming the namespace is not citing a command.
+CITATION_RE = re.compile(r"(?<![\w:/-])/([a-z0-9-]+(?::[a-z0-9-]+)+)")
+CITATION_SAMPLE = 3      # examples carried in the message; the count carries the rest
+
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 QUOTED_RE = re.compile(r"[\"“]([^\"”]{2,}?)[\"”]")
 HEADING_RE = re.compile(r"^#{1,6}\s")
@@ -930,6 +939,53 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
     return out
 
 
+def plugin_prefix(root: str) -> str | None:
+    """The registry prefix this surface's commands carry, from `<root>/.claude-plugin/
+    plugin.json`. `None` says the surface is a target repo's own `.claude/` — where a
+    command file IS in `.claude/commands/`, the bare form is the one that resolves, and
+    the citation check has nothing to say."""
+    text = read_text(os.path.join(root, PLUGIN_MANIFEST))
+    if text is None:
+        return None
+    try:
+        name = json.loads(text).get("name")
+    except (ValueError, AttributeError):
+        return None
+    return name.strip() if isinstance(name, str) and name.strip() else None
+
+
+def bare_citations(body: str, invocations: set[str]) -> list[str]:
+    """The bare `/front:verb` citations in `body` that name a command of THIS surface, in
+    order of appearance and without repeats.
+
+    `body` is the text after the frontmatter, so a citation inside `description:` cannot
+    reach here — the boundary is the parse, never a pattern that has to be kept in step
+    with one."""
+    seen: list[str] = []
+    for m in CITATION_RE.finditer(body):
+        cite = "/" + m.group(1)
+        if cite in invocations and cite not in seen:
+            seen.append(cite)
+    return seen
+
+
+def lint_citations(prefix: str, body: str, invocations: set[str], where: dict) -> list[dict]:
+    """One finding per file, never one per citation: a surface mid-sweep carries hundreds,
+    and a report nobody can read is a report nobody acts on."""
+    bare = bare_citations(body, invocations)
+    if not bare:
+        return []
+    shown = ", ".join(f"`{c}`" for c in bare[:CITATION_SAMPLE])
+    more = f" (+{len(bare) - CITATION_SAMPLE} more)" if len(bare) > CITATION_SAMPLE else ""
+    return [finding("sk-bare-citation", "warn",
+                    f"{plural(len(bare), 'bare command citation')} in the body — {shown}{more}. "
+                    f"These commands come from the `{prefix}` plugin, so the form that resolves "
+                    f"is `{prefix}:<front>:<verb>` for the Skill tool and "
+                    f"`/{prefix}:<front>:<verb>` for a human; the bare form resolves only where "
+                    "the command file lives in the target repo's own .claude/commands/",
+                    citations=bare, **where)]
+
+
 def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict], list[dict]]:
     """(base, commands, references). Accepts a single command file, a commands/ directory,
     or a surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
@@ -961,6 +1017,24 @@ def cmd_lint(args, root: str) -> int:
     findings: list[dict] = []
     for cmd in commands:
         findings.extend(lint_command(cmd, base))
+
+    prefix = plugin_prefix(root)
+    if prefix:
+        # What counts as a command of this surface is a property of the SURFACE, never of
+        # the scope asked for — deriving it from `commands` would make `lint <one file>`
+        # blind to every citation naming a sibling.
+        invocations = {c["command"] for c in
+                       (commands if base == root
+                        else discover_commands(os.path.join(root, COMMANDS_DIR)))}
+        for cmd in commands:
+            findings.extend(lint_citations(prefix, cmd["body"], invocations,
+                                           {"command": cmd["command"],
+                                            "path": rel(cmd["path"], base)}))
+        for ref in references:
+            findings.extend(lint_citations(prefix, ref["body"], invocations,
+                                           {"command": SURFACE_MISSING,
+                                            "path": rel(ref["path"], base)}))
+
     header = f"skills lint — {base} ({plural(len(commands), 'command')}"
     header += f", {plural(len(references), 'reference')})" if references else ")"
     return report_findings(args, header,
