@@ -6,6 +6,9 @@ priority: {level: 6, criticality: medium, date: 2026-07-29}
 refined: {mode: adversarial, date: 2026-07-30}
 approved: {date: 2026-07-30}
 branch: {base: main, work: plan/decide-plans-index-need}
+reviewed: 2026-07-31
+merge: {strategy: merge-commit, subject: "merge: plan/decide-plans-index-need"}
+outcome: done
 ---
 
 # Reassess whether specs/plans/index.md is needed
@@ -745,3 +748,41 @@ As decisões que a primeira passada colocava na seção 1 já estão tomadas e r
 - CONTRADIÇÃO com standard, resolvida pelo humano em 2026-07-30: a task 3.3 e o bloco `## Validation` invocam `functional-checks.sh`, e `docs/standards/quality/surface-verification.md` (authority: current) §The harness belongs to the skill front diz literalmente que ele 'is not named in a spec's ## Validation or a task's verify:'. Retirado dos dois lugares — resta corrigir `## Validation`, que ainda o cita. PENDÊNCIA SEPARADA para o /specs:conclude: esta branch editou CINCO command bodies na task 3.2, e o mesmo standard manda rodar o harness onde a superfície é editada, uma vez, sob /skill:new — que este spec não atravessa. `skills.py doctor` (26 comandos, 0 findings) e `lint` (exit 0) passam, mas nenhum dos dois prova que a superfície CARREGA.
 - Quarto `verify:` corrigido (task 5.5), e o de consequência mais grave: o grep cru varria `plugins/quenching/` inteiro, incluindo o CHANGELOG do README em `:625`, que registra que a release 0.19.0 ganhou `--listing-root`. Aquilo era verdade então — obedecer o verify ao pé da letra teria falsificado um registro de release, exatamente o que a doutrina de `specs/archive/** é história` proíbe. Escopo corrigido para excluir changelog e notícias de retirada. NOTA: ao escrever o filtro, um `grep -v 'Never '` largo demais ESCONDEU um leftover real — a linha da tabela de troubleshooting dos dois QUENCHING.md que ainda mandava rodar `plans reindex`. Achado por classificação manual de cada hit, não pelo filtro. Filtro de exclusão é um risco de falso-negativo, e tem de ser conferido item a item.
 - PARA O /specs:conclude — `main` avançou 22 commits durante este build: o spec `add-import-provenance` foi concluído e mergeado, e trouxe o bump 4.4.0 -> 4.4.1 nos seis artefatos + session.py. Esta branch foi cortada de 1ed05c4 e ainda carrega 4.4.0. Consequências: (1) o merge vai precisar de rebase/merge de main, com colisão provável nos seis arquivos de versão, exatamente o cenário que versioning-release.md §Why not a task descreve; (2) o bump desta branch parte de 4.4.1, não de 4.4.0; (3) main ganhou `docs/standards/architecture/shared-mold-keys.md`, que vive na MESMA subject folder do standard escrito na task 6.1 — conferir a listagem do `architecture/index.md` depois do merge, porque as duas branches inseriram linhas na mesma tabela.
+
+## Outcome
+
+**Concluído como `done` em 2026-07-31, reconciliando um merge feito FORA do `/specs:conclude`.**
+
+O merge (`86b6993 merge: plan/decide-plans-index-need`, strategy merge-commit) já estava em
+`main` e soterrado sob specs posteriores, com a branch `plan/decide-plans-index-need` apagada e o
+frontmatter nunca carimbado (`reviewed`/`merge`/`outcome` nulos). Como o fluxo normal — tudo na
+branch, um único merge — era impossível, a reconciliação (review, este `## Outcome`, os stamps e o
+arquivamento) foi um único commit de bookkeeping direto na `main`.
+
+**O que shipou:** `specs/plans/index.md` e `assets/specs/plans/index.md` retirados; o modo
+`--listing-root` e `_is_spec_file` removidos de `okf-validate.py`; a zona GERADA e o subcomando
+`plans` removidos de `specs.py` (−83 linhas); os quatro `sp-*` da zona retirados; `plans-zone.md`
+renomeado para `specs-front.md`; `docs/standards/architecture/generated-listings.md` escrito e o
+termo *Generated listing* acrescentado ao glossário; guardas de retirada com mutation-pass em
+`okf-validate.py` e `specs.py`. 17/18 boxes marcadas; a diff introduziu 510+/672− (retirada líquida).
+
+**O que ficou de fora — task 7.1 (lockstep de `VERSION`):** bloqueada por decisão humana em
+2026-07-30, porque um bump é obrigação de release (step 5), não uma task — e ficou **sem objeto**:
+`main` já está em **4.4.2** uniforme nos quatro artefatos, bump feito pelo spec posterior
+`declare-repo-body-language`. Não havia nada a bumpar; por isso o arquivamento usou `--force` sobre
+essa box aberta — o caso documentado de trabalho "descoped / proven elsewhere".
+
+**Estratégia de merge:** merge-commit. Nada aqui foi feito por squash, então cada `subject:` de task
+resolve normalmente no histórico.
+
+**Distilação:** colheita vazia. O standard `generated-listings.md` e o termo de glossário já
+entraram durante o build; as lições sobre `verify:` defeituoso (quatro deles, corrigidos no build)
+já são governadas por `docs/standards/workflows/task-execution.md:47` ("a `verify:` that cannot fail
+proves nothing"), portanto são história, não conhecimento novo a adotar.
+
+**Obrigações de release:** nenhuma — `main` está 4.4.2 uniforme, suprido pelo spec posterior.
+
+**Pendência que fica aberta para OUTRO front (não deste comando):** a branch editou CINCO command
+bodies na task 3.2; `docs/standards/quality/surface-verification.md` manda provar que a superfície
+CARREGA via `/skill:new` + functional-checks, o que este spec não atravessou. `skills.py doctor`
+(26 comandos, 0 findings) e `lint` (exit 0) passam, mas nenhum prova o carregamento.
