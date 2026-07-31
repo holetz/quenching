@@ -1299,6 +1299,37 @@ EXPECTED_DRIFT = {
     "pluginonly": {"sk-tool-absent"},   # the hook only — never the two CLIs
 }
 
+# The citation check and the boundary that makes it safe to run. `cites-bare` carries a
+# bare citation in its BODY *and* another inside `description:`; asserting the exact list
+# is what proves the frontmatter one never reached the check — the risk `## Risks` names,
+# a sweep leaking into always-on metadata, is exactly this boundary failing. `resolvable`
+# carries every form that DOES resolve — the registry name, the plugin-prefixed slash, a
+# bare namespace naming no verb, and a URL — and must stay silent.
+CITATION_FIXTURE = {
+    "docs/cites-bare.md":
+        "---\ndescription: A bare /docs:hollow here is frontmatter, and must never fire.\n"
+        "---\n\nHand off to /docs:add once the doc is written.\n",
+    "docs/cites-resolvable.md":
+        "---\ndescription: The control.\n---\n\n"
+        "Invoke `plugfix:docs:add` through the Skill tool, or type /plugfix:docs:add. The\n"
+        "/docs: namespace names no verb, and https://example.com/docs:add is a URL.\n",
+}
+
+# the same check reaching `assets/references/**` — the scope decided by count, and the only
+# evidence that the reference tree is linted at all
+CITATION_REFERENCE_FIXTURE = {"docs-add/homes.md": "Route the rest to /docs:hollow.\n"}
+
+# a manifest is what makes a surface a PLUGIN, and the check fires only for one: on a target
+# repo's own `.claude/`, the command file really is in `.claude/commands/` and the bare form
+# is the one that resolves
+CITATION_MANIFEST = {".claude-plugin/plugin.json": '{"name": "plugfix"}\n'}
+
+EXPECTED_CITATIONS = {
+    "/docs:cites-bare": ["/docs:add"],
+    "/docs:cites-resolvable": [],
+    "references/docs-add/homes.md": ["/docs:hollow"],
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -1313,11 +1344,15 @@ def cmd_selftest(args, root: str) -> int:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
-        for relpath, text in {**FIXTURE, **HOOK_FIXTURE}.items():
+        for relpath, text in {**FIXTURE, **HOOK_FIXTURE, **CITATION_FIXTURE}.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
-        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE}.items():
+        for relpath, text in CITATION_REFERENCE_FIXTURE.items():
+            path = os.path.join(tmp, REFERENCES_DIR, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE, **CITATION_MANIFEST}.items():
             path = os.path.join(tmp, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
@@ -1351,6 +1386,20 @@ def cmd_selftest(args, root: str) -> int:
                 if f["code"].startswith("sk-hook-"):
                     hook_got[c["command"]].add(f["code"])
 
+        prefix = plugin_prefix(tmp)
+        invocations = {c["command"] for c in surface["commands"]}
+        citation_got = {c["command"]: bare_citations(c["body"], invocations)
+                        for c in surface["commands"] if c["command"] in EXPECTED_CITATIONS}
+        for ref in discover_references(os.path.join(tmp, REFERENCES_DIR)):
+            citation_got[f"references/{ref['relpath']}"] = bare_citations(ref["body"], invocations)
+        # the finding's own shape: WARN, never ERROR (bundle-verification.md), and one per
+        # file rather than one per citation
+        cites_bare = next(c for c in surface["commands"] if c["command"] == "/docs:cites-bare")
+        fired = lint_citations(prefix, cites_bare["body"], invocations,
+                               {"command": cites_bare["command"]}) if prefix else []
+        # a target repo's own surface carries no manifest, so the same body must stay silent
+        target_silent = plugin_prefix(os.path.join(tmp, "clean", CLAUDE_DIR)) is None
+
     failures = canonical_case_failures()
     for command, codes in EXPECTED.items():
         if got.get(command) != codes:
@@ -1371,11 +1420,24 @@ def cmd_selftest(args, root: str) -> int:
     if not refusal_armed:
         failures.append("drift: an installed copy's own directory resolved as a plugin root — "
                         "the exit-2 refusal is not armed")
+    if prefix != "plugfix":
+        failures.append(f"citations: the manifest's name read as {prefix!r}, not 'plugfix' — "
+                        "the check cannot name the form that resolves")
+    for where, cites in EXPECTED_CITATIONS.items():
+        if citation_got.get(where) != cites:
+            failures.append(f"{where}: expected citations {cites}, got {citation_got.get(where)}")
+    if [(f["code"], f["severity"]) for f in fired] != [("sk-bare-citation", "warn")]:
+        failures.append(f"citations: expected one sk-bare-citation at warn, got "
+                        f"{[(f['code'], f['severity']) for f in fired]}")
+    if not target_silent:
+        failures.append("citations: a surface with no plugin manifest resolved a prefix — "
+                        "the check would fire where the bare form is the correct one")
 
-    # + 2: the two conformant controls that must stay clean (/docs:add, agents/good.md),
-    # and the drift refusal, which is a case with no fixture row of its own
+    # + 3: the two conformant controls that must stay clean (/docs:add, agents/good.md) and
+    # the drift refusal, none of which has a fixture row of its own; + 2 for the citation
+    # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
-             + len(EXPECTED_DRIFT) + 3)
+             + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5)
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))

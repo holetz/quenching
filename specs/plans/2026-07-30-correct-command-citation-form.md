@@ -308,9 +308,10 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
       subject: plan/correct-command-citation-form: 2.2 finding sk-bare-citation em WARN
-- [ ] 2.3 Acrescentar o caso ao `selftest` e provar que uma `description:` com citação bare NÃO dispara
+- [x] 2.3 Acrescentar o caso ao `selftest` e provar que uma `description:` com citação bare NÃO dispara
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
+      subject: plan/correct-command-citation-form: 2.3 caso de selftest para sk-bare-citation
 
 ### 3. O sweep
 
