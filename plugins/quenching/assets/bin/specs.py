@@ -127,10 +127,17 @@ TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
 TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|subject|commit)\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
 # The anchor is written into a one-line grammar and read back, so the only hard requirement
-# is that it holds text and stays on its line. `commit:` is the older form of the same
-# field — still READ from specs written before the anchor became the subject, never written
-# again, and never rewritten in place.
+# is that it holds text and stays on its line. `commit:` is both the legacy form of the same
+# field — still READ from specs written before the anchor became the subject — AND, since
+# `task --commit`, a form written again on purpose: a real git sha, upserted by the CLI once
+# the commit that implements the task already exists. `subject:` stays the default `--check`
+# writes; `commit:` is opt-in via the new flag. See `task --commit`'s help and `## Design`
+# ("Decisão: o anchor task→commit é o sha") for why both anchors coexist for now.
 SUBJECT_RE = re.compile(r"^[^\r\n]+$")
+# A git object id, short or full — hex only. Loose on purpose (git accepts abbreviations down
+# to a repo-dependent minimum well below 7), but tight enough to catch an obvious mistake like
+# passing a commit MESSAGE where a sha was meant.
+COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DEFAULT_META_INDENT = "      "
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
 BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
@@ -1253,9 +1260,10 @@ def parse_tasks(text: str) -> list[dict]:
             "blockEndLineno": base + block_end,
             # where the anchor line is, and where one would go — so `task` upserts it
             # mechanically instead of the caller doing string surgery on the file. Both
-            # forms are tracked because both are read: nothing writes `commit:` any more,
-            # but a spec written before the change carries one and `--uncheck` must still
-            # be able to drop it.
+            # forms are tracked because both are read AND, as of `task --commit`, both can be
+            # written: `subject:` by `--check --subject`, `commit:` by `--check --commit` once
+            # the real sha exists. A spec written before either form applied to it carries
+            # only whichever one it has, and `--uncheck` must still be able to drop it.
             "subjectLineno": (base + subject_off) if subject_off is not None else None,
             "commitLineno": (base + commit_off) if commit_off is not None else None,
             # After the last metadata line when there is one; otherwise after the WHOLE
@@ -2856,7 +2864,14 @@ def cmd_task(args, root: str) -> int:
 
     `--block` writes the reason into the line itself. That visibility is the whole point:
     v1 kept an attempt counter in `.specs.json` that nobody read, and a task went quiet
-    after five failures with no trace of why."""
+    after five failures with no trace of why.
+
+    `--check` may carry `--subject`, `--commit`, both, or neither. `--commit <sha>` is
+    called AFTER the commit implementing the task already exists — the CLI records the sha
+    it is given, it never resolves or invents one — and is additive: `--subject` keeps
+    working exactly as before for any caller that has not moved to the sha anchor. Whichever
+    write actually lands the anchor (`backend.write_spec`, below) is where a failure — a
+    `gh api` call included — is reported, never swallowed."""
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
@@ -2882,6 +2897,23 @@ def cmd_task(args, root: str) -> int:
         emit(args.json, {"ok": False, "code": "sp-bad-subject", "subject": args.subject,
                          "message": "a commit subject must be one non-empty line"},
              "error: a commit subject must be one non-empty line")
+        return 1
+    # --commit is the sha form of the SAME anchor, meant to be called AFTER the commit that
+    # implements the task already exists — the CLI never invents or looks up a sha, it only
+    # records the one the caller already has. Same rule as --subject: meaningful only on the
+    # transition that says the task is done, so it goes with --check too. It is additive,
+    # not a replacement: a caller may still pass --subject alone, exactly as before.
+    if args.commit and not args.check:
+        emit(args.json, {"ok": False, "code": "sp-commit-without-check",
+                         "message": "--commit records the sha of the commit that implements "
+                                    "a task, so it goes with --check"},
+             "error: --commit goes with --check")
+        return 1
+    if args.commit is not None and not COMMIT_SHA_RE.match(args.commit.strip()):
+        emit(args.json, {"ok": False, "code": "sp-bad-commit-sha", "commit": args.commit,
+                         "message": "--commit takes a git sha (hex, 7-40 characters), not "
+                                    "free text"},
+             "error: --commit takes a git sha (hex, 7-40 characters), not free text")
         return 1
     if args.block and not args.reason:
         emit(args.json, {"ok": False, "code": "sp-no-reason",
@@ -2913,31 +2945,55 @@ def cmd_task(args, root: str) -> int:
         body = f"{body} — blocked: {args.reason.strip()}"
     lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
 
-    # Upsert the `subject:` metadata line — replace one that is already there, otherwise
-    # append it after the task's last metadata line (or right under the checkbox).
+    # Upsert the `subject:`/`commit:` metadata lines — replace one that is already there,
+    # otherwise append it after the task's last metadata line (or right under the
+    # checkbox). The two anchors are independent: passing one never disturbs an existing
+    # line for the other, and both may be written in the same call while a spec transitions
+    # from the subject anchor to the sha one. New lines are inserted together in ONE slice
+    # so inserting one never shifts the position computed for the other.
     subject = None
+    commit = None
+    new_entries: list[str] = []
     if args.subject:
         subject = args.subject.strip()
         entry = f"{t['metaIndent']}subject: {subject}\n"
         if t["subjectLineno"] is not None:
             lines[t["subjectLineno"]] = entry
         else:
-            lines.insert(t["metaInsertAt"], entry)
-    elif args.uncheck:
-        # Drop whichever anchor the line carries — `subject:` now, `commit:` on a spec
-        # written before the anchor changed form. Highest offset first, so deleting one
-        # cannot shift the index of the other.
+            new_entries.append(entry)
+    if args.commit:
+        commit = args.commit.strip()
+        entry = f"{t['metaIndent']}commit: {commit}\n"
+        if t["commitLineno"] is not None:
+            lines[t["commitLineno"]] = entry
+        else:
+            new_entries.append(entry)
+    if new_entries:
+        lines[t["metaInsertAt"]:t["metaInsertAt"]] = new_entries
+    if not args.subject and not args.commit and args.uncheck:
+        # Drop whichever anchor the line carries — `subject:`, `commit:` written by
+        # `--commit`, or the legacy `commit:` on a spec written before either form applied
+        # to it. Highest offset first, so deleting one cannot shift the index of the other.
         for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
                            if o is not None), reverse=True):
             del lines[off]
+    # THE FAILURE-REPORTING CONTRACT: this call is the one that can fail out from under a
+    # tick that already looks applied to `lines`. `FilesBackend` either writes the file or
+    # raises. `GitHubBackend` pushes the same edited task block into the task's own
+    # sub-issue (`_sync_tasks`, inside `write_spec`) and raises `GhRefusal` — never swallowed
+    # — the instant `gh api` fails, e.g. on a network error. `main()` is the one place that
+    # exception becomes an exit code and an `ok: false` JSON body; nothing here catches it
+    # and nothing here prints a success message before this line returns.
     backend.write_spec(info, "".join(lines))
 
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
+    anchor_lines = ((f"\n  subject: {subject}" if subject else "") +
+                    (f"\n  commit: {commit}" if commit else ""))
     emit(args.json,
          {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
-          "state": mark, "text": body, "subject": subject,
+          "state": mark, "text": body, "subject": subject, "commit": commit,
           "reason": args.reason if args.block else None},
-         f"task {ident} {verb}: {body}" + (f"\n  subject: {subject}" if subject else ""))
+         f"task {ident} {verb}: {body}" + anchor_lines)
     return 0
 
 
@@ -5001,6 +5057,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")
+    sp.add_argument("--commit", help="the sha of the commit that implements the task, "
+                                     "recorded as a `commit:` metadata line — call it AFTER "
+                                     "the commit exists (goes with --check; additive to "
+                                     "--subject, not a replacement for it)")
 
     sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
                                               "ranked candidate list"))

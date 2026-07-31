@@ -380,9 +380,10 @@ trabalho em que se está.
       corpo; decidir e registrar per ## Open Decisions como os sete records se serializam
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 4.2 serializacao hibrida — tasks como sub-issues
-- [ ] 4.3 Anchor por sha: o commit acontece primeiro e a CLI grava o sha real na sub-issue; um tick
+- [x] 4.3 Anchor por sha: o commit acontece primeiro e a CLI grava o sha real na sub-issue; um tick
       que falha é reportado, nunca deixado implícito
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 4.3 anchor por sha — task --commit aditivo, falha reportada nunca implicita
 - [ ] 4.4 Reescrever docs/standards/workflows/task-execution.md §One commit per task para o anchor
       por sha, preservando por que o subject foi escolhido antes
       verify: python3 assets/hooks/okf-validate.py docs
@@ -434,3 +435,5 @@ trabalho em que se está.
 - cmd_promote ainda checa destino ocupado com os.path.exists sobre caminho derivado do root — no backend github a checagem sempre passa (inocua, sem sentido). Precisa virar pergunta ao backend.
 - O campo root do JSON emite o root declarado mesmo com backend externo, onde nao significa nada (list mente 'no specs under /.../specs' quando na verdade consultou o GitHub). Mesma familia da discovery ja registrada sobre repo migrado.
 - Custo de rede do backend github: cada invocacao re-lista todas as issues, sem cache entre processos. Um ciclo de 12 comandos gastou 33 chamadas ao gh. Medir na task 4.6 se vira gargalo.
+- task --commit e aditivo: os comandos ainda tickam antes de commitar com --subject, como hoje. Trocar a ordem (commit primeiro, tick depois) e reescrever os standards para preferir sha e trabalho das tasks 4.4/4.5 e possivelmente da secao 5 — nao foi feito na 4.3.
+- TEMPLATE_SPEC (embutido em specs.py) e a guidance comment do template ainda so documentam --subject como anchor. Precisam de --commit mencionado quando os standards forem reescritos, sem quebrar o lockstep byte-a-byte com assets/specs/templates/spec.md.
