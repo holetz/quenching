@@ -419,8 +419,9 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 - [x] 4.3 Reescrever o parágrafo do refresh em `spec-driven.md` §The executor contract
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
       subject: plan/cut-specs-execute-turns: 4.3 spec-driven.md §The executor contract na cadência nova
-- [ ] 4.4 Reescrever a remediação de `sp-handoff-empty` em `conformance.md`
+- [x] 4.4 Reescrever a remediação de `sp-handoff-empty` em `conformance.md`
       files: plugins/quenching/assets/references/specs-align/conformance.md
+      subject: plan/cut-specs-execute-turns: 4.4 a remediação de sp-handoff-empty na cadência nova
 - [ ] 4.5 Provar com um check multilinha que a frase antiga não sobreviveu em nenhum dos quatro arquivos
       verify: python3 -c "import re,pathlib,sys;p=['plugins/quenching/commands/specs/execute.md','plugins/quenching/assets/references/specs-develop/artifacts.md','plugins/quenching/assets/references/specs-develop/spec-driven.md','plugins/quenching/assets/references/specs-align/conformance.md'];sys.exit(1 if any(re.search(r'after\s+each\s+committed\s+task',pathlib.Path(f).read_text(),re.S|re.I) for f in p) else 0)"
 
