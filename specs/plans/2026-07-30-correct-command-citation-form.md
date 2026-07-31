@@ -2,6 +2,8 @@
 slug: correct-command-citation-form
 title: Corrigir a forma de citação de comando — bare versus prefixada pelo plugin
 verification: per-section
+approved: {date: 2026-07-31}
+branch: {base: main, work: claude/correct-command-citation-form-044087}
 ---
 
 # Corrigir a forma de citação de comando — bare versus prefixada pelo plugin
@@ -287,9 +289,10 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 
 ### 1. A regra
 
-- [ ] 1.1 Trocar a frase de duas formas de `align.md:237` pelas três formas, com a condição de cada uma
+- [x] 1.1 Trocar a frase de duas formas de `align.md:237` pelas três formas, com a condição de cada uma
       files: plugins/quenching/commands/docs/align.md
       verify: grep -c 'quenching:docs:harness' plugins/quenching/commands/docs/align.md
+      subject: plan/correct-command-citation-form: 1.1 três formas de citação em align.md
 - [ ] 1.2 Emendar `docs/standards/naming/command-surface.md` §The path IS the identity com as três formas, mantendo `authority: current`
       files: docs/standards/naming/command-surface.md
       pattern: docs/standards/naming/command-surface.md
