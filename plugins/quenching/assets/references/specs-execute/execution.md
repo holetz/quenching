@@ -159,9 +159,9 @@ full-diff read. The whole-branch review runs once, and it belongs to `/specs:con
 
 ## The commit — one per task, carrying its own ticked box
 
-After the self-review passes, **decide the subject, tick the box with it, then commit**. That order
-is the point: the subject is known before the commit exists, so the checkbox travels *inside* the
-commit that implements it.
+After the self-review passes, **decide the subject, then verify, tick the box with it, commit, and
+assert the subject survived**. That order is the point: the subject is known before the commit
+exists, so the checkbox travels *inside* the commit that implements it.
 
 Run it as **one chained call**, gate included:
 
