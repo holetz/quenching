@@ -456,8 +456,9 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 
 ### 6. Fecho
 
-- [ ] 6.1 Rodar a bateria do CLAUDE.md — os três `selftest`, `okf-validate.py` sobre `assets/docs` e o `docs/` do repo, `skills.py doctor` e `lint`
+- [x] 6.1 Rodar a bateria do CLAUDE.md — os três `selftest`, `okf-validate.py` sobre `assets/docs` e o `docs/` do repo, `skills.py doctor` e `lint`
       verify: cd plugins/quenching && python3 assets/bin/specs.py selftest && python3 assets/bin/skills.py selftest && python3 assets/hooks/okf-validate.py selftest && python3 assets/hooks/okf-validate.py assets/docs && python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/cut-specs-execute-turns: 6.1 a bateria do CLAUDE.md verde
 - [ ] 6.2 Medir com `session.py` o par cru do baseline da run `985b372b` e registrá-lo em `## Validation`
       files: specs/plans/2026-07-30-cut-specs-execute-turns.md
 
