@@ -112,6 +112,14 @@ COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
 HOOKS_DIR = "hooks"
 
+# The prose checks reach `assets/references/**` as well as `commands/**`, decided by count:
+# of the 519 bare command citations this surface carried on 2026-07-30, 183 lived under
+# `assets/references/`, so a scope stopping at `commands/` leaves 35% of the prose with no
+# net — and a reference is read by the same session that reads the body citing it, so a
+# body and its reference disagreeing is exactly the drift worth catching. A surface with no
+# such directory (every target repo's `.claude/`) contributes nothing and reports nothing.
+REFERENCES_DIR = os.path.join("assets", "references")
+
 SURFACE_MISSING = "—"
 
 FRONTMATTER_FENCE = "---"
@@ -629,6 +637,27 @@ def discover_commands(commands_dir: str) -> list[dict]:
     return sorted(out, key=lambda c: c["command"])
 
 
+def discover_references(references_dir: str) -> list[dict]:
+    """Every `<references_dir>/**/*.md` — the shared procedure a command body cites by
+    absolute path instead of restating. These are NOT entry points and carry no
+    invocation: they are prose the prose checks read, nothing more."""
+    if not os.path.isdir(references_dir):
+        return []
+    out = []
+    for dirpath, _dirnames, filenames in os.walk(references_dir):
+        for fn in sorted(filenames):
+            if not fn.endswith(".md"):
+                continue
+            path = os.path.join(dirpath, fn)
+            text = read_text(path) or ""
+            out.append({
+                "path": path,
+                "relpath": rel(path, references_dir),
+                "body": body_after_frontmatter(text),
+            })
+    return sorted(out, key=lambda r: r["relpath"])
+
+
 def load_surface(root: str) -> dict:
     return {
         "root": root,
@@ -901,24 +930,29 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
     return out
 
 
-def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict]]:
-    """(base, commands). Accepts a single command file, a commands/ directory, or a
-    surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
-    all mean what they read like."""
+def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict], list[dict]]:
+    """(base, commands, references). Accepts a single command file, a commands/ directory,
+    or a surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
+    all mean what they read like.
+
+    The references ride along only when the base IS a surface root: linting one file, or a
+    bare `commands/` directory, is a scope the caller named and this never widens it."""
     if not path_arg:
-        return root, discover_commands(os.path.join(root, COMMANDS_DIR))
+        return (root, discover_commands(os.path.join(root, COMMANDS_DIR)),
+                discover_references(os.path.join(root, REFERENCES_DIR)))
     target = os.path.abspath(path_arg)
     if os.path.isfile(target):
         parent = os.path.dirname(target)
         return parent, [c for c in discover_commands(parent)
-                        if os.path.abspath(c["path"]) == target]
+                        if os.path.abspath(c["path"]) == target], []
     if os.path.isdir(os.path.join(target, COMMANDS_DIR)):
-        return target, discover_commands(os.path.join(target, COMMANDS_DIR))
-    return target, discover_commands(target)
+        return (target, discover_commands(os.path.join(target, COMMANDS_DIR)),
+                discover_references(os.path.join(target, REFERENCES_DIR)))
+    return target, discover_commands(target), []
 
 
 def cmd_lint(args, root: str) -> int:
-    base, commands = resolve_lint_targets(args.path, root)
+    base, commands, references = resolve_lint_targets(args.path, root)
     if not commands:
         return report_findings(args, f"skills lint — {base}", {"root": base, "commandCount": 0},
                                [finding("sk-no-commands", "error",
@@ -927,8 +961,11 @@ def cmd_lint(args, root: str) -> int:
     findings: list[dict] = []
     for cmd in commands:
         findings.extend(lint_command(cmd, base))
-    return report_findings(args, f"skills lint — {base} ({plural(len(commands), 'command')})",
-                           {"root": base, "commandCount": len(commands)}, findings)
+    header = f"skills lint — {base} ({plural(len(commands), 'command')}"
+    header += f", {plural(len(references), 'reference')})" if references else ")"
+    return report_findings(args, header,
+                           {"root": base, "commandCount": len(commands),
+                            "referenceCount": len(references)}, findings)
 
 
 register("lint", lambda sp: sp.add_argument(
