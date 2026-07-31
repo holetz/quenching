@@ -60,8 +60,13 @@ SUBCOMMANDS
                   per numbered step, unscoped `Bash`, invocation-control coherence, and
                   the execution profile's decidable slice (`sk-fork-gate`,
                   `sk-profile-value`).
+                  Plus, on a surface carrying `.claude-plugin/plugin.json`, the citation
+                  form (`sk-bare-citation`): a plugin's commands are namespaced, so a
+                  bare `/front:verb` in prose resolves nowhere. Read from the body
+                  ALONE, which is what keeps a `description:` out of it.
                   `path` accepts a command file, a commands/ directory, or a surface
-                  root; it defaults to the resolved surface.
+                  root; it defaults to the resolved surface. A surface root also brings
+                  in `assets/references/**` — prose the same session reads.
   doctor          the surface's shape: every command carries a non-empty `description`,
                   no two resolve to the same `/` path, and every path segment is
                   kebab-case. That invariant is what replaced the bijection — with one
