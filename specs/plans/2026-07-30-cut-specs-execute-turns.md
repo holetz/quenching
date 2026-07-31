@@ -449,9 +449,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
       subject: plan/cut-specs-execute-turns: 5.1 constraint: na gramática de metadata, e o despacho exaustivo
-- [ ] 5.2 Documentar `constraint:` (inerte, com o motivo) e a regra de escopo de `verify:` em `artifacts.md` §Execution metadata
+- [x] 5.2 Documentar `constraint:` (inerte, com o motivo) e a regra de escopo de `verify:` em `artifacts.md` §Execution metadata
       files: plugins/quenching/assets/references/specs-develop/artifacts.md
       verify: python3 -c "import re,pathlib,sys;sys.exit(0 if re.search(r'`constraint:`',pathlib.Path('plugins/quenching/assets/references/specs-develop/artifacts.md').read_text(),re.S) else 1)"
+      subject: plan/cut-specs-execute-turns: 5.2 constraint: e o escopo de verify: em artifacts.md
 
 ### 6. Fecho
 
