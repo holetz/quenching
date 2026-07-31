@@ -1,6 +1,6 @@
 # Canonical taxonomy — the tree, homes, `type` vocabulary, boundaries
 
-The single source of the tree `/docs:align` installs and `/docs:add` files into. Every repo
+The single source of the tree `/quenching:docs:align` installs and `/quenching:docs:add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
 (→ [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md)).
 
@@ -74,7 +74,7 @@ survived an earlier alignment.
   **symbols**, `naming/` governs **data**.
 - **`vision/`** — direction segmented by area (`<area>.md`, `type: vision`), **no deadline**.
   A raw unit of work toward it → a spec in `specs/plans/` (**outside** this OKF bundle —
-  see `/specs:create`); what became reality → `standards/`.
+  see `/quenching:specs:create`); what became reality → `standards/`.
 - **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
   home rendered as the product's documentation site (`type: documentation`). Four fixed
   subfolders: `getting-started/` (tutorial), `how-to/` (task recipes — absorbs the former
@@ -82,7 +82,7 @@ survived an earlier alignment.
   Boundary: a published-site page → here; internal team understanding → `knowledge/`; a
   current contract → `standards/`. `audience: human`, `authority: current` by default. The
   plugin ships a mkdocs-material site setup (config + awesome-pages nav) that
-  `/docs:align` installs at the repo root.
+  `/quenching:docs:align` installs at the repo root.
 - **`knowledge/`** — generic, cross-cutting understanding the team holds (`type: knowledge`):
   domain concepts, glossaries, mental models, explanations, learnings — the Diátaxis
   **explanation** quadrant raised to a home, subject subfolders welcome. Non-binding and
@@ -92,8 +92,8 @@ survived an earlier alignment.
   `standards/` and leaves. Ships **one fixed file** — `knowledge/glossary.md`, the repo's A–Z
   term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
-  unlinked entry is a valid permanent state). `/docs:align` installs the seed;
-  `/docs:define` enriches one term on demand, `/docs:glossary-backfill` backfills the
+  unlinked entry is a valid permanent state). `/quenching:docs:align` installs the seed;
+  `/quenching:docs:define` enriches one term on demand, `/quenching:docs:glossary-backfill` backfills the
   whole bundle in one sweep, and the other knowledge skills enrich it as a tail step.
 - **`reference/`** — external facts we consume (`type: reference`); a regulation's PDF lives
   here via a **sidecar**, while *our* implementation of it lives in `standards/`.

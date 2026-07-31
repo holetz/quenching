@@ -1,8 +1,8 @@
 # Memory routing — from a memory file to an OKF home
 
-How `/docs:import-memory` turns each project-memory file into a concept doc in the right
+How `/quenching:docs:import-memory` turns each project-memory file into a concept doc in the right
 OKF home. **Content decides the home**; the memory's `metadata.type` is only a hint. Once the
-home is chosen, the concept is filed exactly as `/docs:add` would — see
+home is chosen, the concept is filed exactly as `/quenching:docs:add` would — see
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
 [docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md) for the
@@ -30,7 +30,7 @@ shell's mount view — with every `\`, `/`, `:` and `.` replaced by `-`:
 The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable, so
 match case-insensitively. This is why the path is resolved in Python rather than from `pwd`, which
 under Windows Git Bash reports `/c/Users/…` and encodes to a directory that does not exist —
-`/docs:import-memory` §1 owns the resolver.
+`/quenching:docs:import-memory` §1 owns the resolver.
 
 ```yaml
 ---

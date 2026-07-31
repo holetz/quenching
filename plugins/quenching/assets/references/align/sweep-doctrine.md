@@ -1,7 +1,7 @@
 # The sweep contract — shared by every align
 
-The plugin has **three** aligns, one per front: `/docs:align` (`docs/`), `/specs:align`
-(`specs/`), and `/skill:align` (`.claude/`) — plus `/align`, which conducts all three. They
+The plugin has **three** aligns, one per front: `/quenching:docs:align` (`docs/`), `/quenching:specs:align`
+(`specs/`), and `/quenching:skill:align` (`.claude/`) — plus `/align`, which conducts all three. They
 converge different artifacts, but they are the *same kind of operation* — a probe, a read-only
 inventory, ONE plan, one OK, apply, verify — and everything about **how** that operation behaves is
 identical across them. So it lives here, once, and each align cites this file instead of restating
@@ -152,9 +152,9 @@ beats a clean-looking run that quietly dropped something.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `docs/` | `/docs:align` | `okf-validate.py <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `specs/` | `/specs:align` | `specs.py doctor` + `specs.py validate` — the whole condition; the OKF validator is never pointed at `specs/` |
-| `.claude/` | `/skill:align` | `skills.py lint` + `skills.py doctor`, plus `skills.py registry reindex` reporting `changed: false` for the zone |
+| `docs/` | `/quenching:docs:align` | `okf-validate.py <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `specs/` | `/quenching:specs:align` | `specs.py doctor` + `specs.py validate` — the whole condition; the OKF validator is never pointed at `specs/` |
+| `.claude/` | `/quenching:skill:align` | `skills.py lint` + `skills.py doctor`, plus `skills.py registry reindex` reporting `changed: false` for the zone |
 
 Each front's verifier is now a **program**, and that is the point: a rule whose only check is a
 sentence decays, because nothing fails when it is broken. All three read the same contract —

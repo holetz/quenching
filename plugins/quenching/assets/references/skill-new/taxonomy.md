@@ -1,8 +1,8 @@
 # The automation taxonomy — one axis, canonical paths, one file per entry point
 
 The classification, naming, placement, and registry rules for a target repo's **local
-automation surface** (`.claude/commands/`). `/skill:new` applies
-them per mint/edit; `/skill:align` applies them to the whole surface. In a target
+automation surface** (`.claude/commands/`). `/quenching:skill:new` applies
+them per mint/edit; `/quenching:skill:align` applies them to the whole surface. In a target
 repo the rule itself lives at `docs/standards/automation/skills.md` (stamped from
 `assets/templates/automation/skills-standard.md`); this file is the plugin-side owner both
 skills load, and the standard the target carries says the same thing.
@@ -93,8 +93,8 @@ What this file still owns, because no tool decides it:
   and only that: the zone lists the repo's **own** surface. Commands contributed by
   installed plugins (`/specs:*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
-- **Who may run the regeneration.** `/skill:new` (in its OKF tail) and
-  `/skill:align` (in its verify step). Neither writes between the markers by
+- **Who may run the regeneration.** `/quenching:skill:new` (in its OKF tail) and
+  `/quenching:skill:align` (in its verify step). Neither writes between the markers by
   hand, and neither composes the table itself — a skill that generates a derived table
   and then diffs it against its own source is one reader checking its own arithmetic,
   which is the failure this tool exists to remove. Both end their run on a second

@@ -7,9 +7,9 @@ lives here, once, and every align and every stage command cites this file instea
 
 | Align | Runs | Loops? |
 | --- | --- | --- |
-| `/docs:align` | its own structural pass, then memory · harness · glossary | yes, to a fixpoint |
-| `/specs:align` | its own structural pass, then conclude · triage | yes, to a fixpoint |
-| `/skill:align` | the migration, then the read-only doctrine audit | yes (converges in 1–2 passes by nature) |
+| `/quenching:docs:align` | its own structural pass, then memory · harness · glossary | yes, to a fixpoint |
+| `/quenching:specs:align` | its own structural pass, then conclude · triage | yes, to a fixpoint |
+| `/quenching:skill:align` | the migration, then the read-only doctrine audit | yes (converges in 1–2 passes by nature) |
 | `/align` | the three front aligns above | yes, across fronts |
 
 This file is **self-contained**: an align reads it and needs nothing else. Each front's own
@@ -36,8 +36,8 @@ Read "the cycle" below as "the invoking align" — nothing in this contract chan
 An align asks for ONE human confirmation, at run start, that authorizes the entire run — up to
 the pass cap or convergence. This section is that contract's single normative home. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
-it: the `docs/` stages (`/docs:import-memory`, `/docs:harness`, `/docs:glossary-backfill`), the
-`specs/` stages (`/specs:conclude`, `/specs:triage`), and the three front aligns when `/align`
+it: the `docs/` stages (`/quenching:docs:import-memory`, `/quenching:docs:harness`, `/quenching:docs:glossary-backfill`), the
+`specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), and the three front aligns when `/align`
 invokes them.
 
 **What the authorization covers** — every routine write a stage performs: frontmatter stamps,
@@ -111,27 +111,27 @@ WARN — exit 0 alone does not prove them clear, read the findings); `specs.py d
 ## Per-item commands are stage tools, not stages
 
 A command that acts on **ONE item a human states** is never a loop stage, because a conducted pass
-has **no fresh human input**: `/docs:add`, `/docs:learn`, `/docs:define`,
-`/docs:import`, `/skill:new`, `/specs:create`, `/specs:develop`,
-`/specs:execute`, `/specs:conclude`.
+has **no fresh human input**: `/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`,
+`/quenching:docs:import`, `/quenching:skill:new`, `/quenching:specs:create`, `/quenching:specs:develop`,
+`/quenching:specs:execute`, `/quenching:specs:conclude`.
 
-`/specs:conclude` is the sharpest case: it is not merely un-stageable for lack of input,
+`/quenching:specs:conclude` is the sharpest case: it is not merely un-stageable for lack of input,
 it is un-stageable **in principle**. Abandonment is a judgment no repo state implies — a change
 untouched for a year may be waiting on a vendor. An align that inferred it from staleness
 would be fabricating a decision, which is exactly what this boundary exists to prevent.
 
-`/specs:status` is not a stage either, for the opposite reason: it writes nothing, so it can
+`/quenching:specs:status` is not a stage either, for the opposite reason: it writes nothing, so it can
 never close a finding. Its place is **before** a conducted run, as the preview of what the OK
 would authorize — the assessment an align performs internally, made visible on its own.
 
 They enter a run only **indirectly**, as the tools a sweep stage delegates to
-(`/docs:harness` MOVEs a durable fact via `/docs:add`). When the assessment finds a gap
+(`/quenching:docs:harness` MOVEs a durable fact via `/quenching:docs:add`). When the assessment finds a gap
 only a per-item command could fill, the align **names the gap and the command that would close
 it** in its report — the user then invokes that command with the missing input, and the next run
 picks the work up. This is the plugin's **anti-fabrication boundary**: an align closes only what a
 sweep can close deterministically from what the repo already contains.
 
 The same split runs through the whole plugin: the whole-bundle glossary sweep
-(`/docs:glossary-backfill`) IS a stage, the single-term capture (`/docs:define`) is not;
-the whole-front ranking sweep (`/specs:triage`) IS a stage, the single-spec capture
-(`/specs:create`) is not.
+(`/quenching:docs:glossary-backfill`) IS a stage, the single-term capture (`/quenching:docs:define`) is not;
+the whole-front ranking sweep (`/quenching:specs:triage`) IS a stage, the single-spec capture
+(`/quenching:specs:create`) is not.

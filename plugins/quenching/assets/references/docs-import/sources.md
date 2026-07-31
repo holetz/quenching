@@ -1,6 +1,6 @@
 # Sources — scoping, bounded ingestion, unit extraction, attribution, dedup
 
-The ingestion-specific detail `/docs:import` owns. The **per-doc** procedure (classify →
+The ingestion-specific detail `/quenching:docs:import` owns. The **per-doc** procedure (classify →
 stamp → index → log → glossary → self-check) is **not** here — it lives once in
 [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), which
 this skill cites. This file covers only how a *source* becomes the list of units that
@@ -13,9 +13,9 @@ procedure then mints.
 - **URLs** — fetched with `WebFetch`. A doc page, an API reference, a spec, an article.
   Anchor each unit to the URL (+ heading/anchor when addressable).
 
-Out of scope (route elsewhere): ONE fact the human states → `/docs:add`; the project's
-`~/.claude` memory → `/docs:import-memory`; installing/aligning the tree →
-`/docs:align`.
+Out of scope (route elsewhere): ONE fact the human states → `/quenching:docs:add`; the project's
+`~/.claude` memory → `/quenching:docs:import-memory`; installing/aligning the tree →
+`/quenching:docs:align`.
 
 ## Bounded ingestion (discipline, not code)
 
@@ -67,7 +67,7 @@ questions** — one written to be searched, one written to be read:
   rule. A bundle's own authored docs already use it that way, and importing must not overload one
   key with two meanings.
 
-**Only `/docs:import` writes `source_uri:`.** No other command mints it, infers it, or backfills
+**Only `/quenching:docs:import` writes `source_uri:`.** No other command mints it, infers it, or backfills
 it, and a doc with no external origin simply has no such key — inventing one fabricates a
 provenance that never existed. The shared frontmatter mold in
 [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) deliberately
@@ -114,5 +114,5 @@ returns **compact unit candidates** — `{home, type, path, one-line, source-anc
 full bodies. The orchestrator merges the candidate lists, runs the cross-slice dedup above,
 and builds the single plan. Extraction/executor sub-agents may run on a **cheap
 model/effort**: enrich deletes nothing, so a misclassification only misfiles a doc (a
-correctable move), unlike `/docs:import-memory` where a misclassification deletes a
+correctable move), unlike `/quenching:docs:import-memory` where a misclassification deletes a
 memory. See the model policy in [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model).
