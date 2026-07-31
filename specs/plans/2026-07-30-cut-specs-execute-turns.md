@@ -353,7 +353,19 @@ custo de o campo poder ficar sem consumidor, registrado em `## Risks`.
 
 ## Handoff
 
-Nada foi construído; sem `branch`, sem `priority`.
+Construído até 4.5. Branch `plan/cut-specs-execute-turns`, cortada de
+`claude/quenching-specs-execute-turns-4ff7e4` (uma worktree do harness, **não** `main`) — é o que o
+record `branch` carimba, e é de lá que o merge sai.
+
+Estado que nada deriva:
+
+- **O `verify:` da task 4.5 foi fortalecido em linha**, com autorização do humano nesta run. O
+  declarado tinha falso negativo (`**` inline entre as palavras); o novo normaliza marcação e
+  whitespace, provado a pegar 4 de 4 contra `HEAD~5` e a sair 0 contra a árvore atual. A descoberta
+  registra o mecanismo.
+- **A run está usando a cadência nova de `## Handoff`** (os quatro eventos), escrita na task 1.1 —
+  o corpo que a sessão carrega em memória é o antigo, porque o registro da superfície é montado no
+  início da sessão.
 
 Convenções em vigor:
 
@@ -422,8 +434,9 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
 - [x] 4.4 Reescrever a remediação de `sp-handoff-empty` em `conformance.md`
       files: plugins/quenching/assets/references/specs-align/conformance.md
       subject: plan/cut-specs-execute-turns: 4.4 a remediação de sp-handoff-empty na cadência nova
-- [ ] 4.5 Provar com um check multilinha que a frase antiga não sobreviveu em nenhum dos quatro arquivos
-      verify: python3 -c "import re,pathlib,sys;p=['plugins/quenching/commands/specs/execute.md','plugins/quenching/assets/references/specs-develop/artifacts.md','plugins/quenching/assets/references/specs-develop/spec-driven.md','plugins/quenching/assets/references/specs-align/conformance.md'];sys.exit(1 if any(re.search(r'after\s+each\s+committed\s+task',pathlib.Path(f).read_text(),re.S|re.I) for f in p) else 0)"
+- [x] 4.5 Provar, com um check que normaliza marcação inline e whitespace, que a frase antiga não sobreviveu em nenhum dos quatro arquivos
+      verify: python3 -c "import re,pathlib,sys;p=['plugins/quenching/commands/specs/execute.md','plugins/quenching/assets/references/specs-develop/artifacts.md','plugins/quenching/assets/references/specs-develop/spec-driven.md','plugins/quenching/assets/references/specs-align/conformance.md'];n=lambda t:re.sub(r'\s+',' ',re.sub(r'[*_\x60]','',t));sys.exit(1 if any(re.search(r'after each committed task',n(pathlib.Path(f).read_text()),re.I) for f in p) else 0)"
+      subject: plan/cut-specs-execute-turns: 4.5 o check da frase antiga, fortalecido contra marcação inline
 
 ### 5. `constraint:` e o escopo de `verify:` nas referências
 
@@ -440,3 +453,7 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
       verify: cd plugins/quenching && python3 assets/bin/specs.py selftest && python3 assets/bin/skills.py selftest && python3 assets/hooks/okf-validate.py selftest && python3 assets/hooks/okf-validate.py assets/docs && python3 assets/bin/skills.py --root . doctor --json
 - [ ] 6.2 Medir com `session.py` o par cru do baseline da run `985b372b` e registrá-lo em `## Validation`
       files: specs/plans/2026-07-30-cut-specs-execute-turns.md
+
+## Discoveries
+
+- O verify: da task 4.5 tem falso negativo: em artifacts.md a frase era 'after **each committed\ntask**' e o regex 'after\s+each\s+committed\s+task' nao casa por causa do ** inline. Provado contra HEAD~3: frase presente, regex nao encontra. O check passaria com 1 dos 4 alvos intocado — o mesmo defeito que task-execution.md §A verify: that cannot fail proves nothing ja registra, agora com marcacao inline em vez de quebra de linha. Um check sobre prosa precisa normalizar marcacao, nao so whitespace.
