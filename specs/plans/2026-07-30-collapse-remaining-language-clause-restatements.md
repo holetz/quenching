@@ -354,7 +354,7 @@ e não com a continuação `files:`.
   files: `plugins/quenching/assets/README.md`, e os demais da tabela de `## Design` que a varredura condenar
   verify: `grep -n 'audience: human' plugins/quenching/assets/README.md` não devolve linha sobre a cláusula da língua, e o grep do censo devolve exatamente quatorze locais
   subject: plan/collapse-remaining-language-clause-restatements: 5 Varrer os dez lembretes contra o guarda-corpo
-- [ ] 6 Sincronizar `specs/QUENCHING.md` a partir do mold já anotado pela task 3 — a cópia instalada
+- [x] 6 Sincronizar `specs/QUENCHING.md` a partir do mold já anotado pela task 3 — a cópia instalada
   neste repositório, hoje atrás em treze headings contra quatorze.
   files: `specs/QUENCHING.md`
   verify: `grep -n 'Fourteen canonical headings' specs/QUENCHING.md` → 1 acerto, e a nota da task 3 presente
