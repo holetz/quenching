@@ -7,7 +7,7 @@ tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-07-31
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31)
 maintainer: quenching
 ---
 
@@ -71,6 +71,16 @@ lived in files where the phrase wraps across a line break, and `grep` matches wi
 against the pre-fix tree the pattern found **1 of 3**, and the task would have ticked green with two
 of its three targets untouched. Replaced with a multiline check, proven to exit 1 before the fix and
 0 after.
+
+The line break is not the only way this happens, and the second way is worse because the phrase
+looks contiguous. A check for `after\s+each\s+committed\s+task` found **3 of its 4** targets: in the
+fourth the phrase read `after **each committed task**`, and the inline `**` sits between two words
+that `\s+` expects to be adjacent. Same failure, no visible wrap. A third instance turned up in the
+same run, inside a check written to *review* the first two.
+
+**A check over prose normalizes before it matches** — strip `*`, `_` and backticks, collapse
+whitespace, then look for the phrase. Read the whole file, never a line at a time. A matcher shaped
+like the prose as it renders will keep missing the prose as it is written.
 
 This is the sibling of [../quality/parse-honesty.md](../quality/parse-honesty.md) from the other
 side: there, a tool misread its input and reported a confident finding about a string it never held.

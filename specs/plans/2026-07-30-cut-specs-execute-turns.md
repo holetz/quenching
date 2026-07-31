@@ -10,6 +10,8 @@ approved:
 branch:
   base: claude/quenching-specs-execute-turns-4ff7e4
   work: plan/cut-specs-execute-turns
+reviewed:
+  date: 2026-07-31
 ---
 
 # Cut /specs:execute's turn count through body wording
