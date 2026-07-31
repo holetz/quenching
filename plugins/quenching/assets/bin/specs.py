@@ -943,26 +943,54 @@ def find_specs_root(root_arg: str | None) -> str:
     return os.path.join(cur, "specs")   # default (created by `new`)
 
 
-CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("worktreeSetup",)
+CONFIG_FILE = os.path.join(".claude", "quenching.json")
+LEGACY_CONFIG_FILE = "config.json"
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup")
+BACKENDS = ("files", "github", "azure-boards")
+DEFAULT_BACKEND = "files"
+DEFAULT_SPECS_BRANCH = "specs"
+
+
+def find_repo_root(specs_root: str) -> str:
+    """The target repo's root — where `.claude/` lives.
+
+    Git's own top level first, because it is the answer that survives being invoked from a
+    subdirectory. Falling back to the specs workspace's parent, which is the repo root by
+    construction: `specs/` sits beside `.claude/`, never below it."""
+    top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
+    return top or os.path.dirname(os.path.abspath(specs_root))
 
 
 def load_config(root: str) -> dict:
-    """`specs/config.json` — the ONE declarative parameter a target repo may set, read as
-    data and never as a refusal.
+    """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
+    as a refusal.
 
-    Absent file, absent key, malformed JSON: all yield `worktreeSetup: None`, because a
-    workspace without a setup script is the normal case and must cost nothing. The two
-    ways it can be *wrong* — an unrecognised key, unparseable JSON — come back as fields
-    rather than as findings, so `doctor` decides what they are worth and every other
+    THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `specs/config.json`, at the
+    root of the specs workspace, holding one key. Two things broke that home: a repo whose
+    backend is external may have no `specs/` folder at all, so a config that lives inside
+    the workspace cannot say where the workspace is; and the config stopped being the specs
+    front's alone. `.claude/` is the one directory every front already shares.
+
+    A leftover `specs/config.json` comes back as `legacyPath` rather than being read. Merging
+    the two silently would leave a repo with a config that half-works and no way to tell which
+    file won; `doctor` names it instead.
+
+    Absent file, absent key, malformed JSON: all yield the defaults, because a repo that
+    declares nothing is the normal case and must cost nothing. Every way the file can be
+    *wrong* — an unrecognised key, an unrecognised backend, unparseable JSON — comes back as
+    a field rather than as a finding, so `doctor` decides what each is worth and every other
     caller is spared the question.
 
-    Whether the declared command actually resolves is deliberately NOT answered here:
-    it is judged relative to the freshly created worktree, whose path this tool never
-    learns. `/specs:isolate` runs it there and reports the exit code."""
-    path = os.path.join(root, CONFIG_FILE)
+    Whether `worktreeSetup` actually resolves is deliberately NOT answered here: it is judged
+    relative to the freshly created worktree, whose path this tool never learns.
+    `/specs:isolate` runs it there and reports the exit code."""
+    repo = find_repo_root(root)
+    path = os.path.join(repo, CONFIG_FILE)
+    legacy = os.path.join(root, LEGACY_CONFIG_FILE)
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
-           "unknownKeys": [], "worktreeSetup": None}
+           "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
+           "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
+           "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
     try:
@@ -974,6 +1002,21 @@ def load_config(root: str) -> dict:
         out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
         return out
     out["unknownKeys"] = sorted(k for k in obj if k not in CONFIG_KEYS)
+
+    backend = obj.get("backend")
+    if isinstance(backend, str) and backend.strip():
+        if backend.strip() in BACKENDS:
+            out["backend"] = backend.strip()
+        else:
+            # The declared value is kept, not discarded: `doctor` must be able to quote back
+            # what was typed. The effective backend stays the default, so a typo degrades to
+            # the local one rather than to no backend at all.
+            out["unknownBackend"] = backend.strip()
+
+    branch = obj.get("specsBranch")
+    if isinstance(branch, str) and branch.strip():
+        out["specsBranch"] = branch.strip()
+
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
@@ -2826,6 +2869,22 @@ def cmd_selftest(args, root: str) -> int:
                                  f"is a refusal the human must fix, not a finding to report",
                                  remedy="exit 2 is this tool's refusal code; 1 is findings"))
 
+    # The config defaults, asserted where nothing is declared. A repo that declares nothing
+    # is the overwhelmingly common case, so a loader that started returning `None` for the
+    # backend would break every such repo while every configured one kept working — the
+    # failure shape that goes unnoticed longest. Read against a path that cannot exist, so
+    # it stays self-contained and never depends on this checkout's own config.
+    blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
+    for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
+                      ("worktreeSetup", None), ("present", False)):
+        if blank[key] != want:
+            findings.append(_finding("sp-config-default-drift", "error",
+                                     f"with nothing declared, config `{key}` is "
+                                     f"{blank[key]!r} and not {want!r}",
+                                     key=key,
+                                     remedy="an absent .claude/quenching.json must yield the "
+                                            "documented defaults, never a null backend"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
@@ -2904,10 +2963,14 @@ def cmd_config(args, root: str) -> int:
     """The workspace's declared parameters, as data. Exit 0 even with nothing declared —
     a missing config is the normal case, and `doctor` is where a malformed one is judged."""
     cfg = load_config(root)
-    emit(args.json, {"ok": True, "root": root, **cfg},
-         f"specs config — {cfg['path']}\n"
-         + (f"  worktreeSetup: {cfg['worktreeSetup']}" if cfg["worktreeSetup"]
-            else "  worktreeSetup: (none declared)"))
+    lines = [f"quenching config — {cfg['path']}",
+             f"  backend: {cfg['backend']}"
+             + (" (default)" if not cfg["present"] else ""),
+             f"  specsBranch: {cfg['specsBranch']}",
+             "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)")]
+    if cfg["legacyPath"]:
+        lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
+    emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
     return 0
 
 
