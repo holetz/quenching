@@ -4,17 +4,17 @@ argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
 
-# /specs:status — read the front, change nothing
+# /quenching:specs:status — read the front, change nothing
 
 **Input**: `$ARGUMENTS` (optionally a spec slug to detail; omit to read the whole front).
 
 The **read-only** view of the `specs/` front. Every other command here either fixes something
-(`/specs:align`), advances one spec a human named, or hands you the next action
-(`/specs:continue`). This one only looks — and because it looks at exactly what the sweep looks at,
+(`/quenching:specs:align`), advances one spec a human named, or hands you the next action
+(`/quenching:specs:continue`). This one only looks — and because it looks at exactly what the sweep looks at,
 it is also the sweep's honest preview: the plan you would be authorizing, before you authorize it.
 
 **Near-free by construction.** Three tool calls and one glob, whatever the size of the front. It
-reads the same two payloads `/specs:align`'s probe reads, which is what lets the two agree: a
+reads the same two payloads `/quenching:specs:align`'s probe reads, which is what lets the two agree: a
 status view that disagreed with the sweep would be worse than none.
 
 The workspace facts (layout, the fourteen sections, the derived stages, the `specs.py` surface)
@@ -37,7 +37,7 @@ point.
   the command that closes it. Never invent a code, never soften one, and never report a finding the
   sweep would not raise — the whole value is that the two agree.
 - **Distinguish "would fix" from "would only report".** Split the output the way the sweep splits
-  it: what `/specs:align` would fix on one OK, what a cycle command closes, and what neither closes
+  it: what `/quenching:specs:align` would fix on one OK, what a cycle command closes, and what neither closes
   because it needs a human. A reader must be able to tell what a sweep would actually do to their
   repo.
 - **Show the records as the history they are.** `priority`, `refined`, `approved`, `branch`,
@@ -61,9 +61,9 @@ Resolve `specs.py` by the fallback in
 check, saying so in the report), invoked via `python3`/`py`. Resolve the `specs/` root at the repo
 root.
 
-**No root at all** is a complete, valid answer: report `sp-no-workspace` and that `/specs:align`
+**No root at all** is a complete, valid answer: report `sp-no-workspace` and that `/quenching:specs:align`
 would scaffold it. A legacy `openspec/` present instead is `sp-legacy-workspace` — report it and
-that `/specs:align` would migrate it.
+that `/quenching:specs:align` would migrate it.
 **Done when:** the root is resolved or its absence recorded.
 
 ### 2. Collect (read-only)
@@ -86,7 +86,7 @@ Map each observation onto a code from
 [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md), keeping its
 two tables intact — what the sweep **fixes** versus what it only **reports**. Every code is the
 sweep's; this command contributes none of its own. Without an OKF bundle, note once that a legacy
-`openspec/` fold could not complete (main specs have nowhere to land) and mention `/docs:align`.
+`openspec/` fold could not complete (main specs have nowhere to land) and mention `/quenching:docs:align`.
 **Done when:** every observation carries a code and lands in exactly one table.
 
 ### 4. Report
@@ -94,19 +94,19 @@ One report, in this order:
 
 1. **Header** — the resolved root, whether an OKF bundle is present, and the verifier states
    verbatim: `doctor`, `validate`, the listing check. If the probe would have stopped
-   (`/specs:align` §The probe), say so in one line: that is the single most useful fact here.
+   (`/quenching:specs:align` §The probe), say so in one line: that is the single most useful fact here.
 2. **Specs** — a table `Spec | Stage | Tasks | Records | Age | State`, where `Stage` is the derived
    stage the tool reports, `Records` lists which of the seven are set (`—` when none), and `State`
    is one of *ready to conclude* (`sp-spec-complete`), *executing*, *blocked* (`sp-spec-blocked`),
    *stale* (`sp-spec-stale`, with the age), or the stage's own name. Archived specs are a count,
    not a list, unless one carries a non-canonical name or no `outcome:`.
-3. **Would be fixed by `/specs:align`** — the fixable codes with counts, and which of them would be
+3. **Would be fixed by `/quenching:specs:align`** — the fixable codes with counts, and which of them would be
    **code-coupled** (a rename whose blast radius reaches product code) and so would confirm on its
    own. State plainly that this list is what a single OK would authorize.
 4. **Closed by a cycle command** — each with the command that owns it: a spec at 100% →
-   `/specs:conclude`; an unmet gate → `/specs:develop`; open tasks → `/specs:execute`; unresolved
-   `## Discoveries` → `/specs:develop`'s discoveries bank; nothing ranked and nothing in flight →
-   `/specs:triage`.
+   `/quenching:specs:conclude`; an unmet gate → `/quenching:specs:develop`; open tasks → `/quenching:specs:execute`; unresolved
+   `## Discoveries` → `/quenching:specs:develop`'s discoveries bank; nothing ranked and nothing in flight →
+   `/quenching:specs:triage`.
 5. **Closed by neither** — everything needing a human decision, each named with its spec:
    `sp-empty-section` and `sp-stray-heading` (authoring nobody can supply), `sp-no-outcome` (`done`
    and `abandoned` are opposite facts), `sp-impact-uncovered` (add the task or drop the
@@ -115,7 +115,7 @@ One report, in this order:
    mistakes a warning for a blocker.
 
 Close with the single most useful next command for this repo's actual state — usually
-`/specs:continue` — and nothing else. No plan, no offer to fix, no "shall I". A status read ends by
+`/quenching:specs:continue` — and nothing else. No plan, no offer to fix, no "shall I". A status read ends by
 handing control back.
 **Done when:** all five sections are reported and no file has changed.
 
@@ -129,7 +129,7 @@ handing control back.
   would not raise.
 - Never call a spec *done*, a task *finished*, or a stale spec *abandoned* — completion and
   abandonment are stated by a human, never inferred from a checkbox or a date.
-- Never rank, and never propose a `priority` — report what is unranked and name `/specs:triage`.
+- Never rank, and never propose a `priority` — report what is unranked and name `/quenching:specs:triage`.
 - Never treat an absent record as a defect. `approved`, `branch`, `reviewed` and `merge` are absent
   on every spec nobody has built yet, which is most of them.
 - Never fan out sub-agents, and never hand this command file `context: fork` when it is invoked as

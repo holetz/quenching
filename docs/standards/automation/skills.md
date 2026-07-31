@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-07-28
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26)
+source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31)
 maintainer: quenching
 ---
 
@@ -150,7 +150,7 @@ refusal, errors setting the exit code and warnings never doing so.
 
 | Subcommand | Decides |
 | --- | --- |
-| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`) |
+| `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`), and a surface root brings `assets/references/**` into scope alongside `commands/**` |
 | `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated |
 | `selftest` | that a file parked under `commands/` which is not an entry point fires `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |

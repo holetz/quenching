@@ -4,7 +4,7 @@ argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 ---
 
-# /specs:execute — build one spec, one task at a time
+# /quenching:specs:execute — build one spec, one task at a time
 
 **Input**: `$ARGUMENTS` — optionally a spec slug. Omitted → infer from the conversation, or
 auto-select when exactly one spec is under way; vague or ambiguous → you MUST prompt.
@@ -20,7 +20,7 @@ the declared-versus-emergent `docs/` line, and the rules for delegating an execu
 which this body cites and never restates.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
-*revealed*, merging, and archiving belong to `/specs:conclude`. That is not tidiness: the branch
+*revealed*, merging, and archiving belong to `/quenching:specs:conclude`. That is not tidiness: the branch
 review is a different scale of judgment, the merge is a separate irreversible decision needing its
 own confirmation, and a run that dies after task nine must be resumable without redoing tasks one
 through eight.
@@ -28,7 +28,7 @@ through eight.
 The git conventions — the commit subject, the branch name, the `branch` record, the subject as the
 task→commit anchor, and the **read-if-present** rule for a target's `docs/standards/git/**` — live
 in [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md), whose
-command is `/specs:isolate`.
+command is `/quenching:specs:isolate`.
 
 The spec-driven facts — the layout, the fourteen canonical sections, the derived stages, the
 `specs.py` surface, the `specs/`↔`docs/` boundary — live in
@@ -63,7 +63,7 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 precondition. Offer to commit or stash. The human may override; then the first commit carries the
 pre-existing changes and the report says so.
 
-Then **hand isolation to `/specs:isolate`** (the `Skill` tool) rather than reimplementing it: it
+Then **hand isolation to `/quenching:specs:isolate`** (the `Skill` tool) rather than reimplementing it: it
 owns the branch and worktree forms, the `plan/<slug>` name, the `branch: {base, work}` stamp and
 its write-once rule. It is not exclusive to building — a spec may already have been isolated at
 creation or during development, in which case that command reports the existing branch and stamps
@@ -89,15 +89,15 @@ command never has to.
   stamp `approved: {date}` on a yes. **Never refuse over it** — refusing would rebuild the folder
   hop this front removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
-  sections and route to `/specs:develop <slug>`, then stop. The gate refuses nothing itself; the
+  sections and route to `/quenching:specs:develop <slug>`, then stop. The gate refuses nothing itself; the
   tool simply has no task to hand out until it is closed.
-- **Every task already `- [x]`** → say so and offer to chain into `/specs:conclude` (step 7).
+- **Every task already `- [x]`** → say so and offer to chain into `/quenching:specs:conclude` (step 7).
 - **`[!]` blocked tasks** → name them and their reasons up front. They were tried and stopped, not
   skipped.
 
 Mention any open `specs.py validate` warning **once** — `sp-unrefined` (nobody has interrogated
 this spec), `sp-impact-uncovered` (a declared standard no task writes) — and offer
-`/specs:develop` before building. Never gate on it: the ready gate is a floor, not a verdict.
+`/quenching:specs:develop` before building. Never gate on it: the ready gate is a floor, not a verdict.
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
@@ -170,9 +170,9 @@ h. **Assert the subject survived**, and report rather than repair:
    (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist,
    then report the failure. Never `--no-verify` your way past it.
 
-**Pause if:** a task is unclear; implementation reveals a design problem (→ `/specs:develop`); a
+**Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
-standard via `/docs:add`, or the spec via `/specs:develop`); attempts stop converging; or the user
+standard via `/quenching:docs:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
@@ -187,7 +187,7 @@ Show the spec, the isolation and its `branch` record, tasks completed this sessi
 progress, each task's commit and the subject recorded for it, any subject that drifted, the blocked
 tasks with their reasons, the standards written, and the discoveries recorded.
 
-**At 100%**, offer to chain straight into `/specs:conclude` (the `Skill` tool): the branch review,
+**At 100%**, offer to chain straight into `/quenching:specs:conclude` (the `Skill` tool): the branch review,
 the emergent `docs/`, the merge, and the archive-time distillation. Offer it once; declined → name
 the command and stop. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
@@ -222,7 +222,7 @@ front of you before the loop starts:
 
 ## Invariants to never violate
 
-- Require a clean tree before the first code change; delegate isolation to `/specs:isolate`,
+- Require a clean tree before the first code change; delegate isolation to `/quenching:specs:isolate`,
   recommend it, never impose it, and never reimplement it here.
 - Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
@@ -233,15 +233,15 @@ front of you before the loop starts:
 - Never write a record after the commit it describes. A subject that drifted is reported, not
   corrected.
 - Never refuse over a missing `approved`; ask inline and stamp it.
-- Never stamp or rewrite a `branch` record here — that record belongs to `/specs:isolate`.
+- Never stamp or rewrite a `branch` record here — that record belongs to `/quenching:specs:isolate`.
 - Write **only** the `docs/` a task explicitly names. Emergent findings are one `specs.py discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under §Delegating an executor (declares `files:`, touches no `docs/`,
   pinned to the session model — **never `haiku`**), and run two tasks in parallel only when
   `specs.py parallel` reports the `[P]` group eligible.
-- Never review the whole branch, merge, or archive from here — that is `/specs:conclude`, and
+- Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`, and
   splitting it is what makes a half-finished build resumable.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
   rather than guessing.
 - **Route other durable learning to its OKF home**: an insight worth keeping beyond this spec goes
-  through `/docs:learn` / `/docs:add` / `/docs:define` — offered, never auto-written.
+  through `/quenching:docs:learn` / `/quenching:docs:add` / `/quenching:docs:define` — offered, never auto-written.
