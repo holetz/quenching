@@ -377,9 +377,10 @@ task": `commands/specs/execute.md` passo 6 · `specs-develop/artifacts.md` §`##
       files: docs/standards/workflows/task-execution.md
       verify: python3 -c "import re,pathlib,sys;t=pathlib.Path('docs/standards/workflows/task-execution.md').read_text();sys.exit(0 if re.search(r'Handoff.{0,40}cadence.{0,40}events',t,re.S|re.I) and re.search(r'blocked task.*?discovery recorded',t,re.S|re.I) else 1)"
       subject: plan/cut-specs-execute-turns: 1.1 a cadência de ## Handoff por quatro eventos
-- [ ] 1.2 Escrever em `docs/standards/workflows/task-execution.md` que `verify:` é escopado na autoria, citando `session-evidence.md` para a perda de medição em vez de a redeclarar
+- [x] 1.2 Escrever em `docs/standards/workflows/task-execution.md` que `verify:` é escopado na autoria, citando `session-evidence.md` para a perda de medição em vez de a redeclarar
       files: docs/standards/workflows/task-execution.md
       verify: python3 -c "import re,pathlib,sys;t=pathlib.Path('docs/standards/workflows/task-execution.md').read_text();sys.exit(0 if re.search(r'session-evidence\.md',t,re.S) and re.search(r'verify:.{0,80}scoped',t,re.S|re.I) else 1)"
+      subject: plan/cut-specs-execute-turns: 1.2 verify: escopado na autoria, citando session-evidence.md
 
 ### 2. O passo 2 — checar antes de despachar
 
