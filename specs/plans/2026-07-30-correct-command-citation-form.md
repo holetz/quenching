@@ -4,6 +4,7 @@ title: Corrigir a forma de citação de comando — bare versus prefixada pelo p
 verification: per-section
 approved: {date: 2026-07-31}
 branch: {base: main, work: claude/correct-command-citation-form-044087}
+reviewed: {date: 2026-07-31}
 ---
 
 # Corrigir a forma de citação de comando — bare versus prefixada pelo plugin
@@ -343,3 +344,18 @@ resultado dos três. A ordem frase → standard → check → sweep é a `## Des
 - [x] 4.1 Rodar o bloco inteiro de `## Validation` e registrar cada saída, incluindo o `total` do budget inalterado
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
       subject: plan/correct-command-citation-form: 4.1 bloco de Validation registrado
+
+## Outcome
+
+**done** — mergeada em `main` por merge-commit `--no-ff`, então os nove `subject:` registrados nas tasks continuam resolvíveis por `git log --grep` indefinidamente.
+
+**O que entregou.** A alegação de duas formas que governava 687 citações foi substituída pela regra de três, cujo eixo é *de onde o comando vem* e não quem lê. A sede é `docs/standards/naming/command-surface.md` §The path IS the identity; os corpos de comando carregam a versão condensada porque viajam para repos-alvo, onde o `docs/` deste repo não existe. O check `sk-bare-citation` (WARN) impede a regressão, alcança `commands/**` e `assets/references/**`, e só fala numa superfície que carrega `.claude-plugin/plugin.json` — num `.claude/` de repo-alvo a forma bare é a correta e ele fica mudo. O sweep zerou as citações bare nos corpos das duas árvores.
+
+**O que ficou de fora, e por quê.** As 79 citações dentro de `description:` (a spec estimava 75; 79 é a medição) seguem intactas — são always-on e o teto de contexto já estava estourado antes deste trabalho, o que torna elas propriedade de `route-commands-without-always-on-descriptions`. O `total` do budget mediu 12875 antes e 12875 depois, que é a prova mecânica de que o sweep não vazou para o frontmatter. `README.md` (102) e `assets/docs/QUENCHING.md` (57) também ficaram: descrevem o produto para quem ainda não instalou, e a regra escrita aqui é justamente o que permite decidir cada sítio depois.
+
+**O que o próximo leitor precisa saber.**
+
+1. **A `## Open Decisions` 1 continua aberta.** Ninguém verificou por execução que a forma bare *falha* — a spec declarou isso fora de escopo e a evidência segue indireta (não existe `.claude/commands/` neste repo, e o humano digitou a forma prefixada). Se ela resolver, nada do texto novo fica falso, mas os 519 sítios terão sido preferência e não correção.
+2. **Um bug pré-existente foi achado na revisão da branch e deliberadamente não consertado aqui.** No modo texto, todo finding do `skills.py lint` imprime `-` onde deveria vir o comando: `report_findings` usa `label_key="skill"` por padrão, mas os findings do lint carregam a chave `command`. Atinge os dez códigos anteriores tanto quanto o novo; o modo `--json` está correto. É escopo de outra spec.
+3. **Dois sítios precisaram de escrita à mão depois do sweep mecânico**, porque neles a forma bare é o *objeto do discurso* e não uma citação: `commands/docs/align.md` §6 e `commands/align.md` §3. Ambos passaram a usar a forma genérica `/<front>:<verb>`, que não casa o regex do check. Qualquer sweep futuro sobre prosa herda essa armadilha.
+4. **A evidência voltou para `restructure-claude-front-namespace`** como discovery: o item de `## Out of Scope` daquele spec foi fechado citando a frase que este corrigiu, e precisa ser reavaliado sobre a evidência nova.
