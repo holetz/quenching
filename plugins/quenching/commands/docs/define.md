@@ -11,7 +11,7 @@ hooks:
           timeout: 10
 ---
 
-# /docs:define — add/refine one glossary term
+# /quenching:docs:define — add/refine one glossary term
 
 **Input**: `$ARGUMENTS` (the term to add or refine, and optionally its one-sentence definition).
 
@@ -21,18 +21,18 @@ of what a term means **here**. The glossary is a flat, alphabetically sorted bul
 same syntax every `index.md` uses (`* [<Term>](<path>.md) — <definition>`, or `* **<Term>** —
 <definition>` when no doc exists yet): an *index* of vocabulary, the one deliberate exception to
 "one concept per file" (a glossary is inherently a multi-term aggregate). The home boundaries, the
-glossary format, and the shared **Enriching the glossary** procedure live with `/docs:add`
+glossary format, and the shared **Enriching the glossary** procedure live with `/quenching:docs:add`
 ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)); the `type`
-vocabulary and conformance rules with `/docs:align`
+vocabulary and conformance rules with `/quenching:docs:align`
 ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)). For a whole-bundle bulk
-backfill instead of one term, see `/docs:glossary-backfill`.
+backfill instead of one term, see `/quenching:docs:glossary-backfill`.
 
 ## Doctrine
 
 - **The glossary is an index, not a home for depth.** An entry is a **one-sentence** meaning plus
   a link to the concept doc that explains the term in full. If the term needs more than a
-  sentence, the depth belongs in a `knowledge/` concept doc (`/docs:learn`) and the entry
+  sentence, the depth belongs in a `knowledge/` concept doc (`/quenching:docs:learn`) and the entry
   just points to it. Never fold a full explanation into the glossary.
 - **Repo-specific terms only.** Add a word a newcomer to *this* repo would not know — a domain
   entity, acronym, internal codename, or term of art. Skip generic English and dictionary senses;
@@ -54,19 +54,19 @@ backfill instead of one term, see `/docs:glossary-backfill`.
 ### 1. Locate the glossary
 Find `docs/knowledge/glossary.md` (the bundle root may be a variant — resolve it as the other
 skills do). If the `knowledge/` home or the glossary seed is **missing**, stop and offer
-`/docs:align` to install the skeleton (it ships the fixed glossary), then resume. Read the
+`/quenching:docs:align` to install the skeleton (it ships the fixed glossary), then resume. Read the
 current list so you can place the entry and detect an existing one.
 
 ### 2. Confirm the term belongs
 Confirm the term is **repo-specific** (not generic English) and not already listed. If it is
 already present, this becomes a **refine** (Step 4 MERGE). If it needs a full explanation rather
-than a one-liner, say so and hand off to `/docs:learn` for the concept doc — then add the
+than a one-liner, say so and hand off to `/quenching:docs:learn` for the concept doc — then add the
 entry here pointing at it.
 
 ### 3. Derive the link
 Look for the concept doc that defines the term (`Grep`/`Glob` `docs/**`). If one exists, link it
 (`/docs/<path>.md`). If none exists, leave the entry unlinked — never invent a target; optionally
-note that a `/docs:learn` capture would give the term a home.
+note that a `/quenching:docs:learn` capture would give the term a home.
 
 ### 4. Write the entry (MERGE, alphabetical)
 Edit `knowledge/glossary.md`: insert `* [<Term>](<path>.md) — <one-sentence meaning in this

@@ -14,9 +14,9 @@ one that spans all three.
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `docs/` — the OKF bundle | `/docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
-| 2 | `specs/` — the spec-driven workspace | `/specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
-| 3 | `.claude/` — the automation surface | `/skill:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
+| 1 | `docs/` — the OKF bundle | `/quenching:docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
+| 2 | `specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
+| 3 | `.claude/` — the automation surface | `/quenching:skill:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
 The surface is **one column, not a matrix**: there is no separate "align-and-update" anywhere. An
 align probes first, so a conformant front costs a couple of tool calls and says so
@@ -51,19 +51,19 @@ here, not three edits that must stay in agreement.
     rule `docs/standards/automation/skills.md` and registry
     `docs/documentation/reference/automation.md`; the `docs/standards/` docs a spec's
     distillation mints). None can land in a tree that is not there.
-  - **specs before skills** — when migrating a legacy `openspec/` workspace, `/specs:align`
+  - **specs before skills** — when migrating a legacy `openspec/` workspace, `/quenching:specs:align`
     removes the CLI-generated `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow
-    copies, so `/skill:align` inventories an already-clean surface instead of classifying plugin
+    copies, so `/quenching:skill:align` inventories an already-clean surface instead of classifying plugin
     duplicates onto the taxonomy axis (a native `specs/` repo has no such copies, so the order is
     harmless there and still holds).
   Never run a later front before an earlier one.
 - **Loop across fronts, because they feed each other.** This is the whole reason this command is
   not three invocations typed in a row. The concrete edges:
-  - `/specs:align` **concludes** a spec → its distillation mints docs into `docs/` → the `docs/`
+  - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `docs/` → the `docs/`
     front's glossary stage must now index those terms.
-  - `/skill:align` **creates** the rule and registry in `docs/` → the `docs/` front's `index.md`
+  - `/quenching:skill:align` **creates** the rule and registry in `docs/` → the `docs/` front's `index.md`
     must list them.
-  - `/docs:align`'s **harness** stage moves a fact into `docs/` that a `specs/` spec should now
+  - `/quenching:docs:align`'s **harness** stage moves a fact into `docs/` that a `specs/` spec should now
     cite instead of restating.
   A single cross-front pass would leave every one of those half-done.
 - **One OK for the whole repo; authorization nests one level.** The gate fires **once**, before
@@ -130,10 +130,12 @@ inherits this OK and will not ask again; only a rename touching product code and
 close-out still confirm on their own."* Wait for **one** OK.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
-### 3. Front 1 — `/docs:align` (the `docs/` bundle)
+### 3. Front 1 — `/quenching:docs:align` (the `docs/` bundle)
 Invoke via the **Skill** tool under its registry name **`quenching:docs:align`** — the command path
-prefixed by the plugin. Every front below is named the same way: a bare `/docs:align` is what a
-human types, not what the Skill tool resolves. Declare the authorization mode verbatim per
+prefixed by the plugin. Every front below is named the same way: the registry name for the tool,
+`/quenching:<front>:align` for a human who types it, and the bare `/<front>:align` **only** where
+that command file lives in the target repo's own `.claude/commands/`.
+Declare the authorization mode verbatim per
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization, naming *this* command as the grantor: *"Running under /align authorization
 granted at run start — skip your plan-confirmation pause; present your plan as narration and
@@ -144,7 +146,7 @@ findings. A hard failure here (the bundle could not be established) **stops the 
 and 3 write into the bundle.
 **Done when:** the align has finished and its outcome is recorded.
 
-### 4. Front 2 — `/specs:align` (the `specs/` workspace)
+### 4. Front 2 — `/quenching:specs:align` (the `specs/` workspace)
 Skip if the front was marked absent and the scaffold line was declined. Otherwise invoke
 **`quenching:specs:align`** with the same declaration. Record its counts, **which specs were
 concluded** (their distillations are the main cross-front feed into front 1's next pass), and its
@@ -153,11 +155,11 @@ here. A failure in this front is **reported, not fatal**: front 3 still runs, an
 the command surface was inventoried with legacy shadow copies possibly still present.
 **Done when:** the align has finished or been skipped with a stated reason.
 
-### 5. Front 3 — `/skill:align` (the `.claude/` surface)
+### 5. Front 3 — `/quenching:skill:align` (the `.claude/` surface)
 Skip if the surface is empty (nothing to migrate). Otherwise invoke **`quenching:skill:align`**
 with the same declaration. Its rule + registry creation lands in the bundle front 1 just aligned —
 verify the front order held before invoking. Record its counts and its **doctrine findings**
-(read-only, routed to `/skill:new`).
+(read-only, routed to `/quenching:skill:new`).
 **Done when:** the align has finished or been skipped with a stated reason.
 
 ### 6. Re-probe across fronts → decide (loop or stop)
@@ -177,8 +179,8 @@ are **not** progress and never justify another cross-front pass.
 ### 7. Consolidated report
 One report, front by front: passes run, what each front's stages did in total, its ending verify
 state (validator findings · `doctor`/`validate` · registry-vs-disk), and — explicitly — everything
-**deferred**, each with the command that closes it (`/docs:add`, `/docs:learn`, `/docs:define`,
-`/specs:develop`, `/specs:conclude`, `/skill:new`). Name the cross-front edges that actually fired,
+**deferred**, each with the command that closes it (`/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`,
+`/quenching:specs:develop`, `/quenching:specs:conclude`, `/quenching:skill:new`). Name the cross-front edges that actually fired,
 so the loop's value is visible.
 
 State which **operator manuals** each front installed, refreshed, or left alone

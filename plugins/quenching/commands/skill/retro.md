@@ -15,7 +15,7 @@ allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true
 ---
 
-# /skill:retro — what one session proves about the command that drove it
+# /quenching:skill:retro — what one session proves about the command that drove it
 
 **Input**: `$ARGUMENTS` — optionally a session id or transcript path, and optionally the
 command to analyse. Omitted → this session, and the command that opened it.
@@ -32,7 +32,7 @@ with `python3`/`py`, and branch on the **exit code** — 0 read clean · 1 read 
 against it · 2 refusal — never on prose.
 
 **This command reports. It never edits a command body**, and it never claims a measured delta:
-a retro has one arm and no control, which is what separates it from `/skill:eval`.
+a retro has one arm and no control, which is what separates it from `/quenching:skill:eval`.
 
 ## Workflow
 
@@ -50,7 +50,7 @@ reported as a session with nothing to improve.
 **Done when:** the transcript is resolved and its commands are in hand, or the refusal is shown.
 
 ### 2. Choose ONE command
-One command per run keeps the output actionable by a single `/skill:new`. A command named in
+One command per run keeps the output actionable by a single `/quenching:skill:new`. A command named in
 `$ARGUMENTS` → take it. Otherwise one command found → take it; several → **AskUserQuestion**,
 one option per command showing its `attributedRun` line range and its `toolCalls`, defaulting
 to the session opener.
@@ -102,9 +102,9 @@ did not count is offered as an observation in plain words, never dressed as a fi
 **Done when:** each finding carries either a count with its quoted turn, or no number at all.
 
 ### 6. Hand each finding to the command that closes it
-End every finding with the `/skill:new` invocation that would fix the body, phrased so it can
+End every finding with the `/quenching:skill:new` invocation that would fix the body, phrased so it can
 be run as-is. Where a finding is about the target repo's contracts rather than the command's
-wording, name `/docs:add` instead.
+wording, name `/quenching:docs:add` instead.
 **Done when:** each finding names the one command that closes it.
 
 ### 7. Self-check
@@ -123,5 +123,5 @@ unchanged.
 - Speak an unclosed command's counts as an upper bound, always naming the conductor whose
   turns they may include.
 - Report a refusal with its reason. An empty run is never presented as a clean one.
-- Report findings; apply none. Editing a command body is `/skill:new`'s, and a measured
-  with/without delta is `/skill:eval`'s.
+- Report findings; apply none. Editing a command body is `/quenching:skill:new`'s, and a measured
+  with/without delta is `/quenching:skill:eval`'s.
