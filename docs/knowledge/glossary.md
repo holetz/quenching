@@ -229,6 +229,14 @@ sentence, and **link out** rather than explaining in full here.
   invitation*, a key only one writer may legitimately set stays **out** of it and lives with that
   writer's own contract — an annotation inside the mold is not equivalent, as the `resource:`
   precedent showed. The test is not "may this be absent?" but "may this citer write it at all?".
+- [**Spec backend**](../standards/architecture/spec-backend.md) — where a repository's specs
+  actually live: markdown files on a dedicated branch, GitHub issues, or Azure Boards work items,
+  declared by `backend` in [the plugin config](../standards/workflows/plugin-configuration.md).
+  Every backend implements **five primitives over the canonical document** — never one method per
+  CLI verb — so the fourteen sections, the frontmatter records and the derived stages are shared
+  code and cannot diverge between targets. The selected backend is the sole source of truth: there
+  is no shadow local store, and a declared-but-unimplemented backend refuses rather than falling
+  back to `files`.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
