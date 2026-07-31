@@ -370,9 +370,10 @@ trabalho em que se está.
 
 ### 4. Backend github
 
-- [ ] 4.1 Transporte via `gh api` em subprocess; binário ausente é recusa exit 2 nomeando
+- [x] 4.1 Transporte via `gh api` em subprocess; binário ausente é recusa exit 2 nomeando
       `gh auth login`
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 4.1 transporte gh api em subprocess com recusa exit 2 legivel
 - [ ] 4.2 Serialização híbrida — `## Tasks` vira sub-issues, as demais seções viram markdown no
       corpo; decidir e registrar per ## Open Decisions como os sete records se serializam
       files: plugins/quenching/assets/bin/specs.py
@@ -427,3 +428,6 @@ trabalho em que se está.
 - doctor le o root direto, sem open_backend (de proposito: diagnosticar nao pode criar worktree). Num repo migrado ele reporta sp-no-workspace falsamente. Precisa de um modo resolve-mas-nao-crie.
 - Um workspace pre-migracao (specs/ na arvore de codigo) NAO e serializado: o lock guarda a worktree de specs, e nao ha onde por um lock que o git ignore na arvore de codigo. Medido: 6 escritores concorrentes dao 4-de-6 sem worktree e 6-de-6 com. Os 49 specs DESTE repo estao nesse estado ate serem migrados.
 - migrate nao e classificado como escritor de proposito (reescreve o layout do workspace declarado, nunca a worktree), mas num repo ja migrado ele opera sobre um specs/ que nao existe mais — mesma familia do gap do doctor.
+- cmd_promote ainda checa destino ocupado com os.path.exists sobre caminho derivado do root — no backend github a checagem sempre passa (inocua, sem sentido). Precisa virar pergunta ao backend.
+- O campo root do JSON emite o root declarado mesmo com backend externo, onde nao significa nada (list mente 'no specs under /.../specs' quando na verdade consultou o GitHub). Mesma familia da discovery ja registrada sobre repo migrado.
+- Custo de rede do backend github: cada invocacao re-lista todas as issues, sem cache entre processos. Um ciclo de 12 comandos gastou 33 chamadas ao gh. Medir na task 4.6 se vira gargalo.
