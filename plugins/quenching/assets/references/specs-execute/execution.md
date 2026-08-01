@@ -308,6 +308,35 @@ confirmation, every `specs.py task --check` flip, every `specs.py task --block` 
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
+### The cost of delegating, and when it inverts
+
+<!-- rules -->
+
+**Permitted is not free, and the account runs the other way more often than it looks.** A
+sub-agent starts on a cold context and does not share the session's prompt cache, so it pays the
+full first read of every file it touches. Where N tasks declare the same large file, that is N
+cold reads against the orchestrator's one warm one. Three rules follow, and they are what decides
+whether a permitted delegation is also a good one:
+
+- **Delegate by file, or by section of tasks — never task by task.** One sub-agent that owns six
+  tasks over one file reads it once; six sub-agents read it six times.
+- **Run the four-item self-review INSIDE the sub-agent**, and have it return a verdict. A
+  sub-agent that hands its diff back for review puts the diff into the long context, which is the
+  cost the delegation was for.
+- **Where the tasks are small and the shared file is large, keep the work.** Reading once and
+  re-reading from cache is the cheaper arm, and the loop is allowed to say so.
+
+<!-- rationale -->
+
+The account is **declared arithmetic over files on disk, not a measurement of any run** — the
+distinction `docs/standards/automation/session-evidence.md` §The rule a counted claim must obey
+imposes, and it is stated as an estimate here because that is what it is. On this repo's
+`configurable-spec-backend`, 18 of 29 tasks are delegation-eligible and 13 of them declare the same
+file: `specs.py`, ~37k tokens. Task-by-task that is ~13 × 37k ≈ 480k against roughly 150k for an
+orchestrator reading it once and re-reading from cache — a delegation that reads as a saving and
+is not one. Measured across the whole transcript archive, this permission had never once been
+exercised, so nothing here revokes it; what was missing was the arithmetic that says when it pays.
+
 ### This is not `context: fork`, and the never-fork rule is untouched
 
 The plugin's standing rule forbids `context: fork` **on these commands**, because a forked context

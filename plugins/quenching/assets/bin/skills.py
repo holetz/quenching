@@ -1473,11 +1473,18 @@ def cmd_selftest(args, root: str) -> int:
     # a rule and got silence proceeds as though the rule did not exist.
     marked = (f"{RULES_MARKER}\nThe binding sentence.\n{RATIONALE_MARKER}\n"
               f"The measurement behind it.")
+    nested = (f"{RULES_MARKER}\nParent rule.\n\n### Sub one\n\n{RULES_MARKER}\nSub rule.\n"
+              f"{RATIONALE_MARKER}\nSub story.\n\n### Sub two\n\nUnmarked sub rule.")
     for label, body, want_text, want_marked in (
             ("marked", marked, "The binding sentence.", True),
             ("no-rationale", f"{RULES_MARKER}\nOnly a rule.", "Only a rule.", True),
             ("unmarked", "A whole section nobody marked up.",
-             "A whole section nobody marked up.", False)):
+             "A whole section nobody marked up.", False),
+            # a marker's reach ends at the next heading: one sub-section's rationale must
+            # not swallow the sub-sections after it
+            ("nested", nested,
+             "Parent rule.\n\n### Sub one\n\nSub rule.\n\n### Sub two\n\n"
+             "Unmarked sub rule.", True)):
         got_text, got_marked = split_rule_and_rationale(body)
         if got_text.strip() != want_text or got_marked != want_marked:
             failures.append(f"--rules-only {label}: got ({got_text.strip()!r}, "
@@ -2066,11 +2073,37 @@ def split_rule_and_rationale(body: str) -> tuple[str, bool]:
     **No marker → the whole section, and the caller is TOLD.** The degradation is to
     today's behaviour, never to emptiness. A convention applied in five files must not turn
     the other eighteen into silence.
+
+    **A marker's reach ends at the next heading.** Asked for a section, a caller gets its
+    sub-sections with it — so a single `<!-- rationale -->` inside one `###` would otherwise
+    truncate every rule after it, including whole sub-sections that carry no marker at all.
+    Measured on `execution.md` §Delegating an executor: three normative `###` blocks
+    disappeared behind one sub-section's rationale.
     """
-    if RULES_MARKER not in body:
-        return body, False
-    after = body.split(RULES_MARKER, 1)[1]
-    return after.split(RATIONALE_MARKER, 1)[0].strip("\n"), True
+    keep, marked, out = True, False, []
+    fence: str | None = None
+    for line in body.splitlines():
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+        elif fence is None:
+            if line.strip() == RULES_MARKER:
+                keep, marked = True, True
+                continue
+            if line.strip() == RATIONALE_MARKER:
+                keep = False
+                continue
+            if MD_HEADING_RE.match(line):
+                if not keep and out and out[-1].strip():
+                    out.append("")   # dropped rationale must not weld a heading to prose
+                keep = True
+        if keep:
+            out.append(line)
+    return "\n".join(out).strip("\n"), marked
 
 
 def normalize_heading(name: str) -> str:
