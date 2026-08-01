@@ -6,6 +6,7 @@ refined: {mode: gate, date: 2026-08-01}
 approved: {date: 2026-08-01}
 branch: {base: main, work: plan/read-by-section-not-by-file}
 reviewed: {date: 2026-08-01}
+outcome: done
 ---
 
 # Read by section, not by file — narrow what a command loads before it works
@@ -515,3 +516,58 @@ razão medida de terem perdido.
 - Defeito achado na task 4.2 usando a convenção: um <!-- rationale --> dentro de uma ### truncava o --rules-only da ## pai, porque pedir a pai devolve as filhas junto — em §Delegating an executor isso engolia TRÊS blocos ### inteiramente normativos, e a falha era silenciosa, exatamente a classe que ## Risks nomeia. Corrigido dentro da 4.2: o alcance de um marcador termina no próximo heading, e o caso aninhado entrou no selftest. Consequência de escrita: uma seção com sub-seções precisa de marcadores POR sub-seção, não um par para o bloco todo.
 - Open Decision 4 resolvida na task 5.1, medindo plans/ em disco: 34 specs, seções por spec = {0:4, 2:1, 3:6, 4:11, 5:5, 6:4, 7:3}, mediana 4. O gatilho é o evento puro — acabou uma seção e há outra pela frente — sem N. O menor N que mudaria alguma coisa (>=2 seções restantes) zeraria a oferta nas specs de 2 e 3 seções, 7 das 34, que são justamente as runs que podem terminar limpas cedo; e as 4 specs sem seção nenhuma nunca disparam de qualquer forma. Mediana de 3 ofertas por spec, cada uma uma linha que não interrompe.
 - Observado na task 7.1: o CLAUDE.md promete que 'okf-validate.py assets/docs' dá 0 error(s), 0 warning(s), mas hoje dá 0 erros e 1 warning — stale-doc em assets/docs/standards/agents/communication.md, cujo timestamp 2026-07-30 precede um commit de 2026-07-31 no resource dele. Pré-existente a esta branch (todos os commits daqui são de 2026-08-01). Ou o timestamp do skeleton é atualizado, ou a frase do CLAUDE.md deixa de prometer zero warnings.
+
+## Outcome
+
+**Entregue.** As 21 tasks estão `- [x]`, cada uma com seu commit, e a branch fecha com 26 commits
+mergeados em `main` por **merge commit** (`plan/read-by-section-not-by-file: merge (merge-commit)`) —
+o que significa que todo `subject:` registrado nas tasks resolve a partir de `main`, sem depender da
+branch sobreviver.
+
+**O que shipou.** O verbo de leitura por seção — `skills.py read <path> --sections "§A" --sections
+"§B" [--rules-only]` para markdown livre, e `specs.py section <slug> "A,B,C"` para as quatorze
+seções canônicas de uma spec, ambos provados contra a MESMA lista canônica (`SECTION_CASES`), pelo
+precedente de `docs/standards/code/canonical-set-parsing.md`. Sobre isso, o passo 4 de
+`/quenching:specs:execute` passou a ler os `docs/standards/` que `## Impact` **declara** em vez das
+pastas onde eles moram, e a spec por seção em vez do arquivo. Medido em disco: o preâmbulo que o
+comando carrega antes da primeira linha de código cai de **263.839 para 174.051 chars (~66,0k →
+~43,5k tokens, −35%)**, quase todo o corte vindo da regra de pasta → arquivos declarados (−59%,
+19 arquivos → 5). A convenção `<!-- rules -->` / `<!-- rationale -->` foi aplicada nas cinco
+referências que o comando carrega, e a oferta de parar numa fronteira de seção entrou no laço do
+passo 5. O assunto ganhou dono em `docs/standards/automation/context-discipline.md`.
+
+**O que ficou de fora, de propósito.** A convenção de marcadores **não** se estende às outras
+dezoito referências: medida depois de aplicada, a fração de racional é **7%**, contra os 25–35% que
+o `## Problem` chutava, e ler as cinco `--rules-only` em vez de inteiras corta mais 15% — resíduo,
+não ordem de grandeza. A quinta Open Decision — se um marcador ausente vira finding do `lint` —
+segue deliberadamente aberta até a convenção ter rodado uma vez, que é o que ela mesma pedia. E não
+há rede de segurança mecânica para um standard vinculante que ninguém declarou: decidir que um
+standard governa uma task é leitura, não parsing, e toda aproximação disso teria que reler a pasta,
+que é justamente o custo removido.
+
+**O que a revisão de branch achou**, tudo consertado antes do merge, em `record the branch review's
+four fixes`: o passo 4 encadeava seis chamadas singulares de `specs.py section` embaixo de um
+parágrafo que dizia "in ONE call" — a forma plural que a task 2.2 construiu não tinha consumidor;
+a tabela de superfície em `spec-driven.md` ainda descrevia `section` como lendo UMA seção; o
+contador de casos do selftest de `skills.py` estava um abaixo; e — o achado que virou doc —
+`SECTION_CASES` declarava `§X` e prefixo único como contrato compartilhado enquanto `specs.py` os
+provava contra um resolvedor escrito **dentro do selftest**: `_match_heading` refutava `§Handoff`
+com exit 2. A regra mora agora em `resolve_heading_name`, que produção e casos canônicos chamam.
+
+**O que o próximo leitor precisa saber.** Nenhuma edição em `commands/**` foi testável na sessão que
+a escreveu — o registry é montado no início da sessão — então as seções 1, 4 e 5 terminaram em
+`doctor` (26 comandos, 0 findings), nunca em teste funcional: elas valem para a **próxima** run, e o
+mesmo vale para as cinco referências. Duas falhas silenciosas foram achadas *usando* o que este spec
+construiu, não revisando-o, e as duas geraram regra: `--sections` precisa ser repetível porque
+headings contêm vírgula, e um marcador deve ser escrito **por sub-seção**, nunca um par por bloco,
+porque um `<!-- rationale -->` dentro de uma `###` trunca todo rule depois dele.
+
+**Dois achados ficam abertos, nenhum causado por esta branch.** O `CLAUDE.md` promete
+`0 error(s), 0 warning(s)` no skeleton shipped e ele devolve 1 warning `stale-doc` pré-existente; e
+`okf-validate.py docs` devolve 26 warnings `stale-doc` no bundle do próprio repo, porque quase todo
+standard tem `plugins/quenching/**` no seu `resource` glob e qualquer branch que toque o plugin os
+envelhece em massa. Os dois são `stale-doc`, advisory, e nenhum bloqueia — mas a promessa do
+`CLAUDE.md` é literalmente falsa hoje.
+
+**`cut-execute-context-integral` continua aberta e é subsumida por inteiro por este spec.** Fechá-la
+como `abandoned` é decisão humana, num `/quenching:specs:conclude` próprio.
