@@ -464,8 +464,9 @@ razão medida de terem perdido.
       delegar por seção de tasks, e o self-review dos quatro itens acontece dentro do sub-agente
       files: plugins/quenching/assets/references/specs-execute/execution.md
       subject: plan/read-by-section-not-by-file: 4.2 §Delegating an executor declara o custo real
-- [ ] 4.3 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
+- [x] 4.3 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
       verify: python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/read-by-section-not-by-file: 4.3 Confirmar a superfície — doctor 26/0, lint sem regressão
 
 ### 5. A fronteira de seção
 
