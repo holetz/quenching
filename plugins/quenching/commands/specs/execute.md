@@ -86,8 +86,9 @@ and **`verification`** — the spec's declared policy, which decides when the su
 command never has to.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  stamp `approved: {date}` on a yes. **Never refuse over it** — refusing would rebuild the folder
-  hop this front removed. A no ends the run cleanly.
+  on a yes stamp it with `specs.py record "<slug>" approved --set date=<today>` — never by editing
+  the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
+  removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
   sections and route to `/specs:develop <slug>`, then stop. The gate refuses nothing itself; the
   tool simply has no task to hand out until it is closed.
@@ -101,9 +102,13 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
-Read `## Problem`, `## Proposal`, `## Design`, `## Handoff` and `## Tasks` at the path `status`
-resolved — never assume filenames. `## Impact` names the `docs/standards/` paths and the code this
-spec expects to touch.
+```bash
+specs.py show --spec "<slug>" --section Problem --section Proposal --section Design \
+  --section Handoff --section Impact --section Tasks
+```
+One call, six sections — never `--full` and never assume filenames. `## Impact` names the
+`docs/standards/` paths and the code this spec expects to touch, and step 5c cross-checks a task's
+declared doc against it, so its body is read here alongside the rest.
 
 Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read
 `docs/standards/<subject>/` for the subjects the tasks touch. Those are **binding contracts** for
@@ -232,7 +237,8 @@ front of you before the loop starts:
   subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
 - Never write a record after the commit it describes. A subject that drifted is reported, not
   corrected.
-- Never refuse over a missing `approved`; ask inline and stamp it.
+- Never refuse over a missing `approved`; ask inline and stamp it with `specs.py record`, never by
+  editing the frontmatter.
 - Never stamp or rewrite a `branch` record here — that record belongs to `/specs:isolate`.
 - Write **only** the `docs/` a task explicitly names. Emergent findings are one `specs.py discover`
   line — never an unrequested standard, and never a loose code comment.

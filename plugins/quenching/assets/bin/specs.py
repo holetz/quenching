@@ -1526,6 +1526,7 @@ BACKEND_CASES = (
     ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
+    ("stamp a record, then re-read", lambda b: _case_record(b)),
     ("move to archive", lambda b: _case_move(b)),
     ("list after the move", lambda b: _listing(b)),
 )
@@ -1570,6 +1571,14 @@ def _case_task(b: "SpecBackend") -> dict:
     b.write_spec(info, block)
     info, _ = b.read_spec("alpha")
     return {"progress": task_progress(info["tasks"]), "stage": info["stage"]}
+
+
+def _case_record(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    b.write_spec(info, set_frontmatter_record(
+        info["text"], "priority", {"level": "1", "criticality": "high"}))
+    info, _ = b.read_spec("alpha")
+    return spec_records(info["frontmatter"])
 
 
 def _case_move(b: "SpecBackend") -> dict:
@@ -2532,6 +2541,11 @@ def cmd_list(args, root: str) -> int:
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
+            # The seven records, on every row. Without them a caller that wants the front's
+            # rankings — `triage` reading `priority`, `status` narrating a spec's history —
+            # has to open each file itself, which is a path read and so only works while the
+            # backend happens to be `files`.
+            "records": spec_records(info["frontmatter"]),
             "unreadable": unreadable,
             "tasks": {"checked": checked, "blocked": blocked, "total": total},
         })
@@ -2742,6 +2756,164 @@ def set_frontmatter_key(text: str, key: str, value: str) -> str:
             return "".join(lines)
     lines.insert(close, f"{key}: {value}\n")
     return "".join(lines)
+
+
+def _render_record(key: str, rec: dict) -> list[str]:
+    """A record as frontmatter lines — flow where flow survives a round trip, block where
+    it would not. A value carrying a comma cannot go in `{a: b, c: d}`, which
+    `parse_frontmatter` splits on commas; a long one wraps in an editor and stops parsing
+    as one line. Both are the block form's whole reason to exist."""
+    parts = [f"{k}: {v}" for k, v in rec.items()]
+    line = f"{key}: {{{', '.join(parts)}}}"
+    if len(line) <= 96 and not any("," in str(v) for v in rec.values()):
+        return [line + "\n"]
+    return [f"{key}:\n"] + [f"  {p}\n" for p in parts]
+
+
+def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
+    """Replace ONE record, its continuation lines included, preserving every other line.
+
+    `set_frontmatter_key` cannot do this: a record already written in block form occupies
+    lines the single-line replacement would leave orphaned below the new value, where they
+    would parse as a second record's fields."""
+    new_lines = _render_record(key, rec)
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return "---\n" + "".join(new_lines) + "---\n\n" + text
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return text
+    for i in range(1, close):
+        if lines[i][:1] in (" ", "\t") or ":" not in lines[i]:
+            continue
+        if lines[i].split(":", 1)[0].strip() != key:
+            continue
+        end = i + 1
+        while end < close and lines[end][:1] in (" ", "\t") and lines[end].strip():
+            end += 1
+        return "".join(lines[:i] + new_lines + lines[end:])
+    return "".join(lines[:close] + new_lines + lines[close:])
+
+
+def cmd_record(args, root: str) -> int:
+    """Read or merge ONE frontmatter record, through the backend.
+
+    The seven records were the last thing the command surface wrote by editing the file at
+    its path — `triage` stamping `priority`, `isolate` stamping `branch`, `conclude`
+    stamping `merge`. That is a path write, so it worked only while the backend happened to
+    be `files`; against GitHub there is no file to edit.
+
+    Which records exist, which fields each declares and which are write-once all come from
+    the schema, so adding a record stays a schema edit. A record declaring no `fields:` is
+    not writable here at all — that is `outcome`, whose one writer is `promote --outcome`,
+    and it falls out of the declaration rather than being named in the code."""
+    schema = load_schema()
+    declared = schema.get("frontmatter", {}).get("records", {})
+    if args.name not in record_keys(schema):
+        emit(args.json,
+             {"ok": False, "code": "sp-unknown-record", "record": args.name,
+              "declared": record_keys(schema),
+              "message": f"'{args.name}' is not a declared record — the declared ones are "
+                         f"{', '.join(record_keys(schema))}"},
+             f"error: '{args.name}' is not a declared record")
+        return 2
+    rspec = declared.get(args.name, {})
+    fields = list(rspec.get("fields", []))
+
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+    current = info["frontmatter"].get(args.name) or None
+
+    if not args.set:
+        if args.json:
+            print(json.dumps({"ok": current is not None, "slug": info["slug"],
+                              "record": args.name, "value": current},
+                             indent=2, ensure_ascii=False))
+        else:
+            print(f"{args.name}: {current}" if current is not None
+                  else f"({args.name}: is unset)")
+        return 0 if current is not None else 1
+
+    if not fields:
+        emit(args.json,
+             {"ok": False, "code": "sp-record-not-writable", "record": args.name,
+              "writtenBy": rspec.get("writtenBy", ""),
+              "message": f"`{args.name}:` declares no fields — its one writer is "
+                         f"{rspec.get('writtenBy', 'another command')}"},
+             f"refused: `{args.name}:` is not written through this command")
+        return 2
+    if rspec.get("writeOnce") and current:
+        emit(args.json,
+             {"ok": False, "code": "sp-record-write-once", "record": args.name,
+              "current": current,
+              "message": f"`{args.name}:` is write-once and already reads {current} — a "
+                         f"record that disagrees with reality is a finding to report, "
+                         f"never a value to overwrite"},
+             f"refused: `{args.name}:` is already set to {current}")
+        return 2
+
+    merged = dict(current) if isinstance(current, dict) else {}
+    for pair in args.set:
+        k, sep, v = pair.partition("=")
+        k, v = k.strip(), v.strip()
+        if not sep or k not in fields:
+            emit(args.json,
+                 {"ok": False, "code": "sp-unknown-record-field", "record": args.name,
+                  "given": pair, "fields": fields,
+                  "message": f"expected `field=value` with field one of "
+                             f"{', '.join(fields)} — got '{pair}'"},
+                 f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
+            return 2
+        merged[k] = v
+    # The schema's field order, so a record reads the same however it was assembled and a
+    # re-stamp never reshuffles what a human wrote.
+    ordered = {k: merged[k] for k in fields if k in merged}
+    backend.write_spec(info, set_frontmatter_record(info["text"], args.name, ordered))
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "record": args.name, "value": ordered},
+         f"{info['slug']} — {args.name}: "
+         f"{{{', '.join(f'{k}: {v}' for k, v in ordered.items())}}}")
+    return 0
+
+
+def record_round_trip_failures() -> list[str]:
+    """Every record this tool writes must read back as what was written.
+
+    A record is written once and read by every later command, so a serialisation that
+    round-trips for the short values and silently truncates a long or comma-carrying one
+    fails months later, on the spec that finally had a subject with a comma in it — and it
+    fails as a record that reads *plausibly*, missing only its tail."""
+    failures: list[str] = []
+    base = "---\nslug: alpha\ntitle: Alpha\nverification: per-task\n---\n\n## Problem\n\nx\n"
+    cases = {
+        "short": {"level": "1", "criticality": "high"},
+        "comma": {"strategy": "merge-commit", "subject": "plan/a: merge, then tidy"},
+        "long": {"strategy": "merge-commit",
+                 "subject": "plan/a-rather-long-slug-name-here: merge (merge-commit) " +
+                            "carrying every task"},
+    }
+    for label, rec in cases.items():
+        text = set_frontmatter_record(base, "priority", rec)
+        got = parse_frontmatter(text).get("priority")
+        if got != rec:
+            failures.append(f"{label}: wrote {rec!r}, read back {got!r}")
+        for k, v in (("slug", "alpha"), ("title", "Alpha"), ("verification", "per-task")):
+            if parse_frontmatter(text).get(k) != v:
+                failures.append(f"{label}: writing a record lost `{k}: {v}`")
+
+    # Block -> flow, the shape that orphans lines: the block form's fields sit on their own
+    # lines, and replacing only the `key:` line would leave them below the new value, where
+    # they parse as fields of whatever record comes next.
+    blocked = set_frontmatter_record(base, "merge", cases["comma"])
+    reflowed = set_frontmatter_record(blocked, "merge", {"strategy": "rebase"})
+    if parse_frontmatter(reflowed).get("merge") != {"strategy": "rebase"}:
+        failures.append("re-stamping a block record left its old fields behind: "
+                        f"{parse_frontmatter(reflowed).get('merge')!r}")
+    return failures
 
 
 def cmd_promote(args, root: str) -> int:
@@ -3693,6 +3865,8 @@ def command_writes(args) -> bool:
         return True
     if cmd == "section":
         return bool(getattr(args, "write", False))
+    if cmd == "record":
+        return bool(getattr(args, "set", None))
     if cmd == "promote":
         return not bool(getattr(args, "dry_run", False))
     return False
@@ -4767,6 +4941,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "derives nothing; a difference outside `path` and "
                                         "`text` means one of them is deriving its own"))
 
+    # The records, which no other check covers: they are frontmatter rather than a section,
+    # so the canonical case list never sees them, and they are written once and read forever.
+    for failure in record_round_trip_failures():
+        findings.append(_finding("sp-record-round-trip-broken", "error",
+                                 f"a record does not read back as written — {failure}",
+                                 remedy="flow (`{a: b}`) only where it survives the round "
+                                        "trip; a comma-carrying or long value goes in the "
+                                        "block form, and a re-stamp replaces the old "
+                                        "field lines rather than orphaning them"))
+
     # The `github` transport's promise that no failure reaches a human as a traceback, and
     # that each one arrives with the remedy that fixes it. Asserted against gh's literal
     # stderr, so a reworded release breaks the check rather than the refusal. Needs no
@@ -5039,6 +5223,13 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 
+    sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
+    sp.add_argument("spec")
+    sp.add_argument("name", help="one of the declared records")
+    sp.add_argument("--set", action="append", metavar="FIELD=VALUE",
+                    help="merge one field; repeatable. Fields not named survive, so a "
+                         "re-stamp never drops what an earlier pass wrote")
+
     sp = add_json(sub.add_parser("promote", help="the gated close-out: plans/ → archive/"))
     sp.add_argument("spec")
     sp.add_argument("--to", choices=list(PHASES), help="force the destination phase")
@@ -5098,6 +5289,7 @@ DISPATCH: dict = {
     "status": cmd_status,
     "show": cmd_show,
     "section": cmd_section,
+    "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,
     "next": cmd_next,

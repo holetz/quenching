@@ -13,7 +13,7 @@ The **read-only** view of the `specs/` front. Every other command here either fi
 (`/specs:continue`). This one only looks — and because it looks at exactly what the sweep looks at,
 it is also the sweep's honest preview: the plan you would be authorizing, before you authorize it.
 
-**Near-free by construction.** Three tool calls and one glob, whatever the size of the front. It
+**Near-free by construction.** Three tool calls, whatever the size of the front. It
 reads the same two payloads `/specs:align`'s probe reads, which is what lets the two agree: a
 status view that disagreed with the sweep would be worse than none.
 
@@ -44,7 +44,8 @@ point.
   `reviewed`, `merge`, `outcome`, read in that order, narrate a spec's life: ranked, interrogated,
   approved, built, reviewed, merged, closed. An absent record is a **not-yet**, never a defect —
   most specs carry two or three, and that is normal.
-- **Cheap by construction.** One `doctor`, one `validate`, one `list --json`, one glob. Reach for
+- **Cheap by construction, and never through a path.** One `doctor`, one `validate`, one
+  `list --json` — which carries the records, so no spec file is opened at all. Reach for
   `specs.py status --spec <slug> --json` **only** for a spec the user named. A dozen active specs
   must not cost a dozen payloads. Never fan out sub-agents: there is nothing here a sub-agent could
   parallelize that the tool does not already answer in one call.
@@ -72,10 +73,11 @@ specs.py doctor --json
 specs.py validate --json
 specs.py list --json
 ```
-Then `Glob` `specs/plans/*.md` and read their frontmatter (the records), read
-`docs/index.md` for `okf_version`, and — only under a suspected legacy migration — `Glob` the
-`openspec/` tree and the shadow copies (`.claude/skills/openspec-*/SKILL.md`,
-`.claude/commands/opsx/*.md`).
+`list --json` carries each spec's seven `records` already, so **there is no per-spec file to
+open** — asking the tool is also the only form that survives a backend where the specs are issues
+and `specs/plans/*.md` does not exist. Then read `docs/index.md` for `okf_version`, and — only
+under a suspected legacy migration — `Glob` the `openspec/` tree and the shadow copies
+(`.claude/skills/openspec-*/SKILL.md`, `.claude/commands/opsx/*.md`).
 
 Add `specs.py status --spec <slug> --json` **only** when the user named a spec. Every one of these
 writes nothing.
@@ -125,6 +127,8 @@ handing control back.
   something looks wrong enough to fix, name the command that fixes it and stop.
 - Never run `specs.py status --spec <slug>` per active spec by default — only for one the user
   named.
+- Never open a spec file to read its records. `list --json` carries them, and a path read answers
+  only while the backend happens to be `files`.
 - Never report a finding with a code the sweep does not define, and never state a finding the sweep
   would not raise.
 - Never call a spec *done*, a task *finished*, or a stale spec *abandoned* — completion and

@@ -1,7 +1,7 @@
 ---
 description: Take or report git isolation for ONE spec — a branch or a worktree, at any stage of its life. Triggers on "isolate this spec", "cut a branch for this spec", "work on this in a worktree", "put this spec on its own branch", "am I isolated?", "which branch is this spec on", "is anything in flight". Records branch: {base, work}, the one git fact no derivation recovers once the branch is merged. Not for: building a spec's tasks → /specs:execute; merging, reviewing or archiving → /specs:conclude; creating a spec → /specs:create; interrogating one → /specs:develop; choosing which spec to work on → /specs:continue.
 argument-hint: [spec slug, or nothing to infer it]
-allowed-tools: Read, Grep, Glob, Edit, Bash, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion
 ---
 
 # /specs:isolate — one spec, one branch
@@ -161,14 +161,15 @@ reason, rather than executed and blamed on the shell.
 failure is reported and nothing was stamped.
 
 ### 6. Stamp the record
-```yaml
-branch: {base: <what was checked out>, work: plan/<slug>}
+```bash
+specs.py record "<slug>" branch --set base=<what was checked out> --set work=plan/<slug>
 ```
 `base` is captured **now**, while it is still true: after the merge git cannot say what the branch
 was cut from, which is the whole reason the record exists. Stamp nothing for work done in place.
 
-The record is write-once. One already present is **read, never rewritten** — and a current branch
-that disagrees with `work` is a finding to report, not a value to correct.
+The record is write-once, and the tool enforces it: one already present refuses (exit 2) naming the
+value it holds. **Read it, never rewrite it** — and a current branch that disagrees with `work` is
+a finding to report, not a value to correct. Never edit the frontmatter to get past the refusal.
 **Done when:** the record is stamped, or the reason it was deliberately not stamped is stated.
 
 ### 7. Report, and hand off
@@ -201,7 +202,8 @@ build — and stop.
 - Report before writing: the read-only answer is a complete use of this command.
 - One plan → one OK before anything is created. Creating a branch is cheap; creating it unasked is
   not.
-- Stamp `branch:` only when isolation was actually taken, and never over an existing record.
+- Stamp `branch:` only when isolation was actually taken, and never over an existing record —
+  through `specs.py record`, never by editing the frontmatter.
 - Never merge, never review, never archive — those are `/specs:conclude`, with their own gates.
 - Never write code, never touch `## Tasks`, never tick a box.
 - Never run a `worktreeSetup` that was not displayed verbatim in the plan block the human answered,
