@@ -24,6 +24,8 @@ somebody else's history.
 
 ## The read-if-present rule
 
+<!-- rules -->
+
 Before the first commit of a run, look for the target's own conventions — **once**, and cheaply:
 
 ```bash
@@ -52,6 +54,8 @@ agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion
 
 ## Isolation is available at any stage
 
+<!-- rules -->
+
 Isolation used to exist only inside `/quenching:specs:execute`, which made it a privilege of building. It is
 not: creating and developing a spec both write into `specs/plans/` and dirty the tree, and a spec
 sometimes ought to be born on the branch that will carry its work.
@@ -73,6 +77,8 @@ archive gates — a merge invocable on its own could run against a spec nobody r
 archived, and would have to duplicate every refusal `conclude` already owns.
 
 ## Branch and worktree names
+
+<!-- rules -->
 
 ```
 plan/<slug>
@@ -133,6 +139,8 @@ A failing setup is reported and **never undoes the worktree**.
 
 ## Recording the isolation
 
+<!-- rules -->
+
 ```yaml
 branch: {base: main, work: plan/<slug>}
 ```
@@ -153,6 +161,8 @@ record outlives the branch it names. Anything asking "is this spec in flight?" a
 ref — the record only supplies the ref's name when it is not the default.
 
 ## Commit messages
+
+<!-- rules -->
 
 The default subject, one per task:
 
@@ -177,6 +187,8 @@ plan/<slug>: record <what>
 ```
 
 ## The subject is the anchor
+
+<!-- rules -->
 
 The task→commit link is the **subject line of the commit**, written onto the task line by
 `specs.py task --check --subject`:
@@ -203,14 +215,16 @@ nothing is left to write afterwards.
 - `/quenching:specs:conclude` stamps `merge: {strategy, subject}` on the work branch, so the **merge is the
   last action of the run** and nothing is ever committed to the base branch after it.
 
+**Two forms are read, forever.** A spec built before this change carries `commit: <sha>` and
+resolves by sha. Neither form is backfilled: a recorded sha describes a commit that exists, and
+rewriting an archived spec to "modernise" it would falsify when the record was made.
+
+<!-- rationale -->
+
 **Still no trailer and no machine-readable anchor inside the message.** The link is the subject the
 target's own convention produced — if the repo's standard prefixes a ticket or appends a sign-off,
 the recorded subject is whatever that convention actually wrote. The record follows; it never
 imposes.
-
-**Two forms are read, forever.** A spec built before this change carries `commit: <sha>` and
-resolves by sha. Neither form is backfilled: a recorded sha describes a commit that exists, and
-rewriting an archived spec to "modernise" it would falsify when the record was made.
 
 ### Where the subject can fail, and what is done about it
 
@@ -221,6 +235,8 @@ what it recorded and **reports a mismatch as a finding, writing nothing**: a cor
 the commit would reintroduce the very ordering this design removed.
 
 ## Merge strategies
+
+<!-- rules -->
 
 Offered by `/quenching:specs:conclude`, never chosen for the human. State the trade in one line each.
 
@@ -302,6 +318,8 @@ Three bounds: only after a merge verified at exit 0, never for an abandoned spec
 **not** delete the branch — that stays the separate offer it already was.
 
 ## What is never done, on any repo
+
+<!-- rules -->
 
 This file owns two prohibitions, and both are about **whose** conventions win:
 

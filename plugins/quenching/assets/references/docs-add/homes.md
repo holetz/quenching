@@ -20,6 +20,8 @@ safety deltas stay inline in its SKILL.md. The full home boundaries and tree liv
 
 ## Classification — one question decides the home
 
+<!-- rules -->
+
 Ask **"what IS this, relative to us?"**:
 
 | The information is… | Home | `type` | Mold (`${CLAUDE_PLUGIN_ROOT}/assets/templates/…`) | Path shape |
@@ -74,6 +76,8 @@ Ask **"what IS this, relative to us?"**:
 
 ## The frontmatter stamp
 
+<!-- rules -->
+
 Fill from the mold; every concept gets:
 
 ```yaml
@@ -96,6 +100,8 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sou
 
 ## Updating `index.md` (the listing)
 
+<!-- rules -->
+
 - Add `* [<title>](<relative-path>.md) — <description>` under the right section. Keep links
   relative within the home, absolute (`/docs/...`) across homes.
 - If the doc **creates a new folder**, create that folder's `index.md` too (a frontmatter-free
@@ -114,6 +120,8 @@ demand. See
 [`specs-create/specs-front.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).)
 
 ## Enriching the glossary (tail step, every capture)
+
+<!-- rules -->
 
 The `knowledge/` home ships one fixed file, [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md):
 the repo's A–Z term lookup, a flat alphabetical bullet list in the same syntax every
@@ -140,6 +148,8 @@ This is the same tail step `/quenching:docs:learn`, `/quenching:docs:add`, and
 already in `docs/` for terms the glossary never caught — is `/quenching:docs:glossary-backfill`.
 
 ## Self-check before finishing
+
+<!-- rules -->
 
 Apply `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`: the new concept has parseable frontmatter +
 a non-empty `type`; every `index.md` you touched is still frontmatter-free; the new doc's folder
