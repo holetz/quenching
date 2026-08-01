@@ -86,11 +86,22 @@ SUBCOMMANDS
                   what the surface costs before anything fires: per command and
                   summed, sorted by cost, against the ceiling. Reports; never
                   refuses.
+  read PATH [--sections "A,B"] [--rules-only]
+                  N sections of any markdown file in ONE call, frontmatter stripped.
+                  Without `--sections`, prints the file's heading index — what exists
+                  to ask for, so discovering it never costs the file. A section runs
+                  from its heading to the next heading of the SAME level or shallower,
+                  so sub-headings travel with their parent; fenced code is never read
+                  as a heading. A named section that does not exist is a refusal (2)
+                  that names it, never an empty answer. `--rules-only` returns
+                  the `<!-- rules -->` half of each section — and, where no marker is
+                  present, the whole section plus a note saying so. Never silence.
   selftest        builds a throwaway surface in a temp dir and asserts doctor's
                   findings on it — chiefly that a file parked under commands/ which
                   is NOT an entry point registers as one and fires
                   `sk-no-description`. The layout rule's only evidence, since the
-                  repo carries no test framework.
+                  repo carries no test framework. Plus the section-reader's canonical
+                  case list, proved here and against the same list by `specs.py`.
 
 SURFACE RESOLUTION
   --root PATH, else $SKILLS_ROOT, else walking up from cwd: the first directory
@@ -111,7 +122,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.4.4"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
+VERSION = "4.4.5"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
@@ -1438,11 +1449,57 @@ def cmd_selftest(args, root: str) -> int:
         failures.append("citations: a surface with no plugin manifest resolved a prefix — "
                         "the check would fire where the bare form is the correct one")
 
+    # The section reader, against the canonical case list `specs.py` proves too. It needs
+    # no fixture on disk — the list carries its own — so it sits outside the temp surface
+    # in spirit and is simply run here.
+    for f in section_case_findings(read_sections_adapter):
+        failures.append(f"section reader: {f['message']}")
+
+    # This tool's own half, which the shared list deliberately does not cover: free
+    # markdown has headings at every level, and a reference cited as `§The [P] check` is a
+    # `###`. A reader that only resolved `##` would refuse half the citations in the repo.
+    all_heads = [(h["level"], h["heading"]) for h in markdown_sections(SECTION_FIXTURE)]
+    want_heads = [(1, "Top"), (2, "Alpha"), (3, "Alpha sub"), (2, "Beta"), (2, "Gamma")]
+    if all_heads != want_heads:
+        failures.append(f"section reader: every-level index is {all_heads}, expected "
+                        f"{want_heads}")
+    sub, _ = select_sections(markdown_sections(SECTION_FIXTURE), ["Alpha sub"])
+    if not sub or "Beta" in sub[0]["body"]:
+        failures.append("section reader: a `###` must resolve on its own and stop at the "
+                        "next heading of the same level or shallower")
+
+    # `--rules-only`, both arms. The fallback arm is the one `## Validation` insists on:
+    # a missing marker must never become an empty answer, because a caller that asked for
+    # a rule and got silence proceeds as though the rule did not exist.
+    marked = (f"{RULES_MARKER}\nThe binding sentence.\n{RATIONALE_MARKER}\n"
+              f"The measurement behind it.")
+    nested = (f"{RULES_MARKER}\nParent rule.\n\n### Sub one\n\n{RULES_MARKER}\nSub rule.\n"
+              f"{RATIONALE_MARKER}\nSub story.\n\n### Sub two\n\nUnmarked sub rule.")
+    for label, body, want_text, want_marked in (
+            ("marked", marked, "The binding sentence.", True),
+            ("no-rationale", f"{RULES_MARKER}\nOnly a rule.", "Only a rule.", True),
+            ("unmarked", "A whole section nobody marked up.",
+             "A whole section nobody marked up.", False),
+            # a marker's reach ends at the next heading: one sub-section's rationale must
+            # not swallow the sub-sections after it
+            ("nested", nested,
+             "Parent rule.\n\n### Sub one\n\nSub rule.\n\n### Sub two\n\n"
+             "Unmarked sub rule.", True)):
+        got_text, got_marked = split_rule_and_rationale(body)
+        if got_text.strip() != want_text or got_marked != want_marked:
+            failures.append(f"--rules-only {label}: got ({got_text.strip()!r}, "
+                            f"{got_marked}), expected ({want_text!r}, {want_marked})")
+        if not got_text.strip():
+            failures.append(f"--rules-only {label}: returned an empty answer — a missing "
+                            f"marker degrades to the whole section, never to silence")
+
     # + 3: the two conformant controls that must stay clean (/docs:add, agents/good.md) and
     # the drift refusal, none of which has a fixture row of its own; + 2 for the citation
     # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
-             + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5)
+             + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5
+             + len(SECTION_CASES["cases"]) + 6)  # + the every-level index, the
+    # `###` resolution, and the four `--rules-only` arms
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
@@ -1934,6 +1991,371 @@ register("drift",
                                     help="the plugin checkout holding VERSION beside assets/ "
                                          "(default: the one this script runs from)"),
          cmd_drift)
+
+
+# --------------------------------------------------------------------------- #
+# read — N sections of any markdown file, in ONE call
+# --------------------------------------------------------------------------- #
+# `specs.py section` reads a SPEC, whose fourteen headings are a validated contract.
+# A reference or a standard is free markdown, so the two cannot share an
+# implementation — but they must not disagree about what a section IS. Per
+# `docs/standards/code/canonical-set-parsing.md`, what is shared is the RULE, proved by
+# both tools against SECTION_CASES below.
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+MD_HEADING_RE = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$")
+
+
+def _strip_frontmatter(lines: list[str]) -> list[str]:
+    """A leading `---` block is a header, never content. ~1,424 chars per OKF doc that
+    a section reader has no reason to carry."""
+    if not lines or lines[0].strip() != "---":
+        return lines
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return lines[i + 1:]
+    return lines
+
+
+def markdown_sections(text: str) -> list[dict]:
+    """Every heading of a markdown file, in order, each with the body it owns.
+
+    Two rules, and both are the reason this is code rather than an `awk` in 26 command
+    bodies:
+
+    - **A section ends at the next heading of the same level or shallower.** So
+      sub-headings travel with their parent, exactly as `## Impact` keeps its parsed
+      `### Standards …` sub-heading in `specs.py`. Ending at the next heading of ANY
+      level would orphan them.
+    - **A fenced block is never read as a heading.** Several sections here open with
+      ```` ```bash ```` blocks containing `## ` comments, and a line-matching reader
+      slices the section in half at one — silently, returning a plausible answer.
+    """
+    lines = _strip_frontmatter(text.splitlines())
+    heads: list[dict] = []
+    fence: str | None = None
+    for lineno, line in enumerate(lines):
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+            continue
+        if fence is not None:
+            continue
+        h = MD_HEADING_RE.match(line)
+        if h:
+            heads.append({"level": len(h.group(1)), "heading": h.group(2).strip(),
+                          "lineno": lineno})
+    for i, h in enumerate(heads):
+        end = len(lines)
+        for nxt in heads[i + 1:]:
+            if nxt["level"] <= h["level"]:
+                end = nxt["lineno"]
+                break
+        h["body"] = "\n".join(lines[h["lineno"] + 1:end]).strip("\n")
+    return heads
+
+
+RULES_MARKER = "<!-- rules -->"
+RATIONALE_MARKER = "<!-- rationale -->"
+
+
+def split_rule_and_rationale(body: str) -> tuple[str, bool]:
+    """The rule half of a section, and whether a marker actually said where it ends.
+
+    **Marker, never heuristic.** A model deciding per read which sentences are binding and
+    which are the story behind them is non-deterministic, and its failure is silent: a
+    dropped binding sentence shows up nowhere. The marker is written once, by whoever wrote
+    the rule, and the read is mechanical.
+
+    **No marker → the whole section, and the caller is TOLD.** The degradation is to
+    today's behaviour, never to emptiness. A convention applied in five files must not turn
+    the other eighteen into silence.
+
+    **A marker's reach ends at the next heading.** Asked for a section, a caller gets its
+    sub-sections with it — so a single `<!-- rationale -->` inside one `###` would otherwise
+    truncate every rule after it, including whole sub-sections that carry no marker at all.
+    Measured on `execution.md` §Delegating an executor: three normative `###` blocks
+    disappeared behind one sub-section's rationale.
+    """
+    keep, marked, out = True, False, []
+    fence: str | None = None
+    for line in body.splitlines():
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+        elif fence is None:
+            if line.strip() == RULES_MARKER:
+                keep, marked = True, True
+                continue
+            if line.strip() == RATIONALE_MARKER:
+                keep = False
+                continue
+            if MD_HEADING_RE.match(line):
+                if not keep and out and out[-1].strip():
+                    out.append("")   # dropped rationale must not weld a heading to prose
+                keep = True
+        if keep:
+            out.append(line)
+    return "\n".join(out).strip("\n"), marked
+
+
+def normalize_heading(name: str) -> str:
+    """What a caller types against what the file carries. `§The commit`, `## The commit`
+    and `the commit` are the same request — the citation form the bodies already use
+    carries the `§`, and refusing over it would make the reader unusable from the very
+    prose it exists to serve."""
+    return " ".join(name.strip().lstrip("#§").strip().split()).casefold()
+
+
+def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], list[str]]:
+    """The requested sections in the order they were ASKED FOR, plus the names that
+    resolved to nothing. Duplicate headings resolve to the first — the same rule
+    `parse_sections` applies in `specs.py`.
+
+    **An exact name wins; failing that, a UNIQUE prefix resolves.** Free-markdown headings
+    are long and full of punctuation — `## The commit — one per task, carrying its own
+    ticked box` — and a caller citing `§The commit`, exactly as the command bodies do, must
+    not have to reproduce an em-dash and a comma to be understood. A prefix matching two
+    headings resolves to neither: ambiguity is a refusal, never a guess."""
+    index: dict[str, dict] = {}
+    for h in heads:
+        index.setdefault(normalize_heading(h["heading"]), h)
+    got, missing = [], []
+    for name in wanted:
+        key = normalize_heading(name)
+        h = index.get(key)
+        if h is None:
+            hits = [v for k, v in index.items() if k.startswith(key)]
+            h = hits[0] if len(hits) == 1 else None
+        (got.append(h) if h else missing.append(name))
+    return got, missing
+
+
+SECTION_FIXTURE = '''---
+type: standard
+title: the section reader's fixture
+---
+
+# Top
+
+Preamble under a level-1 heading.
+
+## Alpha
+
+Alpha body.
+
+### Alpha sub
+
+Sub body that belongs to Alpha.
+
+## Beta
+
+Beta opens with a fenced block whose lines look like headings:
+
+```bash
+## not a heading
+### also not a heading
+```
+
+Beta continues after the fence.
+
+## Gamma
+
+~~~
+## fenced by tildes
+~~~
+
+Gamma ends the file.
+'''
+
+# The canonical case list for the SECTION rule, duplicated verbatim in `specs.py`.
+# EDIT BOTH, OR NEITHER — exactly as `CANONICAL_CASES` is duplicated across all three
+# tools for the frontmatter rule. Neither script may import the other: each installs
+# standalone into a target's `.claude/hooks/`, so the list travelling with each copy is
+# what makes the rule provable where it actually runs.
+#
+# It covers only what BOTH tools answer the same way: level-2 sections. A spec's
+# fourteen headings are all `##`, so that is the whole of `specs.py`'s contract, while
+# `skills.py` also resolves `#` and `###` over free markdown and proves those separately.
+SECTION_CASES = {
+    "index": ["Alpha", "Beta", "Gamma"],
+    "cases": [
+        {"why": "sub-headings travel with their parent, and the section stops at the "
+                "next heading of the same level",
+         "ask": ["Alpha"],
+         "contains": ["Alpha body.", "### Alpha sub", "Sub body that belongs to Alpha."],
+         "excludes": ["Beta continues"]},
+        {"why": "a fenced block containing `## ` never splits the section",
+         "ask": ["Beta"],
+         "contains": ["## not a heading", "Beta continues after the fence."],
+         "excludes": ["Gamma ends"]},
+        {"why": "tilde fences count too, and the last section runs to end of file",
+         "ask": ["Gamma"],
+         "contains": ["## fenced by tildes", "Gamma ends the file."],
+         "excludes": []},
+        {"why": "the citation form the bodies already use resolves: `§X` and `## X` "
+                "are the same request, and N sections come back in the order asked",
+         "ask": ["§Gamma", "## Alpha"],
+         "contains": ["Gamma ends the file.", "Alpha body."],
+         "excludes": [],
+         "order": ["Gamma", "Alpha"]},
+        {"why": "neither frontmatter nor the preamble above the first section ever "
+                "leaks into a section that does not own it",
+         "ask": ["Alpha", "Beta", "Gamma"],
+         "contains": [],
+         "excludes": ["type: standard", "Preamble under a level-1 heading."]},
+        {"why": "a unique prefix resolves, so a citation need not reproduce a long "
+                "heading's punctuation",
+         "ask": ["Gam"],
+         "contains": ["Gamma ends the file."],
+         "excludes": []},
+        {"why": "a section that does not exist is a refusal that names it, never an "
+                "empty answer",
+         "ask": ["Delta"],
+         "missing": ["Delta"]},
+    ],
+}
+
+
+def section_case_findings(read_sections) -> list[dict]:
+    """Run the canonical list against one tool's reader.
+
+    `read_sections(fixture_text, wanted)` returns `(sections, missing)`, where each
+    section is a mapping with `heading` and `body`. Both tools supply that adapter over
+    their own implementation, so the list is the contract and neither is the reference.
+    """
+    out: list[dict] = []
+    heads = [h["heading"] for h in read_sections(SECTION_FIXTURE, None)[0]
+             if h.get("level", 2) == 2]
+    if heads != SECTION_CASES["index"]:
+        out.append(finding("sk-section-index", "error",
+                           f"heading index is {heads}, expected "
+                           f"{SECTION_CASES['index']}",
+                           remedy="a fenced line was read as a heading, or a heading "
+                                  "was missed"))
+    for case in SECTION_CASES["cases"]:
+        got, missing = read_sections(SECTION_FIXTURE, case["ask"])
+        want_missing = case.get("missing", [])
+        if missing != want_missing:
+            out.append(finding("sk-section-missing", "error",
+                               f"{case['ask']}: missing is {missing}, expected "
+                               f"{want_missing} — {case['why']}",
+                               remedy="an absent section must refuse, naming itself"))
+            continue
+        if want_missing:
+            continue
+        body = "\n".join(f"{'#' * s.get('level', 2)} {s['heading']}\n{s['body']}"
+                         for s in got)
+        for needle in case["contains"]:
+            if needle not in body:
+                out.append(finding("sk-section-body", "error",
+                                   f"{case['ask']}: missing {needle!r} — {case['why']}",
+                                   remedy="the section rule dropped content it owns"))
+        for needle in case["excludes"]:
+            if needle in body:
+                out.append(finding("sk-section-body", "error",
+                                   f"{case['ask']}: leaked {needle!r} — {case['why']}",
+                                   remedy="the section rule captured content it does "
+                                          "not own"))
+        if "order" in case and [s["heading"] for s in got] != case["order"]:
+            out.append(finding("sk-section-order", "error",
+                               f"{case['ask']}: order is "
+                               f"{[s['heading'] for s in got]}, expected "
+                               f"{case['order']} — {case['why']}",
+                               remedy="N sections come back in the order asked"))
+    return out
+
+
+def read_sections_adapter(text: str, wanted: list[str] | None) -> tuple[list[dict], list[str]]:
+    """This tool's arm of the canonical list."""
+    heads = markdown_sections(text)
+    if wanted is None:
+        return heads, []
+    return select_sections(heads, wanted)
+
+
+def cmd_read(args, root: str) -> int:
+    path = pathlib.Path(args.path)
+    if not path.is_file():
+        payload = {"ok": False, "code": "sk-read-no-file", "path": str(path),
+                   "message": f"{path} is not a file"}
+        print(json.dumps(payload, indent=2, ensure_ascii=False) if args.json
+              else f"error: {path} is not a file")
+        return 2
+    heads = markdown_sections(path.read_text(encoding="utf-8"))
+
+    if not args.sections:
+        index = [{"heading": h["heading"], "level": h["level"], "chars": len(h["body"])}
+                 for h in heads]
+        if args.json:
+            print(json.dumps({"ok": True, "path": str(path), "index": index},
+                             indent=2, ensure_ascii=False))
+        else:
+            print(f"{path} — {len(index)} sections")
+            for h in index:
+                print(f"  {'  ' * (h['level'] - 1)}{'#' * h['level']} {h['heading']}"
+                      f"  ({h['chars']} chars)")
+        return 0
+
+    # Repeatable AND comma-separated: a heading may itself contain a comma, so the short
+    # form cannot be the only form.
+    wanted = [s for group in args.sections
+              for s in (p.strip() for p in group.split(",")) if s]
+    got, missing = select_sections(heads, wanted)
+    if missing:
+        # A refusal, never an empty answer: a caller that asked for a rule and got
+        # silence proceeds as though the rule did not exist.
+        payload = {"ok": False, "code": "sk-read-no-section", "path": str(path),
+                   "missing": missing,
+                   "available": [h["heading"] for h in heads],
+                   "message": f"{path} has no section named: {', '.join(missing)}"}
+        print(json.dumps(payload, indent=2, ensure_ascii=False) if args.json
+              else f"error: {path} has no section named: {', '.join(missing)}\n"
+                   f"  available: {', '.join(h['heading'] for h in heads)}")
+        return 2
+
+    rows = []
+    for h in got:
+        body, marked = ((h["body"], True) if not args.rules_only
+                        else split_rule_and_rationale(h["body"]))
+        rows.append({"heading": h["heading"], "level": h["level"], "body": body,
+                     **({"marked": marked} if args.rules_only else {})})
+
+    if args.json:
+        print(json.dumps({"ok": True, "path": str(path), "rulesOnly": args.rules_only,
+                          "sections": rows}, indent=2, ensure_ascii=False))
+    else:
+        for r in rows:
+            print(f"{'#' * r['level']} {r['heading']}\n\n{r['body']}\n")
+        unmarked = [r["heading"] for r in rows if r.get("marked") is False]
+        if unmarked:
+            # Stated, never silent: the caller asked for the rule half and got the whole
+            # section, and a reader that does not know which one it holds cannot tell a
+            # compact rule from a section nobody has marked up yet.
+            print(f"note: no {RULES_MARKER} marker in: {', '.join(unmarked)} — returned "
+                  f"the whole section")
+    return 0
+
+
+register("read",
+         lambda sp: (sp.add_argument("path", help="a markdown file"),
+                     sp.add_argument("--sections", action="append", default=[],
+                                     help="a section name, or several comma-separated; "
+                                          "repeatable, for a heading carrying a comma. "
+                                          "A unique prefix resolves. Omit for the file's "
+                                          "heading index"),
+                     sp.add_argument("--rules-only", action="store_true",
+                                     help=f"only the {RULES_MARKER} half of each section; "
+                                          f"a section with no marker comes back whole and "
+                                          f"says so")),
+         cmd_read)
 
 
 # --------------------------------------------------------------------------- #

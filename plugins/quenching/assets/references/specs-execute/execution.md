@@ -23,8 +23,11 @@ never reaches past the loop.
 - [The commit — one per task, carrying its own ticked box](#the-commit--one-per-task-carrying-its-own-ticked-box)
 - [Declared versus emergent `docs/`](#declared-versus-emergent-docs)
 - [Delegating an executor — permitted, and bounded](#delegating-an-executor--permitted-and-bounded)
+- [The section boundary — where a run may stop](#the-section-boundary--where-a-run-may-stop)
 
 ## The precondition: a clean tree
+
+<!-- rules -->
 
 **Refuse to start the loop while `git status --porcelain` is non-empty**, and say why: this command
 commits one task at a time, and a commit cannot separate the task's diff from an unrelated edit
@@ -36,6 +39,8 @@ Not a git repo → no isolation, no commits. Say that once, run the rest of the 
 never `git init` a repo on the human's behalf.
 
 ## Isolation is somebody else's job
+
+<!-- rules -->
 
 Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all belong to
 **`/quenching:specs:isolate`** and its reference,
@@ -54,12 +59,16 @@ Nothing in this file stamps that record, reads it as authoritative, or corrects 
 
 ### Delegating is owed; dispatching unconditionally is not
 
+<!-- rules -->
+
 Delegation and dispatch are not the same act. A spec that is **already isolated** — its
 `plan/<slug>` ref alive, or the `branch` record already stamped — has nothing left to take, and
 `/specs:isolate` invoked against it does exactly what it promises: it reports the existing branch
 and stamps nothing. **Check first, and skip the call in that case.** Checking is `git branch --list
 "plan/<slug>"` plus the `branch` record already inside the `status --json` the loop reads anyway,
 and it decides the question without moving anything.
+
+<!-- rationale -->
 
 The saving is not only turns. Dispatching a stage also costs the run its own **attribution**: the
 transcript's pointer moves to the stage and, measured, almost never comes back, so the conducting
@@ -76,6 +85,8 @@ and is measured as an upper bound. That is the honest cost of a real delegation,
 is not rediscovered at each retro.
 
 ## The verification policy
+
+<!-- rules -->
 
 Declared per spec in the frontmatter (`verification`), written by `/quenching:specs:develop`, read by
 `specs.py status --spec <slug> --json`. **Execute never decides when to test** — the spec's author
@@ -104,6 +115,8 @@ from the spec cycle charges every spec for a front most of them never touch.
 
 ## The validation loop
 
+<!-- rules -->
+
 For each task the policy says to verify:
 
 1. Run the task's `verify:` command.
@@ -126,13 +139,6 @@ Two rules bound the loop:
   and `specs.py next` then skips it and offers the following task, so one bad task never stalls
   the whole spec.
 
-**Why a marker and not a counter.** v1 kept an attempt count in a sidecar `.specs.json` and
-stopped at five. The count was machine state a human never saw: a task went quiet after five
-failures with no trace of *why*, and the only way to resume was a `--reset-attempts` incantation
-that bought five more attempts at the same wrong approach. A written reason serves the same
-purpose — stopping unattended retry loops — while being legible to the person who has to unblock
-it, and it lives in the file they are already reading.
-
 **`--block` requires `--reason`** (the tool refuses without one). A blocked task with no reason is
 exactly the hidden state this replaced.
 
@@ -140,7 +146,18 @@ A human resumes a blocked task by fixing the cause and un-blocking it —
 `specs.py task --spec <slug> --uncheck <id>` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
 
+<!-- rationale -->
+
+**Why a marker and not a counter.** v1 kept an attempt count in a sidecar `.specs.json` and
+stopped at five. The count was machine state a human never saw: a task went quiet after five
+failures with no trace of *why*, and the only way to resume was a `--reset-attempts` incantation
+that bought five more attempts at the same wrong approach. A written reason serves the same
+purpose — stopping unattended retry loops — while being legible to the person who has to unblock
+it, and it lives in the file they are already reading.
+
 ## The diff self-review — four items, before every commit
+
+<!-- rules -->
 
 Cheap, per task, over that task's diff only (`git diff`). Four questions, not a code review:
 
@@ -153,11 +170,17 @@ Cheap, per task, over that task's diff only (`git diff`). Four questions, not a 
 4. **Dead code** — anything added and not reached, left behind by an approach that changed
    mid-task.
 
-Fix what it finds **before** committing, so the commit is the reviewed version. This is
-deliberately *not* a full code review: it runs per task, and a three-line change must not cost a
-full-diff read. The whole-branch review runs once, and it belongs to `/quenching:specs:conclude`.
+Fix what it finds **before** committing, so the commit is the reviewed version. The
+whole-branch review runs once, and it belongs to `/quenching:specs:conclude`.
+
+<!-- rationale -->
+
+This is deliberately *not* a full code review: it runs per task, and a three-line change must not
+cost a full-diff read.
 
 ## The commit — one per task, carrying its own ticked box
+
+<!-- rules -->
 
 After the self-review passes, **decide the subject, then verify, tick the box with it, commit, and
 assert the subject survived**. That order is the point: the subject is known before the commit
@@ -184,10 +207,6 @@ Stage the task's declared `files:` **and the spec file**, never the whole tree �
 picks up whatever an editor or a tool wrote while the task ran, which is the same contamination
 §The precondition refuses at the start.
 
-**There is no per-task bookkeeping commit any more.** It existed only because a sha cannot be known
-before the commit that carries it, so the tick had to follow the commit and could not join it. One
-task is now exactly one commit: code, docs the task named, and the ticked box.
-
 If the commit **fails** — a rejecting hook, nothing staged — undo the tick
 (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist, and
 report the failure. Never route around it with `--no-verify`.
@@ -197,10 +216,6 @@ The **subject line format** is the target repo's to declare. Read
 §Commit messages: a repo with `docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
-
-One commit per task is what makes the branch worth having: `git revert` undoes exactly one task,
-`git log` reads as the spec's task list, and a review can walk it step by step. N tasks piled into
-one uncommitted blob gives none of that, and the isolation offer buys nothing.
 
 **Hard rules, no exceptions and no "just this once":**
 
@@ -223,10 +238,6 @@ matching as a substring and needs nothing. A hook that **replaces** the subject 
 link: **report it as a finding and write nothing.** Correcting the record here would put a write
 after the commit again, which is the whole thing this ordering removes.
 
-The record cannot go stale: the rules above forbid amending an earlier task's commit and forbid
-force-push. Unlike a sha it also **survives a rebase**, so the one merge strategy that used to
-destroy every recorded link no longer does.
-
 **Squash is the one caveat, and `conclude` owns it.** A squashed merge leaves the per-task commits
 reachable only from the branch — which is why `/quenching:specs:conclude` records `merge: {strategy, subject}`
 and, on a squash, offers to keep the branch. Nothing in this loop needs to know; recording the
@@ -235,7 +246,23 @@ subject honestly is the whole job here.
 With no git in the repo there is nothing to anchor to: tick the box without `--subject` and say so
 once in the report, rather than inventing a placeholder.
 
+<!-- rationale -->
+
+**There is no per-task bookkeeping commit any more.** It existed only because a sha cannot be known
+before the commit that carries it, so the tick had to follow the commit and could not join it. One
+task is now exactly one commit: code, docs the task named, and the ticked box.
+
+One commit per task is what makes the branch worth having: `git revert` undoes exactly one task,
+`git log` reads as the spec's task list, and a review can walk it step by step. N tasks piled into
+one uncommitted blob gives none of that, and the isolation offer buys nothing.
+
+The record cannot go stale: the rules above forbid amending an earlier task's commit and forbid
+force-push. Unlike a sha it also **survives a rebase**, so the one merge strategy that used to
+destroy every recorded link no longer does.
+
 ## Declared versus emergent `docs/`
+
+<!-- rules -->
 
 A task writes a `docs/standards/` doc **only when the task itself names it** — the path bulleted
 under `## Impact`'s parsed `### Standards this spec will write into docs/standards/` sub-heading,
@@ -255,6 +282,8 @@ the executor to make it mid-task is how a finding gets dropped for being inconve
 are resolved by `/quenching:specs:develop`'s discoveries bank, and the doc an emergent finding deserves is
 written by `/quenching:specs:conclude` at distillation.
 
+<!-- rationale -->
+
 Two failure modes this line exists to prevent, and they pull in opposite directions: a build that
 stops to author a standard nobody asked for, and a build that silently loses what it learned.
 Declared → write it. Emergent → record it in one line.
@@ -263,6 +292,8 @@ Declared → write it. Emergent → record it in one line.
 below), and a task that writes into `docs/` is not eligible for delegation at all.
 
 ## Delegating an executor — permitted, and bounded
+
+<!-- rules -->
 
 A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 
@@ -277,6 +308,35 @@ confirmation, every `specs.py task --check` flip, every `specs.py task --block` 
 `docs/standards/` write, every `specs.py discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
+
+### The cost of delegating, and when it inverts
+
+<!-- rules -->
+
+**Permitted is not free, and the account runs the other way more often than it looks.** A
+sub-agent starts on a cold context and does not share the session's prompt cache, so it pays the
+full first read of every file it touches. Where N tasks declare the same large file, that is N
+cold reads against the orchestrator's one warm one. Three rules follow, and they are what decides
+whether a permitted delegation is also a good one:
+
+- **Delegate by file, or by section of tasks — never task by task.** One sub-agent that owns six
+  tasks over one file reads it once; six sub-agents read it six times.
+- **Run the four-item self-review INSIDE the sub-agent**, and have it return a verdict. A
+  sub-agent that hands its diff back for review puts the diff into the long context, which is the
+  cost the delegation was for.
+- **Where the tasks are small and the shared file is large, keep the work.** Reading once and
+  re-reading from cache is the cheaper arm, and the loop is allowed to say so.
+
+<!-- rationale -->
+
+The account is **declared arithmetic over files on disk, not a measurement of any run** — the
+distinction `docs/standards/automation/session-evidence.md` §The rule a counted claim must obey
+imposes, and it is stated as an estimate here because that is what it is. On this repo's
+`configurable-spec-backend`, 18 of 29 tasks are delegation-eligible and 13 of them declare the same
+file: `specs.py`, ~37k tokens. Task-by-task that is ~13 × 37k ≈ 480k against roughly 150k for an
+orchestrator reading it once and re-reading from cache — a delegation that reads as a saving and
+is not one. Measured across the whole transcript archive, this permission had never once been
+exercised, so nothing here revokes it; what was missing was the arithmetic that says when it pays.
 
 ### This is not `context: fork`, and the never-fork rule is untouched
 
@@ -312,3 +372,33 @@ Reports each `[P]` group and whether it is `eligible`. Exit **0** when every mar
 eligible, **1** when any group overlaps or lacks `files:`. **Branch on that, never on judgment**:
 a group reported ineligible runs serially, and the reason is stated in the report rather than
 argued about.
+
+## The section boundary — where a run may stop
+
+<!-- rules -->
+
+A `## N.` section's last task committing, with another section still ahead, is a **clean boundary**:
+the loop offers to stop there, names the command that resumes, and continues unless told otherwise.
+
+- **The trigger is that event, never a window size.** No threshold, no token count, no "this is
+  getting long". A number invented before it is measured fixes the answer, which is why §The
+  Handoff cadence is four events rather than a judgment.
+- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `specs.py status`
+  returns already carry everything a fresh session needs; the boundary adds no record and no fifth
+  Handoff event. Accepted, the stop is a pause and a last commit — two events the cadence already
+  has.
+- **It offers and never imposes.** The loop does not end itself, and an unanswered offer means
+  carry on.
+- **The contract still ends at the last commit.** A stop here is not a close-out: the branch
+  review, the merge and the archive remain `/quenching:specs:conclude`'s, exactly as they are for a
+  run that goes to the end.
+
+<!-- rationale -->
+
+The run's cost is `tokens × turns remaining`, so it grows with the **square** of the turn count:
+seven runs of ~45 turns cost roughly a seventh of one run of 300 for the same work. That figure is
+declared arithmetic over the integral, not a measured run, and it assumes resumption costs about
+nothing — which holds only because the trail above was already being maintained for other reasons.
+A section is the unit because it is the smallest independently deliverable one the front already
+defines; `per-section` is the default verification policy for the same reason, so a boundary is
+also the point where the suite has just run.
