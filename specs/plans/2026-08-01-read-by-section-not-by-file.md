@@ -410,9 +410,10 @@ razão medida de terem perdido.
       decidir per ## Open Decisions se falta rede de segurança para um standard não declarado
       files: plugins/quenching/commands/specs/execute.md
       subject: plan/read-by-section-not-by-file: 1.1 Passo 4 lê os standards declarados, nunca a pasta
-- [ ] 1.2 No mesmo passo, trocar o `Read` do arquivo da spec por `specs.py section` para as seções
+- [x] 1.2 No mesmo passo, trocar o `Read` do arquivo da spec por `specs.py section` para as seções
       que ele exige, e dizer que é UMA chamada
       files: plugins/quenching/commands/specs/execute.md
+      subject: plan/read-by-section-not-by-file: 1.2 Passo 4 lê a spec por seção, em UMA chamada
 - [ ] 1.3 Medir e registrar o preâmbulo antes/depois em chars, por código lendo os arquivos em disco
       verify: python3 assets/bin/skills.py --root . doctor --json
 

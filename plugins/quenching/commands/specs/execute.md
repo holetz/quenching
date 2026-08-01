@@ -140,9 +140,19 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
-Read `## Problem`, `## Proposal`, `## Design`, `## Handoff` and `## Tasks` at the path `status`
-resolved — never assume filenames. `## Impact` names the `docs/standards/` paths and the code this
-spec expects to touch.
+Read `## Problem`, `## Proposal`, `## Design`, `## Impact`, `## Handoff` and `## Tasks` **by
+section, in ONE call** — never `Read` on the spec file:
+
+```bash
+specs.py section "<slug>" Problem; specs.py section "<slug>" Proposal; ...
+```
+
+The file carries ~37 lines of template comment identical in every spec plus the sections this step
+does not want, and the reader is not saved by asking for the file and skimming: an executor pays
+for what arrives, not for what it uses. Chain the headings in one shell call — **the unit that
+matters is the turn**, and six headings fetched over six turns costs more than the whole file did.
+The path comes from what `status` resolved; never assume filenames. `## Impact` names the
+`docs/standards/` paths and the code this spec expects to touch.
 
 Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the
 `docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
