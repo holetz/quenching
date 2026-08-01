@@ -40,9 +40,9 @@ Resolve `specs.py` by the fallback in
 `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
-**No deltas.** This front is entirely native: a spec writes its durable rules **directly** into
-`docs/standards/` while it is built, isolated on a branch. There is no second store to bridge to,
-so nothing here writes a delta and nothing later syncs one.
+**No deltas.** A spec writes its durable rules **directly** into `docs/standards/` while it is
+built, isolated on a branch. Whichever backend holds the spec is the only one that holds it, so
+there is no second store to bridge to: nothing here writes a delta and nothing later syncs one.
 
 ## Doctrine
 

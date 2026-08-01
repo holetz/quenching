@@ -7,11 +7,33 @@ derived stages, the executor contract, and the `specs.py` tool surface — and e
 durable knowledge crosses from a spec into `docs/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
-This front is **entirely native** — no external CLI, no Node runtime, no main spec store, no delta
-format. A **spec** writes straight into the OKF `docs/` bundle (a decision into `docs/standards/`,
-an understanding into `docs/knowledge/`), isolated on a branch while it is built. The tool that
-gives the LLM deterministic rails is `assets/bin/specs.py` — a stdlib-only Python script in the
-same mold as `okf-validate.py`.
+**Where a spec is stored is declared, not fixed.** A target repo names its backend in
+`.claude/quenching.json` — `files` (on a dedicated branch), `github`, or `azure-boards` — and the
+**selected backend is the source of truth**. The conceptual model below is the same whichever one
+is chosen: the same fourteen sections, the same frontmatter records, the same derived stages. Only
+*where and how* they are serialized differs, which is why every command drives `specs.py` rather
+than a path.
+
+*This reverses an earlier claim, and the reversal is worth knowing.* This front used to declare
+itself **"entirely native — no external CLI, no Node runtime, no main spec store, no delta
+format"**, and the four clauses did not survive equally:
+
+- **no Node runtime** — still true, and unconditional. `specs.py` is stdlib-only Python, in the
+  same mold as `okf-validate.py`.
+- **no external CLI** — traded deliberately. An external backend's transport is `subprocess` over
+  the vendor's own `gh` / `az`, so auth, paging and API errors stop being this plugin's code. The
+  cost is declared: that backend does not work without the binary installed, and a missing one is a
+  **refusal (exit 2)** naming it, never a traceback.
+- **no main spec store** — replaced by something stronger, not abandoned: there is still exactly
+  ONE store, and it is whichever backend was declared. What is prohibited is a *second*,
+  authoritative local copy shadowing it.
+- **no delta format** — still true in the sense that mattered. A backend may serialize natively
+  (GitHub's `## Tasks` become sub-issues) as long as it reconstructs the canonical document on
+  read; that is a mapping inside one implementation, not a delta bridging two copies that can
+  disagree.
+
+A **spec** still writes straight into the OKF `docs/` bundle (a decision into `docs/standards/`, an
+understanding into `docs/knowledge/`), isolated on a branch while it is built.
 
 ## Contents
 
@@ -56,10 +78,16 @@ a spec carries no OKF `type:`, and `specs.py validate` is its contract (see
 [specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)). The folder
 carries **no listing file** — `specs.py list` derives what it holds from disk on demand.
 
-There is **one truth**, not two: a spec does not edit a separate "main spec" store — it writes the
-durable rule directly into `docs/standards/`, honestly `authority`-graded. There is no delta,
-because there is no other copy for a delta to bridge to; isolation-while-building is what a
-**branch or worktree** provides, with real merge, history, and reversion.
+There is **one truth**, not two — and that survives the backend becoming configurable, because
+exactly one store is ever authoritative. A spec does not edit a separate "main spec" copy: it
+writes the durable rule directly into `docs/standards/`, honestly `authority`-graded. There is no
+delta, because there is no *other* copy for a delta to bridge to; isolation-while-building is what
+a **branch or worktree** provides, with real merge, history, and reversion.
+
+The layout above is the `files` backend's. It is the reference implementation and not the only one:
+under an external backend there may be **no `specs/` folder at all**, the phase is the issue's own
+state rather than a folder, and `promote` moves nothing on disk. What does not change is anything a
+command can observe through `specs.py`.
 
 ## Identity: the slug and the filename
 
@@ -302,11 +330,14 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
+| `specs.py show --spec <slug> [--section H]… [--task ID]… [--full]` | granular read: the section map by default, one or more sections or tasks by name, the whole document **only** under `--full` |
 | `specs.py section <slug> <heading> [--write]` | deterministic partial read/write of ONE section; `--write` creates the heading in canonical position |
+| `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
+| `specs.py config [--json]` | the workspace's declared parameters — the backend, the specs branch, `worktreeSetup` |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
-| `specs.py task --spec <slug> --check ID [--subject LINE] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically |
+| `specs.py task --spec <slug> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
 | `specs.py discover <slug> <text>` | append one line to `## Discoveries` |
 | `specs.py parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
@@ -322,8 +353,10 @@ renaming it**. `--outcome` is the only content a promote ever writes.
 and lists them, overridable with `--force`; `--outcome abandoned` is always allowed, because
 closing out a spec that will not be built is exactly the case where open tasks are expected.
 
-There is no `init` (scaffold is an asset copy — the align's job), no `store`, no `profiles`, no
-telemetry, and no delta parser.
+There is no `init` (scaffold is an asset copy — the align's job), no `profiles`, no telemetry, and
+no delta parser. There is no `store` subcommand either: which store holds the specs is
+**declared** in `.claude/quenching.json` and read by `specs.py config`, never switched by a
+command mid-flight.
 
 Templates live in `assets/specs/templates/spec.md` and are stamped by `specs.py new` — with the
 same content embedded as a fallback constant in `specs.py` itself, so an installed copy under a
