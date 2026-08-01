@@ -327,7 +327,7 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
-| `specs.py section <slug> <heading> [--write]` | deterministic partial read/write of ONE section; `--write` creates the heading in canonical position |
+| `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |

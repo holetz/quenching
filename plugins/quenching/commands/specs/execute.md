@@ -163,13 +163,14 @@ Read `## Problem`, `## Proposal`, `## Design`, `## Impact`, `## Handoff` and `##
 section, in ONE call** — never `Read` on the spec file:
 
 ```bash
-specs.py section "<slug>" Problem; specs.py section "<slug>" Proposal; ...
+specs.py section "<slug>" "Problem,Proposal,Design,Impact,Handoff,Tasks"
 ```
 
 The file carries ~37 lines of template comment identical in every spec plus the sections this step
 does not want, and the reader is not saved by asking for the file and skimming: an executor pays
-for what arrives, not for what it uses. Chain the headings in one shell call — **the unit that
-matters is the turn**, and six headings fetched over six turns costs more than the whole file did.
+for what arrives, not for what it uses. The heading argument is a **list**, and taking it in one
+call is the point — **the unit that matters is the turn**, and six headings fetched over six turns
+costs more than the whole file did. They come back in the order asked.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
 `docs/standards/` paths and the code this spec expects to touch.
 

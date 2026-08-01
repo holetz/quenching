@@ -1498,8 +1498,8 @@ def cmd_selftest(args, root: str) -> int:
     # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
              + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5
-             + len(SECTION_CASES["cases"]) + 5)  # + the every-level index, the
-    # `###` resolution, and the three `--rules-only` arms
+             + len(SECTION_CASES["cases"]) + 6)  # + the every-level index, the
+    # `###` resolution, and the four `--rules-only` arms
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
