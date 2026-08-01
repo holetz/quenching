@@ -411,9 +411,10 @@ para `.claude/quenching.json`; fechar com `doctor` (26 comandos, 0 findings) e `
       `specs.py`
       files: plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/continue.md, plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/develop.md, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/commands/specs/status.md, plugins/quenching/commands/specs/triage.md
       subject: plan/configurable-spec-backend: 5.1 leitura granular na superficie e o record como escritor de frontmatter
-- [ ] 5.2 Retirar de spec-driven.md a declaração "entirely native — no external CLI, no main spec
+- [x] 5.2 Retirar de spec-driven.md a declaração "entirely native — no external CLI, no main spec
       store, no delta format", registrando o que a substitui
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
+      subject: plan/configurable-spec-backend: 5.2 retira a declaracao entirely-native, preservando o que ela reverte
 - [ ] 5.3 Atualizar specs-isolate/git.md e specs-create/specs-front.md para o novo caminho de config
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
 - [ ] 5.4 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
