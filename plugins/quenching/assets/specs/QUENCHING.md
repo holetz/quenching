@@ -15,10 +15,10 @@ This file is the **operator manual** for that workspace. Its sibling
 `../docs/QUENCHING.md` covers the knowledge base; the two are connected by a deliberate bridge
 described in §6.
 
-**Fully native — nothing external to install.** This front has **no npm package, no Node
-runtime, no external CLI, no delta format, and no separate spec store**. The one tool is
+**Nothing external to install for the default.** This front has **no npm package, no Node runtime,
+no delta format, and no second spec store shadowing the one you declared**. The one tool is
 `specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), installed
-into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `specs/config.json`
+into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `.claude/quenching.json`
 (§4, `/specs:isolate`) — absent in most repos, and its absence costs nothing. All you need is
 Python:
 
@@ -203,8 +203,8 @@ discovery at the first failing `verify:`. Either way it commits an uncommitted s
 new branch so the base keeps no trace of it, and stamps `branch: {base, work}`. `base` is
 captured while it is still true: after a merge, git cannot say what the branch was cut from.
 
-**A target may declare a setup command.** `specs/config.json` at the workspace root, with one
-recognised key:
+**A target may declare a setup command.** `.claude/quenching.json` at the repo root, under the
+`worktreeSetup` key:
 
 ```json
 {"worktreeSetup": "./scripts/wt-setup.sh"}
@@ -428,10 +428,13 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
-| `specs.py config [--json]` | the workspace's declared `specs/config.json`, as data; exit 0 whether or not anything is declared |
+| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data; exit 0 whether or not anything is declared |
+| `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
+| `specs.py show --spec <slug> [--section H]… [--task ID]… [--full]` | granular read: the section map by default, named sections or tasks on request, the whole document only under `--full` |
 
-There is no `init` (scaffold is an asset copy), no `store`, no `profiles`, no telemetry, and no
-delta parser. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
+There is no `init` (scaffold is an asset copy), no `profiles`, no telemetry, and no delta parser.
+There is no `store` subcommand either: which store holds the specs is **declared** in
+`.claude/quenching.json`, never switched by a command mid-flight. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
 any time:
 
 ```bash
