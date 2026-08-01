@@ -228,7 +228,27 @@ trabalho em que se está.
   que a interface proíbe. Mantê-los no corpo reaproveita `parse_frontmatter`, a mesma função pura
   que toda leitura já passa, sem um segundo lugar para sincronizar e sem risco de divergência entre
   label e frontmatter. Custo aceito: os sete records ficam invisíveis na lista de issues do GitHub,
-  pesquisáveis só abrindo a issue ou via `gh api`.
+  pesquisáveis só abrindo a issue ou via `gh api`.- **Decidido (task 6.2): a fase do `azure-boards` vem de uma chave de config explícita,
+  `azureStates: {plans, archive}`, e nunca de um palpite.** No `github` o mapeamento pôde ficar em
+  código porque open/closed é universal. Um estado do Azure Boards pertence ao **processo** do
+  projeto — Basic diz To Do/Doing/Done, Agile diz New/Active/Resolved/Closed, Scrum diz
+  New/…/Done/Removed, e um processo customizado diz o que quiser. As três alternativas foram
+  pesadas: perguntar as *state categories* à API (universal, mas uma chamada extra e mais
+  superfície não provável sem um projeto real), uma lista embutida de estados finais conhecidos
+  (zero configuração, quebra **silenciosamente** num processo customizado), ou declarar. Declarar
+  ganhou pelo critério que decidiu todo o resto desta spec: **um palpite errado aqui não falha, ele
+  lê todo spec arquivado como ativo**. Ausente ou pela metade, o backend recusa (exit 2) nomeando a
+  chave; meio-declarada é tratada como não declarada, porque arquivar num estado que o projeto tem
+  e depois não reconhecê-lo na volta é pior que não funcionar. Custo aceito: `azure-boards` exige
+  configuração antes do primeiro uso, e `plugin-configuration.md` passa a ter uma quarta chave —
+  registrado como discovery, não reescrito aqui.
+- **Refinado (task 6.2): a serialização híbrida é código compartilhado, não uma por backend.** Os
+  helpers nasceram no `github` com prefixo `gh_`, que era um acidente de origem: envelope de
+  marcador, casca de `## Tasks`, identidade e bloco de cada task e a remontagem são puros e não
+  sabem nada de GitHub. Renomeados para `hybrid_*` e usados pelos dois. O que os dois backends
+  externos concordam passa a ser literalmente o mesmo código, em vez de duas implementações que
+  alguém precisa manter em sincronia — a mesma razão pela qual a interface são cinco primitivas e
+  não oito verbos.
 ## Alternatives Considered
 
 - **Externo como projeção read-only:** rejeitada — o time quer read-write completo (gerir o spec
@@ -280,46 +300,55 @@ trabalho em que se está.
 
 - O `specs.py` é stdlib-only e sem dependências: o transporte externo é `subprocess` sobre
   `gh`/`az`, nunca uma biblioteca HTTP.
-- Nenhuma edição em `commands/**` é testável na sessão que a escreve. A seção 5 terminou com
-  `doctor` + `lint`, não com um teste funcional.
+- Nenhuma edição em `commands/**` é testável na sessão que a escreve.
 
-**Seções 1–5 completas e verificadas (23/29). Restam: 6 (azure-boards), 7 (export e fechamento).**
+**Seções 1–5 completas. Seção 6 em andamento: 6.1 e 6.2 feitas, resta 6.3. Depois, seção 7
+(export e fechamento). 25/29.**
 
-- **Interface** — `SpecBackend` com 5 primitivas (`list_specs`/`read_spec`/`write_spec`/
-  `create_spec`/`move_spec`), sem derivação própria. `MemoryBackend` prova igualdade no selftest.
-  `open_backend` recusa (exit 2) um backend declarado e não implementado, nunca cai para `files`.
-- **Leitura granular**: `show` com índice por default, `--section`/`--task` repetíveis, documento
-  inteiro só com `--full`.
+- **Interface** — `SpecBackend` com 5 primitivas, sem derivação própria. `MemoryBackend` prova
+  igualdade contra `files` no selftest.
 - **Escrita de frontmatter**: `specs.py record <slug> <name> --set k=v` é o escritor dos sete
   records — merge por campo, write-once imposto pelo schema, `outcome` recusado por declarar zero
-  `fields:` (seu escritor é `promote --outcome`). `list --json` carrega os `records` de cada spec.
-- **Backend `files`**: worktree persistente em `.claude/worktrees/<branch>`, lock que serializa
-  escritores (prova de morte, nunca idade), árvore limpa provada em ciclo completo. **Este próprio
-  repositório NÃO está migrado** — `specs/` populado continua na árvore de código, autoritativo até
-  um humano mover (`## Out of Scope`).
-- **Backend `github`**: transporte via `gh api`, recusa exit 2 legível. `## Tasks` vira sub-issues;
-  os sete records ficam no corpo. Fase = estado da issue. **Provado E2E real** contra
-  `holetz/claude-quenching` (task 4.6).
-- **Superfície (seção 5)**: nenhum body de `/specs:*` lê o corpo de um spec por caminho, e nenhum
-  escreve frontmatter com `Edit` — `triage` e `isolate` perderam a ferramenta `Edit` inteira. A
-  declaração "entirely native" saiu de `spec-driven.md` com a narrativa das quatro cláusulas e do
-  que sobreviveu a cada uma. `specs-isolate/git.md`, `specs-create/specs-front.md` e o
-  `assets/specs/QUENCHING.md` instalado apontam para `.claude/quenching.json`.
+  `fields:`. `list --json` carrega os `records` de cada spec.
+- **Superfície (seção 5)**: nenhum body de `/specs:*` lê o corpo de um spec por caminho nem
+  escreve frontmatter com `Edit`. `triage` e `isolate` perderam a ferramenta `Edit` inteira.
+- **`azure-boards` (6.1–6.2)**: transporte `az boards` com SEIS recusas exit 2 — binário ausente,
+  extensão `azure-devops` ausente, não autenticado, sem org/project, sem `azureStates`, erro de
+  API. `AzureBoardsBackend` implementa as cinco primitivas; um spec é um work item, uma task é um
+  work item filho, ligados por `System.LinkTypes.Hierarchy-Forward`.
+- **A serialização híbrida virou compartilhada**: os helpers `gh_*` viraram `hybrid_*` e são usados
+  pelos dois backends externos. Nada além do rename mudou no `github`.
+
+**O QUE FALTA SABER NA 6.3** — é a única Open Decision aberta: se selecionar `azure-boards` emite
+aviso de não-validado. O custo real da falta de prova agora é visível e está registrado abaixo.
+
+**O que `azure-boards` tem em vez de prova E2E** (não há projeto Azure DevOps aqui, e
+`## Out of Scope` já aceitou isso):
+- `backend_completeness_failures` no selftest — as cinco primitivas implementadas em todo backend
+  declarado, nenhuma herdada; uma herdada viraria traceback, que é a promessa que todo backend
+  externo faz.
+- `az_refusal_failures` — as seis recusas, uma delas capturada do `az` 2.88 REAL deste ambiente
+  (`az boards query` sem org), não inventada.
+- A serialização é literalmente o mesmo código já provado pelo `github`.
+- **NÃO provado**: nenhuma chamada de escrita ao Azure DevOps jamais rodou. `AZ_SPEC_TYPE="Issue"`
+  e `AZ_TASK_TYPE="Task"` são palpites de processo Basic/Agile; Scrum e CMMI nomeiam diferente.
+  A extração de id de filho a partir da URL da relação nunca viu uma resposta real.
 
 **Armadilhas conhecidas (discoveries registradas, nenhuma bloqueante):**
-- `align.md` é o único body ainda acoplado a `files` — ver a discovery que diz por quê.
-- `cmd_promote` checa destino via `os.path.exists` — inócuo mas sem sentido no `github`.
+- `plugin-configuration.md` diz três chaves e agora são quatro (`azureStates`).
+- `align.md` é o único body ainda acoplado ao backend `files`.
+- `cmd_promote` checa destino via `os.path.exists` — sem sentido nos backends externos.
 - O campo `root` do JSON mente com backend externo ou repo migrado.
 - `doctor` reportaria `sp-no-workspace` falsamente num repo sem `specs/`.
-- `migrate` não é escritor classificado; num repo já migrado opera sobre um `specs/` inexistente.
-- Custo de rede do `github`: sem cache entre processos.
+- `migrate` não é escritor classificado.
+- Custo de rede: o `azure-boards` faz UMA chamada `az work-item show` POR spec listado (a CLI não
+  tem forma em lote), pior que o `github`, que pagina. Mitigado só pelo cache por processo.
 - Workspace pré-migração não é serializado pelo lock da worktree (é o estado deste repo agora).
 - `TEMPLATE_SPEC` embutido ainda só documenta `--subject` na guidance comment.
 
-**Baseline de lint para a seção 6**: 35 findings em `plugins/quenching`, distribuídos como
-`sk-trigger-position` 11 · `sk-no-boundary` 10 · `sk-step-criterion` 9 · `sk-unscoped-bash` 5.
-Idêntico finding-a-finding ao commit 5f40fd7 (fim da seção 4) — nenhum deles é desta spec, e é
-contra esse conjunto que "sem regressão" deve ser medido daqui em diante.
+**Baseline de lint**: 35 findings em `plugins/quenching` (`sk-trigger-position` 11 ·
+`sk-no-boundary` 10 · `sk-step-criterion` 9 · `sk-unscoped-bash` 5), idêntico ao commit 5f40fd7.
+Nenhum é desta spec; é contra esse conjunto que "sem regressão" deve ser medido.
 ## Tasks
 
 ### 1. Configuração
@@ -429,8 +458,9 @@ contra esse conjunto que "sem regressão" deve ser medido daqui em diante.
 - [x] 6.1 Transporte via `az boards` em subprocess, com o mesmo contrato de recusa da task 4.1
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 6.1 transporte az boards em subprocess com seis recusas exit 2
-- [ ] 6.2 Serialização híbrida para work items — tasks como itens filhos, seções como markdown
+- [x] 6.2 Serialização híbrida para work items — tasks como itens filhos, seções como markdown
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 6.2 serializacao hibrida compartilhada e o backend azure-boards
 - [ ] 6.3 Decidir per ## Open Decisions se selecionar `azure-boards` emite aviso de não-validado
 
 ### 7. Export e fechamento
@@ -460,3 +490,4 @@ contra esse conjunto que "sem regressão" deve ser medido daqui em diante.
 - align.md é o único body ainda acoplado ao backend files: inventaria por `Glob specs/plans/*.md` e stampa frontmatter direto. Não foi migrado porque o que `/specs:align` significa num backend externo — onde não há pasta, filename nem rename — é uma decisão que a spec não tomou.
 - A task 5.1 tocou `specs.py` além dos `files:` que declara: `list --json` passou a carregar os sete `records` e nasceu `specs.py record`. Sem os dois, status/triage não tinham como parar de ler o caminho — triage escrevia `priority` com Edit no arquivo.
 - `az` está instalado neste ambiente (2.88.0) com o grupo `az devops` disponível, mas SEM defaults de organization/project — o que tornou possível capturar a recusa real de `az boards query` sem org e provar `resolve_azure_project` contra o binário. Nenhuma chamada de escrita foi feita, e a 6.2/6.3 não têm board real contra o qual rodar um E2E.
+- `plugin-configuration.md` documenta três chaves e agora são quatro: a task 6.2 acrescentou `azureStates`. A task não nomeia esse standard, então ele NÃO foi reescrito aqui — fica para /docs:add ou para a task de fechamento da seção 7.
