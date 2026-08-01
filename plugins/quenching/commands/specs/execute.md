@@ -144,11 +144,24 @@ Read `## Problem`, `## Proposal`, `## Design`, `## Handoff` and `## Tasks` at th
 resolved — never assume filenames. `## Impact` names the `docs/standards/` paths and the code this
 spec expects to touch.
 
-Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read
-`docs/standards/<subject>/` for the subjects the tasks touch. Those are **binding contracts** for
-HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
-contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
-**Done when:** the spec's sections and the binding standards are read.
+Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the
+`docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
+task's own text names — **never the folder** `docs/standards/<subject>/`. The folder is the wrong
+unit and it is the expensive one: measured on this repo while building this very step, the four
+subject folders a spec touched held 19 files / ~31k tokens against 5 files / ~13k for what
+`## Impact` declared, and that difference arrives at turn one, where every later turn re-sends it.
+Those files are **binding contracts** for HOW the work is built, complementing the spec's own
+sections (WHAT to build). A task that contradicts one is surfaced (step 5), never silently
+resolved. No bundle → skip silently.
+
+**No mechanical net for a contract nobody declared — deliberately.** `specs.py validate` already
+warns when a declared standard has no task (`sp-impact-uncovered`); the inverse, a binding standard
+nobody declared, is **not derivable**: deciding that a given standard governs a given task is
+reading, not parsing. Every approximation of it has to re-read the folder in order to have
+something to warn about, which is the cost this step just removed. What covers the gap instead is
+one line at the moment it shows up — `specs.py discover` records it while building, and
+`/quenching:specs:develop` repairs `## Impact`.
+**Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:

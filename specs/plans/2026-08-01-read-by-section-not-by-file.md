@@ -405,10 +405,11 @@ razão medida de terem perdido.
 
 ### 1. Estreitar o que o passo 4 abre
 
-- [ ] 1.1 Reescrever o passo 4 de `/quenching:specs:execute`: ler os `docs/standards/` que
+- [x] 1.1 Reescrever o passo 4 de `/quenching:specs:execute`: ler os `docs/standards/` que
       `## Impact` declara mais os que a task corrente nomeia, nunca a pasta `docs/standards/<subject>/`;
       decidir per ## Open Decisions se falta rede de segurança para um standard não declarado
       files: plugins/quenching/commands/specs/execute.md
+      subject: plan/read-by-section-not-by-file: 1.1 Passo 4 lê os standards declarados, nunca a pasta
 - [ ] 1.2 No mesmo passo, trocar o `Read` do arquivo da spec por `specs.py section` para as seções
       que ele exige, e dizer que é UMA chamada
       files: plugins/quenching/commands/specs/execute.md
