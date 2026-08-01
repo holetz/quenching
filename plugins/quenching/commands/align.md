@@ -132,9 +132,9 @@ close-out still confirm on their own."* Wait for **one** OK.
 
 ### 3. Front 1 — `/quenching:docs:align` (the `docs/` bundle)
 Invoke via the **Skill** tool under its registry name **`quenching:docs:align`** — the command path
-prefixed by the plugin. Every front below is named the same way: the registry name for the tool,
-`/quenching:<front>:align` for a human who types it, and the bare `/<front>:align` **only** where
-that command file lives in the target repo's own `.claude/commands/`.
+prefixed by the plugin. Every front below is named the same way; the three forms and the condition
+on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
+§Citing a command's.
 Declare the authorization mode verbatim per
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §cycle-authorization, naming *this* command as the grantor: *"Running under /align authorization

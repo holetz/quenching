@@ -24,7 +24,8 @@ opposite of what the loading hierarchy is for.
 - [4. The blast-radius sweep](#4-the-blast-radius-sweep)
 - [5. MERGE, never clobber; never delete on a guess](#5-merge-never-clobber-never-delete-on-a-guess)
 - [6. Align conformance; report the cycle](#6-align-conformance-report-the-cycle)
-- [7. End honest](#7-end-honest)
+- [7. Citing a command — three forms, one condition each](#7-citing-a-command--three-forms-one-condition-each)
+- [8. End honest](#8-end-honest)
 
 ## 1. Probe before the inventory
 
@@ -144,7 +145,34 @@ This is the plugin's **anti-fabrication boundary**, and it is why the aligns are
 a repo nobody has read: a sweep closes only what it can close deterministically from what the
 repo already contains. Everything requiring a human to state something new is **surfaced**.
 
-## 7. End honest
+## 7. Citing a command — three forms, one condition each
+
+An align names other commands constantly: it invokes its content stages through the `Skill` tool,
+and it reports residue with the command that closes each. Those two jobs need **different
+spellings of the same command**, and picking the wrong one produces text that reads correctly and
+resolves nowhere — which is why the rule lives here rather than being restated by each align.
+
+**The axis is where the command comes from, never who is reading.**
+
+| Form | Shape | Correct when |
+| --- | --- | --- |
+| Registry name | `<plugin>:<front>:<verb>` | the `Skill` tool resolves it — always, for a plugin command |
+| Plugin-prefixed slash | `/<plugin>:<front>:<verb>` | a human types it wherever the plugin is installed **as a plugin** |
+| Bare slash | `/<front>:<verb>` | **only** where that command's file lives in the target repo's own `.claude/commands/` |
+
+So an align invokes its stage as `quenching:docs:import-memory` and tells a human to run
+`/quenching:docs:import-memory`. The bare form is not a shorthand for either — it is a fourth
+thing, correct only for a repo that vendored the command file into its own `.claude/commands/`,
+and wrong everywhere else. An align that cannot see the target's `.claude/commands/` has no
+grounds to emit it.
+
+**Write the shapes, not instances, whenever the sentence is *about* the forms.** The rows above
+carry `<front>` and `<verb>` deliberately: a sentence that explains a form and then shows a real
+command is the one sentence a later mechanical sweep corrupts, because the sweep cannot tell a use
+from a mention. Two sites in this plugin were corrupted exactly that way before the rule was
+written down. A placeholder matches no sweep's pattern, so it survives every one of them.
+
+## 8. End honest
 
 Every align ends with its front's own verifier, then a report that names what it did **and** what
 it deliberately did not close, each with the command that closes it. Residue reported plainly
