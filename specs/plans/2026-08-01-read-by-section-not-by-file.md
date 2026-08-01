@@ -414,8 +414,9 @@ razão medida de terem perdido.
       que ele exige, e dizer que é UMA chamada
       files: plugins/quenching/commands/specs/execute.md
       subject: plan/read-by-section-not-by-file: 1.2 Passo 4 lê a spec por seção, em UMA chamada
-- [ ] 1.3 Medir e registrar o preâmbulo antes/depois em chars, por código lendo os arquivos em disco
+- [x] 1.3 Medir e registrar o preâmbulo antes/depois em chars, por código lendo os arquivos em disco
       verify: python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/read-by-section-not-by-file: 1.3 Medir o preâmbulo antes/depois em disco
 
 ### 2. O resolvedor de seção
 
@@ -486,3 +487,7 @@ razão medida de terem perdido.
       verify: python3 assets/hooks/okf-validate.py assets/docs && cat VERSION
 - [ ] 7.2 README.md — só se 2.1 tiver escolhido um quarto script shipped
       files: plugins/quenching/README.md
+
+## Discoveries
+
+- Medido em disco na task 1.3: o preâmbulo cai de 263.839 para 174.051 chars (~66,0k → ~43,5k tokens), -35%, só com a seção 1 — spec por seção -46% (35.099 → 18.994), standards declarados em vez de pastas -59% (126.720 → 53.037, 19 arquivos → 5). As seis referências (80.991 chars) seguem inteiras: são o alvo das seções 3 e 4.
