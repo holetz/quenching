@@ -499,8 +499,9 @@ razão medida de terem perdido.
 
 ### 7. Fechamento
 
-- [ ] 7.1 O skeleton shipped segue conformante e o lockstep de versão concorda
+- [x] 7.1 O skeleton shipped segue conformante e o lockstep de versão concorda
       verify: python3 assets/hooks/okf-validate.py assets/docs && cat VERSION
+      subject: plan/read-by-section-not-by-file: 7.1 Skeleton conformante e lockstep de versão concordando
 - [ ] 7.2 README.md — só se 2.1 tiver escolhido um quarto script shipped
       files: plugins/quenching/README.md
 
@@ -512,3 +513,4 @@ razão medida de terem perdido.
 - Open Decision 2 resolvida na task 3.4: a convenção de marcadores NÃO se estende às outras dezoito referências. Medido depois de aplicada nas cinco (seções de nível 2): 76.376 chars de arquivo, 65.564 de regra e 5.306 de racional — 7%, contra os 25-35% que o ## Problem declarava como chute. Ler as cinco por --rules-only em vez de inteiras corta 15%; a leitura POR SEÇÃO já entregou o corte de ordem de grandeza, e o --rules-only é o resíduo. Ressalva de honestidade: 7% é a fração da marcação aplicada, que foi conservadora — só prosa claramente narrativa foi relocada — e não uma classificação exaustiva. O fallback garante que as dezoito não marcadas não custam nada.
 - Defeito achado na task 4.2 usando a convenção: um <!-- rationale --> dentro de uma ### truncava o --rules-only da ## pai, porque pedir a pai devolve as filhas junto — em §Delegating an executor isso engolia TRÊS blocos ### inteiramente normativos, e a falha era silenciosa, exatamente a classe que ## Risks nomeia. Corrigido dentro da 4.2: o alcance de um marcador termina no próximo heading, e o caso aninhado entrou no selftest. Consequência de escrita: uma seção com sub-seções precisa de marcadores POR sub-seção, não um par para o bloco todo.
 - Open Decision 4 resolvida na task 5.1, medindo plans/ em disco: 34 specs, seções por spec = {0:4, 2:1, 3:6, 4:11, 5:5, 6:4, 7:3}, mediana 4. O gatilho é o evento puro — acabou uma seção e há outra pela frente — sem N. O menor N que mudaria alguma coisa (>=2 seções restantes) zeraria a oferta nas specs de 2 e 3 seções, 7 das 34, que são justamente as runs que podem terminar limpas cedo; e as 4 specs sem seção nenhuma nunca disparam de qualquer forma. Mediana de 3 ofertas por spec, cada uma uma linha que não interrompe.
+- Observado na task 7.1: o CLAUDE.md promete que 'okf-validate.py assets/docs' dá 0 error(s), 0 warning(s), mas hoje dá 0 erros e 1 warning — stale-doc em assets/docs/standards/agents/communication.md, cujo timestamp 2026-07-30 precede um commit de 2026-07-31 no resource dele. Pré-existente a esta branch (todos os commits daqui são de 2026-08-01). Ou o timestamp do skeleton é atualizado, ou a frase do CLAUDE.md deixa de prometer zero warnings.
