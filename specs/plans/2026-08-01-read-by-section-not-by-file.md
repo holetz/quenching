@@ -374,33 +374,32 @@ razão medida de terem perdido.
 
 ## Handoff
 
-- **A ordem das seções é deliberada e a seção 1 é independente do resto.** Ela usa só o que já existe
-  (`specs.py section`, no singular) e entrega o maior retorno por linha editada — os ~38k tokens de
-  pasta do passo 4. Se tudo depois dela parar, o corte principal já está em pé.
-- **Nenhuma edição em `commands/**` é testável na sessão que a escreve** — o registry é montado no
-  início da sessão. As seções 1 e 4 terminam em `doctor`, nunca em teste funcional. O mesmo vale para
-  as referências da seção 3: elas são lidas no início da run, então a edição vale para a **próxima**.
-- **A seção 5 é a única que muda o FLUXO da run, e vem depois de tudo que muda a leitura.** Não é
-  ordem estética: a oferta de parar só vale a pena com o `## Handoff` sendo o trilho completo, e a
-  §4.2 mexe justamente na disciplina de contexto que a antecede. Ela também é a única cujo ganho —
-  ~1/7 — é aritmético e não medido, então chegar por último é chegar com mais evidência ao redor.
-- **O slug nomeia a metade dominante, não o todo.** Depois de a `cut-execute-context-integral` ser
-  subsumida, este spec carrega dois cortes: abrir menos (seções 1–4) e rodar menos tempo (seção 5).
-  O slug ficou como a identidade que já foi estampada; `docs/standards/automation/context-discipline.md`
-  é onde o nome do princípio inteiro passa a viver.
-- **Este spec toca `specs.py` apenas no verbo `section`.** `configurable-spec-backend` e
-  `rethink-specs-workflow-for-claude-code` reescrevem partes grandes do mesmo arquivo; manter o
-  toque mínimo é o que permite as três coexistirem sem ordem imposta.
-- **A convenção da seção 3 é aditiva por construção**: o fallback do `--rules-only` faz um arquivo sem
-  marcador se comportar exatamente como hoje. Nenhuma das dezoito referências não tocadas regride.
-- **Nenhum `verify:` deste spec pode disparar sessão de agente faturada** — `functional-checks.sh` e
-  `/quenching:skill:eval` pertencem à frente skill e ficam fora daqui, o que é especialmente
-  importante num spec que edita `execution.md` §The verification policy.
-- **A conta de delegação da task 4.2 é aritmética declarada, não medição de run:** ~13 × 37k contra
-  ~150k, sob a premissa de que um sub-agente não compartilha o prompt cache da sessão. Escrever isso
-  em `execution.md` como estimativa — e dizer que é estimativa — é o contrato; afirmá-la como medida
-  não é.
-
+- **As 21 tasks estão `- [x]` e cada uma tem seu commit em `plan/read-by-section-not-by-file`.**
+  Nada ficou bloqueado. O que falta é `/quenching:specs:conclude`: revisão da branch, os `docs/` que
+  o trabalho *revelou*, o bump de versão (as seis strings seguem em 4.4.4) e o merge.
+- **As cinco Open Decisions foram resolvidas nas tasks que as reivindicavam**, e cada uma está em
+  `## Discoveries` com a conta que a decidiu: o verbo mora em `skills.py` (2.1); a convenção de
+  marcadores **não** se estende às outras dezoito (3.4, medida em 7% de racional contra os 25–35%
+  que o `## Problem` chutava); o gatilho da oferta é o evento puro sem N (5.1, contra 34 specs de
+  mediana 4 seções); o passo 4 estreitado **não** ganha rede de segurança mecânica (1.1); e a
+  quinta — se um marcador ausente vira finding do `lint` — segue deliberadamente em aberto até a
+  convenção ter rodado uma vez, que é o que ela mesma pedia.
+- **Duas falhas silenciosas foram achadas USANDO o que este spec construiu, não revisando-o**, e as
+  duas estão em `## Discoveries` com o conserto: `--sections "A,B"` partia headings que contêm
+  vírgula (3.2), e um `<!-- rationale -->` dentro de uma `###` truncava o `--rules-only` da `##`
+  pai, engolindo três blocos normativos inteiros (4.2). A segunda gerou uma regra de escrita:
+  **marque por sub-seção, nunca um par por bloco**.
+- **O corte medido é −35% no preâmbulo** (263.839 → 174.051 chars, ~66,0k → ~43,5k tokens), e ele
+  vem quase todo da seção 1: pasta → arquivos declarados (−59%) e spec por seção (−46%). As seis
+  referências seguem inteiras em disco; o `--rules-only` sobre elas é mais 15%, e é resíduo.
+- **Nenhuma edição em `commands/**` foi testável na sessão que a escreveu** — o registry é montado
+  no início da sessão. As seções 1, 4 e 5 terminaram em `doctor` (26 comandos, 0 findings), nunca
+  em teste funcional, e o mesmo vale para as cinco referências: valem para a **próxima** run.
+- **Um achado fora do escopo espera decisão** (`## Discoveries`, task 7.1): o `CLAUDE.md` promete
+  `0 error(s), 0 warning(s)` no skeleton shipped, e hoje sai 1 warning `stale-doc` — pré-existente
+  a esta branch, todos os commits daqui são de 2026-08-01 e o warning cita 2026-07-31.
+- **`cut-execute-context-integral` continua aberta e é subsumida por inteiro.** Fechá-la como
+  `abandoned` é decisão humana em `/quenching:specs:conclude`, nunca daqui.
 ## Tasks
 
 ### 1. Estreitar o que o passo 4 abre
