@@ -502,8 +502,9 @@ razão medida de terem perdido.
 - [x] 7.1 O skeleton shipped segue conformante e o lockstep de versão concorda
       verify: python3 assets/hooks/okf-validate.py assets/docs && cat VERSION
       subject: plan/read-by-section-not-by-file: 7.1 Skeleton conformante e lockstep de versão concordando
-- [ ] 7.2 README.md — só se 2.1 tiver escolhido um quarto script shipped
+- [x] 7.2 README.md — só se 2.1 tiver escolhido um quarto script shipped
       files: plugins/quenching/README.md
+      subject: plan/read-by-section-not-by-file: 7.2 Nenhum quarto script — nada devido ao README
 
 ## Discoveries
 
