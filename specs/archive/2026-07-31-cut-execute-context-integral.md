@@ -2,6 +2,7 @@
 slug: cut-execute-context-integral
 title: Cut the context integral of /specs:execute
 verification: per-section
+outcome: abandoned
 ---
 
 # Cut the context integral of /specs:execute
@@ -132,3 +133,45 @@ spec de tamanho comparável e comparar a integral `tokens × turnos restantes` p
   a medir, não um fato estabelecido.
 - **Os três números vêm de UMA run.** O entendimento está em `context-budget.md` como
   `authority: background`, e este spec não deve tratá-lo como provado.
+
+## Outcome
+
+**Não será construído: subsumido por inteiro** por `read-by-section-not-by-file`
+(`archive/2026-08-01`, `outcome: done`, mergeado em `main` por merge commit). Nada aqui foi julgado
+errado — as três propostas foram construídas, por outro spec, e este chegou ao fim sem uma única
+task.
+
+**As três, uma a uma.**
+
+1. *O passo 4 lê a spec por `specs.py section`, não o arquivo inteiro* — feito, e mais fundo do que
+   esta proposta pedia: além da spec por seção, o passo 4 passou a ler os `docs/standards/` que
+   `## Impact` **declara** em vez das pastas onde eles moram, que acabou sendo a metade maior do
+   corte (−59% contra −46%).
+2. *"Cite a seção, não o arquivo" vira regra escrita* — feito, com o verbo que faltava. O endereço
+   `§X` já estava em toda a prosa deste repo; o que não existia era o resolvedor. Agora existem
+   dois, `skills.py read` para markdown livre e `specs.py section` para as quatorze seções
+   canônicas, provados contra a mesma lista canônica. A regra mora em
+   `docs/standards/automation/context-discipline.md`.
+3. *Oferecer parar numa fronteira de seção* — feito, e a ressalva que o `## Out of Scope` deste spec
+   fazia foi respeitada: nenhum limiar numérico foi inventado. O gatilho é o evento puro — a última
+   task de uma `## N.` commitou e há outra seção pela frente — decidido medindo as 34 specs de
+   `plans/` (mediana de 4 seções), não chutado.
+
+**Uma coisa que este spec pedia e que NÃO foi feita, e vale dizer.** A `## Validation` acima exigia
+medir a integral rodando `/quenching:specs:execute` sobre um spec comparável e comparando os pares
+crus de transcript, com o `closed` / `mayIncludeTurnsFrom` de cada lado. `read-by-section-not-by-file`
+mediu de outro jeito, deliberadamente: contagem estática de arquivos em disco mais aritmética sobre
+a integral, sem gerar sessão de agente faturada, e declarou isso como declared arithmetic em vez de
+medição de run. O corte de −35% no preâmbulo é portanto sólido em chars e **não** verificado em
+tokens-turno de uma run real. Quem quiser esse número ainda precisa medi-lo.
+
+**O `## Out of Scope` deste spec continua fora de escopo e sem dono novo:** o instrumento de medição
+de custo (`session.py` com subcomando de custo, `/quenching:skill:retro` lendo custo, a política de
+modelo) e a decisão de delegar um executor seguem em `reduce-execute-conclude-cost`. A delegação
+ganhou apenas sua **aritmética** — quando delegar se inverte, em `execution.md` §The cost of
+delegating — não a máquina.
+
+**Nada foi adotado como conhecimento a partir deste spec, e nada foi mergeado.** Não houve branch,
+não houve task e não houve código. O entendimento que ele carregava já estava em
+`docs/standards/automation/context-budget.md` §The other half quando foi escrito, e o que foi
+provado desde então entrou pelo spec que o construiu.
