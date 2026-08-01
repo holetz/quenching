@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.4.4"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.4.5"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -153,6 +153,7 @@ RECORD_NONE_RE = re.compile(r"^none\b", re.IGNORECASE)
 
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
 STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
@@ -1045,12 +1046,17 @@ def parse_sections(text: str) -> dict[str, dict]:
 
     Each entry carries `lines` (the body), `lineno` (0-based, of the heading itself), and
     `filled` — the three-state distinction the whole contract rests on: a heading that is
-    present but empty is MALFORMED, which is neither an answer nor a not-yet."""
+    present but empty is MALFORMED, which is neither an answer nor a not-yet.
+
+    **A fenced block is never read as a heading.** `## Tasks` routinely carries a shell block,
+    and a `## ` comment inside one used to open a phantom section — which `validate` then
+    reported as a stray heading, and which silently truncated the real section at that line."""
     out: dict[str, dict] = {}
     current: str | None = None
     buf: list[str] = []
     start = 0
     lines = text.splitlines()
+    fence: str | None = None
 
     def flush() -> None:
         if current is not None and current not in out:
@@ -1059,6 +1065,20 @@ def parse_sections(text: str) -> dict[str, dict]:
                             "filled": has_real_content(body), "body": body}
 
     for lineno, line in enumerate(lines):
+        fm = FENCE_RE.match(line)
+        if fm:
+            mark = fm.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+            if current is not None:
+                buf.append(line)
+            continue
+        if fence is not None:
+            if current is not None:
+                buf.append(line)
+            continue
         m = HEADING_RE.match(line)
         if m and len(m.group(1)) == 2:
             flush()
@@ -1541,15 +1561,33 @@ def _canonical_index(heading: str, schema: dict | None = None) -> int:
     return canon.index(heading) if heading in canon else len(canon)
 
 
+def resolve_heading_name(name: str, candidates: list[str]) -> str | None:
+    """One requested name onto the candidate that answers it, or None.
+
+    **`§X` and `## X` are the same request, and a UNIQUE prefix resolves** — the two forms
+    `SECTION_CASES` pins, which `skills.py` carries verbatim. The command bodies already cite
+    sections as `§Handoff`, so a reader that refused over the marker would be unusable from the
+    very prose it serves. An ambiguous prefix resolves to nothing: a guess between two headings is
+    worse than the refusal that names them.
+
+    It takes the candidate list as an argument for one reason — so the canonical cases exercise
+    THIS function over the fixture's headings, rather than a second copy of the rule written
+    inside the selftest. A rule proved against a private re-implementation is not proved."""
+    want = " ".join(name.strip().lstrip("#§").strip().split()).lower()
+    if not want:
+        return None
+    for c in candidates:
+        if c.lower() == want:
+            return c
+    hits = [c for c in candidates if c.lower().startswith(want)]
+    return hits[0] if len(hits) == 1 else None
+
+
 def _match_heading(heading: str) -> str | None:
     """Case-insensitive lookup onto the canonical spelling. Headings are a parsed contract,
     so the FILE always carries canonical English — but a human typing `specs.py section x
     validation` should not get a stray section for their trouble."""
-    want = heading.strip().lower()
-    for h in canonical_headings():
-        if h.lower() == want:
-            return h
-    return None
+    return resolve_heading_name(heading, canonical_headings())
 
 
 def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
@@ -1576,32 +1614,195 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
     return text.rstrip() + "\n\n" + block, "created"
 
 
+SECTION_FIXTURE = '''---
+type: standard
+title: the section reader's fixture
+---
+
+# Top
+
+Preamble under a level-1 heading.
+
+## Alpha
+
+Alpha body.
+
+### Alpha sub
+
+Sub body that belongs to Alpha.
+
+## Beta
+
+Beta opens with a fenced block whose lines look like headings:
+
+```bash
+## not a heading
+### also not a heading
+```
+
+Beta continues after the fence.
+
+## Gamma
+
+~~~
+## fenced by tildes
+~~~
+
+Gamma ends the file.
+'''
+
+# The canonical case list for the SECTION rule, duplicated verbatim in `skills.py`.
+# EDIT BOTH, OR NEITHER — exactly as `CANONICAL_CASES` is duplicated across all three
+# tools for the frontmatter rule. Neither script may import the other: each installs
+# standalone into a target's `.claude/hooks/`, so the list travelling with each copy is
+# what makes the rule provable where it actually runs.
+#
+# It covers only what BOTH tools answer the same way: level-2 sections. A spec's
+# fourteen headings are all `##`, so that is the whole of `specs.py`'s contract, while
+# `skills.py` also resolves `#` and `###` over free markdown and proves those separately.
+# The names here are deliberately NOT canonical spec headings: what this list pins is the
+# sectioning rule, not `_match_heading`'s vocabulary, which is `specs.py`'s alone.
+SECTION_CASES = {
+    "index": ["Alpha", "Beta", "Gamma"],
+    "cases": [
+        {"why": "sub-headings travel with their parent, and the section stops at the "
+                "next heading of the same level",
+         "ask": ["Alpha"],
+         "contains": ["Alpha body.", "### Alpha sub", "Sub body that belongs to Alpha."],
+         "excludes": ["Beta continues"]},
+        {"why": "a fenced block containing `## ` never splits the section",
+         "ask": ["Beta"],
+         "contains": ["## not a heading", "Beta continues after the fence."],
+         "excludes": ["Gamma ends"]},
+        {"why": "tilde fences count too, and the last section runs to end of file",
+         "ask": ["Gamma"],
+         "contains": ["## fenced by tildes", "Gamma ends the file."],
+         "excludes": []},
+        {"why": "the citation form the bodies already use resolves: `§X` and `## X` "
+                "are the same request, and N sections come back in the order asked",
+         "ask": ["§Gamma", "## Alpha"],
+         "contains": ["Gamma ends the file.", "Alpha body."],
+         "excludes": [],
+         "order": ["Gamma", "Alpha"]},
+        {"why": "neither frontmatter nor the preamble above the first section ever "
+                "leaks into a section that does not own it",
+         "ask": ["Alpha", "Beta", "Gamma"],
+         "contains": [],
+         "excludes": ["type: standard", "Preamble under a level-1 heading."]},
+        {"why": "a unique prefix resolves, so a citation need not reproduce a long "
+                "heading's punctuation",
+         "ask": ["Gam"],
+         "contains": ["Gamma ends the file."],
+         "excludes": []},
+        {"why": "a section that does not exist is a refusal that names it, never an "
+                "empty answer",
+         "ask": ["Delta"],
+         "missing": ["Delta"]},
+    ],
+}
+
+
+def _section_case_rows(text: str) -> list[dict]:
+    """This tool's arm of the canonical list: `parse_sections` itself, addressed by name.
+
+    It goes through `parse_sections` and not through `cmd_section`, because the canonical
+    list pins the SECTIONING rule — where a section starts and stops — while `cmd_section`
+    additionally refuses a heading outside the fourteen. Running the list through the
+    canonical filter would prove the filter and leave the rule untested."""
+    return [{"heading": h, "level": 2, "body": v["body"]}
+            for h, v in parse_sections(text).items()]
+
+
+def section_case_failures() -> list[str]:
+    """Run `SECTION_CASES` against this tool's own sectioning rule."""
+    out: list[str] = []
+    rows = _section_case_rows(SECTION_FIXTURE)
+    heads = [r["heading"] for r in rows]
+    if heads != SECTION_CASES["index"]:
+        out.append(f"heading index is {heads}, expected {SECTION_CASES['index']} — a "
+                   f"fenced line was read as a heading, or a heading was missed")
+    # `resolve_heading_name` is the SAME function `_match_heading` runs in production, handed the
+    # fixture's headings instead of the canonical fourteen. That is what makes the `\u00a7X` and
+    # unique-prefix cases evidence about this tool rather than about the selftest.
+    index = {r["heading"]: r for r in rows}
+    for case in SECTION_CASES["cases"]:
+        got, missing = [], []
+        for name in case["ask"]:
+            hit = resolve_heading_name(name, list(index))
+            (got.append(index[hit]) if hit else missing.append(name))
+        want_missing = case.get("missing", [])
+        if missing != want_missing:
+            out.append(f"{case['ask']}: missing is {missing}, expected {want_missing} "
+                       f"— {case['why']}")
+            continue
+        if want_missing:
+            continue
+        body = "\n".join(f"## {r['heading']}\n{r['body']}" for r in got)
+        for needle in case["contains"]:
+            if needle not in body:
+                out.append(f"{case['ask']}: missing {needle!r} — {case['why']}")
+        for needle in case["excludes"]:
+            if needle in body:
+                out.append(f"{case['ask']}: leaked {needle!r} — {case['why']}")
+        if "order" in case and [r["heading"] for r in got] != case["order"]:
+            out.append(f"{case['ask']}: order is {[r['heading'] for r in got]}, expected "
+                       f"{case['order']} — {case['why']}")
+    return out
+
+
 def cmd_section(args, root: str) -> int:
-    """Deterministic partial read/write of ONE section — what makes lean agent context real.
+    """Deterministic partial read/write of N sections — what makes lean agent context real.
 
     An executor is handed a task line and `## Handoff`, never the whole spec; this is the
-    command that slices it without an LLM re-reading and rewriting the file."""
+    command that slices it without an LLM re-reading and rewriting the file.
+
+    **The read form is plural, and that is half the saving, not a convenience.** Every turn
+    re-sends the whole conversation, so a cost has two factors — tokens AND the turns that
+    follow it. Six headings fetched over six turns can lose to the one `Read` this command
+    replaced. Comma-separated, one call, back in the order asked.
+
+    `--write` stays singular: it takes stdin, and there is no unambiguous way to split one
+    stream across several sections."""
     info, err = load_spec(root, args.spec)
     if err:
         return emit_err(args.json, err)
-    heading = _match_heading(args.heading)
-    if not heading:
+    wanted = [h for h in (p.strip() for p in args.heading.split(",")) if h]
+    headings, stray = [], []
+    for name in wanted:
+        h = _match_heading(name)
+        (headings.append(h) if h else stray.append(name))
+    if stray:
         emit(args.json,
-             {"ok": False, "code": "sp-stray-heading", "heading": args.heading,
-              "canonical": canonical_headings(),
-              "message": f"'{args.heading}' is not one of the fourteen canonical headings"},
-             f"error: '{args.heading}' is not a canonical heading")
+             {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
+              "stray": stray, "canonical": canonical_headings(),
+              "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
+             f"error: not a canonical heading: {', '.join(stray)}")
+        return 2
+    if args.write and len(headings) != 1:
+        emit(args.json,
+             {"ok": False, "code": "sp-write-plural", "stray": headings,
+              "message": "--write takes exactly one heading — stdin is one stream"},
+             "error: --write takes exactly one heading")
         return 2
     if not args.write:
-        st = section_state(info["sections"], heading)
-        body = info["sections"].get(heading, {}).get("body", "")
+        rows = [{"heading": h, "state": section_state(info["sections"], h),
+                 "body": info["sections"].get(h, {}).get("body", "")} for h in headings]
+        absent = [r["heading"] for r in rows if r["state"] == "absent"]
         if args.json:
-            print(json.dumps({"ok": st != "absent", "slug": info["slug"],
-                              "heading": heading, "state": st, "body": body},
+            one = rows[0] if len(rows) == 1 else {}
+            print(json.dumps({"ok": not absent, "slug": info["slug"],
+                              **one, "sections": rows, "absent": absent},
                              indent=2, ensure_ascii=False))
         else:
-            print(body.strip() if st != "absent" else f"(## {heading} is absent)")
-        return 0 if st != "absent" else 1
+            for r in rows:
+                if r["state"] == "absent":
+                    print(f"(## {r['heading']} is absent)")
+                elif len(rows) == 1:
+                    print(r["body"].strip())
+                else:
+                    print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
+        return 0 if not absent else 1
+    heading = headings[0]
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
     block = (f"## {heading}\n\n{content.strip()}\n"
@@ -2734,6 +2935,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "docs/standards/code/frontmatter-parsing.md; the three "
                                         "tools move together or not at all"))
 
+    # The section rule, against the SAME canonical list `skills.py` proves. Self-contained,
+    # so it runs on an installed copy too — which is exactly where a `## ` inside a shell
+    # block in somebody's `## Tasks` would otherwise open a phantom section unnoticed.
+    for failure in section_case_failures():
+        findings.append(_finding("sp-section-case", "error",
+                                 f"canonical section case — {failure}",
+                                 remedy="this reader disagrees with SECTION_CASES, which "
+                                        "`skills.py` carries verbatim; the two tools move "
+                                        "together or not at all"))
+
     # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
     # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
     # checked BEFORE the early return for the same reason the frontmatter cases are.
@@ -2875,10 +3086,12 @@ def cmd_selftest(args, root: str) -> int:
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
-                          "cases": len(CANONICAL_CASES), "findings": findings},
+                          "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1,
+                          "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
-    print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} canonical case(s), "
+    print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
+          f"{len(SECTION_CASES['cases']) + 1} section canonical case(s), "
           f"{len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
@@ -2886,9 +3099,9 @@ def cmd_selftest(args, root: str) -> int:
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print("  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
-              "the entry-gate headings, and the embedded schema and template match their "
-              "asset files.")
+        print("  OK — the canonical frontmatter and section cases pass, the capture form "
+              "stamps exactly the entry-gate headings, and the embedded schema and "
+              "template match their asset files.")
     return 1 if errors else 0
 
 
@@ -3002,9 +3215,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
 
-    sp = add_json(sub.add_parser("section", help="read or write ONE section"))
+    sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
     sp.add_argument("spec")
-    sp.add_argument("heading")
+    sp.add_argument("heading", help="one canonical heading, or several comma-separated; "
+                                    "returned in the order asked")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 

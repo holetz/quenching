@@ -29,6 +29,8 @@ same mold as `okf-validate.py`.
 
 ## The `specs/` layout
 
+<!-- rules -->
+
 **One spec is ONE markdown file for its entire lifecycle.** Phases enrich it; they never split it.
 The front lives at the target repo root (never inside `docs/`):
 
@@ -46,11 +48,6 @@ two declared sources of one fact will diverge, and a folder cannot lie. There is
 transition left — `plans/` → `archive/`, a `git mv` performed by `specs.py promote` — so `git log`
 narrates the close-out.
 
-**Why one active folder.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
-reproduces: *a human said go*. Everything else it implied — that the spec is complete enough to
-build — is computable from the sections themselves, and now is (§Derived stages). The human's word
-is `approved:` in frontmatter, so the fact survived and the folder did not.
-
 `plans/` is **not** part of the OKF `docs/` bundle, and `okf-validate.py` is never pointed at it:
 a spec carries no OKF `type:`, and `specs.py validate` is its contract (see
 [specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)). The folder
@@ -61,7 +58,16 @@ durable rule directly into `docs/standards/`, honestly `authority`-graded. There
 because there is no other copy for a delta to bridge to; isolation-while-building is what a
 **branch or worktree** provides, with real merge, history, and reversion.
 
+<!-- rationale -->
+
+**Why one active folder.** A `backlog/` ↔ `ready/` split bought exactly one fact no derivation
+reproduces: *a human said go*. Everything else it implied — that the spec is complete enough to
+build — is computable from the sections themselves, and now is (§Derived stages). The human's word
+is `approved:` in frontmatter, so the fact survived and the folder did not.
+
 ## Identity: the slug and the filename
+
+<!-- rules -->
 
 **Every spec file is named `YYYY-MM-DD-<slug>.md`, in both folders.** The date prefix records when
 the spec was **born** and is written **once, at creation** — `promote` moves the file and never
@@ -77,6 +83,8 @@ The prefix earns its place in `plans/` as much as in `archive/`: birth order is 
 wants at every stage — *how long has this sat unproposed? how long has this build been open?*
 
 ## Frontmatter
+
+<!-- rules -->
 
 Write-once, low-churn fields only. Machine state a human never reads does not belong in a spec.
 
@@ -116,6 +124,8 @@ There is no attempt counter and no `.specs.json`. Both are gone.
 
 ## The fourteen sections
 
+<!-- rules -->
+
 The canonical set, in canonical order. **Headings are a parsed contract** — canonical English, like
 frontmatter keys. A heading outside this set is a **stray** and `validate` flags it. Which language
 the body prose is written in is owned by the bundle's `docs/standards/agents/communication.md`.
@@ -153,6 +163,8 @@ Two of these sections are load-bearing for machinery, not just for thinking:
 
 ## The gates and the stage-scoped explicit-none rule
 
+<!-- rules -->
+
 A section is required — and required to carry an explicit `- none — <reason>` when it has nothing
 in it — **only once its own gate is reached**. Before its gate, a heading's absence is not an
 omission; it is a *not-yet*.
@@ -182,16 +194,20 @@ Three rules decide whether a section counts as filled:
 3. **An absent heading before its gate is legal.** `specs.py new` stamps `## Problem` and nothing
    else — a captured spec is four lines of body, not a fourteen-heading skeleton.
 
+The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
+source, two consumers. The ten gate sections in particular are declared in exactly one place, the
+`ready` stage rule marked `gate: true`, because a second copy is the shape that silently diverges.
+
+<!-- rationale -->
+
 **Why the rule is scoped rather than absolute.** Applied absolutely it would kill the derived
 stage: since `- none — <reason>` counts as filled, a freshly created spec carrying fourteen
 `- none` sections would derive as `designed` and clear the whole ready gate without anyone having
 thought anything. Stage-scoping is the version where both rules survive.
 
-The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
-source, two consumers. The ten gate sections in particular are declared in exactly one place, the
-`ready` stage rule marked `gate: true`, because a second copy is the shape that silently diverges.
-
 ## Derived stages
+
+<!-- rules -->
 
 Sub-stages are **computed from section completeness, never declared**. Declared state is forgotten
 on edit and goes stale; derived state regresses automatically when a section empties. The
@@ -219,6 +235,8 @@ on every call.
 
 ## `## Impact` — the one parsed declaration
 
+<!-- rules -->
+
 `## Impact` is declared scope for human review, with exactly one machine-checked part:
 
 ```markdown
@@ -237,6 +255,8 @@ write), and an unfilled `<placeholder>` declares nothing. A spec with no such su
 nothing and is never flagged — **the check is opt-in by writing the heading**.
 
 ## `## Tasks` and the `[!]` blocked marker
+
+<!-- rules -->
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
 `files:` / `verify:` / `pattern:` / `subject:` / `[P]` metadata. `specs.py task --check <id>` flips a
@@ -270,6 +290,8 @@ disjoint (`specs.py parallel`). Serial by default.
 
 ## The executor contract
 
+<!-- rules -->
+
 **The orchestrator is the spec's only writer.** An executor receives:
 
 - its task line (with `files:` / `verify:` / `pattern:`),
@@ -295,6 +317,8 @@ failure mode, and `validate` warns when a spec past the ready gate has an empty 
 
 ## The `specs.py` tool surface
 
+<!-- rules -->
+
 Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok · **1** findings ·
 **2** refusal. A command branches on the exit code and the JSON, never on prose.
 
@@ -303,7 +327,7 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
-| `specs.py section <slug> <heading> [--write]` | deterministic partial read/write of ONE section; `--write` creates the heading in canonical position |
+| `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
@@ -342,6 +366,8 @@ hand and **say in the report that the check was manual**, never silently skip it
 `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`).
 
 ## Boundary: `specs/` vs the OKF `docs/` bundle
+
+<!-- rules -->
 
 **This section is the single normative owner of the boundary.** Everywhere it comes up —
 `/quenching:specs:align`'s conformance codes, `distill.md`'s what-crosses table, `homes.md`'s

@@ -4,6 +4,10 @@ title: Read by section, not by file — narrow what a command loads before it wo
 verification: per-section
 refined: {mode: gate, date: 2026-08-01}
 approved: {date: 2026-08-01}
+branch: {base: main, work: plan/read-by-section-not-by-file}
+reviewed: {date: 2026-08-01}
+merge: {strategy: merge-commit, subject: "plan/read-by-section-not-by-file: merge (merge-commit)"}
+outcome: done
 ---
 
 # Read by section, not by file — narrow what a command loads before it works
@@ -373,113 +377,198 @@ razão medida de terem perdido.
 
 ## Handoff
 
-- **A ordem das seções é deliberada e a seção 1 é independente do resto.** Ela usa só o que já existe
-  (`specs.py section`, no singular) e entrega o maior retorno por linha editada — os ~38k tokens de
-  pasta do passo 4. Se tudo depois dela parar, o corte principal já está em pé.
-- **Nenhuma edição em `commands/**` é testável na sessão que a escreve** — o registry é montado no
-  início da sessão. As seções 1 e 4 terminam em `doctor`, nunca em teste funcional. O mesmo vale para
-  as referências da seção 3: elas são lidas no início da run, então a edição vale para a **próxima**.
-- **A seção 5 é a única que muda o FLUXO da run, e vem depois de tudo que muda a leitura.** Não é
-  ordem estética: a oferta de parar só vale a pena com o `## Handoff` sendo o trilho completo, e a
-  §4.2 mexe justamente na disciplina de contexto que a antecede. Ela também é a única cujo ganho —
-  ~1/7 — é aritmético e não medido, então chegar por último é chegar com mais evidência ao redor.
-- **O slug nomeia a metade dominante, não o todo.** Depois de a `cut-execute-context-integral` ser
-  subsumida, este spec carrega dois cortes: abrir menos (seções 1–4) e rodar menos tempo (seção 5).
-  O slug ficou como a identidade que já foi estampada; `docs/standards/automation/context-discipline.md`
-  é onde o nome do princípio inteiro passa a viver.
-- **Este spec toca `specs.py` apenas no verbo `section`.** `configurable-spec-backend` e
-  `rethink-specs-workflow-for-claude-code` reescrevem partes grandes do mesmo arquivo; manter o
-  toque mínimo é o que permite as três coexistirem sem ordem imposta.
-- **A convenção da seção 3 é aditiva por construção**: o fallback do `--rules-only` faz um arquivo sem
-  marcador se comportar exatamente como hoje. Nenhuma das dezoito referências não tocadas regride.
-- **Nenhum `verify:` deste spec pode disparar sessão de agente faturada** — `functional-checks.sh` e
-  `/quenching:skill:eval` pertencem à frente skill e ficam fora daqui, o que é especialmente
-  importante num spec que edita `execution.md` §The verification policy.
-- **A conta de delegação da task 4.2 é aritmética declarada, não medição de run:** ~13 × 37k contra
-  ~150k, sob a premissa de que um sub-agente não compartilha o prompt cache da sessão. Escrever isso
-  em `execution.md` como estimativa — e dizer que é estimativa — é o contrato; afirmá-la como medida
-  não é.
-
+- **As 21 tasks estão `- [x]` e cada uma tem seu commit em `plan/read-by-section-not-by-file`.**
+  Nada ficou bloqueado. O que falta é `/quenching:specs:conclude`: revisão da branch, os `docs/` que
+  o trabalho *revelou*, o bump de versão (as seis strings seguem em 4.4.4) e o merge.
+- **As cinco Open Decisions foram resolvidas nas tasks que as reivindicavam**, e cada uma está em
+  `## Discoveries` com a conta que a decidiu: o verbo mora em `skills.py` (2.1); a convenção de
+  marcadores **não** se estende às outras dezoito (3.4, medida em 7% de racional contra os 25–35%
+  que o `## Problem` chutava); o gatilho da oferta é o evento puro sem N (5.1, contra 34 specs de
+  mediana 4 seções); o passo 4 estreitado **não** ganha rede de segurança mecânica (1.1); e a
+  quinta — se um marcador ausente vira finding do `lint` — segue deliberadamente em aberto até a
+  convenção ter rodado uma vez, que é o que ela mesma pedia.
+- **Duas falhas silenciosas foram achadas USANDO o que este spec construiu, não revisando-o**, e as
+  duas estão em `## Discoveries` com o conserto: `--sections "A,B"` partia headings que contêm
+  vírgula (3.2), e um `<!-- rationale -->` dentro de uma `###` truncava o `--rules-only` da `##`
+  pai, engolindo três blocos normativos inteiros (4.2). A segunda gerou uma regra de escrita:
+  **marque por sub-seção, nunca um par por bloco**.
+- **O corte medido é −35% no preâmbulo** (263.839 → 174.051 chars, ~66,0k → ~43,5k tokens), e ele
+  vem quase todo da seção 1: pasta → arquivos declarados (−59%) e spec por seção (−46%). As seis
+  referências seguem inteiras em disco; o `--rules-only` sobre elas é mais 15%, e é resíduo.
+- **Nenhuma edição em `commands/**` foi testável na sessão que a escreveu** — o registry é montado
+  no início da sessão. As seções 1, 4 e 5 terminaram em `doctor` (26 comandos, 0 findings), nunca
+  em teste funcional, e o mesmo vale para as cinco referências: valem para a **próxima** run.
+- **Um achado fora do escopo espera decisão** (`## Discoveries`, task 7.1): o `CLAUDE.md` promete
+  `0 error(s), 0 warning(s)` no skeleton shipped, e hoje sai 1 warning `stale-doc` — pré-existente
+  a esta branch, todos os commits daqui são de 2026-08-01 e o warning cita 2026-07-31.
+- **`cut-execute-context-integral` continua aberta e é subsumida por inteiro.** Fechá-la como
+  `abandoned` é decisão humana em `/quenching:specs:conclude`, nunca daqui.
 ## Tasks
 
 ### 1. Estreitar o que o passo 4 abre
 
-- [ ] 1.1 Reescrever o passo 4 de `/quenching:specs:execute`: ler os `docs/standards/` que
+- [x] 1.1 Reescrever o passo 4 de `/quenching:specs:execute`: ler os `docs/standards/` que
       `## Impact` declara mais os que a task corrente nomeia, nunca a pasta `docs/standards/<subject>/`;
       decidir per ## Open Decisions se falta rede de segurança para um standard não declarado
       files: plugins/quenching/commands/specs/execute.md
-- [ ] 1.2 No mesmo passo, trocar o `Read` do arquivo da spec por `specs.py section` para as seções
+      subject: plan/read-by-section-not-by-file: 1.1 Passo 4 lê os standards declarados, nunca a pasta
+- [x] 1.2 No mesmo passo, trocar o `Read` do arquivo da spec por `specs.py section` para as seções
       que ele exige, e dizer que é UMA chamada
       files: plugins/quenching/commands/specs/execute.md
-- [ ] 1.3 Medir e registrar o preâmbulo antes/depois em chars, por código lendo os arquivos em disco
+      subject: plan/read-by-section-not-by-file: 1.2 Passo 4 lê a spec por seção, em UMA chamada
+- [x] 1.3 Medir e registrar o preâmbulo antes/depois em chars, por código lendo os arquivos em disco
       verify: python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/read-by-section-not-by-file: 1.3 Medir o preâmbulo antes/depois em disco
 
 ### 2. O resolvedor de seção
 
-- [ ] 2.1 Decidir per ## Open Decisions onde o verbo mora e implementá-lo:
+- [x] 2.1 Decidir per ## Open Decisions onde o verbo mora e implementá-lo:
       `read <path> --sections "A,B"` — N seções numa chamada, sem frontmatter, exit 2 nomeando a
       seção quando ela não existe
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
-- [ ] 2.2 `specs.py section` ganha a forma plural, com o mesmo contrato de saída
+      subject: plan/read-by-section-not-by-file: 2.1 skills.py read — N seções numa chamada
+- [x] 2.2 `specs.py section` ganha a forma plural, com o mesmo contrato de saída
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
-- [ ] 2.3 A lista canônica de casos de seção provada pelas DUAS ferramentas, per o precedente de
+      subject: plan/read-by-section-not-by-file: 2.2 specs.py section ganha a forma plural
+- [x] 2.3 A lista canônica de casos de seção provada pelas DUAS ferramentas, per o precedente de
       canonical-set-parsing.md — incluindo a seção que contém um bloco de código com `## ` dentro
       verify: python3 assets/bin/skills.py selftest && python3 assets/bin/specs.py selftest
+      subject: plan/read-by-section-not-by-file: 2.3 A lista canônica de seção provada pelas duas ferramentas
 
 ### 3. A convenção regra/racional
 
-- [ ] 3.1 `--rules-only` sobre os marcadores `<!-- rules -->` / `<!-- rationale -->`, com fallback
+- [x] 3.1 `--rules-only` sobre os marcadores `<!-- rules -->` / `<!-- rationale -->`, com fallback
       para a seção inteira reportando a ausência do marcador
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
-- [ ] 3.2 Aplicar os marcadores em specs-execute/execution.md, sem remover uma linha de prosa
+      subject: plan/read-by-section-not-by-file: 3.1 --rules-only por marcador, com fallback que reporta
+- [x] 3.2 Aplicar os marcadores em specs-execute/execution.md, sem remover uma linha de prosa
       files: plugins/quenching/assets/references/specs-execute/execution.md
-- [ ] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
+      subject: plan/read-by-section-not-by-file: 3.2 Marcadores em execution.md, sem perder prosa
+- [x] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/references/docs-add/homes.md, plugins/quenching/assets/references/docs-align/conformance.md
-- [ ] 3.4 Medir a fração real de racional nas cinco e decidir per ## Open Decisions se a convenção
+      subject: plan/read-by-section-not-by-file: 3.3 Marcadores nas outras quatro referências
+- [x] 3.4 Medir a fração real de racional nas cinco e decidir per ## Open Decisions se a convenção
       se estende às outras dezoito
       verify: python3 assets/bin/skills.py --root . lint --json
+      subject: plan/read-by-section-not-by-file: 3.4 Medir a fração de racional e decidir o alcance
 
 ### 4. A superfície passa a usar
 
-- [ ] 4.1 `/quenching:specs:execute` cita as referências pelo leitor de seção em vez de por caminho
+- [x] 4.1 `/quenching:specs:execute` cita as referências pelo leitor de seção em vez de por caminho
       de arquivo, e o corpo diz por quê numa linha
       files: plugins/quenching/commands/specs/execute.md
-- [ ] 4.2 `execution.md` §Delegating an executor passa a declarar o custo real: sub-agente não
+      subject: plan/read-by-section-not-by-file: 4.1 O corpo cita as referências pelo leitor de seção
+- [x] 4.2 `execution.md` §Delegating an executor passa a declarar o custo real: sub-agente não
       compartilha o prompt cache, N tasks sobre o mesmo arquivo grande pagam N leituras frias;
       delegar por seção de tasks, e o self-review dos quatro itens acontece dentro do sub-agente
       files: plugins/quenching/assets/references/specs-execute/execution.md
-- [ ] 4.3 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
+      subject: plan/read-by-section-not-by-file: 4.2 §Delegating an executor declara o custo real
+- [x] 4.3 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
       verify: python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/read-by-section-not-by-file: 4.3 Confirmar a superfície — doctor 26/0, lint sem regressão
 
 ### 5. A fronteira de seção
 
-- [ ] 5.1 Decidir per ## Open Decisions qual evento dispara a oferta, medindo a distribuição de
+- [x] 5.1 Decidir per ## Open Decisions qual evento dispara a oferta, medindo a distribuição de
       tamanho das specs de plans/ em disco
       verify: python3 assets/bin/specs.py list --json
-- [ ] 5.2 `/quenching:specs:execute` passa a oferecer parar na fronteira de seção, nomeando o comando
+      subject: plan/read-by-section-not-by-file: 5.1 Decidir o evento que dispara a oferta de parar
+- [x] 5.2 `/quenching:specs:execute` passa a oferecer parar na fronteira de seção, nomeando o comando
       que retoma; oferece e nunca impõe, e nunca encerra sozinha
       files: plugins/quenching/commands/specs/execute.md
-- [ ] 5.3 O passo 6 (`## Handoff`, quatro eventos) declara que a fronteira de seção é retomada pelo
+      subject: plan/read-by-section-not-by-file: 5.2 Oferecer parar na fronteira de seção
+- [x] 5.3 O passo 6 (`## Handoff`, quatro eventos) declara que a fronteira de seção é retomada pelo
       trilho que ele já mantém, sem escrever estado novo
       files: plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/execution.md
-- [ ] 5.4 Confirmar a superfície depois das três edições de corpo
+      subject: plan/read-by-section-not-by-file: 5.3 A fronteira é retomada pelo trilho que já existe
+- [x] 5.4 Confirmar a superfície depois das três edições de corpo
       verify: python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/read-by-section-not-by-file: 5.4 Confirmar a superfície após as edições de corpo
 
 ### 6. Os standards
 
-- [ ] 6.1 Escrever docs/standards/automation/context-discipline.md — as duas metades da integral,
+- [x] 6.1 Escrever docs/standards/automation/context-discipline.md — as duas metades da integral,
       abrir menos e rodar menos tempo (authority: background — uma medição, um repo)
       verify: python3 assets/hooks/okf-validate.py docs
-- [ ] 6.2 Revisar docs/standards/automation/context-budget.md §The other half para apontar para o
+      subject: plan/read-by-section-not-by-file: 6.1 docs/standards/automation/context-discipline.md
+- [x] 6.2 Revisar docs/standards/automation/context-budget.md §The other half para apontar para o
       dono novo sem absorvê-lo, preservando a narrativa da medição que ela já carrega
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/read-by-section-not-by-file: 6.2 §The other half aponta para o dono novo
 
 ### 7. Fechamento
 
-- [ ] 7.1 O skeleton shipped segue conformante e o lockstep de versão concorda
+- [x] 7.1 O skeleton shipped segue conformante e o lockstep de versão concorda
       verify: python3 assets/hooks/okf-validate.py assets/docs && cat VERSION
-- [ ] 7.2 README.md — só se 2.1 tiver escolhido um quarto script shipped
+      subject: plan/read-by-section-not-by-file: 7.1 Skeleton conformante e lockstep de versão concordando
+- [x] 7.2 README.md — só se 2.1 tiver escolhido um quarto script shipped
       files: plugins/quenching/README.md
+      subject: plan/read-by-section-not-by-file: 7.2 Nenhum quarto script — nada devido ao README
+
+## Discoveries
+
+- Medido em disco na task 1.3: o preâmbulo cai de 263.839 para 174.051 chars (~66,0k → ~43,5k tokens), -35%, só com a seção 1 — spec por seção -46% (35.099 → 18.994), standards declarados em vez de pastas -59% (126.720 → 53.037, 19 arquivos → 5). As seis referências (80.991 chars) seguem inteiras: são o alvo das seções 3 e 4.
+- Open Decision 1 resolvida na task 2.1: o verbo de leitura mora em skills.py, não num quarto script shipped — plugin-layout.md decide a casa de um executável por COMO ele é invocado (por um comando da superfície, como lint/doctor/registry), e versioning-release.md §The six cobra uma linha permanente de lockstep em toda release por script novo. Consequência: a task 7.2 (README por causa de um quarto script) fica sem trabalho.
+- Defeito achado na task 3.2 usando o próprio leitor: o contrato --sections "A,B" parte headings que CONTÊM vírgula, e os deste repo contêm (ex. '## The commit — one per task, carrying its own ticked box'). Corrigido dentro da 3.2, fora do files: declarado: --sections virou repetível (action=append) e um prefixo ÚNICO passa a resolver, para que a citação §The commit funcione sem reproduzir em-dash e vírgula. Caso somado à lista canônica nas duas ferramentas.
+- Open Decision 2 resolvida na task 3.4: a convenção de marcadores NÃO se estende às outras dezoito referências. Medido depois de aplicada nas cinco (seções de nível 2): 76.376 chars de arquivo, 65.564 de regra e 5.306 de racional — 7%, contra os 25-35% que o ## Problem declarava como chute. Ler as cinco por --rules-only em vez de inteiras corta 15%; a leitura POR SEÇÃO já entregou o corte de ordem de grandeza, e o --rules-only é o resíduo. Ressalva de honestidade: 7% é a fração da marcação aplicada, que foi conservadora — só prosa claramente narrativa foi relocada — e não uma classificação exaustiva. O fallback garante que as dezoito não marcadas não custam nada.
+- Defeito achado na task 4.2 usando a convenção: um <!-- rationale --> dentro de uma ### truncava o --rules-only da ## pai, porque pedir a pai devolve as filhas junto — em §Delegating an executor isso engolia TRÊS blocos ### inteiramente normativos, e a falha era silenciosa, exatamente a classe que ## Risks nomeia. Corrigido dentro da 4.2: o alcance de um marcador termina no próximo heading, e o caso aninhado entrou no selftest. Consequência de escrita: uma seção com sub-seções precisa de marcadores POR sub-seção, não um par para o bloco todo.
+- Open Decision 4 resolvida na task 5.1, medindo plans/ em disco: 34 specs, seções por spec = {0:4, 2:1, 3:6, 4:11, 5:5, 6:4, 7:3}, mediana 4. O gatilho é o evento puro — acabou uma seção e há outra pela frente — sem N. O menor N que mudaria alguma coisa (>=2 seções restantes) zeraria a oferta nas specs de 2 e 3 seções, 7 das 34, que são justamente as runs que podem terminar limpas cedo; e as 4 specs sem seção nenhuma nunca disparam de qualquer forma. Mediana de 3 ofertas por spec, cada uma uma linha que não interrompe.
+- Observado na task 7.1: o CLAUDE.md promete que 'okf-validate.py assets/docs' dá 0 error(s), 0 warning(s), mas hoje dá 0 erros e 1 warning — stale-doc em assets/docs/standards/agents/communication.md, cujo timestamp 2026-07-30 precede um commit de 2026-07-31 no resource dele. Pré-existente a esta branch (todos os commits daqui são de 2026-08-01). Ou o timestamp do skeleton é atualizado, ou a frase do CLAUDE.md deixa de prometer zero warnings.
+
+## Outcome
+
+**Entregue.** As 21 tasks estão `- [x]`, cada uma com seu commit, e a branch fecha com 26 commits
+mergeados em `main` por **merge commit** (`plan/read-by-section-not-by-file: merge (merge-commit)`) —
+o que significa que todo `subject:` registrado nas tasks resolve a partir de `main`, sem depender da
+branch sobreviver.
+
+**O que shipou.** O verbo de leitura por seção — `skills.py read <path> --sections "§A" --sections
+"§B" [--rules-only]` para markdown livre, e `specs.py section <slug> "A,B,C"` para as quatorze
+seções canônicas de uma spec, ambos provados contra a MESMA lista canônica (`SECTION_CASES`), pelo
+precedente de `docs/standards/code/canonical-set-parsing.md`. Sobre isso, o passo 4 de
+`/quenching:specs:execute` passou a ler os `docs/standards/` que `## Impact` **declara** em vez das
+pastas onde eles moram, e a spec por seção em vez do arquivo. Medido em disco: o preâmbulo que o
+comando carrega antes da primeira linha de código cai de **263.839 para 174.051 chars (~66,0k →
+~43,5k tokens, −35%)**, quase todo o corte vindo da regra de pasta → arquivos declarados (−59%,
+19 arquivos → 5). A convenção `<!-- rules -->` / `<!-- rationale -->` foi aplicada nas cinco
+referências que o comando carrega, e a oferta de parar numa fronteira de seção entrou no laço do
+passo 5. O assunto ganhou dono em `docs/standards/automation/context-discipline.md`.
+
+**O que ficou de fora, de propósito.** A convenção de marcadores **não** se estende às outras
+dezoito referências: medida depois de aplicada, a fração de racional é **7%**, contra os 25–35% que
+o `## Problem` chutava, e ler as cinco `--rules-only` em vez de inteiras corta mais 15% — resíduo,
+não ordem de grandeza. A quinta Open Decision — se um marcador ausente vira finding do `lint` —
+segue deliberadamente aberta até a convenção ter rodado uma vez, que é o que ela mesma pedia. E não
+há rede de segurança mecânica para um standard vinculante que ninguém declarou: decidir que um
+standard governa uma task é leitura, não parsing, e toda aproximação disso teria que reler a pasta,
+que é justamente o custo removido.
+
+**O que a revisão de branch achou**, tudo consertado antes do merge, em `record the branch review's
+four fixes`: o passo 4 encadeava seis chamadas singulares de `specs.py section` embaixo de um
+parágrafo que dizia "in ONE call" — a forma plural que a task 2.2 construiu não tinha consumidor;
+a tabela de superfície em `spec-driven.md` ainda descrevia `section` como lendo UMA seção; o
+contador de casos do selftest de `skills.py` estava um abaixo; e — o achado que virou doc —
+`SECTION_CASES` declarava `§X` e prefixo único como contrato compartilhado enquanto `specs.py` os
+provava contra um resolvedor escrito **dentro do selftest**: `_match_heading` refutava `§Handoff`
+com exit 2. A regra mora agora em `resolve_heading_name`, que produção e casos canônicos chamam.
+
+**O que o próximo leitor precisa saber.** Nenhuma edição em `commands/**` foi testável na sessão que
+a escreveu — o registry é montado no início da sessão — então as seções 1, 4 e 5 terminaram em
+`doctor` (26 comandos, 0 findings), nunca em teste funcional: elas valem para a **próxima** run, e o
+mesmo vale para as cinco referências. Duas falhas silenciosas foram achadas *usando* o que este spec
+construiu, não revisando-o, e as duas geraram regra: `--sections` precisa ser repetível porque
+headings contêm vírgula, e um marcador deve ser escrito **por sub-seção**, nunca um par por bloco,
+porque um `<!-- rationale -->` dentro de uma `###` trunca todo rule depois dele.
+
+**Dois achados ficam abertos, nenhum causado por esta branch.** O `CLAUDE.md` promete
+`0 error(s), 0 warning(s)` no skeleton shipped e ele devolve 1 warning `stale-doc` pré-existente; e
+`okf-validate.py docs` devolve 26 warnings `stale-doc` no bundle do próprio repo, porque quase todo
+standard tem `plugins/quenching/**` no seu `resource` glob e qualquer branch que toque o plugin os
+envelhece em massa. Os dois são `stale-doc`, advisory, e nenhum bloqueia — mas a promessa do
+`CLAUDE.md` é literalmente falsa hoje.
+
+**`cut-execute-context-integral` continua aberta e é subsumida por inteiro por este spec.** Fechá-la
+como `abandoned` é decisão humana, num `/quenching:specs:conclude` próprio.

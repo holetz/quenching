@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-31
+timestamp: 2026-08-01
 audience: both
 authority: current
 source: quenching skeleton
@@ -130,6 +130,13 @@ sentence, and **link out** rather than explaining in full here.
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
   backfilled.
+- [**Context integral**](../standards/automation/context-discipline.md) — a run's true cost,
+  `tokens × turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block
+  loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
+  exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
+  neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
+  beats shortening the reads. [context-budget.md](../standards/automation/context-budget.md)
+  §The other half owns the integral itself and the 344-turn run it was measured on.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -222,12 +229,34 @@ sentence, and **link out** rather than explaining in full here.
   **unreserved**: dropping the reservation too would send every surviving instance down the
   concept-doc path, turning it into a `no-frontmatter`/`missing-type` ERROR in target repos that
   changed nothing. `docs/log.md` is the first artifact retired this way.
+- [**Rules/rationale markers**](../standards/automation/context-discipline.md) — the pair of HTML
+  comments, `<!-- rules -->` and `<!-- rationale -->`, that split a normative section's binding half
+  from the measurement and history behind it, so `skills.py read --rules-only` can return the first
+  without the second. **A marker, never a heuristic**: a model deciding per read which sentences
+  bind is non-deterministic and fails *silently*. Compaction here is **relocation, never deletion**
+  — the rationale stays on disk and stays contract, only its position moves. A missing marker
+  degrades to the whole section and **says so**, never to emptiness. A marker's reach ends at the
+  next heading, so a section with sub-sections is marked **per sub-section**.
 - [**Scope ladder**](../standards/automation/hooks.md) — the four rungs a hook may be installed at,
   narrowest first: a command's own frontmatter `hooks:` block (fires only while that command runs),
   a `settings.json` hook with an event + `matcher`, a gated wide event, and an unmatched
   session-wide hook — the top rung, and a finding (`sk-hook-unmatched`) unless the reason nothing
   narrower suffices is stated where it is wired. `skills.py` holds rung 1 and rung 2 to the same
   checks from one implementation.
+- [**Section boundary**](../standards/automation/context-discipline.md) — the moment a `## N.`
+  section's last task commits with another section still ahead: a clean point for a build to
+  **offer** to stop, because the resumption trail (`## Handoff`, `git log`, the recorded commit
+  subjects) is already maintained for other reasons, which is what makes the cut nearly free. The
+  trigger is **that event, never a window size** — a threshold invented before it is measured fixes
+  the answer. It offers and never imposes, never ends a run itself, and writes no new state.
+- [**Section reader**](../standards/automation/context-discipline.md) — the verb that resolves the
+  `§X` address the prose was already writing: `skills.py read <path> --sections "§A"` over free
+  markdown, `specs.py section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
+  **list**, because turns are the other factor of the **Context integral** and N sections fetched
+  over N turns can lose to reading the whole file. A section runs to the next heading of the same
+  level or shallower, a fenced block is never read as a heading, and a name that resolves to
+  nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
+  same **Canonical set**, `SECTION_CASES`.
 - [**Shared mold**](../standards/architecture/shared-mold-keys.md) — a frontmatter key block owned
   once and cited by several commands, so each mints a doc from the same stamp instead of restating
   it (`docs-add/homes.md` §The frontmatter stamp, cited by four). Because a mold is a *fill-in

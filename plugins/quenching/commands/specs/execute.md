@@ -19,6 +19,19 @@ the declared-versus-emergent `docs/` line, and the rules for delegating an execu
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
 which this body cites and never restates.
 
+**Every `§X` below is an address, and it is loaded as one — never by opening the file.**
+
+```bash
+skills.py read <the cited file> --sections "§The verification policy" --sections "§The commit"
+```
+
+One call, N sections, no frontmatter; a unique prefix resolves, so `§The commit` is enough. The
+reason is the whole of this command's own cost: a preamble is re-sent on every turn that follows
+it, so what is loaded at turn one is paid for the length of the run — and `execution.md`
+§The verification policy is ~400 tokens against 4,600 for the file that holds it. `--rules-only`
+narrows further to the `<!-- rules -->` half where a section carries the marker, and returns the
+whole section, saying so, where it does not.
+
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
 *revealed*, merging, and archiving belong to `/quenching:specs:conclude`. That is not tidiness: the branch
 review is a different scale of judgment, the merge is a separate irreversible decision needing its
@@ -44,6 +57,12 @@ Resolve `specs.py` by the fallback in
 `.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
 `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
+
+`skills.py read` — the section reader every `§X` citation above resolves through — is the same
+fallback one directory over: `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then the target's
+`.claude/hooks/skills.py`. Neither resolves → read the cited file with `Read` and **say in the
+report that the sections were loaded whole**, because that is the run's context cost changing, not
+a cosmetic difference.
 
 **Why `Bash` is unrestricted here.** This is the one `/specs:*` command that runs the target repo's
 own toolchain — build, tests, linters, migrations, and `git` — as part of implementing a task. Its
@@ -140,15 +159,39 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
-Read `## Problem`, `## Proposal`, `## Design`, `## Handoff` and `## Tasks` at the path `status`
-resolved — never assume filenames. `## Impact` names the `docs/standards/` paths and the code this
-spec expects to touch.
+Read `## Problem`, `## Proposal`, `## Design`, `## Impact`, `## Handoff` and `## Tasks` **by
+section, in ONE call** — never `Read` on the spec file:
 
-Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read
-`docs/standards/<subject>/` for the subjects the tasks touch. Those are **binding contracts** for
-HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
-contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
-**Done when:** the spec's sections and the binding standards are read.
+```bash
+specs.py section "<slug>" "Problem,Proposal,Design,Impact,Handoff,Tasks"
+```
+
+The file carries ~37 lines of template comment identical in every spec plus the sections this step
+does not want, and the reader is not saved by asking for the file and skimming: an executor pays
+for what arrives, not for what it uses. The heading argument is a **list**, and taking it in one
+call is the point — **the unit that matters is the turn**, and six headings fetched over six turns
+costs more than the whole file did. They come back in the order asked.
+The path comes from what `status` resolved; never assume filenames. `## Impact` names the
+`docs/standards/` paths and the code this spec expects to touch.
+
+Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the
+`docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
+task's own text names — **never the folder** `docs/standards/<subject>/`. The folder is the wrong
+unit and it is the expensive one: measured on this repo while building this very step, the four
+subject folders a spec touched held 19 files / ~31k tokens against 5 files / ~13k for what
+`## Impact` declared, and that difference arrives at turn one, where every later turn re-sends it.
+Those files are **binding contracts** for HOW the work is built, complementing the spec's own
+sections (WHAT to build). A task that contradicts one is surfaced (step 5), never silently
+resolved. No bundle → skip silently.
+
+**No mechanical net for a contract nobody declared — deliberately.** `specs.py validate` already
+warns when a declared standard has no task (`sp-impact-uncovered`); the inverse, a binding standard
+nobody declared, is **not derivable**: deciding that a given standard governs a given task is
+reading, not parsing. Every approximation of it has to re-read the folder in order to have
+something to warn about, which is the cost this step just removed. What covers the gap instead is
+one line at the moment it shows up — `specs.py discover` records it while building, and
+`/quenching:specs:develop` repairs `## Impact`.
+**Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:
@@ -212,6 +255,21 @@ f. **Read the chain's tail, and act on which link broke:**
      breaks the task→commit link: **report it as a finding and write nothing.** Editing the record
      now would put a write after the commit again, which is exactly what this ordering removed.
 
+g. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The event
+   is exact and needs no threshold: the last task of a `## N.` section just committed, and another
+   section is still ahead. Say it in one line and continue:
+
+   ```
+   Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <slug>` resumes from here —
+   say the word and I stop; otherwise I continue with 4.1.
+   ```
+
+   It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
+   makes the boundary resumable is the one §6 already keeps. Why the trigger is that event and
+   never a window size, and why a section is the unit, live in
+   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   §The section boundary.
+
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
 standard via `/quenching:docs:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
@@ -236,6 +294,13 @@ were ~90% identical to one another. And do not substitute a judgment — "rewrit
 underivable state changed" is the rule that already failed, because an unattended run never judges
 that something went stale. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
+
+**The section-boundary offer (§5g) adds no fifth event and writes no new state.** Accepted, it is a
+pause and a last commit, which are already two of the four above; declined, nothing happened worth
+recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
+`status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
+why stopping there is nearly free. An offer that required writing something extra would be moving
+cost rather than cutting it.
 **Done when:** `## Handoff` describes the tree as it stands after the run's last commit.
 
 ### 7. Report, and hand off
