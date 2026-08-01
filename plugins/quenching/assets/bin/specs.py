@@ -972,10 +972,16 @@ def find_specs_root(root_arg: str | None) -> str:
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup")
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates")
 BACKENDS = ("files", "github", "azure-boards")
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
+# `azureStates` has NO default, and that is the decision rather than an omission. GitHub's
+# open/closed is universal, so `github` needs no such key; an Azure Boards state is defined
+# by the project's PROCESS — Basic says To Do/Doing/Done, Agile says New/Active/Resolved/
+# Closed, Scrum says New/…/Done/Removed, and a customised process says whatever it likes.
+# Guessing would not fail loudly: it would read every archived spec as active in half the
+# projects it ran against.
 
 
 def find_repo_root(specs_root: str) -> str:
@@ -1017,6 +1023,7 @@ def load_config(root: str) -> dict:
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
+           "azureStates": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1047,6 +1054,14 @@ def load_config(root: str) -> dict:
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+
+    # Both phases or neither. A half-declared mapping is worse than none: it would archive a
+    # spec into a state the project has and then fail to recognise it on the way back.
+    states = obj.get("azureStates")
+    if isinstance(states, dict):
+        named = {p: str(states.get(p, "")).strip() for p in PHASES}
+        if all(named.values()):
+            out["azureStates"] = named
     return out
 
 
@@ -1661,6 +1676,14 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
             # falls back to `files` when the repo asked for GitHub.
             return None, err
         backend = gh                                        # type: ignore[assignment]
+    elif name == "azure-boards":
+        az, err = open_azure_backend(root)
+        if err:
+            # No `az`, no extension, nobody logged in, no configured project, or no declared
+            # phase-to-state mapping. Each is an exit-2 refusal, and nothing falls back to
+            # `files` when the repo asked for Azure Boards.
+            return None, err
+        backend = az                                        # type: ignore[assignment]
     else:
         return None, {
             "code": "sp-backend-unavailable", "exit": 2, "backend": name,
@@ -1849,14 +1872,14 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # issue tracker belongs to its humans, and a backend that treated every open issue as a spec
 # would list the bug reports and then write over them. The same reasoning applies one level
 # down to a task's own marker, below.
-GH_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)\s*-->[ \t]*\r?\n")
+HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)\s*-->[ \t]*\r?\n")
 
 
-def gh_wrap(filename: str, text: str) -> str:
+def hybrid_wrap(filename: str, text: str) -> str:
     return f"<!-- quenching-spec: {filename} -->\n{text}"
 
 
-def gh_unwrap(body: str) -> tuple[str, str]:
+def hybrid_unwrap(body: str) -> tuple[str, str]:
     """`(filename, document)` for a spec issue, or `("", "")` for any other issue.
 
     Line endings are normalised on the way in. GitHub stores and returns issue bodies with
@@ -1864,11 +1887,11 @@ def gh_unwrap(body: str) -> tuple[str, str]:
     section parse, every diff and the round-trip equality would all read that as content
     having changed."""
     body = (body or "").replace("\r\n", "\n")
-    m = GH_MARKER_RE.match(body)
+    m = HYBRID_MARKER_RE.match(body)
     return (m.group(1), body[m.end():]) if m else ("", "")
 
 
-def gh_tasks_shell(text: str) -> str:
+def hybrid_tasks_shell(text: str) -> str:
     """The canonical document with `## Tasks`'s own body emptied down to the bare heading.
 
     Built with `upsert_section` — the SAME splice every command already writes a section
@@ -1882,7 +1905,7 @@ def gh_tasks_shell(text: str) -> str:
     return new_text
 
 
-def gh_task_key(task: dict) -> str:
+def hybrid_task_key(task: dict) -> str:
     """The identity a task keeps across writes, so `write_spec` updates a sub-issue instead
     of retiring one and minting a new one for the same task.
 
@@ -1896,7 +1919,7 @@ def gh_task_key(task: dict) -> str:
     return task["id"] or f"#{task['index']}"
 
 
-def gh_task_block(text: str, task: dict) -> str:
+def hybrid_task_block(text: str, task: dict) -> str:
     """One task's literal source — the checkbox line plus every indented metadata line
     under it — sliced verbatim from `text` and never re-rendered from the parsed fields.
 
@@ -1909,15 +1932,15 @@ def gh_task_block(text: str, task: dict) -> str:
     return "".join(lines[task["lineno"]:task["blockEndLineno"]])
 
 
-GH_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)\s*-->"
+HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)\s*-->"
                                r"[ \t]*\r?\n")
 
 
-def gh_wrap_task(key: str, index: int, block: str) -> str:
+def hybrid_wrap_task(key: str, index: int, block: str) -> str:
     return f"<!-- quenching-task: key={key} index={index} -->\n{block}"
 
 
-def gh_unwrap_task(body: str) -> tuple[str, int, str]:
+def hybrid_unwrap_task(body: str) -> tuple[str, int, str]:
     """`(key, index, block)` for a task sub-issue, or `("", -1, "")` for anything else.
 
     `index` is what lets `read_spec` put the tasks back in DOCUMENT order rather than
@@ -1925,31 +1948,31 @@ def gh_unwrap_task(body: str) -> tuple[str, int, str]:
     reprioritised in the UI, and a rebuild that trusted that order would silently reorder
     the plan every time it was read back."""
     body = (body or "").replace("\r\n", "\n")
-    m = GH_TASK_MARKER_RE.match(body)
+    m = HYBRID_TASK_MARKER_RE.match(body)
     return (m.group(1), int(m.group(2)), body[m.end():]) if m else ("", -1, "")
 
 
-def gh_wrap_task_removed(key: str, index: int, block: str) -> str:
+def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
     """A task's sub-issue after the document stops carrying it.
 
     Closing the sub-issue alone is NOT enough: `checked` already closes one for a task that
     is done and still very much in the document, so "closed" cannot also mean "gone" without
     the two colliding — a removed-but-once-checked task would come back from the very next
     read, resurrected by its own leftover marker. Retiring the marker (this function) is
-    what makes `gh_unwrap_task` skip it: the text stays, for a human's audit trail, but it
+    what makes `hybrid_unwrap_task` skip it: the text stays, for a human's audit trail, but it
     no longer parses as `quenching-task:` — deliberately a PREFIX MISMATCH and not a new
-    marker `gh_unwrap_task` also has to know about, so one regex stays the single place a
+    marker `hybrid_unwrap_task` also has to know about, so one regex stays the single place a
     body is read as an active task."""
     return f"<!-- quenching-task-removed: key={key} index={index} -->\n{block}"
 
 
-def gh_rebuild_tasks_section(shell_text: str, task_bodies: list[str]) -> str:
+def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[str]) -> str:
     """Splice the reconstructed `## Tasks` body — every sub-issue's raw block, in document
     order — back into the shell `write_spec` emptied it into.
 
     Each block is followed by a blank line. `parse_tasks` does not need it — a following
     checkbox line ends the previous task's metadata scan on its own — but a human reading
-    the issue does, and `gh_task_block` never captured a trailing blank line in the first
+    the issue does, and `hybrid_task_block` never captured a trailing blank line in the first
     place (its span ends where `parse_tasks` itself stops scanning), so without this every
     task the github backend rebuilds would read as one unbroken paragraph.
 
@@ -1981,7 +2004,7 @@ class GitHubBackend(SpecBackend):
     diverge the first time somebody closed an issue from the web UI.
 
     ONE TASK IS ONE SUB-ISSUE. Every other section stays as markdown in the parent's body
-    (the "shell" — see `gh_tasks_shell`), because only `## Tasks` has a native GitHub
+    (the "shell" — see `hybrid_tasks_shell`), because only `## Tasks` has a native GitHub
     counterpart with its own state and identity; a `## Design` or `## Risks` section has
     no equivalent to move to and gains nothing by trying.
 
@@ -2057,7 +2080,7 @@ class GitHubBackend(SpecBackend):
                     # both. A PR can never be a spec, and one that happened to carry the
                     # marker would otherwise be listed and then written over.
                     continue
-                filename, shell = gh_unwrap(issue.get("body") or "")
+                filename, shell = hybrid_unwrap(issue.get("body") or "")
                 m = SPEC_FILE_RE.match(filename)
                 if not m:
                     continue
@@ -2106,23 +2129,23 @@ class GitHubBackend(SpecBackend):
             return None, err
         number, shell = next((n, d) for descriptor, n, d in rows
                              if descriptor["slug"] == slug)
-        full_text = gh_rebuild_tasks_section(shell, self._task_bodies(number))
+        full_text = hybrid_rebuild_tasks_section(shell, self._task_bodies(number))
         return derive_info(spec, full_text), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         number = self._issue_number(info["slug"])
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
-                        {"title": gh_issue_title(info["slug"], text),
-                         "body": gh_wrap(info["file"], gh_tasks_shell(text))})
+                        {"title": hybrid_title(info["slug"], text),
+                         "body": hybrid_wrap(info["file"], hybrid_tasks_shell(text))})
         self._sync_tasks(number, text)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                {"title": gh_issue_title(m.group(2) if m else filename, text),
-                                 "body": gh_wrap(filename, gh_tasks_shell(text))})
+                                {"title": hybrid_title(m.group(2) if m else filename, text),
+                                 "body": hybrid_wrap(filename, hybrid_tasks_shell(text))})
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
         # `capture_form` never stamps a `## Tasks` body, so this is a no-op for every spec
@@ -2150,12 +2173,12 @@ class GitHubBackend(SpecBackend):
     # -- tasks as sub-issues --------------------------------------------------- #
     def _task_bodies(self, parent_number: int) -> list[str]:
         """Every task sub-issue's raw body, in DOCUMENT order — ready for
-        `gh_rebuild_tasks_section`, which only concatenates."""
+        `hybrid_rebuild_tasks_section`, which only concatenates."""
         subs = self._api(f"listing sub-issues of #{parent_number}",
                          f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []
         marked = []
         for sub in subs:
-            key, index, block = gh_unwrap_task(sub.get("body") or "")
+            key, index, block = hybrid_unwrap_task(sub.get("body") or "")
             if key:      # an ordinary sub-issue a human added is not a task line
                 marked.append((index, block))
         marked.sort(key=lambda pair: pair[0])
@@ -2163,7 +2186,7 @@ class GitHubBackend(SpecBackend):
 
     def _sync_tasks(self, parent_number: int, text: str) -> None:
         """Make the parent's sub-issues match `text`'s `## Tasks` exactly: one sub-issue per
-        task, matched by `gh_task_key` so an update never mints a duplicate, and a task the
+        task, matched by `hybrid_task_key` so an update never mints a duplicate, and a task the
         document no longer carries is CLOSED AND its marker retired — a normal `gh` token
         cannot delete an issue, so closing is the closest a tracker gets to "no longer
         active" (the same loss `files` accepts: a task removed from a file is simply gone
@@ -2176,15 +2199,15 @@ class GitHubBackend(SpecBackend):
         existing: dict[str, dict] = {}
         for sub in self._api(f"listing sub-issues of #{parent_number}",
                              f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []:
-            key, _, _ = gh_unwrap_task(sub.get("body") or "")
+            key, _, _ = hybrid_unwrap_task(sub.get("body") or "")
             if key:
                 existing[key] = sub
         seen: set[str] = set()
         for t in tasks:
-            key = gh_task_key(t)
+            key = hybrid_task_key(t)
             seen.add(key)
-            block = gh_task_block(text, t)
-            payload = {"title": t["text"], "body": gh_wrap_task(key, t["index"], block),
+            block = hybrid_task_block(text, t)
+            payload = {"title": t["text"], "body": hybrid_wrap_task(key, t["index"], block),
                        "state": "closed" if t["checked"] else "open"}
             if key in existing:
                 num = existing[key]["number"]
@@ -2202,14 +2225,14 @@ class GitHubBackend(SpecBackend):
         for key, sub in existing.items():
             if key in seen:
                 continue
-            _, index, block = gh_unwrap_task(sub.get("body") or "")
+            _, index, block = hybrid_unwrap_task(sub.get("body") or "")
             self._write_api(f"retiring orphaned sub-issue #{sub['number']}", "PATCH",
                             f"repos/{self.repo}/issues/{sub['number']}",
                             {"state": "closed",
-                             "body": gh_wrap_task_removed(key, index, block)})
+                             "body": hybrid_wrap_task_removed(key, index, block)})
 
 
-def gh_issue_title(slug: str, text: str) -> str:
+def hybrid_title(slug: str, text: str) -> str:
     """What a human sees in the issue list: the spec's own title, or the slug titleised.
 
     The title is a PROJECTION of the document and never a second source — it is rewritten
@@ -2282,13 +2305,13 @@ def gh_refusal_failures() -> list[str]:
     # The round trip the shell serialisation rests on, including the CRLF GitHub actually
     # stores bodies with.
     doc = "---\ntitle: Alpha\n---\n\n## Problem\n\nUm problema.\n"
-    for label, body in (("as written", gh_wrap("2026-01-01-alpha.md", doc)),
+    for label, body in (("as written", hybrid_wrap("2026-01-01-alpha.md", doc)),
                         ("as GitHub returns it",
-                         gh_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
-        name, back = gh_unwrap(body)
+                         hybrid_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
+        name, back = hybrid_unwrap(body)
         if (name, back) != ("2026-01-01-alpha.md", doc):
             failures.append(f"marker round trip {label}: got {(name, back)!r}")
-    if gh_unwrap("An ordinary bug report.\n") != ("", ""):
+    if hybrid_unwrap("An ordinary bug report.\n") != ("", ""):
         failures.append("an issue with no marker was read as a spec")
     return failures
 
@@ -2296,12 +2319,12 @@ def gh_refusal_failures() -> list[str]:
 # The fields `parse_tasks` derives, minus the ones a rebuild is not expected to reproduce:
 # `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/`commitLineno` are
 # POSITIONS in a specific document, and the rebuilt document is flat (no `### N.` grouping —
-# see `gh_task_serialization_failures`'s docstring), so they are never asked to match.
-GH_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
+# see `hybrid_serialization_failures`'s docstring), so they are never asked to match.
+HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
                          "files", "pattern", "verify", "subject", "commit")
 
 
-def gh_task_serialization_failures() -> list[str]:
+def hybrid_serialization_failures() -> list[str]:
     """The claim the hybrid serialisation rests on: a task's checked/blocked state, its
     text and its metadata survive shell → sub-issue → shell exactly, with `parse_tasks` —
     the one shared derivation — doing the reading on both ends.
@@ -2323,39 +2346,39 @@ def gh_task_serialization_failures() -> list[str]:
           "- [ ] [P] quarta sem id\n\n"
           "## Outcome\n\n")
     tasks = parse_tasks(doc)
-    shell = gh_tasks_shell(doc)
+    shell = hybrid_tasks_shell(doc)
     failures: list[str] = []
     if "1.1 primeira" in shell or "1.2 segunda" in shell:
-        failures.append("gh_tasks_shell left a checkbox behind — sub-issues would duplicate it")
+        failures.append("hybrid_tasks_shell left a checkbox behind — sub-issues would duplicate it")
     if "## Outcome" not in shell or "## Problem" not in shell:
-        failures.append("gh_tasks_shell dropped a section other than Tasks")
+        failures.append("hybrid_tasks_shell dropped a section other than Tasks")
 
-    keys = [gh_task_key(t) for t in tasks]
+    keys = [hybrid_task_key(t) for t in tasks]
     if keys != ["1.1", "1.2", "1.3", "#4"]:
-        failures.append(f"gh_task_key: got {keys!r}, expected explicit ids and one "
+        failures.append(f"hybrid_task_key: got {keys!r}, expected explicit ids and one "
                         f"positional fallback for the task with none")
     if len(set(keys)) != len(keys):
-        failures.append(f"gh_task_key produced a collision: {keys!r}")
+        failures.append(f"hybrid_task_key produced a collision: {keys!r}")
 
     # Wrap each task's raw block as `_sync_tasks` would, store it through a CRLF round
     # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
     # a real sub-issue list.
-    stored = [gh_wrap_task(k, t["index"], gh_task_block(doc, t)).replace("\n", "\r\n")
+    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t)).replace("\n", "\r\n")
              for k, t in zip(keys, tasks)]
-    unwrapped = sorted((gh_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
+    unwrapped = sorted((hybrid_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
     for key, want_index, (got_key, got_index, _) in zip(keys, range(1, 5), unwrapped):
         if (got_key, got_index) != (key, want_index):
             failures.append(f"task marker round trip: got key={got_key!r} "
                             f"index={got_index!r}, wanted key={key!r} index={want_index!r}")
 
-    rebuilt = gh_rebuild_tasks_section(shell, [block for _, _, block in unwrapped])
+    rebuilt = hybrid_rebuild_tasks_section(shell, [block for _, _, block in unwrapped])
     tasks2 = parse_tasks(rebuilt)
     if len(tasks2) != len(tasks):
         failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
     else:
         for before, after in zip(tasks, tasks2):
-            b = {k: before[k] for k in GH_TASK_SEMANTIC_KEYS}
-            a = {k: after[k] for k in GH_TASK_SEMANTIC_KEYS}
+            b = {k: before[k] for k in HYBRID_TASK_SEMANTIC_KEYS}
+            a = {k: after[k] for k in HYBRID_TASK_SEMANTIC_KEYS}
             if b != a:
                 failures.append(f"task '{b['id'] or before['index']}' drifted: "
                                 f"before={b!r} after={a!r}")
@@ -2364,9 +2387,9 @@ def gh_task_serialization_failures() -> list[str]:
     # this is the exact shape of a bug caught while writing this backend: closing a
     # checked task's sub-issue without also retiring its marker let it resurrect itself,
     # because `checked` and `removed` both wanted to mean "closed".
-    checked_block = gh_task_block(doc, tasks[1])   # "1.2 segunda", never checked in `doc`
-    removed = gh_wrap_task_removed("1.2", 2, checked_block).replace("\n", "\r\n")
-    if gh_unwrap_task(removed)[0]:
+    checked_block = hybrid_task_block(doc, tasks[1])   # "1.2 segunda", never checked in `doc`
+    removed = hybrid_wrap_task_removed("1.2", 2, checked_block).replace("\n", "\r\n")
+    if hybrid_unwrap_task(removed)[0]:
         failures.append("a retired task's marker still parses as an active one — it would "
                         "resurrect on the next read_spec")
     return failures
@@ -2542,6 +2565,33 @@ AZ_REFUSAL_CASES = (
 )
 
 
+SPEC_PRIMITIVES = ("list_specs", "read_spec", "write_spec", "create_spec", "move_spec")
+
+
+def backend_completeness_failures() -> list[str]:
+    """Every declared backend implements all five primitives — none left inherited.
+
+    THIS IS WHAT `azure-boards` HAS INSTEAD OF END-TO-END PROOF. `## Out of Scope` accepts
+    shipping it without a real Azure DevOps project to exercise, and `backend_equivalence_
+    failures` cannot cover it: that check runs the canonical cases against two backends, and
+    running them here would mean a network. What CAN be checked without a network is the
+    failure a half-written backend actually takes — a primitive left inheriting the base
+    class's `NotImplementedError`, which reaches a human as a traceback rather than as a
+    refusal, breaking the one promise every external backend makes.
+
+    Self-contained: reads the classes, calls nothing."""
+    failures: list[str] = []
+    for cls in (FilesBackend, MemoryBackend, GitHubBackend, AzureBoardsBackend):
+        for primitive in SPEC_PRIMITIVES:
+            if getattr(cls, primitive, None) is getattr(SpecBackend, primitive):
+                failures.append(f"{cls.__name__} inherits `{primitive}` — it would raise "
+                                f"NotImplementedError as a traceback")
+        if getattr(cls, "name", "abstract") == "abstract":
+            failures.append(f"{cls.__name__} never named itself — `name` is what a refusal "
+                            f"and every report call it")
+    return failures
+
+
 def az_refusal_failures() -> list[str]:
     """Every `az` failure must arrive as its own exit-2 refusal, carrying the remedy that
     fixes THAT failure — never a traceback, and never the wrong remedy stated confidently.
@@ -2558,6 +2608,274 @@ def az_refusal_failures() -> list[str]:
         if not str(got.get("message", "")).strip():
             failures.append(f"{label}: refused with an empty message")
     return failures
+
+
+class AzureBoardsBackend(SpecBackend):
+    """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
+
+    ONE WORK ITEM IS ONE SPEC and ONE TASK IS ONE CHILD WORK ITEM — the same hybrid shape
+    the `github` backend uses, through the same `hybrid_*` helpers, which is the point of
+    those helpers having stopped being `gh_*`. Everything the two backends agree on is
+    literally shared code rather than two implementations that must be kept in step.
+
+    IT DERIVES NOTHING, exactly as `GitHubBackend` derives nothing: `derive_info` produces
+    the stages, gates and records, and `parse_tasks` is the only thing that ever decides a
+    task is checked or blocked.
+
+    THE PHASE IS A DECLARED STATE, and this is the one place the two external backends
+    genuinely differ. GitHub's open/closed is universal, so the mapping could be written in
+    code. An Azure Boards state belongs to the project's process — Basic, Agile, Scrum and
+    CMMI each name their states differently, and a customised process names them however it
+    likes — so the mapping is read from `azureStates` in `.claude/quenching.json` and is
+    NEVER guessed. Absent, the backend refuses (exit 2) naming the key: a guess would not
+    fail loudly, it would silently report every archived spec as active.
+
+    A state this tool did not write is read as `plans` — a work item moved to `Active` or
+    `Resolved` by a human on the board is still in flight, and only the declared archive
+    state means closed. That is the same one-way reading `github` gets from `state=closed`.
+
+    The listing is fetched once per process and cached — a local cache and NOT a store:
+    not authoritative, read by nothing outside this object, dropped on every write."""
+
+    name = "azure-boards"
+
+    def __init__(self, org: str, project: str, states: dict, cwd: str) -> None:
+        self.org = org
+        self.project = project
+        self.states = states
+        self.cwd = cwd
+        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
+
+    # -- transport ---------------------------------------------------------- #
+    def _az(self, action: str, *argv: str):
+        """One `az boards` call, parsed. Raises `BackendRefusal` for every way it can fail.
+
+        `--org` and `--project` on every call rather than relying on the configured
+        defaults: resolution already read them once, and passing them explicitly means a
+        human changing their `az` defaults mid-session cannot silently redirect a write to
+        another project."""
+        code, out, err = _az_run(self.cwd, "boards", *argv,
+                                 "--org", self.org, "--output", "json")
+        if code != 0:
+            raise BackendRefusal(az_refusal(action, code, out, err))
+        try:
+            return json.loads(out or "null")
+        except json.JSONDecodeError as e:
+            raise BackendRefusal({
+                "code": "sp-az-bad-response", "exit": 2, "action": action,
+                "message": f"`az boards` exited 0 while {action} but its output is not "
+                           f"JSON: {e}",
+            }) from e
+
+    def _field(self, item: dict, name: str) -> str:
+        return str((item.get("fields") or {}).get(name, "") or "")
+
+    def _phase_of(self, item: dict) -> str:
+        return "archive" if self._field(item, "System.State") == self.states["archive"] \
+            else "plans"
+
+    # -- the listing, fetched once ------------------------------------------- #
+    def _load(self) -> list[tuple[dict, int, str]]:
+        if self._rows is not None:
+            return self._rows
+        # WIQL rather than a saved query: the filter is this tool's, not the project's, and
+        # a saved query is one more thing a human has to create before the backend works.
+        found = self._az("querying the project's work items", "query", "--project",
+                         self.project, "--wiql",
+                         "SELECT [System.Id] FROM WorkItems WHERE "
+                         "[System.TeamProject] = @project") or []
+        ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
+               for r in found]
+        rows: list[tuple[dict, int, str]] = []
+        for item in self._show_many([i for i in ids if i]):
+            filename, shell = hybrid_unwrap(self._field(item, "System.Description"))
+            m = SPEC_FILE_RE.match(filename)
+            if not m:
+                # An ordinary work item a human created. The marker is what tells a spec
+                # apart from the project's real backlog, which this backend must never
+                # list and must never write over.
+                continue
+            phase = self._phase_of(item)
+            rows.append(({
+                # The SAME key set `spec_files` returns and nothing more.
+                "phase": phase, "folder": phase, "legacy": False, "file": filename,
+                "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
+                        f"{item.get('id')}",
+                "date": m.group(1), "slug": m.group(2),
+            }, int(item.get("id") or 0), shell))
+        self._rows = rows
+        return rows
+
+    def _show_many(self, ids: list[int]) -> list[dict]:
+        """Each work item's fields. One call per id — `az boards work-item show` takes a
+        single id, and there is no batch form in the CLI. The cost is declared rather than
+        hidden: it is why the listing is cached for the whole process."""
+        return [self._az(f"reading work item {i}", "work-item", "show", "--id", str(i))
+                for i in ids]
+
+    def _invalidate(self) -> None:
+        self._rows = None
+
+    def _item_id(self, slug: str) -> int:
+        for descriptor, item_id, _ in self._load():
+            if descriptor["slug"] == slug:
+                return item_id
+        raise BackendRefusal({
+            "code": "sp-az-item-gone", "exit": 2, "slug": slug,
+            "message": f"spec '{slug}' was in the listing and is not there any more — the "
+                       f"work item was deleted or moved while this command ran; nothing "
+                       f"was written",
+        })
+
+    # -- the five primitives -------------------------------------------------- #
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        rows = [dict(d) for d, _, _ in self._load()
+                if phase is None or d["phase"] == phase]
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        rows = self._load()
+        spec, err = resolve_one(self.list_specs(), slug)
+        if err:
+            return None, err
+        item_id, shell = next((i, d) for descriptor, i, d in rows
+                              if descriptor["slug"] == slug)
+        full_text = hybrid_rebuild_tasks_section(shell, self._task_bodies(item_id))
+        return derive_info(spec, full_text), {}
+
+    def write_spec(self, info: dict, text: str) -> None:
+        item_id = self._item_id(info["slug"])
+        self._update(item_id, title=hybrid_title(info["slug"], text),
+                     description=hybrid_wrap(info["file"], hybrid_tasks_shell(text)))
+        self._sync_tasks(item_id, text)
+        self._invalidate()
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        m = SPEC_FILE_RE.match(filename)
+        item = self._az("creating a work item", "work-item", "create", "--project",
+                        self.project, "--type", AZ_SPEC_TYPE,
+                        "--title", hybrid_title(m.group(2) if m else filename, text),
+                        "--description", hybrid_wrap(filename, hybrid_tasks_shell(text)),
+                        "--state", self.states[phase])
+        item_id = int((item or {}).get("id") or 0)
+        self._sync_tasks(item_id, text)
+        self._invalidate()
+        return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        item_id = self._item_id(info["slug"])
+        self._update(item_id, state=self.states[dest_phase])
+        self._invalidate()
+        return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def _update(self, item_id: int, **fields: str):
+        argv: list[str] = ["work-item", "update", "--id", str(item_id)]
+        for key, value in fields.items():
+            argv += [f"--{key}", value]
+        return self._az(f"updating work item {item_id}", *argv)
+
+    # -- tasks as child work items --------------------------------------------- #
+    def _children(self, parent_id: int) -> list[dict]:
+        """Every child work item of the parent, as full items.
+
+        Relations come back on the parent under `--expand relations`, as URLs whose last
+        segment is the child's id — the CLI has no "list children" verb."""
+        parent = self._az(f"reading work item {parent_id}", "work-item", "show",
+                          "--id", str(parent_id), "--expand", "relations") or {}
+        ids = []
+        for rel in (parent.get("relations") or []):
+            if str(rel.get("rel")) == "System.LinkTypes.Hierarchy-Forward":
+                tail = str(rel.get("url") or "").rstrip("/").rsplit("/", 1)[-1]
+                if tail.isdigit():
+                    ids.append(int(tail))
+        return self._show_many(ids)
+
+    def _task_bodies(self, parent_id: int) -> list[str]:
+        """Every task child's raw block, in DOCUMENT order — ready for
+        `hybrid_rebuild_tasks_section`, which only concatenates."""
+        marked = []
+        for child in self._children(parent_id):
+            key, index, block = hybrid_unwrap_task(
+                self._field(child, "System.Description"))
+            if key:      # an ordinary child a human added is not a task line
+                marked.append((index, block))
+        marked.sort(key=lambda pair: pair[0])
+        return [block for _, block in marked]
+
+    def _sync_tasks(self, parent_id: int, text: str) -> None:
+        """Make the parent's children match `text`'s `## Tasks` exactly — the same contract
+        `GitHubBackend._sync_tasks` implements, and the same two-part retirement: a task the
+        document no longer carries is moved to the archive state AND has its marker retired,
+        because `checked` already means "in the archive state" for a task still very much in
+        the document, and one signal cannot mean both without a done-then-removed task
+        resurrecting itself on the next read."""
+        tasks = parse_tasks(text)
+        existing: dict[str, dict] = {}
+        for child in self._children(parent_id):
+            key, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
+            if key:
+                existing[key] = child
+        seen: set[str] = set()
+        for t in tasks:
+            key = hybrid_task_key(t)
+            seen.add(key)
+            block = hybrid_task_block(text, t)
+            state = self.states["archive" if t["checked"] else "plans"]
+            description = hybrid_wrap_task(key, t["index"], block)
+            if key in existing:
+                self._update(int(existing[key]["id"]), title=t["text"],
+                             description=description, state=state)
+            else:
+                child = self._az("creating a child work item", "work-item", "create",
+                                 "--project", self.project, "--type", AZ_TASK_TYPE,
+                                 "--title", t["text"], "--description", description,
+                                 "--state", state)
+                self._az(f"linking child work item {child.get('id')}", "work-item",
+                         "relation", "add", "--id", str(child.get("id")),
+                         "--relation-type", "parent", "--target-id", str(parent_id))
+        for key, child in existing.items():
+            if key in seen:
+                continue
+            _, index, block = hybrid_unwrap_task(self._field(child, "System.Description"))
+            self._update(int(child["id"]), state=self.states["archive"],
+                         description=hybrid_wrap_task_removed(key, index, block))
+
+
+# The work item types this backend creates. `Issue` and `Task` exist in the Basic and Agile
+# processes; Scrum and CMMI name their equivalents differently, which is the same
+# process-dependence `azureStates` exists for. Left as constants rather than a fifth config
+# key until a real Azure DevOps project says otherwise — `## Out of Scope` accepts that this
+# backend ships without end-to-end proof, and inventing configuration for an unproven
+# guess is worse than one named place to change.
+AZ_SPEC_TYPE = "Issue"
+AZ_TASK_TYPE = "Task"
+
+
+def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
+    """The `azure-boards` backend for this workspace, or the refusal that says why not.
+
+    Resolution happens HERE and not in the constructor, on the same "on demand" rule
+    `open_backend` applies to the files worktree and the github backend: the round trip is
+    paid by the first command that needs a spec, and the missing-binary, not-logged-in and
+    nothing-declared refusals arrive at the START of a command rather than halfway through
+    a write."""
+    cwd = find_repo_root(root)
+    cfg = load_config(root)
+    states = cfg["azureStates"]
+    if not states:
+        return None, {
+            "code": "sp-az-no-states", "exit": 2, "config": cfg["path"],
+            "message": "backend 'azure-boards' needs the phase-to-state mapping declared in "
+                       f"{CONFIG_FILE} — add "
+                       '`"azureStates": {"plans": "<your active state>", "archive": '
+                       '"<your closed state>"}`; an Azure Boards state is defined by the '
+                       "project's process, so this tool never guesses it. No spec was read "
+                       "or written",
+        }
+    (org, project), err = resolve_azure_project(cwd)
+    if err:
+        return None, err
+    return AzureBoardsBackend(org, project, states, cwd), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -5151,6 +5469,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are three refusals with three remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # What `azure-boards` has instead of an end-to-end run, and the reason it runs before
+    # the early return: a primitive left inherited reaches a human as a traceback, which is
+    # the one thing every external backend promises never to do.
+    for failure in backend_completeness_failures():
+        findings.append(_finding("sp-backend-incomplete", "error",
+                                 f"a backend is half-implemented — {failure}",
+                                 remedy="all five primitives on every declared backend; a "
+                                        "failure travels as a BackendRefusal carrying its "
+                                        "own remedy, never as an exception"))
+
     # The `azure-boards` transport's half of the same promise, and the reason it is its own
     # check: `az` has no dedicated exit code for "not logged in", so every refusal here is
     # split on what stderr SAID. A reworded release must break this check rather than start
@@ -5166,7 +5494,7 @@ def cmd_selftest(args, root: str) -> int:
     # The hybrid serialisation's own claim: a task's checked/blocked state survives
     # shell -> sub-issue -> shell, derived by `parse_tasks` on both ends and never by the
     # backend's own notion of what a checkbox means.
-    for failure in gh_task_serialization_failures():
+    for failure in hybrid_serialization_failures():
         findings.append(_finding("sp-gh-task-serialization-broken", "error",
                                  f"the github task serialisation misreads a task — {failure}",
                                  remedy="a task's raw block is stored and re-parsed by the "
@@ -5278,7 +5606,9 @@ def cmd_config(args, root: str) -> int:
              f"  backend: {cfg['backend']}"
              + (" (default)" if not cfg["present"] else ""),
              f"  specsBranch: {cfg['specsBranch']}",
-             "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)")]
+             "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
+             "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
+                                  if cfg["azureStates"] else "(none declared)")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
     emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
