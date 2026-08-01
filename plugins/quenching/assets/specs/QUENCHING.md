@@ -421,7 +421,7 @@ code and the JSON, never on prose.
 | `specs.py new <slug> [--title T] [--verification P]` | create in `plans/` with `## Problem` alone; stamps the date ONCE |
 | `specs.py list [--json]` | every spec, grouped by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections, stage, tasks, the frontmatter records, commits, and the gate's outstanding list |
-| `specs.py section <slug> "<Heading>" [--write]` | read or write ONE section; `--write` creates it in canonical position |
+| `specs.py section <slug> "<Heading>[,<Heading>…]" [--write]` | read N sections in ONE call, returned in the order asked; `--write` takes exactly one and creates it in canonical position |
 | `specs.py next --spec <slug> [--json]` | THE single next action for one spec; skips `[!]` |
 | `specs.py next --front [--json]` | the ranked candidate list with a reason per row — the only place ranking logic lives |
 | `specs.py task --spec <slug> --check ID [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip a checkbox mechanically; `--commit` writes the sha onto the task line |
