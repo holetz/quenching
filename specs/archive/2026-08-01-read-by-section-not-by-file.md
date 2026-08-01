@@ -6,6 +6,7 @@ refined: {mode: gate, date: 2026-08-01}
 approved: {date: 2026-08-01}
 branch: {base: main, work: plan/read-by-section-not-by-file}
 reviewed: {date: 2026-08-01}
+merge: {strategy: merge-commit, subject: "plan/read-by-section-not-by-file: merge (merge-commit)"}
 outcome: done
 ---
 
