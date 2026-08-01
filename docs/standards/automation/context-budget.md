@@ -4,7 +4,7 @@ title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry, the per-surface ceiling, and the disable-model-invocation exit that lets a typed-only command cost nothing at all; and the other half — what a body costs once it fires, where every turn re-sends the whole conversation so a block costs tokens × turns remaining
 resource: plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-07-31
+timestamp: 2026-08-01
 audience: both
 authority: background
 source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31)
@@ -232,6 +232,14 @@ The budget above is what loads *before* anything fires. Once a command runs, a s
 that the description caps say nothing about, and it is not linear: **every turn re-sends the whole
 conversation**, so a block of context is paid once for each turn that follows it. Its true cost is
 `tokens × turns remaining`, not `tokens`.
+
+**This section owns the integral and the run it was measured on. What to *do* about it is
+[context-discipline.md](context-discipline.md)** — the rules for opening less (the declared files
+rather than the folder, the cited sections rather than the file, N sections in one call, the
+`<!-- rules -->` / `<!-- rationale -->` convention) and for running less time (the section boundary
+as a stopping point), plus the two moves that were priced and refused. The two consequences named
+below are where that file starts; it is the owner of them, and this one does not restate what it
+concluded.
 
 Measured on one `/quenching:specs:execute` run of 344 turns — 17.4M token-turns of integral:
 
