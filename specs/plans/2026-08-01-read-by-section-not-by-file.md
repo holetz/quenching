@@ -488,9 +488,10 @@ razão medida de terem perdido.
 
 ### 6. Os standards
 
-- [ ] 6.1 Escrever docs/standards/automation/context-discipline.md — as duas metades da integral,
+- [x] 6.1 Escrever docs/standards/automation/context-discipline.md — as duas metades da integral,
       abrir menos e rodar menos tempo (authority: background — uma medição, um repo)
       verify: python3 assets/hooks/okf-validate.py docs
+      subject: plan/read-by-section-not-by-file: 6.1 docs/standards/automation/context-discipline.md
 - [ ] 6.2 Revisar docs/standards/automation/context-budget.md §The other half para apontar para o
       dono novo sem absorvê-lo, preservando a narrativa da medição que ela já carrega
       verify: python3 assets/hooks/okf-validate.py docs
