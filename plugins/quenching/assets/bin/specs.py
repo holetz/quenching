@@ -1671,13 +1671,17 @@ SECTION_CASES = {
          "ask": ["Alpha", "Beta", "Gamma"],
          "contains": [],
          "excludes": ["type: standard", "Preamble under a level-1 heading."]},
+        {"why": "a unique prefix resolves, so a citation need not reproduce a long "
+                "heading's punctuation",
+         "ask": ["Gam"],
+         "contains": ["Gamma ends the file."],
+         "excludes": []},
         {"why": "a section that does not exist is a refusal that names it, never an "
                 "empty answer",
          "ask": ["Delta"],
          "missing": ["Delta"]},
     ],
 }
-
 
 
 def _section_case_rows(text: str) -> list[dict]:
@@ -1703,7 +1707,11 @@ def section_case_failures() -> list[str]:
     for case in SECTION_CASES["cases"]:
         got, missing = [], []
         for name in case["ask"]:
-            r = index.get(name.strip().lstrip("#\u00a7").strip().casefold())
+            key = name.strip().lstrip("#\u00a7").strip().casefold()
+            r = index.get(key)
+            if r is None:
+                hits = [v for k, v in index.items() if k.startswith(key)]
+                r = hits[0] if len(hits) == 1 else None
             (got.append(r) if r else missing.append(name))
         want_missing = case.get("missing", [])
         if missing != want_missing:
