@@ -474,9 +474,10 @@ razão medida de terem perdido.
       tamanho das specs de plans/ em disco
       verify: python3 assets/bin/specs.py list --json
       subject: plan/read-by-section-not-by-file: 5.1 Decidir o evento que dispara a oferta de parar
-- [ ] 5.2 `/quenching:specs:execute` passa a oferecer parar na fronteira de seção, nomeando o comando
+- [x] 5.2 `/quenching:specs:execute` passa a oferecer parar na fronteira de seção, nomeando o comando
       que retoma; oferece e nunca impõe, e nunca encerra sozinha
       files: plugins/quenching/commands/specs/execute.md
+      subject: plan/read-by-section-not-by-file: 5.2 Oferecer parar na fronteira de seção
 - [ ] 5.3 O passo 6 (`## Handoff`, quatro eventos) declara que a fronteira de seção é retomada pelo
       trilho que ele já mantém, sem escrever estado novo
       files: plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/execution.md

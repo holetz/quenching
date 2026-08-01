@@ -254,6 +254,27 @@ f. **Read the chain's tail, and act on which link broke:**
      breaks the task→commit link: **report it as a finding and write nothing.** Editing the record
      now would put a write after the commit again, which is exactly what this ordering removed.
 
+g. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The event
+   is exact and needs no threshold: the last task of a `## N.` section just committed, and another
+   section is still ahead. Say it in one line and continue:
+
+   ```
+   Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <slug>` resumes from here —
+   say the word and I stop; otherwise I continue with 4.1.
+   ```
+
+   **Why here and not on a window size.** The run's cost is `tokens × turns remaining`, which grows
+   with the *square* of the turn count — seven runs of ~45 turns cost roughly a seventh of one run
+   of 300 for the same work. A section is the smallest independently deliverable unit the front
+   already defines (it is why `per-section` is the default verification policy), so stopping there
+   leaves nothing half-done, and the resumption trail is **already paid**: `## Handoff`, `git log`,
+   and the `subjects` `specs.py status` returns. No state is written for this.
+
+   **It offers, it never imposes, and it never ends the run itself.** An unattended run that
+   decides to stop trades a cost for a surprise. A threshold — "the window is long now" — is
+   forbidden here for the same reason §6's cadence is four events rather than a judgment: a number
+   invented before it is measured fixes the answer.
+
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
 standard via `/quenching:docs:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
