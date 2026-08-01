@@ -86,14 +86,16 @@ SUBCOMMANDS
                   what the surface costs before anything fires: per command and
                   summed, sorted by cost, against the ceiling. Reports; never
                   refuses.
-  read PATH [--sections "A,B"]
+  read PATH [--sections "A,B"] [--rules-only]
                   N sections of any markdown file in ONE call, frontmatter stripped.
                   Without `--sections`, prints the file's heading index — what exists
                   to ask for, so discovering it never costs the file. A section runs
                   from its heading to the next heading of the SAME level or shallower,
                   so sub-headings travel with their parent; fenced code is never read
                   as a heading. A named section that does not exist is a refusal (2)
-                  that names it, never an empty answer.
+                  that names it, never an empty answer. `--rules-only` returns
+                  the `<!-- rules -->` half of each section — and, where no marker is
+                  present, the whole section plus a note saying so. Never silence.
   selftest        builds a throwaway surface in a temp dir and asserts doctor's
                   findings on it — chiefly that a file parked under commands/ which
                   is NOT an entry point registers as one and fires
@@ -1466,12 +1468,31 @@ def cmd_selftest(args, root: str) -> int:
         failures.append("section reader: a `###` must resolve on its own and stop at the "
                         "next heading of the same level or shallower")
 
+    # `--rules-only`, both arms. The fallback arm is the one `## Validation` insists on:
+    # a missing marker must never become an empty answer, because a caller that asked for
+    # a rule and got silence proceeds as though the rule did not exist.
+    marked = (f"{RULES_MARKER}\nThe binding sentence.\n{RATIONALE_MARKER}\n"
+              f"The measurement behind it.")
+    for label, body, want_text, want_marked in (
+            ("marked", marked, "The binding sentence.", True),
+            ("no-rationale", f"{RULES_MARKER}\nOnly a rule.", "Only a rule.", True),
+            ("unmarked", "A whole section nobody marked up.",
+             "A whole section nobody marked up.", False)):
+        got_text, got_marked = split_rule_and_rationale(body)
+        if got_text.strip() != want_text or got_marked != want_marked:
+            failures.append(f"--rules-only {label}: got ({got_text.strip()!r}, "
+                            f"{got_marked}), expected ({want_text!r}, {want_marked})")
+        if not got_text.strip():
+            failures.append(f"--rules-only {label}: returned an empty answer — a missing "
+                            f"marker degrades to the whole section, never to silence")
+
     # + 3: the two conformant controls that must stay clean (/docs:add, agents/good.md) and
     # the drift refusal, none of which has a fixture row of its own; + 2 for the citation
     # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
              + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5
-             + len(SECTION_CASES["cases"]) + 1)  # +1 for the heading index
+             + len(SECTION_CASES["cases"]) + 5)  # + the every-level index, the
+    # `###` resolution, and the three `--rules-only` arms
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
@@ -2030,6 +2051,28 @@ def markdown_sections(text: str) -> list[dict]:
     return heads
 
 
+RULES_MARKER = "<!-- rules -->"
+RATIONALE_MARKER = "<!-- rationale -->"
+
+
+def split_rule_and_rationale(body: str) -> tuple[str, bool]:
+    """The rule half of a section, and whether a marker actually said where it ends.
+
+    **Marker, never heuristic.** A model deciding per read which sentences are binding and
+    which are the story behind them is non-deterministic, and its failure is silent: a
+    dropped binding sentence shows up nowhere. The marker is written once, by whoever wrote
+    the rule, and the read is mechanical.
+
+    **No marker → the whole section, and the caller is TOLD.** The degradation is to
+    today's behaviour, never to emptiness. A convention applied in five files must not turn
+    the other eighteen into silence.
+    """
+    if RULES_MARKER not in body:
+        return body, False
+    after = body.split(RULES_MARKER, 1)[1]
+    return after.split(RATIONALE_MARKER, 1)[0].strip("\n"), True
+
+
 def normalize_heading(name: str) -> str:
     """What a caller types against what the file carries. `§The commit`, `## The commit`
     and `the commit` are the same request — the citation form the bodies already use
@@ -2227,14 +2270,26 @@ def cmd_read(args, root: str) -> int:
                    f"  available: {', '.join(h['heading'] for h in heads)}")
         return 2
 
+    rows = []
+    for h in got:
+        body, marked = ((h["body"], True) if not args.rules_only
+                        else split_rule_and_rationale(h["body"]))
+        rows.append({"heading": h["heading"], "level": h["level"], "body": body,
+                     **({"marked": marked} if args.rules_only else {})})
+
     if args.json:
-        print(json.dumps({"ok": True, "path": str(path),
-                          "sections": [{"heading": h["heading"], "level": h["level"],
-                                        "body": h["body"]} for h in got]},
-                         indent=2, ensure_ascii=False))
+        print(json.dumps({"ok": True, "path": str(path), "rulesOnly": args.rules_only,
+                          "sections": rows}, indent=2, ensure_ascii=False))
     else:
-        for h in got:
-            print(f"{'#' * h['level']} {h['heading']}\n\n{h['body']}\n")
+        for r in rows:
+            print(f"{'#' * r['level']} {r['heading']}\n\n{r['body']}\n")
+        unmarked = [r["heading"] for r in rows if r.get("marked") is False]
+        if unmarked:
+            # Stated, never silent: the caller asked for the rule half and got the whole
+            # section, and a reader that does not know which one it holds cannot tell a
+            # compact rule from a section nobody has marked up yet.
+            print(f"note: no {RULES_MARKER} marker in: {', '.join(unmarked)} — returned "
+                  f"the whole section")
     return 0
 
 
@@ -2242,7 +2297,11 @@ register("read",
          lambda sp: (sp.add_argument("path", help="a markdown file"),
                      sp.add_argument("--sections",
                                      help="comma-separated section names; omit for the "
-                                          "file's heading index")),
+                                          "file's heading index"),
+                     sp.add_argument("--rules-only", action="store_true",
+                                     help=f"only the {RULES_MARKER} half of each section; "
+                                          f"a section with no marker comes back whole and "
+                                          f"says so")),
          cmd_read)
 
 
