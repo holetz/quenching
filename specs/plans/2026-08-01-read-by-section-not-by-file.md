@@ -478,9 +478,10 @@ razão medida de terem perdido.
       que retoma; oferece e nunca impõe, e nunca encerra sozinha
       files: plugins/quenching/commands/specs/execute.md
       subject: plan/read-by-section-not-by-file: 5.2 Oferecer parar na fronteira de seção
-- [ ] 5.3 O passo 6 (`## Handoff`, quatro eventos) declara que a fronteira de seção é retomada pelo
+- [x] 5.3 O passo 6 (`## Handoff`, quatro eventos) declara que a fronteira de seção é retomada pelo
       trilho que ele já mantém, sem escrever estado novo
       files: plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/execution.md
+      subject: plan/read-by-section-not-by-file: 5.3 A fronteira é retomada pelo trilho que já existe
 - [ ] 5.4 Confirmar a superfície depois das três edições de corpo
       verify: python3 assets/bin/skills.py --root . doctor --json
 

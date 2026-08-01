@@ -263,17 +263,11 @@ g. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    say the word and I stop; otherwise I continue with 4.1.
    ```
 
-   **Why here and not on a window size.** The run's cost is `tokens × turns remaining`, which grows
-   with the *square* of the turn count — seven runs of ~45 turns cost roughly a seventh of one run
-   of 300 for the same work. A section is the smallest independently deliverable unit the front
-   already defines (it is why `per-section` is the default verification policy), so stopping there
-   leaves nothing half-done, and the resumption trail is **already paid**: `## Handoff`, `git log`,
-   and the `subjects` `specs.py status` returns. No state is written for this.
-
-   **It offers, it never imposes, and it never ends the run itself.** An unattended run that
-   decides to stop trades a cost for a surprise. A threshold — "the window is long now" — is
-   forbidden here for the same reason §6's cadence is four events rather than a judgment: a number
-   invented before it is measured fixes the answer.
+   It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
+   makes the boundary resumable is the one §6 already keeps. Why the trigger is that event and
+   never a window size, and why a section is the unit, live in
+   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   §The section boundary.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
@@ -299,6 +293,13 @@ were ~90% identical to one another. And do not substitute a judgment — "rewrit
 underivable state changed" is the rule that already failed, because an unattended run never judges
 that something went stale. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
+
+**The section-boundary offer (§5g) adds no fifth event and writes no new state.** Accepted, it is a
+pause and a last commit, which are already two of the four above; declined, nothing happened worth
+recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
+`status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
+why stopping there is nearly free. An offer that required writing something extra would be moving
+cost rather than cutting it.
 **Done when:** `## Handoff` describes the tree as it stands after the run's last commit.
 
 ### 7. Report, and hand off
