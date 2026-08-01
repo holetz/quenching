@@ -391,8 +391,9 @@ trabalho em que se está.
 - [x] 4.5 Reescrever docs/standards/workflows/plan-git-record.md §The task→commit link
       verify: python3 assets/hooks/okf-validate.py docs
       subject: plan/configurable-spec-backend: 4.5 reescreve plan-git-record.md — o link task-commit e o sha
-- [ ] 4.6 E2E real neste repositório: criar spec de teste, escrever três seções, criar e ticar duas
+- [x] 4.6 E2E real neste repositório: criar spec de teste, escrever três seções, criar e ticar duas
       tasks, promover, remover a issue; os JSONs devem bater com os do backend `files`
+      subject: plan/configurable-spec-backend: 4.6 e2e real do backend github contra holetz/claude-quenching
 
 ### 5. Superfície
 
