@@ -7,6 +7,20 @@
 This file is the single owner of how every `/specs:*` command resolves its tools. A `/specs:*`
 command writes nothing into the bundle at all — see §The `specs/` front records itself.
 
+## Where the front is configured
+
+The plugin's configuration lives in **`.claude/quenching.json`**, at the repo root — the `backend`
+key naming which store holds the specs, the specs branch, and `worktreeSetup`. It is read by
+`specs.py config --json`, which exits 0 whether or not anything is declared, and the standard that
+owns it is
+[plugin-configuration.md](../../../../docs/standards/workflows/plugin-configuration.md).
+
+It is **not** `specs/config.json` any more, and the reason is this section's whole point: a repo
+that declares an external backend may carry no `specs/` folder, so configuration cannot live inside
+one. Everything below describes the `files` backend, which is the reference implementation and the
+default — under `github` or `azure-boards` there is no folder, no listing and no filename, and the
+only thing that stays constant is what `specs.py` answers.
+
 ## The folder is the listing
 
 `plans/` carries **no index file**. `specs.py list` and `specs.py status` derive what the folder
@@ -97,3 +111,9 @@ own frontmatter records (`priority`, `refined`, `approved`, `branch`, `reviewed`
 `outcome`) narrate its history in the file a reader already has open, and what the folder holds is
 derived from disk on demand (§The folder is the listing). Nothing here is a cross-front event, so
 nothing here is the bundle's business.
+
+**Those seven records are written by `specs.py record`, never by editing the frontmatter** — it
+merges field by field, so a re-stamp never drops what an earlier pass wrote, and it refuses (exit
+2) a second write to a write-once record rather than overwriting it. `outcome` is the exception
+and declares no fields: its one writer is `promote --outcome`. An in-place edit would do the same
+thing only while the backend happens to be `files`.

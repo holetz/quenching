@@ -415,8 +415,9 @@ para `.claude/quenching.json`; fechar com `doctor` (26 comandos, 0 findings) e `
       store, no delta format", registrando o que a substitui
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
       subject: plan/configurable-spec-backend: 5.2 retira a declaracao entirely-native, preservando o que ela reverte
-- [ ] 5.3 Atualizar specs-isolate/git.md e specs-create/specs-front.md para o novo caminho de config
+- [x] 5.3 Atualizar specs-isolate/git.md e specs-create/specs-front.md para o novo caminho de config
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
+      subject: plan/configurable-spec-backend: 5.3 as referencias e o manual apontam para .claude/quenching.json
 - [ ] 5.4 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
       verify: python3 assets/bin/skills.py --root . doctor --json
 

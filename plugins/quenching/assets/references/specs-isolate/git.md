@@ -109,11 +109,18 @@ human read rather than a discovery at the first `verify:` that fails.
 
 ### A target may declare a setup command
 
-`specs/config.json`, at the root of the specs workspace, with exactly one recognised key:
+`.claude/quenching.json`, at the repo root, under the `worktreeSetup` key:
 
 ```json
-{"worktreeSetup": "./scripts/wt-setup.sh"}
+{"backend": "files", "worktreeSetup": "./scripts/wt-setup.sh"}
 ```
+
+**The home moved, and the move is the point.** This used to be `specs/config.json`, at the root of
+the specs workspace — which only had a place to live while every repo was guaranteed a `specs/`
+folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
+configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
+with the rest of it. See
+[plugin-configuration.md](../../../../docs/standards/workflows/plugin-configuration.md).
 
 Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
 `/specs:isolate`, immediately after `git worktree add`, with **cwd inside the new worktree** — the
@@ -133,8 +140,8 @@ A failing setup is reported and **never undoes the worktree**.
 
 ## Recording the isolation
 
-```yaml
-branch: {base: main, work: plan/<slug>}
+```bash
+specs.py record <slug> branch --set base=main --set work=plan/<slug>
 ```
 
 `base` is whatever was checked out when the branch was cut. It is **not** assumed to be `main`.
@@ -145,8 +152,10 @@ the record exists and why it is captured while still true.
 Stamp nothing when the human declines isolation and works in place: a record whose `base` equals
 its `work` states no fact. Say in the report that the spec carries no `branch` record and why.
 
-The record is `writeOnce: true`. A later run **reads** it rather than rewriting it, and a current
-branch that disagrees with `work` is a finding to report, never a value to correct.
+The record is `writeOnce: true`, and `specs.py record` enforces it: a second stamp refuses (exit 2)
+naming the value already held. A later run **reads** it rather than rewriting it, and a current
+branch that disagrees with `work` is a finding to report, never a value to correct. Never edit the
+frontmatter to get past that refusal — the refusal is the rule, working.
 
 **The record is not the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking "is this spec in flight?" asks git for a live
