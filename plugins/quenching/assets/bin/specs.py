@@ -1561,15 +1561,33 @@ def _canonical_index(heading: str, schema: dict | None = None) -> int:
     return canon.index(heading) if heading in canon else len(canon)
 
 
+def resolve_heading_name(name: str, candidates: list[str]) -> str | None:
+    """One requested name onto the candidate that answers it, or None.
+
+    **`§X` and `## X` are the same request, and a UNIQUE prefix resolves** — the two forms
+    `SECTION_CASES` pins, which `skills.py` carries verbatim. The command bodies already cite
+    sections as `§Handoff`, so a reader that refused over the marker would be unusable from the
+    very prose it serves. An ambiguous prefix resolves to nothing: a guess between two headings is
+    worse than the refusal that names them.
+
+    It takes the candidate list as an argument for one reason — so the canonical cases exercise
+    THIS function over the fixture's headings, rather than a second copy of the rule written
+    inside the selftest. A rule proved against a private re-implementation is not proved."""
+    want = " ".join(name.strip().lstrip("#§").strip().split()).lower()
+    if not want:
+        return None
+    for c in candidates:
+        if c.lower() == want:
+            return c
+    hits = [c for c in candidates if c.lower().startswith(want)]
+    return hits[0] if len(hits) == 1 else None
+
+
 def _match_heading(heading: str) -> str | None:
     """Case-insensitive lookup onto the canonical spelling. Headings are a parsed contract,
     so the FILE always carries canonical English — but a human typing `specs.py section x
     validation` should not get a stray section for their trouble."""
-    want = heading.strip().lower()
-    for h in canonical_headings():
-        if h.lower() == want:
-            return h
-    return None
+    return resolve_heading_name(heading, canonical_headings())
 
 
 def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
@@ -1703,16 +1721,15 @@ def section_case_failures() -> list[str]:
     if heads != SECTION_CASES["index"]:
         out.append(f"heading index is {heads}, expected {SECTION_CASES['index']} — a "
                    f"fenced line was read as a heading, or a heading was missed")
-    index = {r["heading"].strip().casefold(): r for r in rows}
+    # `resolve_heading_name` is the SAME function `_match_heading` runs in production, handed the
+    # fixture's headings instead of the canonical fourteen. That is what makes the `\u00a7X` and
+    # unique-prefix cases evidence about this tool rather than about the selftest.
+    index = {r["heading"]: r for r in rows}
     for case in SECTION_CASES["cases"]:
         got, missing = [], []
         for name in case["ask"]:
-            key = name.strip().lstrip("#\u00a7").strip().casefold()
-            r = index.get(key)
-            if r is None:
-                hits = [v for k, v in index.items() if k.startswith(key)]
-                r = hits[0] if len(hits) == 1 else None
-            (got.append(r) if r else missing.append(name))
+            hit = resolve_heading_name(name, list(index))
+            (got.append(index[hit]) if hit else missing.append(name))
         want_missing = case.get("missing", [])
         if missing != want_missing:
             out.append(f"{case['ask']}: missing is {missing}, expected {want_missing} "
