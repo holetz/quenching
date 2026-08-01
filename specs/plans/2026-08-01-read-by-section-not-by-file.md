@@ -445,8 +445,9 @@ razão medida de terem perdido.
 - [x] 3.2 Aplicar os marcadores em specs-execute/execution.md, sem remover uma linha de prosa
       files: plugins/quenching/assets/references/specs-execute/execution.md
       subject: plan/read-by-section-not-by-file: 3.2 Marcadores em execution.md, sem perder prosa
-- [ ] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
+- [x] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/references/docs-add/homes.md, plugins/quenching/assets/references/docs-align/conformance.md
+      subject: plan/read-by-section-not-by-file: 3.3 Marcadores nas outras quatro referências
 - [ ] 3.4 Medir a fração real de racional nas cinco e decidir per ## Open Decisions se a convenção
       se estende às outras dezoito
       verify: python3 assets/bin/skills.py --root . lint --json
