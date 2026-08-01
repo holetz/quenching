@@ -448,9 +448,10 @@ razão medida de terem perdido.
 - [x] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/references/docs-add/homes.md, plugins/quenching/assets/references/docs-align/conformance.md
       subject: plan/read-by-section-not-by-file: 3.3 Marcadores nas outras quatro referências
-- [ ] 3.4 Medir a fração real de racional nas cinco e decidir per ## Open Decisions se a convenção
+- [x] 3.4 Medir a fração real de racional nas cinco e decidir per ## Open Decisions se a convenção
       se estende às outras dezoito
       verify: python3 assets/bin/skills.py --root . lint --json
+      subject: plan/read-by-section-not-by-file: 3.4 Medir a fração de racional e decidir o alcance
 
 ### 4. A superfície passa a usar
 
@@ -499,3 +500,4 @@ razão medida de terem perdido.
 - Medido em disco na task 1.3: o preâmbulo cai de 263.839 para 174.051 chars (~66,0k → ~43,5k tokens), -35%, só com a seção 1 — spec por seção -46% (35.099 → 18.994), standards declarados em vez de pastas -59% (126.720 → 53.037, 19 arquivos → 5). As seis referências (80.991 chars) seguem inteiras: são o alvo das seções 3 e 4.
 - Open Decision 1 resolvida na task 2.1: o verbo de leitura mora em skills.py, não num quarto script shipped — plugin-layout.md decide a casa de um executável por COMO ele é invocado (por um comando da superfície, como lint/doctor/registry), e versioning-release.md §The six cobra uma linha permanente de lockstep em toda release por script novo. Consequência: a task 7.2 (README por causa de um quarto script) fica sem trabalho.
 - Defeito achado na task 3.2 usando o próprio leitor: o contrato --sections "A,B" parte headings que CONTÊM vírgula, e os deste repo contêm (ex. '## The commit — one per task, carrying its own ticked box'). Corrigido dentro da 3.2, fora do files: declarado: --sections virou repetível (action=append) e um prefixo ÚNICO passa a resolver, para que a citação §The commit funcione sem reproduzir em-dash e vírgula. Caso somado à lista canônica nas duas ferramentas.
+- Open Decision 2 resolvida na task 3.4: a convenção de marcadores NÃO se estende às outras dezoito referências. Medido depois de aplicada nas cinco (seções de nível 2): 76.376 chars de arquivo, 65.564 de regra e 5.306 de racional — 7%, contra os 25-35% que o ## Problem declarava como chute. Ler as cinco por --rules-only em vez de inteiras corta 15%; a leitura POR SEÇÃO já entregou o corte de ordem de grandeza, e o --rules-only é o resíduo. Ressalva de honestidade: 7% é a fração da marcação aplicada, que foi conservadora — só prosa claramente narrativa foi relocada — e não uma classificação exaustiva. O fallback garante que as dezoito não marcadas não custam nada.
