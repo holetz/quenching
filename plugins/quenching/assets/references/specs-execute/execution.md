@@ -23,6 +23,7 @@ never reaches past the loop.
 - [The commit — one per task, carrying its own ticked box](#the-commit--one-per-task-carrying-its-own-ticked-box)
 - [Declared versus emergent `docs/`](#declared-versus-emergent-docs)
 - [Delegating an executor — permitted, and bounded](#delegating-an-executor--permitted-and-bounded)
+- [The section boundary — where a run may stop](#the-section-boundary--where-a-run-may-stop)
 
 ## The precondition: a clean tree
 
@@ -371,3 +372,33 @@ Reports each `[P]` group and whether it is `eligible`. Exit **0** when every mar
 eligible, **1** when any group overlaps or lacks `files:`. **Branch on that, never on judgment**:
 a group reported ineligible runs serially, and the reason is stated in the report rather than
 argued about.
+
+## The section boundary — where a run may stop
+
+<!-- rules -->
+
+A `## N.` section's last task committing, with another section still ahead, is a **clean boundary**:
+the loop offers to stop there, names the command that resumes, and continues unless told otherwise.
+
+- **The trigger is that event, never a window size.** No threshold, no token count, no "this is
+  getting long". A number invented before it is measured fixes the answer, which is why §The
+  Handoff cadence is four events rather than a judgment.
+- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `specs.py status`
+  returns already carry everything a fresh session needs; the boundary adds no record and no fifth
+  Handoff event. Accepted, the stop is a pause and a last commit — two events the cadence already
+  has.
+- **It offers and never imposes.** The loop does not end itself, and an unanswered offer means
+  carry on.
+- **The contract still ends at the last commit.** A stop here is not a close-out: the branch
+  review, the merge and the archive remain `/quenching:specs:conclude`'s, exactly as they are for a
+  run that goes to the end.
+
+<!-- rationale -->
+
+The run's cost is `tokens × turns remaining`, so it grows with the **square** of the turn count:
+seven runs of ~45 turns cost roughly a seventh of one run of 300 for the same work. That figure is
+declared arithmetic over the integral, not a measured run, and it assumes resumption costs about
+nothing — which holds only because the trail above was already being maintained for other reasons.
+A section is the unit because it is the smallest independently deliverable one the front already
+defines; `per-section` is the default verification policy for the same reason, so a boundary is
+also the point where the suite has just run.
