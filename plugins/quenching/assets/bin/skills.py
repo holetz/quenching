@@ -1453,6 +1453,19 @@ def cmd_selftest(args, root: str) -> int:
     for f in section_case_findings(read_sections_adapter):
         failures.append(f"section reader: {f['message']}")
 
+    # This tool's own half, which the shared list deliberately does not cover: free
+    # markdown has headings at every level, and a reference cited as `§The [P] check` is a
+    # `###`. A reader that only resolved `##` would refuse half the citations in the repo.
+    all_heads = [(h["level"], h["heading"]) for h in markdown_sections(SECTION_FIXTURE)]
+    want_heads = [(1, "Top"), (2, "Alpha"), (3, "Alpha sub"), (2, "Beta"), (2, "Gamma")]
+    if all_heads != want_heads:
+        failures.append(f"section reader: every-level index is {all_heads}, expected "
+                        f"{want_heads}")
+    sub, _ = select_sections(markdown_sections(SECTION_FIXTURE), ["Alpha sub"])
+    if not sub or "Beta" in sub[0]["body"]:
+        failures.append("section reader: a `###` must resolve on its own and stop at the "
+                        "next heading of the same level or shallower")
+
     # + 3: the two conformant controls that must stay clean (/docs:add, agents/good.md) and
     # the drift refusal, none of which has a fixture row of its own; + 2 for the citation
     # check's own shape (one WARN per file) and its target-surface silence
@@ -2076,12 +2089,17 @@ Beta continues after the fence.
 Gamma ends the file.
 '''
 
-# The canonical case list. `skills.py` and `specs.py` implement the section rule
-# separately — they may not import each other, since each installs standalone into a
-# target's `.claude/hooks/` — so what keeps them meaning the same thing is that both
-# prove against THIS list, per `docs/standards/code/canonical-set-parsing.md`.
+# The canonical case list for the SECTION rule, duplicated verbatim in `specs.py`.
+# EDIT BOTH, OR NEITHER — exactly as `CANONICAL_CASES` is duplicated across all three
+# tools for the frontmatter rule. Neither script may import the other: each installs
+# standalone into a target's `.claude/hooks/`, so the list travelling with each copy is
+# what makes the rule provable where it actually runs.
+#
+# It covers only what BOTH tools answer the same way: level-2 sections. A spec's
+# fourteen headings are all `##`, so that is the whole of `specs.py`'s contract, while
+# `skills.py` also resolves `#` and `###` over free markdown and proves those separately.
 SECTION_CASES = {
-    "index": ["Top", "Alpha", "Alpha sub", "Beta", "Gamma"],
+    "index": ["Alpha", "Beta", "Gamma"],
     "cases": [
         {"why": "sub-headings travel with their parent, and the section stops at the "
                 "next heading of the same level",
@@ -2102,10 +2120,11 @@ SECTION_CASES = {
          "contains": ["Gamma ends the file.", "Alpha body."],
          "excludes": [],
          "order": ["Gamma", "Alpha"]},
-        {"why": "frontmatter is a header, never content",
-         "ask": ["Top"],
-         "contains": ["Preamble under a level-1 heading."],
-         "excludes": ["type: standard", "title: the section reader"]},
+        {"why": "neither frontmatter nor the preamble above the first section ever "
+                "leaks into a section that does not own it",
+         "ask": ["Alpha", "Beta", "Gamma"],
+         "contains": [],
+         "excludes": ["type: standard", "Preamble under a level-1 heading."]},
         {"why": "a section that does not exist is a refusal that names it, never an "
                 "empty answer",
          "ask": ["Delta"],
@@ -2122,7 +2141,8 @@ def section_case_findings(read_sections) -> list[dict]:
     their own implementation, so the list is the contract and neither is the reference.
     """
     out: list[dict] = []
-    heads = [h["heading"] for h in read_sections(SECTION_FIXTURE, None)[0]]
+    heads = [h["heading"] for h in read_sections(SECTION_FIXTURE, None)[0]
+             if h.get("level", 2) == 2]
     if heads != SECTION_CASES["index"]:
         out.append(finding("sk-section-index", "error",
                            f"heading index is {heads}, expected "
