@@ -455,9 +455,10 @@ razão medida de terem perdido.
 
 ### 4. A superfície passa a usar
 
-- [ ] 4.1 `/quenching:specs:execute` cita as referências pelo leitor de seção em vez de por caminho
+- [x] 4.1 `/quenching:specs:execute` cita as referências pelo leitor de seção em vez de por caminho
       de arquivo, e o corpo diz por quê numa linha
       files: plugins/quenching/commands/specs/execute.md
+      subject: plan/read-by-section-not-by-file: 4.1 O corpo cita as referências pelo leitor de seção
 - [ ] 4.2 `execution.md` §Delegating an executor passa a declarar o custo real: sub-agente não
       compartilha o prompt cache, N tasks sobre o mesmo arquivo grande pagam N leituras frias;
       delegar por seção de tasks, e o self-review dos quatro itens acontece dentro do sub-agente

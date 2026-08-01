@@ -19,6 +19,19 @@ the declared-versus-emergent `docs/` line, and the rules for delegating an execu
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
 which this body cites and never restates.
 
+**Every `§X` below is an address, and it is loaded as one — never by opening the file.**
+
+```bash
+skills.py read <the cited file> --sections "§The verification policy" --sections "§The commit"
+```
+
+One call, N sections, no frontmatter; a unique prefix resolves, so `§The commit` is enough. The
+reason is the whole of this command's own cost: a preamble is re-sent on every turn that follows
+it, so what is loaded at turn one is paid for the length of the run — and `execution.md`
+§The verification policy is ~400 tokens against 4,600 for the file that holds it. `--rules-only`
+narrows further to the `<!-- rules -->` half where a section carries the marker, and returns the
+whole section, saying so, where it does not.
+
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
 *revealed*, merging, and archiving belong to `/quenching:specs:conclude`. That is not tidiness: the branch
 review is a different scale of judgment, the merge is a separate irreversible decision needing its
@@ -44,6 +57,12 @@ Resolve `specs.py` by the fallback in
 `.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
 `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
+
+`skills.py read` — the section reader every `§X` citation above resolves through — is the same
+fallback one directory over: `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then the target's
+`.claude/hooks/skills.py`. Neither resolves → read the cited file with `Read` and **say in the
+report that the sections were loaded whole**, because that is the run's context cost changing, not
+a cosmetic difference.
 
 **Why `Bash` is unrestricted here.** This is the one `/specs:*` command that runs the target repo's
 own toolchain — build, tests, linters, migrations, and `git` — as part of implementing a task. Its
