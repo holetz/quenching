@@ -420,11 +420,12 @@ razão medida de terem perdido.
 
 ### 2. O resolvedor de seção
 
-- [ ] 2.1 Decidir per ## Open Decisions onde o verbo mora e implementá-lo:
+- [x] 2.1 Decidir per ## Open Decisions onde o verbo mora e implementá-lo:
       `read <path> --sections "A,B"` — N seções numa chamada, sem frontmatter, exit 2 nomeando a
       seção quando ela não existe
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
+      subject: plan/read-by-section-not-by-file: 2.1 skills.py read — N seções numa chamada
 - [ ] 2.2 `specs.py section` ganha a forma plural, com o mesmo contrato de saída
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
@@ -491,3 +492,4 @@ razão medida de terem perdido.
 ## Discoveries
 
 - Medido em disco na task 1.3: o preâmbulo cai de 263.839 para 174.051 chars (~66,0k → ~43,5k tokens), -35%, só com a seção 1 — spec por seção -46% (35.099 → 18.994), standards declarados em vez de pastas -59% (126.720 → 53.037, 19 arquivos → 5). As seis referências (80.991 chars) seguem inteiras: são o alvo das seções 3 e 4.
+- Open Decision 1 resolvida na task 2.1: o verbo de leitura mora em skills.py, não num quarto script shipped — plugin-layout.md decide a casa de um executável por COMO ele é invocado (por um comando da superfície, como lint/doctor/registry), e versioning-release.md §The six cobra uma linha permanente de lockstep em toda release por script novo. Consequência: a task 7.2 (README por causa de um quarto script) fica sem trabalho.
