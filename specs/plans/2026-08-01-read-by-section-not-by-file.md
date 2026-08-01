@@ -4,6 +4,7 @@ title: Read by section, not by file — narrow what a command loads before it wo
 verification: per-section
 refined: {mode: gate, date: 2026-08-01}
 approved: {date: 2026-08-01}
+branch: {base: main, work: plan/read-by-section-not-by-file}
 ---
 
 # Read by section, not by file — narrow what a command loads before it works
