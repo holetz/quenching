@@ -437,10 +437,11 @@ razão medida de terem perdido.
 
 ### 3. A convenção regra/racional
 
-- [ ] 3.1 `--rules-only` sobre os marcadores `<!-- rules -->` / `<!-- rationale -->`, com fallback
+- [x] 3.1 `--rules-only` sobre os marcadores `<!-- rules -->` / `<!-- rationale -->`, com fallback
       para a seção inteira reportando a ausência do marcador
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
+      subject: plan/read-by-section-not-by-file: 3.1 --rules-only por marcador, com fallback que reporta
 - [ ] 3.2 Aplicar os marcadores em specs-execute/execution.md, sem remover uma linha de prosa
       files: plugins/quenching/assets/references/specs-execute/execution.md
 - [ ] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
