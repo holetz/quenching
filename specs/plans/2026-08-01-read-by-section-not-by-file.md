@@ -426,9 +426,10 @@ razão medida de terem perdido.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
       subject: plan/read-by-section-not-by-file: 2.1 skills.py read — N seções numa chamada
-- [ ] 2.2 `specs.py section` ganha a forma plural, com o mesmo contrato de saída
+- [x] 2.2 `specs.py section` ganha a forma plural, com o mesmo contrato de saída
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
+      subject: plan/read-by-section-not-by-file: 2.2 specs.py section ganha a forma plural
 - [ ] 2.3 A lista canônica de casos de seção provada pelas DUAS ferramentas, per o precedente de
       canonical-set-parsing.md — incluindo a seção que contém um bloco de código com `## ` dentro
       verify: python3 assets/bin/skills.py selftest && python3 assets/bin/specs.py selftest

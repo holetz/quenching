@@ -1577,31 +1577,58 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
 
 
 def cmd_section(args, root: str) -> int:
-    """Deterministic partial read/write of ONE section — what makes lean agent context real.
+    """Deterministic partial read/write of N sections — what makes lean agent context real.
 
     An executor is handed a task line and `## Handoff`, never the whole spec; this is the
-    command that slices it without an LLM re-reading and rewriting the file."""
+    command that slices it without an LLM re-reading and rewriting the file.
+
+    **The read form is plural, and that is half the saving, not a convenience.** Every turn
+    re-sends the whole conversation, so a cost has two factors — tokens AND the turns that
+    follow it. Six headings fetched over six turns can lose to the one `Read` this command
+    replaced. Comma-separated, one call, back in the order asked.
+
+    `--write` stays singular: it takes stdin, and there is no unambiguous way to split one
+    stream across several sections."""
     info, err = load_spec(root, args.spec)
     if err:
         return emit_err(args.json, err)
-    heading = _match_heading(args.heading)
-    if not heading:
+    wanted = [h for h in (p.strip() for p in args.heading.split(",")) if h]
+    headings, stray = [], []
+    for name in wanted:
+        h = _match_heading(name)
+        (headings.append(h) if h else stray.append(name))
+    if stray:
         emit(args.json,
-             {"ok": False, "code": "sp-stray-heading", "heading": args.heading,
-              "canonical": canonical_headings(),
-              "message": f"'{args.heading}' is not one of the fourteen canonical headings"},
-             f"error: '{args.heading}' is not a canonical heading")
+             {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
+              "stray": stray, "canonical": canonical_headings(),
+              "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
+             f"error: not a canonical heading: {', '.join(stray)}")
+        return 2
+    if args.write and len(headings) != 1:
+        emit(args.json,
+             {"ok": False, "code": "sp-write-plural", "stray": headings,
+              "message": "--write takes exactly one heading — stdin is one stream"},
+             "error: --write takes exactly one heading")
         return 2
     if not args.write:
-        st = section_state(info["sections"], heading)
-        body = info["sections"].get(heading, {}).get("body", "")
+        rows = [{"heading": h, "state": section_state(info["sections"], h),
+                 "body": info["sections"].get(h, {}).get("body", "")} for h in headings]
+        absent = [r["heading"] for r in rows if r["state"] == "absent"]
         if args.json:
-            print(json.dumps({"ok": st != "absent", "slug": info["slug"],
-                              "heading": heading, "state": st, "body": body},
+            one = rows[0] if len(rows) == 1 else {}
+            print(json.dumps({"ok": not absent, "slug": info["slug"],
+                              **one, "sections": rows, "absent": absent},
                              indent=2, ensure_ascii=False))
         else:
-            print(body.strip() if st != "absent" else f"(## {heading} is absent)")
-        return 0 if st != "absent" else 1
+            for r in rows:
+                if r["state"] == "absent":
+                    print(f"(## {r['heading']} is absent)")
+                elif len(rows) == 1:
+                    print(r["body"].strip())
+                else:
+                    print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
+        return 0 if not absent else 1
+    heading = headings[0]
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
     block = (f"## {heading}\n\n{content.strip()}\n"
@@ -3002,9 +3029,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
 
-    sp = add_json(sub.add_parser("section", help="read or write ONE section"))
+    sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
     sp.add_argument("spec")
-    sp.add_argument("heading")
+    sp.add_argument("heading", help="one canonical heading, or several comma-separated; "
+                                    "returned in the order asked")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 
