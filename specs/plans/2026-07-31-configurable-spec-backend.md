@@ -280,30 +280,31 @@ trabalho em que se está.
 
 - O `specs.py` é stdlib-only e sem dependências: o transporte externo é `subprocess` sobre
   `gh`/`az`, nunca uma biblioteca HTTP.
-- Nenhuma edição em `commands/**` é testável na sessão que a escreve. A seção 5 termina com
-  `doctor`, não com um teste funcional.
+- Nenhuma edição em `commands/**` é testável na sessão que a escreve. A seção 5 terminou com
+  `doctor` + `lint`, não com um teste funcional.
 
-**Seções 1–4 completas e verificadas. Seção 5 em andamento (5.1 feita). Restam: 5.2–5.4, 6
-(azure-boards), 7 (export e fechamento).**
+**Seções 1–5 completas e verificadas (23/29). Restam: 6 (azure-boards), 7 (export e fechamento).**
 
 - **Interface** — `SpecBackend` com 5 primitivas (`list_specs`/`read_spec`/`write_spec`/
   `create_spec`/`move_spec`), sem derivação própria. `MemoryBackend` prova igualdade no selftest.
   `open_backend` recusa (exit 2) um backend declarado e não implementado, nunca cai para `files`.
 - **Leitura granular**: `show` com índice por default, `--section`/`--task` repetíveis, documento
   inteiro só com `--full`.
-- **Escrita de frontmatter** (5.1): `specs.py record <slug> <name> --set k=v` é o escritor dos sete
+- **Escrita de frontmatter**: `specs.py record <slug> <name> --set k=v` é o escritor dos sete
   records — merge por campo, write-once imposto pelo schema, `outcome` recusado por declarar zero
-  `fields:` (seu escritor é `promote --outcome`). `list --json` passou a carregar os `records` de
-  cada spec. Juntos, são o que permitiu status/triage pararem de ler e editar o caminho.
+  `fields:` (seu escritor é `promote --outcome`). `list --json` carrega os `records` de cada spec.
 - **Backend `files`**: worktree persistente em `.claude/worktrees/<branch>`, lock que serializa
   escritores (prova de morte, nunca idade), árvore limpa provada em ciclo completo. **Este próprio
   repositório NÃO está migrado** — `specs/` populado continua na árvore de código, autoritativo até
   um humano mover (`## Out of Scope`).
-- **Backend `github`**: transporte via `gh api`, recusa exit 2 legível (binário ausente, não
-  autenticado, erro de API). `## Tasks` vira sub-issues; os sete records ficam no corpo (Open
-  Decision fechada em `## Design`). Fase = estado da issue. **Provado E2E real** contra
-  `holetz/claude-quenching` (task 4.6) — issues criadas e apagadas, repositório confirmado intacto.
-- **Anchor por sha** (`task --commit <sha>`) é **aditivo** a `--subject`, nunca substituição.
+- **Backend `github`**: transporte via `gh api`, recusa exit 2 legível. `## Tasks` vira sub-issues;
+  os sete records ficam no corpo. Fase = estado da issue. **Provado E2E real** contra
+  `holetz/claude-quenching` (task 4.6).
+- **Superfície (seção 5)**: nenhum body de `/specs:*` lê o corpo de um spec por caminho, e nenhum
+  escreve frontmatter com `Edit` — `triage` e `isolate` perderam a ferramenta `Edit` inteira. A
+  declaração "entirely native" saiu de `spec-driven.md` com a narrativa das quatro cláusulas e do
+  que sobreviveu a cada uma. `specs-isolate/git.md`, `specs-create/specs-front.md` e o
+  `assets/specs/QUENCHING.md` instalado apontam para `.claude/quenching.json`.
 
 **Armadilhas conhecidas (discoveries registradas, nenhuma bloqueante):**
 - `align.md` é o único body ainda acoplado a `files` — ver a discovery que diz por quê.
@@ -315,9 +316,10 @@ trabalho em que se está.
 - Workspace pré-migração não é serializado pelo lock da worktree (é o estado deste repo agora).
 - `TEMPLATE_SPEC` embutido ainda só documenta `--subject` na guidance comment.
 
-**Para 5.2–5.4**: retirar de `spec-driven.md` a declaração "entirely native — no external CLI, no
-main spec store, no delta format"; atualizar `specs-isolate/git.md` e `specs-create/specs-front.md`
-para `.claude/quenching.json`; fechar com `doctor` (26 comandos, 0 findings) e `lint`.
+**Baseline de lint para a seção 6**: 35 findings em `plugins/quenching`, distribuídos como
+`sk-trigger-position` 11 · `sk-no-boundary` 10 · `sk-step-criterion` 9 · `sk-unscoped-bash` 5.
+Idêntico finding-a-finding ao commit 5f40fd7 (fim da seção 4) — nenhum deles é desta spec, e é
+contra esse conjunto que "sem regressão" deve ser medido daqui em diante.
 ## Tasks
 
 ### 1. Configuração
@@ -418,8 +420,9 @@ para `.claude/quenching.json`; fechar com `doctor` (26 comandos, 0 findings) e `
 - [x] 5.3 Atualizar specs-isolate/git.md e specs-create/specs-front.md para o novo caminho de config
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
       subject: plan/configurable-spec-backend: 5.3 as referencias e o manual apontam para .claude/quenching.json
-- [ ] 5.4 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
+- [x] 5.4 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
       verify: python3 assets/bin/skills.py --root . doctor --json
+      subject: plan/configurable-spec-backend: 5.4 confirma a superficie — 26 comandos, 0 findings, lint sem regressao
 
 ### 6. Backend azure-boards
 
