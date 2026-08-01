@@ -442,8 +442,9 @@ razão medida de terem perdido.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 assets/bin/skills.py selftest
       subject: plan/read-by-section-not-by-file: 3.1 --rules-only por marcador, com fallback que reporta
-- [ ] 3.2 Aplicar os marcadores em specs-execute/execution.md, sem remover uma linha de prosa
+- [x] 3.2 Aplicar os marcadores em specs-execute/execution.md, sem remover uma linha de prosa
       files: plugins/quenching/assets/references/specs-execute/execution.md
+      subject: plan/read-by-section-not-by-file: 3.2 Marcadores em execution.md, sem perder prosa
 - [ ] 3.3 Aplicar os marcadores nas outras quatro referências que /quenching:specs:execute carrega
       files: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/assets/references/docs-add/homes.md, plugins/quenching/assets/references/docs-align/conformance.md
 - [ ] 3.4 Medir a fração real de racional nas cinco e decidir per ## Open Decisions se a convenção
@@ -496,3 +497,4 @@ razão medida de terem perdido.
 
 - Medido em disco na task 1.3: o preâmbulo cai de 263.839 para 174.051 chars (~66,0k → ~43,5k tokens), -35%, só com a seção 1 — spec por seção -46% (35.099 → 18.994), standards declarados em vez de pastas -59% (126.720 → 53.037, 19 arquivos → 5). As seis referências (80.991 chars) seguem inteiras: são o alvo das seções 3 e 4.
 - Open Decision 1 resolvida na task 2.1: o verbo de leitura mora em skills.py, não num quarto script shipped — plugin-layout.md decide a casa de um executável por COMO ele é invocado (por um comando da superfície, como lint/doctor/registry), e versioning-release.md §The six cobra uma linha permanente de lockstep em toda release por script novo. Consequência: a task 7.2 (README por causa de um quarto script) fica sem trabalho.
+- Defeito achado na task 3.2 usando o próprio leitor: o contrato --sections "A,B" parte headings que CONTÊM vírgula, e os deste repo contêm (ex. '## The commit — one per task, carrying its own ticked box'). Corrigido dentro da 3.2, fora do files: declarado: --sections virou repetível (action=append) e um prefixo ÚNICO passa a resolver, para que a citação §The commit funcione sem reproduzir em-dash e vírgula. Caso somado à lista canônica nas duas ferramentas.

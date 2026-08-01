@@ -2084,13 +2084,23 @@ def normalize_heading(name: str) -> str:
 def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], list[str]]:
     """The requested sections in the order they were ASKED FOR, plus the names that
     resolved to nothing. Duplicate headings resolve to the first — the same rule
-    `parse_sections` applies in `specs.py`."""
+    `parse_sections` applies in `specs.py`.
+
+    **An exact name wins; failing that, a UNIQUE prefix resolves.** Free-markdown headings
+    are long and full of punctuation — `## The commit — one per task, carrying its own
+    ticked box` — and a caller citing `§The commit`, exactly as the command bodies do, must
+    not have to reproduce an em-dash and a comma to be understood. A prefix matching two
+    headings resolves to neither: ambiguity is a refusal, never a guess."""
     index: dict[str, dict] = {}
     for h in heads:
         index.setdefault(normalize_heading(h["heading"]), h)
     got, missing = [], []
     for name in wanted:
-        h = index.get(normalize_heading(name))
+        key = normalize_heading(name)
+        h = index.get(key)
+        if h is None:
+            hits = [v for k, v in index.items() if k.startswith(key)]
+            h = hits[0] if len(hits) == 1 else None
         (got.append(h) if h else missing.append(name))
     return got, missing
 
@@ -2168,6 +2178,11 @@ SECTION_CASES = {
          "ask": ["Alpha", "Beta", "Gamma"],
          "contains": [],
          "excludes": ["type: standard", "Preamble under a level-1 heading."]},
+        {"why": "a unique prefix resolves, so a citation need not reproduce a long "
+                "heading's punctuation",
+         "ask": ["Gam"],
+         "contains": ["Gamma ends the file."],
+         "excludes": []},
         {"why": "a section that does not exist is a refusal that names it, never an "
                 "empty answer",
          "ask": ["Delta"],
@@ -2256,7 +2271,10 @@ def cmd_read(args, root: str) -> int:
                       f"  ({h['chars']} chars)")
         return 0
 
-    wanted = [s for s in (p.strip() for p in args.sections.split(",")) if s]
+    # Repeatable AND comma-separated: a heading may itself contain a comma, so the short
+    # form cannot be the only form.
+    wanted = [s for group in args.sections
+              for s in (p.strip() for p in group.split(",")) if s]
     got, missing = select_sections(heads, wanted)
     if missing:
         # A refusal, never an empty answer: a caller that asked for a rule and got
@@ -2295,9 +2313,11 @@ def cmd_read(args, root: str) -> int:
 
 register("read",
          lambda sp: (sp.add_argument("path", help="a markdown file"),
-                     sp.add_argument("--sections",
-                                     help="comma-separated section names; omit for the "
-                                          "file's heading index"),
+                     sp.add_argument("--sections", action="append", default=[],
+                                     help="a section name, or several comma-separated; "
+                                          "repeatable, for a heading carrying a comma. "
+                                          "A unique prefix resolves. Omit for the file's "
+                                          "heading index"),
                      sp.add_argument("--rules-only", action="store_true",
                                      help=f"only the {RULES_MARKER} half of each section; "
                                           f"a section with no marker comes back whole and "
