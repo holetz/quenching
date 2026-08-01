@@ -114,10 +114,11 @@ not be built).
 ```bash
 specs.py status --spec "<slug>" --json
 ```
-Read task progress, the `## Outcome` state, the `## Discoveries` lines, and the records —
-`branch`, `reviewed`, `merge`, `outcome`. Then read git: the current branch, whether the work
-branch exists, and whether it is already merged. Announce the outcome and, per §Resuming, which
-stages this run will actually perform.
+Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`,
+`outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
+step needs: `specs.py show --spec "<slug>" --section Discoveries --json`. Then read git: the
+current branch, whether the work branch exists, and whether it is already merged. Announce the
+outcome and, per §Resuming, which stages this run will actually perform.
 
 Open tasks under a `done` outcome are surfaced **now**, before anything is written, so the human
 can choose between finishing them, forcing, or switching to `abandoned`.
@@ -134,7 +135,8 @@ extracting once the third caller appeared, a `## Impact` path nothing ever wrote
 diff contradicts.
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
-`reviewed: {date}`.
+the record — `specs.py record "<slug>" reviewed --set date=<today>`, never by editing the
+frontmatter.
 
 No `branch` record (the work was done in place), or no git → say so and skip to step 4; there is no
 branch diff to read.
@@ -218,9 +220,13 @@ already satisfies is reported as already done, never redone.
 **Finally, stamp the merge record**, still on the branch, naming the subject the merge commit is
 about to carry:
 
-```yaml
-merge: {strategy: <chosen in step 4>, subject: "plan/<slug>: merge (<strategy>)"}
+```bash
+specs.py record "<slug>" merge --set strategy=<chosen in step 4> \
+  --set subject="plan/<slug>: merge (<strategy>)"
 ```
+
+It is write-once, so a spec already carrying one refuses (exit 2) with the value it holds — which
+is the finding §Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
 none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §When there is no
@@ -376,7 +382,8 @@ reported.
 - Never delete a branch after a **squash** without saying what it costs: each task's recorded
   `subject:` stops resolving.
 - Never overwrite a `writeOnce` record (`merge`, `outcome`) to make reality fit — report the
-  disagreement instead.
+  disagreement instead. Every record here is stamped with `specs.py record`, which refuses on its
+  own; editing the frontmatter to get past that refusal is the thing the refusal exists to stop.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
 - Never re-write a rule a task already wrote into `docs/standards/` during execution — concluding
   syncs nothing.

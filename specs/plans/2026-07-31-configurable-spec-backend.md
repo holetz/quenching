@@ -280,34 +280,44 @@ trabalho em que se está.
 
 - O `specs.py` é stdlib-only e sem dependências: o transporte externo é `subprocess` sobre
   `gh`/`az`, nunca uma biblioteca HTTP.
-- A ordem das seções é deliberada — o backend `github` prova a interface **antes** de os nove
-  bodies serem reescritos.
 - Nenhuma edição em `commands/**` é testável na sessão que a escreve. A seção 5 termina com
   `doctor`, não com um teste funcional.
 
-**Estado (seções 1, 2, 3 completas; seção 4 em andamento — 4.1 feita):**
+**Seções 1–4 completas e verificadas. Seção 5 em andamento (5.1 feita). Restam: 5.2–5.4, 6
+(azure-boards), 7 (export e fechamento).**
 
-- Config em `.claude/quenching.json`; interface `SpecBackend` (5 primitivas, sem derivação
-  própria); `MemoryBackend` prova igualdade no selftest; `show` granular; worktree persistente +
-  lock para o backend `files`, com árvore limpa provada em ciclo completo.
-- **`gh` está instalado e autenticado neste ambiente** (conta `holetz`, remote
-  `holetz/claude-quenching`), o que tornou possível verificar recusas e leituras contra o
-  repositório real sem escrever nele. **Nenhuma issue foi ou deve ser criada nele fora da task
-  4.6**, que exige confirmação humana explícita antes de rodar.
-- `GitHubBackend` (4.1): transporte via `gh api`, recusa exit 2 legível para binário ausente, não
-  autenticado, erro de API. `resolve_github_repo` nunca chuta o repositório. `cmd_list` corrigido
-  para usar o backend em vez de ler o path direto — era o último comando que contornava.
-- **4.2 em andamento**: serialização híbrida (`## Tasks` → sub-issues) e a Open Decision dos sete
-  records de frontmatter (labels vs. corpo vs. misto).
+- **Interface** — `SpecBackend` com 5 primitivas (`list_specs`/`read_spec`/`write_spec`/
+  `create_spec`/`move_spec`), sem derivação própria. `MemoryBackend` prova igualdade no selftest.
+  `open_backend` recusa (exit 2) um backend declarado e não implementado, nunca cai para `files`.
+- **Leitura granular**: `show` com índice por default, `--section`/`--task` repetíveis, documento
+  inteiro só com `--full`.
+- **Escrita de frontmatter** (5.1): `specs.py record <slug> <name> --set k=v` é o escritor dos sete
+  records — merge por campo, write-once imposto pelo schema, `outcome` recusado por declarar zero
+  `fields:` (seu escritor é `promote --outcome`). `list --json` passou a carregar os `records` de
+  cada spec. Juntos, são o que permitiu status/triage pararem de ler e editar o caminho.
+- **Backend `files`**: worktree persistente em `.claude/worktrees/<branch>`, lock que serializa
+  escritores (prova de morte, nunca idade), árvore limpa provada em ciclo completo. **Este próprio
+  repositório NÃO está migrado** — `specs/` populado continua na árvore de código, autoritativo até
+  um humano mover (`## Out of Scope`).
+- **Backend `github`**: transporte via `gh api`, recusa exit 2 legível (binário ausente, não
+  autenticado, erro de API). `## Tasks` vira sub-issues; os sete records ficam no corpo (Open
+  Decision fechada em `## Design`). Fase = estado da issue. **Provado E2E real** contra
+  `holetz/claude-quenching` (task 4.6) — issues criadas e apagadas, repositório confirmado intacto.
+- **Anchor por sha** (`task --commit <sha>`) é **aditivo** a `--subject`, nunca substituição.
 
-**Armadilhas conhecidas (discoveries registradas):**
-- `cmd_promote` checa destino ocupado via `os.path.exists` — inócuo mas sem sentido no `github`.
-- O campo `root` do JSON mente com backend externo.
-- `doctor` reportaria `sp-no-workspace` falsamente num repo sem `specs/` migrado.
-- Custo de rede do `github`: sem cache entre processos, ~33 chamadas por ciclo de 12 comandos.
-- Workspace pré-migração (specs/ na árvore de código) não é serializado pelo lock da worktree.
-- `migrate` não é classificado como escritor; num repo já migrado opera sobre um `specs/` que não
-  existe mais.
+**Armadilhas conhecidas (discoveries registradas, nenhuma bloqueante):**
+- `align.md` é o único body ainda acoplado a `files` — ver a discovery que diz por quê.
+- `cmd_promote` checa destino via `os.path.exists` — inócuo mas sem sentido no `github`.
+- O campo `root` do JSON mente com backend externo ou repo migrado.
+- `doctor` reportaria `sp-no-workspace` falsamente num repo sem `specs/`.
+- `migrate` não é escritor classificado; num repo já migrado opera sobre um `specs/` inexistente.
+- Custo de rede do `github`: sem cache entre processos.
+- Workspace pré-migração não é serializado pelo lock da worktree (é o estado deste repo agora).
+- `TEMPLATE_SPEC` embutido ainda só documenta `--subject` na guidance comment.
+
+**Para 5.2–5.4**: retirar de `spec-driven.md` a declaração "entirely native — no external CLI, no
+main spec store, no delta format"; atualizar `specs-isolate/git.md` e `specs-create/specs-front.md`
+para `.claude/quenching.json`; fechar com `doctor` (26 comandos, 0 findings) e `lint`.
 ## Tasks
 
 ### 1. Configuração
@@ -397,9 +407,10 @@ trabalho em que se está.
 
 ### 5. Superfície
 
-- [ ] 5.1 Migrar os nove bodies de `/specs:*` de Read-no-caminho para a leitura granular do
+- [x] 5.1 Migrar os nove bodies de `/specs:*` de Read-no-caminho para a leitura granular do
       `specs.py`
       files: plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/continue.md, plugins/quenching/commands/specs/create.md, plugins/quenching/commands/specs/develop.md, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/commands/specs/status.md, plugins/quenching/commands/specs/triage.md
+      subject: plan/configurable-spec-backend: 5.1 leitura granular na superficie e o record como escritor de frontmatter
 - [ ] 5.2 Retirar de spec-driven.md a declaração "entirely native — no external CLI, no main spec
       store, no delta format", registrando o que a substitui
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
@@ -440,3 +451,5 @@ trabalho em que se está.
 - Custo de rede do backend github: cada invocacao re-lista todas as issues, sem cache entre processos. Um ciclo de 12 comandos gastou 33 chamadas ao gh. Medir na task 4.6 se vira gargalo.
 - task --commit e aditivo: os comandos ainda tickam antes de commitar com --subject, como hoje. Trocar a ordem (commit primeiro, tick depois) e reescrever os standards para preferir sha e trabalho das tasks 4.4/4.5 e possivelmente da secao 5 — nao foi feito na 4.3.
 - TEMPLATE_SPEC (embutido em specs.py) e a guidance comment do template ainda so documentam --subject como anchor. Precisam de --commit mencionado quando os standards forem reescritos, sem quebrar o lockstep byte-a-byte com assets/specs/templates/spec.md.
+- align.md é o único body ainda acoplado ao backend files: inventaria por `Glob specs/plans/*.md` e stampa frontmatter direto. Não foi migrado porque o que `/specs:align` significa num backend externo — onde não há pasta, filename nem rename — é uma decisão que a spec não tomou.
+- A task 5.1 tocou `specs.py` além dos `files:` que declara: `list --json` passou a carregar os sete `records` e nasceu `specs.py record`. Sem os dois, status/triage não tinham como parar de ler o caminho — triage escrevia `priority` com Edit no arquivo.
