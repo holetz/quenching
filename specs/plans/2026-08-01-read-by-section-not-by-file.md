@@ -459,10 +459,11 @@ razão medida de terem perdido.
       de arquivo, e o corpo diz por quê numa linha
       files: plugins/quenching/commands/specs/execute.md
       subject: plan/read-by-section-not-by-file: 4.1 O corpo cita as referências pelo leitor de seção
-- [ ] 4.2 `execution.md` §Delegating an executor passa a declarar o custo real: sub-agente não
+- [x] 4.2 `execution.md` §Delegating an executor passa a declarar o custo real: sub-agente não
       compartilha o prompt cache, N tasks sobre o mesmo arquivo grande pagam N leituras frias;
       delegar por seção de tasks, e o self-review dos quatro itens acontece dentro do sub-agente
       files: plugins/quenching/assets/references/specs-execute/execution.md
+      subject: plan/read-by-section-not-by-file: 4.2 §Delegating an executor declara o custo real
 - [ ] 4.3 Confirmar a superfície: doctor com 26 comandos e 0 findings, lint sem regressão
       verify: python3 assets/bin/skills.py --root . doctor --json
 
@@ -502,3 +503,4 @@ razão medida de terem perdido.
 - Open Decision 1 resolvida na task 2.1: o verbo de leitura mora em skills.py, não num quarto script shipped — plugin-layout.md decide a casa de um executável por COMO ele é invocado (por um comando da superfície, como lint/doctor/registry), e versioning-release.md §The six cobra uma linha permanente de lockstep em toda release por script novo. Consequência: a task 7.2 (README por causa de um quarto script) fica sem trabalho.
 - Defeito achado na task 3.2 usando o próprio leitor: o contrato --sections "A,B" parte headings que CONTÊM vírgula, e os deste repo contêm (ex. '## The commit — one per task, carrying its own ticked box'). Corrigido dentro da 3.2, fora do files: declarado: --sections virou repetível (action=append) e um prefixo ÚNICO passa a resolver, para que a citação §The commit funcione sem reproduzir em-dash e vírgula. Caso somado à lista canônica nas duas ferramentas.
 - Open Decision 2 resolvida na task 3.4: a convenção de marcadores NÃO se estende às outras dezoito referências. Medido depois de aplicada nas cinco (seções de nível 2): 76.376 chars de arquivo, 65.564 de regra e 5.306 de racional — 7%, contra os 25-35% que o ## Problem declarava como chute. Ler as cinco por --rules-only em vez de inteiras corta 15%; a leitura POR SEÇÃO já entregou o corte de ordem de grandeza, e o --rules-only é o resíduo. Ressalva de honestidade: 7% é a fração da marcação aplicada, que foi conservadora — só prosa claramente narrativa foi relocada — e não uma classificação exaustiva. O fallback garante que as dezoito não marcadas não custam nada.
+- Defeito achado na task 4.2 usando a convenção: um <!-- rationale --> dentro de uma ### truncava o --rules-only da ## pai, porque pedir a pai devolve as filhas junto — em §Delegating an executor isso engolia TRÊS blocos ### inteiramente normativos, e a falha era silenciosa, exatamente a classe que ## Risks nomeia. Corrigido dentro da 4.2: o alcance de um marcador termina no próximo heading, e o caso aninhado entrou no selftest. Consequência de escrita: uma seção com sub-seções precisa de marcadores POR sub-seção, não um par para o bloco todo.
