@@ -1682,8 +1682,9 @@ GH_NOT_AUTHENTICATED = 4
 GH_MISSING = 127
 
 
-class GhRefusal(Exception):
-    """A `gh` call that failed, carried to the CLI boundary as a ready-to-emit refusal.
+class BackendRefusal(Exception):
+    """An external backend's call that failed, carried to the CLI boundary as a
+    ready-to-emit refusal. Shared by `github` and `azure-boards`.
 
     THREE OF THE FIVE PRIMITIVES RETURN A LOCATOR AND NOT `(value, err)` — `write_spec`,
     `create_spec` and `move_spec` were shaped around a backend that cannot fail halfway.
@@ -1693,7 +1694,7 @@ class GhRefusal(Exception):
     in every signature, for a failure mode only the external backends have."""
 
     def __init__(self, err: dict) -> None:
-        super().__init__(err.get("message", "gh failed"))
+        super().__init__(err.get("message", "the backend failed"))
         self.err = err
 
 
@@ -2016,16 +2017,16 @@ class GitHubBackend(SpecBackend):
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
-        """One `gh api` call, parsed. Raises `GhRefusal` for every way it can fail."""
+        """One `gh api` call, parsed. Raises `BackendRefusal` for every way it can fail."""
         code, out, err = _gh_run(self.cwd, "api", *argv, stdin=stdin)
         if code != 0:
-            raise GhRefusal(gh_refusal(action, code, out, err))
+            raise BackendRefusal(gh_refusal(action, code, out, err))
         try:
             return json.loads(out or "null")
         except json.JSONDecodeError as e:
             # Not an API error — gh exited 0 and handed back something unparseable. Named
             # separately so it can never be read as "GitHub said no".
-            raise GhRefusal({
+            raise BackendRefusal({
                 "code": "sp-gh-bad-response", "exit": 2, "action": action,
                 "message": f"`gh api` exited 0 while {action} but its output is not JSON: {e}",
             }) from e
@@ -2085,7 +2086,7 @@ class GitHubBackend(SpecBackend):
         for descriptor, number, _ in self._load():
             if descriptor["slug"] == slug:
                 return number
-        raise GhRefusal({
+        raise BackendRefusal({
             "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
             "message": f"spec '{slug}' was in the listing and is not there any more — the "
                        f"issue was deleted or transferred while this command ran; nothing "
@@ -2368,6 +2369,194 @@ def gh_task_serialization_failures() -> list[str]:
     if gh_unwrap_task(removed)[0]:
         failures.append("a retired task's marker still parses as an active one — it would "
                         "resurrect on the next read_spec")
+    return failures
+
+
+# --------------------------------------------------------------------------- #
+# the azure-boards backend — transport over the `az` CLI
+# --------------------------------------------------------------------------- #
+# OURS, never one of az's: the binary is not on PATH, so no process ever started. Same
+# number and same meaning as `GH_MISSING`, kept separate so neither constant becomes the
+# other's by accident.
+AZ_MISSING = 127
+
+# `az` does NOT have gh's exit 4 — it answers almost everything with exit 1 and says why in
+# stderr, so the split into remedies is made on what it SAID rather than on the code. Each
+# tuple is (fragment lowercased, refusal code, remedy), tried in order; the first match
+# wins, so the more specific fragments come first.
+AZ_STDERR_SIGNALS = (
+    ("az extension add", "sp-az-extension-missing",
+     "run `az extension add --name azure-devops`"),
+    ("is not in the 'az' command group", "sp-az-extension-missing",
+     "run `az extension add --name azure-devops`"),
+    ("az devops login", "sp-az-unauthenticated", "run `az devops login`"),
+    ("az login", "sp-az-unauthenticated", "run `az login`"),
+    ("before you can run azure devops commands", "sp-az-unauthenticated",
+     "run `az devops login`"),
+    ("tf400813", "sp-az-unauthenticated",
+     "the identity is authenticated but not authorised for this project"),
+    # Captured from az 2.88 by running `az boards query` with no defaults set. It reaches
+    # this table only when the defaults vanish BETWEEN `resolve_azure_project` and the call
+    # — otherwise resolution refuses first, with `sp-az-no-project`, which is why both
+    # carry the same code and the same remedy.
+    ("must be specified", "sp-az-no-project",
+     "run `az devops configure --defaults organization=https://dev.azure.com/<org> "
+     "project=<project>`"),
+)
+
+
+def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    """Exit code, stdout AND stderr of one `az` command.
+
+    A SIBLING of `_gh_run` for the same reason that one is a sibling of `_git_run`: the two
+    CLIs fail differently, and here the difference is that `az` has no dedicated
+    "unauthenticated" exit code — it says so in stderr and exits 1, the same as an API
+    error. Flattening them would tell a human to check the project name when the real fix is
+    `az devops login`.
+
+    `--only-show-errors` suppresses az's upgrade notices and preview warnings, which
+    otherwise land in stderr and would be quoted back as the reason a call failed.
+
+    A missing binary comes back as `AZ_MISSING` rather than as an exception, so the failure
+    a user is most likely to hit stays an ordinary return value.
+
+    60s and not git's 30, matching `_gh_run`: this is a round trip to dev.azure.com."""
+    import subprocess
+    if not os.path.isdir(cwd):
+        return 1, "", f"not a directory: {cwd}"
+    try:
+        out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
+                             text=True, timeout=60, cwd=cwd, input=stdin)
+        return out.returncode, out.stdout, out.stderr
+    except FileNotFoundError as e:
+        return AZ_MISSING, "", str(e)
+    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+        return 1, "", str(e)
+
+
+def _az_said(stdout: str, stderr: str) -> str:
+    """The one line worth quoting back from a failed `az` call.
+
+    Unlike `gh`, `az` puts the whole story in stderr and prefixes it with `ERROR: `. Stdout
+    is read as a fallback only, for the calls that fail with a JSON body and an empty
+    stderr."""
+    for line in (stderr or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        return line[6:].strip() if line.upper().startswith("ERROR:") else line
+    head = next((ln.strip() for ln in (stdout or "").splitlines() if ln.strip()), "")
+    return head or "az failed without saying why"
+
+
+def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
+    """Every way an `az` call can fail, as an exit-2 refusal a human can act on.
+
+    FOUR OUTCOMES, FOUR REMEDIES — one more than the `gh` transport has, because `az boards`
+    lives in an extension that is not installed by default. A human whose `az` is installed
+    and logged in still gets "not recognised" until they add it, and telling them to log in
+    again would be the wrong remedy delivered confidently.
+
+    Always exit 2, always a refusal and never a finding: nothing was read and nothing was
+    written."""
+    if code == AZ_MISSING:
+        return {
+            "code": "sp-az-missing", "exit": 2, "action": action,
+            "message": "backend 'azure-boards' needs the Azure CLI and it is not on PATH — "
+                       "install `az` (https://aka.ms/azure-cli), then run "
+                       "`az extension add --name azure-devops` and `az devops login`; no "
+                       "spec was read or written",
+        }
+    said = _az_said(stdout, stderr)
+    haystack = f"{stderr or ''}\n{stdout or ''}".lower()
+    for fragment, refusal_code, remedy in AZ_STDERR_SIGNALS:
+        if fragment in haystack:
+            return {
+                "code": refusal_code, "exit": 2, "action": action, "az": said,
+                "message": f"azure-boards refused {action} — {remedy}; az said: {said}",
+            }
+    return {
+        "code": "sp-az-api-error", "exit": 2, "action": action, "az": said, "azExit": code,
+        "message": f"azure devops refused {action} — az said: {said}",
+    }
+
+
+def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
+    """`(organization, project)` for this checkout, or a refusal.
+
+    ASK `az` FOR ITS OWN DEFAULTS, the same reasoning `resolve_github_repo` applies to `gh`:
+    the answer that matters is the one the CLI will actually use, and a human who ran
+    `az devops configure --defaults organization=… project=…` has already stated it in the
+    place `az` reads. Deriving it from a git remote instead would be a guess dressed as an
+    answer — an Azure DevOps remote URL carries an organization and a REPOSITORY, and the
+    repository is not the project.
+
+    Never guesses. Missing defaults are a refusal naming the exact command that sets them,
+    because a wrong answer here does not fail — it reads and writes somebody else's board."""
+    code, out, err = _az_run(cwd, "devops", "configure", "--list")
+    if code != 0:
+        return ("", ""), az_refusal("resolving the organization and project", code, out, err)
+    defaults = {}
+    for line in (out or "").splitlines():
+        key, sep, value = line.partition("=")
+        if sep:
+            defaults[key.strip().lower()] = value.strip()
+    org, project = defaults.get("organization", ""), defaults.get("project", "")
+    if not org or not project:
+        missing = " and ".join(n for n, v in (("organization", org), ("project", project))
+                               if not v)
+        return ("", ""), {
+            "code": "sp-az-no-project", "exit": 2, "missing": missing,
+            "message": f"backend 'azure-boards' has no default {missing} — run "
+                       f"`az devops configure --defaults organization=https://dev.azure.com/"
+                       f"<org> project=<project>`; no spec was read or written",
+        }
+    return (org, project), {}
+
+
+AZ_REFUSAL_CASES = (
+    # (label, az exit, stdout, stderr, expected code). `az` reports almost everything as
+    # exit 1 and explains in stderr, so these are the literal stderr shapes its 2.6x
+    # releases produce — a reworded release breaks the check rather than the refusal.
+    ("no binary on PATH", AZ_MISSING, "", "", "sp-az-missing"),
+    ("the azure-devops extension is not installed", 2, "",
+     "ERROR: 'boards' is not in the 'az' command group. Run `az extension add --name "
+     "azure-devops`.\n", "sp-az-extension-missing"),
+    ("nobody logged in", 1, "",
+     "ERROR: Before you can run Azure DevOps commands, you need to run the login command "
+     "(az login if using AAD/MSA identity...).\n", "sp-az-unauthenticated"),
+    ("an identity without access", 1, "",
+     "ERROR: TF400813: The user 'x' is not authorized to access this resource.\n",
+     "sp-az-unauthenticated"),
+    ("a work item that is not there", 1, "",
+     "ERROR: TF401232: Work item 4242 does not exist, or you do not have permissions to "
+     "read it.\n", "sp-az-api-error"),
+    # Captured VERBATIM from az 2.88 on 2026-08-01, by running `az boards query` in a
+    # checkout with no defaults configured. It is the failure a first-time user actually
+    # hits, and it is not an API error: nothing was asked of Azure DevOps at all.
+    ("no organization configured", 1, "",
+     "ERROR: --organization must be specified. The value should be the URI of your Azure "
+     "DevOps organization, for example: https://dev.azure.com/MyOrganization/. You can set "
+     "a default value by running: az devops configure --defaults "
+     "organization=https://dev.azure.com/MyOrganization/.\n", "sp-az-no-project"),
+)
+
+
+def az_refusal_failures() -> list[str]:
+    """Every `az` failure must arrive as its own exit-2 refusal, carrying the remedy that
+    fixes THAT failure — never a traceback, and never the wrong remedy stated confidently.
+
+    Self-contained: no network and no `az`. Asserted against the literal streams the CLI
+    produces, because the split into remedies is made on what it said."""
+    failures: list[str] = []
+    for label, code, out, err, want in AZ_REFUSAL_CASES:
+        got = az_refusal("reading a spec", code, out, err)
+        if got.get("code") != want:
+            failures.append(f"{label}: got {got.get('code')!r}, expected {want!r}")
+        if got.get("exit") != 2:
+            failures.append(f"{label}: exited {got.get('exit')!r}, every refusal is 2")
+        if not str(got.get("message", "")).strip():
+            failures.append(f"{label}: refused with an empty message")
     return failures
 
 
@@ -3152,7 +3341,7 @@ def cmd_task(args, root: str) -> int:
     # THE FAILURE-REPORTING CONTRACT: this call is the one that can fail out from under a
     # tick that already looks applied to `lines`. `FilesBackend` either writes the file or
     # raises. `GitHubBackend` pushes the same edited task block into the task's own
-    # sub-issue (`_sync_tasks`, inside `write_spec`) and raises `GhRefusal` — never swallowed
+    # sub-issue (`_sync_tasks`, inside `write_spec`) and raises `BackendRefusal` — never swallowed
     # — the instant `gh api` fails, e.g. on a network error. `main()` is the one place that
     # exception becomes an exit code and an `ok: false` JSON body; nothing here catches it
     # and nothing here prints a success message before this line returns.
@@ -4962,6 +5151,18 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are three refusals with three remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # The `azure-boards` transport's half of the same promise, and the reason it is its own
+    # check: `az` has no dedicated exit code for "not logged in", so every refusal here is
+    # split on what stderr SAID. A reworded release must break this check rather than start
+    # telling a human to log in when the real fix is installing the extension.
+    for failure in az_refusal_failures():
+        findings.append(_finding("sp-az-refusal-broken", "error",
+                                 f"the az transport misreports a failure — {failure}",
+                                 remedy="a missing binary, a missing azure-devops "
+                                        "extension, an unauthenticated identity and an API "
+                                        "error are four refusals with four remedies; all "
+                                        "exit 2 and none is a traceback"))
+
     # The hybrid serialisation's own claim: a task's checked/blocked state survives
     # shell -> sub-issue -> shell, derived by `parse_tasks` on both ends and never by the
     # backend's own notion of what a checkbox means.
@@ -5061,8 +5262,9 @@ def cmd_selftest(args, root: str) -> int:
               f"`files` and `memory`, the config defaults hold with nothing declared, the files "
               f"root reaches for no specs worktree where there must not be one, the worktree "
               f"lock admits one writer and reclaims nothing it cannot prove dead, the "
-              f"{len(GH_REFUSAL_CASES)} gh transport failures each refuse with their own "
-              f"remedy, a task's shell -> sub-issue -> shell round trip reconstructs its "
+              f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
+              f"each refuse with their own remedy, every record reads back as it was "
+              f"written, a task's shell -> sub-issue -> shell round trip reconstructs its "
               f"checked/blocked state and metadata exactly, and the embedded schema and "
               f"template match their asset files.")
     return 1 if errors else 0
@@ -5339,7 +5541,7 @@ def main(argv: list[str]) -> int:
         return emit_err(args.json, err)
     try:
         return DISPATCH[args.cmd](args, root)
-    except GhRefusal as e:
+    except BackendRefusal as e:
         # THE ONE PLACE A TRANSPORT FAILURE BECOMES AN EXIT CODE. An external backend can
         # fail in the middle of a primitive that has no error channel, and the contract is
         # a legible refusal and never a traceback — so the failure is raised where it

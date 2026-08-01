@@ -426,8 +426,9 @@ contra esse conjunto que "sem regressão" deve ser medido daqui em diante.
 
 ### 6. Backend azure-boards
 
-- [ ] 6.1 Transporte via `az boards` em subprocess, com o mesmo contrato de recusa da task 4.1
+- [x] 6.1 Transporte via `az boards` em subprocess, com o mesmo contrato de recusa da task 4.1
       files: plugins/quenching/assets/bin/specs.py
+      subject: plan/configurable-spec-backend: 6.1 transporte az boards em subprocess com seis recusas exit 2
 - [ ] 6.2 Serialização híbrida para work items — tasks como itens filhos, seções como markdown
       files: plugins/quenching/assets/bin/specs.py
 - [ ] 6.3 Decidir per ## Open Decisions se selecionar `azure-boards` emite aviso de não-validado
@@ -458,3 +459,4 @@ contra esse conjunto que "sem regressão" deve ser medido daqui em diante.
 - TEMPLATE_SPEC (embutido em specs.py) e a guidance comment do template ainda so documentam --subject como anchor. Precisam de --commit mencionado quando os standards forem reescritos, sem quebrar o lockstep byte-a-byte com assets/specs/templates/spec.md.
 - align.md é o único body ainda acoplado ao backend files: inventaria por `Glob specs/plans/*.md` e stampa frontmatter direto. Não foi migrado porque o que `/specs:align` significa num backend externo — onde não há pasta, filename nem rename — é uma decisão que a spec não tomou.
 - A task 5.1 tocou `specs.py` além dos `files:` que declara: `list --json` passou a carregar os sete `records` e nasceu `specs.py record`. Sem os dois, status/triage não tinham como parar de ler o caminho — triage escrevia `priority` com Edit no arquivo.
+- `az` está instalado neste ambiente (2.88.0) com o grupo `az devops` disponível, mas SEM defaults de organization/project — o que tornou possível capturar a recusa real de `az boards query` sem org e provar `resolve_azure_project` contra o binário. Nenhuma chamada de escrita foi feita, e a 6.2/6.3 não têm board real contra o qual rodar um E2E.
