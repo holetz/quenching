@@ -431,14 +431,16 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
-| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data; exit 0 whether or not anything is declared |
+| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`; exit 0 whether or not anything is declared |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
+| `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing keeps it in sync, so it is a rescue copy for an external backend and never a second store |
 
 There is no `init` (scaffold is an asset copy), no `profiles`, no telemetry, and no delta parser.
 There is no `store` subcommand either: which store holds the specs is **declared** in
-`.claude/quenching.json`, never switched by a command mid-flight. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
-any time:
+`.claude/quenching.json`, never switched by a command mid-flight.
+
+`/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself any time:
 
 ```bash
 python3 .claude/hooks/specs.py doctor --json      # workspace health (and legacy detection)

@@ -221,10 +221,12 @@ sentence, and **link out** rather than explaining in full here.
   the tasks are written, declaring it may run concurrently with its group; honoured only when
   `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
-  single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`
-  and `worktreeSetup`. It replaced `specs/config.json`, whose home stopped working once a repository
-  could have no `specs/` folder at all. Absence yields the documented defaults, never a null and
-  never a refusal; every way it can be wrong comes back as a field for `doctor` to judge.
+  single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
+  `worktreeSetup` and `azureStates`. It replaced `specs/config.json`, whose home stopped working once
+  a repository could have no `specs/` folder at all. Absence yields the documented defaults, never a
+  null and never a refusal — except `azureStates`, which has no default because the project's own
+  process defines the states, and whose absence refuses instead of guessing; every other way it can
+  be wrong comes back as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
