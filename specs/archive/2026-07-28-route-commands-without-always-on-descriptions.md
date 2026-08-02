@@ -978,3 +978,23 @@ estão defasados — trabalhe por conteúdo. E qualquer spike futuro sobre esta 
 resolver a **raiz viva** do plugin antes de escrever o probe: nesta máquina é a instalação
 user-scope em `~/.claude/plugins/cache/`, não a árvore de trabalho, e um probe escrito no lugar
 errado teria lido "bloqueado" nos dois braços — falso positivo exatamente sobre o que se media.
+
+**O que a conclusão escreveu, além do que as tarefas escreveram.**
+
+- `plugins/quenching/assets/references/skill-new/doctrine.md` — `sk-inert-stage` na linha
+  *Invocation control is coherent*, e as duas regras de roteamento marcadas *routed commands only*.
+  A tabela declara nomear todo código do `lint`, e o código que esta branch cunhou não estava nela.
+- `docs/standards/quality/selftest-mutation.md` — o passe de sete mutações contra as regras novas do
+  `skills.py`, re-executado na conclusão em vez de relatado de segunda mão. Seis falham com uma
+  asserção que nomeia o caso do fixture; a sétima falha por `TypeError`, ou seja Python pegou e o
+  corpus não, e isso está dito. O portão de graduação **não** fecha: cobre só as regras novas.
+- `docs/knowledge/glossary.md` — **Routed command** e **Typed-only command**, o par de classes que
+  este spec cunhou e que três padrões, um código de `lint` e o payload do `budget` passaram a usar
+  sem que nada o definisse.
+- `specs/plans/2026-08-02-make-named-by-bodies-scale-with-the-surface-it-was-built-for.md` — o
+  achado de performance da revisão de branch, com a medição.
+- `specs/plans/2026-08-02-fix-the-files-field-parser-splitting-on-commas-inside-parentheses.md` — o
+  bug do parser de `files:` registrado no `## Discoveries` da 0.1.
+
+Oferecida e **recusada**: um doc para as duas convenções de nomear um estágio. O fato segue no
+`## Discoveries` e no comentário de `named_by_bodies`, e em lugar nenhum além disso.

@@ -229,6 +229,13 @@ sentence, and **link out** rather than explaining in full here.
   **unreserved**: dropping the reservation too would send every surviving instance down the
   concept-doc path, turning it into a `no-frontmatter`/`missing-type` ERROR in target repos that
   changed nothing. `docs/log.md` is the first artifact retired this way.
+- [**Routed command**](../standards/automation/skills.md) — a command something reaches **without a
+  human typing its name**, whether by a spoken trigger or by another command's body naming it; its
+  `description` stays resident in every session's context and is charged against the
+  **Always-on ceiling**. The half of the test that is mechanical is not a judgement call:
+  `skills.py lint` derives the name-reachable set from the command bodies, so classify against the
+  instrument. The complement is a **Typed-only command**, and the criterion is a floor rather than a
+  quota — on a small surface it may admit nobody.
 - [**Rules/rationale markers**](../standards/automation/context-discipline.md) — the pair of HTML
   comments, `<!-- rules -->` and `<!-- rationale -->`, that split a normative section's binding half
   from the measurement and history behind it, so `skills.py read --rules-only` can return the first
@@ -263,6 +270,14 @@ sentence, and **link out** rather than explaining in full here.
   invitation*, a key only one writer may legitimately set stays **out** of it and lives with that
   writer's own contract — an annotation inside the mold is not equivalent, as the `resource:`
   precedent showed. The test is not "may this be absent?" but "may this citer write it at all?".
+- [**Typed-only command**](../standards/automation/context-budget.md) — a command carrying
+  `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
+  every session's context and `skills.py budget` charges it **0**. Residency and content are
+  independent axes, so the description **keeps all three parts at full length** — the human picking
+  it out of the `/` menu is now its only reader, and has no routing to fall back on. Measured, not
+  assumed: the field also makes the command unreachable **by name** through the Skill tool, so
+  putting it on a stage another body invokes leaves that stage silently inert (`sk-inert-stage`,
+  error). The complement is a **Routed command**.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
