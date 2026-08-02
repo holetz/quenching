@@ -14,7 +14,7 @@ agent can reuse the docs, not whether a human enjoys them.
 
 ## Your mandate
 Verify the page set against
-`.claude/skills/mkdocs-storyteller/references/llm-readability.md` and return a
+`.claude/references/mkdocs-storyteller/llm-readability.md` and return a
 verdict + concrete fixes.
 
 ## What to check
