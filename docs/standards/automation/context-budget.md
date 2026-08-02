@@ -111,11 +111,14 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **12,726 characters** — this plugin's measured total across its 25 always-on
-commands and 0 agent definitions, on 2026-07-28. It is a number a run produced, not one somebody
-picked, and it is **revised only from a measurement**. The surface has since grown to 26 commands
-and the figure has not moved, because the 26th is typed-only and counts 0 (§*The one command that
-costs nothing* below).
+The current default is **12,875 characters** — this plugin's measured total across its 25 routed
+commands and 0 agent definitions, on 2026-08-02. It is a number a run produced, not one somebody
+picked, and it is **revised only from a measurement**. The 26th command is typed-only and counts 0,
+holding a further 876 characters outside the total (§*The one command that costs nothing* below).
+
+The previous figure, **12,726** on 2026-07-28, was not replaced by growth in the surface's size:
+the command count did not change. It was replaced by three descriptions growing, which is the
+firing mode §*The ratchet's other firing mode* below exists to name.
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
 the next **always-on** command crosses it on the day it is minted. Under §*A new command is not free* below,
