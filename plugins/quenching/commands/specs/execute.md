@@ -13,11 +13,10 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
-**reviewed**, and it is **committed**. The mechanics of that — the clean-tree precondition, the
-verification policy, the validation loop, the four-item diff self-review, the one commit per task,
-the declared-versus-emergent `docs/` line, and the rules for delegating an executor — live in
-[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
-which this body cites and never restates.
+**reviewed**, and it is **committed**. The mechanics of that live in
+[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§The precondition §The verification policy §The validation loop §The diff self-review §The commit
+§Declared versus emergent `docs/` §Delegating an executor, which this body cites and never restates.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
@@ -33,21 +32,17 @@ narrows further to the `<!-- rules -->` half where a section carries the marker,
 whole section, saying so, where it does not.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
-*revealed*, merging, and archiving belong to `/quenching:specs:conclude`. That is not tidiness: the branch
-review is a different scale of judgment, the merge is a separate irreversible decision needing its
-own confirmation, and a run that dies after task nine must be resumable without redoing tasks one
-through eight.
+*revealed*, merging, and archiving belong to `/quenching:specs:conclude` — [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+opens on why that split holds.
 
-The git conventions — the commit subject, the branch name, the `branch` record, the subject as the
-task→commit anchor, and the **read-if-present** rule for a target's `docs/standards/git/**` — live
-in [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md), whose
-command is `/quenching:specs:isolate`.
+The git conventions live in
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+§The read-if-present rule §Branch and worktree names §Recording the isolation §Commit messages
+§The subject is the anchor, whose command is `/quenching:specs:isolate`.
 
-The spec-driven facts — the layout, the fourteen canonical sections, the derived stages, the
-`specs.py` surface, the `specs/`↔`docs/` boundary — live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
-The OKF insert procedure for the docs a task writes lives in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
+The spec-driven facts live in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §Boundary.
 
 ## Resolving the tool
 
@@ -61,12 +56,7 @@ never on prose.
 `skills.py read` — the section reader every `§X` citation above resolves through — is the same
 fallback one directory over: `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then the target's
 `.claude/hooks/skills.py`. Neither resolves → read the cited file with `Read` and **say in the
-report that the sections were loaded whole**, because that is the run's context cost changing, not
-a cosmetic difference.
-
-**Why `Bash` is unrestricted here.** This is the one `/specs:*` command that runs the target repo's
-own toolchain — build, tests, linters, migrations, and `git` — as part of implementing a task. Its
-siblings are scoped to `python3`/`py` because they only ever talk to `specs.py`.
+report that the sections were loaded whole**.
 
 ## Workflow
 
@@ -89,17 +79,17 @@ specs.py status --spec "<slug>" --json
 ```
 
 `git status --porcelain` non-empty → **refuse to start**, per
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
-precondition. Offer to commit or stash. The human may override; then the first commit carries the
-pre-existing changes and the report says so.
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§The precondition. Offer to commit or stash. The human may override; then the first commit carries
+the pre-existing changes and the report says so.
 
 **Then check before dispatching.** `branch --list plan/<slug>` printing a ref, or the `branch`
 record already present in the `status` payload, means the spec **is already isolated** — go
 straight to the loop and dispatch nothing. `/quenching:specs:isolate` would report the existing
 branch and stamp nothing new, so the call buys nothing and costs twice: the turns, and the run's
 own attribution, per
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Isolation is
-somebody else's job.
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§Isolation is somebody else's job.
 
 **Nothing to check out → hand isolation to `/quenching:specs:isolate`** (the `Skill` tool) rather
 than reimplementing it: it owns the branch and worktree forms, the `plan/<slug>` name, the
@@ -159,38 +149,39 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
-Read `## Problem`, `## Proposal`, `## Design`, `## Impact`, `## Handoff` and `## Tasks` **by
-section, in ONE call** — never `Read` on the spec file:
+Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-specs.py section "<slug>" "Problem,Proposal,Design,Impact,Handoff,Tasks"
+specs.py section "<slug>" --moment build --json
 ```
 
-The file carries ~37 lines of template comment identical in every spec plus the sections this step
-does not want, and the reader is not saved by asking for the file and skimming: an executor pays
-for what arrives, not for what it uses. The heading argument is a **list**, and taking it in one
-call is the point — **the unit that matters is the turn**, and six headings fetched over six turns
-costs more than the whole file did. They come back in the order asked.
+Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
+the same fact this call's own `absent` list repeats: a section not yet `filled` — `## Handoff`
+empty on a spec's first build is the ordinary case, not a finding — is read as empty. No second
+call, and no heading enumerated here to know which one that was.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
 `docs/standards/` paths and the code this spec expects to touch.
 
 Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the
 `docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
-task's own text names — **never the folder** `docs/standards/<subject>/`. The folder is the wrong
-unit and it is the expensive one: measured on this repo while building this very step, the four
-subject folders a spec touched held 19 files / ~31k tokens against 5 files / ~13k for what
-`## Impact` declared, and that difference arrives at turn one, where every later turn re-sends it.
-Those files are **binding contracts** for HOW the work is built, complementing the spec's own
-sections (WHAT to build). A task that contradicts one is surfaced (step 5), never silently
-resolved. No bundle → skip silently.
+task's own text names — **never the folder** `docs/standards/<subject>/`, the wrong and the
+expensive unit ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§Tooling asides has the measurement). Those files are **binding contracts** for
+HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
+contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
 
-**No mechanical net for a contract nobody declared — deliberately.** `specs.py validate` already
-warns when a declared standard has no task (`sp-impact-uncovered`); the inverse, a binding standard
-nobody declared, is **not derivable**: deciding that a given standard governs a given task is
-reading, not parsing. Every approximation of it has to re-read the folder in order to have
-something to warn about, which is the cost this step just removed. What covers the gap instead is
-one line at the moment it shows up — `specs.py discover` records it while building, and
-`/quenching:specs:develop` repairs `## Impact`.
+A declared bullet may carry a `§`address beside its path —
+`docs/standards/automation/context-budget.md §The two caps §The per-surface ceiling`. With one,
+read exactly those sections (`skills.py read <path> --sections "§A" --sections "§B"`); with none,
+read the file whole, exactly as today. The default never changes: reading less is an assertion the
+spec's own author wrote, never an economy the executor takes on its own.
+
+**No mechanical net for a contract nobody declared — deliberately.** Deciding a standard governs a
+task is reading, not parsing, so nothing scans the folder to net one
+([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§Tooling asides has the failure modes this avoids). What covers the gap is one line at the
+moment it shows up — `specs.py discover` records it while building, and `/quenching:specs:develop`
+repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
@@ -205,17 +196,22 @@ Then, for that task:
 a. **Show what is being worked on** — the id, its declared `files:` and its `verify:`.
 
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
-   writes nothing under `docs/` **may** go to an executor sub-agent under §Delegating an executor —
-   which also explains why this is **not** `context: fork` and leaves that rule untouched.
+   writes nothing under `docs/` **may** go to an executor sub-agent under
+   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
+   that rule untouched.
 
 c. **Write only the `docs/` this task names.** A `docs/standards/` path declared under `## Impact`
    and named by this task is part of its deliverable — write it through the insert procedure in
-   [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), stamp `authority`
-   honestly, and self-check it against
-   [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
+   [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
+   stamp §Updating `index.md` §Enriching the glossary §Self-check, stamp `authority` honestly, and
+   self-check it against
+   [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
+   §Concept docs §Resource integrity.
    Anything else the work reveals costs one line — `specs.py discover "<slug>" "<finding>"` — and
-   no authoring. The line between the two, and why it falls there, is §Declared versus emergent
-   `docs/`.
+   no authoring. The line between the two, and why it falls there, is
+   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   §Declared versus emergent `docs/`.
 
 d. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
    dead code — and fix what it finds. This happens on the written diff, *before* the chain below,
@@ -237,8 +233,8 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
    carried is still enforced, and now mechanically rather than by the body being obeyed in sequence:
    verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
    that implements it, and any link failing short-circuits every link after it. Run `verify:` only
-   when the spec's declared policy says this task is a gate (§The verification policy); otherwise
-   the chain starts at `specs.py task`.
+   when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+   §The verification policy); otherwise the chain starts at `specs.py task`.
 
 f. **Read the chain's tail, and act on which link broke:**
 
@@ -265,10 +261,9 @@ g. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    ```
 
    It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
-   makes the boundary resumable is the one §6 already keeps. Why the trigger is that event and
+   makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event and
    never a window size, and why a section is the unit, live in
-   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §The section boundary.
+   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The section boundary.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `docs/standards/` contract (surface it and let the human pick — revise the
@@ -289,13 +284,13 @@ Everything a resumed run *can* derive — which tasks are done, which commit car
 already in `git log` and in the `subjects` `status` returns, so the Handoff is not the resumption
 trail and must not be rewritten as one. It is sent with every task, so keep it small.
 
-**Not after every committed task.** Measured on a 13-task run, that cadence produced rewrites that
-were ~90% identical to one another. And do not substitute a judgment — "rewrite it when the
-underivable state changed" is the rule that already failed, because an unattended run never judges
-that something went stale. Each trigger above is a moment this body *just finished doing
+**Not after every committed task, and not on a judgment call either** — both were tried and both
+failed;
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The Handoff cadence
+has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
-**The section-boundary offer (§5g) adds no fifth event and writes no new state.** Accepted, it is a
+**The section-boundary offer (step 5g) adds no fifth event and writes no new state.** Accepted, it is a
 pause and a last commit, which are already two of the four above; declined, nothing happened worth
 recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
 `status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
@@ -360,9 +355,11 @@ front of you before the loop starts:
 - Never stamp or rewrite a `branch` record here — that record belongs to `/quenching:specs:isolate`.
 - Write **only** the `docs/` a task explicitly names. Emergent findings are one `specs.py discover`
   line — never an unrequested standard, and never a loose code comment.
-- Delegate an executor only under §Delegating an executor (declares `files:`, touches no `docs/`,
-  pinned to the session model — **never `haiku`**), and run two tasks in parallel only when
-  `specs.py parallel` reports the `[P]` group eligible.
+- Delegate an executor only under
+  [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+  §Delegating an executor (declares `files:`, touches no `docs/`, pinned to the session model —
+  **never `haiku`**), and run two tasks in parallel only when `specs.py parallel` reports the `[P]`
+  group eligible.
 - Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`, and
   splitting it is what makes a half-finished build resumable.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
