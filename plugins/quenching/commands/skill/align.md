@@ -285,8 +285,18 @@ whether a spoken request reaches it at all. Review the whole surface in **one pa
 
 Read **frontmatter only** — never a body, whether or not §7 ran. A description is judged against the
 other descriptions, and no body changes that verdict. The read is self-limiting and its size is
-known *before* it starts: what this stage reads is `budget`'s `total`, already printed in §1. Say
-that number when opening the stage, so the human authorizes a cost rather than an open-ended sweep.
+known *before* it starts: `budget`'s `classes` block, already printed in §1, gives both halves —
+`routed.characters` plus `typedOnly.characters`, since the `total` charges a typed-only description
+0 and would understate what this stage actually opens. Say that sum when opening the stage, so the
+human authorizes a cost rather than an open-ended sweep.
+
+**Which class a description is in decides which verdicts apply.** A typed-only command
+(`disable-model-invocation: true`) has left the routing surface: `lint` reports neither routing code
+against it, nothing routes from its prose, and it is charged 0 — so there is nothing to buy by
+shortening it and no trigger to demand. Its description keeps all three slots at full length for the
+human picking it out of the `/` menu, who has no routing to fall back on
+([context-budget.md](/docs/standards/automation/context-budget.md) §The tier for a description that
+is not in context). Read `budget`'s `classes` for the split; never re-derive it.
 
 Judge each description against the three slots and the competitor test in
 [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md)
@@ -294,9 +304,9 @@ Judge each description against the three slots and the competitor test in
 
 | Verdict | Action |
 | --- | --- |
-| prose about **how** the command works — step order, tool names, call counts, the reasoning behind a rule | **cut**; it is body, and a reader who needs it has already loaded the body |
+| prose about **how** the command works — step order, tool names, call counts, the reasoning behind a rule | **cut** on a routed description; it is body. On a typed-only one, cut it only where it confuses the human reader — length is not the reason, since the command is charged 0 |
 | the leading concept is a `/`-menu label, or absent | **rewrite** the first sentence in the command's own vocabulary |
-| no trigger, or a trigger after the second sentence (`sk-trigger-position`) | **add** one verbatim phrase per branch that has none; move them into the second sentence |
+| no trigger, or a trigger after the second sentence (`sk-trigger-position`) | **add** one verbatim phrase per branch that has none; move them into the second sentence. **Routed only** — on a typed-only command an absent trigger is not a defect, and adding one buys nothing that routes |
 | `Not for:` naming a command that fails the competitor test | **cut**, and record the waiver with the competitor set checked |
 | a real competitor with no `Not for:` (`sk-no-boundary`) | **add** the one clause that routes: `Not for: <job> → <command>` |
 | a quoted trigger that looks like sediment | **report**, never cut — `/quenching:skill:eval <command>` decides it on a measured miss |
@@ -307,8 +317,9 @@ commands share, from the paths in §1's `lint` payload, and the trigger vocabula
 from the descriptions this stage just read. It needs nothing §2 collected, which is what lets §1
 enter this stage directly on a surface with nothing to migrate.
 
-Present ONE table — command · current chars → proposed chars · what changed · the slot that
-earned it — with the surface total before and after against `budget`'s ceiling. **Gate on its own
+Present ONE table — command · class · current chars → proposed chars · what changed · the slot that
+earned it — with the **routed** total before and after against `budget`'s ceiling, since that is
+the half the ceiling measures. **Gate on its own
 OK**, separately from §4's: that plan was confirmed before any description had been read, and an
 edit nobody saw is not an edit anybody authorized. Declined → nothing is written here and the run
 continues to §9 reporting the review as proposed-and-declined.

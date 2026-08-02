@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Always-on context budget
-description: What a command surface costs before anything fires — the two description caps, what the description may carry, the per-surface ceiling, and the disable-model-invocation exit that lets a typed-only command cost nothing at all; and the other half — what a body costs once it fires, where every turn re-sends the whole conversation so a block costs tokens × turns remaining
+description: What a command surface costs before anything fires — the two description caps, what the description may carry including the tier for one that is not in context at all, the per-surface ceiling and its two firing modes, and the disable-model-invocation exit that lets a typed-only command cost nothing at all, with the routed/typed-only split that keeps that exit auditable; and the other half — what a body costs once it fires, where every turn re-sends the whole conversation so a block costs tokens × turns remaining
 resource: plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, commands, context, budget, performance]
 timestamp: 2026-08-02
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31)
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31); the typed-only tier, the description-growth firing mode (+149 since a03f31a) and the routed/typed-only split added by route-commands-without-always-on-descriptions (2026-08-02), whose task 0.1 measured what the field actually closes
 maintainer: quenching
 ---
 
@@ -86,6 +86,30 @@ description's job is to let a reader predict **when it fires and what will exist
 finishes**, not how. Cutting exactly this prose from 17 over-limit descriptions on the
 pre-collapse surface recovered 2,605 characters without touching a single trigger phrase.
 
+### The tier for a description that is not in context
+
+A typed-only command's description carries **the same three parts, at the same length**. Residency
+and content are independent axes, and only residency costs context — so there is nothing to buy by
+shortening a description that is already charged 0.
+
+This is the tier that is easiest to get wrong, because "it costs nothing" reads like "it does not
+matter". The description is still read, by a human in the file and in the `/` menu, and that reader
+needs it *more* than the model did: they are choosing between neighbours by hand, with no routing to
+fall back on. Cutting a typed-only description to a stub pays twice — the routing was already gone,
+and now the human's discrimination goes too.
+
+Two of the three parts change meaning rather than disappearing:
+
+| Part | In a routed description | In a typed-only one |
+| --- | --- | --- |
+| leading concept | what the model matches on | what the human reads in the `/` menu |
+| trigger phrases | how a user's wording routes here | **not load-bearing** — nothing routes from prose. Keep them if they read as examples; they are no longer a defect when absent, which is why `sk-trigger-position` does not fire here |
+| `Not for:` boundary | discriminates against neighbours for the model | discriminates against neighbours for the **human**, who is picking from a menu of near-identical names — so it earns its place either way, and `sk-no-boundary` likewise does not fire |
+
+The two codes are scoped by the same predicate `budget` charges from — `description_is_resident` in
+`skills.py`, read from one place by both — so `lint` can never report a routing defect against a
+description no routing reads. Two copies of that condition is the shape that diverges in silence.
+
 ## The per-surface ceiling
 
 `skills.py budget` sums the whole surface and compares it against a ceiling:
@@ -95,11 +119,14 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **12,726 characters** — this plugin's measured total across its 25 always-on
-commands and 0 agent definitions, on 2026-07-28. It is a number a run produced, not one somebody
-picked, and it is **revised only from a measurement**. The surface has since grown to 26 commands
-and the figure has not moved, because the 26th is typed-only and counts 0 (§*The one command that
-costs nothing* below).
+The current default is **12,875 characters** — this plugin's measured total across its 25 routed
+commands and 0 agent definitions, on 2026-08-02. It is a number a run produced, not one somebody
+picked, and it is **revised only from a measurement**. The 26th command is typed-only and counts 0,
+holding a further 876 characters outside the total (§*The one command that costs nothing* below).
+
+The previous figure, **12,726** on 2026-07-28, was not replaced by growth in the surface's size:
+the command count did not change. It was replaced by three descriptions growing, which is the
+firing mode §*The ratchet's other firing mode* below exists to name.
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
 the next **always-on** command crosses it on the day it is minted. Under §*A new command is not free* below,
@@ -127,6 +154,39 @@ The qualifier is load-bearing and was added after the fact: a typed-only command
 fires nothing, so the ratchet has a second exit — see
 [§The one command that costs nothing](#the-one-command-that-costs-nothing--disable-model-invocation-true).
 The 26th command took it, and the re-set this paragraph predicts was never needed.
+
+### The ratchet's other firing mode — description growth, with no command minted
+
+The section above describes the ratchet firing **when a command is minted**, and that framing hid a
+second mode for two months. A surface can cross its ceiling with **no new file, no `/skill:new` run,
+and nothing to review** — because an existing description grew.
+
+Measured on this surface, comparing against `a03f31a`, the commit that set `DEFAULT_CEILING`:
+
+| Command | then | now | delta |
+| --- | ---: | ---: | ---: |
+| `/specs:execute` | 937 | 999 | +62 |
+| `/specs:develop` | 951 | 1,007 | +56 |
+| `/specs:conclude` | 974 | 1,005 | +31 |
+| **whole surface** | **12,726** | **12,875** | **+149** |
+
+Three trigger-phrase additions, each defensible on its own, and the surface sat 149 characters over
+its ceiling with `budget` exiting 1 on `sk-budget-ceiling`. Nobody saw it.
+
+**Why nobody saw it is the part worth fixing.** This mode is silent by construction: minting a
+command is an event with a command of its own, so somebody is present to re-measure. Growing a
+description by 62 characters is an edit inside a larger change, and the only instrument that reports
+the consequence is `budget` — which was **not in the repository's verification routine**. A ratchet
+whose sole detector nobody runs is not a ratchet.
+
+The rule that follows, and it is the cheap half of this whole standard:
+
+- **A repository's stated verification routine must run `budget` alongside its other surface
+  checks.** Re-measuring the ceiling does not cause anyone to run the instrument; only listing it
+  where the routine is written down does.
+- **The ratchet has two triggers, not one** — a command minted, *or* the always-on total drifting
+  above the ceiling for any reason. Both resolve the same way: re-measure and re-set from a run, or
+  take the typed-only exit where it is the honest design.
 
 ### Why the ceiling went 2,083 → 11,565
 
@@ -172,11 +232,20 @@ so the two can never disagree about what it contains.
 ### The one command that costs nothing — `disable-model-invocation: true`
 
 A command whose frontmatter carries `disable-model-invocation: true` counts **0** against the total
-(`skills.py:1432`, applied at `skills.py:1439`). This is not an exemption the budget grants as a
-favour: Claude Code drops such a command's description from the routing surface entirely, because
-the model is never offered the chance to route to it. The description is still read — by a human,
-in the file, and by `/skill:*` — but it is not resident in any session's context, so there is
-nothing to charge.
+(`description_is_resident` in `skills.py`, the one place both `budget` and `lint` read it from).
+This is not an exemption the budget grants as a favour: Claude Code drops such a command's
+description from the routing surface entirely, because the model is never offered the chance to
+route to it. The description is still read — by a human, in the file, and by `/skill:*` — but it is
+not resident in any session's context, so there is nothing to charge.
+
+**What the field closes is wider than the budget, and it is measured.** It removes the description
+from the listing **and** makes the command unreachable by name through the Skill tool — row 7 of
+[claude-code-skill-command-mechanics.md](/docs/reference/tools/claude-code-skill-command-mechanics.md),
+Claude Code 2.1.220, with a control arm. The consequence for anyone reaching for this exit purely to
+close a ceiling: **a command that another command's body invokes by name cannot take it.** The
+conductor does not fail — it is refused and carries on doing nothing — so `skills.py lint` reports
+that combination as `sk-inert-stage` at **error**, with the reachable set derived from the command
+bodies rather than a hand-kept list.
 
 That makes the ceiling's zero-headroom ratchet **a question rather than a verdict**. When the next
 command would cross the ceiling, there are two exits, not one:
@@ -185,6 +254,21 @@ command would cross the ceiling, there are two exits, not one:
 | --- | --- | --- |
 | **re-measure the ceiling** | the command must be auto-routable — Claude should reach it from a description alone | the bookkeeping change: `DEFAULT_CEILING`, the figure transcribed here, and `README.md` |
 | **`disable-model-invocation: true`** | a human should choose it — it reads private data, is irreversible, or only makes sense when deliberately invoked | **0**, and the ceiling never fires |
+
+**The split that makes the second exit auditable.** "Only honest when it is the right design" is
+prose, and prose detects nothing: a surface that falls from 12,875 to 3,000 by writing tighter
+descriptions and one that falls the same way by flagging half its commands typed-only are identical
+in the total alone. `budget --json` therefore reports both classes side by side —
+
+```json
+"classes": {"routed":    {"commands": 25, "characters": 12875},
+            "typedOnly": {"commands":  1, "characters":   876}}
+```
+
+— where `typedOnly.characters` is the description text that **left** context. A total that falls
+while that number climbs is reclassification, not thrift, and the two are now distinguishable
+without reading the diff. `routed.characters` equals `breakdown.commands` by construction, so the
+split can never drift from the total it explains.
 
 The second exit is only honest when typed-only is the *right* design, never as a way to dodge the
 measurement. `/skill:retro` is the case that established it and shows the test: a retro reads the
