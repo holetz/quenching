@@ -4,10 +4,10 @@ title: Context discipline — open less, and run for less time
 description: The two halves of a run's integral `tokens × turns remaining` and the only two ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention) and run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-01
+timestamp: 2026-08-02
 audience: both
 authority: background
-source: read-by-section-not-by-file spec — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote this file; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason
 maintainer: quenching
 ---
 
@@ -93,6 +93,14 @@ The measurement, what was reverted, the v1 that failed.
 - **A marker's reach ends at the next heading.** Asked for a section, a caller receives its
   sub-sections too, so one `<!-- rationale -->` inside a `###` would otherwise truncate every rule
   after it. Mark **per sub-section**, not once per block.
+- **Relocation only pays when the destination is not already loaded.** Rationale moved into a
+  section the citing body *already addresses* has changed position without changing cost — the
+  chars are still paid every turn. Read the body's citation set first, and relocate into a section
+  outside it. The failure is **silent**: both the body and the destination file read as correct
+  afterwards, and only a whole-branch review recomputes the number.
+- **A section's cost is the section plus its `###` children.** The same reach that governs the
+  marker governs the count: a caller asking for `§X` receives everything under it, so a budget
+  computed from the level-2 prose alone under-reads by whatever the sub-sections hold.
 
 <!-- rationale -->
 
@@ -106,6 +114,21 @@ of an exhaustive classification.
 
 The last rule was not foreseen. Applied to `execution.md` §Delegating an executor, a single
 `<!-- rationale -->` inside one `###` swallowed three entirely normative `###` blocks, silently.
+
+**The two rules above it were not foreseen either, and both were caught by a branch review rather
+than by the task that introduced them.** Measured 2026-08-02 while relocating rationale out of
+`/quenching:specs:execute`: the destination chosen was `execution.md` §Declared versus emergent
+`docs/` — one of the *seven* sections that command's preamble cites on every run. The section went
+1,547 → 2,366 chars, so **819 chars per turn were relocated into the bill they were being moved
+off**. Nothing detected it: the body was correct, the destination file was correct, and the task's
+own diff self-review saw one file's change with no view of the citation set. Moving the same two
+blocks to §Tooling asides, relocated — cited by nothing — returned the section to 1,547 exactly.
+
+The sub-section rule has the same provenance and the same shape of cost. That relocation's spec
+budgeted `execution.md`'s seven cited sections at 11,610 chars and `git.md`'s five at 4,233; they
+actually cost 16,212 and 8,491, because the estimate counted level-2 prose and the reader returns
+the `###` children too. The gap turned a cut declared at −36% into a measured −30,1% — not a
+regression, an under-read baseline, and the correction is to count what the reader returns.
 
 ## Run for less time: the section boundary
 
