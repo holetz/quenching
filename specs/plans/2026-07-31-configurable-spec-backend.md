@@ -6,6 +6,7 @@ refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
 priority: {level: 16, criticality: high, date: 2026-08-01}
 branch: {base: main, work: claude/configurable-spec-backend-50928f}
+reviewed: {date: 2026-08-02}
 ---
 
 # Configurable backend for spec management (files, GitHub, Azure DevOps)
@@ -493,9 +494,9 @@ branch não deriva sozinha do `git log`.
 - align.md é o único body ainda acoplado ao backend files: inventaria por `Glob specs/plans/*.md` e stampa frontmatter direto. Não foi migrado porque o que `/specs:align` significa num backend externo — onde não há pasta, filename nem rename — é uma decisão que a spec não tomou.
 - A task 5.1 tocou `specs.py` além dos `files:` que declara: `list --json` passou a carregar os sete `records` e nasceu `specs.py record`. Sem os dois, status/triage não tinham como parar de ler o caminho — triage escrevia `priority` com Edit no arquivo.
 - `az` está instalado neste ambiente (2.88.0) com o grupo `az devops` disponível, mas SEM defaults de organization/project — o que tornou possível capturar a recusa real de `az boards query` sem org e provar `resolve_azure_project` contra o binário. Nenhuma chamada de escrita foi feita, e a 6.2/6.3 não têm board real contra o qual rodar um E2E.
-- `plugin-configuration.md` documenta três chaves e agora são quatro: a task 6.2 acrescentou `azureStates`. A task não nomeia esse standard, então ele NÃO foi reescrito aqui — fica para /docs:add ou para a task de fechamento da seção 7.
+- RESOLVIDO na revisão de branch do conclude: `plugin-configuration.md` documentava três chaves contra quatro no código (a task 6.2 acrescentou `azureStates`). A tabela §The recognised keys, o parágrafo de por que essa chave não tem default, a `description` do standard, as duas linhas de índice e o verbete do glossário foram corrigidos.
 - As tres ferramentas .py citam comandos na forma bare (/specs:execute) em dezenas de strings, inclusive nas recusas novas desta spec. E a convencao pre-existente da main e esta DELIBERADAMENTE fora do alcance do lint: a spec correct-command-citation-form estendeu o check a assets/references e parou ali. Nao foi normalizado aqui; se deve ser, e uma spec propria.
 - A spec check-canonical-cases-and-map-the-scripts (main, plans/) mediu specs.py em 3.108 linhas e concluiu que modularizar nao se paga. Esta branch levou o arquivo a 6.199 — dobrou. A premissa numerica daquela spec esta vencida e a conclusao dela precisa ser re-medida depois deste merge, nao herdada.
 - A spec refuse-a-mis-levelled-specs-root (main, plans/) trata do --root de specs.py vs skills.py apontarem para niveis diferentes da arvore. Esta branch acrescentou resolve_files_root e a worktree de specs, que mudam o que --root resolve num repo migrado. As duas se tocam: quem pegar aquela spec precisa ler resolve_files_root primeiro.
 - A pausa desta branch foi por custo de execucao, e a main entregou trabalho direto nisso enquanto ela esperava: read-by-section-not-by-file, cut-specs-execute-turns e narrow-the-execute-preamble mergeados, mais duas specs vivas (reduce-execute-conclude-cost 0/14 e cut-conclude-run-cost). A retomada herda esse ganho de graca — nao replanejar custo de execucao dentro desta spec.
-- spec-driven.md §The specs.py tool surface nao lista specs.py export (task 7.1 declarou so specs.py, nao spec-driven.md); adicionar a linha na proxima vez que a tabela for tocada.
+- RESOLVIDO na revisão de branch do conclude: `specs.py export` entrou nas DUAS tabelas que enumeram a superfície — spec-driven.md §The specs.py tool surface e assets/specs/QUENCHING.md — e a linha do `config` nas duas passou a nomear `azureStates`.

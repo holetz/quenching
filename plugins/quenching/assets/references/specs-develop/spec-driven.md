@@ -374,7 +374,7 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
-| `specs.py config [--json]` | the workspace's declared parameters — the backend, the specs branch, `worktreeSetup` |
+| `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates` |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
@@ -384,6 +384,7 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
 | `specs.py doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
 | `specs.py migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
+| `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
 | `specs.py selftest` | prove the embedded schema and template have not drifted from their asset files |
 
 `promote` now has exactly one destination. It checks `archive/`'s required-section set from

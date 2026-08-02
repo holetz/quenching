@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the three recognised keys and their defaults, why every way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
+description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the four recognised keys and their defaults, the one key that deliberately has none and refuses instead, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
 tags: [workflows, specs, configuration, backend, plugin]
-timestamp: 2026-07-31
+timestamp: 2026-08-02
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 1.4)
+source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code
 maintainer: quenching
 ---
 
@@ -43,6 +43,7 @@ Read by `specs.py` with `json.load` — a plain object, no new format, no prose 
 | `backend` | `files` · `github` · `azure-boards` | `files` | the spec backend selection |
 | `specsBranch` | any branch name | `specs` | the `files` backend only |
 | `worktreeSetup` | a shell command, run as written | none | `/specs:isolate`, after `git worktree add` |
+| `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
 
 `worktreeSetup` keeps the contract it had in its old home unchanged — who runs it, with which cwd,
 what a failure means, and why the consent is the isolation offer rather than a prompt of its own,
@@ -54,6 +55,19 @@ branch fails on its first operation with no recourse. Namespacing it (`quenching
 the collision and charge the longer name to every repository that never had the problem. Configurable
 pays the cost only where it exists — and if no real target ever sets it, the key is a candidate for
 removal rather than a permanent fixture.
+
+**`azureStates` is the one key with no default, and the absence is the decision.** A phase maps onto
+a state, and what the states *are* is defined by the Azure DevOps project's **process**: Basic says
+To Do/Doing/Done, Agile says New/Active/Resolved/Closed, Scrum says New/…/Done/Removed, and a
+customised process says whatever it likes. GitHub needs no equivalent because open/closed is
+universal. A guessed default would not fail loudly — it would read every archived spec as active in
+half the projects it ran against, which is the failure shape that survives longest unnoticed. So
+`azure-boards` **refuses (exit 2, `sp-az-no-states`)** with the shape to declare, and reads and
+writes nothing.
+
+This is also the one key whose absence is a refusal rather than a default, and the exception is
+narrow on purpose: it refuses only for the backend that needs it. A repository on `files` or
+`github` never sees it, which is why §Absence is the normal case below still holds.
 
 ## Absence is the normal case, and never a finding
 
