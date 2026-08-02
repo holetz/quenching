@@ -6131,6 +6131,35 @@ def _emit_doctor(args, root: str, findings: list[dict]) -> int:
     return 1 if errors else 0
 
 
+def cmd_export(args, root: str) -> int:
+    """Dump the canonical markdown of one spec, or every spec, to disk — write-only.
+
+    THE MITIGATION `## Risks` NAMES FOR LOSING AN EXTERNAL BACKEND, AND NOTHING MORE. Nothing
+    in this tool reads the dump back and nothing keeps it in sync with the backend, so it is
+    never a second store — a stale copy on disk cannot silently outrank the backend the way a
+    cache could. `info["text"]` is the same canonical document every other command derives
+    from and shows under `show --full`; this command only adds the write to disk."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    slugs = [s["slug"] for s in backend.list_specs()] if args.all else [args.spec]
+    written = []
+    for slug in slugs:
+        info, rerr = backend.read_spec(slug)
+        if rerr:
+            return emit_err(args.json, rerr)
+        dest = os.path.join(args.out, info["folder"], info["file"])
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, "w", encoding="utf-8") as f:
+            f.write(info["text"])
+        written.append(dest)
+    obj = {"ok": True, "out": args.out, "count": len(written), "files": written}
+    human = f"exported {len(written)} spec(s) to {args.out}/\n" + \
+            "\n".join(f"  {w}" for w in written)
+    emit(args.json, obj, human)
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # dispatch
 # --------------------------------------------------------------------------- #
@@ -6234,6 +6263,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                                                  "(v1 → v3, and backlog/ + ready/ → plans/)"))
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
 
+    sp = add_json(sub.add_parser("export", help="dump the canonical markdown to disk — "
+                                                "write-only, nothing reads it back"))
+    grp = sp.add_mutually_exclusive_group(required=True)
+    grp.add_argument("--spec", help="one slug")
+    grp.add_argument("--all", action="store_true", help="every spec")
+    sp.add_argument("--out", default="specs-export",
+                    help="destination directory (default: ./specs-export)")
+
     return p, sub
 
 
@@ -6254,6 +6291,7 @@ DISPATCH: dict = {
     "doctor": cmd_doctor,
     "selftest": cmd_selftest,
     "migrate": cmd_migrate,
+    "export": cmd_export,
 }
 
 
