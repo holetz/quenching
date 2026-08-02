@@ -6,6 +6,7 @@ refined: {mode: gate, date: 2026-08-02}
 approved: 2026-08-02
 branch: {base: main, work: plan/narrow-the-execute-preamble}
 reviewed: {date: 2026-08-02}
+outcome: done
 ---
 
 # Estreitar o preâmbulo de /specs:execute — os seis itens que sobraram de read-by-section
@@ -766,3 +767,81 @@ nunca considera elegível.
 ## Discoveries
 
 - 9.1 mede depois=112.434 chars (-30,1%), não os -36% garantidos: execution.md e git.md §seções já custavam 16.212/8.491 antes desta spec (o ## Design §5 estimou 11.610/4.233 — subestimativa própria, provavelmente por não contar os ### filhos de §Delegating an executor). A tarefa 8.1 também colou seu racional relocado dentro de §Declared versus emergent docs/, uma das 7 seções sempre citadas — +815 chars pagos em todo turno que cita essa seção; mover para uma seção não citada (ex.: Tooling asides, relocated) recuperaria isso sem perder o conteúdo.
+
+## Outcome
+
+**Concluída como `done` em 2026-08-02**, mesclada em `main` por **merge commit** (`--no-ff`), com
+os vinte commits preservados — os quinze `subject:` gravados nas tasks resolvem de `main` para
+sempre, e apagar a branch não custa nada.
+
+**O que shipou.** Os sete itens do `## Problem`, com as cinco decisões do `## Design` intactas:
+
+- Toda citação de referência no corpo de `/quenching:specs:execute` é um endereço `§` completo —
+  vinte e nove endereços, zero sem arquivo, zero partido por quebra de linha, zero `§<dígito>`.
+  `homes.md` e `conformance.md` desceram do preâmbulo para o passo 5c.
+- O eixo `moment` (`decision` / `build` / `close`) substituiu o campo `audience`, que era dado
+  morto: declarado em três arquivos e lido por ninguém — que é por que a regra de audiência do
+  template nunca passou de prosa. Ganhou um consumidor, `specs.py section --moment build`, que é
+  o que o passo 4 pede. `## Problem` saiu do que o executor recebe; `## Out of Scope` entrou pela
+  primeira vez.
+- Um `docs/standards/` declarado no `## Impact` pode carregar um `§`endereço, com o arquivo
+  inteiro como default. Custou **zero** de código, como o `## Design` §2 previu, e um caso de
+  `selftest` prova a tolerância contra fixture em vez de contra a superfície real.
+- O racional de seis blocos saiu do corpo para `execution.md`, mantida no prompt a metade-regra
+  dos três que intercalavam regra e racional.
+- Dois standards revisados: `context-discipline.md` §Open less (uma afirmação virou regra da
+  superfície inteira, provada em um comando) e `plan-artifacts.md` (a coluna `moment`, a forma do
+  `§`endereço no `## Impact`, e o schema entrando no lockstep de três arquivos).
+
+**A medição.** Convenção da tarefa 0.1 (`len()` Python sobre UTF-8 decodificado, arquivo inteiro
+com frontmatter, stdout puro de `section`), contra a spec de referência
+`route-commands-without-always-on-descriptions` na versão de `257f35e`:
+
+| | chars | ~tokens |
+| --- | ---: | ---: |
+| antes | 160.856 | 40,2k |
+| **depois** | **111.583** | **27,9k** |
+| corte | **−49.273** | **−30,6%** |
+
+Contra os 287.709 de antes de `read-by-section`: **−61,2%**.
+
+**Duas coisas em que este spec desmente a si mesmo.** Ambas ficam aqui porque quem reler as seções
+originais vai procurar o que elas prometem e não vai achar.
+
+1. **Os −36% "garantidos" do `## Design` §5 não existiam** — não como regressão, mas como baseline
+   sub-lida. O `## Design` orçou as §seções citadas de `execution.md` em 11.610 e as de `git.md`
+   em 4.233 contando só a prosa de nível 2; o leitor devolve os `###` filhos junto, e elas já
+   custavam 16.212 e 8.491 **antes de esta spec tocar qualquer arquivo**. A regra que faltava foi
+   escrita na conclusão, em `context-discipline.md`.
+2. **O `exit 1` por seção ausente não deixou de acontecer**, ao contrário do que o `## Design` §3 e
+   a `## Validation` afirmam. Medido: `specs.py section --moment build --json` ainda sai 1 com a
+   lista em `absent`. O que shipou é outra resolução, e ela funciona — o passo 4 ramifica no
+   **payload** e lê uma seção ausente como vazia, dizendo em voz alta que `## Handoff` vazio numa
+   primeira build é o caso ordinário, não um finding. A semântica do exit code não foi tocada, e
+   não precisava ser.
+
+**O que a revisão de branch achou e consertou.** Quatro coisas, nenhuma alcançável por uma
+auto-revisão por task, porque cada uma enxerga o diff de uma task só:
+
+1. Dois `§`endereços partidos por quebra de linha em `execute.md`, mais o exemplo que *ensina* a
+   forma. Contradiziam a regra 2.2 que a task 3.1 escreveu **nesta mesma branch**: a 1.2 consertou
+   os dois que existiam e a 8.1, três tasks depois, reintroduziu dois novos no mesmo arquivo.
+2. Uma linha do `## Handoff` quebrava de modo a começar com `## Design`, e o parser a lia como
+   stray heading — `specs.py validate` saía 1.
+3. **A relocação da task 8.1 tinha ido parar dentro de `§Declared versus emergent docs/`**, uma das
+   sete §seções que o preâmbulo cita em toda run: 819 chars por turno movidos para dentro da mesma
+   conta de onde estavam saindo, silenciosamente. Movida para `§Tooling asides, relocated`, que
+   nada cita. É esse conserto que leva o corte de −30,1% (o que a 9.1 fechou) para −30,6%.
+4. `plan-artifacts.md` ficara com `timestamp` de 2026-07-29 depois de revisado pela task 7.1.
+
+**O que ficou de fora**, e segue fora: converter os outros vinte e cinco corpos da superfície — a
+doutrina é escrita como regra da superfície inteira e **provada em um**, que é onde a medição
+existe; o conserto do `--sections` que quebra em vírgula, que mordeu esta própria conclusão e
+obrigou a citar `§Tooling asides` em vez de `§Tooling asides, relocated`; e o instrumento de
+medição de custo de run, que é de `reduce-execute-conclude-cost`.
+
+**Para o próximo leitor: a régua se mexeu.** A spec de referência
+`route-commands-without-always-on-descriptions` foi construída e concluída em `main` enquanto esta
+branch existia, e o conjunto `build` dela cresceu +4.894 chars. Uma remedição feita hoje contra a
+versão atual dá 116.477 (−27,6%) — mesma árvore, régua diferente. Todo número desta seção é contra
+a versão de `257f35e`, que é a que a tarefa 9.1 mediu.
