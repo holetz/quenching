@@ -669,7 +669,7 @@ nunca considera elegível.
 
 ### 3. Escrever a doutrina de citação no dono dela
 
-- [ ] 3.1 Revisar `docs/standards/automation/context-discipline.md` §Open less: a regra 2 hoje
+- [x] 3.1 Revisar `docs/standards/automation/context-discipline.md` §Open less: a regra 2 hoje
       **afirma** que toda citação do repositório já é um `§`endereço, o que os itens 1 e 7 do
       `## Problem` medem ser falso. A afirmação vira regra da superfície inteira, com as três metades
       do `## Design` §4 (o endereço carrega o arquivo, não quebra linha, e `§` só significa seção de
@@ -677,6 +677,7 @@ nunca considera elegível.
       grupos 1 e 2 como a prova, em um comando. Mantém `authority: background`.
       files: docs/standards/automation/context-discipline.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/narrow-the-execute-preamble: 3.1 Revisar context-discipline.md §Open less regra 2
 
 ### 4. O eixo `moment` substitui o `audience` morto
 
