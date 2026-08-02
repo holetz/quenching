@@ -1008,6 +1008,40 @@ DEFAULT_SPECS_BRANCH = "specs"
 # Guessing would not fail loudly: it would read every archived spec as active in half the
 # projects it ran against.
 
+# The backends that ship without ever having run against a real target. `## Out of Scope`
+# accepts that for `azure-boards`, and the selftest's completeness and refusal checks are
+# what it has instead. Named HERE rather than inside the backend so that retiring the
+# caveat is one edit: a real Azure DevOps project exercises it, this tuple loses a name,
+# and the doctor finding and the write-time line go quiet together.
+UNPROVED_BACKENDS = ("azure-boards",)
+
+_UNPROVED_ANNOUNCED: set[str] = set()
+
+
+def announce_unproved(name: str) -> None:
+    """One line on stderr, once per process, before an unproved backend's first WRITE.
+
+    THE DECISION IS "WARN, BUT NOT ON EVERY OPERATION". A line per operation is honest and
+    becomes a per-call tax on the agent reading this CLI, paid forever for a fact that never
+    changes between calls. Silence is not defensible either, because the unproved paths do
+    not all fail the same way: a wrong `AZ_SPEC_TYPE` fails LOUDLY — `az` answers with an
+    API error and the transport turns it into an exit-2 refusal — but a relation whose child
+    ids do not extract fails QUIETLY, returning a spec with no tasks, and a write that fails
+    halfway leaves work items behind on somebody's real board. So the line lands on the
+    writes, where an unproved path can cost something that does not announce itself, and
+    reads — the overwhelming majority of a build loop's calls — stay silent. The permanent,
+    zero-noise half of the same answer is `sp-backend-unproved` in `doctor`.
+
+    stderr and never stdout: every caller branches on the `--json` payload, and a warning
+    printed into it would break the parse it is trying to inform."""
+    if name not in UNPROVED_BACKENDS or name in _UNPROVED_ANNOUNCED:
+        return
+    _UNPROVED_ANNOUNCED.add(name)
+    print(f"warning: backend '{name}' ships without an end-to-end run against a real "
+          f"target — its writes have never seen a live response, so this one may fail, or "
+          f"half-succeed and leave items behind. `specs.py selftest` proves its five "
+          f"primitives and its refusals; nothing proves this call.", file=sys.stderr)
+
 
 def find_repo_root(specs_root: str) -> str:
     """The target repo's root — where `.claude/` lives.
@@ -2658,6 +2692,47 @@ def az_refusal_failures() -> list[str]:
     return failures
 
 
+def unproved_backend_failures() -> list[str]:
+    """The unproved-backend warning says its piece once, on stderr, and only for a backend
+    that is actually declared unproved.
+
+    Three ways this decision could ship broken, and all three are silent. A name misspelled
+    in `UNPROVED_BACKENDS` matches no backend, so the warning never fires and the caveat is
+    dead code that reads as coverage. A warning that repeats is the per-operation noise the
+    decision rejected, arriving anyway. A warning on stdout breaks the `--json` parse of
+    every caller, which is a worse failure than the one it was warning about.
+
+    Self-contained: no network, no `az`, and the process-level flag is restored so the check
+    cannot change what a later command prints."""
+    import contextlib
+    import io
+    failures: list[str] = []
+    for name in UNPROVED_BACKENDS:
+        if name not in BACKENDS:
+            failures.append(f"`{name}` is declared unproved and is not a backend — the "
+                            f"warning it names can never fire")
+    held = set(_UNPROVED_ANNOUNCED)
+    _UNPROVED_ANNOUNCED.clear()
+    try:
+        for name, want in [(b, b in UNPROVED_BACKENDS) for b in BACKENDS]:
+            err, out = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                announce_unproved(name)
+                announce_unproved(name)
+            said = err.getvalue().strip()
+            if bool(said) != want:
+                failures.append(f"{name}: warned={bool(said)!r}, expected {want!r}")
+            if said.count("warning:") > 1:
+                failures.append(f"{name}: warned twice in one process — the decision is one "
+                                f"line per process, not one per operation")
+            if out.getvalue():
+                failures.append(f"{name}: wrote to stdout, which is the `--json` payload")
+    finally:
+        _UNPROVED_ANNOUNCED.clear()
+        _UNPROVED_ANNOUNCED.update(held)
+    return failures
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
@@ -2792,6 +2867,7 @@ class AzureBoardsBackend(SpecBackend):
         return derive_info(spec, full_text), {}
 
     def write_spec(self, info: dict, text: str) -> None:
+        announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
         self._update(item_id, title=hybrid_title(info["slug"], text),
                      description=hybrid_wrap(info["file"], hybrid_tasks_shell(text)))
@@ -2799,6 +2875,7 @@ class AzureBoardsBackend(SpecBackend):
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
+        announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
         item = self._az("creating a work item", "work-item", "create", "--project",
                         self.project, "--type", AZ_SPEC_TYPE,
@@ -2811,6 +2888,7 @@ class AzureBoardsBackend(SpecBackend):
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
+        announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
         self._update(item_id, state=self.states[dest_phase])
         self._invalidate()
@@ -5719,6 +5797,17 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are four refusals with four remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # The other thing `azure-boards` ships with instead of proof: the warning that says so.
+    # It runs here, beside the two checks above, because all three answer the same question
+    # — what an unproved backend owes the human who selects it — and because a warning that
+    # silently stopped firing would leave that debt unpaid with nothing to show for it.
+    for failure in unproved_backend_failures():
+        findings.append(_finding("sp-unproved-warning-broken", "error",
+                                 f"the unproved-backend warning misfires — {failure}",
+                                 remedy="one line per process on stderr, only for a backend "
+                                        "named in UNPROVED_BACKENDS, never on stdout; the "
+                                        "permanent half is doctor's sp-backend-unproved"))
+
     # The hybrid serialisation's own claim: a task's checked/blocked state survives
     # shell -> sub-issue -> shell, derived by `parse_tasks` on both ends and never by the
     # backend's own notion of what a checkbox means.
@@ -5901,7 +5990,9 @@ def cmd_selftest(args, root: str) -> int:
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
-              f"each refuse with their own remedy, every record reads back as it was "
+              f"each refuse with their own remedy, the unproved-backend warning says its "
+              f"piece once per process on stderr and only for "
+              f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
               f"written, a task's shell -> sub-issue -> shell round trip reconstructs its "
               f"checked/blocked state and metadata exactly, and the embedded schema and "
               f"template match their asset files.")
@@ -5972,6 +6063,24 @@ def cmd_doctor(args, root: str) -> int:
                                  f"is in effect instead",
                                  path=CONFIG_FILE, backend=cfg["unknownBackend"],
                                  remedy=f"the implemented backend(s): {', '.join(BACKENDS)}"))
+    # The permanent half of the "warn or stay silent" answer, and the reason it is a finding
+    # and not a line on every call: a backend that was never run against a real target is a
+    # fact about the CONFIGURATION, unchanged between operations, so it belongs where a
+    # human goes to ask what is wrong with this workspace rather than in the output of every
+    # command. The write-time line in `announce_unproved` is the other half. A warning on
+    # every operation would be noise nobody reads twice; silence would let the untested
+    # guesses (AZ_SPEC_TYPE/AZ_TASK_TYPE, the child-id URL parse) surface only when they are
+    # already wrong in a real project. `doctor` is the middle the Open Decision asked for.
+    if cfg["backend"] in UNPROVED_BACKENDS:
+        findings.append(_finding("sp-backend-unproved", "warn",
+                                 f"{CONFIG_FILE} declares backend `{cfg['backend']}`, which "
+                                 f"ships without ever having been run against a real target "
+                                 f"— its writes are unproved",
+                                 path=CONFIG_FILE, backend=cfg["backend"],
+                                 remedy="verify AZ_SPEC_TYPE/AZ_TASK_TYPE match this "
+                                        "project's process template before relying on it, "
+                                        "or declare a proven backend: "
+                                        f"{', '.join(b for b in BACKENDS if b not in UNPROVED_BACKENDS)}"))
     # The config moved to `.claude/`, and a repo that upgrades without moving its file is the
     # one shape where every command keeps working while nothing it declared is read — the
     # silence the two findings above exist to prevent, reappearing one directory over. Named
