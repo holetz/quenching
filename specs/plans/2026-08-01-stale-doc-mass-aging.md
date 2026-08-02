@@ -2,6 +2,7 @@
 slug: stale-doc-mass-aging
 title: Um resource glob amplo envelhece o bundle inteiro a cada branch
 verification: per-section
+priority: {level: 6, criticality: high, complexity: 2, date: 2026-08-01}
 ---
 
 # Um resource glob amplo envelhece o bundle inteiro a cada branch

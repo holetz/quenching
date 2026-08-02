@@ -2,6 +2,7 @@
 slug: check-canonical-cases-and-map-the-scripts
 title: Check the CANONICAL_CASES lockstep and make the shipped scripts navigable
 verification: per-section
+priority: {level: 31, criticality: low, complexity: 2, date: 2026-08-01}
 ---
 
 # Check the CANONICAL_CASES lockstep and make the shipped scripts navigable

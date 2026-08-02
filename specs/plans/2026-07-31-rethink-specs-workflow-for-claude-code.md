@@ -3,6 +3,7 @@ slug: rethink-specs-workflow-for-claude-code
 title: Rethink the specs workflow for Claude Code worktrees
 verification: per-section
 refined: {mode: gate, date: 2026-08-01}
+priority: {level: 28, criticality: medium, date: 2026-08-01}
 ---
 
 # Rethink the specs workflow for Claude Code worktrees

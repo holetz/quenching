@@ -4,6 +4,7 @@ title: Configurable backend for spec management (files, GitHub, Azure DevOps)
 verification: per-section
 refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
+priority: {level: 16, criticality: high, date: 2026-08-01}
 ---
 
 # Configurable backend for spec management (files, GitHub, Azure DevOps)
