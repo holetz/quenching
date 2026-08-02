@@ -710,11 +710,12 @@ nunca considera elegível.
 
 ### 6. Um standard declarado pode carregar um endereço
 
-- [ ] 6.1 Fazer o passo 4 honrar um `§`endereço escrito ao lado de um caminho na sub-heading parseada
+- [x] 6.1 Fazer o passo 4 honrar um `§`endereço escrito ao lado de um caminho na sub-heading parseada
       do `## Impact`, **lendo o arquivo inteiro quando não houver endereço**. Nenhuma mudança em
       `parse_impact_standards`: medido, ele já tolera o sufixo e devolve o caminho nu.
       files: plugins/quenching/commands/specs/execute.md
       verify: python3 plugins/quenching/assets/bin/specs.py validate — 0 error(s), nenhum
+      subject: plan/narrow-the-execute-preamble: 6.1 Passo 4 honra um §endereço no Impact
       `sp-impact-uncovered` novo
 - [ ] 6.2 Provar a tolerância por caso de `selftest`, contra um `## Impact` com endereço em um standard
       e sem endereço no outro. Provar editando a superfície real seria provar por coincidência.
