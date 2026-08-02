@@ -639,12 +639,13 @@ nunca considera elegível.
 
 ### 1. Toda citação vira um endereço completo
 
-- [ ] 1.1 Converter as seis citações do preâmbulo de topo em endereços `§`, nomeando as seções que o
+- [x] 1.1 Converter as seis citações do preâmbulo de topo em endereços `§`, nomeando as seções que o
       próprio texto já enumera, em **forma de prefixo** que pare antes de qualquer vírgula — sete
       seções das cinco referências recusam com `exit 2` pelo nome completo (`## Risks`). As seções
       alvo e os tamanhos estão na tabela do `## Problem` item 1.
       files: plugins/quenching/commands/specs/execute.md
       verify: uma chamada `SK read <referência> --sections "§…"` por referência citada, com
+      subject: plan/narrow-the-execute-preamble: 1.1 Converter as seis citações do preâmbulo em endereços
       exatamente os endereços que o corpo passou a carregar, **todas saindo 0**
 - [ ] 1.2 Completar os endereços que o `## Problem` item 7 mede: dar arquivo aos cinco `§` que não
       têm (`:208`, `:217`, `:240`, `:271`, `:363`), juntar os dois que quebram linha no meio do
