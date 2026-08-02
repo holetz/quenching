@@ -1,4 +1,4 @@
-<!-- quenching v4.2.0 · operator manual · generated payload.
+<!-- quenching v4.4.2 · operator manual · generated payload.
      Refreshed by /specs:align (or /align). Edit the plugin asset, not this copy —
      a run with a newer plugin overwrites this file. Remove this banner to keep
      your own version: the align will then leave it alone and report it. -->
@@ -16,9 +16,11 @@ This file is the **operator manual** for that workspace. Its sibling
 described in §6.
 
 **Fully native — nothing external to install.** This front has **no npm package, no Node
-runtime, no external CLI, no `config.yaml`, no delta format, and no separate spec store**. The
-one tool is `specs.py` — a single stdlib-only Python script (the same mold as the OKF validator),
-installed into `.claude/hooks/specs.py` by `/specs:align`. All you need is Python:
+runtime, no external CLI, no delta format, and no separate spec store**. The one tool is
+`specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), installed
+into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `specs/config.json`
+(§4, `/specs:isolate`) — absent in most repos, and its absence costs nothing. All you need is
+Python:
 
 ```bash
 python3 --version           # or `py --version` on Windows
@@ -193,10 +195,27 @@ Isolation is not a privilege of building. Creating and developing a spec also wr
 `plans/` and dirty your tree, and sometimes a spec should be born on the branch that will carry
 its work — so this command takes **or reports** isolation for one spec whenever you want it.
 
-It offers a **branch** (`plan/<slug>`, the default) or a **worktree** beside the repo, commits an
-uncommitted spec file onto the new branch so the base keeps no trace of it, and stamps
-`branch: {base, work}`. `base` is captured while it is still true: after a merge, git cannot say
-what the branch was cut from.
+It offers a **worktree** beside the repo first, and recommends it, unconditionally — a plain
+**branch** (`plan/<slug>`) and working in place stay available after it. No heuristic sniffs the
+target for `node_modules/` or `.venv/`; the offer states the cost instead, inline: a fresh
+worktree carries only what git tracks, so choosing Branch is a decision you read rather than a
+discovery at the first failing `verify:`. Either way it commits an uncommitted spec file onto the
+new branch so the base keeps no trace of it, and stamps `branch: {base, work}`. `base` is
+captured while it is still true: after a merge, git cannot say what the branch was cut from.
+
+**A target may declare a setup command.** `specs/config.json` at the workspace root, with one
+recognised key:
+
+```json
+{"worktreeSetup": "./scripts/wt-setup.sh"}
+```
+
+No file, no key, or a command that does not resolve all mean no setup, and none of it is a
+finding. When Worktree is chosen and the key is declared, `/specs:isolate` shows the command
+**verbatim** in the same plan block that already shows the branch name and the worktree path,
+then runs it once, with cwd inside the new worktree, right after `git worktree add`. **Choosing
+Worktree is the OK for it** — no second prompt. A failing setup is reported and never undoes the
+worktree.
 
 **Asking is a complete use of it.** "Am I isolated?" costs a few `git` reads and writes nothing.
 A spec whose branch is already alive is never given a second one — you are offered a checkout or
@@ -251,10 +270,15 @@ ran, so a second call picks up where the first stopped:
    two tasks solving the same problem differently. Records `reviewed: {date}`.
 2. **Write the emergent `docs/`** — the standards and knowledge the work *revealed* (resolved
    from `## Discoveries`), as opposed to the declared docs `execute` already wrote.
-3. **Archive + distil** — `outcome: done` refuses while boxes are open (`--force` if you know
-   why); `abandoned` is always allowed and distils **nothing as adopted** — at most a narrow
-   `authority: background` note. The outcome is **your word**, never inferred from progress or
-   staleness. Both the archive move and the distillation land on the **work branch**.
+3. **Archive + distil + settle the release obligations** — `outcome: done` refuses while boxes are
+   open (`--force` if you know why); `abandoned` is always allowed and distils **nothing as
+   adopted** — at most a narrow `authority: background` note. The outcome is **your word**, never
+   inferred from progress or staleness. Whatever your `docs/standards/` attach to the *merge*
+   rather than to a task — a version bump, a changelog entry, a manifest re-stamp — is applied
+   here, on one confirmation, and never as a task in the spec: what the release turns out to be is
+   only knowable once the last task is written, and a bump made here starts from the base you are
+   actually merging into. An abandoned spec settles none of it. The archive move, the distillation
+   and these all land on the **work branch**.
 4. **Merge — the last action, without exception.** Strategy offered, never chosen for you: merge
    commit (default), squash, rebase, or fast-forward. `merge: {strategy, subject}` is stamped on
    the branch *before* the merge, so **nothing is ever committed to the base after it** and one
@@ -349,19 +373,27 @@ write-once — rewriting one would falsify a fact that already happened. A spec 
 `type:` — it is not a concept doc, it lives outside the bundle, and `specs.py validate` is what
 checks it.
 
-Thirteen canonical headings, in this order: `## Problem`, `## Proposal`, `## Out of Scope`,
-`## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`, `## Open Decisions`,
-`## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`. **Headings are a parsed
-contract** — canonical English, exactly as written; body prose follows your repo's language. A
-heading outside the set is a stray and `validate` flags it.
+Fourteen canonical headings, in this order: `## Overview`, `## Problem`, `## Proposal`,
+`## Out of Scope`, `## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`,
+`## Open Decisions`, `## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
+**Headings are a parsed contract** — canonical English, exactly as written; body prose follows
+your repo's language. A heading outside the set is a stray and `validate` flags it.
+*(`standards/agents/communication.md` owns that language rule for a repo whose bundle has one.
+This manual states it self-contained rather than citing it: `/specs:align` is native and installs
+here into repos that never adopted the bundle, where that path resolves to nothing.)*
 
 A heading is required only once **its own gate** is reached — before that, its absence is a
 *not-yet*, not an omission. That is what keeps a freshly created spec four lines long instead of
-a thirteen-heading skeleton.
+a fourteen-heading skeleton.
 
 Two sections are load-bearing for machinery, not just for thinking: `## Validation` is the
 fallback for a task with no `verify:` line, and `## Impact` is the one machine-parsed
 declaration.
+
+`## Overview` is warn-only, like `## Handoff` — never one of the ten sections the `ready` gate
+requires. It sits first, ahead of `## Problem`, and is written **last**: `/specs:develop` fills
+it once the other sections have settled, because connecting them is only possible after they
+exist. An empty one on a spec that otherwise meets the gate is reported as `sp-overview-missing`.
 
 A completed task carries its implementing commit; a blocked one carries its reason — both in the
 task line's own metadata grammar, never in a sidecar:
@@ -399,6 +431,7 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
+| `specs.py config [--json]` | the workspace's declared `specs/config.json`, as data; exit 0 whether or not anything is declared |
 
 There is no `init` (scaffold is an asset copy), no `store`, no `profiles`, no telemetry, and no
 delta parser. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
@@ -437,7 +470,7 @@ never pointed at `specs/`: a spec carries no OKF `type:` (it is not a concept do
 | --- | --- |
 | `list` exits 2 and every row says `legacy: true` | The workspace still has the old `backlog/` + `ready/` folders. Run `/specs:align` — it drives `specs.py migrate`, which folds both into `plans/` without renaming a single file. |
 | `list` says the workspace is empty, but there are files in `specs/` | It is a **v1 workspace** (one folder per plan). `specs.py doctor` detects the leftovers and declares `migrate` as the remedy — or just `/specs:align`. |
-| A freshly created spec shows as `designed` | Someone stamped all thirteen headings at creation. An explicit none counts as *filled*, so a skeleton derives as designed. `create` writes `## Problem` alone on purpose. |
+| A freshly created spec shows as `designed` | Someone stamped all fourteen headings at creation. An explicit none counts as *filled*, so a skeleton derives as designed. `create` writes `## Problem` alone on purpose. |
 | `execute` asks me to approve a spec I already promoted | The old `ready/` folder recorded your OK; the record vocabulary replaced it. Say yes once — it stamps `approved: {date}` and never asks again. |
 | `promote` refuses with open boxes | The outcome is `done` and the work is not. Finish them, pass `--force` if you know why, or switch to `outcome: abandoned`. |
 | Two commands both refuse with "slug matches 2 files" | Two specs resolve to the same slug. Identity IS the slug — rename one. |
@@ -516,7 +549,7 @@ the fronts feed each other: a spec's distillation is glossary work, and the skil
 registry is a `docs/` listing. A front this repo does not use simply has no manual — the paths
 above are references, not promises.
 
-The normative spec-driven facts — the folders, the thirteen canonical sections, the gates, the
+The normative spec-driven facts — the folders, the fourteen canonical sections, the gates, the
 derived stages, the record vocabulary, the full `specs.py` surface — live in the plugin's
 `assets/references/specs-develop/spec-driven.md`. This file is the operator's view; that is the
 specification.

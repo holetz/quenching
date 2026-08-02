@@ -4,10 +4,10 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-07-28
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26)
+source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31)
 maintainer: quenching
 ---
 
@@ -19,13 +19,30 @@ How the `quenching` plugin names its commands.
 
 **One file per entry point.** Claude Code merged custom commands into skills, so
 `commands/<front>/[<object>/]<verb>.md` carries both the description that routes to it and the
-body that runs. It is invocable as `/<front>:[<object>:]<verb>` — the `:` separator, one per path
-segment — and by that same name through the Skill tool, prefixed by the plugin
-(`quenching:docs:align`).
+body that runs. The path `<front>/[<object>/]<verb>` is the identity — the `:` separator, one per
+path segment — and everything below is how that one identity is *spelled* at a call site.
 
-- `commands/docs/add.md` → `/docs:add`
-- `commands/specs/develop.md` → `/specs:develop`
-- `commands/docs/documentation/build.md` → `/docs:documentation:build`
+### Three citation forms, and the condition on each
+
+The axis is **where the command comes from**, never who is reading. Same file, three spellings,
+and only one of them is unconditionally correct for this repo's commands:
+
+| Form | Example | Correct when |
+| --- | --- | --- |
+| Registry name (no `/`) | `quenching:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
+| Plugin-prefixed slash | `/quenching:specs:develop` | a human types it wherever `quenching` is installed **as a plugin** |
+| Bare slash | `/specs:develop` | **only** where that command file lives in the target repo's own `.claude/commands/` |
+
+So `commands/specs/develop.md` is cited as `quenching:specs:develop` for the tool and
+`/quenching:specs:develop` for the human — and as `/specs:develop` **only** by a repo that vendored
+the file into its own `.claude/commands/`. Measured in this tree on 2026-07-30: there is no
+`.claude/commands/` here, so every bare citation in this repo's own prose names a form that
+resolves nowhere.
+
+This mapping is what every command body copies, which is why it states the condition rather than
+the shorthand. The prose form of the same rule used to live in `commands/docs/align.md`, declaring
+two forms and calling the bare one "what a human types"; that claim authorised 687 bare citations
+across the repo before it was corrected.
 
 There is **no second name**. The `quenching-<front>-<object>-<verb>` skill name this standard once
 mandated existed to be *mirrored* by a command path; with nothing to mirror, it is retired, and

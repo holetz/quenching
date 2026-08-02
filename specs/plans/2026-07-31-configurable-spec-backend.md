@@ -4,6 +4,7 @@ title: Configurable backend for spec management (files, GitHub, Azure DevOps)
 verification: per-section
 refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
+priority: {level: 16, criticality: high, date: 2026-08-01}
 ---
 
 # Configurable backend for spec management (files, GitHub, Azure DevOps)
@@ -228,7 +229,8 @@ trabalho em que se está.
   que a interface proíbe. Mantê-los no corpo reaproveita `parse_frontmatter`, a mesma função pura
   que toda leitura já passa, sem um segundo lugar para sincronizar e sem risco de divergência entre
   label e frontmatter. Custo aceito: os sete records ficam invisíveis na lista de issues do GitHub,
-  pesquisáveis só abrindo a issue ou via `gh api`.- **Decidido (task 6.2): a fase do `azure-boards` vem de uma chave de config explícita,
+  pesquisáveis só abrindo a issue ou via `gh api`.
+- **Decidido (task 6.2): a fase do `azure-boards` vem de uma chave de config explícita,
   `azureStates: {plans, archive}`, e nunca de um palpite.** No `github` o mapeamento pôde ficar em
   código porque open/closed é universal. Um estado do Azure Boards pertence ao **processo** do
   projeto — Basic diz To Do/Doing/Done, Agile diz New/Active/Resolved/Closed, Scrum diz
@@ -249,6 +251,7 @@ trabalho em que se está.
   externos concordam passa a ser literalmente o mesmo código, em vez de duas implementações que
   alguém precisa manter em sincronia — a mesma razão pela qual a interface são cinco primitivas e
   não oito verbos.
+
 ## Alternatives Considered
 
 - **Externo como projeção read-only:** rejeitada — o time quer read-write completo (gerir o spec
@@ -349,6 +352,7 @@ aviso de não-validado. O custo real da falta de prova agora é visível e está
 **Baseline de lint**: 35 findings em `plugins/quenching` (`sk-trigger-position` 11 ·
 `sk-no-boundary` 10 · `sk-step-criterion` 9 · `sk-unscoped-bash` 5), idêntico ao commit 5f40fd7.
 Nenhum é desta spec; é contra esse conjunto que "sem regressão" deve ser medido.
+
 ## Tasks
 
 ### 1. Configuração

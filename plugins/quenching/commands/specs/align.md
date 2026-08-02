@@ -4,12 +4,12 @@ argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(git mv:*), Bash(rm:*), Write, Edit, Task
 ---
 
-# /specs:align — force the `specs/` workspace into shape
+# /quenching:specs:align — force the `specs/` workspace into shape
 
 **Input**: `$ARGUMENTS` (optionally a `specs/` path or a scope; omit to align the whole workspace).
 
-One of the plugin's three aligns. Where `/docs:align` converges a repo's `docs/` bundle and
-`/skill:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
+One of the plugin's three aligns. Where `/quenching:docs:align` converges a repo's `docs/` bundle and
+`/quenching:skill:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
 so every repo that adopts the plugin carries the same `specs/` too. Quenching-native: this front is
 **entirely plugin-owned** — no Node runtime, no `config.yaml`, no second spec store shadowing the
 declared one, no delta format. It is what installs the front (there is no `init` step — scaffolding
@@ -130,7 +130,7 @@ frontmatter stamps, the `plans/` listing, shadow copies) and what it only **repo
 **`sp-v2-layout` and `sp-v1-leftover` are classified before anything else** — until the fold runs,
 every other reading of the workspace is about files that are not where they will be. A legacy
 `openspec/` fold requires an OKF bundle for its main-spec cut: if `docs/index.md` with
-`okf_version` is absent, that fold **stops** and this command suggests `/docs:align` first. For a
+`okf_version` is absent, that fold **stops** and this command suggests `/quenching:docs:align` first. For a
 shadow copy, diff it against the plugin's command of the same name before classifying: identical →
 removal candidate, divergent → `sp-shadow-diverged`, keep-and-report.
 **Done when:** every finding carries a code and lands in exactly one table.
@@ -166,7 +166,7 @@ Copy `assets/specs/` and install `specs.py` if approved; run the legacy fold, th
 each tool-stated repair; rename the confirmed files and update every reference site alongside its
 individually confirmed rename; install the operator manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/specs/QUENCHING.md` to `specs/QUENCHING.md` under the four-branch
-manual-install rule in [/docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never
+manual-install rule in [/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never
 restated — same banner, same version fill, same never-clobber-a-de-bannered-copy branch); stamp the
 missing frontmatter keys (MERGE); install the GENERATED markers without touching the fixed prose;
 delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migration.
@@ -192,7 +192,7 @@ residue, each with the command that closes it.
   explicit `- none — <reason>`**. A section is content; only filenames, frontmatter keys and the
   `plans/` listing are this sweep's to write. (A legacy fold's main-spec→`docs/standards/` mapping
   is the one authored crossing, and it is human-chosen.)
-- Never `promote` a spec, and never propose one — that is `/specs:develop` and `/specs:conclude`.
+- Never `promote` a spec, and never propose one — that is `/quenching:specs:develop` and `/quenching:specs:conclude`.
 - Never write a frontmatter record this command does not own. `priority`, `refined`, `approved`,
   `branch`, `reviewed`, `merge` and `outcome` each have exactly one writer, and none of them is a
   sweep.
@@ -205,7 +205,7 @@ residue, each with the command that closes it.
 - Never derive a spec's date from filesystem mtime while a truer source exists — frontmatter, then
   the path's first commit; otherwise report and leave the name alone.
 - Never delete a **diverged** shadow copy, and never touch any `.claude/` skill or command outside
-  `openspec-*` / `opsx/` under a legacy migration — that surface is `/skill:align`'s.
+  `openspec-*` / `opsx/` under a legacy migration — that surface is `/quenching:skill:align`'s.
 - Never recreate `plans/index.md`. The artifact is retired: no command produces it, and one
   surviving in a target repo is left exactly as found — neither refreshed nor deleted.
 - Never stamp an OKF `type:` on a spec file to quiet the bundle validator — that validator owns the

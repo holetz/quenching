@@ -378,6 +378,9 @@ Fourteen canonical headings, in this order: `## Overview`, `## Problem`, `## Pro
 `## Open Decisions`, `## Risks`, `## Handoff`, `## Tasks`, `## Discoveries`, `## Outcome`.
 **Headings are a parsed contract** — canonical English, exactly as written; body prose follows
 your repo's language. A heading outside the set is a stray and `validate` flags it.
+*(`standards/agents/communication.md` owns that language rule for a repo whose bundle has one.
+This manual states it self-contained rather than citing it: `/specs:align` is native and installs
+here into repos that never adopted the bundle, where that path resolves to nothing.)*
 
 A heading is required only once **its own gate** is reached — before that, its absence is a
 *not-yet*, not an omission. That is what keeps a freshly created spec four lines long instead of
@@ -418,7 +421,7 @@ code and the JSON, never on prose.
 | `specs.py new <slug> [--title T] [--verification P]` | create in `plans/` with `## Problem` alone; stamps the date ONCE |
 | `specs.py list [--json]` | every spec, grouped by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections, stage, tasks, the frontmatter records, commits, and the gate's outstanding list |
-| `specs.py section <slug> "<Heading>" [--write]` | read or write ONE section; `--write` creates it in canonical position |
+| `specs.py section <slug> "<Heading>[,<Heading>…]" [--write]` | read N sections in ONE call, returned in the order asked; `--write` takes exactly one and creates it in canonical position |
 | `specs.py next --spec <slug> [--json]` | THE single next action for one spec; skips `[!]` |
 | `specs.py next --front [--json]` | the ranked candidate list with a reason per row — the only place ranking logic lives |
 | `specs.py task --spec <slug> --check ID [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip a checkbox mechanically; `--commit` writes the sha onto the task line |
@@ -430,7 +433,7 @@ code and the JSON, never on prose.
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
 | `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data; exit 0 whether or not anything is declared |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
-| `specs.py show --spec <slug> [--section H]… [--task ID]… [--full]` | granular read: the section map by default, named sections or tasks on request, the whole document only under `--full` |
+| `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
 
 There is no `init` (scaffold is an asset copy), no `profiles`, no telemetry, and no delta parser.
 There is no `store` subcommand either: which store holds the specs is **declared** in

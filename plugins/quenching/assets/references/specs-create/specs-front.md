@@ -50,8 +50,8 @@ plugin path (`${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py`,
 `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`)
 first, then a copy installed into the target's `.claude/hooks/`, and if neither resolves, the
 declared **manual** fallback — check those same rules by hand and **say in the report that the
-check was manual**, never silently skip it. `/specs:align` installs `specs.py` into a target's
-`.claude/hooks/`; `/skill:align` installs `skills.py`; `/docs:align` installs `okf-validate.py`
+check was manual**, never silently skip it. `/quenching:specs:align` installs `specs.py` into a target's
+`.claude/hooks/`; `/quenching:skill:align` installs `skills.py`; `/quenching:docs:align` installs `okf-validate.py`
 and the hook config.
 
 Every command branches on the **exit code** (0 ok · 1 findings · 2 refusal) and the

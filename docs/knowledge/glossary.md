@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-07-30
+timestamp: 2026-08-01
 audience: both
 authority: current
 source: quenching skeleton
@@ -73,6 +73,16 @@ sentence, and **link out** rather than explaining in full here.
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
   unblocks it.
+- [**Boundary reminder**](../standards/architecture/plugin-layout.md) — a one-clause line that
+  states the *edge* of a rule the citing place already owns, seen from the other side (`/docs:add`
+  saying the slug is canonical English while the body prose follows whatever language the repo
+  declared), as opposed to a restatement, which repeats a fact the citing place neither owns nor
+  can change. Note the paraphrase: writing the clause verbatim here would make this entry one more
+  member of the census it describes — see
+  [prose-sweeps.md](../standards/quality/prose-sweeps.md) §*Write the mention as a placeholder*. It is legitimate
+  by the **ownership test** and stays legitimate only under the **verifiable guardrail** — one
+  clause, no fact the owner states, and never a narrowing; the third is what caught
+  `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
   frontmatter entry stamped by `/specs:isolate` at the moment isolation is taken, write-once.
   `work` is derivable while the branch is checked out; **`base` is not** — after the merge, git
@@ -120,6 +130,13 @@ sentence, and **link out** rather than explaining in full here.
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
   backfilled.
+- [**Context integral**](../standards/automation/context-discipline.md) — a run's true cost,
+  `tokens × turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block
+  loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
+  exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
+  neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
+  beats shortening the reads. [context-budget.md](../standards/automation/context-budget.md)
+  §The other half owns the integral itself and the 344-turn run it was measured on.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -156,6 +173,23 @@ sentence, and **link out** rather than explaining in full here.
   committed to the base after it. The strategy was a human choice and the subject names the merge
   commit it is about to produce; recording both is what tells a future reader whether the per-task
   subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
+- [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
+  section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
+  human, weighing whether to build), `build` (the executor, at step 4 of `/specs:execute`), `close`
+  (`/specs:conclude`, at archive time). One value per section, declared in `schema.json` and in
+  `specs.py`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `specs.py section <slug>
+  --moment build` returns the six an executor needs, so a command body names the moment instead of
+  repeating a heading list that can drift from the schema. `## Discoveries` carries no moment at
+  all: captured indiscriminately while building, it is resolved by `/specs:develop`'s triage sweep
+  on its own schedule. The axis replaced a human/agent binary that was **prose nobody applied** —
+  measured, that binary cut 14% and named the wrong sections, leaving `## Out of Scope` invisible to
+  the one reader it exists to constrain.
+- [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
+  section is read at, one value per section: `decision` (the human, weighing whether to build),
+  `build` (the executor), `close` (`/specs:conclude`). Declared in `schema.json` and `DEFAULT_SCHEMA`
+  and **resolved rather than enumerated** — `specs.py section <slug> --moment build` returns the six
+  an executor needs, so a body names the moment instead of a heading list that can drift. Replaced
+  an `audience` field nobody read; `## Discoveries` carries no moment at all.
 - [**Origin key** (`source_uri`)](../standards/quality/bundle-verification.md) — the frontmatter key
   holding the **exact** URI or path of the source unit an imported doc was minted from, written by
   `/docs:import` and by no other command; a doc with no external origin simply does not have it.
@@ -217,12 +251,41 @@ sentence, and **link out** rather than explaining in full here.
   **unreserved**: dropping the reservation too would send every surviving instance down the
   concept-doc path, turning it into a `no-frontmatter`/`missing-type` ERROR in target repos that
   changed nothing. `docs/log.md` is the first artifact retired this way.
+- [**Routed command**](../standards/automation/skills.md) — a command something reaches **without a
+  human typing its name**, whether by a spoken trigger or by another command's body naming it; its
+  `description` stays resident in every session's context and is charged against the
+  **Always-on ceiling**. The half of the test that is mechanical is not a judgement call:
+  `skills.py lint` derives the name-reachable set from the command bodies, so classify against the
+  instrument. The complement is a **Typed-only command**, and the criterion is a floor rather than a
+  quota — on a small surface it may admit nobody.
+- [**Rules/rationale markers**](../standards/automation/context-discipline.md) — the pair of HTML
+  comments, `<!-- rules -->` and `<!-- rationale -->`, that split a normative section's binding half
+  from the measurement and history behind it, so `skills.py read --rules-only` can return the first
+  without the second. **A marker, never a heuristic**: a model deciding per read which sentences
+  bind is non-deterministic and fails *silently*. Compaction here is **relocation, never deletion**
+  — the rationale stays on disk and stays contract, only its position moves. A missing marker
+  degrades to the whole section and **says so**, never to emptiness. A marker's reach ends at the
+  next heading, so a section with sub-sections is marked **per sub-section**.
 - [**Scope ladder**](../standards/automation/hooks.md) — the four rungs a hook may be installed at,
   narrowest first: a command's own frontmatter `hooks:` block (fires only while that command runs),
   a `settings.json` hook with an event + `matcher`, a gated wide event, and an unmatched
   session-wide hook — the top rung, and a finding (`sk-hook-unmatched`) unless the reason nothing
   narrower suffices is stated where it is wired. `skills.py` holds rung 1 and rung 2 to the same
   checks from one implementation.
+- [**Section boundary**](../standards/automation/context-discipline.md) — the moment a `## N.`
+  section's last task commits with another section still ahead: a clean point for a build to
+  **offer** to stop, because the resumption trail (`## Handoff`, `git log`, the recorded commit
+  subjects) is already maintained for other reasons, which is what makes the cut nearly free. The
+  trigger is **that event, never a window size** — a threshold invented before it is measured fixes
+  the answer. It offers and never imposes, never ends a run itself, and writes no new state.
+- [**Section reader**](../standards/automation/context-discipline.md) — the verb that resolves the
+  `§X` address the prose was already writing: `skills.py read <path> --sections "§A"` over free
+  markdown, `specs.py section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
+  **list**, because turns are the other factor of the **Context integral** and N sections fetched
+  over N turns can lose to reading the whole file. A section runs to the next heading of the same
+  level or shallower, a fenced block is never read as a heading, and a name that resolves to
+  nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
+  same **Canonical set**, `SECTION_CASES`.
 - [**Shared mold**](../standards/architecture/shared-mold-keys.md) — a frontmatter key block owned
   once and cited by several commands, so each mints a doc from the same stamp instead of restating
   it (`docs-add/homes.md` §The frontmatter stamp, cited by four). Because a mold is a *fill-in
@@ -237,6 +300,14 @@ sentence, and **link out** rather than explaining in full here.
   code and cannot diverge between targets. The selected backend is the sole source of truth: there
   is no shadow local store, and a declared-but-unimplemented backend refuses rather than falling
   back to `files`.
+- [**Typed-only command**](../standards/automation/context-budget.md) — a command carrying
+  `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
+  every session's context and `skills.py budget` charges it **0**. Residency and content are
+  independent axes, so the description **keeps all three parts at full length** — the human picking
+  it out of the `/` menu is now its only reader, and has no routing to fall back on. Measured, not
+  assumed: the field also makes the command unreachable **by name** through the Skill tool, so
+  putting it on a stage another body invokes leaves that stage silently inert (`sk-inert-stage`,
+  error). The complement is a **Routed command**.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.

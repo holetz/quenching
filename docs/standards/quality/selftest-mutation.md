@@ -4,10 +4,10 @@ title: Mutation-checking a selftest
 description: A selftest that has never been observed to fail is an untested test — the mutation pass that earns the claim, one mutation per rule the fixture exists to prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate this repo's three shipped selftests have not yet cleared
 resource: plugins/quenching/assets/bin/session.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
 tags: [quality, testing, selftest, mutation, verification]
-timestamp: 2026-07-29
+timestamp: 2026-08-02
 audience: both
 authority: background
-source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; the three shipped tools have not had it
+source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against skills.py's selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — the rest of that tool's corpus and the whole of specs.py's and okf-validate.py's still have not had it
 maintainer: quenching
 ---
 
@@ -57,6 +57,34 @@ plausible, entirely wrong finding, against a run whose honest redundant-read cou
 selftest that now holds that line was written *after* the bug, which is the ordinary case; the
 mutation pass is what confirms the line is actually held rather than merely intended.
 
+## The second pass — `skills.py`, and why it counts as partial
+
+Run 2026-08-02 for `route-commands-without-always-on-descriptions`, against the rules that spec
+added: the residency predicate `budget` and `lint` both read from, and the set of commands a
+conductor reaches by name, derived from the bodies. Seven mutations, seven observed failures:
+
+| Mutation | Rule it attacks | Result |
+| --- | --- | --- |
+| `description_is_resident` → always `True` | prose routing does not reach a typed-only command | `/docs:typed-only-bare`: expected `[]`, got `sk-no-boundary`, `sk-trigger-position` |
+| `description_is_resident` → always `False` | …and it *does* reach a resident one | `/docs:routed-bare`: expected both codes, got `[]` |
+| drop the leading-slash exclusion | `/prefix:name` is a citation aimed at a human, not a hand-off | `/docs:stage-cited` wrongly flagged `sk-inert-stage` |
+| drop the Skill-tool arm | the unprefixed slash form near "Skill tool" is also a hand-off | `/docs:stage-handed` not flagged |
+| drop the registry arm | the bare registry form is the hand-off | `/docs:stage-inert` not flagged |
+| drop the self-reference guard | a command cannot conduct itself | `/docs:typed-only-bare` wrongly flagged |
+| ungate `sk-inert-stage` from the caller set | typed-only is legitimate when nobody names it | **crash** — `TypeError: 'NoneType' object is not iterable` |
+
+Six of the seven land the way the section above says a useful mutation lands: one named fixture
+case, expected and actual code lists printed side by side. **The seventh does not, and naming that
+is worth more than counting it.** It failed by raising, so what caught it was Python, not the
+corpus. A crash proves the mutated path is reached; it does not prove the fixture discriminates —
+the same mutation in a tool that tolerated the bad value would have survived silently. Read
+strictly, this is six mutations that earned the claim and one that only looks like it did.
+
+**And it covers the new rules only.** `skills.py`'s selftest also carries fixtures for the two
+description caps, body length, step criteria, tool scoping, the hook codes and the citation form,
+and none of those was mutated. Adding a rule with a mutation beside it is the practice working; it
+is not the same as having checked the tool.
+
 ## Where this sits
 
 This is the authoring-time complement to the two verification gates already written:
@@ -71,11 +99,14 @@ a selftest that cannot fail is named rather than counted as coverage.
 
 ## Graduation gate
 
-`authority: background`, and the gate is explicit: this pass has been run against **one** selftest,
-`session.py`'s. The three shipped tools — `skills.py`, `specs.py`, `okf-validate.py` — carry
-selftests that CLAUDE.md's verification block treats as the repo's primary gate, and **none of them
-has ever been observed to fail.** They may well be sound; nobody has checked.
+`authority: background`, and the gate is explicit. Two passes exist: `session.py`'s whole selftest
+(four mutations, 2026-07-29) and `skills.py`'s **newest rules only** (seven, 2026-08-02). What is
+still unchecked is the rest of `skills.py`'s corpus and the whole of `specs.py`'s and
+`okf-validate.py`'s — selftests CLAUDE.md's verification block treats as the repo's primary gate,
+and which **have never been observed to fail.** They may well be sound; nobody has checked.
 
-This becomes `authority: current` when the same four-mutation-shaped pass has been run against all
-three and the result recorded — not before. Until then it describes a practice this repo has
-adopted once and not generalised, and saying so is the point of the `background` stamp.
+This becomes `authority: current` when a pass of the shape above has been run against all three
+shipped tools and the result recorded — not before. A pass over one tool's newest rules does not
+clear it, and booking it as partial rather than as progress is the same honesty the standard asks
+of the mutations themselves. Until then this describes a practice the repo has adopted twice and
+not generalised, which is what the `background` stamp is for.
