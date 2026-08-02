@@ -758,10 +758,11 @@ nunca considera elegível.
       verify: o total do depois bate item a item com a `## Validation`, e a diferença contra o
       subject: plan/narrow-the-execute-preamble: 9.1 Refazer o depois sob a convenção de 0.1
       garantido de 103.091 é explicada item a item, não arredondada
-- [ ] 9.2 Rodar a bateria de integridade da superfície e reportar: lockstep de `VERSION` contra os três
+- [x] 9.2 Rodar a bateria de integridade da superfície e reportar: lockstep de `VERSION` contra os três
       scripts, `okf-validate.py assets/docs` e `okf-validate.py docs`, `doctor`, `lint` e os três
       `selftest`.
       verify: 0 error(s) nos dois `okf-validate`, `doctor` com 26 comandos e 0 findings, `lint` em
+      subject: plan/narrow-the-execute-preamble: 9.2 Rodar a bateria de integridade da superfície
       exit 0, os três `selftest` passando
 
 ## Discoveries
