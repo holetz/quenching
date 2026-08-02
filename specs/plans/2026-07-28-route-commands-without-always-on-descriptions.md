@@ -4,6 +4,8 @@ title: Route a 10x command surface without per-command always-on descriptions
 verification: per-section
 priority: {level: 1, criticality: critical, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
+approved: {date: 2026-08-02}
+branch: {base: main, work: plan/route-commands-without-always-on-descriptions}
 ---
 
 # Route a 10x command surface without per-command always-on descriptions
@@ -694,6 +696,45 @@ grupo 0 mais o grupo 1.
   e os caps por comando (`sk-metadata-cap` 1.536 `error`, `sk-description-portable` 1.024 `warn`)
   continuam valendo comando a comando. Registrado para que ninguém a redescubra como risco.
 
+## Handoff
+
+Estado da árvore após o commit da 0.1.
+
+**A mecânica está medida (0.1), e ela BLOQUEIA os dois caminhos.** Claude Code 2.1.220, dois braços
+com controle, verificado no sistema de arquivos:
+
+- controle (sem o campo): descrição listada, invocação por nome pelo Skill tool **ok**, corpo executou;
+- tratamento (`disable-model-invocation: true`): descrição **não listada**, invocação por nome
+  **recusada** com `Skill quenching:zzprobeb cannot be used with Skill tool due to
+  disable-model-invocation`, corpo não executou.
+
+Consequências já fixadas para as tarefas seguintes, sem precisar re-decidir:
+
+- `## Open Decisions` item 1 → **bloqueia também por nome**. Não foi por ambiguidade; foi observado.
+- `## Open Decisions` item 2 → `skills.md` **ganha a medição**; a célula está certa e passa a citar a
+  linha de 0.2. Não há padrão `authority: current` errado para corrigir.
+- `## Open Decisions` item 6 → severidade do finding de 1.3 é **`error`**: um comando nomeado pelo
+  corpo de outro carregando o campo é um conductor inerte, e o host recusa a chamada.
+- `## Design` §D3 sobrevive como escrito: a classe typed-only **exclui** os ~12 alcançáveis por nome.
+
+**Ambiente, que difere do que o spec assume.** O plugin vivo nesta máquina é a instalação user-scope
+`quenching@quenching` em `~/.claude/plugins/cache/quenching/quenching/4.4.0/`, **não** a árvore de
+trabalho. Um probe de superfície precisa ser escrito na raiz viva. Ver `## Discoveries`.
+
+**Números de linha de `skills.py` citados em `## Impact`/`## Design` estão defasados** — trabalhar por
+conteúdo. `budget_rows` ~1667, `_lint_invocation` ~921.
+
+Isolamento: worktree em `../claude-quenching-route-commands-without-always-on-descriptions`,
+branch `plan/route-commands-without-always-on-descriptions` sobre `main`.
+
+**Próximo:** 0.2 registra o resultado em `docs/reference/tools/claude-code-skill-command-mechanics.md`
+(linha nova na tabela §The findings com status **Observed**, a subseção que a explica, e a entrada em
+§Re-measurements com data 2026-08-02 e versão 2.1.220). Depois 0.3 leva os itens 1, 2, 5 e 6 ao humano
+— dos quais só o **item 5** (a projeção de ~250 comandos é o alvo?) continua genuinamente em aberto, e
+é o que decide se os grupos 2 e 3 existem.
+
+`verification: per-section` — a verificação do grupo 0 roda ao fim de 0.2/0.3, não por tarefa.
+
 ## Tasks
 
 Ordenado por `## Design` §D4: medir, instrumentar, escrever a política, só então classificar. Nada é
@@ -705,13 +746,14 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 
 ### 0. Medir a mecânica que todo o resto assume
 
-- [ ] 0.1 Medir, em uma sessão `claude -p` **nova** e contra um comando descartável, se
+- [x] 0.1 Medir, em uma sessão `claude -p` **nova** e contra um comando descartável, se
       `disable-model-invocation: true` bloqueia (a) a seleção autônoma pelo modelo e (b) a invocação
       **por nome** pelo Skill tool. Reverter o arquivo de probe nos dois casos. Ambiguidade conta como
       "bloqueia", por `## Open Decisions` item 1. Sessão nova porque o registry é construído no início
       da sessão.
       files: plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)
       pattern: specs/archive/2026-07-26-skill-description-tiering.md §Discoveries — o método do spike
+      subject: plan/route-commands-without-always-on-descriptions: 0.1 medir a mecânica de disable-model-invocation
       anterior, incluindo o cuidado de verificar no sistema de arquivos em vez de acreditar no
       auto-relato do probe
 - [ ] 0.2 Registrar o resultado de 0.1 em
@@ -801,3 +843,10 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       "continua digitável no menu `/`" é checagem **manual** e tem de ser dita como manual no relatório,
       porque nenhum instrumento deste repositório observa o menu.
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+
+## Discoveries
+
+- 0.1: o probe teve de ser instalado na raiz VIVA do plugin (~/.claude/plugins/cache/quenching/quenching/4.4.0/commands/), nao no caminho declarado plugins/quenching/commands/ — nesta maquina o quenching carregado e a instalacao user-scope quenching@quenching vinda do git, e a arvore de trabalho nao e o plugin vivo. Qualquer spike futuro sobre a superficie precisa resolver a raiz viva antes de escrever o probe.
+- 0.1: a versao medida e Claude Code 2.1.220, nao a 2.1.215 que claude-code-skill-command-mechanics.md registra como base de todas as suas linhas. Nenhuma outra linha daquele doc foi re-medida contra a 2.1.220 por este spec.
+- specs.py next quebra o campo files: de 0.1 em duas entradas (plugins/quenching/commands/zzprobe.md (descartavel + revertido ao fim)) — o parser separa por virgula sem respeitar parenteses, entao um comentario entre parenteses num files: vira um caminho falso para o executor.
+- Os numeros de linha que ## Impact e ## Design citam de skills.py estao defasados: budget_rows/1436-1439 esta hoje em ~1667-1674 e _lint_invocation/861-877 em ~921-931. Trabalhar por conteudo, nunca por linha.
