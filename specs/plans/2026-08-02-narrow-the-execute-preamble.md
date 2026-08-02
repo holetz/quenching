@@ -5,6 +5,7 @@ verification: per-section
 refined: {mode: gate, date: 2026-08-02}
 approved: 2026-08-02
 branch: {base: main, work: plan/narrow-the-execute-preamble}
+reviewed: {date: 2026-08-02}
 ---
 
 # Estreitar o preâmbulo de /specs:execute — os seis itens que sobraram de read-by-section
