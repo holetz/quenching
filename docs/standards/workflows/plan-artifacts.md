@@ -62,13 +62,34 @@ derived fact earns no such mirror.
 
 ## Fourteen canonical sections
 
-`## Overview`, `## Problem`, `## Proposal`, `## Out of Scope`, `## Impact`, `## Validation`,
-`## Design`, `## Alternatives Considered`, `## Open Decisions`, `## Risks`, `## Handoff`,
-`## Tasks`, `## Discoveries`, `## Outcome`.
+| # | Heading | Moment |
+| --- | --- | --- |
+| 1 | `## Overview` | `decision` |
+| 2 | `## Problem` | `decision` |
+| 3 | `## Proposal` | `build` |
+| 4 | `## Out of Scope` | `build` |
+| 5 | `## Impact` | `build` |
+| 6 | `## Validation` | `close` |
+| 7 | `## Design` | `build` |
+| 8 | `## Alternatives Considered` | `decision` |
+| 9 | `## Open Decisions` | `decision` |
+| 10 | `## Risks` | `decision` |
+| 11 | `## Handoff` | `build` |
+| 12 | `## Tasks` | `build` |
+| 13 | `## Discoveries` | — (no moment; see below) |
+| 14 | `## Outcome` | `close` |
 
 **Headings are a parsed contract** — canonical English, exactly as written. A heading outside the
 set is a stray and `validate` flags it. Which language a spec's body is written in belongs to
 [../agents/communication.md](../agents/communication.md), not here.
+
+**Moment replaces an unread `audience` field.** Each canonical section is born `moment: decision |
+build | close` in `assets/specs/schema.json` — the point on the spec's timeline it is read at, not
+who reads it. `/quenching:specs:execute` step 4 (`specs.py section <slug> --moment build`) sends an
+executor exactly the `build` set; `decision` stays with the human weighing whether to build at all,
+and `close` is `/quenching:specs:conclude`'s. `## Discoveries` carries no `moment` — captured
+indiscriminately while building, it is resolved later by `/quenching:specs:develop`'s triage sweep on its own
+schedule, tied to none of the three.
 
 Two are load-bearing for machinery, not only for thinking:
 
@@ -144,6 +165,14 @@ Two exclusions are deliberate: the sibling sub-headings are **not** parsed (they
 spec never promised to write), and an unfilled `<placeholder>` declares nothing. A spec with no such
 sub-heading declares nothing and is never flagged — **the check is opt-in by writing the heading**.
 
+A bullet may carry a `§`address beside its path —
+`docs/standards/automation/context-budget.md §The two caps` — naming exactly which sections of that
+standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
+only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not, so no code
+changed to accept it. Without an address, `/quenching:specs:execute` step 4 reads the file whole,
+exactly as before — the address is an assertion the spec's own author makes, never an economy the
+executor infers on its own.
+
 ## Stages are derived, never declared
 
 The stage list and its resolution order are [plan-lifecycle.md](plan-lifecycle.md) §`ready` is
@@ -191,6 +220,10 @@ Any change to the record vocabulary is therefore a **three-file lockstep edit**:
 `specs.py`, `assets/specs/schema.json`, and the guidance in `assets/specs/templates/spec.md`. This
 was found by a task that declared only the first under `files:` and produced a tool that reported
 the old vocabulary from the new code.
+
+The `audience` → `moment` rename is exactly this shape: `sections[].moment` in `DEFAULT_SCHEMA` and
+`schema.json`, plus the per-section `MOMENT:` comment token in the template — three files, one
+edit, or the constant reports a vocabulary the JSON and the template have already left behind.
 
 The template holds all fourteen headings with their guidance; `new` stamps only the **capture
 form** (everything up to the second `## ` heading), and `section --write` pulls one heading's
