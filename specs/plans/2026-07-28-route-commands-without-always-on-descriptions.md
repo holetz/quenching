@@ -756,7 +756,7 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       subject: plan/route-commands-without-always-on-descriptions: 0.1 medir a mecânica de disable-model-invocation
       anterior, incluindo o cuidado de verificar no sistema de arquivos em vez de acreditar no
       auto-relato do probe
-- [ ] 0.2 Registrar o resultado de 0.1 em
+- [x] 0.2 Registrar o resultado de 0.1 em
       `docs/reference/tools/claude-code-skill-command-mechanics.md`: uma linha na tabela
       §*The findings* com status Observed ou Inferred, a subseção que a explica, e a entrada em
       §*Re-measurements* com data e versão do binário. Registrar mesmo se o resultado vier ambíguo —
@@ -764,6 +764,7 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       modo de falha que aquele doc documenta.
       files: docs/reference/tools/claude-code-skill-command-mechanics.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/route-commands-without-always-on-descriptions: 0.2 registrar a medição em claude-code-skill-command-mechanics
 - [ ] 0.3 Decidir com o humano, contra o resultado de 0.1, os itens 1, 2, 5 e 6 de
       `## Open Decisions` — a mecânica, o que acontece com `skills.md`, se a projeção de ~250 é o alvo,
       e a severidade do finding de 1.3. Sem a resposta do item 5 os grupos 2 e 3 não têm justificativa,
@@ -850,3 +851,4 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 - 0.1: a versao medida e Claude Code 2.1.220, nao a 2.1.215 que claude-code-skill-command-mechanics.md registra como base de todas as suas linhas. Nenhuma outra linha daquele doc foi re-medida contra a 2.1.220 por este spec.
 - specs.py next quebra o campo files: de 0.1 em duas entradas (plugins/quenching/commands/zzprobe.md (descartavel + revertido ao fim)) — o parser separa por virgula sem respeitar parenteses, entao um comentario entre parenteses num files: vira um caminho falso para o executor.
 - Os numeros de linha que ## Impact e ## Design citam de skills.py estao defasados: budget_rows/1436-1439 esta hoje em ~1667-1674 e _lint_invocation/861-877 em ~921-931. Trabalhar por conteudo, nunca por linha.
+- 0.2: o baseline que ## Validation afirma para okf-validate.py docs esta defasado — ele diz 'avisos stale-doc pre-existentes em tres docs nao relacionados'; a medicao de 2026-08-02 nesta arvore da 0 error(s), 25 warning(s), TODOS stale-doc e todos pre-existentes. Nenhum sobre reference/tools/. O spec 2026-08-01-stale-doc-mass-aging e o dono disso.
