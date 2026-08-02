@@ -1743,7 +1743,18 @@ def cmd_budget(args, root: str) -> int:
     surface = load_surface(root)
     rows = budget_rows(surface)
     agents = agent_budget_rows(root)
-    commands_total = sum(r["total"] for r in rows)
+    # The two classes, reported side by side so a falling total can be READ. A surface
+    # that halves its cost by writing tighter descriptions and one that halves it by
+    # flagging half the surface typed-only look identical in the total alone, and only
+    # one of them is the honest design context-budget.md asks for. `typedOnly.characters`
+    # is the description text that left context — the number that grows when the field
+    # is used to dodge the measurement rather than to declare a human-must-choose
+    # command. `commands_total` sums the routed class alone, which is what makes
+    # `breakdown.commands` and `classes.routed.characters` equal by construction rather
+    # than by an assertion somebody has to maintain.
+    routed = [r for r in rows if r.get("alwaysOn") is not False]
+    typed_only = [r for r in rows if r.get("alwaysOn") is False]
+    commands_total = sum(r["total"] for r in routed)
     agents_total = sum(r["total"] for r in agents)
     total = commands_total + agents_total
     ceiling = args.ceiling if args.ceiling is not None else DEFAULT_CEILING
@@ -1757,6 +1768,11 @@ def cmd_budget(args, root: str) -> int:
     payload = {"root": root, "total": total, "ceiling": ceiling,
                "approxTokens": round(total / CHARS_PER_TOKEN),
                "breakdown": {"commands": commands_total, "agents": agents_total},
+               "classes": {
+                   "routed": {"commands": len(routed),
+                              "characters": sum(r["total"] for r in routed)},
+                   "typedOnly": {"commands": len(typed_only),
+                                 "characters": sum(r["description"] for r in typed_only)}},
                "commands": rows, "agents": agents}
     if args.json:
         print(json.dumps({"ok": not findings, **payload, "findings": findings},
@@ -1773,6 +1789,11 @@ def cmd_budget(args, root: str) -> int:
           f"ceiling {ceiling}")
     if agents:
         print(f"  commands {commands_total} + agents {agents_total}")
+    cls = payload["classes"]
+    print(f"  routed {plural(cls['routed']['commands'], 'command')}, "
+          f"{cls['routed']['characters']} characters in context · "
+          f"typed-only {plural(cls['typedOnly']['commands'], 'command')}, "
+          f"{cls['typedOnly']['characters']} characters out of it")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
     return exit_for(findings)
