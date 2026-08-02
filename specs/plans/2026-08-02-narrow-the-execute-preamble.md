@@ -689,12 +689,13 @@ nunca considera elegível.
       files: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
       subject: plan/narrow-the-execute-preamble: 4.1 Trocar audience por moment nas quatorze seções
-- [ ] 4.2 Dar a `specs.py section` a opção `--moment <valor>`, que resolve a lista de headings pelo
+- [x] 4.2 Dar a `specs.py section` a opção `--moment <valor>`, que resolve a lista de headings pelo
       schema em vez de recebê-la enumerada, mantendo a forma por lista intacta. Entregar junto o caso
       de `selftest` que prova que `--moment build` devolve exatamente as seis seções da tabela —
       sem ele a regra fica sendo prosa outra vez, que é o defeito que este grupo existe para tirar.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/narrow-the-execute-preamble: 4.2 Dar a specs.py section a opção --moment
 
 ### 5. O passo 4 lê o conjunto `build`
 

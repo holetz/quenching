@@ -881,6 +881,17 @@ def canonical_headings(schema: dict | None = None) -> list[str]:
     return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))]
 
 
+def headings_for_moment(moment: str, schema: dict | None = None) -> list[str]:
+    """The canonical headings declared `moment: <moment>`, in canonical order.
+
+    `## Discoveries` declares no `moment` — resolved on its own schedule by
+    `/specs:develop`'s triage sweep, not one of `decision` / `build` / `close` — so it never
+    matches here, by construction rather than by exclusion list."""
+    s = schema or load_schema()
+    return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))
+            if x.get("moment") == moment]
+
+
 def phase_spec(phase: str, schema: dict | None = None) -> dict:
     s = schema or load_schema()
     for p in s.get("phases", []):
@@ -1769,7 +1780,22 @@ def cmd_section(args, root: str) -> int:
     info, err = load_spec(root, args.spec)
     if err:
         return emit_err(args.json, err)
-    wanted = [h for h in (p.strip() for p in args.heading.split(",")) if h]
+    if args.moment:
+        wanted = headings_for_moment(args.moment)
+        if not wanted:
+            emit(args.json,
+                 {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
+                  "message": f"no canonical section declares moment '{args.moment}'"},
+                 f"error: no canonical section declares moment '{args.moment}'")
+            return 2
+    else:
+        wanted = [h for h in (p.strip() for p in (args.heading or "").split(",")) if h]
+        if not wanted:
+            emit(args.json,
+                 {"ok": False, "code": "sp-no-heading",
+                  "message": "give a heading, or --moment, to read"},
+                 "error: give a heading, or --moment, to read")
+            return 2
     headings, stray = [], []
     for name in wanted:
         h = _match_heading(name)
@@ -3032,6 +3058,22 @@ def cmd_selftest(args, root: str) -> int:
                                         "TASK_META_KEYS gets its own arm or is deliberately "
                                         "unread — never a trailing `else` that catches it"))
 
+    # `--moment build` is the set `/quenching:specs:execute` step 4 sends an executor — asserted
+    # against the literal list rather than eyeballed, so an edit to DEFAULT_SCHEMA that drops or
+    # reorders a `moment: build` section is caught here instead of at the first run that pays
+    # for it. Self-contained: DEFAULT_SCHEMA, not the loaded schema, so it covers an installed
+    # copy with no adjacent assets too.
+    want_build = ["Proposal", "Out of Scope", "Impact", "Design", "Handoff", "Tasks"]
+    got_build = headings_for_moment("build", DEFAULT_SCHEMA)
+    if got_build != want_build:
+        findings.append(_finding("sp-moment-build", "error",
+                                 f"headings_for_moment('build') is {got_build}, expected "
+                                 f"{want_build} — `/quenching:specs:execute` step 4 would read "
+                                 f"the wrong section set",
+                                 remedy="DEFAULT_SCHEMA's `moment: build` sections must match "
+                                        "docs/standards/workflows/plan-artifacts.md §Fourteen "
+                                        "canonical sections"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
@@ -3220,8 +3262,12 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
     sp.add_argument("spec")
-    sp.add_argument("heading", help="one canonical heading, or several comma-separated; "
-                                    "returned in the order asked")
+    sp.add_argument("heading", nargs="?",
+                    help="one canonical heading, or several comma-separated; returned in "
+                         "the order asked. Omit when --moment resolves the list instead")
+    sp.add_argument("--moment", choices=["decision", "build", "close"],
+                    help="read every canonical section declared this moment, in canonical "
+                         "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 
