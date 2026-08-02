@@ -13,11 +13,10 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
-**reviewed**, and it is **committed**. The mechanics of that — the clean-tree precondition, the
-verification policy, the validation loop, the four-item diff self-review, the one commit per task,
-the declared-versus-emergent `docs/` line, and the rules for delegating an executor — live in
-[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
-which this body cites and never restates.
+**reviewed**, and it is **committed**. The mechanics of that live in
+[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§The precondition §The verification policy §The validation loop §The diff self-review §The commit
+§Declared versus emergent `docs/` §Delegating an executor, which this body cites and never restates.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
@@ -38,16 +37,17 @@ review is a different scale of judgment, the merge is a separate irreversible de
 own confirmation, and a run that dies after task nine must be resumable without redoing tasks one
 through eight.
 
-The git conventions — the commit subject, the branch name, the `branch` record, the subject as the
-task→commit anchor, and the **read-if-present** rule for a target's `docs/standards/git/**` — live
-in [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md), whose
-command is `/quenching:specs:isolate`.
+The git conventions live in
+[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+§The read-if-present rule §Branch and worktree names §Recording the isolation §Commit messages
+§The subject is the anchor, whose command is `/quenching:specs:isolate`.
 
-The spec-driven facts — the layout, the fourteen canonical sections, the derived stages, the
-`specs.py` surface, the `specs/`↔`docs/` boundary — live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
+The spec-driven facts live in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §Boundary.
 The OKF insert procedure for the docs a task writes lives in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
+stamp §Updating `index.md` §Enriching the glossary §Self-check.
 
 ## Resolving the tool
 
@@ -210,9 +210,11 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
 
 c. **Write only the `docs/` this task names.** A `docs/standards/` path declared under `## Impact`
    and named by this task is part of its deliverable — write it through the insert procedure in
-   [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), stamp `authority`
-   honestly, and self-check it against
-   [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
+   [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
+   stamp §Updating `index.md` §Enriching the glossary §Self-check, stamp `authority` honestly, and
+   self-check it against
+   [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
+   §Concept docs §Resource integrity.
    Anything else the work reveals costs one line — `specs.py discover "<slug>" "<finding>"` — and
    no authoring. The line between the two, and why it falls there, is §Declared versus emergent
    `docs/`.
