@@ -647,12 +647,13 @@ nunca considera elegível.
       verify: uma chamada `SK read <referência> --sections "§…"` por referência citada, com
       subject: plan/narrow-the-execute-preamble: 1.1 Converter as seis citações do preâmbulo em endereços
       exatamente os endereços que o corpo passou a carregar, **todas saindo 0**
-- [ ] 1.2 Completar os endereços que o `## Problem` item 7 mede: dar arquivo aos cinco `§` que não
+- [x] 1.2 Completar os endereços que o `## Problem` item 7 mede: dar arquivo aos cinco `§` que não
       têm (`:208`, `:217`, `:240`, `:271`, `:363`), juntar os dois que quebram linha no meio do
       endereço (`:92`, `:101`), e trocar `§6`/`§5g` por `passo 6`/`passo 5g` — o `§` fica com um
       sentido só, seção de arquivo.
       files: plugins/quenching/commands/specs/execute.md
       verify: `grep -c "§" plugins/quenching/commands/specs/execute.md` bate com o número de endereços
+      subject: plan/narrow-the-execute-preamble: 1.2 Completar os endereços sem arquivo, quebra de linha e §<dígito>
       cobertos pelas chamadas de 1.1; zero `§` sem arquivo e zero `§<dígito>`
 
 ### 2. A referência de ramo condicional é lida no ramo
