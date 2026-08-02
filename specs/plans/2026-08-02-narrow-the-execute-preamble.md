@@ -752,13 +752,18 @@ nunca considera elegível.
 
 ### 9. Fechar a medição
 
-- [ ] 9.1 Refazer o **depois** dos oito itens sob a convenção fixada em 0.1 e registrar o par
+- [x] 9.1 Refazer o **depois** dos oito itens sob a convenção fixada em 0.1 e registrar o par
       antes/depois. Um número estimado em qualquer uma das pontas é falha da tarefa.
       files: (nenhum — medição; o par vai para o commit e para o `## Outcome` em `/specs:conclude`)
       verify: o total do depois bate item a item com a `## Validation`, e a diferença contra o
+      subject: plan/narrow-the-execute-preamble: 9.1 Refazer o depois sob a convenção de 0.1
       garantido de 103.091 é explicada item a item, não arredondada
 - [ ] 9.2 Rodar a bateria de integridade da superfície e reportar: lockstep de `VERSION` contra os três
       scripts, `okf-validate.py assets/docs` e `okf-validate.py docs`, `doctor`, `lint` e os três
       `selftest`.
       verify: 0 error(s) nos dois `okf-validate`, `doctor` com 26 comandos e 0 findings, `lint` em
       exit 0, os três `selftest` passando
+
+## Discoveries
+
+- 9.1 mede depois=112.434 chars (-30,1%), não os -36% garantidos: execution.md e git.md §seções já custavam 16.212/8.491 antes desta spec (o ## Design §5 estimou 11.610/4.233 — subestimativa própria, provavelmente por não contar os ### filhos de §Delegating an executor). A tarefa 8.1 também colou seu racional relocado dentro de §Declared versus emergent docs/, uma das 7 seções sempre citadas — +815 chars pagos em todo turno que cita essa seção; mover para uma seção não citada (ex.: Tooling asides, relocated) recuperaria isso sem perder o conteúdo.
