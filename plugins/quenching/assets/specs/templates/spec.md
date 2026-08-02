@@ -37,16 +37,22 @@ verification: <VERIFICATION>
 
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
+     *(`standards/agents/communication.md` owns that language rule for a repo whose bundle has
+     one. This template states it self-contained rather than citing it: `/specs:align` is native
+     and installs here into repos that never adopted the bundle, where that path resolves to
+     nothing.)*
 
-     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
-     `## Design` are for the human — examples and plain language belong there.
-     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
-     metadata. An orchestrator never sends the human sections to an executor; that is what
-     lets one file serve both audiences without bloating agent context. -->
+     MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
+     (the human, deciding whether to build), `build` (the executor, in step 4 of
+     `/specs:execute`), `close` (`/specs:conclude`, at archive time). `## Discoveries` belongs
+     to none of them — captured indiscriminately while building, resolved later by
+     `/specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     exactly the `build` set; that is what lets one file serve every moment without bloating
+     agent context. -->
 
 ## Overview
 
-<!-- AUDIENCE: human. Warned on when empty once the ready gate is met.
+<!-- MOMENT: decision. Warned on when empty once the ready gate is met.
 
      Connective tissue for a reader who is not holding the whole spec in their head: how the
      other sections relate to one another, not a compressed restatement of each. Plain
@@ -57,21 +63,21 @@ verification: <VERIFICATION>
 
 ## Problem
 
-<!-- AUDIENCE: human. Gate: new (capture).
+<!-- MOMENT: decision. Gate: new (capture).
 
      The problem or opportunity this spec answers, and why now. This is the only section a
      freshly captured spec carries — write it even if it is two sentences. -->
 
 ## Proposal
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The change at a high level, in bullet points. What will be true afterwards that is not
      true now. -->
 
 ## Out of Scope
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      What this spec deliberately does NOT do, and why it was ruled out.
 
@@ -81,7 +87,7 @@ verification: <VERIFICATION>
 
 ## Impact
 
-<!-- AUDIENCE: human + PARSED. Gate: ready (derived).
+<!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
      docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
@@ -110,7 +116,7 @@ verification: <VERIFICATION>
 
 ## Validation
 
-<!-- AUDIENCE: human + agent. Gate: ready (derived).
+<!-- MOMENT: close (plus the agent's `verify:` fallback, resolved lazily). Gate: ready (derived).
 
      How anyone confirms this spec actually worked: the commands to run and the output they
      must produce, the fixtures to check, the invariants that must still hold afterwards.
@@ -122,7 +128,7 @@ verification: <VERIFICATION>
 
 ## Design
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The choices made and their rationale, plus the background and binding contracts this
      design must not contradict. For each decision: what was chosen, why, and what was
@@ -132,7 +138,7 @@ verification: <VERIFICATION>
 
 ## Alternatives Considered
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      Whole-shape alternatives rejected at the spec level, each with the reason it lost.
      Per-decision alternatives can stay inside `## Design`; this section is for the ones that
@@ -142,7 +148,7 @@ verification: <VERIFICATION>
 
 ## Open Decisions
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What is deliberately still undecided, and how each will be decided — the evidence or the
      moment that settles it, not "TBD".
@@ -151,7 +157,7 @@ verification: <VERIFICATION>
 
 ## Risks
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What could go wrong, and the mitigation for each. A risk taken knowingly is written
      `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
@@ -160,7 +166,7 @@ verification: <VERIFICATION>
 
 ## Handoff
 
-<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+<!-- MOMENT: build. Warned on when empty once the ready gate is met.
 
      The context an executor needs and cannot derive: the state of play, the conventions in
      force, what was already tried. Small by construction — it is sent with EVERY task.
@@ -170,7 +176,7 @@ verification: <VERIFICATION>
 
 ## Tasks
 
-<!-- AUDIENCE: agent. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
@@ -219,7 +225,8 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- AUDIENCE: triage. No gate — appended during execution.
+<!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
+     not tied to one of the three. No gate — appended during execution.
 
      One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
@@ -232,7 +239,7 @@ verification: <VERIFICATION>
 
 ## Outcome
 
-<!-- AUDIENCE: archive reader. Gate: promote -> archive/.
+<!-- MOMENT: close. Gate: promote -> archive/.
 
      What actually happened, written at archive time: what shipped, what was left out, what
      the next reader needs to know. `outcome: done | abandoned` is stamped into the

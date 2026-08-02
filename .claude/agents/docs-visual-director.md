@@ -17,7 +17,7 @@ structured information into the visual it deserves, and remove anything decorati
 
 ## How to work
 - Decide by content type using
-  `.claude/skills/mkdocs-storyteller/references/visual-language.md` (comparison→
+  `.claude/references/mkdocs-storyteller/visual-language.md` (comparison→
   table, sequence→Mermaid/numbered, routes→cards, variants→tabs, risk→callout,
   metadata→badges, landing→hero).
 - Use exact syntax + required extensions from `material-toolkit.md`. Confirm the

@@ -8,7 +8,7 @@ cited, never restated here — this file is only the *writing* guidance: what be
 heading, how to write an honest explicit none, and how to shape `## Tasks`.
 
 There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
-while it is built (`/specs:execute`), and `## Impact` is where it *declares* that scope. Two things
+while it is built (`/quenching:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
 in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed sub-heading of
 `## Impact` — and everything else is prose for a human reviewer.
 
@@ -87,7 +87,7 @@ first in the file: only the authoring order within a pass is last, never its pos
 - **`## Design`** — each decision with the alternatives weighed and why this one, plus the binding
   contracts the design must not contradict (the relevant `docs/standards/`, the existing code
   shape, external limits). State a decision as a **durable rule**, not a diary entry: this is the
-  material `/specs:conclude` later distils.
+  material `/quenching:specs:conclude` later distils.
 - **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
   the reason it lost. Per-decision alternatives stay inside `## Design`; this section is for the
   ones that would have changed the spec's shape. **The rejected ones and why they lost are the
@@ -137,9 +137,19 @@ The context an executor needs and cannot derive: the state of play, the conventi
 was already tried. **Small by construction** — it is sent with every task, and it does not carry
 the human sections.
 
-It is warned on (not gated) once the ready gate is met, and it is rewritten after **each committed
-task** rather than when someone judges it stale. Staleness is this section's only failure mode, and
-an event-bound rule is the one cure that survives an unattended run.
+It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
+the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
+— rather than when someone judges it stale. Staleness is this section's only failure mode, and an
+event-bound rule is the one cure that survives an unattended run.
+
+Each of those four is a moment the executor *just finished doing something*, never one where it
+appraises something: that is the property that makes the rule survivable unattended, and it is what
+any future edit has to preserve. The cadence they replaced was one rewrite per committed task,
+which on a measured 13-task run produced rewrites ~90% identical to one another — the section is
+sent with every task, so a near-identical rewrite is paid for on both sides and buys nothing on
+either. What a resumed run can derive on its own — which tasks are done, which commit carried each
+— lives in `git log` and in the `subjects` `specs.py status` returns; this section carries only
+what nothing derives.
 
 ## `## Tasks`
 
@@ -147,7 +157,7 @@ The implementation checklist `specs.py` parses: checkboxes `- [ ] <id> <text>` g
 `### N. <Section>` headings. `specs.py task --spec <slug> --check <id>` flips a box mechanically —
 never hand-edit the checkbox character.
 
-Shape it so `/specs:execute` can walk it top to bottom:
+Shape it so `/quenching:specs:execute` can walk it top to bottom:
 
 - **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → docs).
   Each item is one reviewable unit of work — small enough to check off honestly, large enough not
@@ -163,8 +173,8 @@ Shape it so `/specs:execute` can walk it top to bottom:
   is written and self-checks clean" is a task, not an implicit hope.
 
 Do not put `docs/knowledge/` captures or glossary terms in `## Tasks` as durable content — those
-route through `/docs:learn` / `/docs:define`; a task may *name* the capture
-(`- [ ] 5.2 Capture the retry-budget gotcha via /docs:learn`) but the knowledge itself lives in its
+route through `/quenching:docs:learn` / `/quenching:docs:define`; a task may *name* the capture
+(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching:docs:learn`) but the knowledge itself lives in its
 OKF home, never in the checklist.
 
 ## Execution metadata — optional, indented, additive
@@ -184,12 +194,29 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 | `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
 | `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation` |
+| `constraint:` | a bound on HOW this task may be done — a file it must not touch, an approach already ruled out | **nothing reads it yet.** Admitted by the grammar and handed through untouched; its only plausible consumer is an executor sub-agent briefing itself, and the decision to dispatch one belongs elsewhere. Write it where an executor would otherwise have to guess; it costs nothing when unread |
 | `subject:` | the SUBJECT of the commit that implements this task | **written by the tool, never by hand** (`task --check --subject`), so code and spec stay linked without a trailer inside the commit message. Known before the commit exists, which is what lets the box travel inside it |
 
-Write the first three where they earn their place — a task touching three known files with an
-obvious test command deserves all three; a one-line doc edit deserves none. Metadata that restates
+Write the first four where they earn their place — a task touching three known files with an
+obvious test command deserves them; a one-line doc edit deserves none. Metadata that restates
 the task text is noise. `subject:` is not written by an author at all; it appears when the task is
 ticked.
+
+**Scope each `verify:` to what its own task could break** — not to what the repo can check. The
+policy decides *when* a gate fires; the `verify:` lines decide *what* runs there, so a gate that
+re-runs a check whose inputs the section could not have touched is a `verify:` written too wide,
+not a policy to be filtered at build time. Measured: on a 13-task run the same three selftests ran
+at the close of section 1 and again at task 5.1, because tasks in two sections each declared all
+three, while the spec itself stated no script changed in between. The body obeyed exactly what was
+written. Fixing it at authoring needs no judgment while building and holds for every spec; the
+alternative — a gate that skips a declared check because it judges the inputs unchanged — is a
+correctness judgment made mid-build, which this front refuses everywhere else.
+
+And **a `verify:` that cannot fail proves nothing when it passes.** Run each one against the tree
+*before* the fix and require it to exit non-zero; only then does its later exit 0 mean the task did
+something. Over prose this is not hypothetical: a check has passed while its target was untouched
+because the phrase wrapped across a line, and again because inline `**` sat between two words. A
+check over prose reads the whole file and normalizes markup and whitespace before matching.
 
 **`[P]` marks a task parallel-eligible**, written right after the id:
 
@@ -210,14 +237,14 @@ disjunction, parallel execution trades wall-clock for merge conflicts and loses 
 
 `per-task` / `per-section` (default) / `end-of-plan`, recorded in frontmatter. It answers *when* the
 checks run; `verify:` answers *what* runs. Declaring it during definition is what keeps
-`/specs:execute` from having to guess, or from stopping mid-build to ask.
+`/quenching:specs:execute` from having to guess, or from stopping mid-build to ask.
 
 ## `## Discoveries` and `## Outcome`
 
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
 `specs.py discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
-inconvenient. Each line is resolved **in place** by `/specs:develop`'s discoveries bank, so
+inconvenient. Each line is resolved **in place** by `/quenching:specs:develop`'s discoveries bank, so
 provenance is never lost:
 
 ```markdown

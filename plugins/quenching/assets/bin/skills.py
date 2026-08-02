@@ -60,8 +60,13 @@ SUBCOMMANDS
                   per numbered step, unscoped `Bash`, invocation-control coherence, and
                   the execution profile's decidable slice (`sk-fork-gate`,
                   `sk-profile-value`).
+                  Plus, on a surface carrying `.claude-plugin/plugin.json`, the citation
+                  form (`sk-bare-citation`): a plugin's commands are namespaced, so a
+                  bare `/front:verb` in prose resolves nowhere. Read from the body
+                  ALONE, which is what keeps a `description:` out of it.
                   `path` accepts a command file, a commands/ directory, or a surface
-                  root; it defaults to the resolved surface.
+                  root; it defaults to the resolved surface. A surface root also brings
+                  in `assets/references/**` — prose the same session reads.
   doctor          the surface's shape: every command carries a non-empty `description`,
                   no two resolve to the same `/` path, and every path segment is
                   kebab-case. That invariant is what replaced the bijection — with one
@@ -81,11 +86,22 @@ SUBCOMMANDS
                   what the surface costs before anything fires: per command and
                   summed, sorted by cost, against the ceiling. Reports; never
                   refuses.
+  read PATH [--sections "A,B"] [--rules-only]
+                  N sections of any markdown file in ONE call, frontmatter stripped.
+                  Without `--sections`, prints the file's heading index — what exists
+                  to ask for, so discovering it never costs the file. A section runs
+                  from its heading to the next heading of the SAME level or shallower,
+                  so sub-headings travel with their parent; fenced code is never read
+                  as a heading. A named section that does not exist is a refusal (2)
+                  that names it, never an empty answer. `--rules-only` returns
+                  the `<!-- rules -->` half of each section — and, where no marker is
+                  present, the whole section plus a note saying so. Never silence.
   selftest        builds a throwaway surface in a temp dir and asserts doctor's
                   findings on it — chiefly that a file parked under commands/ which
                   is NOT an entry point registers as one and fires
                   `sk-no-description`. The layout rule's only evidence, since the
-                  repo carries no test framework.
+                  repo carries no test framework. Plus the section-reader's canonical
+                  case list, proved here and against the same list by `specs.py`.
 
 SURFACE RESOLUTION
   --root PATH, else $SKILLS_ROOT, else walking up from cwd: the first directory
@@ -106,11 +122,19 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.4.2"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
+VERSION = "4.6.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
 HOOKS_DIR = "hooks"
+
+# The prose checks reach `assets/references/**` as well as `commands/**`, decided by count:
+# of the 519 bare command citations this surface carried on 2026-07-30, 183 lived under
+# `assets/references/`, so a scope stopping at `commands/` leaves 35% of the prose with no
+# net — and a reference is read by the same session that reads the body citing it, so a
+# body and its reference disagreeing is exactly the drift worth catching. A surface with no
+# such directory (every target repo's `.claude/`) contributes nothing and reports nothing.
+REFERENCES_DIR = os.path.join("assets", "references")
 
 SURFACE_MISSING = "—"
 
@@ -164,7 +188,14 @@ LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an infere
 # minted the 25th command (`/specs:isolate`) and the ceiling fired the same day. The
 # +1161 is that command's own description plus the boundary clauses five siblings grew to
 # name it. Revised from the measurement `budget` printed, never estimated.
-DEFAULT_CEILING = 12726
+#
+# 2026-08-02: re-measured at 12875 over the same 26 commands (25 routed, 0 agents),
+# replacing 12726. NO command was minted and none was reclassified — the +149 is three
+# descriptions growing (`/specs:execute` +62, `/specs:develop` +56, `/specs:conclude`
+# +31) since a03f31a. That is the ratchet's second firing mode, silent by construction,
+# and it went unseen because nothing in the repo's verification routine ran `budget`;
+# that routine now does. Revised from the measurement `budget` printed, never estimated.
+DEFAULT_CEILING = 12875
 CHARS_PER_TOKEN = 4             # a rule of thumb for the report, never a tokenizer count
 
 # the registry's derived zone — markers, cells, and location, per the automation mold
@@ -172,6 +203,15 @@ REGISTRY_RELPATH = ("docs", "documentation", "reference", "automation.md")
 ZONE_BEGIN = "<!-- GENERATED:BEGIN -->"
 ZONE_END = "<!-- GENERATED:END -->"
 EMPTY_CELL = "—"
+
+PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
+
+# A slash citation carrying at least one `:` — `/docs:add`, `/docs:documentation:build`. The
+# lookbehind rejects a citation already prefixed by a path or a scheme (`https://`,
+# `${CLAUDE_PLUGIN_ROOT}/…`), and requiring a segment after the `:` keeps a bare namespace
+# (`/skill:`) out: naming the namespace is not citing a command.
+CITATION_RE = re.compile(r"(?<![\w:/-])/([a-z0-9-]+(?::[a-z0-9-]+)+)")
+CITATION_SAMPLE = 3      # examples carried in the message; the count carries the rest
 
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 QUOTED_RE = re.compile(r"[\"“]([^\"”]{2,}?)[\"”]")
@@ -629,6 +669,27 @@ def discover_commands(commands_dir: str) -> list[dict]:
     return sorted(out, key=lambda c: c["command"])
 
 
+def discover_references(references_dir: str) -> list[dict]:
+    """Every `<references_dir>/**/*.md` — the shared procedure a command body cites by
+    absolute path instead of restating. These are NOT entry points and carry no
+    invocation: they are prose the prose checks read, nothing more."""
+    if not os.path.isdir(references_dir):
+        return []
+    out = []
+    for dirpath, _dirnames, filenames in os.walk(references_dir):
+        for fn in sorted(filenames):
+            if not fn.endswith(".md"):
+                continue
+            path = os.path.join(dirpath, fn)
+            text = read_text(path) or ""
+            out.append({
+                "path": path,
+                "relpath": rel(path, references_dir),
+                "body": body_after_frontmatter(text),
+            })
+    return sorted(out, key=lambda r: r["relpath"])
+
+
 def load_surface(root: str) -> dict:
     return {
         "root": root,
@@ -750,7 +811,71 @@ def _step_criteria(body: str) -> tuple[int, int]:
     return len(steps), len(covered)
 
 
-def lint_command(cmd: dict, base: str) -> list[dict]:
+SKILL_TOOL_RE = re.compile(r"[*`_]*Skill[*`_]*\s+tool", re.I)
+SKILL_TOOL_WINDOW = 1           # lines either side of the name, so a wrapped sentence counts
+
+
+def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
+    """Which commands another command's BODY reaches BY NAME — derived from disk, never
+    from a hand-kept list, so a mass rename moves the paths and the check still holds.
+
+    Frontmatter is not read. A `Not for: X -> /other` boundary names a neighbour it is
+    steering AWAY from, and counting it would put most of the surface in this set.
+
+    Two conventions are in use, and only the first is unambiguous on its own:
+
+      A. the BARE registry form, `prefix:docs:align` — what you actually hand the Skill
+         tool. The same name written `/prefix:docs:align` is a human-facing citation, so
+         a leading slash disqualifies it;
+      B. any form of the name on a line whose neighbourhood says "Skill tool" — which is
+         how a body that writes "hand isolation to `/specs:isolate` (the `Skill` tool)"
+         says the same thing.
+
+    The union is deliberately the WIDER read. The two errors are not symmetric: a false
+    positive costs a command its place in the typed-only class, which is an argument; a
+    false negative lets a real conductor stage be flagged typed-only and go silently
+    inert, which is the failure this check exists to prevent."""
+    out: dict[str, set[str]] = {}
+    for caller in commands:
+        lines = caller["body"].splitlines()
+        skill_lines = [i for i, _ in enumerate(lines)
+                       if SKILL_TOOL_RE.search("\n".join(
+                           lines[max(0, i - SKILL_TOOL_WINDOW): i + SKILL_TOOL_WINDOW + 1]))]
+        for target in commands:
+            name = target["command"]
+            if name == caller["command"]:
+                continue
+            path = re.escape(name.lstrip("/"))
+            registry = rf"(?<![\w:/-]){re.escape(prefix)}:{path}(?![\w:-])"
+            adjacent = rf"(?<![\w:-])/?(?:{re.escape(prefix)}:)?{path}(?![\w:-])"
+            if (re.search(registry, caller["body"])
+                    or any(re.search(adjacent, lines[i]) for i in skill_lines)):
+                out.setdefault(name, set()).add(caller["command"])
+    return out
+
+
+def description_is_resident(fm: dict) -> bool:
+    """Is this command's `description` in every session's context?
+
+    THE one place that answers it. `budget` charges the always-on total from it and
+    `lint` scopes its two routing codes by it, so the two instruments can never
+    disagree about the same surface — two copies of this condition is the shape that
+    diverges in silence.
+
+    `disable-model-invocation: true` is the only field that makes the answer no.
+    Measured, not assumed: Claude Code drops the description from the listing AND
+    refuses the command by name through the Skill tool — row 7 of
+    docs/reference/tools/claude-code-skill-command-mechanics.md, Claude Code 2.1.220.
+    The description is still read by a human, in the file and in the `/` menu; it is
+    residency it loses, never content."""
+    return str(fm.get("disable-model-invocation", "")).strip().lower() != "true"
+
+
+def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list[dict]:
+    """`named_by` is the set of commands whose bodies reach THIS one by name. It is a
+    property of the whole surface, so only a caller holding one can supply it — and a
+    surface with no plugin manifest has no registry form to be reached by, which is why
+    `None` (the check does not apply) is a legitimate state rather than a skipped one."""
     fm, body = cmd["frontmatter"], cmd["body"]
     where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
     if not fm:
@@ -790,19 +915,28 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                            "command is not portable outside Claude Code",
                            characters=len(description), cap=CAP_DESCRIPTION_PORTABLE, **where))
 
-    triggers = _quoted_phrases(description)
-    if not triggers:
-        out.append(finding("sk-trigger-position", "warn",
-                           "the description quotes no trigger phrase — no user wording routes to "
-                           "this command", **where))
-    elif not _quoted_phrases(" ".join(_split_sentences(description)[:TRIGGER_SENTENCE_MAX])):
-        out.append(finding("sk-trigger-position", "warn",
-                           f"the first trigger phrase appears after sentence "
-                           f"{TRIGGER_SENTENCE_MAX} — a truncated description loses it", **where))
-    if BOUNDARY_MARKER not in description:
-        out.append(finding("sk-no-boundary", "warn",
-                           f"the description states no `{BOUNDARY_MARKER}` boundary — the routing "
-                           "story is missing from the only text always in context", **where))
+    # Both codes below judge ROUTING FROM PROSE, so both are scoped to a description
+    # that is actually in context. For a typed-only command there is no listing for a
+    # trigger phrase to sit in and no neighbour for a boundary to discriminate against
+    # — the human reaches it by typing the name. Reporting it as badly written for a
+    # routing that cannot happen is `lint` contradicting `budget`, which already
+    # charges the same command 0.
+    if description_is_resident(fm):
+        triggers = _quoted_phrases(description)
+        if not triggers:
+            out.append(finding("sk-trigger-position", "warn",
+                               "the description quotes no trigger phrase — no user wording routes "
+                               "to this command", **where))
+        elif not _quoted_phrases(" ".join(_split_sentences(description)[:TRIGGER_SENTENCE_MAX])):
+            out.append(finding("sk-trigger-position", "warn",
+                               f"the first trigger phrase appears after sentence "
+                               f"{TRIGGER_SENTENCE_MAX} — a truncated description loses it",
+                               **where))
+        if BOUNDARY_MARKER not in description:
+            out.append(finding("sk-no-boundary", "warn",
+                               f"the description states no `{BOUNDARY_MARKER}` boundary — the "
+                               "routing story is missing from the only text always in context",
+                               **where))
 
     if cmd["bodyLines"] > CAP_BODY_LINES:
         out.append(finding("sk-body-length", "error",
@@ -823,7 +957,7 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                            f"`{bare}` is granted unscoped — scope it to the commands the workflow "
                            "runs, or state the reason in the body", tool=bare, **where))
 
-    out.extend(_lint_invocation(fm, where))
+    out.extend(_lint_invocation(fm, where, named_by))
     out.extend(_lint_frontmatter_hooks(cmd, where))
     out.extend(_lint_profile(fm, where))
     return out
@@ -858,11 +992,18 @@ def _lint_profile(fm: dict, where: dict) -> list[dict]:
     return out
 
 
-def _lint_invocation(fm: dict, where: dict) -> list[dict]:
+def _lint_invocation(fm: dict, where: dict, named_by: set[str] | None = None) -> list[dict]:
     """Both keys are optional and default invocation is the norm — a collapsed command
     is typable at `/` AND reachable by name, which is what lets a conductor invoke a
     stage. The incoherence worth an error is the combination that leaves NO caller:
-    the menu off and the model blocked."""
+    the menu off and the model blocked.
+
+    The second incoherence is narrower and was invisible until it was measured: a
+    command another body reaches BY NAME cannot also be typed-only, because the Skill
+    tool refuses it (row 7 of the mechanics reference). Nothing else on this surface
+    catches it — `budget` charges the command 0 and calls that an improvement, `doctor`
+    still counts it as present, and the conductor does not fail, it simply does
+    nothing."""
     out, values = [], {}
     for key in ("user-invocable", "disable-model-invocation"):
         if key not in fm:
@@ -879,6 +1020,13 @@ def _lint_invocation(fm: dict, where: dict) -> list[dict]:
                            "`user-invocable: false` with `disable-model-invocation: true` leaves "
                            "no way to invoke the command — neither the menu nor the model",
                            **where))
+    if values.get("disable-model-invocation") is True and named_by:
+        callers = ", ".join(sorted(named_by))
+        out.append(finding("sk-inert-stage", "error",
+                           f"`disable-model-invocation: true` on a command reached by name from "
+                           f"{callers} — the Skill tool refuses the call, so that body runs and "
+                           "this stage silently does nothing",
+                           namedBy=sorted(named_by), **where))
 
     return out
 
@@ -901,34 +1049,110 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
     return out
 
 
-def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict]]:
-    """(base, commands). Accepts a single command file, a commands/ directory, or a
-    surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
-    all mean what they read like."""
+def plugin_prefix(root: str) -> str | None:
+    """The registry prefix this surface's commands carry, from `<root>/.claude-plugin/
+    plugin.json`. `None` says the surface is a target repo's own `.claude/` — where a
+    command file IS in `.claude/commands/`, the bare form is the one that resolves, and
+    the citation check has nothing to say."""
+    text = read_text(os.path.join(root, PLUGIN_MANIFEST))
+    if text is None:
+        return None
+    try:
+        name = json.loads(text).get("name")
+    except (ValueError, AttributeError):
+        return None
+    return name.strip() if isinstance(name, str) and name.strip() else None
+
+
+def bare_citations(body: str, invocations: set[str]) -> list[str]:
+    """The bare `/front:verb` citations in `body` that name a command of THIS surface, in
+    order of appearance and without repeats.
+
+    `body` is the text after the frontmatter, so a citation inside `description:` cannot
+    reach here — the boundary is the parse, never a pattern that has to be kept in step
+    with one."""
+    seen: list[str] = []
+    for m in CITATION_RE.finditer(body):
+        cite = "/" + m.group(1)
+        if cite in invocations and cite not in seen:
+            seen.append(cite)
+    return seen
+
+
+def lint_citations(prefix: str, body: str, invocations: set[str], where: dict) -> list[dict]:
+    """One finding per file, never one per citation: a surface mid-sweep carries hundreds,
+    and a report nobody can read is a report nobody acts on."""
+    bare = bare_citations(body, invocations)
+    if not bare:
+        return []
+    shown = ", ".join(f"`{c}`" for c in bare[:CITATION_SAMPLE])
+    more = f" (+{len(bare) - CITATION_SAMPLE} more)" if len(bare) > CITATION_SAMPLE else ""
+    return [finding("sk-bare-citation", "warn",
+                    f"{plural(len(bare), 'bare command citation')} in the body — {shown}{more}. "
+                    f"These commands come from the `{prefix}` plugin, so the form that resolves "
+                    f"is `{prefix}:<front>:<verb>` for the Skill tool and "
+                    f"`/{prefix}:<front>:<verb>` for a human; the bare form resolves only where "
+                    "the command file lives in the target repo's own .claude/commands/",
+                    citations=bare, **where)]
+
+
+def resolve_lint_targets(path_arg: str | None, root: str) -> tuple[str, list[dict], list[dict]]:
+    """(base, commands, references). Accepts a single command file, a commands/ directory,
+    or a surface root — so `lint commands`, `lint .claude`, and `lint commands/docs/add.md`
+    all mean what they read like.
+
+    The references ride along only when the base IS a surface root: linting one file, or a
+    bare `commands/` directory, is a scope the caller named and this never widens it."""
     if not path_arg:
-        return root, discover_commands(os.path.join(root, COMMANDS_DIR))
+        return (root, discover_commands(os.path.join(root, COMMANDS_DIR)),
+                discover_references(os.path.join(root, REFERENCES_DIR)))
     target = os.path.abspath(path_arg)
     if os.path.isfile(target):
         parent = os.path.dirname(target)
         return parent, [c for c in discover_commands(parent)
-                        if os.path.abspath(c["path"]) == target]
+                        if os.path.abspath(c["path"]) == target], []
     if os.path.isdir(os.path.join(target, COMMANDS_DIR)):
-        return target, discover_commands(os.path.join(target, COMMANDS_DIR))
-    return target, discover_commands(target)
+        return (target, discover_commands(os.path.join(target, COMMANDS_DIR)),
+                discover_references(os.path.join(target, REFERENCES_DIR)))
+    return target, discover_commands(target), []
 
 
 def cmd_lint(args, root: str) -> int:
-    base, commands = resolve_lint_targets(args.path, root)
+    base, commands, references = resolve_lint_targets(args.path, root)
     if not commands:
         return report_findings(args, f"skills lint — {base}", {"root": base, "commandCount": 0},
                                [finding("sk-no-commands", "error",
                                         f"no command file found under {base}",
                                         command=SURFACE_MISSING)])
+    prefix = plugin_prefix(root)
+    # Same surface-versus-scope rule as the citations below, and for the same reason: the
+    # body that names a stage is usually NOT the file being linted, so deriving this from
+    # `commands` would make `lint <one file>` blind to the conductor that reaches it.
+    surface_commands = (commands if base == root
+                        else discover_commands(os.path.join(root, COMMANDS_DIR)))
+    named_by = named_by_bodies(surface_commands, prefix) if prefix else {}
+
     findings: list[dict] = []
     for cmd in commands:
-        findings.extend(lint_command(cmd, base))
-    return report_findings(args, f"skills lint — {base} ({plural(len(commands), 'command')})",
-                           {"root": base, "commandCount": len(commands)}, findings)
+        findings.extend(lint_command(cmd, base,
+                                     named_by.get(cmd["command"]) if prefix else None))
+
+    if prefix:
+        invocations = {c["command"] for c in surface_commands}
+        for cmd in commands:
+            findings.extend(lint_citations(prefix, cmd["body"], invocations,
+                                           {"command": cmd["command"],
+                                            "path": rel(cmd["path"], base)}))
+        for ref in references:
+            findings.extend(lint_citations(prefix, ref["body"], invocations,
+                                           {"command": SURFACE_MISSING,
+                                            "path": rel(ref["path"], base)}))
+
+    header = f"skills lint — {base} ({plural(len(commands), 'command')}"
+    header += f", {plural(len(references), 'reference')})" if references else ")"
+    return report_findings(args, header,
+                           {"root": base, "commandCount": len(commands),
+                            "referenceCount": len(references)}, findings)
 
 
 register("lint", lambda sp: sp.add_argument(
@@ -1188,6 +1412,117 @@ EXPECTED_DRIFT = {
     "pluginonly": {"sk-tool-absent"},   # the hook only — never the two CLIs
 }
 
+# The citation check and the boundary that makes it safe to run. `cites-bare` carries a
+# bare citation in its BODY *and* another inside `description:`; asserting the exact list
+# is what proves the frontmatter one never reached the check — the risk `## Risks` names,
+# a sweep leaking into always-on metadata, is exactly this boundary failing. `resolvable`
+# carries every form that DOES resolve — the registry name, the plugin-prefixed slash, a
+# bare namespace naming no verb, and a URL — and must stay silent.
+CITATION_FIXTURE = {
+    "docs/cites-bare.md":
+        "---\ndescription: A bare /docs:hollow here is frontmatter, and must never fire.\n"
+        "---\n\nHand off to /docs:add once the doc is written.\n",
+    "docs/cites-resolvable.md":
+        "---\ndescription: The control.\n---\n\n"
+        "Invoke `plugfix:docs:add` through the Skill tool, or type /plugfix:docs:add. The\n"
+        "/docs: namespace names no verb, and https://example.com/docs:add is a URL.\n",
+}
+
+# the same check reaching `assets/references/**` — the scope decided by count, and the only
+# evidence that the reference tree is linted at all
+CITATION_REFERENCE_FIXTURE = {"docs-add/homes.md": "Route the rest to /docs:hollow.\n"}
+
+# a manifest is what makes a surface a PLUGIN, and the check fires only for one: on a target
+# repo's own `.claude/`, the command file really is in `.claude/commands/` and the bare form
+# is the one that resolves
+CITATION_MANIFEST = {".claude-plugin/plugin.json": '{"name": "plugfix"}\n'}
+
+EXPECTED_CITATIONS = {
+    "/docs:cites-bare": ["/docs:add"],
+    "/docs:cites-resolvable": [],
+    "references/docs-add/homes.md": ["/docs:hollow"],
+}
+
+# The two routing codes against `description_is_resident`. This rule is UNOBSERVABLE on
+# the real surface — the one typed-only command there happens to carry both a trigger
+# phrase and a boundary, so it would pass either way — and a rule no case exercises is
+# not proved. The two fixtures are byte-identical but for the field, which is what makes
+# the pair a measurement rather than two assertions: the control fires both codes, so a
+# silent treatment can only be the field.
+ROUTING_FIXTURE = {
+    "docs/routed-bare.md":
+        "---\ndescription: The control. No quoted trigger, no boundary, and resident — "
+        "so both routing codes must fire.\n---\n\nBody.\n",
+    # The body names ITSELF by the registry form, which real bodies do in their own
+    # headings. It must not count as being reached by name — a command cannot conduct
+    # itself — and this is the case that arms that exclusion.
+    "docs/typed-only-bare.md":
+        "---\ndescription: The treatment. Same bare description, out of context — so "
+        "neither routing code may fire.\ndisable-model-invocation: true\n---\n\n"
+        "# `plugfix:docs:typed-only-bare`\n\nBody.\n",
+}
+
+ROUTING_CODES = {"sk-trigger-position", "sk-no-boundary"}
+
+EXPECTED_ROUTING = {
+    "/docs:routed-bare": ROUTING_CODES,
+    "/docs:typed-only-bare": set(),
+}
+
+# The inert-stage finding, which cannot be proved on the real surface without EDITING it
+# into the very failure the check exists to prevent. One conductor naming two stages the
+# two ways a body does it, and three controls — because a check that fires on the legitimate
+# use of the field is worse than no check: `stage-live` is named but resident, and
+# `typed-only-bare` (reused from ROUTING_FIXTURE) is typed-only but named by nobody, which
+# is exactly what the field is for.
+INERT_FIXTURE = {
+    "docs/conducts.md":
+        "---\ndescription: The conductor. Use when you \"run the stages\". "
+        "Not for: anything else -> /docs:add.\n---\n\n"
+        "Invoke `plugfix:docs:stage-inert` by name, then `plugfix:docs:stage-live`.\n"
+        "Neither line says the two words below, so only the registry arm reaches these.\n",
+    "docs/stage-inert.md":
+        "---\ndescription: Named by a conductor AND typed-only — the inert combination.\n"
+        "disable-model-invocation: true\n---\n\nBody.\n",
+    "docs/stage-live.md":
+        "---\ndescription: Named by the same conductor, but resident. Use when you "
+        "\"run the live stage\". Not for: anything else -> /docs:add.\n---\n\nBody.\n",
+    # The discriminator that took this set from 21 targets to 6 on the real surface: the
+    # SAME name with a leading slash is a citation aimed at a human, not a hand-off. This
+    # pair is what arms that rule — without it the slash exclusion can be deleted and
+    # every other case still passes.
+    # The second convention, and the only case that arms it: a stage handed off by the
+    # unprefixed slash form, which is a hand-off ONLY because the sentence says so. Delete
+    # the Skill-tool arm and this is the case that notices.
+    "docs/hands-off.md":
+        "---\ndescription: Hands a stage off the other way this surface writes it. Use "
+        "when you \"run the hand-off case\". Not for: anything else -> /docs:add.\n---\n\n"
+        "Hand the isolation to /docs:stage-handed through the `Skill` tool rather than\n"
+        "reimplementing it here.\n",
+    "docs/stage-handed.md":
+        "---\ndescription: Typed-only, and reached by name only through the Skill-tool "
+        "phrasing.\ndisable-model-invocation: true\n---\n\nBody.\n",
+    "docs/cites-slash.md":
+        "---\ndescription: Cites a neighbour the human-facing way. Use when you "
+        "\"read the citation case\". Not for: anything else -> /docs:add.\n---\n\n"
+        "When there is nothing to do, say so and point the human at\n"
+        "/plugfix:docs:stage-cited instead.\n",
+    "docs/stage-cited.md":
+        "---\ndescription: Typed-only, and only ever CITED with a leading slash — never "
+        "reached by name, so this must stay silent.\n"
+        "disable-model-invocation: true\n---\n\nBody.\n",
+}
+
+EXPECTED_INERT = {
+    "/docs:conducts": set(),
+    "/docs:stage-inert": {"sk-inert-stage"},        # the bare registry form reaches it
+    "/docs:stage-live": set(),                      # named, but its description is resident
+    "/docs:typed-only-bare": set(),                 # typed-only and named by nobody
+    "/docs:stage-cited": set(),                     # typed-only, cited with a slash only
+    "/docs:hands-off": set(),
+    "/docs:stage-handed": {"sk-inert-stage"},       # reached only via the Skill-tool arm
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -1202,11 +1537,16 @@ def cmd_selftest(args, root: str) -> int:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
-        for relpath, text in {**FIXTURE, **HOOK_FIXTURE}.items():
+        for relpath, text in {**FIXTURE, **HOOK_FIXTURE, **CITATION_FIXTURE,
+                              **ROUTING_FIXTURE, **INERT_FIXTURE}.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
-        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE}.items():
+        for relpath, text in CITATION_REFERENCE_FIXTURE.items():
+            path = os.path.join(tmp, REFERENCES_DIR, *relpath.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            pathlib.Path(path).write_text(text, encoding="utf-8")
+        for relpath, text in {**WIDER_FIXTURE, **DRIFT_FIXTURE, **CITATION_MANIFEST}.items():
             path = os.path.join(tmp, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
@@ -1240,6 +1580,36 @@ def cmd_selftest(args, root: str) -> int:
                 if f["code"].startswith("sk-hook-"):
                     hook_got[c["command"]].add(f["code"])
 
+        routing_got = {c: set() for c in EXPECTED_ROUTING}
+        for c in surface["commands"]:
+            if c["command"] not in EXPECTED_ROUTING:
+                continue
+            routing_got[c["command"]] = {f["code"] for f in lint_command(c, tmp)
+                                         if f["code"] in ROUTING_CODES}
+
+        prefix = plugin_prefix(tmp)
+        named_by = named_by_bodies(surface["commands"], prefix) if prefix else {}
+        inert_got = {c: set() for c in EXPECTED_INERT}
+        for c in surface["commands"]:
+            if c["command"] not in EXPECTED_INERT:
+                continue
+            inert_got[c["command"]] = {
+                f["code"] for f in lint_command(c, tmp, named_by.get(c["command"]))
+                if f["code"] == "sk-inert-stage"}
+
+        invocations = {c["command"] for c in surface["commands"]}
+        citation_got = {c["command"]: bare_citations(c["body"], invocations)
+                        for c in surface["commands"] if c["command"] in EXPECTED_CITATIONS}
+        for ref in discover_references(os.path.join(tmp, REFERENCES_DIR)):
+            citation_got[f"references/{ref['relpath']}"] = bare_citations(ref["body"], invocations)
+        # the finding's own shape: WARN, never ERROR (bundle-verification.md), and one per
+        # file rather than one per citation
+        cites_bare = next(c for c in surface["commands"] if c["command"] == "/docs:cites-bare")
+        fired = lint_citations(prefix, cites_bare["body"], invocations,
+                               {"command": cites_bare["command"]}) if prefix else []
+        # a target repo's own surface carries no manifest, so the same body must stay silent
+        target_silent = plugin_prefix(os.path.join(tmp, "clean", CLAUDE_DIR)) is None
+
     failures = canonical_case_failures()
     for command, codes in EXPECTED.items():
         if got.get(command) != codes:
@@ -1248,6 +1618,14 @@ def cmd_selftest(args, root: str) -> int:
         if hook_got.get(command) != codes:
             failures.append(f"{command}: expected {sorted(codes)}, "
                             f"got {sorted(hook_got.get(command, []))}")
+    for command, codes in EXPECTED_ROUTING.items():
+        if routing_got.get(command) != codes:
+            failures.append(f"{command}: expected routing codes {sorted(codes)}, "
+                            f"got {sorted(routing_got.get(command, []))}")
+    for command, codes in EXPECTED_INERT.items():
+        if inert_got.get(command) != codes:
+            failures.append(f"{command}: expected inert-stage codes {sorted(codes)}, "
+                            f"got {sorted(inert_got.get(command, []))}")
     if got.get("/docs:add"):
         failures.append(f"/docs:add: the conformant control was flagged {sorted(got['/docs:add'])}")
     if got.get("agents/good.md"):
@@ -1260,11 +1638,70 @@ def cmd_selftest(args, root: str) -> int:
     if not refusal_armed:
         failures.append("drift: an installed copy's own directory resolved as a plugin root — "
                         "the exit-2 refusal is not armed")
+    if prefix != "plugfix":
+        failures.append(f"citations: the manifest's name read as {prefix!r}, not 'plugfix' — "
+                        "the check cannot name the form that resolves")
+    for where, cites in EXPECTED_CITATIONS.items():
+        if citation_got.get(where) != cites:
+            failures.append(f"{where}: expected citations {cites}, got {citation_got.get(where)}")
+    if [(f["code"], f["severity"]) for f in fired] != [("sk-bare-citation", "warn")]:
+        failures.append(f"citations: expected one sk-bare-citation at warn, got "
+                        f"{[(f['code'], f['severity']) for f in fired]}")
+    if not target_silent:
+        failures.append("citations: a surface with no plugin manifest resolved a prefix — "
+                        "the check would fire where the bare form is the correct one")
 
-    # + 2: the two conformant controls that must stay clean (/docs:add, agents/good.md),
-    # and the drift refusal, which is a case with no fixture row of its own
+    # The section reader, against the canonical case list `specs.py` proves too. It needs
+    # no fixture on disk — the list carries its own — so it sits outside the temp surface
+    # in spirit and is simply run here.
+    for f in section_case_findings(read_sections_adapter):
+        failures.append(f"section reader: {f['message']}")
+
+    # This tool's own half, which the shared list deliberately does not cover: free
+    # markdown has headings at every level, and a reference cited as `§The [P] check` is a
+    # `###`. A reader that only resolved `##` would refuse half the citations in the repo.
+    all_heads = [(h["level"], h["heading"]) for h in markdown_sections(SECTION_FIXTURE)]
+    want_heads = [(1, "Top"), (2, "Alpha"), (3, "Alpha sub"), (2, "Beta"), (2, "Gamma")]
+    if all_heads != want_heads:
+        failures.append(f"section reader: every-level index is {all_heads}, expected "
+                        f"{want_heads}")
+    sub, _ = select_sections(markdown_sections(SECTION_FIXTURE), ["Alpha sub"])
+    if not sub or "Beta" in sub[0]["body"]:
+        failures.append("section reader: a `###` must resolve on its own and stop at the "
+                        "next heading of the same level or shallower")
+
+    # `--rules-only`, both arms. The fallback arm is the one `## Validation` insists on:
+    # a missing marker must never become an empty answer, because a caller that asked for
+    # a rule and got silence proceeds as though the rule did not exist.
+    marked = (f"{RULES_MARKER}\nThe binding sentence.\n{RATIONALE_MARKER}\n"
+              f"The measurement behind it.")
+    nested = (f"{RULES_MARKER}\nParent rule.\n\n### Sub one\n\n{RULES_MARKER}\nSub rule.\n"
+              f"{RATIONALE_MARKER}\nSub story.\n\n### Sub two\n\nUnmarked sub rule.")
+    for label, body, want_text, want_marked in (
+            ("marked", marked, "The binding sentence.", True),
+            ("no-rationale", f"{RULES_MARKER}\nOnly a rule.", "Only a rule.", True),
+            ("unmarked", "A whole section nobody marked up.",
+             "A whole section nobody marked up.", False),
+            # a marker's reach ends at the next heading: one sub-section's rationale must
+            # not swallow the sub-sections after it
+            ("nested", nested,
+             "Parent rule.\n\n### Sub one\n\nSub rule.\n\n### Sub two\n\n"
+             "Unmarked sub rule.", True)):
+        got_text, got_marked = split_rule_and_rationale(body)
+        if got_text.strip() != want_text or got_marked != want_marked:
+            failures.append(f"--rules-only {label}: got ({got_text.strip()!r}, "
+                            f"{got_marked}), expected ({want_text!r}, {want_marked})")
+        if not got_text.strip():
+            failures.append(f"--rules-only {label}: returned an empty answer — a missing "
+                            f"marker degrades to the whole section, never to silence")
+
+    # + 3: the two conformant controls that must stay clean (/docs:add, agents/good.md) and
+    # the drift refusal, none of which has a fixture row of its own; + 2 for the citation
+    # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
-             + len(EXPECTED_DRIFT) + 3)
+             + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5
+             + len(SECTION_CASES["cases"]) + 6)  # + the every-level index, the
+    # `###` resolution, and the four `--rules-only` arms
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
@@ -1429,17 +1866,18 @@ def budget_rows(surface: dict) -> list[dict]:
     `argument-hint` is still deliberately excluded: it totals a few dozen characters
     across a whole surface and is not carried in the listing.
 
-    A `disable-model-invocation: true` command counts 0: Claude Code drops its
-    description from context entirely (the command is reachable only by typing it), so
-    charging it to the always-on total would report a cost the model never pays. The row
-    stays in the table, marked, so the surface's full inventory is still visible."""
+    A typed-only command counts 0: Claude Code drops its description from context
+    entirely (the command is reachable only by typing it), so charging it to the
+    always-on total would report a cost the model never pays. The row stays in the
+    table, marked, so the surface's full inventory is still visible. The predicate is
+    `description_is_resident` — the same one `lint` scopes its routing codes by."""
     rows = []
     for c in surface["commands"]:
         description = len(str(c["frontmatter"].get("description", "")))
-        hidden = str(c["frontmatter"].get("disable-model-invocation", "")).strip().lower() == "true"
+        resident = description_is_resident(c["frontmatter"])
         rows.append({"command": c["command"], "description": description,
-                     "total": 0 if hidden else description,
-                     **({"alwaysOn": False} if hidden else {})})
+                     "total": description if resident else 0,
+                     **({"alwaysOn": False} if not resident else {})})
     return sorted(rows, key=lambda r: (-r["total"], r["command"]))
 
 
@@ -1447,7 +1885,18 @@ def cmd_budget(args, root: str) -> int:
     surface = load_surface(root)
     rows = budget_rows(surface)
     agents = agent_budget_rows(root)
-    commands_total = sum(r["total"] for r in rows)
+    # The two classes, reported side by side so a falling total can be READ. A surface
+    # that halves its cost by writing tighter descriptions and one that halves it by
+    # flagging half the surface typed-only look identical in the total alone, and only
+    # one of them is the honest design context-budget.md asks for. `typedOnly.characters`
+    # is the description text that left context — the number that grows when the field
+    # is used to dodge the measurement rather than to declare a human-must-choose
+    # command. `commands_total` sums the routed class alone, which is what makes
+    # `breakdown.commands` and `classes.routed.characters` equal by construction rather
+    # than by an assertion somebody has to maintain.
+    routed = [r for r in rows if r.get("alwaysOn") is not False]
+    typed_only = [r for r in rows if r.get("alwaysOn") is False]
+    commands_total = sum(r["total"] for r in routed)
     agents_total = sum(r["total"] for r in agents)
     total = commands_total + agents_total
     ceiling = args.ceiling if args.ceiling is not None else DEFAULT_CEILING
@@ -1461,6 +1910,11 @@ def cmd_budget(args, root: str) -> int:
     payload = {"root": root, "total": total, "ceiling": ceiling,
                "approxTokens": round(total / CHARS_PER_TOKEN),
                "breakdown": {"commands": commands_total, "agents": agents_total},
+               "classes": {
+                   "routed": {"commands": len(routed),
+                              "characters": sum(r["total"] for r in routed)},
+                   "typedOnly": {"commands": len(typed_only),
+                                 "characters": sum(r["description"] for r in typed_only)}},
                "commands": rows, "agents": agents}
     if args.json:
         print(json.dumps({"ok": not findings, **payload, "findings": findings},
@@ -1477,6 +1931,11 @@ def cmd_budget(args, root: str) -> int:
           f"ceiling {ceiling}")
     if agents:
         print(f"  commands {commands_total} + agents {agents_total}")
+    cls = payload["classes"]
+    print(f"  routed {plural(cls['routed']['commands'], 'command')}, "
+          f"{cls['routed']['characters']} characters in context · "
+          f"typed-only {plural(cls['typedOnly']['commands'], 'command')}, "
+          f"{cls['typedOnly']['characters']} characters out of it")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
     return exit_for(findings)
@@ -1756,6 +2215,371 @@ register("drift",
                                     help="the plugin checkout holding VERSION beside assets/ "
                                          "(default: the one this script runs from)"),
          cmd_drift)
+
+
+# --------------------------------------------------------------------------- #
+# read — N sections of any markdown file, in ONE call
+# --------------------------------------------------------------------------- #
+# `specs.py section` reads a SPEC, whose fourteen headings are a validated contract.
+# A reference or a standard is free markdown, so the two cannot share an
+# implementation — but they must not disagree about what a section IS. Per
+# `docs/standards/code/canonical-set-parsing.md`, what is shared is the RULE, proved by
+# both tools against SECTION_CASES below.
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+MD_HEADING_RE = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$")
+
+
+def _strip_frontmatter(lines: list[str]) -> list[str]:
+    """A leading `---` block is a header, never content. ~1,424 chars per OKF doc that
+    a section reader has no reason to carry."""
+    if not lines or lines[0].strip() != "---":
+        return lines
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return lines[i + 1:]
+    return lines
+
+
+def markdown_sections(text: str) -> list[dict]:
+    """Every heading of a markdown file, in order, each with the body it owns.
+
+    Two rules, and both are the reason this is code rather than an `awk` in 26 command
+    bodies:
+
+    - **A section ends at the next heading of the same level or shallower.** So
+      sub-headings travel with their parent, exactly as `## Impact` keeps its parsed
+      `### Standards …` sub-heading in `specs.py`. Ending at the next heading of ANY
+      level would orphan them.
+    - **A fenced block is never read as a heading.** Several sections here open with
+      ```` ```bash ```` blocks containing `## ` comments, and a line-matching reader
+      slices the section in half at one — silently, returning a plausible answer.
+    """
+    lines = _strip_frontmatter(text.splitlines())
+    heads: list[dict] = []
+    fence: str | None = None
+    for lineno, line in enumerate(lines):
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+            continue
+        if fence is not None:
+            continue
+        h = MD_HEADING_RE.match(line)
+        if h:
+            heads.append({"level": len(h.group(1)), "heading": h.group(2).strip(),
+                          "lineno": lineno})
+    for i, h in enumerate(heads):
+        end = len(lines)
+        for nxt in heads[i + 1:]:
+            if nxt["level"] <= h["level"]:
+                end = nxt["lineno"]
+                break
+        h["body"] = "\n".join(lines[h["lineno"] + 1:end]).strip("\n")
+    return heads
+
+
+RULES_MARKER = "<!-- rules -->"
+RATIONALE_MARKER = "<!-- rationale -->"
+
+
+def split_rule_and_rationale(body: str) -> tuple[str, bool]:
+    """The rule half of a section, and whether a marker actually said where it ends.
+
+    **Marker, never heuristic.** A model deciding per read which sentences are binding and
+    which are the story behind them is non-deterministic, and its failure is silent: a
+    dropped binding sentence shows up nowhere. The marker is written once, by whoever wrote
+    the rule, and the read is mechanical.
+
+    **No marker → the whole section, and the caller is TOLD.** The degradation is to
+    today's behaviour, never to emptiness. A convention applied in five files must not turn
+    the other eighteen into silence.
+
+    **A marker's reach ends at the next heading.** Asked for a section, a caller gets its
+    sub-sections with it — so a single `<!-- rationale -->` inside one `###` would otherwise
+    truncate every rule after it, including whole sub-sections that carry no marker at all.
+    Measured on `execution.md` §Delegating an executor: three normative `###` blocks
+    disappeared behind one sub-section's rationale.
+    """
+    keep, marked, out = True, False, []
+    fence: str | None = None
+    for line in body.splitlines():
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+        elif fence is None:
+            if line.strip() == RULES_MARKER:
+                keep, marked = True, True
+                continue
+            if line.strip() == RATIONALE_MARKER:
+                keep = False
+                continue
+            if MD_HEADING_RE.match(line):
+                if not keep and out and out[-1].strip():
+                    out.append("")   # dropped rationale must not weld a heading to prose
+                keep = True
+        if keep:
+            out.append(line)
+    return "\n".join(out).strip("\n"), marked
+
+
+def normalize_heading(name: str) -> str:
+    """What a caller types against what the file carries. `§The commit`, `## The commit`
+    and `the commit` are the same request — the citation form the bodies already use
+    carries the `§`, and refusing over it would make the reader unusable from the very
+    prose it exists to serve."""
+    return " ".join(name.strip().lstrip("#§").strip().split()).casefold()
+
+
+def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], list[str]]:
+    """The requested sections in the order they were ASKED FOR, plus the names that
+    resolved to nothing. Duplicate headings resolve to the first — the same rule
+    `parse_sections` applies in `specs.py`.
+
+    **An exact name wins; failing that, a UNIQUE prefix resolves.** Free-markdown headings
+    are long and full of punctuation — `## The commit — one per task, carrying its own
+    ticked box` — and a caller citing `§The commit`, exactly as the command bodies do, must
+    not have to reproduce an em-dash and a comma to be understood. A prefix matching two
+    headings resolves to neither: ambiguity is a refusal, never a guess."""
+    index: dict[str, dict] = {}
+    for h in heads:
+        index.setdefault(normalize_heading(h["heading"]), h)
+    got, missing = [], []
+    for name in wanted:
+        key = normalize_heading(name)
+        h = index.get(key)
+        if h is None:
+            hits = [v for k, v in index.items() if k.startswith(key)]
+            h = hits[0] if len(hits) == 1 else None
+        (got.append(h) if h else missing.append(name))
+    return got, missing
+
+
+SECTION_FIXTURE = '''---
+type: standard
+title: the section reader's fixture
+---
+
+# Top
+
+Preamble under a level-1 heading.
+
+## Alpha
+
+Alpha body.
+
+### Alpha sub
+
+Sub body that belongs to Alpha.
+
+## Beta
+
+Beta opens with a fenced block whose lines look like headings:
+
+```bash
+## not a heading
+### also not a heading
+```
+
+Beta continues after the fence.
+
+## Gamma
+
+~~~
+## fenced by tildes
+~~~
+
+Gamma ends the file.
+'''
+
+# The canonical case list for the SECTION rule, duplicated verbatim in `specs.py`.
+# EDIT BOTH, OR NEITHER — exactly as `CANONICAL_CASES` is duplicated across all three
+# tools for the frontmatter rule. Neither script may import the other: each installs
+# standalone into a target's `.claude/hooks/`, so the list travelling with each copy is
+# what makes the rule provable where it actually runs.
+#
+# It covers only what BOTH tools answer the same way: level-2 sections. A spec's
+# fourteen headings are all `##`, so that is the whole of `specs.py`'s contract, while
+# `skills.py` also resolves `#` and `###` over free markdown and proves those separately.
+SECTION_CASES = {
+    "index": ["Alpha", "Beta", "Gamma"],
+    "cases": [
+        {"why": "sub-headings travel with their parent, and the section stops at the "
+                "next heading of the same level",
+         "ask": ["Alpha"],
+         "contains": ["Alpha body.", "### Alpha sub", "Sub body that belongs to Alpha."],
+         "excludes": ["Beta continues"]},
+        {"why": "a fenced block containing `## ` never splits the section",
+         "ask": ["Beta"],
+         "contains": ["## not a heading", "Beta continues after the fence."],
+         "excludes": ["Gamma ends"]},
+        {"why": "tilde fences count too, and the last section runs to end of file",
+         "ask": ["Gamma"],
+         "contains": ["## fenced by tildes", "Gamma ends the file."],
+         "excludes": []},
+        {"why": "the citation form the bodies already use resolves: `§X` and `## X` "
+                "are the same request, and N sections come back in the order asked",
+         "ask": ["§Gamma", "## Alpha"],
+         "contains": ["Gamma ends the file.", "Alpha body."],
+         "excludes": [],
+         "order": ["Gamma", "Alpha"]},
+        {"why": "neither frontmatter nor the preamble above the first section ever "
+                "leaks into a section that does not own it",
+         "ask": ["Alpha", "Beta", "Gamma"],
+         "contains": [],
+         "excludes": ["type: standard", "Preamble under a level-1 heading."]},
+        {"why": "a unique prefix resolves, so a citation need not reproduce a long "
+                "heading's punctuation",
+         "ask": ["Gam"],
+         "contains": ["Gamma ends the file."],
+         "excludes": []},
+        {"why": "a section that does not exist is a refusal that names it, never an "
+                "empty answer",
+         "ask": ["Delta"],
+         "missing": ["Delta"]},
+    ],
+}
+
+
+def section_case_findings(read_sections) -> list[dict]:
+    """Run the canonical list against one tool's reader.
+
+    `read_sections(fixture_text, wanted)` returns `(sections, missing)`, where each
+    section is a mapping with `heading` and `body`. Both tools supply that adapter over
+    their own implementation, so the list is the contract and neither is the reference.
+    """
+    out: list[dict] = []
+    heads = [h["heading"] for h in read_sections(SECTION_FIXTURE, None)[0]
+             if h.get("level", 2) == 2]
+    if heads != SECTION_CASES["index"]:
+        out.append(finding("sk-section-index", "error",
+                           f"heading index is {heads}, expected "
+                           f"{SECTION_CASES['index']}",
+                           remedy="a fenced line was read as a heading, or a heading "
+                                  "was missed"))
+    for case in SECTION_CASES["cases"]:
+        got, missing = read_sections(SECTION_FIXTURE, case["ask"])
+        want_missing = case.get("missing", [])
+        if missing != want_missing:
+            out.append(finding("sk-section-missing", "error",
+                               f"{case['ask']}: missing is {missing}, expected "
+                               f"{want_missing} — {case['why']}",
+                               remedy="an absent section must refuse, naming itself"))
+            continue
+        if want_missing:
+            continue
+        body = "\n".join(f"{'#' * s.get('level', 2)} {s['heading']}\n{s['body']}"
+                         for s in got)
+        for needle in case["contains"]:
+            if needle not in body:
+                out.append(finding("sk-section-body", "error",
+                                   f"{case['ask']}: missing {needle!r} — {case['why']}",
+                                   remedy="the section rule dropped content it owns"))
+        for needle in case["excludes"]:
+            if needle in body:
+                out.append(finding("sk-section-body", "error",
+                                   f"{case['ask']}: leaked {needle!r} — {case['why']}",
+                                   remedy="the section rule captured content it does "
+                                          "not own"))
+        if "order" in case and [s["heading"] for s in got] != case["order"]:
+            out.append(finding("sk-section-order", "error",
+                               f"{case['ask']}: order is "
+                               f"{[s['heading'] for s in got]}, expected "
+                               f"{case['order']} — {case['why']}",
+                               remedy="N sections come back in the order asked"))
+    return out
+
+
+def read_sections_adapter(text: str, wanted: list[str] | None) -> tuple[list[dict], list[str]]:
+    """This tool's arm of the canonical list."""
+    heads = markdown_sections(text)
+    if wanted is None:
+        return heads, []
+    return select_sections(heads, wanted)
+
+
+def cmd_read(args, root: str) -> int:
+    path = pathlib.Path(args.path)
+    if not path.is_file():
+        payload = {"ok": False, "code": "sk-read-no-file", "path": str(path),
+                   "message": f"{path} is not a file"}
+        print(json.dumps(payload, indent=2, ensure_ascii=False) if args.json
+              else f"error: {path} is not a file")
+        return 2
+    heads = markdown_sections(path.read_text(encoding="utf-8"))
+
+    if not args.sections:
+        index = [{"heading": h["heading"], "level": h["level"], "chars": len(h["body"])}
+                 for h in heads]
+        if args.json:
+            print(json.dumps({"ok": True, "path": str(path), "index": index},
+                             indent=2, ensure_ascii=False))
+        else:
+            print(f"{path} — {len(index)} sections")
+            for h in index:
+                print(f"  {'  ' * (h['level'] - 1)}{'#' * h['level']} {h['heading']}"
+                      f"  ({h['chars']} chars)")
+        return 0
+
+    # Repeatable AND comma-separated: a heading may itself contain a comma, so the short
+    # form cannot be the only form.
+    wanted = [s for group in args.sections
+              for s in (p.strip() for p in group.split(",")) if s]
+    got, missing = select_sections(heads, wanted)
+    if missing:
+        # A refusal, never an empty answer: a caller that asked for a rule and got
+        # silence proceeds as though the rule did not exist.
+        payload = {"ok": False, "code": "sk-read-no-section", "path": str(path),
+                   "missing": missing,
+                   "available": [h["heading"] for h in heads],
+                   "message": f"{path} has no section named: {', '.join(missing)}"}
+        print(json.dumps(payload, indent=2, ensure_ascii=False) if args.json
+              else f"error: {path} has no section named: {', '.join(missing)}\n"
+                   f"  available: {', '.join(h['heading'] for h in heads)}")
+        return 2
+
+    rows = []
+    for h in got:
+        body, marked = ((h["body"], True) if not args.rules_only
+                        else split_rule_and_rationale(h["body"]))
+        rows.append({"heading": h["heading"], "level": h["level"], "body": body,
+                     **({"marked": marked} if args.rules_only else {})})
+
+    if args.json:
+        print(json.dumps({"ok": True, "path": str(path), "rulesOnly": args.rules_only,
+                          "sections": rows}, indent=2, ensure_ascii=False))
+    else:
+        for r in rows:
+            print(f"{'#' * r['level']} {r['heading']}\n\n{r['body']}\n")
+        unmarked = [r["heading"] for r in rows if r.get("marked") is False]
+        if unmarked:
+            # Stated, never silent: the caller asked for the rule half and got the whole
+            # section, and a reader that does not know which one it holds cannot tell a
+            # compact rule from a section nobody has marked up yet.
+            print(f"note: no {RULES_MARKER} marker in: {', '.join(unmarked)} — returned "
+                  f"the whole section")
+    return 0
+
+
+register("read",
+         lambda sp: (sp.add_argument("path", help="a markdown file"),
+                     sp.add_argument("--sections", action="append", default=[],
+                                     help="a section name, or several comma-separated; "
+                                          "repeatable, for a heading carrying a comma. "
+                                          "A unique prefix resolves. Omit for the file's "
+                                          "heading index"),
+                     sp.add_argument("--rules-only", action="store_true",
+                                     help=f"only the {RULES_MARKER} half of each section; "
+                                          f"a section with no marker comes back whole and "
+                                          f"says so")),
+         cmd_read)
 
 
 # --------------------------------------------------------------------------- #

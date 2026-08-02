@@ -75,8 +75,10 @@ CLI prints, because the CLI never sees the storage.
 ## Granular reading is about context, not I/O
 
 `show` returns an **index** by default — the fourteen headings with their state, and the task ids.
-One section or one task comes back on request; the whole document only under `--full`, which refuses
-to combine with a selector.
+One task comes back on request; the whole document only under `--full`, which refuses to combine
+with a selector. Section **bodies** are `section`'s, which already reads N headings in one call and
+resolves a `--moment` to its declared set: two ways to ask for a heading would be two spellings of
+the same measured answer, and they would drift.
 
 The cost this addresses is the **agent's context**, not disk or network. An agent handed all fourteen
 sections in order to edit one pays for the other thirteen on every call. Whether the backend had to

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Reading a canonical set
-description: How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; and why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
+description: How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest
+resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
 tags: [code, parsing, contracts, schema, lockstep, selftest]
-timestamp: 2026-07-29
+timestamp: 2026-08-01
 audience: both
 authority: current
-source: add-eli5-section-to-specs spec — the branch review found `specs.py new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it
+source: add-eli5-section-to-specs spec — the branch review found `specs.py new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `specs.py`'s own selftest while `_match_heading` refused it
 maintainer: quenching
 ---
 
@@ -83,6 +83,38 @@ assert the derived behaviour against the declaration, not just the declaration a
 Neither code belongs to the `/specs:align` sweep vocabulary — like `sp-template-drift`, they are
 selftest findings about the tool, not findings about a workspace.
 
+## A case must exercise the production function, not a copy of its rule
+
+The step after the one above. Once a tool derives behaviour from a canonical set and the set gets
+its own case list, the list has to run against **the function that ships** — not against a second
+implementation of the same rule written inside the selftest.
+
+`SECTION_CASES` is a shared list: `skills.py` and `specs.py` carry it verbatim and each proves the
+sectioning rule against its own reader. Two of its seven cases are about **name resolution** — that
+`§Gamma` and `## Alpha` are the same request, and that a unique prefix resolves. In `skills.py`
+they ran through `select_sections`, which is what `read` calls. In `specs.py` they ran through a
+resolver written in the selftest body, ten lines that did the `§`-strip and the prefix walk
+themselves. It passed. Meanwhile the shipped path, `_match_heading`, did neither:
+`specs.py section <slug> "§Handoff"` was **exit 2, not a canonical heading** — the exact citation
+form every command body writes.
+
+Both halves were green and they were reporting on different functions.
+
+**So: hand the production function its inputs, rather than re-deriving its answer.** The fix is
+usually a parameter, not a new assertion:
+
+- take the candidate set as an **argument** so the same function serves production and the fixture
+  — `resolve_heading_name(name, candidates)`, with `_match_heading` as the one-line caller that
+  binds it to the canonical fourteen;
+- prefer that to a selftest that reproduces the rule, however short: a ten-line copy is small
+  enough to look like scaffolding and large enough to hide the whole divergence;
+- when a shared list's case is genuinely *not* about production behaviour, say which rule it pins
+  and keep it out of the shared half — a case that both tools answer differently is not a shared
+  contract, and labelling it one is what made this survive review twice.
+
+The tell is cheap and worth reaching for: run the documented invocation by hand. `SECTION_CASES`
+declared `§X` resolves; one shell call against a real spec said otherwise.
+
 ## When the set grows
 
 Adding a member to a canonical set is a **lockstep edit** across every place the set is declared
@@ -98,3 +130,16 @@ time this happened:
    installs into every adopting repo, and the command bodies that cite the contract. A rename
    that stops at the schema leaves the tool telling users a number it no longer implements.
 2. **Positional readers.** Every ordinal index into the set, per §Slice by membership above.
+3. **The dispatch, not just the grammar.** Admitting a member is half the work; placing it is the
+   other half. A dispatch that ends in a bare `else` gives the new member to whatever that last arm
+   holds — silently, and only for the member that was just added, so every existing case still
+   passes.
+
+   Measured: `constraint:` was admitted into `specs.py`'s task-metadata grammar while the dispatch
+   still ended `else: verify = val`. A task carrying `constraint:` after `verify:` came back with
+   the constraint's prose *as its verify command*, which the execution loop would have run as
+   shell. Nothing in the grammar was wrong; the set grew and the dispatch did not.
+
+   **Make the dispatch exhaustive** — every member gets its own arm, or is deliberately unread with
+   a comment saying so — and assert it, because the failure is invisible to any check that only
+   asks whether the member parses.

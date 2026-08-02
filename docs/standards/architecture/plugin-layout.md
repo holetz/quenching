@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-07-30
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28)
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught
 maintainer: quenching
 ---
 
@@ -143,6 +143,39 @@ alongside it. This is why a mold and the plugin's own copy of the same standard 
 in wording: `skills.md` may point at the measurement behind a rule, while
 `skills-standard.md` states the rule and stops. That difference is the rule being obeyed, not
 drift — do not "reconcile" them.
+
+### A boundary reminder is not a restatement
+
+The rule above answers *may this text stand alone?*. The neighbouring question — *is this text a
+restatement at all?* — had no owner, and a collapse sweep that lacks it will fold text that was
+never a duplicate.
+
+The case that forced it: thirteen places in this plugin say something about the repo's language.
+Three are self-contained molds, covered above. Ten restate nothing — they state the
+**canonical-structure boundary** ([../naming/command-surface.md](../naming/command-surface.md)):
+the slug stays English, the prose around it follows the tag. Their whole value is being in context
+at the instant a slug is written, which a citation spends a tool call to destroy.
+
+**The ownership test** — is a reminder legitimate at all? A boundary reminder states the edge of a
+rule the citing place **already owns**, seen from the other side. `/docs:add` owns where a doc goes
+and what its slug looks like, so "the slug is canonical English, the body may follow the repo's
+language" is that command's own rule at its border, not a second copy of somebody else's. A
+restatement states a fact the citing place neither owns nor can change.
+
+**The verifiable guardrail** — is it still legitimate *as written*? Three properties, each checked
+against the owning doc:
+
+1. **One clause.** A reminder names the border and stops. A paragraph is a copy.
+2. **No fact the owner states.** The owner's scope, its exclusions and its declaration form belong
+   to the owner. Repeat one and the reminder has become the thing it was allowed not to be.
+3. **Never a narrowing.** A reminder may not scope the rule smaller than the owner scopes it.
+
+The third earns the list on its own. `assets/README.md` narrowed the language rule to
+`audience: human` docs — one adjective, no citation — and so taught a smaller rule than
+[../agents/communication.md](../agents/communication.md) declares, which governs all prose the
+agent authors. It survived weeks: the ownership test passes it, and no validator reads prose.
+**Apply the guardrail, not the sentence.** "A boundary reminder is not a restatement", read loosely,
+absolves every copy there is.
 
 ## The layout rule needs no check of its own
 

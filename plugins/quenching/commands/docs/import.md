@@ -4,19 +4,19 @@ argument-hint: [source-paths-or-urls]
 allowed-tools: Read, Grep, Glob, WebFetch, Write, Edit, Task
 ---
 
-# /docs:import — import an external source into the OKF bundle
+# /quenching:docs:import — import an external source into the OKF bundle
 
 **Input**: `$ARGUMENTS` (the source to ingest — local file/folder paths, or URLs).
 
 A Claude-native analogue of the OKF reference implementation's `enrich` command — **without**
 BigQuery or heavy dependencies. It reads an external source (local files/folders, or URLs)
 and mints **multiple** conformant OKF concept docs from it. It is a **batch fan-out of
-`/docs:add`**: [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+`/quenching:docs:add`**: [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
 is the **single owner** of the per-doc procedure (classify → stamp → index → log → glossary →
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 [docs-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md). Requires an existing OKF bundle — run
-`/docs:align` first if `docs/` is not one.
+`/quenching:docs:align` first if `docs/` is not one.
 
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
 
@@ -40,7 +40,7 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
   (the catalog access-card rule).
 - **Additive only.** Enrich never deletes a source or a bundle doc; it mints and merges.
 
-## Workflow (force-with-1-confirmation, like `/docs:align`)
+## Workflow (force-with-1-confirmation, like `/quenching:docs:align`)
 
 ### 1. Scope the source (read-only)
 Identify the inputs: local files/folders (`Read`/`Glob`/`Grep`) or URLs (`WebFetch`). For a
@@ -61,7 +61,7 @@ carrying the URI or the term that decided it. For a large source, fan **one `Tas
 slice** out to return **compact unit candidates** (home / `type` / path / one-line + source
 anchor + its `source_uri`), never full bodies; the orchestrator merges and judges. Extraction sub-agents may run
 on a **cheap model/effort** — enrich **deletes nothing**, so a misclassification only misfiles
-a doc (correctable), unlike `/docs:import-memory` (see the model policy in
+a doc (correctable), unlike `/quenching:docs:import-memory` (see the model policy in
 [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model)).
 
 ### 3. Present ONE ingestion plan → gate on ONE OK
@@ -78,7 +78,7 @@ rendering the two identically is how a wrong MERGE hides inside a batch OK.
 
 A single OK executes the whole batch. A
 minted/edited doc whose change reaches the target's **product code** is its **own**
-confirmation item (mirrors `/docs:align`) — never folded into the batch OK.
+confirmation item (mirrors `/quenching:docs:align`) — never folded into the batch OK.
 
 ### 4. Execute on OK — mint each doc via the insert procedure
 For each planned unit, run homes.md end to end: fill the mold (§The frontmatter stamp;

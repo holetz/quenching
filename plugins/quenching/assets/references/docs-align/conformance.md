@@ -9,16 +9,20 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
 
 ## File classification (by basename)
 
+<!-- rules -->
+
 | Basename | Kind | Checked as |
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
-| `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/docs:harness`, not the validator) |
-| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/docs:align` for `docs/`, not authored knowledge) |
+| `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/quenching:docs:harness`, not the validator) |
+| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/quenching:docs:align` for `docs/`, not authored knowledge) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
 ## Concept docs (`check_concept`)
+
+<!-- rules -->
 
 - **ERROR `no-frontmatter`** — no `---` YAML block at the top.
 - **ERROR `broken-frontmatter`** — opens `---` but never closes.
@@ -27,6 +31,8 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
   `resource`, `timestamp`.
 
 ## `index.md` (`check_index`)
+
+<!-- rules -->
 
 - **ERROR `index-has-type`** — carries a concept `type` (an index is a listing, not a concept).
 - **Non-root** `index.md`:
@@ -38,6 +44,8 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
 
 ## `log.md` (retired — no checks)
 
+<!-- rules -->
+
 No codes. The validator recognizes the name, emits nothing about the file, and never blocks a
 write to it under `hardBlock`. **The reservation is what makes that true**, and it is load-bearing
 in a way the silence hides: drop `log.md` from the validator's `RESERVED` tuple and every log
@@ -47,14 +55,18 @@ the line with a fixture bundle carrying two surviving logs.
 
 ## Bundle level
 
+<!-- rules -->
+
 - **WARN `bundle-no-index`** — the bundle root has no `index.md`.
 
 ## Structural integrity (whole-tree — CLI + `Stop` only)
 
+<!-- rules -->
+
 Deterministic directory/index checks the validator runs over the **whole tree** (not on a
 single-file `PostToolUse`). All **WARN** — OKF says a consumer MUST tolerate broken links and
 MAY synthesize a missing `index.md`, so these never fail conformance; the **skills treat them
-as must-fix** in their own verify gate (a bundle `/docs:align` leaves behind has none). Dirs whose
+as must-fix** in their own verify gate (a bundle `/quenching:docs:align` leaves behind has none). Dirs whose
 name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node_modules/`,
 `__pycache__/`, …), are pruned from this walk.
 
@@ -76,6 +88,8 @@ name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node
 
 ## Resource integrity (per-doc — every mode)
 
+<!-- rules -->
+
 A doc that is provably **lying about itself**. These join the structural set the skills treat as
 **must-fix** in their verify gate, for the same reason: `WARN` because OKF does not govern
 `resource` at all, blocking because the plugin does.
@@ -96,6 +110,8 @@ A doc that is provably **lying about itself**. These join the structural set the
 
 ## Staleness (CLI only — advisory, never blocking)
 
+<!-- rules -->
+
 - **WARN `stale-doc`** — the doc's `timestamp` predates the last commit touching the code its
   `resource` globs name (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so
   a single `*` does not cross a `/` here either).
@@ -111,6 +127,8 @@ checkout **skips it silently** rather than reporting a finding it cannot compute
 
 ## Running it
 
+<!-- rules -->
+
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/docs        # human report; exit 0/1
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/docs --json # machine-readable findings
@@ -121,7 +139,9 @@ opt-in **PreToolUse** (`hardBlock: true`) denies writing an `index.md` with a `t
 concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
 (`docsDir`/`warnAsError`/`blockOnFail`/`hardBlock`/`deadlineMs`).
 
-## Verify gate (Step 5 of /docs:align)
+## Verify gate (Step 5 of /quenching:docs:align)
+
+<!-- rules -->
 
 A bundle is **aligned** when `okf-validate.py <docs>` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,

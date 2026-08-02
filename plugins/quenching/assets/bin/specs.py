@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.4.2"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.6.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -124,8 +124,14 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_RE = re.compile(r"^\s+(files|pattern|verify|subject|commit)\s*:\s*(.+?)\s*$",
+TASK_META_KEYS = ("files", "pattern", "verify", "constraint", "subject", "commit")
+TASK_META_RE = re.compile(rf"^\s+({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
+# `constraint:` is INERT by design: the grammar admits it and `next` hands it through, but no
+# command reads it. Its only consumer would be an executor sub-agent briefing itself, and the
+# decision to dispatch one belongs to another spec — so the field lands first and the decision
+# stays untouched. A field nobody reads costs one alternation and moves no turn.
+#
 # The anchor is written into a one-line grammar and read back, so the only hard requirement
 # is that it holds text and stays on its line. `commit:` is both the legacy form of the same
 # field — still READ from specs written before the anchor became the subject — AND, since
@@ -154,6 +160,7 @@ RECORD_NONE_RE = re.compile(r"^none\b", re.IGNORECASE)
 
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
 STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
@@ -196,20 +203,20 @@ DEFAULT_SCHEMA: dict = {
         },
     },
     "sections": [
-        {"heading": "Overview", "order": 1, "group": "orientation", "audience": "human"},
-        {"heading": "Problem", "order": 2, "group": "definition", "audience": "human"},
-        {"heading": "Proposal", "order": 3, "group": "definition", "audience": "human"},
-        {"heading": "Out of Scope", "order": 4, "group": "definition", "audience": "human"},
-        {"heading": "Impact", "order": 5, "group": "definition", "audience": "human", "parsed": True},
-        {"heading": "Validation", "order": 6, "group": "definition", "audience": "both"},
-        {"heading": "Design", "order": 7, "group": "definition", "audience": "human"},
-        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "audience": "human"},
-        {"heading": "Open Decisions", "order": 9, "group": "definition", "audience": "human"},
-        {"heading": "Risks", "order": 10, "group": "definition", "audience": "human"},
-        {"heading": "Handoff", "order": 11, "group": "execution", "audience": "agent"},
-        {"heading": "Tasks", "order": 12, "group": "execution", "audience": "agent"},
-        {"heading": "Discoveries", "order": 13, "group": "execution", "audience": "triage"},
-        {"heading": "Outcome", "order": 14, "group": "archive", "audience": "human"},
+        {"heading": "Overview", "order": 1, "group": "orientation", "moment": "decision"},
+        {"heading": "Problem", "order": 2, "group": "definition", "moment": "decision"},
+        {"heading": "Proposal", "order": 3, "group": "definition", "moment": "build"},
+        {"heading": "Out of Scope", "order": 4, "group": "definition", "moment": "build"},
+        {"heading": "Impact", "order": 5, "group": "definition", "moment": "build", "parsed": True},
+        {"heading": "Validation", "order": 6, "group": "definition", "moment": "close"},
+        {"heading": "Design", "order": 7, "group": "definition", "moment": "build"},
+        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "moment": "decision"},
+        {"heading": "Open Decisions", "order": 9, "group": "definition", "moment": "decision"},
+        {"heading": "Risks", "order": 10, "group": "definition", "moment": "decision"},
+        {"heading": "Handoff", "order": 11, "group": "execution", "moment": "build"},
+        {"heading": "Tasks", "order": 12, "group": "execution", "moment": "build"},
+        {"heading": "Discoveries", "order": 13, "group": "execution"},
+        {"heading": "Outcome", "order": 14, "group": "archive", "moment": "close"},
     ],
     "impact": {
         "parsedSubheading": "Standards this spec will write into docs/standards/",
@@ -291,16 +298,22 @@ verification: <VERIFICATION>
 
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
+     *(`standards/agents/communication.md` owns that language rule for a repo whose bundle has
+     one. This template states it self-contained rather than citing it: `/specs:align` is native
+     and installs here into repos that never adopted the bundle, where that path resolves to
+     nothing.)*
 
-     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
-     `## Design` are for the human — examples and plain language belong there.
-     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
-     metadata. An orchestrator never sends the human sections to an executor; that is what
-     lets one file serve both audiences without bloating agent context. -->
+     MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
+     (the human, deciding whether to build), `build` (the executor, in step 4 of
+     `/specs:execute`), `close` (`/specs:conclude`, at archive time). `## Discoveries` belongs
+     to none of them — captured indiscriminately while building, resolved later by
+     `/specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     exactly the `build` set; that is what lets one file serve every moment without bloating
+     agent context. -->
 
 ## Overview
 
-<!-- AUDIENCE: human. Warned on when empty once the ready gate is met.
+<!-- MOMENT: decision. Warned on when empty once the ready gate is met.
 
      Connective tissue for a reader who is not holding the whole spec in their head: how the
      other sections relate to one another, not a compressed restatement of each. Plain
@@ -311,21 +324,21 @@ verification: <VERIFICATION>
 
 ## Problem
 
-<!-- AUDIENCE: human. Gate: new (capture).
+<!-- MOMENT: decision. Gate: new (capture).
 
      The problem or opportunity this spec answers, and why now. This is the only section a
      freshly captured spec carries — write it even if it is two sentences. -->
 
 ## Proposal
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The change at a high level, in bullet points. What will be true afterwards that is not
      true now. -->
 
 ## Out of Scope
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      What this spec deliberately does NOT do, and why it was ruled out.
 
@@ -335,7 +348,7 @@ verification: <VERIFICATION>
 
 ## Impact
 
-<!-- AUDIENCE: human + PARSED. Gate: ready (derived).
+<!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
      docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
@@ -364,7 +377,7 @@ verification: <VERIFICATION>
 
 ## Validation
 
-<!-- AUDIENCE: human + agent. Gate: ready (derived).
+<!-- MOMENT: close (plus the agent's `verify:` fallback, resolved lazily). Gate: ready (derived).
 
      How anyone confirms this spec actually worked: the commands to run and the output they
      must produce, the fixtures to check, the invariants that must still hold afterwards.
@@ -376,7 +389,7 @@ verification: <VERIFICATION>
 
 ## Design
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The choices made and their rationale, plus the background and binding contracts this
      design must not contradict. For each decision: what was chosen, why, and what was
@@ -386,7 +399,7 @@ verification: <VERIFICATION>
 
 ## Alternatives Considered
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      Whole-shape alternatives rejected at the spec level, each with the reason it lost.
      Per-decision alternatives can stay inside `## Design`; this section is for the ones that
@@ -396,7 +409,7 @@ verification: <VERIFICATION>
 
 ## Open Decisions
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What is deliberately still undecided, and how each will be decided — the evidence or the
      moment that settles it, not "TBD".
@@ -405,7 +418,7 @@ verification: <VERIFICATION>
 
 ## Risks
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What could go wrong, and the mitigation for each. A risk taken knowingly is written
      `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
@@ -414,7 +427,7 @@ verification: <VERIFICATION>
 
 ## Handoff
 
-<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+<!-- MOMENT: build. Warned on when empty once the ready gate is met.
 
      The context an executor needs and cannot derive: the state of play, the conventions in
      force, what was already tried. Small by construction — it is sent with EVERY task.
@@ -424,7 +437,7 @@ verification: <VERIFICATION>
 
 ## Tasks
 
-<!-- AUDIENCE: agent. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
@@ -473,7 +486,8 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- AUDIENCE: triage. No gate — appended during execution.
+<!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
+     not tied to one of the three. No gate — appended during execution.
 
      One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
@@ -486,7 +500,7 @@ verification: <VERIFICATION>
 
 ## Outcome
 
-<!-- AUDIENCE: archive reader. Gate: promote -> archive/.
+<!-- MOMENT: close. Gate: promote -> archive/.
 
      What actually happened, written at archive time: what shipped, what was left out, what
      the next reader needs to know. `outcome: done | abandoned` is stamped into the
@@ -894,6 +908,17 @@ def canonical_headings(schema: dict | None = None) -> list[str]:
     return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))]
 
 
+def headings_for_moment(moment: str, schema: dict | None = None) -> list[str]:
+    """The canonical headings declared `moment: <moment>`, in canonical order.
+
+    `## Discoveries` declares no `moment` — resolved on its own schedule by
+    `/specs:develop`'s triage sweep, not one of `decision` / `build` / `close` — so it never
+    matches here, by construction rather than by exclusion list."""
+    s = schema or load_schema()
+    return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))
+            if x.get("moment") == moment]
+
+
 def phase_spec(phase: str, schema: dict | None = None) -> dict:
     s = schema or load_schema()
     for p in s.get("phases", []):
@@ -1120,12 +1145,17 @@ def parse_sections(text: str) -> dict[str, dict]:
 
     Each entry carries `lines` (the body), `lineno` (0-based, of the heading itself), and
     `filled` — the three-state distinction the whole contract rests on: a heading that is
-    present but empty is MALFORMED, which is neither an answer nor a not-yet."""
+    present but empty is MALFORMED, which is neither an answer nor a not-yet.
+
+    **A fenced block is never read as a heading.** `## Tasks` routinely carries a shell block,
+    and a `## ` comment inside one used to open a phantom section — which `validate` then
+    reported as a stray heading, and which silently truncated the real section at that line."""
     out: dict[str, dict] = {}
     current: str | None = None
     buf: list[str] = []
     start = 0
     lines = text.splitlines()
+    fence: str | None = None
 
     def flush() -> None:
         if current is not None and current not in out:
@@ -1134,6 +1164,20 @@ def parse_sections(text: str) -> dict[str, dict]:
                             "filled": has_real_content(body), "body": body}
 
     for lineno, line in enumerate(lines):
+        fm = FENCE_RE.match(line)
+        if fm:
+            mark = fm.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+            if current is not None:
+                buf.append(line)
+            continue
+        if fence is not None:
+            if current is not None:
+                buf.append(line)
+            continue
         m = HEADING_RE.match(line)
         if m and len(m.group(1)) == 2:
             flush()
@@ -1246,8 +1290,12 @@ def parse_tasks(text: str) -> list[dict]:
                 subject, subject_off = val, off
             elif key == "commit":
                 commit, commit_off = val, off
-            else:
+            elif key == "verify":
                 verify = val
+            # `constraint:` is admitted by the grammar and read by nothing — the inert field.
+            # This arm is why the dispatch is exhaustive rather than an `else: verify = val`:
+            # under the open form, a `constraint:` line following `verify:` overwrote it, and
+            # the loop would have run that prose as the task's shell command.
         out.append({
             "index": idx,
             "id": idm.group(1) if idm else None,
@@ -1413,8 +1461,8 @@ class SpecBackend:
     it can never drift the JSON the CLI prints.
 
     Granular reading is unaffected by this split, because the cost it addresses is the
-    agent's context and not I/O: `show --section` hands back one heading whether or not the
-    backend had to fetch the whole document to find it."""
+    agent's context and not I/O: `section` hands back the headings asked for whether or not
+    the backend had to fetch the whole document to find them."""
 
     name = "abstract"
 
@@ -2028,8 +2076,8 @@ class GitHubBackend(SpecBackend):
     drops it. It exists because the CLI asks for the listing more than once per command,
     and each ask is a network round trip. Sub-issues are fetched only for the ONE spec a
     command actually reads — the same "granular by construction" reasoning `## Design`
-    applies to `show --section`, here applied to the transport itself: `list` never pays
-    for a body no command asked to see."""
+    applies to `section`, here applied to the transport itself: `list` never pays for a
+    body no command asked to see."""
 
     name = "github"
 
@@ -3168,15 +3216,33 @@ def _canonical_index(heading: str, schema: dict | None = None) -> int:
     return canon.index(heading) if heading in canon else len(canon)
 
 
+def resolve_heading_name(name: str, candidates: list[str]) -> str | None:
+    """One requested name onto the candidate that answers it, or None.
+
+    **`§X` and `## X` are the same request, and a UNIQUE prefix resolves** — the two forms
+    `SECTION_CASES` pins, which `skills.py` carries verbatim. The command bodies already cite
+    sections as `§Handoff`, so a reader that refused over the marker would be unusable from the
+    very prose it serves. An ambiguous prefix resolves to nothing: a guess between two headings is
+    worse than the refusal that names them.
+
+    It takes the candidate list as an argument for one reason — so the canonical cases exercise
+    THIS function over the fixture's headings, rather than a second copy of the rule written
+    inside the selftest. A rule proved against a private re-implementation is not proved."""
+    want = " ".join(name.strip().lstrip("#§").strip().split()).lower()
+    if not want:
+        return None
+    for c in candidates:
+        if c.lower() == want:
+            return c
+    hits = [c for c in candidates if c.lower().startswith(want)]
+    return hits[0] if len(hits) == 1 else None
+
+
 def _match_heading(heading: str) -> str | None:
     """Case-insensitive lookup onto the canonical spelling. Headings are a parsed contract,
     so the FILE always carries canonical English — but a human typing `specs.py section x
     validation` should not get a stray section for their trouble."""
-    want = heading.strip().lower()
-    for h in canonical_headings():
-        if h.lower() == want:
-            return h
-    return None
+    return resolve_heading_name(heading, canonical_headings())
 
 
 def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
@@ -3203,35 +3269,217 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
     return text.rstrip() + "\n\n" + block, "created"
 
 
+SECTION_FIXTURE = '''---
+type: standard
+title: the section reader's fixture
+---
+
+# Top
+
+Preamble under a level-1 heading.
+
+## Alpha
+
+Alpha body.
+
+### Alpha sub
+
+Sub body that belongs to Alpha.
+
+## Beta
+
+Beta opens with a fenced block whose lines look like headings:
+
+```bash
+## not a heading
+### also not a heading
+```
+
+Beta continues after the fence.
+
+## Gamma
+
+~~~
+## fenced by tildes
+~~~
+
+Gamma ends the file.
+'''
+
+# The canonical case list for the SECTION rule, duplicated verbatim in `skills.py`.
+# EDIT BOTH, OR NEITHER — exactly as `CANONICAL_CASES` is duplicated across all three
+# tools for the frontmatter rule. Neither script may import the other: each installs
+# standalone into a target's `.claude/hooks/`, so the list travelling with each copy is
+# what makes the rule provable where it actually runs.
+#
+# It covers only what BOTH tools answer the same way: level-2 sections. A spec's
+# fourteen headings are all `##`, so that is the whole of `specs.py`'s contract, while
+# `skills.py` also resolves `#` and `###` over free markdown and proves those separately.
+# The names here are deliberately NOT canonical spec headings: what this list pins is the
+# sectioning rule, not `_match_heading`'s vocabulary, which is `specs.py`'s alone.
+SECTION_CASES = {
+    "index": ["Alpha", "Beta", "Gamma"],
+    "cases": [
+        {"why": "sub-headings travel with their parent, and the section stops at the "
+                "next heading of the same level",
+         "ask": ["Alpha"],
+         "contains": ["Alpha body.", "### Alpha sub", "Sub body that belongs to Alpha."],
+         "excludes": ["Beta continues"]},
+        {"why": "a fenced block containing `## ` never splits the section",
+         "ask": ["Beta"],
+         "contains": ["## not a heading", "Beta continues after the fence."],
+         "excludes": ["Gamma ends"]},
+        {"why": "tilde fences count too, and the last section runs to end of file",
+         "ask": ["Gamma"],
+         "contains": ["## fenced by tildes", "Gamma ends the file."],
+         "excludes": []},
+        {"why": "the citation form the bodies already use resolves: `§X` and `## X` "
+                "are the same request, and N sections come back in the order asked",
+         "ask": ["§Gamma", "## Alpha"],
+         "contains": ["Gamma ends the file.", "Alpha body."],
+         "excludes": [],
+         "order": ["Gamma", "Alpha"]},
+        {"why": "neither frontmatter nor the preamble above the first section ever "
+                "leaks into a section that does not own it",
+         "ask": ["Alpha", "Beta", "Gamma"],
+         "contains": [],
+         "excludes": ["type: standard", "Preamble under a level-1 heading."]},
+        {"why": "a unique prefix resolves, so a citation need not reproduce a long "
+                "heading's punctuation",
+         "ask": ["Gam"],
+         "contains": ["Gamma ends the file."],
+         "excludes": []},
+        {"why": "a section that does not exist is a refusal that names it, never an "
+                "empty answer",
+         "ask": ["Delta"],
+         "missing": ["Delta"]},
+    ],
+}
+
+
+def _section_case_rows(text: str) -> list[dict]:
+    """This tool's arm of the canonical list: `parse_sections` itself, addressed by name.
+
+    It goes through `parse_sections` and not through `cmd_section`, because the canonical
+    list pins the SECTIONING rule — where a section starts and stops — while `cmd_section`
+    additionally refuses a heading outside the fourteen. Running the list through the
+    canonical filter would prove the filter and leave the rule untested."""
+    return [{"heading": h, "level": 2, "body": v["body"]}
+            for h, v in parse_sections(text).items()]
+
+
+def section_case_failures() -> list[str]:
+    """Run `SECTION_CASES` against this tool's own sectioning rule."""
+    out: list[str] = []
+    rows = _section_case_rows(SECTION_FIXTURE)
+    heads = [r["heading"] for r in rows]
+    if heads != SECTION_CASES["index"]:
+        out.append(f"heading index is {heads}, expected {SECTION_CASES['index']} — a "
+                   f"fenced line was read as a heading, or a heading was missed")
+    # `resolve_heading_name` is the SAME function `_match_heading` runs in production, handed the
+    # fixture's headings instead of the canonical fourteen. That is what makes the `\u00a7X` and
+    # unique-prefix cases evidence about this tool rather than about the selftest.
+    index = {r["heading"]: r for r in rows}
+    for case in SECTION_CASES["cases"]:
+        got, missing = [], []
+        for name in case["ask"]:
+            hit = resolve_heading_name(name, list(index))
+            (got.append(index[hit]) if hit else missing.append(name))
+        want_missing = case.get("missing", [])
+        if missing != want_missing:
+            out.append(f"{case['ask']}: missing is {missing}, expected {want_missing} "
+                       f"— {case['why']}")
+            continue
+        if want_missing:
+            continue
+        body = "\n".join(f"## {r['heading']}\n{r['body']}" for r in got)
+        for needle in case["contains"]:
+            if needle not in body:
+                out.append(f"{case['ask']}: missing {needle!r} — {case['why']}")
+        for needle in case["excludes"]:
+            if needle in body:
+                out.append(f"{case['ask']}: leaked {needle!r} — {case['why']}")
+        if "order" in case and [r["heading"] for r in got] != case["order"]:
+            out.append(f"{case['ask']}: order is {[r['heading'] for r in got]}, expected "
+                       f"{case['order']} — {case['why']}")
+    return out
+
+
 def cmd_section(args, root: str) -> int:
-    """Deterministic partial read/write of ONE section — what makes lean agent context real.
+    """Deterministic partial read/write of N sections — what makes lean agent context real.
 
     An executor is handed a task line and `## Handoff`, never the whole spec; this is the
-    command that slices it without an LLM re-reading and rewriting the file."""
+    command that slices it without an LLM re-reading and rewriting the file.
+
+    **The read form is plural, and that is half the saving, not a convenience.** Every turn
+    re-sends the whole conversation, so a cost has two factors — tokens AND the turns that
+    follow it. Six headings fetched over six turns can lose to the one `Read` this command
+    replaced. Comma-separated, one call, back in the order asked.
+
+    `--write` stays singular: it takes stdin, and there is no unambiguous way to split one
+    stream across several sections.
+
+    The document comes from the BACKEND, never from a path: this is the reader every other
+    front calls, so a backend that could not serve it would leave the whole surface tied to
+    `files`."""
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
     info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
-    heading = _match_heading(args.heading)
-    if not heading:
+    if args.moment:
+        wanted = headings_for_moment(args.moment)
+        if not wanted:
+            emit(args.json,
+                 {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
+                  "message": f"no canonical section declares moment '{args.moment}'"},
+                 f"error: no canonical section declares moment '{args.moment}'")
+            return 2
+    else:
+        wanted = [h for h in (p.strip() for p in (args.heading or "").split(",")) if h]
+        if not wanted:
+            emit(args.json,
+                 {"ok": False, "code": "sp-no-heading",
+                  "message": "give a heading, or --moment, to read"},
+                 "error: give a heading, or --moment, to read")
+            return 2
+    headings, stray = [], []
+    for name in wanted:
+        h = _match_heading(name)
+        (headings.append(h) if h else stray.append(name))
+    if stray:
         emit(args.json,
-             {"ok": False, "code": "sp-stray-heading", "heading": args.heading,
-              "canonical": canonical_headings(),
-              "message": f"'{args.heading}' is not one of the fourteen canonical headings"},
-             f"error: '{args.heading}' is not a canonical heading")
+             {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
+              "stray": stray, "canonical": canonical_headings(),
+              "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
+             f"error: not a canonical heading: {', '.join(stray)}")
+        return 2
+    if args.write and len(headings) != 1:
+        emit(args.json,
+             {"ok": False, "code": "sp-write-plural", "stray": headings,
+              "message": "--write takes exactly one heading — stdin is one stream"},
+             "error: --write takes exactly one heading")
         return 2
     if not args.write:
-        st = section_state(info["sections"], heading)
-        body = info["sections"].get(heading, {}).get("body", "")
+        rows = [{"heading": h, "state": section_state(info["sections"], h),
+                 "body": info["sections"].get(h, {}).get("body", "")} for h in headings]
+        absent = [r["heading"] for r in rows if r["state"] == "absent"]
         if args.json:
-            print(json.dumps({"ok": st != "absent", "slug": info["slug"],
-                              "heading": heading, "state": st, "body": body},
+            one = rows[0] if len(rows) == 1 else {}
+            print(json.dumps({"ok": not absent, "slug": info["slug"],
+                              **one, "sections": rows, "absent": absent},
                              indent=2, ensure_ascii=False))
         else:
-            print(body.strip() if st != "absent" else f"(## {heading} is absent)")
-        return 0 if st != "absent" else 1
+            for r in rows:
+                if r["state"] == "absent":
+                    print(f"(## {r['heading']} is absent)")
+                elif len(rows) == 1:
+                    print(r["body"].strip())
+                else:
+                    print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
+        return 0 if not absent else 1
+    heading = headings[0]
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
     block = (f"## {heading}\n\n{content.strip()}\n"
@@ -3729,14 +3977,10 @@ def _show_human(obj: dict, info: dict) -> str:
             out.append(f"  tasks ({len(obj['tasks'])})")
             for t in obj["tasks"]:
                 out.append(f"    [{t['state']}] {t['text']}")
-        out.append(f"  read one: specs.py show --spec {obj['slug']} --section <Heading> "
-                   f"| --task <id>   (--full for the whole document)")
+        out.append(f"  read sections: specs.py section {obj['slug']} \"<Heading>,<Heading>\"\n"
+                   f"  read one task: specs.py show --spec {obj['slug']} --task <id>"
+                   f"   (--full for the whole document)")
         return "\n".join(out)
-    for s in obj["sections"]:
-        if s["state"] == "absent":
-            out.append(f"\n(## {s['heading']} is absent)")
-            continue
-        out.append(f"\n## {s['heading']}\n{s['body'].strip()}")
     for t in obj["tasks"]:
         out.append(f"\n- [{t['state']}] {t['text']}")
         for key in ("files", "pattern", "verify", "subject", "commit"):
@@ -3748,24 +3992,23 @@ def _show_human(obj: dict, info: dict) -> str:
 
 
 def cmd_show(args, root: str) -> int:
-    """Read ONE section, ONE task, or the map of what is there — the whole document only
-    when it is asked for by name.
+    """Read ONE task, or the map of what is there — the whole document only when it is asked
+    for by name.
 
     THE COST THIS ADDRESSES IS THE AGENT'S CONTEXT, NOT I/O. A backend may well have fetched
-    the entire document to answer `--section Handoff`, and that is fine — reading a file
-    twice is free. What is not free is an executor handed fourteen sections in order to edit
-    one: it carries the other thirteen through every remaining turn of its conversation and
-    pays for them again on each. So the DEFAULT IS THE INDEX AND NEVER THE DOCUMENT, and
-    `--full` exists precisely so that the whole document has to be typed on purpose.
+    the entire document to answer `--task 3.1`, and that is fine — reading a file twice is
+    free. What is not free is an executor handed fourteen sections in order to edit one: it
+    carries the other thirteen through every remaining turn of its conversation and pays for
+    them again on each. So the DEFAULT IS THE INDEX AND NEVER THE DOCUMENT, and `--full`
+    exists precisely so that the whole document has to be typed on purpose.
 
-    `section` stays the read/write pair for one heading. This is the read-only view that also
-    reaches tasks and answers several slices in ONE call — which is the difference that
-    matters when the alternative is four invocations or one whole document.
+    **Section bodies are `section`'s, not this command's.** That reader is already plural and
+    already resolves a `--moment` to its section set, so a second way to ask for a heading
+    would be a second spelling of a measured answer — and the two would drift. What is left
+    here is what `section` cannot say: WHICH headings and task ids exist (the index), one
+    task's line and metadata, and the whole document under a name nobody types by accident.
 
-    An unknown canonical spelling is a REFUSAL (exit 2), not an empty body: a caller that
-    mistypes `Handof` must find out, and returning nothing would read as `the section is
-    empty` — a fact about the spec rather than about the request. An absent-but-canonical
-    heading and an unknown task id are findings (exit 1), the same as an unknown slug."""
+    An unknown task id is a finding (exit 1), the same as an unknown slug."""
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
@@ -3773,31 +4016,17 @@ def cmd_show(args, root: str) -> int:
     if err:
         return emit_err(args.json, err)
 
-    wanted_sections = list(args.section or [])
     wanted_tasks = list(args.task or [])
-    if args.full and (wanted_sections or wanted_tasks):
+    if args.full and wanted_tasks:
         # Two different cost profiles in one request. Silently letting one win would hand
         # back the whole document to a caller that asked for a slice, which is the exact
         # failure this command exists to make impossible.
         emit(args.json,
              {"ok": False, "code": "sp-conflicting-selection",
-              "message": "--full asks for the whole document and --section/--task for a "
-                         "slice of it — pass one or the other"},
-             "error: --full does not combine with --section/--task")
+              "message": "--full asks for the whole document and --task for a slice of it "
+                         "— pass one or the other"},
+             "error: --full does not combine with --task")
         return 2
-
-    headings: list[str] = []
-    for raw in wanted_sections:
-        heading = _match_heading(raw)
-        if not heading:
-            emit(args.json,
-                 {"ok": False, "code": "sp-stray-heading", "heading": raw,
-                  "canonical": canonical_headings(),
-                  "message": f"'{raw}' is not one of the fourteen canonical headings"},
-                 f"error: '{raw}' is not a canonical heading")
-            return 2
-        if heading not in headings:
-            headings.append(heading)
 
     tasks: list[dict] = []
     for ident in wanted_tasks:
@@ -3809,31 +4038,20 @@ def cmd_show(args, root: str) -> int:
             return 1
         tasks.append(_task_view(t))
 
-    view = "full" if args.full else ("slice" if (headings or tasks) else "index")
+    view = "full" if args.full else ("slice" if tasks else "index")
     obj = {"ok": True, "slug": info["slug"],
            "title": info["frontmatter"].get("title", ""),
            "stage": info["stage"], "phase": info["phase"], "folder": info["folder"],
            "file": info["file"], "view": view}
-    code = 0
     if view == "full":
         obj["document"] = info["text"]
         obj["lines"] = len(info["text"].splitlines())
     elif view == "slice":
-        obj["sections"] = [
-            {"heading": h, "state": section_state(info["sections"], h),
-             "lines": len(info["sections"].get(h, {}).get("lines", [])),
-             "body": info["sections"].get(h, {}).get("body", "")}
-            for h in headings]
         obj["tasks"] = tasks
-        # An absent canonical heading is legal — its phase was never reached — so it is
-        # reported as a finding and not as a refusal, exactly as `section` does on read.
-        if any(s["state"] == "absent" for s in obj["sections"]):
-            obj["ok"] = False
-            code = 1
     else:
         obj.update(_show_index(info))
     emit(args.json, obj, _show_human(obj, info))
-    return code
+    return 0
 
 
 CRITICALITY_RANK = {"critical": 0, "high": 1, "medium": 2, "normal": 2, "low": 3}
@@ -5352,6 +5570,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "docs/standards/code/frontmatter-parsing.md; the three "
                                         "tools move together or not at all"))
 
+    # The section rule, against the SAME canonical list `skills.py` proves. Self-contained,
+    # so it runs on an installed copy too — which is exactly where a `## ` inside a shell
+    # block in somebody's `## Tasks` would otherwise open a phantom section unnoticed.
+    for failure in section_case_failures():
+        findings.append(_finding("sp-section-case", "error",
+                                 f"canonical section case — {failure}",
+                                 remedy="this reader disagrees with SECTION_CASES, which "
+                                        "`skills.py` carries verbatim; the two tools move "
+                                        "together or not at all"))
+
     # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
     # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
     # checked BEFORE the early return for the same reason the frontmatter cases are.
@@ -5517,6 +5745,83 @@ def cmd_selftest(args, root: str) -> int:
                                      remedy="an absent .claude/quenching.json must yield the "
                                             "documented defaults, never a null backend"))
 
+    # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
+    # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
+    # undocumented one does not — a grammar that admits everything admits the prose under a task.
+    for key in TASK_META_KEYS:
+        m = TASK_META_RE.match(f"{DEFAULT_META_INDENT}{key}: value")
+        if not m or m.group(1).lower() != key:
+            findings.append(_finding("sp-task-meta-key", "error",
+                                     f"`{key}:` is a documented task metadata key that "
+                                     f"TASK_META_RE no longer parses",
+                                     remedy="TASK_META_KEYS and the grammar documented in "
+                                            "assets/references/specs-develop/artifacts.md "
+                                            "§Execution metadata move together"))
+    for bad, why in ((f"{DEFAULT_META_INDENT}notakey: value", "an undocumented key"),
+                     ("files: value", "an unindented line")):
+        if TASK_META_RE.match(bad):
+            findings.append(_finding("sp-task-meta-key", "error",
+                                     f"TASK_META_RE accepts {why} — the grammar is closed on "
+                                     f"both the key list and the indent",
+                                     remedy="metadata is indented under its checkbox and drawn "
+                                            "from TASK_META_KEYS; anything else is prose"))
+
+    # Admitting a key into the grammar is only half the job — the dispatch has to place it.
+    # `constraint:` is inert, so the arm that reads it is *no arm at all*, and the failure this
+    # asserts is what an `else: verify = val` fallthrough did: a `constraint:` line after
+    # `verify:` silently became the task's verify command, and the loop would have run that
+    # prose as shell. Ordering matters to the fixture — constraint must follow verify.
+    probe = parse_tasks("## Tasks\n\n### 1. X\n\n"
+                        "- [ ] 1.1 t\n"
+                        "      verify: THE-REAL-CHECK\n"
+                        "      constraint: prose that is not a command\n")
+    if not probe or probe[0].get("verify") != "THE-REAL-CHECK":
+        findings.append(_finding("sp-task-meta-dispatch", "error",
+                                 "a `constraint:` line overwrote the task's `verify:` — an "
+                                 "inert key reached the verify arm, so the loop would run "
+                                 "prose as the task's shell command",
+                                 remedy="the metadata dispatch is exhaustive: every key in "
+                                        "TASK_META_KEYS gets its own arm or is deliberately "
+                                        "unread — never a trailing `else` that catches it"))
+
+    # `--moment build` is the set `/quenching:specs:execute` step 4 sends an executor — asserted
+    # against the literal list rather than eyeballed, so an edit to DEFAULT_SCHEMA that drops or
+    # reorders a `moment: build` section is caught here instead of at the first run that pays
+    # for it. Self-contained: DEFAULT_SCHEMA, not the loaded schema, so it covers an installed
+    # copy with no adjacent assets too.
+    want_build = ["Proposal", "Out of Scope", "Impact", "Design", "Handoff", "Tasks"]
+    got_build = headings_for_moment("build", DEFAULT_SCHEMA)
+    if got_build != want_build:
+        findings.append(_finding("sp-moment-build", "error",
+                                 f"headings_for_moment('build') is {got_build}, expected "
+                                 f"{want_build} — `/quenching:specs:execute` step 4 would read "
+                                 f"the wrong section set",
+                                 remedy="DEFAULT_SCHEMA's `moment: build` sections must match "
+                                        "docs/standards/workflows/plan-artifacts.md §Fourteen "
+                                        "canonical sections"))
+
+    # A `## Impact` bullet may carry a `§`address beside its path (the executor's optional
+    # narrowing in `/quenching:specs:execute` step 4). `parse_impact_standards` must tolerate
+    # it — one bullet addressed, one bare — without a line of code changing. Proved against a
+    # fixture, never the real command surface: editing that to pass would prove it by
+    # coincidence, not by contract.
+    impact_probe = parse_impact_standards(
+        "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
+        "- `docs/standards/automation/context-budget.md` §The two caps §The per-surface "
+        "ceiling — revisado.\n"
+        "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
+        "lê inteiro.\n", DEFAULT_SCHEMA)
+    want_impact = ["docs/standards/automation/context-budget.md",
+                   "docs/standards/workflows/plan-artifacts.md"]
+    if impact_probe != want_impact:
+        findings.append(_finding("sp-impact-address-tolerance", "error",
+                                 f"parse_impact_standards() on a §addressed bullet returned "
+                                 f"{impact_probe}, expected {want_impact} — a `§`address beside "
+                                 f"the path must not break the declaration it sits on",
+                                 remedy="parse_impact_standards must keep matching only the "
+                                        "docs/standards/**.md path and ignore the rest of the "
+                                        "line, addressed or not"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
@@ -5574,10 +5879,12 @@ def cmd_selftest(args, root: str) -> int:
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
-                          "cases": len(CANONICAL_CASES), "findings": findings},
+                          "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1,
+                          "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
-    print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} canonical case(s), "
+    print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
+          f"{len(SECTION_CASES['cases']) + 1} section canonical case(s), "
           f"{len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
@@ -5585,11 +5892,14 @@ def cmd_selftest(args, root: str) -> int:
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print(f"  OK — the canonical frontmatter cases pass, the capture form stamps exactly "
-              f"the entry-gate headings, the {len(BACKEND_CASES)} backend cases agree between "
-              f"`files` and `memory`, the config defaults hold with nothing declared, the files "
-              f"root reaches for no specs worktree where there must not be one, the worktree "
-              f"lock admits one writer and reclaims nothing it cannot prove dead, the "
+        print(f"  OK — the canonical frontmatter and section cases pass, the capture form "
+              f"stamps exactly the entry-gate headings, the task metadata grammar is closed "
+              f"on both the key list and the indent, `--moment build` resolves the six "
+              f"sections an executor is sent, a §addressed Impact bullet still declares its "
+              f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
+              f"`memory`, the config defaults hold with nothing declared, the files root "
+              f"reaches for no specs worktree where there must not be one, the worktree lock "
+              f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
               f"each refuse with their own remedy, every record reads back as it was "
               f"written, a task's shell -> sub-issue -> shell round trip reconstructs its "
@@ -5737,21 +6047,24 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
 
-    sp = add_json(sub.add_parser("show", help="granular read: ONE section or task, the map "
-                                              "by default, the document only with --full"))
+    sp = add_json(sub.add_parser("show", help="granular read: ONE task, the map by default, "
+                                              "the document only with --full (section "
+                                              "bodies are `section`'s)"))
     sp.add_argument("--spec", required=True)
-    sp.add_argument("--section", action="append", metavar="HEADING",
-                    help="one canonical heading's body; repeatable, so a slice that spans "
-                         "two sections is one call and not two")
     sp.add_argument("--task", action="append", metavar="ID",
                     help="one task's line and metadata, by id or index; repeatable")
     sp.add_argument("--full", action="store_true",
                     help="the WHOLE document — never the default, because every caller "
                          "that did not need it pays for it in context on every later turn")
 
-    sp = add_json(sub.add_parser("section", help="read or write ONE section"))
+    sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
     sp.add_argument("spec")
-    sp.add_argument("heading")
+    sp.add_argument("heading", nargs="?",
+                    help="one canonical heading, or several comma-separated; returned in "
+                         "the order asked. Omit when --moment resolves the list instead")
+    sp.add_argument("--moment", choices=["decision", "build", "close"],
+                    help="read every canonical section declared this moment, in canonical "
+                         "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 

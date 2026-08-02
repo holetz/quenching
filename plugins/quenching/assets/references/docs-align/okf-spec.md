@@ -31,7 +31,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
   summary) · `resource` (URI uniquely identifying the underlying asset) · `tags` (YAML list)
   · `timestamp` (ISO 8601 of last change).
 - Producers **MAY** add any additional keys (this plugin's `audience`/`authority`/`source`/
-  `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/docs:import`
+  `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/quenching:docs:import`
   alone and by no other command; its contract — the exact-URI value, and why it is separate from
   the authorial prose in `source` — is owned by
   [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) §Attribution.
@@ -114,12 +114,14 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    language**. Identifier-derived slugs (catalog tables/schemas, repo names)
    stay **verbatim** — the slug is the greppable key to the asset.
    *(`standards/agents/communication.md` is the owner of that language rule for a bundle that has
-   one, and every other statement of it in this plugin was collapsed into a citation. This one
+   one. Every **normative** statement of it in this plugin was collapsed into a citation; the
+   boundary reminders that survive do so by decision, under
+   `standards/architecture/plugin-layout.md` §A boundary reminder is not a restatement. This one
    stays self-contained deliberately: a format spec is what other implementers read to build
    against, and one that defers to a doc living inside a particular repo's bundle stops being
    self-describing.)*
 7. **Harness files** `CLAUDE.md`/`AGENTS.md` are navigation pointers, **not** OKF concepts —
-   exempt from the `type` requirement. The validator skips them entirely; the `/docs:harness`
+   exempt from the `type` requirement. The validator skips them entirely; the `/quenching:docs:harness`
    skill keeps them thin and honest (moving inlined knowledge into its home and verifying every
    pointer resolves — pointer honesty is checked by the skill, not the validator).
 8. **Every knowledge-holding folder has an `index.md`, and listings do not lie.** OKF leaves

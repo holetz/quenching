@@ -123,7 +123,7 @@ import sys
 import tempfile
 import time
 
-VERSION = "4.4.2"  # kept in lockstep with the plugin VERSION file (and specs.py)
+VERSION = "4.6.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"

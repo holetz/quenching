@@ -1,6 +1,6 @@
 # The evaluation contract — cases, grading, and the benchmark
 
-The owner of **what an evaluation produces**. `/skill:eval`'s body owns the workflow
+The owner of **what an evaluation produces**. `/quenching:skill:eval`'s body owns the workflow
 (select → read → derive → gate → run → grade → tune → report); this file owns the three artifact
 shapes, what makes an assertion worth grading, and the description-tuning loop.
 
@@ -30,7 +30,7 @@ have installed.
     benchmark.json                  # the run's aggregate and its delta
 ```
 
-`<path>` **mirrors the command path**: `/docs:add` is measured by
+`<path>` **mirrors the command path**: `/quenching:docs:add` is measured by
 `.claude/evals/docs/add/evals.json`. In this plugin, which registers only `commands/**` and keeps
 everything else under `assets/`, the same tree lives at
 `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`.
