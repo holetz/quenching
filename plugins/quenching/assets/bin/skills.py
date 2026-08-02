@@ -804,6 +804,49 @@ def _step_criteria(body: str) -> tuple[int, int]:
     return len(steps), len(covered)
 
 
+SKILL_TOOL_RE = re.compile(r"[*`_]*Skill[*`_]*\s+tool", re.I)
+SKILL_TOOL_WINDOW = 1           # lines either side of the name, so a wrapped sentence counts
+
+
+def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
+    """Which commands another command's BODY reaches BY NAME — derived from disk, never
+    from a hand-kept list, so a mass rename moves the paths and the check still holds.
+
+    Frontmatter is not read. A `Not for: X -> /other` boundary names a neighbour it is
+    steering AWAY from, and counting it would put most of the surface in this set.
+
+    Two conventions are in use, and only the first is unambiguous on its own:
+
+      A. the BARE registry form, `prefix:docs:align` — what you actually hand the Skill
+         tool. The same name written `/prefix:docs:align` is a human-facing citation, so
+         a leading slash disqualifies it;
+      B. any form of the name on a line whose neighbourhood says "Skill tool" — which is
+         how a body that writes "hand isolation to `/specs:isolate` (the `Skill` tool)"
+         says the same thing.
+
+    The union is deliberately the WIDER read. The two errors are not symmetric: a false
+    positive costs a command its place in the typed-only class, which is an argument; a
+    false negative lets a real conductor stage be flagged typed-only and go silently
+    inert, which is the failure this check exists to prevent."""
+    out: dict[str, set[str]] = {}
+    for caller in commands:
+        lines = caller["body"].splitlines()
+        skill_lines = [i for i, _ in enumerate(lines)
+                       if SKILL_TOOL_RE.search("\n".join(
+                           lines[max(0, i - SKILL_TOOL_WINDOW): i + SKILL_TOOL_WINDOW + 1]))]
+        for target in commands:
+            name = target["command"]
+            if name == caller["command"]:
+                continue
+            path = re.escape(name.lstrip("/"))
+            registry = rf"(?<![\w:/-]){re.escape(prefix)}:{path}(?![\w:-])"
+            adjacent = rf"(?<![\w:-])/?(?:{re.escape(prefix)}:)?{path}(?![\w:-])"
+            if (re.search(registry, caller["body"])
+                    or any(re.search(adjacent, lines[i]) for i in skill_lines)):
+                out.setdefault(name, set()).add(caller["command"])
+    return out
+
+
 def description_is_resident(fm: dict) -> bool:
     """Is this command's `description` in every session's context?
 
@@ -821,7 +864,11 @@ def description_is_resident(fm: dict) -> bool:
     return str(fm.get("disable-model-invocation", "")).strip().lower() != "true"
 
 
-def lint_command(cmd: dict, base: str) -> list[dict]:
+def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list[dict]:
+    """`named_by` is the set of commands whose bodies reach THIS one by name. It is a
+    property of the whole surface, so only a caller holding one can supply it — and a
+    surface with no plugin manifest has no registry form to be reached by, which is why
+    `None` (the check does not apply) is a legitimate state rather than a skipped one."""
     fm, body = cmd["frontmatter"], cmd["body"]
     where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
     if not fm:
@@ -903,7 +950,7 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                            f"`{bare}` is granted unscoped — scope it to the commands the workflow "
                            "runs, or state the reason in the body", tool=bare, **where))
 
-    out.extend(_lint_invocation(fm, where))
+    out.extend(_lint_invocation(fm, where, named_by))
     out.extend(_lint_frontmatter_hooks(cmd, where))
     out.extend(_lint_profile(fm, where))
     return out
@@ -938,11 +985,18 @@ def _lint_profile(fm: dict, where: dict) -> list[dict]:
     return out
 
 
-def _lint_invocation(fm: dict, where: dict) -> list[dict]:
+def _lint_invocation(fm: dict, where: dict, named_by: set[str] | None = None) -> list[dict]:
     """Both keys are optional and default invocation is the norm — a collapsed command
     is typable at `/` AND reachable by name, which is what lets a conductor invoke a
     stage. The incoherence worth an error is the combination that leaves NO caller:
-    the menu off and the model blocked."""
+    the menu off and the model blocked.
+
+    The second incoherence is narrower and was invisible until it was measured: a
+    command another body reaches BY NAME cannot also be typed-only, because the Skill
+    tool refuses it (row 7 of the mechanics reference). Nothing else on this surface
+    catches it — `budget` charges the command 0 and calls that an improvement, `doctor`
+    still counts it as present, and the conductor does not fail, it simply does
+    nothing."""
     out, values = [], {}
     for key in ("user-invocable", "disable-model-invocation"):
         if key not in fm:
@@ -959,6 +1013,13 @@ def _lint_invocation(fm: dict, where: dict) -> list[dict]:
                            "`user-invocable: false` with `disable-model-invocation: true` leaves "
                            "no way to invoke the command — neither the menu nor the model",
                            **where))
+    if values.get("disable-model-invocation") is True and named_by:
+        callers = ", ".join(sorted(named_by))
+        out.append(finding("sk-inert-stage", "error",
+                           f"`disable-model-invocation: true` on a command reached by name from "
+                           f"{callers} — the Skill tool refuses the call, so that body runs and "
+                           "this stage silently does nothing",
+                           namedBy=sorted(named_by), **where))
 
     return out
 
@@ -1056,18 +1117,21 @@ def cmd_lint(args, root: str) -> int:
                                [finding("sk-no-commands", "error",
                                         f"no command file found under {base}",
                                         command=SURFACE_MISSING)])
+    prefix = plugin_prefix(root)
+    # Same surface-versus-scope rule as the citations below, and for the same reason: the
+    # body that names a stage is usually NOT the file being linted, so deriving this from
+    # `commands` would make `lint <one file>` blind to the conductor that reaches it.
+    surface_commands = (commands if base == root
+                        else discover_commands(os.path.join(root, COMMANDS_DIR)))
+    named_by = named_by_bodies(surface_commands, prefix) if prefix else {}
+
     findings: list[dict] = []
     for cmd in commands:
-        findings.extend(lint_command(cmd, base))
+        findings.extend(lint_command(cmd, base,
+                                     named_by.get(cmd["command"]) if prefix else None))
 
-    prefix = plugin_prefix(root)
     if prefix:
-        # What counts as a command of this surface is a property of the SURFACE, never of
-        # the scope asked for — deriving it from `commands` would make `lint <one file>`
-        # blind to every citation naming a sibling.
-        invocations = {c["command"] for c in
-                       (commands if base == root
-                        else discover_commands(os.path.join(root, COMMANDS_DIR)))}
+        invocations = {c["command"] for c in surface_commands}
         for cmd in commands:
             findings.extend(lint_citations(prefix, cmd["body"], invocations,
                                            {"command": cmd["command"],
@@ -1382,9 +1446,13 @@ ROUTING_FIXTURE = {
     "docs/routed-bare.md":
         "---\ndescription: The control. No quoted trigger, no boundary, and resident — "
         "so both routing codes must fire.\n---\n\nBody.\n",
+    # The body names ITSELF by the registry form, which real bodies do in their own
+    # headings. It must not count as being reached by name — a command cannot conduct
+    # itself — and this is the case that arms that exclusion.
     "docs/typed-only-bare.md":
         "---\ndescription: The treatment. Same bare description, out of context — so "
-        "neither routing code may fire.\ndisable-model-invocation: true\n---\n\nBody.\n",
+        "neither routing code may fire.\ndisable-model-invocation: true\n---\n\n"
+        "# `plugfix:docs:typed-only-bare`\n\nBody.\n",
 }
 
 ROUTING_CODES = {"sk-trigger-position", "sk-no-boundary"}
@@ -1392,6 +1460,60 @@ ROUTING_CODES = {"sk-trigger-position", "sk-no-boundary"}
 EXPECTED_ROUTING = {
     "/docs:routed-bare": ROUTING_CODES,
     "/docs:typed-only-bare": set(),
+}
+
+# The inert-stage finding, which cannot be proved on the real surface without EDITING it
+# into the very failure the check exists to prevent. One conductor naming two stages the
+# two ways a body does it, and three controls — because a check that fires on the legitimate
+# use of the field is worse than no check: `stage-live` is named but resident, and
+# `typed-only-bare` (reused from ROUTING_FIXTURE) is typed-only but named by nobody, which
+# is exactly what the field is for.
+INERT_FIXTURE = {
+    "docs/conducts.md":
+        "---\ndescription: The conductor. Use when you \"run the stages\". "
+        "Not for: anything else -> /docs:add.\n---\n\n"
+        "Invoke `plugfix:docs:stage-inert` by name, then `plugfix:docs:stage-live`.\n"
+        "Neither line says the two words below, so only the registry arm reaches these.\n",
+    "docs/stage-inert.md":
+        "---\ndescription: Named by a conductor AND typed-only — the inert combination.\n"
+        "disable-model-invocation: true\n---\n\nBody.\n",
+    "docs/stage-live.md":
+        "---\ndescription: Named by the same conductor, but resident. Use when you "
+        "\"run the live stage\". Not for: anything else -> /docs:add.\n---\n\nBody.\n",
+    # The discriminator that took this set from 21 targets to 6 on the real surface: the
+    # SAME name with a leading slash is a citation aimed at a human, not a hand-off. This
+    # pair is what arms that rule — without it the slash exclusion can be deleted and
+    # every other case still passes.
+    # The second convention, and the only case that arms it: a stage handed off by the
+    # unprefixed slash form, which is a hand-off ONLY because the sentence says so. Delete
+    # the Skill-tool arm and this is the case that notices.
+    "docs/hands-off.md":
+        "---\ndescription: Hands a stage off the other way this surface writes it. Use "
+        "when you \"run the hand-off case\". Not for: anything else -> /docs:add.\n---\n\n"
+        "Hand the isolation to /docs:stage-handed through the `Skill` tool rather than\n"
+        "reimplementing it here.\n",
+    "docs/stage-handed.md":
+        "---\ndescription: Typed-only, and reached by name only through the Skill-tool "
+        "phrasing.\ndisable-model-invocation: true\n---\n\nBody.\n",
+    "docs/cites-slash.md":
+        "---\ndescription: Cites a neighbour the human-facing way. Use when you "
+        "\"read the citation case\". Not for: anything else -> /docs:add.\n---\n\n"
+        "When there is nothing to do, say so and point the human at\n"
+        "/plugfix:docs:stage-cited instead.\n",
+    "docs/stage-cited.md":
+        "---\ndescription: Typed-only, and only ever CITED with a leading slash — never "
+        "reached by name, so this must stay silent.\n"
+        "disable-model-invocation: true\n---\n\nBody.\n",
+}
+
+EXPECTED_INERT = {
+    "/docs:conducts": set(),
+    "/docs:stage-inert": {"sk-inert-stage"},        # the bare registry form reaches it
+    "/docs:stage-live": set(),                      # named, but its description is resident
+    "/docs:typed-only-bare": set(),                 # typed-only and named by nobody
+    "/docs:stage-cited": set(),                     # typed-only, cited with a slash only
+    "/docs:hands-off": set(),
+    "/docs:stage-handed": {"sk-inert-stage"},       # reached only via the Skill-tool arm
 }
 
 EXPECTED = {
@@ -1409,7 +1531,7 @@ def cmd_selftest(args, root: str) -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         for relpath, text in {**FIXTURE, **HOOK_FIXTURE, **CITATION_FIXTURE,
-                              **ROUTING_FIXTURE}.items():
+                              **ROUTING_FIXTURE, **INERT_FIXTURE}.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
@@ -1459,6 +1581,15 @@ def cmd_selftest(args, root: str) -> int:
                                          if f["code"] in ROUTING_CODES}
 
         prefix = plugin_prefix(tmp)
+        named_by = named_by_bodies(surface["commands"], prefix) if prefix else {}
+        inert_got = {c: set() for c in EXPECTED_INERT}
+        for c in surface["commands"]:
+            if c["command"] not in EXPECTED_INERT:
+                continue
+            inert_got[c["command"]] = {
+                f["code"] for f in lint_command(c, tmp, named_by.get(c["command"]))
+                if f["code"] == "sk-inert-stage"}
+
         invocations = {c["command"] for c in surface["commands"]}
         citation_got = {c["command"]: bare_citations(c["body"], invocations)
                         for c in surface["commands"] if c["command"] in EXPECTED_CITATIONS}
@@ -1484,6 +1615,10 @@ def cmd_selftest(args, root: str) -> int:
         if routing_got.get(command) != codes:
             failures.append(f"{command}: expected routing codes {sorted(codes)}, "
                             f"got {sorted(routing_got.get(command, []))}")
+    for command, codes in EXPECTED_INERT.items():
+        if inert_got.get(command) != codes:
+            failures.append(f"{command}: expected inert-stage codes {sorted(codes)}, "
+                            f"got {sorted(inert_got.get(command, []))}")
     if got.get("/docs:add"):
         failures.append(f"/docs:add: the conformant control was flagged {sorted(got['/docs:add'])}")
     if got.get("agents/good.md"):

@@ -840,13 +840,14 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
       subject: plan/route-commands-without-always-on-descriptions: 1.2 reportar a divisão roteada/typed-only no budget
-- [ ] 1.3 Adicionar em `_lint_invocation` o finding que esta política torna necessário: um comando
+- [x] 1.3 Adicionar em `_lint_invocation` o finding que esta política torna necessário: um comando
       **nomeado pelo corpo de outro comando** carregando `disable-model-invocation: true`, com o
       conjunto de alvos derivado de `commands/**` e não de lista fixa, para sobreviver à renomeação que
       `restructure-claude-front-namespace` propõe. Severidade por `## Open Decisions` item 6. Provar por
       caso no `selftest`, nunca editando a superfície real.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
+      subject: plan/route-commands-without-always-on-descriptions: 1.3 adicionar sk-inert-stage com o conjunto alcançável-por-nome derivado dos corpos
 - [ ] 1.4 Lockstep de versão, porque `skills.py` mudou: `VERSION`, `plugin.json`, o manifest do
       marketplace e o `--version` das outras duas ferramentas movem juntos.
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
@@ -911,3 +912,4 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 - 0.2: o baseline que ## Validation afirma para okf-validate.py docs esta defasado — ele diz 'avisos stale-doc pre-existentes em tres docs nao relacionados'; a medicao de 2026-08-02 nesta arvore da 0 error(s), 25 warning(s), TODOS stale-doc e todos pre-existentes. Nenhum sobre reference/tools/. O spec 2026-08-01-stale-doc-mass-aging e o dono disso.
 - 1.1: o baseline de lint em ## Validation esta defasado — diz 35 findings; a arvore (inclusive em main, antes de qualquer mudanca deste spec) da 36: 11 sk-trigger-position, 10 sk-no-boundary, 9 sk-step-criterion, 5 sk-unscoped-bash e 1 sk-bare-citation que o spec nao lista.
 - 1.1: escopar os dois codigos por description_is_resident nao muda NADA na superficie real (11/10 antes e depois) — /skill:retro, o unico typed-only, carrega gatilho e fronteira. A regra so existe provada pelo caso de selftest, e o caso foi verificado por mutacao: trocar o if por True faz o selftest FALHAR com 'expected routing codes [], got [sk-no-boundary, sk-trigger-position]'.
+- 1.3: a superficie usa DUAS convencoes para nomear um estagio, e so uma e detectavel sozinha — (a) a forma de registro nua 'quenching:docs:align' (o que se passa ao Skill tool; a mesma com barra, '/quenching:docs:align', e citacao para humano) e (b) a forma com barra sem prefixo perto da frase 'Skill tool'. Um predicado so com (a) da 6 alvos e perde /specs:isolate e /specs:conclude; so contar mencao da 21 de 26. A uniao das duas da exatamente os 8 de ## Design §D3 linhas 1-3. A linha 4 (/specs:continue) e dinamica e corretamente fica de fora.
