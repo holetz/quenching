@@ -900,9 +900,10 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       `doctor` com 26 comandos e `ok: true`.
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
       subject: plan/route-commands-without-always-on-descriptions: 4.1 provar que os três instrumentos concordam
-- [ ] 4.2 Os três selftests e o bundle OKF continuam limpos, sem aviso novo nos arquivos que este spec
+- [x] 4.2 Os três selftests e o bundle OKF continuam limpos, sem aviso novo nos arquivos que este spec
       tocou.
       verify: python3 plugins/quenching/assets/bin/skills.py selftest && python3 plugins/quenching/assets/bin/specs.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/route-commands-without-always-on-descriptions: 4.2 provar os três selftests e o bundle OKF
 - [ ] 4.3 Confirmar o que a classe typed-only promete: um comando reclassificado continua com a
       descrição inteira no arquivo e continua com `total: 0` e `alwaysOn: false` no `budget`. A metade
       "continua digitável no menu `/`" é checagem **manual** e tem de ser dita como manual no relatório,
