@@ -848,20 +848,21 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
       subject: plan/route-commands-without-always-on-descriptions: 1.3 adicionar sk-inert-stage com o conjunto alcançável-por-nome derivado dos corpos
-- [ ] 1.4 Lockstep de versão, porque `skills.py` mudou: `VERSION`, `plugin.json`, o manifest do
+- [!] 1.4 Lockstep de versão, porque `skills.py` mudou: `VERSION`, `plugin.json`, o manifest do — blocked: Contradiz docs/standards/ci-cd/versioning-release.md (authority: current), que diz que o bump NUNCA e uma tarefa e acontece so no /specs:conclude passo 5, na work branch, imediatamente antes do merge. O proprio source: daquele padrao registra este modo de falha — 'the conclude-time rule added after /specs:develop inferred a bump task from this doc resource: alone' — e o ## Impact deste spec lista os seis arquivos, que e exatamente a inferencia. Alem disso 1.4 esta incompleta: lista seis arquivos, e o padrao nomeia um setimo (session.py) que tambem tem de mover. Decidido com o humano em 2026-08-02: bloquear e deixar o bump para o conclude.
       marketplace e o `--version` das outras duas ferramentas movem juntos.
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/bin/skills.py --version
 
 ### 2. Escrever a política antes de aplicá-la
 
-- [ ] 2.1 Escrever `docs/standards/automation/context-budget.md` (`authority: background`, mantido):
+- [x] 2.1 Escrever `docs/standards/automation/context-budget.md` (`authority: background`, mantido):
       o tier que falta em §*What the description may carry* para uma descrição que não está em
       contexto, a divisão que `budget` agora reporta, e o modo de disparo do ratchet por **crescimento
       de descrição** — medido, +149 sobre `/specs:execute`, `/specs:develop` e `/specs:conclude` desde
       `a03f31a`, com `budget` saindo 1 e nada na rotina do repositório executando `budget`.
       files: docs/standards/automation/context-budget.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/route-commands-without-always-on-descriptions: 2.1 escrever o tier typed-only, a divisão e o modo de disparo por crescimento
 - [ ] 2.2 Escrever `docs/standards/automation/skills.md`: o critério de admissão à classe roteada em
       §*Invocation and permission are authored decisions*, e a célula da tabela de invocação sobre
       invocação por nome passando a citar a linha medida em 0.2 — ou reescrita para dizer o que se sabe,
