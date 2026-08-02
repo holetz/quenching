@@ -572,31 +572,82 @@ reportar que um conductor deste plugin ficou inerte.
    `claude -p` nova. Regra de leitura fixada agora, para que o resultado não seja interpretado depois:
    **ambiguidade conta como "bloqueia"** — é a leitura conservadora e é a que
    `docs/standards/automation/skills.md` já afirma, então adotá-la não muda nada que já esteja escrito.
+
+   **RESOLVIDO (0.1, 2026-08-02, Claude Code 2.1.220) — bloqueia os DOIS caminhos.** Dois braços com
+   controle, verificado no sistema de arquivos: o braço sem o campo foi listado e invocado por nome
+   com sucesso; o braço com o campo não foi listado e a invocação por nome foi **recusada** com
+   `Skill quenching:zzprobeb cannot be used with Skill tool due to disable-model-invocation`. Não foi
+   preciso recorrer à regra de ambiguidade — o host nomeia o campo na própria recusa. Registrado como
+   linha 7 de `docs/reference/tools/claude-code-skill-command-mechanics.md` (0.2).
+
 2. **`skills.md` ganha a medição, ou perde a afirmação?** Se o spike confirmar o bloqueio, a célula da
    tabela de invocação fica e passa a citar a linha medida. Se contradisser, um padrão
    `authority: current` está errado em uma célula, e corrigi-lo é maior que um edit de prosa — arrasta
    a tabela de quatro linhas, a §*Invocation and permission are authored decisions* e o
    `## Out of Scope` do collapse arquivado, que declarou a alavanca "closed by mechanics". Decidido
    **pelo resultado** da 0.1; registrado aqui porque o spec não pode e não deve escolher antes.
+
+   **RESOLVIDO (0.3) — ganha a medição.** O spike confirmou o bloqueio, então a célula estava certa e
+   fica. A tarefa 2.2 a faz **citar** a linha 7 em vez de afirmar. Nenhum padrão `authority: current`
+   está errado, e a cascata que o item temia não existe: o `## Out of Scope` do collapse arquivado
+   ("closed by mechanics") também estava certo.
+
 3. **Quem entra na classe roteada, comando por comando.** O critério está em `## Proposal`; a lista
    não está, e não deve estar: escrevê-la agora seria decidir 26 casos sem o instrumento que deriva a
    parte mecânica deles. Decidida pelo humano na **tarefa 3.1**, com o conjunto alcançável-por-nome
    vindo do instrumento da 1.3, aplicada só na parte aprovada.
+
+   **EM ABERTO** — é da 3.1, como projetado. Mas a medição de 0.1 já estreita o resultado esperado:
+   ver a nota de dimensionamento no fim desta seção.
+
 4. **Qual é o orçamento da classe roteada — e portanto quando a saída E de
    `## Alternatives Considered` dispara.** Decidido **de uma execução** de `budget` depois da 3.1,
    nunca de estimativa: é a regra do próprio `context-budget.md`. Até essa execução existir, a forma E
    não tem gatilho numérico, só condição qualitativa, e este spec não finge o contrário.
+
+   **EM ABERTO** — depende da 3.1, como projetado.
+
 5. **A projeção de ~250 comandos é o alvo contra o qual planejar?** Se o humano declarar que a
    superfície não passa de ~40 comandos, a resposta honesta passa a ser a forma **D** de
    `## Alternatives Considered` — restaurar as três partes em todos e re-medir o teto — e este spec
    encolhe para o grupo 0 (a medição) mais o grupo 1 (os dois instrumentos), abandonando os grupos 2 e
    3. Decidido pelo humano **antes** da tarefa 3.1, e é a decisão que mais muda o tamanho deste spec.
    O `## Risks` §*A crítica que mais dói* é o material dessa conversa.
+
+   **RESOLVIDO (0.3, 2026-08-02) — sim, ~250 é o alvo. O spec é construído inteiro**, grupos 1, 2 e 3.
+   Decidido com os números re-medidos nesta árvore, e não com a estimativa pré-spike, incluindo a nota
+   abaixo: a decisão foi tomada **sabendo** que o grupo 3 classifica perto de nada hoje. O que se
+   compra é o instrumento e a política, e o retorno está inteiramente nos comandos ainda não cunhados.
+
 6. **A severidade do finding da tarefa 1.3.** `error` se a 0.1 disser que o campo bloqueia por nome,
    porque então a combinação é um conductor inerte; `warn` se não bloquear, porque então é só uma
    escolha de projeto discutível. Decidido pela 0.1, não por gosto — escrito aqui para que a tarefa não
    tenha de decidir sozinha no meio da execução.
 
+   **RESOLVIDO (0.1) — `error`.** O campo bloqueia por nome, logo a combinação é literalmente um
+   conductor inerte: a chamada é recusada e o conductor segue sem falhar.
+
+### A nota de dimensionamento que a medição obriga (0.3)
+
+Re-medido nesta árvore em 2026-08-02, e mais duro do que o `## Risks` previu:
+
+| | comandos | chars | fatia |
+| --- | ---: | ---: | ---: |
+| descrição completa | 15 | 12.816 | **99,5%** |
+| descrição curta | 11 | 935 | 0,5% |
+| **superfície** | **26** | **12.875** | teto 12.726 — **estourado em 149** |
+
+O `## Risks` estimava a classe typed-only como "essencialmente o conjunto das descrições curtas, 935
+caracteres". A medição de 0.1 a encolhe mais: três das onze curtas — `/docs:harness`,
+`/docs:import-memory`, `/docs:glossary-backfill`, 217 chars — são estágios que `/docs:align` alcança
+**por nome**, e agora estão **duramente** excluídas. As demais são alcançadas por fala, que o critério
+de admissão também exclui.
+
+**Aplicado honestamente hoje, o grupo 3 classifica zero ou perto de zero comandos, e a
+reclassificação não fecha nenhum dos 149 caracteres de estouro.** Quem fecha o estouro é a 3.2
+(re-medir o teto — a forma C dobrada para dentro), e quem impede o próximo é a 2.3 (pôr `budget` na
+rotina). Isto está escrito aqui para que ninguém leia o `budget` verde do fim como prova de que a
+política economizou alguma coisa: ela não economizou, ela parou de crescer.
 ## Risks
 
 Gerado por um premortem contra o conteúdo deste spec — *é 2026-10-30, isto foi construído e deu
@@ -698,43 +749,46 @@ grupo 0 mais o grupo 1.
 
 ## Handoff
 
-Estado da árvore após o commit da 0.1.
+Estado da árvore após o grupo 0 (0.1, 0.2, 0.3 commitados). Grupo 0 verificado: `okf-validate.py docs`
+sai 0 — 25 avisos, todos `stale-doc` pré-existentes, nenhum em arquivo que este spec tocou.
 
-**A mecânica está medida (0.1), e ela BLOQUEIA os dois caminhos.** Claude Code 2.1.220, dois braços
-com controle, verificado no sistema de arquivos:
+**A mecânica está medida e BLOQUEIA os dois caminhos** (Claude Code 2.1.220, dois braços com controle,
+verificado no sistema de arquivos): descrição fora da listagem **e** invocação por nome pelo Skill tool
+recusada, com o host nomeando o campo — `Skill quenching:zzprobeb cannot be used with Skill tool due to
+disable-model-invocation`. Está na linha 7 de `docs/reference/tools/claude-code-skill-command-mechanics.md`.
 
-- controle (sem o campo): descrição listada, invocação por nome pelo Skill tool **ok**, corpo executou;
-- tratamento (`disable-model-invocation: true`): descrição **não listada**, invocação por nome
-  **recusada** com `Skill quenching:zzprobeb cannot be used with Skill tool due to
-  disable-model-invocation`, corpo não executou.
+**Decisões fechadas — não re-decidir.** Ver `## Open Decisions` para o registro completo.
 
-Consequências já fixadas para as tarefas seguintes, sem precisar re-decidir:
+- item 1 → bloqueia também por nome (observado, não por ambiguidade);
+- item 2 → `skills.md` **ganha a medição**; a célula estava certa e passa a citar a linha 7. Sem cascata;
+- item 5 → **~250 é o alvo; construir o spec inteiro**, grupos 1, 2 e 3;
+- item 6 → severidade do finding de 1.3 é **`error`**;
+- itens 3 e 4 seguem abertos por projeto (são da 3.1 e da execução de `budget` depois dela).
 
-- `## Open Decisions` item 1 → **bloqueia também por nome**. Não foi por ambiguidade; foi observado.
-- `## Open Decisions` item 2 → `skills.md` **ganha a medição**; a célula está certa e passa a citar a
-  linha de 0.2. Não há padrão `authority: current` errado para corrigir.
-- `## Open Decisions` item 6 → severidade do finding de 1.3 é **`error`**: um comando nomeado pelo
-  corpo de outro carregando o campo é um conductor inerte, e o host recusa a chamada.
-- `## Design` §D3 sobrevive como escrito: a classe typed-only **exclui** os ~12 alcançáveis por nome.
+**O que o grupo 3 vai encontrar, já medido — não é uma surpresa a descobrir na 3.1.** 26 comandos,
+12.875 chars, teto 12.726, estourado em 149. 15 descrições completas = 12.816 chars (99,5%); 11 curtas
+= 935. Das onze curtas, três (`/docs:harness`, `/docs:import-memory`, `/docs:glossary-backfill`, 217
+chars) são estágios alcançados **por nome** e agora estão duramente excluídas; as outras são alcançadas
+por fala, que o critério também exclui. **A 3.1 deve classificar zero ou perto de zero.** Quem fecha o
+estouro é a 3.2, não a reclassificação.
+
+**Armadilha para a 1.3.** Um `grep -rhoE 'quenching:[a-z-]+(:[a-z-]+)*' commands/` casa **25 dos 26**
+comandos — porque as fronteiras `Not for: X → /outro-comando` e as citações em prosa mencionam nomes
+sem os invocar. O conjunto real alcançável-por-nome é ~12 (`## Design` §D3). O instrumento da 1.3 tem
+de distinguir **invocação pelo Skill tool** de **menção**, ou vai marcar a superfície inteira.
 
 **Ambiente, que difere do que o spec assume.** O plugin vivo nesta máquina é a instalação user-scope
 `quenching@quenching` em `~/.claude/plugins/cache/quenching/quenching/4.4.0/`, **não** a árvore de
-trabalho. Um probe de superfície precisa ser escrito na raiz viva. Ver `## Discoveries`.
+trabalho. Ver `## Discoveries`.
 
-**Números de linha de `skills.py` citados em `## Impact`/`## Design` estão defasados** — trabalhar por
-conteúdo. `budget_rows` ~1667, `_lint_invocation` ~921.
+**Números de linha de `skills.py` em `## Impact`/`## Design` estão defasados** — trabalhar por conteúdo.
+`budget_rows` ~1667 (condição do campo ~1674), `_lint_invocation` ~921 (`sk-unreachable` ~931).
 
-Isolamento: worktree em `../claude-quenching-route-commands-without-always-on-descriptions`,
-branch `plan/route-commands-without-always-on-descriptions` sobre `main`.
+Isolamento: worktree em `../claude-quenching-route-commands-without-always-on-descriptions`, branch
+`plan/route-commands-without-always-on-descriptions` sobre `main`.
 
-**Próximo:** 0.2 registra o resultado em `docs/reference/tools/claude-code-skill-command-mechanics.md`
-(linha nova na tabela §The findings com status **Observed**, a subseção que a explica, e a entrada em
-§Re-measurements com data 2026-08-02 e versão 2.1.220). Depois 0.3 leva os itens 1, 2, 5 e 6 ao humano
-— dos quais só o **item 5** (a projeção de ~250 comandos é o alvo?) continua genuinamente em aberto, e
-é o que decide se os grupos 2 e 3 existem.
-
-`verification: per-section` — a verificação do grupo 0 roda ao fim de 0.2/0.3, não por tarefa.
-
+**Próximo: grupo 1**, as três tarefas que tocam o mesmo arquivo (`skills.py`) e por isso não são `[P]`,
+mais o lockstep da 1.4. `verification: per-section` — a verificação roda ao fim do grupo, não por tarefa.
 ## Tasks
 
 Ordenado por `## Design` §D4: medir, instrumentar, escrever a política, só então classificar. Nada é
@@ -765,10 +819,11 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: docs/reference/tools/claude-code-skill-command-mechanics.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/route-commands-without-always-on-descriptions: 0.2 registrar a medição em claude-code-skill-command-mechanics
-- [ ] 0.3 Decidir com o humano, contra o resultado de 0.1, os itens 1, 2, 5 e 6 de
+- [x] 0.3 Decidir com o humano, contra o resultado de 0.1, os itens 1, 2, 5 e 6 de
       `## Open Decisions` — a mecânica, o que acontece com `skills.md`, se a projeção de ~250 é o alvo,
       e a severidade do finding de 1.3. Sem a resposta do item 5 os grupos 2 e 3 não têm justificativa,
       e sem a do item 6 a tarefa 1.3 não tem critério.
+      subject: plan/route-commands-without-always-on-descriptions: 0.3 decidir os itens 1, 2, 5 e 6 contra a medição
 
 ### 1. Fechar a discordância entre os dois instrumentos
 
