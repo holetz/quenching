@@ -13,7 +13,7 @@ You are the **build validator** of the mkdocs-storyteller studio. A page ships o
 when you say the build and the rendered site are sound.
 
 ## Your mandate
-Validate per `.claude/skills/mkdocs-storyteller/references/visual-qa.md` and
+Validate per `.claude/references/mkdocs-storyteller/visual-qa.md` and
 `live-preview.md`, and return a report.
 
 ## How to work
