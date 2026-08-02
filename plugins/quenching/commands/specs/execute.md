@@ -179,6 +179,12 @@ Those files are **binding contracts** for HOW the work is built, complementing t
 sections (WHAT to build). A task that contradicts one is surfaced (step 5), never silently
 resolved. No bundle → skip silently.
 
+A declared bullet may carry a `§`address beside its path — `docs/standards/automation/context-budget.md
+§The two caps §The per-surface ceiling`. With one, read exactly those sections
+(`skills.py read <path> --sections "§A" --sections "§B"`); with none, read the file whole, exactly
+as today. The default never changes: reading less is an assertion the spec's own author wrote, never
+an economy the executor takes on its own.
+
 **No mechanical net for a contract nobody declared — deliberately.** `specs.py validate` already
 warns when a declared standard has no task (`sp-impact-uncovered`); the inverse, a binding standard
 nobody declared, is **not derivable**: deciding that a given standard governs a given task is
