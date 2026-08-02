@@ -5,6 +5,7 @@ verification: per-section
 refined: {mode: gate, date: 2026-07-31}
 approved: {date: 2026-07-31}
 priority: {level: 16, criticality: high, date: 2026-08-01}
+branch: {base: main, work: claude/configurable-spec-backend-50928f}
 ---
 
 # Configurable backend for spec management (files, GitHub, Azure DevOps)
@@ -251,6 +252,18 @@ trabalho em que se está.
   externos concordam passa a ser literalmente o mesmo código, em vez de duas implementações que
   alguém precisa manter em sincronia — a mesma razão pela qual a interface são cinco primitivas e
   não oito verbos.
+- **Refinado (merge da main 011d90c): a leitura granular de seção é do `section`, e o `show`
+  perdeu `--section`.** Enquanto esta branch esteve parada, a main resolveu o MESMO problema por
+  outro caminho: deu forma plural ao `specs.py section` (`"A,B,C"` numa chamada) e um `--moment`
+  que resolve o conjunto declarado no schema, medido em −37% de tokens contra o `Read` do arquivo
+  e já citado por seis standards, pelo glossário e pelo step 4 do `/quenching:specs:execute`. A
+  decisão original acima — "a CLI expõe seção-a-seção via `show --section`" — foi escrita quando
+  `section` era o par read/write de UMA seção; a main tornou essa premissa falsa. Manter os dois
+  daria duas grafias da mesma resposta já medida, e elas divergiriam. O que sobrou no `show` é o
+  que o `section` não sabe dizer: o **mapa** de quais headings e task ids existem (o default),
+  UMA task com sua metadata, e o documento inteiro sob `--full`. A decisão de fundo não mudou —
+  o custo endereçado continua sendo o **contexto** do agente e não I/O, e continua valendo que o
+  backend pode ter buscado o documento inteiro para responder. Só o verbo mudou de dono.
 
 ## Alternatives Considered
 
@@ -308,6 +321,19 @@ trabalho em que se está.
 **Seções 1–5 completas. Seção 6 em andamento: 6.1 e 6.2 feitas, resta 6.3. Depois, seção 7
 (export e fechamento). 25/29.**
 
+**A BRANCH FOI RETOMADA APÓS UMA PAUSA — leia isto antes de qualquer coisa.** A run parou em
+5f40fd7 por custo de execução, e a main avançou 100+ commits nesse intervalo. O merge
+`61eccb6` trouxe a main `011d90c` para dentro e reconciliou os nove arquivos que conflitaram;
+`## Design` registra a única reconciliação que não foi textual (`show` × `section`). Três
+consequências para quem retoma:
+- **Não reintroduza `show --section`.** Quatro bodies (`develop`, `conclude`, `triage`,
+  `execute`) foram convertidos para `section`, e o `execute` usa o `--moment build` da main em
+  vez de enumerar as seis seções. O `show` hoje é mapa + `--task` + `--full`.
+- **O lockstep já está em 4.6.0** — VERSION e as três ferramentas concordam. A task 7.2 vira
+  re-conferência, não trabalho.
+- **O baseline de lint mudou de 35 para 36**, e o finding a mais é da main. Ver o bloco de
+  baseline no fim desta seção.
+
 - **Interface** — `SpecBackend` com 5 primitivas, sem derivação própria. `MemoryBackend` prova
   igualdade contra `files` no selftest.
 - **Escrita de frontmatter**: `specs.py record <slug> <name> --set k=v` é o escritor dos sete
@@ -349,9 +375,23 @@ aviso de não-validado. O custo real da falta de prova agora é visível e está
 - Workspace pré-migração não é serializado pelo lock da worktree (é o estado deste repo agora).
 - `TEMPLATE_SPEC` embutido ainda só documenta `--subject` na guidance comment.
 
-**Baseline de lint**: 35 findings em `plugins/quenching` (`sk-trigger-position` 11 ·
-`sk-no-boundary` 10 · `sk-step-criterion` 9 · `sk-unscoped-bash` 5), idêntico ao commit 5f40fd7.
-Nenhum é desta spec; é contra esse conjunto que "sem regressão" deve ser medido.
+**Baseline pós-merge — medido contra a MAIN, não contra o commit de partida.** Os quatro números
+abaixo são idênticos aos da main `011d90c` medidos numa worktree destacada, o que é a forma
+honesta de dizer "esta branch não regrediu nada":
+- `skills.py doctor`: 26 comandos, 0 findings.
+- `skills.py lint`: **36** findings (`sk-trigger-position` 11 · `sk-no-boundary` 10 ·
+  `sk-step-criterion` 9 · `sk-unscoped-bash` 5 · `sk-bare-citation` 1). Eram 35 em 5f40fd7; o
+  `sk-bare-citation` a mais é da main, em `specs-execute/execution.md`, e não desta spec.
+- `okf-validate` sobre `docs/`: 0 erros, 23 warnings, todos `stale-doc` — o envelhecimento em
+  massa que a spec `stale-doc-mass-aging` da main já captura, não um efeito deste merge.
+- Os três selftests passam, e o do `specs.py` roda as checagens das DUAS histórias: 12 casos
+  canônicos de frontmatter + 8 de seção, 9 de backend, 5 recusas `gh` + 6 `az`, `--moment build`,
+  e a tolerância ao `§`endereço no `## Impact`.
+
+Provado também num workspace descartável, que é o único lugar onde o backend `files` em worktree
+pode ser exercitado: `new` → `section --write` → `section` plural → `--moment build` →
+`show --task` → `promote`, com o spec vivendo em `.claude/worktrees/specs/` na branch `specs` e
+`git status --porcelain` vazio na árvore de código.
 
 ## Tasks
 
@@ -495,3 +535,7 @@ Nenhum é desta spec; é contra esse conjunto que "sem regressão" deve ser medi
 - A task 5.1 tocou `specs.py` além dos `files:` que declara: `list --json` passou a carregar os sete `records` e nasceu `specs.py record`. Sem os dois, status/triage não tinham como parar de ler o caminho — triage escrevia `priority` com Edit no arquivo.
 - `az` está instalado neste ambiente (2.88.0) com o grupo `az devops` disponível, mas SEM defaults de organization/project — o que tornou possível capturar a recusa real de `az boards query` sem org e provar `resolve_azure_project` contra o binário. Nenhuma chamada de escrita foi feita, e a 6.2/6.3 não têm board real contra o qual rodar um E2E.
 - `plugin-configuration.md` documenta três chaves e agora são quatro: a task 6.2 acrescentou `azureStates`. A task não nomeia esse standard, então ele NÃO foi reescrito aqui — fica para /docs:add ou para a task de fechamento da seção 7.
+- As tres ferramentas .py citam comandos na forma bare (/specs:execute) em dezenas de strings, inclusive nas recusas novas desta spec. E a convencao pre-existente da main e esta DELIBERADAMENTE fora do alcance do lint: a spec correct-command-citation-form estendeu o check a assets/references e parou ali. Nao foi normalizado aqui; se deve ser, e uma spec propria.
+- A spec check-canonical-cases-and-map-the-scripts (main, plans/) mediu specs.py em 3.108 linhas e concluiu que modularizar nao se paga. Esta branch levou o arquivo a 6.199 — dobrou. A premissa numerica daquela spec esta vencida e a conclusao dela precisa ser re-medida depois deste merge, nao herdada.
+- A spec refuse-a-mis-levelled-specs-root (main, plans/) trata do --root de specs.py vs skills.py apontarem para niveis diferentes da arvore. Esta branch acrescentou resolve_files_root e a worktree de specs, que mudam o que --root resolve num repo migrado. As duas se tocam: quem pegar aquela spec precisa ler resolve_files_root primeiro.
+- A pausa desta branch foi por custo de execucao, e a main entregou trabalho direto nisso enquanto ela esperava: read-by-section-not-by-file, cut-specs-execute-turns e narrow-the-execute-preamble mergeados, mais duas specs vivas (reduce-execute-conclude-cost 0/14 e cut-conclude-run-cost). A retomada herda esse ganho de graca — nao replanejar custo de execucao dentro desta spec.
