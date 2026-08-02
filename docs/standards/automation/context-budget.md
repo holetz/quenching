@@ -4,7 +4,7 @@ title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry, the per-surface ceiling, and the disable-model-invocation exit that lets a typed-only command cost nothing at all; and the other half — what a body costs once it fires, where every turn re-sends the whole conversation so a block costs tokens × turns remaining
 resource: plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-08-01
+timestamp: 2026-08-02
 audience: both
 authority: background
 source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31)
@@ -70,7 +70,15 @@ Three things, in this order, and nothing else:
 1. the leading concept: what the command does and to what, in its own vocabulary;
 2. the trigger phrases, quoted verbatim, one per distinct way a user asks — in the **second
    sentence**, so truncation cannot reach them (`sk-trigger-position`);
-3. the boundary: `Not for: <adjacent job> → <owning command>` (`sk-no-boundary`).
+3. the boundary: `Not for: <adjacent job> → <owning command>` (`sk-no-boundary`) — **where an
+   adjacent command exists.** A boundary is routing, and routing nobody needs is rent: a command
+   sharing no `/<namespace>:` and no overlapping trigger with anything on the surface is
+   confusable with nothing, and its `Not for:` costs every session forever to disambiguate a
+   collision that cannot happen. Whether one exists is a claim about the **whole surface**, so it
+   is not decidable while writing one command: `/skill:align` §8 is where every description is
+   reviewed against all the others at once, and a waiver there is stated with the competitor set
+   it checked. `sk-no-boundary` still fires on absence alone — the tool reads one command — so a
+   waived boundary is a warning **reported as accepted**, never one silently ignored.
 
 **What belongs in none of them** — how the command works. The step order, the tool calls, the
 checks it runs: a reader who needs those has already fired the command and loaded the body. A
