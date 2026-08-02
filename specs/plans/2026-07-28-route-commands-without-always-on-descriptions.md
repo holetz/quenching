@@ -827,12 +827,13 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 
 ### 1. Fechar a discordância entre os dois instrumentos
 
-- [ ] 1.1 Extrair o predicado "esta descrição está em contexto?" de `budget_rows`
+- [x] 1.1 Extrair o predicado "esta descrição está em contexto?" de `budget_rows`
       (`skills.py:1439`) para um helper, e escopar `sk-trigger-position` e `sk-no-boundary` por ele, de
       modo que `lint` e `budget` leiam a mesma condição de um lugar só. Entregar junto o caso de
       `selftest` que demonstra a regra, porque na superfície real ela é hoje inobservável.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
+      subject: plan/route-commands-without-always-on-descriptions: 1.1 extrair description_is_resident e escopar os dois códigos de roteamento
 - [ ] 1.2 Fazer `budget --json` reportar a divisão por classe — contagem e caracteres de roteada e de
       typed-only — para que uma queda de custo obtida por reclassificação seja distinguível de uma
       obtida por escrever menos.
@@ -907,3 +908,5 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 - specs.py next quebra o campo files: de 0.1 em duas entradas (plugins/quenching/commands/zzprobe.md (descartavel + revertido ao fim)) — o parser separa por virgula sem respeitar parenteses, entao um comentario entre parenteses num files: vira um caminho falso para o executor.
 - Os numeros de linha que ## Impact e ## Design citam de skills.py estao defasados: budget_rows/1436-1439 esta hoje em ~1667-1674 e _lint_invocation/861-877 em ~921-931. Trabalhar por conteudo, nunca por linha.
 - 0.2: o baseline que ## Validation afirma para okf-validate.py docs esta defasado — ele diz 'avisos stale-doc pre-existentes em tres docs nao relacionados'; a medicao de 2026-08-02 nesta arvore da 0 error(s), 25 warning(s), TODOS stale-doc e todos pre-existentes. Nenhum sobre reference/tools/. O spec 2026-08-01-stale-doc-mass-aging e o dono disso.
+- 1.1: o baseline de lint em ## Validation esta defasado — diz 35 findings; a arvore (inclusive em main, antes de qualquer mudanca deste spec) da 36: 11 sk-trigger-position, 10 sk-no-boundary, 9 sk-step-criterion, 5 sk-unscoped-bash e 1 sk-bare-citation que o spec nao lista.
+- 1.1: escopar os dois codigos por description_is_resident nao muda NADA na superficie real (11/10 antes e depois) — /skill:retro, o unico typed-only, carrega gatilho e fronteira. A regra so existe provada pelo caso de selftest, e o caso foi verificado por mutacao: trocar o if por True faz o selftest FALHAR com 'expected routing codes [], got [sk-no-boundary, sk-trigger-position]'.

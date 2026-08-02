@@ -804,6 +804,23 @@ def _step_criteria(body: str) -> tuple[int, int]:
     return len(steps), len(covered)
 
 
+def description_is_resident(fm: dict) -> bool:
+    """Is this command's `description` in every session's context?
+
+    THE one place that answers it. `budget` charges the always-on total from it and
+    `lint` scopes its two routing codes by it, so the two instruments can never
+    disagree about the same surface — two copies of this condition is the shape that
+    diverges in silence.
+
+    `disable-model-invocation: true` is the only field that makes the answer no.
+    Measured, not assumed: Claude Code drops the description from the listing AND
+    refuses the command by name through the Skill tool — row 7 of
+    docs/reference/tools/claude-code-skill-command-mechanics.md, Claude Code 2.1.220.
+    The description is still read by a human, in the file and in the `/` menu; it is
+    residency it loses, never content."""
+    return str(fm.get("disable-model-invocation", "")).strip().lower() != "true"
+
+
 def lint_command(cmd: dict, base: str) -> list[dict]:
     fm, body = cmd["frontmatter"], cmd["body"]
     where = {"command": cmd["command"], "path": rel(cmd["path"], base)}
@@ -844,19 +861,28 @@ def lint_command(cmd: dict, base: str) -> list[dict]:
                            "command is not portable outside Claude Code",
                            characters=len(description), cap=CAP_DESCRIPTION_PORTABLE, **where))
 
-    triggers = _quoted_phrases(description)
-    if not triggers:
-        out.append(finding("sk-trigger-position", "warn",
-                           "the description quotes no trigger phrase — no user wording routes to "
-                           "this command", **where))
-    elif not _quoted_phrases(" ".join(_split_sentences(description)[:TRIGGER_SENTENCE_MAX])):
-        out.append(finding("sk-trigger-position", "warn",
-                           f"the first trigger phrase appears after sentence "
-                           f"{TRIGGER_SENTENCE_MAX} — a truncated description loses it", **where))
-    if BOUNDARY_MARKER not in description:
-        out.append(finding("sk-no-boundary", "warn",
-                           f"the description states no `{BOUNDARY_MARKER}` boundary — the routing "
-                           "story is missing from the only text always in context", **where))
+    # Both codes below judge ROUTING FROM PROSE, so both are scoped to a description
+    # that is actually in context. For a typed-only command there is no listing for a
+    # trigger phrase to sit in and no neighbour for a boundary to discriminate against
+    # — the human reaches it by typing the name. Reporting it as badly written for a
+    # routing that cannot happen is `lint` contradicting `budget`, which already
+    # charges the same command 0.
+    if description_is_resident(fm):
+        triggers = _quoted_phrases(description)
+        if not triggers:
+            out.append(finding("sk-trigger-position", "warn",
+                               "the description quotes no trigger phrase — no user wording routes "
+                               "to this command", **where))
+        elif not _quoted_phrases(" ".join(_split_sentences(description)[:TRIGGER_SENTENCE_MAX])):
+            out.append(finding("sk-trigger-position", "warn",
+                               f"the first trigger phrase appears after sentence "
+                               f"{TRIGGER_SENTENCE_MAX} — a truncated description loses it",
+                               **where))
+        if BOUNDARY_MARKER not in description:
+            out.append(finding("sk-no-boundary", "warn",
+                               f"the description states no `{BOUNDARY_MARKER}` boundary — the "
+                               "routing story is missing from the only text always in context",
+                               **where))
 
     if cmd["bodyLines"] > CAP_BODY_LINES:
         out.append(finding("sk-body-length", "error",
@@ -1346,6 +1372,28 @@ EXPECTED_CITATIONS = {
     "references/docs-add/homes.md": ["/docs:hollow"],
 }
 
+# The two routing codes against `description_is_resident`. This rule is UNOBSERVABLE on
+# the real surface — the one typed-only command there happens to carry both a trigger
+# phrase and a boundary, so it would pass either way — and a rule no case exercises is
+# not proved. The two fixtures are byte-identical but for the field, which is what makes
+# the pair a measurement rather than two assertions: the control fires both codes, so a
+# silent treatment can only be the field.
+ROUTING_FIXTURE = {
+    "docs/routed-bare.md":
+        "---\ndescription: The control. No quoted trigger, no boundary, and resident — "
+        "so both routing codes must fire.\n---\n\nBody.\n",
+    "docs/typed-only-bare.md":
+        "---\ndescription: The treatment. Same bare description, out of context — so "
+        "neither routing code may fire.\ndisable-model-invocation: true\n---\n\nBody.\n",
+}
+
+ROUTING_CODES = {"sk-trigger-position", "sk-no-boundary"}
+
+EXPECTED_ROUTING = {
+    "/docs:routed-bare": ROUTING_CODES,
+    "/docs:typed-only-bare": set(),
+}
+
 EXPECTED = {
     "/docs:references:homes": {"sk-no-description"},
     "/docs:hollow": {"sk-no-description"},
@@ -1360,7 +1408,8 @@ def cmd_selftest(args, root: str) -> int:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
-        for relpath, text in {**FIXTURE, **HOOK_FIXTURE, **CITATION_FIXTURE}.items():
+        for relpath, text in {**FIXTURE, **HOOK_FIXTURE, **CITATION_FIXTURE,
+                              **ROUTING_FIXTURE}.items():
             path = os.path.join(tmp, COMMANDS_DIR, *relpath.split("/"))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             pathlib.Path(path).write_text(text, encoding="utf-8")
@@ -1402,6 +1451,13 @@ def cmd_selftest(args, root: str) -> int:
                 if f["code"].startswith("sk-hook-"):
                     hook_got[c["command"]].add(f["code"])
 
+        routing_got = {c: set() for c in EXPECTED_ROUTING}
+        for c in surface["commands"]:
+            if c["command"] not in EXPECTED_ROUTING:
+                continue
+            routing_got[c["command"]] = {f["code"] for f in lint_command(c, tmp)
+                                         if f["code"] in ROUTING_CODES}
+
         prefix = plugin_prefix(tmp)
         invocations = {c["command"] for c in surface["commands"]}
         citation_got = {c["command"]: bare_citations(c["body"], invocations)
@@ -1424,6 +1480,10 @@ def cmd_selftest(args, root: str) -> int:
         if hook_got.get(command) != codes:
             failures.append(f"{command}: expected {sorted(codes)}, "
                             f"got {sorted(hook_got.get(command, []))}")
+    for command, codes in EXPECTED_ROUTING.items():
+        if routing_got.get(command) != codes:
+            failures.append(f"{command}: expected routing codes {sorted(codes)}, "
+                            f"got {sorted(routing_got.get(command, []))}")
     if got.get("/docs:add"):
         failures.append(f"/docs:add: the conformant control was flagged {sorted(got['/docs:add'])}")
     if got.get("agents/good.md"):
@@ -1664,17 +1724,18 @@ def budget_rows(surface: dict) -> list[dict]:
     `argument-hint` is still deliberately excluded: it totals a few dozen characters
     across a whole surface and is not carried in the listing.
 
-    A `disable-model-invocation: true` command counts 0: Claude Code drops its
-    description from context entirely (the command is reachable only by typing it), so
-    charging it to the always-on total would report a cost the model never pays. The row
-    stays in the table, marked, so the surface's full inventory is still visible."""
+    A typed-only command counts 0: Claude Code drops its description from context
+    entirely (the command is reachable only by typing it), so charging it to the
+    always-on total would report a cost the model never pays. The row stays in the
+    table, marked, so the surface's full inventory is still visible. The predicate is
+    `description_is_resident` — the same one `lint` scopes its routing codes by."""
     rows = []
     for c in surface["commands"]:
         description = len(str(c["frontmatter"].get("description", "")))
-        hidden = str(c["frontmatter"].get("disable-model-invocation", "")).strip().lower() == "true"
+        resident = description_is_resident(c["frontmatter"])
         rows.append({"command": c["command"], "description": description,
-                     "total": 0 if hidden else description,
-                     **({"alwaysOn": False} if hidden else {})})
+                     "total": description if resident else 0,
+                     **({"alwaysOn": False} if not resident else {})})
     return sorted(rows, key=lambda r: (-r["total"], r["command"]))
 
 
