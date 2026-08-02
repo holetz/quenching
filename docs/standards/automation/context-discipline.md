@@ -34,10 +34,23 @@ Three rules, in descending order of what they were measured to be worth:
    `docs/standards/` paths a spec expects to touch; those, plus whatever the current task's own text
    names, are the binding contracts. A `docs/standards/<subject>/` folder is a location, not a
    claim about relevance.
-2. **Read the *sections* a body cites, never the file that holds them.** Every citation in this
-   repository is already written `§Section name` — the address exists; what was missing was the
-   resolver. `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown,
-   and `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings.
+2. **A reference citation in a command body IS a `§`-address — never a bare path.** Surface-wide
+   rule, proved on one command: measured on `/quenching:specs:execute`, six of its top-preamble
+   citations named only a file, and five of its `§`-addresses named a section with no file to
+   resolve it in. A citation is resolvable, by a reader and by `skills.py` alike, only when three
+   halves hold together:
+   1. every `§`-address carries the file it belongs to, in the same link or glued to it;
+   2. an address is never split across a line break;
+   3. a step of the body's own workflow is `step 5g`, never `§5g` — `§` keeps one meaning, a file's
+      section, never a step number.
+
+   A reference used only inside one conditional branch is read in that branch, never hoisted into
+   the preamble every turn pays for regardless of which branch runs.
+
+   `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
+   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. Converting the other
+   twenty-five command bodies to this shape is future work; only `/quenching:specs:execute` is
+   converted today.
 3. **N sections in ONE call.** Turns are the *other* factor. Five sections fetched over five turns
    trades tokens for turns and can lose to reading the whole file, because a turn spent early is
    repaid by every turn after it. Both readers take a list for this reason; it is half the result,
