@@ -1,19 +1,15 @@
 ---
-name: skill-cartographer
 description: >-
   Use to turn a skill, agent system, or architecture into a single self-contained
-  interactive HTML "kit map" — a layered infographic in the style of the
-  Claude-Code Agent-Development-Kit poster (numbered layers, cards with icons,
-  side rails for inputs/outputs, connectors, a footer of principles). One .html
-  file, no external dependencies, opens in any browser: hover to highlight,
-  click a card to expand its detail, toggle light/dark. Triggers: "criar um mapa
-  visual da skill", "gerar um .html do que foi construído", "infográfico/fluxo em
-  HTML", "mapa interativo da arquitetura", "kit map", "visualize this skill/system
-  as HTML".
+  interactive HTML "kit map" — one .html file, no external dependencies, opens
+  offline in any browser. Triggers: "criar um mapa visual da skill", "gerar um
+  .html do que foi construído", "infográfico/fluxo em HTML", "mapa interativo da
+  arquitetura", "kit map", "visualize this skill/system as HTML". Not for:
+  generating a documentation site → /docs:storyteller.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
-# skill-cartographer
+# /skill-map
 
 Turn a system you built — a skill and its references, an agent studio, a layered
 architecture — into **one self-contained interactive HTML map**: a layered "kit"
@@ -56,7 +52,7 @@ Read the real thing with `rg`/Glob before drawing. For a skill, that's its
 ### 2 — Map to the visual model
 Assign each layer a number, an accent color, and an icon; place items as cards.
 The anatomy, palette, and component specs are in
-[design-spec.md](references/design-spec.md).
+[design-spec.md](.claude/references/skill-cartographer/design-spec.md).
 
 ### 3 — Generate the HTML
 Write one `.html` following the spec: header (title · subtitle · optional mark),
@@ -84,13 +80,13 @@ with a small mark, **numbered layer bands** in soft pastel tints, white cards wi
 a colored left accent and checkmark/■ bullets, thin connectors between bands, two
 vertical **side rails** (inputs left, outputs right), and a **footer row** of small
 icons + captions. Elegant restraint — every card carries information, never
-decoration. Full recipe: [design-spec.md](references/design-spec.md); a complete
-worked file is in [examples/](examples/).
+decoration. Full recipe: [design-spec.md](.claude/references/skill-cartographer/design-spec.md); a complete
+worked file is in [examples/](.claude/references/skill-cartographer/examples/).
 
 ## References
-- [design-spec.md](references/design-spec.md) — palette, layer/card anatomy, side
+- [design-spec.md](.claude/references/skill-cartographer/design-spec.md) — palette, layer/card anatomy, side
   rails, connectors, typography, interactivity, responsive rules.
-- [examples/mkdocs-storyteller.html](examples/mkdocs-storyteller.html) — a full
+- [examples/mkdocs-storyteller.html](.claude/references/skill-cartographer/examples/mkdocs-storyteller.html) — a full
   map of the mkdocs-storyteller studio (EN); copy it as the working template.
-- [examples/mkdocs-storyteller.pt-br.html](examples/mkdocs-storyteller.pt-br.html)
+- [examples/mkdocs-storyteller.pt-br.html](.claude/references/skill-cartographer/examples/mkdocs-storyteller.pt-br.html)
   — the same map localized to **pt-BR** (identifiers kept in English).
