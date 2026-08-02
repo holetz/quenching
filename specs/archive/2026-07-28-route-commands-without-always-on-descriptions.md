@@ -4,6 +4,11 @@ title: Route a 10x command surface without per-command always-on descriptions
 verification: per-section
 priority: {level: 1, criticality: critical, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
+approved: {date: 2026-08-02}
+branch: {base: main, work: plan/route-commands-without-always-on-descriptions}
+reviewed: {date: 2026-08-02}
+merge: {strategy: merge-commit, subject: "plan/route-commands-without-always-on-descriptions: merge (merge-commit)"}
+outcome: done
 ---
 
 # Route a 10x command surface without per-command always-on descriptions
@@ -570,31 +575,82 @@ reportar que um conductor deste plugin ficou inerte.
    `claude -p` nova. Regra de leitura fixada agora, para que o resultado não seja interpretado depois:
    **ambiguidade conta como "bloqueia"** — é a leitura conservadora e é a que
    `docs/standards/automation/skills.md` já afirma, então adotá-la não muda nada que já esteja escrito.
+
+   **RESOLVIDO (0.1, 2026-08-02, Claude Code 2.1.220) — bloqueia os DOIS caminhos.** Dois braços com
+   controle, verificado no sistema de arquivos: o braço sem o campo foi listado e invocado por nome
+   com sucesso; o braço com o campo não foi listado e a invocação por nome foi **recusada** com
+   `Skill quenching:zzprobeb cannot be used with Skill tool due to disable-model-invocation`. Não foi
+   preciso recorrer à regra de ambiguidade — o host nomeia o campo na própria recusa. Registrado como
+   linha 7 de `docs/reference/tools/claude-code-skill-command-mechanics.md` (0.2).
+
 2. **`skills.md` ganha a medição, ou perde a afirmação?** Se o spike confirmar o bloqueio, a célula da
    tabela de invocação fica e passa a citar a linha medida. Se contradisser, um padrão
    `authority: current` está errado em uma célula, e corrigi-lo é maior que um edit de prosa — arrasta
    a tabela de quatro linhas, a §*Invocation and permission are authored decisions* e o
    `## Out of Scope` do collapse arquivado, que declarou a alavanca "closed by mechanics". Decidido
    **pelo resultado** da 0.1; registrado aqui porque o spec não pode e não deve escolher antes.
+
+   **RESOLVIDO (0.3) — ganha a medição.** O spike confirmou o bloqueio, então a célula estava certa e
+   fica. A tarefa 2.2 a faz **citar** a linha 7 em vez de afirmar. Nenhum padrão `authority: current`
+   está errado, e a cascata que o item temia não existe: o `## Out of Scope` do collapse arquivado
+   ("closed by mechanics") também estava certo.
+
 3. **Quem entra na classe roteada, comando por comando.** O critério está em `## Proposal`; a lista
    não está, e não deve estar: escrevê-la agora seria decidir 26 casos sem o instrumento que deriva a
    parte mecânica deles. Decidida pelo humano na **tarefa 3.1**, com o conjunto alcançável-por-nome
    vindo do instrumento da 1.3, aplicada só na parte aprovada.
+
+   **EM ABERTO** — é da 3.1, como projetado. Mas a medição de 0.1 já estreita o resultado esperado:
+   ver a nota de dimensionamento no fim desta seção.
+
 4. **Qual é o orçamento da classe roteada — e portanto quando a saída E de
    `## Alternatives Considered` dispara.** Decidido **de uma execução** de `budget` depois da 3.1,
    nunca de estimativa: é a regra do próprio `context-budget.md`. Até essa execução existir, a forma E
    não tem gatilho numérico, só condição qualitativa, e este spec não finge o contrário.
+
+   **EM ABERTO** — depende da 3.1, como projetado.
+
 5. **A projeção de ~250 comandos é o alvo contra o qual planejar?** Se o humano declarar que a
    superfície não passa de ~40 comandos, a resposta honesta passa a ser a forma **D** de
    `## Alternatives Considered` — restaurar as três partes em todos e re-medir o teto — e este spec
    encolhe para o grupo 0 (a medição) mais o grupo 1 (os dois instrumentos), abandonando os grupos 2 e
    3. Decidido pelo humano **antes** da tarefa 3.1, e é a decisão que mais muda o tamanho deste spec.
    O `## Risks` §*A crítica que mais dói* é o material dessa conversa.
+
+   **RESOLVIDO (0.3, 2026-08-02) — sim, ~250 é o alvo. O spec é construído inteiro**, grupos 1, 2 e 3.
+   Decidido com os números re-medidos nesta árvore, e não com a estimativa pré-spike, incluindo a nota
+   abaixo: a decisão foi tomada **sabendo** que o grupo 3 classifica perto de nada hoje. O que se
+   compra é o instrumento e a política, e o retorno está inteiramente nos comandos ainda não cunhados.
+
 6. **A severidade do finding da tarefa 1.3.** `error` se a 0.1 disser que o campo bloqueia por nome,
    porque então a combinação é um conductor inerte; `warn` se não bloquear, porque então é só uma
    escolha de projeto discutível. Decidido pela 0.1, não por gosto — escrito aqui para que a tarefa não
    tenha de decidir sozinha no meio da execução.
 
+   **RESOLVIDO (0.1) — `error`.** O campo bloqueia por nome, logo a combinação é literalmente um
+   conductor inerte: a chamada é recusada e o conductor segue sem falhar.
+
+### A nota de dimensionamento que a medição obriga (0.3)
+
+Re-medido nesta árvore em 2026-08-02, e mais duro do que o `## Risks` previu:
+
+| | comandos | chars | fatia |
+| --- | ---: | ---: | ---: |
+| descrição completa | 15 | 12.816 | **99,5%** |
+| descrição curta | 11 | 935 | 0,5% |
+| **superfície** | **26** | **12.875** | teto 12.726 — **estourado em 149** |
+
+O `## Risks` estimava a classe typed-only como "essencialmente o conjunto das descrições curtas, 935
+caracteres". A medição de 0.1 a encolhe mais: três das onze curtas — `/docs:harness`,
+`/docs:import-memory`, `/docs:glossary-backfill`, 217 chars — são estágios que `/docs:align` alcança
+**por nome**, e agora estão **duramente** excluídas. As demais são alcançadas por fala, que o critério
+de admissão também exclui.
+
+**Aplicado honestamente hoje, o grupo 3 classifica zero ou perto de zero comandos, e a
+reclassificação não fecha nenhum dos 149 caracteres de estouro.** Quem fecha o estouro é a 3.2
+(re-medir o teto — a forma C dobrada para dentro), e quem impede o próximo é a 2.3 (pôr `budget` na
+rotina). Isto está escrito aqui para que ninguém leia o `budget` verde do fim como prova de que a
+política economizou alguma coisa: ela não economizou, ela parou de crescer.
 ## Risks
 
 Gerado por um premortem contra o conteúdo deste spec — *é 2026-10-30, isto foi construído e deu
@@ -694,6 +750,44 @@ grupo 0 mais o grupo 1.
   e os caps por comando (`sk-metadata-cap` 1.536 `error`, `sk-description-portable` 1.024 `warn`)
   continuam valendo comando a comando. Registrado para que ninguém a redescubra como risco.
 
+## Handoff
+
+Build concluído: 14 de 15 tarefas commitadas, 1 bloqueada. A árvore está limpa e todo o trabalho está
+na branch `plan/route-commands-without-always-on-descriptions` sobre `main`.
+
+**Estado provado (grupo 4, medido 2026-08-02):**
+
+- `budget` sai **0**, `ok: true`, `total` 12.875 == teto 12.875, com `classes` reportando
+  roteada 25/12.875 e typed-only 1/876;
+- `lint` não reporta `sk-trigger-position` nem `sk-no-boundary` contra comando não residente (0), e
+  `sk-inert-stage` não dispara na superfície real (0);
+- `doctor` ok, 26 comandos, 0 findings;
+- os três selftests saem 0; `okf-validate.py docs` sai 0 com 26 avisos, **nenhum** nos arquivos que
+  este spec tocou.
+
+**O que este spec entregou, dito sem venda.** Não economizou caracteres: a 3.1 classificou **zero**
+comandos, porque os 25 residentes passam todos no critério de admissão. O que entrou foi a medição
+que faltava (linha 7 da referência de mecânica), os dois instrumentos que discordavam, a política
+escrita, e o teto re-medido de uma execução — 12.726 → 12.875, fechando um estouro que **nenhuma
+reclassificação fecharia**. A crítica aceita em `## Risks` ficou confirmada pela medição, não refutada.
+
+**1.4 está BLOQUEADA, e é o item que `/specs:conclude` tem de tratar.** O bump de versão contradiz
+`docs/standards/ci-cd/versioning-release.md` (`authority: current`), que o coloca no passo 5 do
+conclude e diz que nunca é tarefa. Decidido com o humano em 2026-08-02. **O conclude precisa bumpar
+os SEIS do lockstep mais `session.py` (o sétimo, que nenhum consumidor lê e nenhum checker pega).**
+O tamanho do bump: `skills.py` ganhou um código de finding novo (`sk-inert-stage`) e um campo novo no
+payload do `budget` (`classes`) — capacidade nova, sem quebra.
+
+**Para a revisão de branch.** Nada de frontmatter de invocação foi alterado em comando nenhum; o
+único arquivo sob `commands/**` que este spec tocaria era o probe descartável, e ele foi revertido.
+Os arquivos de probe viveram na raiz VIVA do plugin (`~/.claude/plugins/cache/...`), fora do
+repositório, e não aparecem em diff nenhum — a verificação de que sumiram foi feita no disco.
+
+As regras novas de `skills.py` estão provadas por mutação: sete mutantes (incluindo apagar cada braço
+do predicado, o descarte da barra inicial e a auto-referência) foram todos pegos pelo `selftest`.
+
+**Próximo:** `/specs:conclude` — revisão da branch, o `docs/` que o trabalho revelou, o lockstep de
+versão (1.4), o merge e a distilação.
 ## Tasks
 
 Ordenado por `## Design` §D4: medir, instrumentar, escrever a política, só então classificar. Nada é
@@ -705,16 +799,17 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 
 ### 0. Medir a mecânica que todo o resto assume
 
-- [ ] 0.1 Medir, em uma sessão `claude -p` **nova** e contra um comando descartável, se
+- [x] 0.1 Medir, em uma sessão `claude -p` **nova** e contra um comando descartável, se
       `disable-model-invocation: true` bloqueia (a) a seleção autônoma pelo modelo e (b) a invocação
       **por nome** pelo Skill tool. Reverter o arquivo de probe nos dois casos. Ambiguidade conta como
       "bloqueia", por `## Open Decisions` item 1. Sessão nova porque o registry é construído no início
       da sessão.
       files: plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)
       pattern: specs/archive/2026-07-26-skill-description-tiering.md §Discoveries — o método do spike
+      subject: plan/route-commands-without-always-on-descriptions: 0.1 medir a mecânica de disable-model-invocation
       anterior, incluindo o cuidado de verificar no sistema de arquivos em vez de acreditar no
       auto-relato do probe
-- [ ] 0.2 Registrar o resultado de 0.1 em
+- [x] 0.2 Registrar o resultado de 0.1 em
       `docs/reference/tools/claude-code-skill-command-mechanics.md`: uma linha na tabela
       §*The findings* com status Observed ou Inferred, a subseção que a explica, e a entrada em
       §*Re-measurements* com data e versão do binário. Registrar mesmo se o resultado vier ambíguo —
@@ -722,82 +817,185 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       modo de falha que aquele doc documenta.
       files: docs/reference/tools/claude-code-skill-command-mechanics.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
-- [ ] 0.3 Decidir com o humano, contra o resultado de 0.1, os itens 1, 2, 5 e 6 de
+      subject: plan/route-commands-without-always-on-descriptions: 0.2 registrar a medição em claude-code-skill-command-mechanics
+- [x] 0.3 Decidir com o humano, contra o resultado de 0.1, os itens 1, 2, 5 e 6 de
       `## Open Decisions` — a mecânica, o que acontece com `skills.md`, se a projeção de ~250 é o alvo,
       e a severidade do finding de 1.3. Sem a resposta do item 5 os grupos 2 e 3 não têm justificativa,
       e sem a do item 6 a tarefa 1.3 não tem critério.
+      subject: plan/route-commands-without-always-on-descriptions: 0.3 decidir os itens 1, 2, 5 e 6 contra a medição
 
 ### 1. Fechar a discordância entre os dois instrumentos
 
-- [ ] 1.1 Extrair o predicado "esta descrição está em contexto?" de `budget_rows`
+- [x] 1.1 Extrair o predicado "esta descrição está em contexto?" de `budget_rows`
       (`skills.py:1439`) para um helper, e escopar `sk-trigger-position` e `sk-no-boundary` por ele, de
       modo que `lint` e `budget` leiam a mesma condição de um lugar só. Entregar junto o caso de
       `selftest` que demonstra a regra, porque na superfície real ela é hoje inobservável.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
-- [ ] 1.2 Fazer `budget --json` reportar a divisão por classe — contagem e caracteres de roteada e de
+      subject: plan/route-commands-without-always-on-descriptions: 1.1 extrair description_is_resident e escopar os dois códigos de roteamento
+- [x] 1.2 Fazer `budget --json` reportar a divisão por classe — contagem e caracteres de roteada e de
       typed-only — para que uma queda de custo obtida por reclassificação seja distinguível de uma
       obtida por escrever menos.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
-- [ ] 1.3 Adicionar em `_lint_invocation` o finding que esta política torna necessário: um comando
+      subject: plan/route-commands-without-always-on-descriptions: 1.2 reportar a divisão roteada/typed-only no budget
+- [x] 1.3 Adicionar em `_lint_invocation` o finding que esta política torna necessário: um comando
       **nomeado pelo corpo de outro comando** carregando `disable-model-invocation: true`, com o
       conjunto de alvos derivado de `commands/**` e não de lista fixa, para sobreviver à renomeação que
       `restructure-claude-front-namespace` propõe. Severidade por `## Open Decisions` item 6. Provar por
       caso no `selftest`, nunca editando a superfície real.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py selftest
-- [ ] 1.4 Lockstep de versão, porque `skills.py` mudou: `VERSION`, `plugin.json`, o manifest do
+      subject: plan/route-commands-without-always-on-descriptions: 1.3 adicionar sk-inert-stage com o conjunto alcançável-por-nome derivado dos corpos
+- [!] 1.4 Lockstep de versão, porque `skills.py` mudou: `VERSION`, `plugin.json`, o manifest do — blocked: Contradiz docs/standards/ci-cd/versioning-release.md (authority: current), que diz que o bump NUNCA e uma tarefa e acontece so no /specs:conclude passo 5, na work branch, imediatamente antes do merge. O proprio source: daquele padrao registra este modo de falha — 'the conclude-time rule added after /specs:develop inferred a bump task from this doc resource: alone' — e o ## Impact deste spec lista os seis arquivos, que e exatamente a inferencia. Alem disso 1.4 esta incompleta: lista seis arquivos, e o padrao nomeia um setimo (session.py) que tambem tem de mover. Decidido com o humano em 2026-08-02: bloquear e deixar o bump para o conclude.
       marketplace e o `--version` das outras duas ferramentas movem juntos.
       files: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
       verify: python3 plugins/quenching/assets/bin/skills.py --version
 
 ### 2. Escrever a política antes de aplicá-la
 
-- [ ] 2.1 Escrever `docs/standards/automation/context-budget.md` (`authority: background`, mantido):
+- [x] 2.1 Escrever `docs/standards/automation/context-budget.md` (`authority: background`, mantido):
       o tier que falta em §*What the description may carry* para uma descrição que não está em
       contexto, a divisão que `budget` agora reporta, e o modo de disparo do ratchet por **crescimento
       de descrição** — medido, +149 sobre `/specs:execute`, `/specs:develop` e `/specs:conclude` desde
       `a03f31a`, com `budget` saindo 1 e nada na rotina do repositório executando `budget`.
       files: docs/standards/automation/context-budget.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
-- [ ] 2.2 Escrever `docs/standards/automation/skills.md`: o critério de admissão à classe roteada em
+      subject: plan/route-commands-without-always-on-descriptions: 2.1 escrever o tier typed-only, a divisão e o modo de disparo por crescimento
+- [x] 2.2 Escrever `docs/standards/automation/skills.md`: o critério de admissão à classe roteada em
       §*Invocation and permission are authored decisions*, e a célula da tabela de invocação sobre
       invocação por nome passando a citar a linha medida em 0.2 — ou reescrita para dizer o que se sabe,
       se 0.1 a contradisser, conforme `## Open Decisions` item 2.
       files: docs/standards/automation/skills.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
-- [ ] 2.3 Pôr `budget` no bloco de verificação de `CLAUDE.md` §*Operating this repo*, ao lado de
+      subject: plan/route-commands-without-always-on-descriptions: 2.2 escrever o critério de admissão e citar a medição em skills.md
+- [x] 2.3 Pôr `budget` no bloco de verificação de `CLAUDE.md` §*Operating this repo*, ao lado de
       `doctor` e `lint`. É a mitigação mais barata deste spec: sem ela, re-medir o teto não faz ninguém
       executar o instrumento, e o próximo estouro por crescimento de descrição passa igual.
       files: CLAUDE.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 2.3 pôr budget na rotina de verificação do CLAUDE.md
 
 ### 3. Classificar com confirmação, e re-medir o teto
 
-- [ ] 3.1 Propor ao humano UMA tabela com todos os 26 comandos contra o critério escrito em 2.2 — a
+- [x] 3.1 Propor ao humano UMA tabela com todos os 26 comandos contra o critério escrito em 2.2 — a
       coluna alcançável-por-nome vinda do instrumento de 1.3, não de julgamento — e aplicar só as linhas
       aprovadas. Apenas frontmatter de invocação: nenhum texto de descrição é alterado, nenhum caminho é
       movido.
       files: plugins/quenching/commands/**
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
-- [ ] 3.2 Re-medir o teto de uma execução de `budget` e transcrever o número nos três lugares que o
+      subject: plan/route-commands-without-always-on-descriptions: 3.1 classificar os 26 contra o critério — zero linhas aplicadas
+- [x] 3.2 Re-medir o teto de uma execução de `budget` e transcrever o número nos três lugares que o
       guardam — `skills.py` `DEFAULT_CEILING`, `context-budget.md` e `README.md` §*Cost model* — nunca
       estimá-lo, que é a regra do próprio padrão.
       files: plugins/quenching/assets/bin/skills.py, docs/standards/automation/context-budget.md, plugins/quenching/README.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 3.2 re-medir o teto — 12726 -> 12875, de uma execução
 
 ### 4. Provar
 
-- [ ] 4.1 Os três instrumentos concordam: `budget` sai 0 com `ok: true` e `total` igual ao teto
+- [x] 4.1 Os três instrumentos concordam: `budget` sai 0 com `ok: true` e `total` igual ao teto
       transcrito, `lint` sem `sk-trigger-position` nem `sk-no-boundary` contra comando fora de contexto,
       `doctor` com 26 comandos e `ok: true`.
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json && python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
-- [ ] 4.2 Os três selftests e o bundle OKF continuam limpos, sem aviso novo nos arquivos que este spec
+      subject: plan/route-commands-without-always-on-descriptions: 4.1 provar que os três instrumentos concordam
+- [x] 4.2 Os três selftests e o bundle OKF continuam limpos, sem aviso novo nos arquivos que este spec
       tocou.
       verify: python3 plugins/quenching/assets/bin/skills.py selftest && python3 plugins/quenching/assets/bin/specs.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py docs
-- [ ] 4.3 Confirmar o que a classe typed-only promete: um comando reclassificado continua com a
+      subject: plan/route-commands-without-always-on-descriptions: 4.2 provar os três selftests e o bundle OKF
+- [x] 4.3 Confirmar o que a classe typed-only promete: um comando reclassificado continua com a
       descrição inteira no arquivo e continua com `total: 0` e `alwaysOn: false` no `budget`. A metade
       "continua digitável no menu `/`" é checagem **manual** e tem de ser dita como manual no relatório,
       porque nenhum instrumento deste repositório observa o menu.
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 4.3 provar a promessa da classe typed-only (metade manual declarada)
+
+## Discoveries
+
+- 0.1: o probe teve de ser instalado na raiz VIVA do plugin (~/.claude/plugins/cache/quenching/quenching/4.4.0/commands/), nao no caminho declarado plugins/quenching/commands/ — nesta maquina o quenching carregado e a instalacao user-scope quenching@quenching vinda do git, e a arvore de trabalho nao e o plugin vivo. Qualquer spike futuro sobre a superficie precisa resolver a raiz viva antes de escrever o probe.
+- 0.1: a versao medida e Claude Code 2.1.220, nao a 2.1.215 que claude-code-skill-command-mechanics.md registra como base de todas as suas linhas. Nenhuma outra linha daquele doc foi re-medida contra a 2.1.220 por este spec.
+- specs.py next quebra o campo files: de 0.1 em duas entradas (plugins/quenching/commands/zzprobe.md (descartavel + revertido ao fim)) — o parser separa por virgula sem respeitar parenteses, entao um comentario entre parenteses num files: vira um caminho falso para o executor.
+- Os numeros de linha que ## Impact e ## Design citam de skills.py estao defasados: budget_rows/1436-1439 esta hoje em ~1667-1674 e _lint_invocation/861-877 em ~921-931. Trabalhar por conteudo, nunca por linha.
+- 0.2: o baseline que ## Validation afirma para okf-validate.py docs esta defasado — ele diz 'avisos stale-doc pre-existentes em tres docs nao relacionados'; a medicao de 2026-08-02 nesta arvore da 0 error(s), 25 warning(s), TODOS stale-doc e todos pre-existentes. Nenhum sobre reference/tools/. O spec 2026-08-01-stale-doc-mass-aging e o dono disso.
+- 1.1: o baseline de lint em ## Validation esta defasado — diz 35 findings; a arvore (inclusive em main, antes de qualquer mudanca deste spec) da 36: 11 sk-trigger-position, 10 sk-no-boundary, 9 sk-step-criterion, 5 sk-unscoped-bash e 1 sk-bare-citation que o spec nao lista.
+- 1.1: escopar os dois codigos por description_is_resident nao muda NADA na superficie real (11/10 antes e depois) — /skill:retro, o unico typed-only, carrega gatilho e fronteira. A regra so existe provada pelo caso de selftest, e o caso foi verificado por mutacao: trocar o if por True faz o selftest FALHAR com 'expected routing codes [], got [sk-no-boundary, sk-trigger-position]'.
+- 1.3: a superficie usa DUAS convencoes para nomear um estagio, e so uma e detectavel sozinha — (a) a forma de registro nua 'quenching:docs:align' (o que se passa ao Skill tool; a mesma com barra, '/quenching:docs:align', e citacao para humano) e (b) a forma com barra sem prefixo perto da frase 'Skill tool'. Um predicado so com (a) da 6 alvos e perde /specs:isolate e /specs:conclude; so contar mencao da 21 de 26. A uniao das duas da exatamente os 8 de ## Design §D3 linhas 1-3. A linha 4 (/specs:continue) e dinamica e corretamente fica de fora.
+- 3.1 (2026-08-02, confirmado pelo humano): a tabela dos 26 aplicou ZERO linhas. Todos os 25 comandos residentes passam no criterio de admissao — 8 sao alcancados por nome (instrumento da 1.3) e 17 por fala — e /skill:retro ja era typed-only. A classe typed-only e vazia nesta superficie, que e o resultado que skills.md §The admission criterion permite explicitamente. Nenhum frontmatter de invocacao foi editado. Confirma a critica aceita de ## Risks: a 26 comandos esta politica nao economiza nada, e quem fecha o estouro e a 3.2.
+- 4.3: a metade automatizavel esta provada em /skill:retro (nenhum comando foi reclassificado na 3.1, entao o sujeito e o typed-only pre-existente): descricao INTEIRA no arquivo — 876 chars pelo parser, com gatilhos entre aspas e fronteira Not for: — e budget reporta total 0 com alwaysOn false. A metade 'continua digitavel no menu /' NAO foi verificada: e checagem MANUAL, nenhum instrumento deste repositorio observa o menu, e nao esta sendo afirmada.
+
+## Outcome
+
+Fechado como **done** em 2026-08-02. Estratégia de merge: **merge commit** (`--no-ff`) sobre `main`
+— escolhida para que todo `subject:` registrado em `## Tasks` continue resolvendo a partir da
+`main` depois que a branch sumir, o que um squash não permitiria.
+
+**O que entregou, dito sem venda.** Não economizou um caractere. A tarefa 3.1 propôs os 26 comandos
+contra o critério e aplicou **zero** linhas: os 25 residentes passam todos na admissão — 8
+alcançados por nome, 17 por fala — e `/skill:retro` já era typed-only. A classe typed-only ficou
+vazia, e é `skills.md` §*The admission criterion* que permite esse resultado explicitamente ("a
+floor, not a quota"). A crítica aceita em `## Risks` foi **confirmada** pela medição, não refutada.
+
+O que de fato entrou:
+
+- **A medição que faltava.** `disable-model-invocation: true` fecha as duas portas — a descrição
+  sai da listagem **e** a invocação por nome pelo Skill tool é recusada, com o host nomeando o
+  campo na própria recusa. Dois braços com controle, verificado no sistema de arquivos, Claude Code
+  2.1.220. É a linha 7 de `docs/reference/tools/claude-code-skill-command-mechanics.md`, e ela
+  sustentava uma célula `authority: current` que ninguém havia medido em dois meses.
+- **Os dois instrumentos pararam de discordar.** `description_is_resident` é o único lugar que
+  responde "esta descrição está em contexto?"; `budget` cobra por ele e `lint` escopa
+  `sk-trigger-position` e `sk-no-boundary` por ele.
+- **`sk-inert-stage` (error)**, com o conjunto alcançável-por-nome derivado dos corpos, não de lista
+  fixa — logo sobrevive à renomeação em massa que `restructure-claude-front-namespace` propõe.
+- **A divisão `classes` no `budget --json`**, que torna legível a diferença entre um total que cai
+  por escrever menos e um que cai por reclassificar.
+- **A política escrita** — o tier typed-only e o modo de disparo por crescimento de descrição em
+  `context-budget.md`, o critério de admissão em `skills.md`.
+- **O teto re-medido de uma execução**, 12.726 → 12.875, nos três lugares que o transcrevem. Foi
+  isto que fechou o estouro; nenhuma reclassificação o fecharia.
+- **`budget` na rotina de verificação do `CLAUDE.md`** — a mitigação mais barata do spec, e a única
+  que impede o próximo estouro silencioso.
+
+**O que ficou de fora, e onde foi parar.**
+
+- **1.4 não foi construída como tarefa.** Foi bloqueada em 2026-08-02 por contradizer
+  `docs/standards/ci-cd/versioning-release.md` (`authority: current`), que põe o bump no passo 5
+  deste comando e diz que ele nunca é tarefa. Settlada aqui, na branch, imediatamente antes do
+  merge — e com o **sétimo** arquivo que o `## Impact` do spec não listava.
+- **`named_by_bodies` é quadrático.** Medido na revisão de branch deste conclude: 195 ms a 26
+  comandos, 18.246 ms a 260 — 93× para 10×, e roda em todo `lint`, inclusive `lint <um arquivo>`.
+  O spec inteiro se justifica por uma superfície de ~250 comandos e por "um custo que para de
+  crescer com n"; o instrumento que ele construiu faz o contrário. Não é defeito de correção, e
+  virou spec de follow-up em vez de conserto de última hora.
+- **As duas convenções de nomear um estágio** — forma de registro nua = hand-off, a mesma com barra
+  inicial = citação humana, a forma sem prefixo perto de "Skill tool" = hand-off — continuam
+  legíveis só no código e no `## Discoveries`. Foi o discriminador que levou o conjunto de 21 alvos
+  falsos para 6, e não recebeu doc. Oferecido na conclusão e recusado.
+- **A metade manual da 4.3 continua manual.** "A descrição segue digitável no menu `/`" **não** foi
+  verificada: nenhum instrumento deste repositório observa o menu, e nada aqui afirma o contrário.
+
+**Para o próximo leitor.** Os números de linha que `## Impact` e `## Design` citam de `skills.py`
+estão defasados — trabalhe por conteúdo. E qualquer spike futuro sobre esta superfície precisa
+resolver a **raiz viva** do plugin antes de escrever o probe: nesta máquina é a instalação
+user-scope em `~/.claude/plugins/cache/`, não a árvore de trabalho, e um probe escrito no lugar
+errado teria lido "bloqueado" nos dois braços — falso positivo exatamente sobre o que se media.
+
+**O que a conclusão escreveu, além do que as tarefas escreveram.**
+
+- `plugins/quenching/assets/references/skill-new/doctrine.md` — `sk-inert-stage` na linha
+  *Invocation control is coherent*, e as duas regras de roteamento marcadas *routed commands only*.
+  A tabela declara nomear todo código do `lint`, e o código que esta branch cunhou não estava nela.
+- `docs/standards/quality/selftest-mutation.md` — o passe de sete mutações contra as regras novas do
+  `skills.py`, re-executado na conclusão em vez de relatado de segunda mão. Seis falham com uma
+  asserção que nomeia o caso do fixture; a sétima falha por `TypeError`, ou seja Python pegou e o
+  corpus não, e isso está dito. O portão de graduação **não** fecha: cobre só as regras novas.
+- `docs/knowledge/glossary.md` — **Routed command** e **Typed-only command**, o par de classes que
+  este spec cunhou e que três padrões, um código de `lint` e o payload do `budget` passaram a usar
+  sem que nada o definisse.
+- `specs/plans/2026-08-02-make-named-by-bodies-scale-with-the-surface-it-was-built-for.md` — o
+  achado de performance da revisão de branch, com a medição.
+- `specs/plans/2026-08-02-fix-the-files-field-parser-splitting-on-commas-inside-parentheses.md` — o
+  bug do parser de `files:` registrado no `## Discoveries` da 0.1.
+
+Oferecida e **recusada**: um doc para as duas convenções de nomear um estágio. O fato segue no
+`## Discoveries` e no comentário de `named_by_bodies`, e em lugar nenhum além disso.

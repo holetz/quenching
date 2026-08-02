@@ -19,14 +19,14 @@ restates the number, so the rule and its checker cannot drift apart.
 
 | Doctrine rule | Checked by | Code |
 | --- | --- | --- |
-| Triggers in the second sentence | `lint` | `sk-trigger-position` |
-| The `Not for:` boundary is present | `lint` | `sk-no-boundary` |
+| Triggers in the second sentence — *routed commands only* | `lint` | `sk-trigger-position` |
+| The `Not for:` boundary is present — *routed commands only* | `lint` | `sk-no-boundary` |
 | The metadata fits Claude Code's cap | `lint` | `sk-metadata-cap` (error) |
 | The description is portable | `lint` | `sk-description-portable` |
 | The body stays under the size cap | `lint` | `sk-body-length` |
 | Every numbered step has a criterion | `lint` | `sk-step-criterion` |
 | `allowed-tools` is scoped | `lint` | `sk-unscoped-bash` |
-| Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value` |
+| Invocation control is coherent | `lint` | `sk-unreachable`, `sk-invocation-value`, `sk-inert-stage` (error) |
 | `context: fork` never beside a mid-flow gate | `lint` | `sk-fork-gate` (error) |
 | `effort`/`context` values Claude Code can parse | `lint` | `sk-profile-value` |
 | A plugin's commands are cited in a form that resolves | `lint` | `sk-bare-citation` |
@@ -36,6 +36,21 @@ restates the number, so the rule and its checker cannot drift apart.
 The last row is the boundary. Each of those needs a claim about how an agent would *behave*, and
 no parser makes one. They are why this file exists, and why a clean `lint` is a floor rather than
 a verdict.
+
+**Two of those rows are scoped to a *routed* command**, and the reason is the one lever on this
+list that changes which rules apply at all. `disable-model-invocation: true` makes a command
+**typed-only**: its description leaves every session's context, so no prose routes to it and
+`lint` reports neither routing code against it. What does *not* change is the text — a typed-only
+description keeps all three parts at full length, because the human picking it out of the `/` menu
+is now the only reader it has, and they have no routing to fall back on.
+
+The lever is not free, and what it costs was measured rather than assumed: it also makes the
+command unreachable **by name** through the Skill tool. Put it on a stage another command's body
+invokes and that stage goes silently inert — the conductor is refused, does not fail, and does
+nothing. That is `sk-inert-stage`, an error, with the reachable set derived from the command
+bodies rather than a hand-kept list. Which class a command belongs to is decided by the admission
+criterion in `docs/standards/automation/skills.md`, and the tier its description then owes is in
+`docs/standards/automation/context-budget.md`.
 
 ## Predictability is the root virtue
 
