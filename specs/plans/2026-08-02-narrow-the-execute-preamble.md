@@ -732,11 +732,12 @@ nunca considera elegível.
       files: docs/standards/workflows/plan-artifacts.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/narrow-the-execute-preamble: 7.1 Revisar plan-artifacts.md com o eixo moment
-- [ ] 7.2 Alinhar `specs-develop/spec-driven.md` — §The fourteen sections recebe o eixo de momento,
+- [x] 7.2 Alinhar `specs-develop/spec-driven.md` — §The fourteen sections recebe o eixo de momento,
       §The executor contract passa a nomear o conjunto `build`, e §`## Impact` — the one parsed
       declaration ganha a forma do endereço.
       files: plugins/quenching/assets/references/specs-develop/spec-driven.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/narrow-the-execute-preamble: 7.2 Alinhar spec-driven.md com moment e o endereço
 
 ### 8. Relocar o racional do corpo
 
