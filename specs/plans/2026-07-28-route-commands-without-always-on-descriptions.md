@@ -6,6 +6,7 @@ priority: {level: 1, criticality: critical, date: 2026-07-29}
 refined: {mode: gate, date: 2026-07-30}
 approved: {date: 2026-08-02}
 branch: {base: main, work: plan/route-commands-without-always-on-descriptions}
+reviewed: {date: 2026-08-02}
 ---
 
 # Route a 10x command surface without per-command always-on descriptions
