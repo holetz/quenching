@@ -600,10 +600,10 @@ uma task; os que são viram task, e é assim que o premortem converte.
 
 **Todas as 15 tasks commitadas, nenhuma bloqueada.** A árvore está limpa; nada falta implementar.
 
-**O achado central de 9.1:** o depois mede 112.434 chars (-30,1%), não os -36% (103.091) que
-## Design §5 chamou de "garantido". A causa dos dois maiores desvios (execution.md, git.md) é uma
-subestimativa do próprio ## Design — essas §seções já custavam mais do que ele contou, mesmo antes
-desta spec tocar qualquer arquivo — não uma regressão introduzida aqui. Ver ## Discoveries.
+**O achado central de 9.1:** o depois mede 112.434 chars (-30,1%), não os -36% (103.091) que o
+`## Design` §5 chamou de "garantido". A causa dos dois maiores desvios (execution.md, git.md) é
+uma subestimativa do próprio `## Design` — essas §seções já custavam mais do que ele contou, mesmo
+antes desta spec tocar qualquer arquivo — não uma regressão introduzida aqui. Ver `## Discoveries`.
 
 **Uma ineficiência da própria tarefa 8.1 ficou registrada como discovery, não corrigida em 9.1**:
 o racional relocado foi colado dentro de `§Declared versus emergent docs/`, uma das sete seções
