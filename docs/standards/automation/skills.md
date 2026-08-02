@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command authoring and alignment
-description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point
+description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-07-31
+timestamp: 2026-08-02
 audience: both
 authority: current
-source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31)
+source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /skill:align (2026-08-02)
 maintainer: quenching
 ---
 
@@ -76,6 +76,15 @@ interrogation do not.
 - **MERGE, never clobber; never delete without a human word.** Only names, placement, and missing
   scaffolding change — existing bodies are preserved. An unclassifiable command is kept and
   reported, never forced.
+- **One surface-wide description review, on its own confirmation.** A body is reported with the
+  `/skill:new` that fixes it; a **description** is rewritten here, because its central question —
+  does anything else answer to the same request? — is unanswerable one command at a time, and this
+  is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
+  concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
+  a quoted trigger is **never** deleted, which only a measured miss retires
+  ([skill-evaluation.md](skill-evaluation.md) §Description tuning). `budget` joins `doctor` and
+  `lint` in the probe, because it is the only one of the three that can see a description grown
+  expensive while structurally clean.
 - **Post-apply verification**: regenerate the registry zone, confirm the surface invariant, and
   report residue.
 
@@ -88,7 +97,7 @@ deliberately at mint, never left to default:
 | --- | --- | --- | --- |
 | *(unset)* | *(unset)* | everyone | **the default here** — typable at `/` AND reachable by name, which is what lets a conductor invoke it as a stage and a spoken trigger route to it |
 | `false` | *(unset)* | the model only | a command deliberately kept out of the `/` menu. With no wrapper left to stand in front of it, this hides the entry point itself |
-| *(unset)* | `true` | the human only | a command whose cost or blast radius means a human must choose it — never a conductor stage, which it would silently break |
+| *(unset)* | `true` | the human only | a command whose cost or blast radius means a human must choose it — **never a conductor stage**, which it silently breaks ([measured](#what-disable-model-invocation-closes-and-how-we-know)) |
 | `false` | `true` | **nobody** | never — this is `sk-unreachable`, an error |
 
 The default row changed with the collapse. It used to be `user-invocable: false`, because every
@@ -102,6 +111,50 @@ firing from a description match, or how a conductor ends up running and doing no
 also differ in what they cost: `disable-model-invocation: true` removes the description from
 always-on context entirely (`budget` counts the command at 0), while `user-invocable: false`
 saves nothing — the description still loads.
+
+### What `disable-model-invocation` closes, and how we know
+
+The row above and the paragraph above both assert that the field stops a conductor. That claim
+stood **unmeasured for two months**, in a doc at `authority: current`, while the reference doc that
+owns this class of fact carried no line about it at all. It has now been measured, and it holds:
+
+> `Skill quenching:zzprobeb cannot be used with Skill tool due to disable-model-invocation`
+
+Two arms with a control, filesystem-verified, Claude Code 2.1.220 — recorded as row 7 of
+[claude-code-skill-command-mechanics.md](/docs/reference/tools/claude-code-skill-command-mechanics.md).
+The control arm, identical but for the field, was listed and invoked by name successfully.
+
+Recorded plainly because being right by luck is worth as much as being wrong here: the opposite
+assertion would have been equally easy to write, and
+[the mechanics doc's own history](/docs/reference/tools/claude-code-skill-command-mechanics.md)
+carries a case where three artifacts supplied the contrary of an unmeasured row. Cite the row; do
+not restate the mechanic from memory.
+
+### The admission criterion — which class a command belongs to
+
+Residency is an authored decision like the two above, and it has one test:
+
+> A command is **routed** if, and only if, something reaches it **without a human typing its name** —
+> a spoken trigger, or another command's body naming it. Everything else is **typed-only**.
+
+Routed commands keep their description resident and are charged against the surface ceiling.
+Typed-only commands declare `disable-model-invocation: true`, cost 0, and **keep their description
+at full length** — see [context-budget.md](context-budget.md) §*The tier for a description that is
+not in context*. Nothing is shortened by this decision; only residency changes.
+
+Two consequences that are not obvious from the test itself:
+
+- **"A human might type this" is not a reason to pick typed-only.** Every command can be typed. The
+  question is whether anything *else* reaches it, and for a conductor stage the answer is yes even
+  though a human can also type it — which is exactly how `/docs:harness`, `/docs:import-memory` and
+  `/docs:glossary-backfill` would be misclassified by intuition.
+- **The name-reachable half is not a judgment call.** `skills.py lint` derives it from the command
+  bodies and reports `sk-inert-stage` at error for a typed-only command another body reaches by
+  name. Classify against the instrument, not against recollection of who calls what.
+
+The criterion is a floor, not a quota: it says which commands *may* be typed-only, never that any
+must be. On a small surface it may admit nobody, and that is a legitimate outcome rather than a
+failure to economise.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
 gates on a mid-flow confirmation — a forked context cannot present the plan whose OK the run
