@@ -28,11 +28,17 @@ python3 assets/hooks/okf-validate.py assets/docs                          # 0 er
 # the command surface
 python3 assets/bin/skills.py --root . doctor --json                       # 26 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings reported, not fatal)
+python3 assets/bin/skills.py --root . budget --json                       # exit 1 = over the ceiling; re-measure, never estimate
 # each tool proves the shared frontmatter rule against the SAME canonical case list
 python3 assets/bin/skills.py selftest                                     # + the layout rule's fixture
 python3 assets/bin/specs.py selftest
 python3 assets/hooks/okf-validate.py selftest
 ```
+
+`budget` is in that list because a surface can cross its ceiling with **no command minted** — three
+description edits put it 149 characters over, and nothing in this block ran the only instrument that
+says so. Both firing modes and the two exits →
+[context-budget.md](docs/standards/automation/context-budget.md).
 
 **Nothing above tests that the surface actually LOADS** — the registry is built at session start,
 so no change under `commands/**` is testable in the session that writes it:
