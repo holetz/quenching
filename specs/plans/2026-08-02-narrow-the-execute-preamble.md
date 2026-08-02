@@ -699,12 +699,13 @@ nunca considera elegível.
 
 ### 5. O passo 4 lê o conjunto `build`
 
-- [ ] 5.1 Reescrever o passo 4 para pedir `SP section "<slug>" --moment build`, restrito às seções que
+- [x] 5.1 Reescrever o passo 4 para pedir `SP section "<slug>" --moment build`, restrito às seções que
       o `sections[].state` do `status` do passo 2 já reportou `filled`. Some `## Problem`, entra
       `## Out of Scope`, e o `exit 1` por seção ausente deixa de ser alcançável — sem ressalva no
       corpo e sem tocar na semântica do exit code.
       files: plugins/quenching/commands/specs/execute.md
       verify: o corpo não enumera heading nenhum no passo 4; `SP section <slug> --moment build` sai 0
+      subject: plan/narrow-the-execute-preamble: 5.1 Passo 4 lê o conjunto build via --moment
       contra uma spec com as seis preenchidas
 
 ### 6. Um standard declarado pode carregar um endereço

@@ -156,18 +156,16 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
-Read `## Problem`, `## Proposal`, `## Design`, `## Impact`, `## Handoff` and `## Tasks` **by
-section, in ONE call** — never `Read` on the spec file:
+Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-specs.py section "<slug>" "Problem,Proposal,Design,Impact,Handoff,Tasks"
+specs.py section "<slug>" --moment build --json
 ```
 
-The file carries ~37 lines of template comment identical in every spec plus the sections this step
-does not want, and the reader is not saved by asking for the file and skimming: an executor pays
-for what arrives, not for what it uses. The heading argument is a **list**, and taking it in one
-call is the point — **the unit that matters is the turn**, and six headings fetched over six turns
-costs more than the whole file did. They come back in the order asked.
+Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
+the same fact this call's own `absent` list repeats: a section not yet `filled` — `## Handoff`
+empty on a spec's first build is the ordinary case, not a finding — is read as empty. No second
+call, and no heading enumerated here to know which one that was.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
 `docs/standards/` paths and the code this spec expects to touch.
 
