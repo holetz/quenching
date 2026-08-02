@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-30}
 approved: {date: 2026-08-02}
 branch: {base: main, work: plan/route-commands-without-always-on-descriptions}
 reviewed: {date: 2026-08-02}
+outcome: done
 ---
 
 # Route a 10x command surface without per-command always-on descriptions
@@ -920,3 +921,60 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 - 1.3: a superficie usa DUAS convencoes para nomear um estagio, e so uma e detectavel sozinha — (a) a forma de registro nua 'quenching:docs:align' (o que se passa ao Skill tool; a mesma com barra, '/quenching:docs:align', e citacao para humano) e (b) a forma com barra sem prefixo perto da frase 'Skill tool'. Um predicado so com (a) da 6 alvos e perde /specs:isolate e /specs:conclude; so contar mencao da 21 de 26. A uniao das duas da exatamente os 8 de ## Design §D3 linhas 1-3. A linha 4 (/specs:continue) e dinamica e corretamente fica de fora.
 - 3.1 (2026-08-02, confirmado pelo humano): a tabela dos 26 aplicou ZERO linhas. Todos os 25 comandos residentes passam no criterio de admissao — 8 sao alcancados por nome (instrumento da 1.3) e 17 por fala — e /skill:retro ja era typed-only. A classe typed-only e vazia nesta superficie, que e o resultado que skills.md §The admission criterion permite explicitamente. Nenhum frontmatter de invocacao foi editado. Confirma a critica aceita de ## Risks: a 26 comandos esta politica nao economiza nada, e quem fecha o estouro e a 3.2.
 - 4.3: a metade automatizavel esta provada em /skill:retro (nenhum comando foi reclassificado na 3.1, entao o sujeito e o typed-only pre-existente): descricao INTEIRA no arquivo — 876 chars pelo parser, com gatilhos entre aspas e fronteira Not for: — e budget reporta total 0 com alwaysOn false. A metade 'continua digitavel no menu /' NAO foi verificada: e checagem MANUAL, nenhum instrumento deste repositorio observa o menu, e nao esta sendo afirmada.
+
+## Outcome
+
+Fechado como **done** em 2026-08-02. Estratégia de merge: **merge commit** (`--no-ff`) sobre `main`
+— escolhida para que todo `subject:` registrado em `## Tasks` continue resolvendo a partir da
+`main` depois que a branch sumir, o que um squash não permitiria.
+
+**O que entregou, dito sem venda.** Não economizou um caractere. A tarefa 3.1 propôs os 26 comandos
+contra o critério e aplicou **zero** linhas: os 25 residentes passam todos na admissão — 8
+alcançados por nome, 17 por fala — e `/skill:retro` já era typed-only. A classe typed-only ficou
+vazia, e é `skills.md` §*The admission criterion* que permite esse resultado explicitamente ("a
+floor, not a quota"). A crítica aceita em `## Risks` foi **confirmada** pela medição, não refutada.
+
+O que de fato entrou:
+
+- **A medição que faltava.** `disable-model-invocation: true` fecha as duas portas — a descrição
+  sai da listagem **e** a invocação por nome pelo Skill tool é recusada, com o host nomeando o
+  campo na própria recusa. Dois braços com controle, verificado no sistema de arquivos, Claude Code
+  2.1.220. É a linha 7 de `docs/reference/tools/claude-code-skill-command-mechanics.md`, e ela
+  sustentava uma célula `authority: current` que ninguém havia medido em dois meses.
+- **Os dois instrumentos pararam de discordar.** `description_is_resident` é o único lugar que
+  responde "esta descrição está em contexto?"; `budget` cobra por ele e `lint` escopa
+  `sk-trigger-position` e `sk-no-boundary` por ele.
+- **`sk-inert-stage` (error)**, com o conjunto alcançável-por-nome derivado dos corpos, não de lista
+  fixa — logo sobrevive à renomeação em massa que `restructure-claude-front-namespace` propõe.
+- **A divisão `classes` no `budget --json`**, que torna legível a diferença entre um total que cai
+  por escrever menos e um que cai por reclassificar.
+- **A política escrita** — o tier typed-only e o modo de disparo por crescimento de descrição em
+  `context-budget.md`, o critério de admissão em `skills.md`.
+- **O teto re-medido de uma execução**, 12.726 → 12.875, nos três lugares que o transcrevem. Foi
+  isto que fechou o estouro; nenhuma reclassificação o fecharia.
+- **`budget` na rotina de verificação do `CLAUDE.md`** — a mitigação mais barata do spec, e a única
+  que impede o próximo estouro silencioso.
+
+**O que ficou de fora, e onde foi parar.**
+
+- **1.4 não foi construída como tarefa.** Foi bloqueada em 2026-08-02 por contradizer
+  `docs/standards/ci-cd/versioning-release.md` (`authority: current`), que põe o bump no passo 5
+  deste comando e diz que ele nunca é tarefa. Settlada aqui, na branch, imediatamente antes do
+  merge — e com o **sétimo** arquivo que o `## Impact` do spec não listava.
+- **`named_by_bodies` é quadrático.** Medido na revisão de branch deste conclude: 195 ms a 26
+  comandos, 18.246 ms a 260 — 93× para 10×, e roda em todo `lint`, inclusive `lint <um arquivo>`.
+  O spec inteiro se justifica por uma superfície de ~250 comandos e por "um custo que para de
+  crescer com n"; o instrumento que ele construiu faz o contrário. Não é defeito de correção, e
+  virou spec de follow-up em vez de conserto de última hora.
+- **As duas convenções de nomear um estágio** — forma de registro nua = hand-off, a mesma com barra
+  inicial = citação humana, a forma sem prefixo perto de "Skill tool" = hand-off — continuam
+  legíveis só no código e no `## Discoveries`. Foi o discriminador que levou o conjunto de 21 alvos
+  falsos para 6, e não recebeu doc. Oferecido na conclusão e recusado.
+- **A metade manual da 4.3 continua manual.** "A descrição segue digitável no menu `/`" **não** foi
+  verificada: nenhum instrumento deste repositório observa o menu, e nada aqui afirma o contrário.
+
+**Para o próximo leitor.** Os números de linha que `## Impact` e `## Design` citam de `skills.py`
+estão defasados — trabalhe por conteúdo. E qualquer spike futuro sobre esta superfície precisa
+resolver a **raiz viva** do plugin antes de escrever o probe: nesta máquina é a instalação
+user-scope em `~/.claude/plugins/cache/`, não a árvore de trabalho, e um probe escrito no lugar
+errado teria lido "bloqueado" nos dois braços — falso positivo exatamente sobre o que se media.
