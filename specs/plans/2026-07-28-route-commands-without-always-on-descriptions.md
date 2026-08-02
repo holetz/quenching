@@ -749,46 +749,42 @@ grupo 0 mais o grupo 1.
 
 ## Handoff
 
-Estado da árvore após o grupo 0 (0.1, 0.2, 0.3 commitados). Grupo 0 verificado: `okf-validate.py docs`
-sai 0 — 25 avisos, todos `stale-doc` pré-existentes, nenhum em arquivo que este spec tocou.
+Build concluído: 14 de 15 tarefas commitadas, 1 bloqueada. A árvore está limpa e todo o trabalho está
+na branch `plan/route-commands-without-always-on-descriptions` sobre `main`.
 
-**A mecânica está medida e BLOQUEIA os dois caminhos** (Claude Code 2.1.220, dois braços com controle,
-verificado no sistema de arquivos): descrição fora da listagem **e** invocação por nome pelo Skill tool
-recusada, com o host nomeando o campo — `Skill quenching:zzprobeb cannot be used with Skill tool due to
-disable-model-invocation`. Está na linha 7 de `docs/reference/tools/claude-code-skill-command-mechanics.md`.
+**Estado provado (grupo 4, medido 2026-08-02):**
 
-**Decisões fechadas — não re-decidir.** Ver `## Open Decisions` para o registro completo.
+- `budget` sai **0**, `ok: true`, `total` 12.875 == teto 12.875, com `classes` reportando
+  roteada 25/12.875 e typed-only 1/876;
+- `lint` não reporta `sk-trigger-position` nem `sk-no-boundary` contra comando não residente (0), e
+  `sk-inert-stage` não dispara na superfície real (0);
+- `doctor` ok, 26 comandos, 0 findings;
+- os três selftests saem 0; `okf-validate.py docs` sai 0 com 26 avisos, **nenhum** nos arquivos que
+  este spec tocou.
 
-- item 1 → bloqueia também por nome (observado, não por ambiguidade);
-- item 2 → `skills.md` **ganha a medição**; a célula estava certa e passa a citar a linha 7. Sem cascata;
-- item 5 → **~250 é o alvo; construir o spec inteiro**, grupos 1, 2 e 3;
-- item 6 → severidade do finding de 1.3 é **`error`**;
-- itens 3 e 4 seguem abertos por projeto (são da 3.1 e da execução de `budget` depois dela).
+**O que este spec entregou, dito sem venda.** Não economizou caracteres: a 3.1 classificou **zero**
+comandos, porque os 25 residentes passam todos no critério de admissão. O que entrou foi a medição
+que faltava (linha 7 da referência de mecânica), os dois instrumentos que discordavam, a política
+escrita, e o teto re-medido de uma execução — 12.726 → 12.875, fechando um estouro que **nenhuma
+reclassificação fecharia**. A crítica aceita em `## Risks` ficou confirmada pela medição, não refutada.
 
-**O que o grupo 3 vai encontrar, já medido — não é uma surpresa a descobrir na 3.1.** 26 comandos,
-12.875 chars, teto 12.726, estourado em 149. 15 descrições completas = 12.816 chars (99,5%); 11 curtas
-= 935. Das onze curtas, três (`/docs:harness`, `/docs:import-memory`, `/docs:glossary-backfill`, 217
-chars) são estágios alcançados **por nome** e agora estão duramente excluídas; as outras são alcançadas
-por fala, que o critério também exclui. **A 3.1 deve classificar zero ou perto de zero.** Quem fecha o
-estouro é a 3.2, não a reclassificação.
+**1.4 está BLOQUEADA, e é o item que `/specs:conclude` tem de tratar.** O bump de versão contradiz
+`docs/standards/ci-cd/versioning-release.md` (`authority: current`), que o coloca no passo 5 do
+conclude e diz que nunca é tarefa. Decidido com o humano em 2026-08-02. **O conclude precisa bumpar
+os SEIS do lockstep mais `session.py` (o sétimo, que nenhum consumidor lê e nenhum checker pega).**
+O tamanho do bump: `skills.py` ganhou um código de finding novo (`sk-inert-stage`) e um campo novo no
+payload do `budget` (`classes`) — capacidade nova, sem quebra.
 
-**Armadilha para a 1.3.** Um `grep -rhoE 'quenching:[a-z-]+(:[a-z-]+)*' commands/` casa **25 dos 26**
-comandos — porque as fronteiras `Not for: X → /outro-comando` e as citações em prosa mencionam nomes
-sem os invocar. O conjunto real alcançável-por-nome é ~12 (`## Design` §D3). O instrumento da 1.3 tem
-de distinguir **invocação pelo Skill tool** de **menção**, ou vai marcar a superfície inteira.
+**Para a revisão de branch.** Nada de frontmatter de invocação foi alterado em comando nenhum; o
+único arquivo sob `commands/**` que este spec tocaria era o probe descartável, e ele foi revertido.
+Os arquivos de probe viveram na raiz VIVA do plugin (`~/.claude/plugins/cache/...`), fora do
+repositório, e não aparecem em diff nenhum — a verificação de que sumiram foi feita no disco.
 
-**Ambiente, que difere do que o spec assume.** O plugin vivo nesta máquina é a instalação user-scope
-`quenching@quenching` em `~/.claude/plugins/cache/quenching/quenching/4.4.0/`, **não** a árvore de
-trabalho. Ver `## Discoveries`.
+As regras novas de `skills.py` estão provadas por mutação: sete mutantes (incluindo apagar cada braço
+do predicado, o descarte da barra inicial e a auto-referência) foram todos pegos pelo `selftest`.
 
-**Números de linha de `skills.py` em `## Impact`/`## Design` estão defasados** — trabalhar por conteúdo.
-`budget_rows` ~1667 (condição do campo ~1674), `_lint_invocation` ~921 (`sk-unreachable` ~931).
-
-Isolamento: worktree em `../claude-quenching-route-commands-without-always-on-descriptions`, branch
-`plan/route-commands-without-always-on-descriptions` sobre `main`.
-
-**Próximo: grupo 1**, as três tarefas que tocam o mesmo arquivo (`skills.py`) e por isso não são `[P]`,
-mais o lockstep da 1.4. `verification: per-section` — a verificação roda ao fim do grupo, não por tarefa.
+**Próximo:** `/specs:conclude` — revisão da branch, o `docs/` que o trabalho revelou, o lockstep de
+versão (1.4), o merge e a distilação.
 ## Tasks
 
 Ordenado por `## Design` §D4: medir, instrumentar, escrever a política, só então classificar. Nada é
