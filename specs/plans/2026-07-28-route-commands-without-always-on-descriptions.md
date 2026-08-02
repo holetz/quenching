@@ -886,11 +886,12 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: plugins/quenching/commands/**
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
       subject: plan/route-commands-without-always-on-descriptions: 3.1 classificar os 26 contra o critério — zero linhas aplicadas
-- [ ] 3.2 Re-medir o teto de uma execução de `budget` e transcrever o número nos três lugares que o
+- [x] 3.2 Re-medir o teto de uma execução de `budget` e transcrever o número nos três lugares que o
       guardam — `skills.py` `DEFAULT_CEILING`, `context-budget.md` e `README.md` §*Cost model* — nunca
       estimá-lo, que é a regra do próprio padrão.
       files: plugins/quenching/assets/bin/skills.py, docs/standards/automation/context-budget.md, plugins/quenching/README.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 3.2 re-medir o teto — 12726 -> 12875, de uma execução
 
 ### 4. Provar
 

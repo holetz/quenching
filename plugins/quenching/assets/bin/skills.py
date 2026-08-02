@@ -188,7 +188,14 @@ LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an infere
 # minted the 25th command (`/specs:isolate`) and the ceiling fired the same day. The
 # +1161 is that command's own description plus the boundary clauses five siblings grew to
 # name it. Revised from the measurement `budget` printed, never estimated.
-DEFAULT_CEILING = 12726
+#
+# 2026-08-02: re-measured at 12875 over the same 26 commands (25 routed, 0 agents),
+# replacing 12726. NO command was minted and none was reclassified — the +149 is three
+# descriptions growing (`/specs:execute` +62, `/specs:develop` +56, `/specs:conclude`
+# +31) since a03f31a. That is the ratchet's second firing mode, silent by construction,
+# and it went unseen because nothing in the repo's verification routine ran `budget`;
+# that routine now does. Revised from the measurement `budget` printed, never estimated.
+DEFAULT_CEILING = 12875
 CHARS_PER_TOKEN = 4             # a rule of thumb for the report, never a tokenizer count
 
 # the registry's derived zone — markers, cells, and location, per the automation mold
