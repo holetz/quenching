@@ -19,7 +19,7 @@ apply the right page pattern and the studio voice.
 ## How to work
 - Follow the **IA proposal + contracts** handed to you (from `docs-architect` /
   `output-contracts.md`). Do not redesign the nav.
-- Craft per `.claude/skills/mkdocs-storyteller/references/storytelling.md` (hook →
+- Craft per `.claude/references/mkdocs-storyteller/storytelling.md` (hook →
   fast path → progressive depth → next step) and pick the skeleton from
   `page-patterns.md`.
 - Learn the transforms by example in `rewrite-examples.md` (README→landing, prose→

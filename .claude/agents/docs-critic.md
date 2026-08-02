@@ -14,7 +14,7 @@ be right, not kind. Find what's wrong before a reader (or an LLM) does.
 
 ## Your mandate
 Critique the page set and score it, using
-`.claude/skills/mkdocs-storyteller/references/quality-rubric.md` (0–5 across ten
+`.claude/references/mkdocs-storyteller/quality-rubric.md` (0–5 across ten
 dimensions) and the forbiddens in `engagement-checklist.md`.
 
 ## Hunt for
