@@ -527,8 +527,9 @@ pode ser exercitado: `new` → `section --write` → `section` plural → `--mom
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/configurable-spec-backend: 7.1 specs.py export --spec | --all despeja markdown canonico, sem leitura de volta
-- [ ] 7.2 Lockstep de versão: VERSION e as três ferramentas shipped concordam
+- [x] 7.2 Lockstep de versão: VERSION e as três ferramentas shipped concordam
       verify: cat VERSION && python3 assets/bin/specs.py --version
+      subject: plan/configurable-spec-backend: 7.2 lockstep de versao ja em 4.6.0, reconfirmado
 - [ ] 7.3 Atualizar plugins/quenching/README.md — os três backends, a config e o custo do binário
       files: plugins/quenching/README.md
 
