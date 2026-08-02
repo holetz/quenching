@@ -6,6 +6,7 @@ refined: {mode: gate, date: 2026-08-02}
 approved: 2026-08-02
 branch: {base: main, work: plan/narrow-the-execute-preamble}
 reviewed: {date: 2026-08-02}
+merge: {strategy: merge-commit, subject: "plan/narrow-the-execute-preamble: merge (merge-commit)"}
 outcome: done
 ---
 
@@ -845,3 +846,22 @@ medição de custo de run, que é de `reduce-execute-conclude-cost`.
 branch existia, e o conjunto `build` dela cresceu +4.894 chars. Uma remedição feita hoje contra a
 versão atual dá 116.477 (−27,6%) — mesma árvore, régua diferente. Todo número desta seção é contra
 a versão de `257f35e`, que é a que a tarefa 9.1 mediu.
+
+**A distilação, na conclusão.** Três coisas cruzaram para fora deste spec, além dos dois standards
+que as tasks 3.1 e 7.1 já haviam escrito:
+
+- `docs/standards/automation/context-discipline.md` §The rules/rationale marker convention — duas
+  regras que a revisão de branch revelou: relocar racional só paga se o destino não for uma seção
+  que o corpo já carrega, e o custo de uma §seção inclui os `###` filhos.
+- `docs/knowledge/glossary.md` — a entrada **Moment**, o termo que este spec cunhou e que já é usado
+  por `plan-artifacts.md`, `schema.json`, `DEFAULT_SCHEMA`, `headings_for_moment()`, o token
+  `MOMENT:` do template e o passo 4 de `execute.md`, sem definição em lugar nenhum até aqui.
+- Dois specs de follow-up em `plans/`, cada um com a medição que o origina:
+  `fix-skills-read-sections-splitting-on-commas` (o defeito que mordeu esta própria conclusão) e
+  `convert-the-remaining-command-bodies-to-section-addresses` (a regra da superfície inteira que
+  segue provada em um comando só).
+
+**Relatado e não consertado:** `assets/specs/QUENCHING.md` documenta a superfície de
+`specs.py section` sem o `--moment` que este spec acrescentou. O rider de manual de
+`versioning-release.md` só dispara para comando renomeado ou novo, então nada obrigava a edição —
+mas o manual é instalado nos targets e a tabela está desatualizada.
