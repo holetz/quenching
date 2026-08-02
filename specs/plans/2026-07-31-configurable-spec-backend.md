@@ -530,8 +530,9 @@ pode ser exercitado: `new` → `section --write` → `section` plural → `--mom
 - [x] 7.2 Lockstep de versão: VERSION e as três ferramentas shipped concordam
       verify: cat VERSION && python3 assets/bin/specs.py --version
       subject: plan/configurable-spec-backend: 7.2 lockstep de versao ja em 4.6.0, reconfirmado
-- [ ] 7.3 Atualizar plugins/quenching/README.md — os três backends, a config e o custo do binário
+- [x] 7.3 Atualizar plugins/quenching/README.md — os três backends, a config e o custo do binário
       files: plugins/quenching/README.md
+      subject: plan/configurable-spec-backend: 7.3 README documenta os tres backends, .claude/quenching.json e o custo de rede do binario externo
 
 ## Discoveries
 
@@ -555,3 +556,4 @@ pode ser exercitado: `new` → `section --write` → `section` plural → `--mom
 - A spec check-canonical-cases-and-map-the-scripts (main, plans/) mediu specs.py em 3.108 linhas e concluiu que modularizar nao se paga. Esta branch levou o arquivo a 6.199 — dobrou. A premissa numerica daquela spec esta vencida e a conclusao dela precisa ser re-medida depois deste merge, nao herdada.
 - A spec refuse-a-mis-levelled-specs-root (main, plans/) trata do --root de specs.py vs skills.py apontarem para niveis diferentes da arvore. Esta branch acrescentou resolve_files_root e a worktree de specs, que mudam o que --root resolve num repo migrado. As duas se tocam: quem pegar aquela spec precisa ler resolve_files_root primeiro.
 - A pausa desta branch foi por custo de execucao, e a main entregou trabalho direto nisso enquanto ela esperava: read-by-section-not-by-file, cut-specs-execute-turns e narrow-the-execute-preamble mergeados, mais duas specs vivas (reduce-execute-conclude-cost 0/14 e cut-conclude-run-cost). A retomada herda esse ganho de graca — nao replanejar custo de execucao dentro desta spec.
+- spec-driven.md §The specs.py tool surface nao lista specs.py export (task 7.1 declarou so specs.py, nao spec-driven.md); adicionar a linha na proxima vez que a tabela for tocada.

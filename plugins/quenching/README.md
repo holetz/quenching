@@ -7,9 +7,9 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: a **fully native** `specs/` front (the nine `/specs:*` commands)
-with the OKF bundle as its knowledge substrate — no external
-CLI, driven by the bundled stdlib `specs.py`.
+**spec-driven plan cycle**: the nine `/specs:*` commands over a `specs/` front whose **backend is
+configurable** — `files` (a dedicated branch), `github`, or `azure-boards` — with the OKF bundle
+as its knowledge substrate, driven end to end by the bundled stdlib `specs.py`.
 
 All of it sits behind **one interface, repeated on every front**: ONE `align` per front —
 probe-first, so a clean front costs a couple of tool calls — that forces the structure into
@@ -300,23 +300,34 @@ this repo"*, *"install quenching in this repo"*, *"set the repo up end to end"*.
 
 ## The `specs/` flow — the nine `/specs:*` commands
 
-The plugin's **spec-driven plan cycle**, and it is **entirely native**: no `npm i -g`, no Node
-runtime, no `config.yaml`, no main-spec store, and no delta format. The deterministic rails are
-the bundled stdlib `assets/bin/specs.py` (uniform `--json`, strict exit codes `0` ok · `1`
-findings · `2` refusal), the same self-contained mold as the OKF hook — a command branches on
-data, never on prose. `/specs:align` installs it into a target's `.claude/hooks/`. Every command
-on this front reads the `docs/` bundle as context going in and distils durable knowledge back out
-when a spec closes.
+The plugin's **spec-driven plan cycle**. **Where a spec is stored is declared, not fixed**: a
+target repo names its backend in `.claude/quenching.json` — `backend: "files"` (on a dedicated
+branch, never sharing one with the code), `"github"`, or `"azure-boards"` — and the selected
+backend is the source of truth. No backend leaves a spec dividing a branch with the code it
+tracks; the conceptual model (fourteen sections, seven frontmatter records, derived stages) is
+identical whichever one is chosen — only *where and how* it is serialized differs, which is why
+every command drives `assets/bin/specs.py` (uniform `--json`, strict exit codes `0` ok · `1`
+findings · `2` refusal) rather than a path. `files` and `github` are validated against this
+repository; `azure-boards` ships implemented but **without an end-to-end run against a real
+Azure DevOps project** — `doctor`'s `sp-backend-unproved` finding, plus a one-line stderr warning
+on its first write each process, name that gap every time it is selected. `/specs:align` installs
+`specs.py` into a target's `.claude/hooks/`. Every command on this front reads the `docs/` bundle
+as context going in and distils durable knowledge back out when a spec closes.
 
-The **unit of work is a spec** — ONE markdown file, `specs/plans/YYYY-MM-DD-<slug>.md`, living
-its whole pre-archive life in one folder and moving exactly once, to `specs/archive/`.
-**Frontmatter records human judgments** (`priority`, `refined`, `approved`, `branch`,
-`reviewed`, `merge`, `outcome`); the filesystem, git and section presence record everything else
-— `ready` is a *derived* stage, and the OK to build is the `approved: {date}` stamp. Because a
-spec writes its durable rule **directly into `docs/standards/`** (honestly `authority`-graded),
-there is no second store to bridge to: isolation-while-building is a real git **branch or
-worktree** (taken by `/specs:isolate` at any stage, recorded as `branch: {base, work}`, each task committed
-alone with its sha on the task line).
+The **unit of work is a spec** — ONE canonical markdown document for its whole pre-archive life.
+Under `files` it is a real file, `specs/plans/YYYY-MM-DD-<slug>.md`, moving exactly once to
+`specs/archive/`; under `github` or `azure-boards` it is an issue or work item — `## Tasks`
+serialized as sub-issues / child work items, everything else as markdown — and there may be **no
+`specs/` folder on disk at all**. **Frontmatter records human judgments** (`priority`, `refined`,
+`approved`, `branch`, `reviewed`, `merge`, `outcome`); the filesystem or backend, git and section
+presence record everything else — `ready` is a *derived* stage, and the OK to build is the
+`approved: {date}` stamp. Because a spec writes its durable rule **directly into
+`docs/standards/`** (honestly `authority`-graded), there is no second store to bridge to:
+isolation-while-building is a real git **branch or worktree** (taken by `/specs:isolate` at any
+stage, recorded as `branch: {base, work}`, each task committed alone with its sha on the task
+line). `specs.py export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
+write-only, nothing reads it back, so it is never a second store — the mitigation `## Risks`
+names for losing access to an external backend.
 
 | Command | Role |
 | --- | --- |
@@ -529,6 +540,17 @@ every-turn sweep. The installed script is versioned (`okf-validate.py --version`
 with `VERSION`), and `/docs:align` step 6 offers the **upgrade** — overwrite the script
 only, preserving the target's `hooks-config.json`. Details:
 [`assets/hooks/README.md`](assets/hooks/README.md).
+
+**External backend cost — network, not tokens.** `github`/`azure-boards` reach the vendor through
+`subprocess` over `gh`/`az`, never a bundled HTTP client, so every write and every list is one
+process spawn plus one network round trip, cached only for the lifetime of the running
+`specs.py` process. Measured on `github`: a 12-command build cycle spent 33 `gh` calls, because
+`list` re-lists every issue with no cache between processes. `azure-boards` is worse per spec —
+`az work-item show` has no batch form, so a `list` costs one call per spec listed, against
+`github`'s paged listing — mitigated only by the same per-process cache. Neither binary is a
+plugin dependency until a target repo declares that backend: `files` never shells out, and a
+missing `gh`/`az`, a missing extension, or a missing auth is a named **refusal (exit 2)**, on the
+first operation, never mid-build.
 
 ## Install
 
