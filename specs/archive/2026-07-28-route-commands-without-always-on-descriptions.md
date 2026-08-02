@@ -7,6 +7,7 @@ refined: {mode: gate, date: 2026-07-30}
 approved: {date: 2026-08-02}
 branch: {base: main, work: plan/route-commands-without-always-on-descriptions}
 reviewed: {date: 2026-08-02}
+merge: {strategy: merge-commit, subject: "plan/route-commands-without-always-on-descriptions: merge (merge-commit)"}
 outcome: done
 ---
 
