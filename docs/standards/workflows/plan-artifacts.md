@@ -4,10 +4,10 @@ title: Spec file contract
 description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-07-29
+timestamp: 2026-08-02
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec
 maintainer: quenching
 ---
 
