@@ -834,11 +834,12 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching lint --json
       subject: plan/route-commands-without-always-on-descriptions: 1.1 extrair description_is_resident e escopar os dois códigos de roteamento
-- [ ] 1.2 Fazer `budget --json` reportar a divisão por classe — contagem e caracteres de roteada e de
+- [x] 1.2 Fazer `budget --json` reportar a divisão por classe — contagem e caracteres de roteada e de
       typed-only — para que uma queda de custo obtida por reclassificação seja distinguível de uma
       obtida por escrever menos.
       files: plugins/quenching/assets/bin/skills.py
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 1.2 reportar a divisão roteada/typed-only no budget
 - [ ] 1.3 Adicionar em `_lint_invocation` o finding que esta política torna necessário: um comando
       **nomeado pelo corpo de outro comando** carregando `disable-model-invocation: true`, com o
       conjunto de alvos derivado de `commands/**` e não de lista fixa, para sobreviver à renomeação que
