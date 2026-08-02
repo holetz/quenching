@@ -196,20 +196,20 @@ DEFAULT_SCHEMA: dict = {
         },
     },
     "sections": [
-        {"heading": "Overview", "order": 1, "group": "orientation", "audience": "human"},
-        {"heading": "Problem", "order": 2, "group": "definition", "audience": "human"},
-        {"heading": "Proposal", "order": 3, "group": "definition", "audience": "human"},
-        {"heading": "Out of Scope", "order": 4, "group": "definition", "audience": "human"},
-        {"heading": "Impact", "order": 5, "group": "definition", "audience": "human", "parsed": True},
-        {"heading": "Validation", "order": 6, "group": "definition", "audience": "both"},
-        {"heading": "Design", "order": 7, "group": "definition", "audience": "human"},
-        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "audience": "human"},
-        {"heading": "Open Decisions", "order": 9, "group": "definition", "audience": "human"},
-        {"heading": "Risks", "order": 10, "group": "definition", "audience": "human"},
-        {"heading": "Handoff", "order": 11, "group": "execution", "audience": "agent"},
-        {"heading": "Tasks", "order": 12, "group": "execution", "audience": "agent"},
-        {"heading": "Discoveries", "order": 13, "group": "execution", "audience": "triage"},
-        {"heading": "Outcome", "order": 14, "group": "archive", "audience": "human"},
+        {"heading": "Overview", "order": 1, "group": "orientation", "moment": "decision"},
+        {"heading": "Problem", "order": 2, "group": "definition", "moment": "decision"},
+        {"heading": "Proposal", "order": 3, "group": "definition", "moment": "build"},
+        {"heading": "Out of Scope", "order": 4, "group": "definition", "moment": "build"},
+        {"heading": "Impact", "order": 5, "group": "definition", "moment": "build", "parsed": True},
+        {"heading": "Validation", "order": 6, "group": "definition", "moment": "close"},
+        {"heading": "Design", "order": 7, "group": "definition", "moment": "build"},
+        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "moment": "decision"},
+        {"heading": "Open Decisions", "order": 9, "group": "definition", "moment": "decision"},
+        {"heading": "Risks", "order": 10, "group": "definition", "moment": "decision"},
+        {"heading": "Handoff", "order": 11, "group": "execution", "moment": "build"},
+        {"heading": "Tasks", "order": 12, "group": "execution", "moment": "build"},
+        {"heading": "Discoveries", "order": 13, "group": "execution"},
+        {"heading": "Outcome", "order": 14, "group": "archive", "moment": "close"},
     ],
     "impact": {
         "parsedSubheading": "Standards this spec will write into docs/standards/",
@@ -296,15 +296,17 @@ verification: <VERIFICATION>
      and installs here into repos that never adopted the bundle, where that path resolves to
      nothing.)*
 
-     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
-     `## Design` are for the human — examples and plain language belong there.
-     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
-     metadata. An orchestrator never sends the human sections to an executor; that is what
-     lets one file serve both audiences without bloating agent context. -->
+     MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
+     (the human, deciding whether to build), `build` (the executor, in step 4 of
+     `/specs:execute`), `close` (`/specs:conclude`, at archive time). `## Discoveries` belongs
+     to none of them — captured indiscriminately while building, resolved later by
+     `/specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     exactly the `build` set; that is what lets one file serve every moment without bloating
+     agent context. -->
 
 ## Overview
 
-<!-- AUDIENCE: human. Warned on when empty once the ready gate is met.
+<!-- MOMENT: decision. Warned on when empty once the ready gate is met.
 
      Connective tissue for a reader who is not holding the whole spec in their head: how the
      other sections relate to one another, not a compressed restatement of each. Plain
@@ -315,21 +317,21 @@ verification: <VERIFICATION>
 
 ## Problem
 
-<!-- AUDIENCE: human. Gate: new (capture).
+<!-- MOMENT: decision. Gate: new (capture).
 
      The problem or opportunity this spec answers, and why now. This is the only section a
      freshly captured spec carries — write it even if it is two sentences. -->
 
 ## Proposal
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The change at a high level, in bullet points. What will be true afterwards that is not
      true now. -->
 
 ## Out of Scope
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      What this spec deliberately does NOT do, and why it was ruled out.
 
@@ -339,7 +341,7 @@ verification: <VERIFICATION>
 
 ## Impact
 
-<!-- AUDIENCE: human + PARSED. Gate: ready (derived).
+<!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
      docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
@@ -368,7 +370,7 @@ verification: <VERIFICATION>
 
 ## Validation
 
-<!-- AUDIENCE: human + agent. Gate: ready (derived).
+<!-- MOMENT: close (plus the agent's `verify:` fallback, resolved lazily). Gate: ready (derived).
 
      How anyone confirms this spec actually worked: the commands to run and the output they
      must produce, the fixtures to check, the invariants that must still hold afterwards.
@@ -380,7 +382,7 @@ verification: <VERIFICATION>
 
 ## Design
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The choices made and their rationale, plus the background and binding contracts this
      design must not contradict. For each decision: what was chosen, why, and what was
@@ -390,7 +392,7 @@ verification: <VERIFICATION>
 
 ## Alternatives Considered
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      Whole-shape alternatives rejected at the spec level, each with the reason it lost.
      Per-decision alternatives can stay inside `## Design`; this section is for the ones that
@@ -400,7 +402,7 @@ verification: <VERIFICATION>
 
 ## Open Decisions
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What is deliberately still undecided, and how each will be decided — the evidence or the
      moment that settles it, not "TBD".
@@ -409,7 +411,7 @@ verification: <VERIFICATION>
 
 ## Risks
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What could go wrong, and the mitigation for each. A risk taken knowingly is written
      `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
@@ -418,7 +420,7 @@ verification: <VERIFICATION>
 
 ## Handoff
 
-<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+<!-- MOMENT: build. Warned on when empty once the ready gate is met.
 
      The context an executor needs and cannot derive: the state of play, the conventions in
      force, what was already tried. Small by construction — it is sent with EVERY task.
@@ -428,7 +430,7 @@ verification: <VERIFICATION>
 
 ## Tasks
 
-<!-- AUDIENCE: agent. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
@@ -477,7 +479,8 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- AUDIENCE: triage. No gate — appended during execution.
+<!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
+     not tied to one of the three. No gate — appended during execution.
 
      One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
@@ -490,7 +493,7 @@ verification: <VERIFICATION>
 
 ## Outcome
 
-<!-- AUDIENCE: archive reader. Gate: promote -> archive/.
+<!-- MOMENT: close. Gate: promote -> archive/.
 
      What actually happened, written at archive time: what shipped, what was left out, what
      the next reader needs to know. `outcome: done | abandoned` is stamped into the

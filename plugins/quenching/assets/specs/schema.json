@@ -67,20 +67,20 @@
   },
 
   "sections": [
-    { "heading": "Overview",                "order": 1,  "group": "orientation", "audience": "human" },
-    { "heading": "Problem",                 "order": 2,  "group": "definition", "audience": "human" },
-    { "heading": "Proposal",                "order": 3,  "group": "definition", "audience": "human" },
-    { "heading": "Out of Scope",            "order": 4,  "group": "definition", "audience": "human" },
-    { "heading": "Impact",                  "order": 5,  "group": "definition", "audience": "human", "parsed": true },
-    { "heading": "Validation",              "order": 6,  "group": "definition", "audience": "both" },
-    { "heading": "Design",                  "order": 7,  "group": "definition", "audience": "human" },
-    { "heading": "Alternatives Considered", "order": 8,  "group": "definition", "audience": "human" },
-    { "heading": "Open Decisions",          "order": 9,  "group": "definition", "audience": "human" },
-    { "heading": "Risks",                   "order": 10, "group": "definition", "audience": "human" },
-    { "heading": "Handoff",                 "order": 11, "group": "execution",  "audience": "agent" },
-    { "heading": "Tasks",                   "order": 12, "group": "execution",  "audience": "agent" },
-    { "heading": "Discoveries",             "order": 13, "group": "execution",  "audience": "triage" },
-    { "heading": "Outcome",                 "order": 14, "group": "archive",    "audience": "human" }
+    { "heading": "Overview",                "order": 1,  "group": "orientation", "moment": "decision" },
+    { "heading": "Problem",                 "order": 2,  "group": "definition", "moment": "decision" },
+    { "heading": "Proposal",                "order": 3,  "group": "definition", "moment": "build" },
+    { "heading": "Out of Scope",            "order": 4,  "group": "definition", "moment": "build" },
+    { "heading": "Impact",                  "order": 5,  "group": "definition", "moment": "build", "parsed": true },
+    { "heading": "Validation",              "order": 6,  "group": "definition", "moment": "close" },
+    { "heading": "Design",                  "order": 7,  "group": "definition", "moment": "build" },
+    { "heading": "Alternatives Considered", "order": 8,  "group": "definition", "moment": "decision" },
+    { "heading": "Open Decisions",          "order": 9,  "group": "definition", "moment": "decision" },
+    { "heading": "Risks",                   "order": 10, "group": "definition", "moment": "decision" },
+    { "heading": "Handoff",                 "order": 11, "group": "execution",  "moment": "build" },
+    { "heading": "Tasks",                   "order": 12, "group": "execution",  "moment": "build" },
+    { "heading": "Discoveries",             "order": 13, "group": "execution" },
+    { "heading": "Outcome",                 "order": 14, "group": "archive",    "moment": "close" }
   ],
 
   "impact": {

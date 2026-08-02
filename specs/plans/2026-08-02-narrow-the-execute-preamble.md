@@ -681,13 +681,14 @@ nunca considera elegível.
 
 ### 4. O eixo `moment` substitui o `audience` morto
 
-- [ ] 4.1 Trocar `audience` por `moment` (`decision` / `build` / `close`) nas quatorze seções, em
+- [x] 4.1 Trocar `audience` por `moment` (`decision` / `build` / `close`) nas quatorze seções, em
       **lockstep de três arquivos** — `DEFAULT_SCHEMA` em `specs.py`, `assets/specs/schema.json` e o
       comentário de audiência do template — pelos valores da tabela do `## Design` §1.
       `plan-artifacts.md` §There is a THIRD copy é o aviso: mudar só a constante é invisível no layout
       que o plugin shipa.
       files: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/narrow-the-execute-preamble: 4.1 Trocar audience por moment nas quatorze seções
 - [ ] 4.2 Dar a `specs.py section` a opção `--moment <valor>`, que resolve a lista de headings pelo
       schema em vez de recebê-la enumerada, mantendo a forma por lista intacta. Entregar junto o caso
       de `selftest` que prova que `--moment build` devolve exatamente as seis seções da tabela —
