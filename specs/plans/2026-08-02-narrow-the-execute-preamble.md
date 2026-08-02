@@ -741,12 +741,13 @@ nunca considera elegível.
 
 ### 8. Relocar o racional do corpo
 
-- [ ] 8.1 Mover para `execution.md`, sob `<!-- rationale -->`, o racional dos seis blocos nomeados na
+- [x] 8.1 Mover para `execution.md`, sob `<!-- rationale -->`, o racional dos seis blocos nomeados na
       tabela do `## Design` §5, **mantendo no corpo a metade-regra dos três que intercalam** os dois.
       A tarefa **mede** o corpo antes e depois e reporta o que de fato saiu; a estimativa de ~1.900 de
       3.020 é ponto de partida, não meta.
       files: plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/execution.md
       verify: as sentenças-regra dos três blocos intercalados seguem presentes no corpo, e o delta
+      subject: plan/narrow-the-execute-preamble: 8.1 Relocar o racional do corpo para execution.md
       medido é reportado no commit
 
 ### 9. Fechar a medição

@@ -32,10 +32,8 @@ narrows further to the `<!-- rules -->` half where a section carries the marker,
 whole section, saying so, where it does not.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
-*revealed*, merging, and archiving belong to `/quenching:specs:conclude`. That is not tidiness: the branch
-review is a different scale of judgment, the merge is a separate irreversible decision needing its
-own confirmation, and a run that dies after task nine must be resumable without redoing tasks one
-through eight.
+*revealed*, merging, and archiving belong to `/quenching:specs:conclude` — [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+opens on why that split holds.
 
 The git conventions live in
 [specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
@@ -58,12 +56,7 @@ never on prose.
 `skills.py read` — the section reader every `§X` citation above resolves through — is the same
 fallback one directory over: `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then the target's
 `.claude/hooks/skills.py`. Neither resolves → read the cited file with `Read` and **say in the
-report that the sections were loaded whole**, because that is the run's context cost changing, not
-a cosmetic difference.
-
-**Why `Bash` is unrestricted here.** This is the one `/specs:*` command that runs the target repo's
-own toolchain — build, tests, linters, migrations, and `git` — as part of implementing a task. Its
-siblings are scoped to `python3`/`py` because they only ever talk to `specs.py`.
+report that the sections were loaded whole**.
 
 ## Workflow
 
@@ -171,13 +164,11 @@ The path comes from what `status` resolved; never assume filenames. `## Impact` 
 
 Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the
 `docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
-task's own text names — **never the folder** `docs/standards/<subject>/`. The folder is the wrong
-unit and it is the expensive one: measured on this repo while building this very step, the four
-subject folders a spec touched held 19 files / ~31k tokens against 5 files / ~13k for what
-`## Impact` declared, and that difference arrives at turn one, where every later turn re-sends it.
-Those files are **binding contracts** for HOW the work is built, complementing the spec's own
-sections (WHAT to build). A task that contradicts one is surfaced (step 5), never silently
-resolved. No bundle → skip silently.
+task's own text names — **never the folder** `docs/standards/<subject>/`, the wrong and the
+expensive unit ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§Declared versus emergent `docs/` has the measurement). Those files are **binding contracts** for
+HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
+contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
 
 A declared bullet may carry a `§`address beside its path — `docs/standards/automation/context-budget.md
 §The two caps §The per-surface ceiling`. With one, read exactly those sections
@@ -185,13 +176,12 @@ A declared bullet may carry a `§`address beside its path — `docs/standards/au
 as today. The default never changes: reading less is an assertion the spec's own author wrote, never
 an economy the executor takes on its own.
 
-**No mechanical net for a contract nobody declared — deliberately.** `specs.py validate` already
-warns when a declared standard has no task (`sp-impact-uncovered`); the inverse, a binding standard
-nobody declared, is **not derivable**: deciding that a given standard governs a given task is
-reading, not parsing. Every approximation of it has to re-read the folder in order to have
-something to warn about, which is the cost this step just removed. What covers the gap instead is
-one line at the moment it shows up — `specs.py discover` records it while building, and
-`/quenching:specs:develop` repairs `## Impact`.
+**No mechanical net for a contract nobody declared — deliberately.** Deciding a standard governs a
+task is reading, not parsing, so nothing scans the folder to net one
+([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
+versus emergent `docs/` has the failure modes this avoids). What covers the gap is one line at the
+moment it shows up — `specs.py discover` records it while building, and `/quenching:specs:develop`
+repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
@@ -294,10 +284,9 @@ Everything a resumed run *can* derive — which tasks are done, which commit car
 already in `git log` and in the `subjects` `status` returns, so the Handoff is not the resumption
 trail and must not be rewritten as one. It is sent with every task, so keep it small.
 
-**Not after every committed task.** Measured on a 13-task run, that cadence produced rewrites that
-were ~90% identical to one another. And do not substitute a judgment — "rewrite it when the
-underivable state changed" is the rule that already failed, because an unattended run never judges
-that something went stale. Each trigger above is a moment this body *just finished doing
+**Not after every committed task, and not on a judgment call either** — both were tried and both
+failed; [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
+Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
 **The section-boundary offer (step 5g) adds no fifth event and writes no new state.** Accepted, it is a
