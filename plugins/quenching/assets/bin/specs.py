@@ -3074,6 +3074,28 @@ def cmd_selftest(args, root: str) -> int:
                                         "docs/standards/workflows/plan-artifacts.md §Fourteen "
                                         "canonical sections"))
 
+    # A `## Impact` bullet may carry a `§`address beside its path (the executor's optional
+    # narrowing in `/quenching:specs:execute` step 4). `parse_impact_standards` must tolerate
+    # it — one bullet addressed, one bare — without a line of code changing. Proved against a
+    # fixture, never the real command surface: editing that to pass would prove it by
+    # coincidence, not by contract.
+    impact_probe = parse_impact_standards(
+        "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
+        "- `docs/standards/automation/context-budget.md` §The two caps §The per-surface "
+        "ceiling — revisado.\n"
+        "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
+        "lê inteiro.\n", DEFAULT_SCHEMA)
+    want_impact = ["docs/standards/automation/context-budget.md",
+                   "docs/standards/workflows/plan-artifacts.md"]
+    if impact_probe != want_impact:
+        findings.append(_finding("sp-impact-address-tolerance", "error",
+                                 f"parse_impact_standards() on a §addressed bullet returned "
+                                 f"{impact_probe}, expected {want_impact} — a `§`address beside "
+                                 f"the path must not break the declaration it sits on",
+                                 remedy="parse_impact_standards must keep matching only the "
+                                        "docs/standards/**.md path and ignore the rest of the "
+                                        "line, addressed or not"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
