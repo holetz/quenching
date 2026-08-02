@@ -166,20 +166,20 @@ Then, if the repo carries an OKF bundle (`docs/index.md` with `okf_version`), re
 `docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
 task's own text names — **never the folder** `docs/standards/<subject>/`, the wrong and the
 expensive unit ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-§Declared versus emergent `docs/` has the measurement). Those files are **binding contracts** for
+§Tooling asides has the measurement). Those files are **binding contracts** for
 HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
 contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
 
-A declared bullet may carry a `§`address beside its path — `docs/standards/automation/context-budget.md
-§The two caps §The per-surface ceiling`. With one, read exactly those sections
-(`skills.py read <path> --sections "§A" --sections "§B"`); with none, read the file whole, exactly
-as today. The default never changes: reading less is an assertion the spec's own author wrote, never
-an economy the executor takes on its own.
+A declared bullet may carry a `§`address beside its path —
+`docs/standards/automation/context-budget.md §The two caps §The per-surface ceiling`. With one,
+read exactly those sections (`skills.py read <path> --sections "§A" --sections "§B"`); with none,
+read the file whole, exactly as today. The default never changes: reading less is an assertion the
+spec's own author wrote, never an economy the executor takes on its own.
 
 **No mechanical net for a contract nobody declared — deliberately.** Deciding a standard governs a
 task is reading, not parsing, so nothing scans the folder to net one
-([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
-versus emergent `docs/` has the failure modes this avoids). What covers the gap is one line at the
+([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§Tooling asides has the failure modes this avoids). What covers the gap is one line at the
 moment it shows up — `specs.py discover` records it while building, and `/quenching:specs:develop`
 repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
@@ -285,8 +285,9 @@ already in `git log` and in the `subjects` `status` returns, so the Handoff is n
 trail and must not be rewritten as one. It is sent with every task, so keep it small.
 
 **Not after every committed task, and not on a judgment call either** — both were tried and both
-failed; [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
-Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
+failed;
+[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The Handoff cadence
+has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
 **The section-boundary offer (step 5g) adds no fifth event and writes no new state.** Accepted, it is a

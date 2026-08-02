@@ -294,17 +294,6 @@ Declared → write it. Emergent → record it in one line.
 **The orchestrator writes every `docs/` file itself.** This is never delegated to a sub-agent (see
 below), and a task that writes into `docs/` is not eligible for delegation at all.
 
-**Reading the declared files instead of their folder is measured, not assumed.** On this repo, the
-four subject folders a spec touched held 19 files (~31k tokens) against 5 files (~13k) for what
-`## Impact` declared, and that gap arrives at turn one, where every later turn re-sends it.
-
-**There is deliberately no mechanical net for a contract nobody declared**, the mirror image of the
-line above. `specs.py validate` already warns when a declared standard has no task
-(`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not derivable,
-because deciding a standard governs a task is reading, not parsing. Every approximation of it has
-to re-read the folder to have something to warn about, which is the cost `/quenching:specs:execute`
-step 4 removed by reading only the declared files.
-
 ## Delegating an executor — permitted, and bounded
 
 <!-- rules -->
@@ -443,3 +432,17 @@ scoped to `python3`/`py` because they only ever talk to `specs.py`.
 When neither `skills.py` nor the target's `.claude/hooks/skills.py` resolves, the body falls back
 to `Read`ing the cited file whole and says so in the report — because that is the run's context
 cost changing, not a cosmetic difference.
+
+### Why the declared files, never their folder
+
+Measured, not assumed: on this repo, the four subject folders a spec touched held 19 files
+(~31k tokens) against 5 files (~13k) for what `## Impact` declared, and that gap arrives at turn
+one, where every later turn re-sends it.
+
+### Why there is no mechanical net for an undeclared contract
+
+The mirror image of the line above. `specs.py validate` already warns when a declared standard has
+no task (`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not
+derivable, because deciding a standard governs a task is reading, not parsing. Every approximation
+of it has to re-read the folder to have something to warn about, which is the cost
+`/quenching:specs:execute` step 4 removed by reading only the declared files.
