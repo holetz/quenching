@@ -45,9 +45,6 @@ The git conventions live in
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §Boundary.
-The OKF insert procedure for the docs a task writes lives in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
-stamp §Updating `index.md` §Enriching the glossary §Self-check.
 
 ## Resolving the tool
 

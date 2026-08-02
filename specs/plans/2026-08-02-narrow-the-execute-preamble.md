@@ -659,11 +659,12 @@ nunca considera elegível.
 
 ### 2. A referência de ramo condicional é lida no ramo
 
-- [ ] 2.1 Descer o carregamento de `homes.md` e `conformance.md` do preâmbulo de topo para o passo 5c,
+- [x] 2.1 Descer o carregamento de `homes.md` e `conformance.md` do preâmbulo de topo para o passo 5c,
       onde já são citadas, e deixar o topo sem menção a elas. São 18.426 chars que hoje todo turno
       paga e que passam a ser lidos só nas tasks que escrevem `docs/`.
       files: plugins/quenching/commands/specs/execute.md
       verify: `grep -n "homes.md\|conformance.md" plugins/quenching/commands/specs/execute.md` só
+      subject: plan/narrow-the-execute-preamble: 2.1 Descer homes.md/conformance.md para o passo 5c
       devolve linhas dentro do passo 5c
 
 ### 3. Escrever a doutrina de citação no dono dela
