@@ -264,6 +264,19 @@ trabalho em que se está.
   UMA task com sua metadata, e o documento inteiro sob `--full`. A decisão de fundo não mudou —
   o custo endereçado continua sendo o **contexto** do agente e não I/O, e continua valendo que o
   backend pode ter buscado o documento inteiro para responder. Só o verbo mudou de dono.
+- **Decidido (task 6.3): selecionar um backend não-provado (`azure-boards`) não emite aviso a cada
+  operação nem fica em silêncio — as duas metades são o finding `sp-backend-unproved` (warn) no
+  `doctor`, e uma linha em stderr na primeira escrita de cada processo.** A Open Decision colocou
+  as duas pontas como as únicas opções: aviso por operação vira ruído permanente que ninguém lê
+  duas vezes; silêncio deixa o usuário descobrir sozinho os palpites não provados
+  (`AZ_SPEC_TYPE`/`AZ_TASK_TYPE`, a extração de id de filho pela URL da relação). O `doctor` já é
+  onde `sp-config-unknown-backend` e os outros achados de config aparecem — nomeado uma vez por
+  execução, no lugar onde um humano já está olhando para achados, nunca despejado em toda chamada
+  de `list`/`status`/`show`. A metade em stderr cobre quem nunca roda `doctor`, mas escreve direto:
+  uma linha por processo, só nas primitivas de escrita, nunca no stdout que `--json` usa. `azure-boards`
+  é o único nome em `UNPROVED_BACKENDS` hoje; um segundo backend não-provado ganha as duas metades
+  de graça. Custo aceito: quem nunca roda `doctor` nem escreve vê apenas o finding na próxima vez que
+  rodar; é o mesmo custo que os achados de config já aceitam.
 
 ## Alternatives Considered
 
@@ -505,7 +518,8 @@ pode ser exercitado: `new` → `section --write` → `section` plural → `--mom
 - [x] 6.2 Serialização híbrida para work items — tasks como itens filhos, seções como markdown
       files: plugins/quenching/assets/bin/specs.py
       subject: plan/configurable-spec-backend: 6.2 serializacao hibrida compartilhada e o backend azure-boards
-- [ ] 6.3 Decidir per ## Open Decisions se selecionar `azure-boards` emite aviso de não-validado
+- [x] 6.3 Decidir per ## Open Decisions se selecionar `azure-boards` emite aviso de não-validado
+      subject: plan/configurable-spec-backend: 6.3 doctor com finding unico sp-backend-unproved, aviso write-time uma vez por processo
 
 ### 7. Export e fechamento
 
