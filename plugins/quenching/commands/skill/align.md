@@ -1,5 +1,5 @@
 ---
-description: Migrate this repo's whole .claude command surface AND audit every body against the writing doctrine — collapse pairs, one file per entry point. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "converge the automation surface". Probes with skills.py doctor and lint before reading anything, so a conformant surface costs two calls and stops. Otherwise: inventory, ONE plan, one OK, apply the migration, collapse each pair to one file, then read every body against the doctrine — reported with the /skill:new that fixes it, never rewritten, because authoring needs the human whose intent the command encodes. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring whether a command teaches anything → /skill:eval; the docs/ or specs/ front → /docs:align, /specs:align.
+description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the docs/ or specs/ front → /docs:align, /specs:align.
 argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Read, Grep, Glob, Write, Edit, Task
 ---
@@ -11,12 +11,13 @@ allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash
 The sweep counterpart of `/quenching:skill:new`: where the mint keeps each **new** command
 conformant, this one converges everything that **already exists** — including a surface still
 built as `skills/<name>/SKILL.md` + a mirrored wrapper, which it **collapses to one file per
-entry point** (§6 below) — and then **reads every surviving body against the writing doctrine**
-(§7), which is the one thing the migration itself is forbidden to touch.
+entry point** (§6 below) — then **reads every surviving body against the writing doctrine** (§7)
+and **reviews every description against it in one surface-wide pass** (§8).
 
-Structure and content are one command because the audit only becomes possible once the migration
+Structure and content are one command because both audits only become possible once the migration
 has run: a body still sitting in `skills/<name>/SKILL.md` is not yet at the path that will be
-judged. The axis, naming, placement, and registry format live in
+judged, and a collapsed pair's surviving description is the wrapper's, which §6 decides. The axis,
+naming, placement, and registry format live in
 [skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md);
 the writing doctrine judged against is
 [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md);
@@ -49,6 +50,15 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   needs the human whose intent the command encodes — the same anti-fabrication boundary every
   align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
   §Align conformance; report the cycle).
+- **A description is the one text this sweep rewrites, and §8 is where.** The asymmetry is not an
+  exception to the rule above; it is what the rule is for. A body is intent — long, authored, and
+  only its author knows what it meant. A description is **routing**, it is short enough to review
+  whole, and its central question — does anything else on this surface answer to the same
+  request? — is unanswerable one command at a time. This sweep is the only place holding all of
+  them at once, so it is the only place that can waive a boundary honestly. Reviewing them one per
+  `/quenching:skill:new` run would cost N sessions to reach a verdict none of them can reach.
+  The edit still gates on its own OK, and a **trigger phrase is never deleted here** — that is
+  `/quenching:skill:eval`'s, on a measured miss.
 - **This front is honestly short, and says so.** `docs/` and `specs/` each have an out-of-band
   store to drain; this one has none, and the migration is idempotent — so the loop reaches a
   fixpoint in **1–2 passes**, essentially always. It is not ceremony: a rename in the migration
@@ -100,12 +110,14 @@ and reported by this sweep, never by a `sk-*` code.
 
 ## Workflow (probe → ONE OK → migrate → audit → re-probe)
 
-### 1. Probe — the two calls that decide whether anything else runs
+### 1. Probe — the three calls that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
 ```bash
 skills.py doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
                           # the report-only wider surface: agents/ and wired hooks (sk-agent-*, sk-hook-*)
 skills.py lint --json     # per-command conformance, one sk-* code per gap
+skills.py budget --json   # what the surface costs before anything fires: the total against the
+                          # ceiling, and every description's own character count
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 [sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §Probe before
@@ -113,9 +125,15 @@ the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
-| both exit 0 with no findings, and no legacy pair | **STOP.** Report "`.claude/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
-| both exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
-| either exits 1 or 2, or a legacy pair exists | Continue to step 2. |
+| all three exit 0 with no findings, and no legacy pair | **STOP.** Report "`.claude/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
+| all three exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
+| the only findings are `budget` over the ceiling, or description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
+| anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
+
+**`budget` is what makes the description review reachable at all.** Descriptions can be structurally
+perfect — every trigger in place, every boundary present — while the surface pays for prose about
+*how* each command works, and `doctor` and `lint` both exit 0 on that surface forever. `budget` is
+the only subcommand that measures it, and it costs one call.
 
 An **empty** surface (no commands, no skills) also stops: scaffolding a taxonomy for zero commands
 is ceremony. Note whether an OKF bundle exists (`docs/index.md` with `okf_version`) and say so once
@@ -125,8 +143,8 @@ The registry zone is deliberately **not** probed: `registry reindex` has no dry 
 cheap idempotent call that step 8 makes anyway as this front's verifier. A `changed: true` there on
 an otherwise-clean run means the zone was stale and has just been repaired — which is a fact to
 report, not a reason to pay for an inventory.
-**Done when:** both payloads and the glob are in hand, and the run has either stopped or committed
-to a full sweep.
+**Done when:** the three payloads and the glob are in hand, and the run has either stopped,
+committed to a full sweep, or entered §8 directly.
 
 ### 2. Inventory the surface (read-only)
 `Glob` for what the tool cannot see, because it reads only `commands/**`:
@@ -260,16 +278,57 @@ that surface is `/quenching:specs:align`'s here as everywhere. Never rewrite a b
 **Done when:** every surviving body carries a verdict — a finding with its fix invocation, or
 clean — and nothing was written.
 
-### 8. Verify, decide, report
+### 8. Review every description — ONE table, its own OK
+The description is the only text a command has that never stops loading: it is paid on every
+session in the repo whether or not the command ever fires, and it is the only text that decides
+whether a spoken request reaches it at all. Review the whole surface in **one pass**, here.
+
+Read **frontmatter only** — never a body, whether or not §7 ran. A description is judged against the
+other descriptions, and no body changes that verdict. The read is self-limiting and its size is
+known *before* it starts: what this stage reads is `budget`'s `total`, already printed in §1. Say
+that number when opening the stage, so the human authorizes a cost rather than an open-ended sweep.
+
+Judge each description against the three slots and the competitor test in
+[skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md)
+§The three slots — owned there, never restated here. What this stage does with each verdict:
+
+| Verdict | Action |
+| --- | --- |
+| prose about **how** the command works — step order, tool names, call counts, the reasoning behind a rule | **cut**; it is body, and a reader who needs it has already loaded the body |
+| the leading concept is a `/`-menu label, or absent | **rewrite** the first sentence in the command's own vocabulary |
+| no trigger, or a trigger after the second sentence (`sk-trigger-position`) | **add** one verbatim phrase per branch that has none; move them into the second sentence |
+| `Not for:` naming a command that fails the competitor test | **cut**, and record the waiver with the competitor set checked |
+| a real competitor with no `Not for:` (`sk-no-boundary`) | **add** the one clause that routes: `Not for: <job> → <command>` |
+| a quoted trigger that looks like sediment | **report**, never cut — `/quenching:skill:eval <command>` decides it on a measured miss |
+| over a cap (`sk-metadata-cap`, `sk-description-portable`) after all of the above | **report** the residue with its code; a cap is not closed by deleting a trigger |
+
+The competitor test runs **against the surface in hand, never from memory**: the `/<namespace>:`
+commands share, from the paths in §1's `lint` payload, and the trigger vocabulary that overlaps,
+from the descriptions this stage just read. It needs nothing §2 collected, which is what lets §1
+enter this stage directly on a surface with nothing to migrate.
+
+Present ONE table — command · current chars → proposed chars · what changed · the slot that
+earned it — with the surface total before and after against `budget`'s ceiling. **Gate on its own
+OK**, separately from §4's: that plan was confirmed before any description had been read, and an
+edit nobody saw is not an edit anybody authorized. Declined → nothing is written here and the run
+continues to §9 reporting the review as proposed-and-declined.
+**Done when:** every description carries a verdict, each applied edit is in the confirmed table,
+every waived boundary names the competitor set that was checked, and no trigger phrase was
+deleted.
+
+### 9. Verify, decide, report
 Regenerate the zone, then let the tool judge the surface the migration produced:
 ```bash
-skills.py registry reindex --json   # the zone, from the post-migration surface
+skills.py registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
 skills.py doctor --json             # the surface invariant the migration just changed
 skills.py lint --json               # the gaps the migration was supposed to close
+skills.py budget --json             # what §8 changed: the total against the ceiling
 skills.py registry reindex --json   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
-`skills/` tree.
+`skills/` tree. `reindex` runs **after** §8, never before: the zone's `Typical trigger` column is
+each description's **first quoted phrase**, so a §8 that adds or moves a trigger moves the zone
+with it, and a zone regenerated ahead of the review is stale the moment the review applies.
 
 Then re-run §1's probe and decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
@@ -277,17 +336,24 @@ Then re-run §1's probe and decide by the four outcomes in
 plan; **converged** → report; **residue** → stop and report; **pass cap reached** → stop and report
 what remains. A second pass here catches the one thing the first can create — a rename that shifted
 the registry or dangled a reference. §7's findings are **not** progress: they are read-only and
-carry forward unchanged, so a pass that only produced them has converged.
+carry forward unchanged, so a pass that only produced them has converged. **Neither is §8's edit**,
+though it does write: the review is idempotent by construction — a description rewritten to the
+three slots proposes nothing on a second reading — so a second pass runs §8 only to confirm it has
+nothing left to say, and never to re-open a table the human already answered.
 
 In an OKF repo, confirm the registry is indexed, per
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The migration
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
-flagged; every `sk-*` finding that survived the run, by code; and §7's doctrine findings, listed
-apart, each with its `/quenching:skill:new`. Say plainly when the front converged in one pass — that is the
+flagged; every `sk-*` finding that survived the run, by code; §7's doctrine findings, listed
+apart, each with its `/quenching:skill:new`; and §8's line — descriptions reviewed, edited,
+declined; the surface total before → after against the ceiling; every waived boundary with the
+competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
+`/quenching:skill:eval`. Say plainly when the front converged in one pass — that is the
 expected outcome here, not a shortfall. **Done when:** `doctor` and `lint` exit 0 or each surviving
-finding is named with its code, the second `registry reindex` reports `changed: false`, and the
-counts and the doctrine findings are reported.
+finding is named with its code, `budget`'s total is reported against its ceiling, the second
+`registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
+are reported.
 
 ## Invariants
 
@@ -301,6 +367,14 @@ counts and the doctrine findings are reported.
   §7 only reads it.
 - Never inventory before the probe, and never treat §7's read-only findings as progress that
   justifies another pass.
+- Never delete a quoted trigger phrase — not for length, not for looking redundant. A trigger
+  retires on a measured miss, which is `/quenching:skill:eval`'s; here it is reported with that
+  invocation. Cutting one to fit a cap trades a measurable routing loss for a character count.
+- Never write a `Not for:` clause naming a command that fails the competitor test, and never cut
+  one without stating the set that was checked — an invented boundary and a silent waiver are the
+  same error in opposite directions.
+- Never apply §8's edits under §4's OK: that plan was confirmed before a single description had
+  been read.
 - Never delete a command without the human stating it is obsolete; never force an
   unroutable item onto the axis. Deleting a `skills/<name>/` folder whose body has just been
   moved into its command file is not a deletion in this sense — nothing is lost — but it

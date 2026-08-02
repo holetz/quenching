@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-07-31
+timestamp: 2026-08-02
 audience: both
 authority: current
-source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31)
+source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + the surface-wide description review added to /skill:align (2026-08-02)
 maintainer: quenching
 ---
 
@@ -76,6 +76,15 @@ interrogation do not.
 - **MERGE, never clobber; never delete without a human word.** Only names, placement, and missing
   scaffolding change — existing bodies are preserved. An unclassifiable command is kept and
   reported, never forced.
+- **One surface-wide description review, on its own confirmation.** A body is reported with the
+  `/skill:new` that fixes it; a **description** is rewritten here, because its central question —
+  does anything else answer to the same request? — is unanswerable one command at a time, and this
+  is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
+  concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
+  a quoted trigger is **never** deleted, which only a measured miss retires
+  ([skill-evaluation.md](skill-evaluation.md) §Description tuning). `budget` joins `doctor` and
+  `lint` in the probe, because it is the only one of the three that can see a description grown
+  expensive while structurally clean.
 - **Post-apply verification**: regenerate the registry zone, confirm the surface invariant, and
   report residue.
 

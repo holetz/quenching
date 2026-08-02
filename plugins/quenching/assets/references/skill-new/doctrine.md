@@ -37,6 +37,12 @@ The last row is the boundary. Each of those needs a claim about how an agent wou
 no parser makes one. They are why this file exists, and why a clean `lint` is a floor rather than
 a verdict.
 
+`sk-no-boundary` is the one row where the code is **wider than the rule**: it fires on absence
+alone, because the tool reads one command and cannot see whether anything competes with it.
+Where a boundary is waived against the whole surface (§The three slots below), the warning is
+reported as **accepted, with the competitor set that was checked** — named in the report every
+run, never silently swallowed.
+
 ## Predictability is the root virtue
 
 A skill is a promise: the `name` + `description` are always in context, the body only loads
@@ -50,8 +56,43 @@ rule below serves that one property:
   verbatim quoted trigger phrase ("create a skill", "wire a command for this"); a branch
   without a trigger is a branch that never fires, and two triggers for the same branch are
   sediment. Triggers sit in the **second** sentence so a truncated description keeps them.
-- The description ends with the boundary: `Not for: <adjacent job> → <owning skill>` — the
-  routing story lives in the description, not in a shared router doc.
+- The description ends with the boundary — `Not for: <adjacent job> → <owning skill>` — **where an
+  adjacent command actually exists**. The routing story lives in the description, not in a shared
+  router doc; but a boundary naming nobody routes nothing and pays always-on rent forever. See
+  below for what makes a competitor real.
+
+### The three slots, and the boundary that must be earned
+
+A description carries what it does, when it fires, and — conditionally — when it does not. Nothing
+else: how the command works is body, and a reader who needs the step order has already fired it and
+paid for the body ([context-budget.md](/docs/standards/automation/context-budget.md)
+§What the description may carry, where cutting exactly that prose from 17 descriptions recovered
+2,605 always-on characters without touching one trigger phrase).
+
+| Slot | Earned by | Absent → |
+| --- | --- | --- |
+| the leading concept — what it does, to what | always | `sk-no-description` (error) |
+| the triggers — one verbatim phrase per branch, second sentence | always | `sk-trigger-position` |
+| the boundary — `Not for: <job> → <command>` | **a named competitor** | `sk-no-boundary` |
+
+**A competitor is named, not imagined.** Two commands compete when one of these holds, and the test
+is run against the surface, never from memory:
+
+- they act on the **same axis folder** — the same `/<namespace>:` — so a user who knows the domain
+  but not the verb can land on either;
+- a **plausible user phrasing routes to both** — their trigger vocabulary overlaps, or one's job is
+  the obvious next step after the other's.
+
+Neither holding, the boundary is **waived**: it is deleted where it exists and never invented where
+it does not. A waiver is stated with the competitor set that was checked, because "nothing competes
+with this" is a claim about the whole surface and only a reader holding all of it can make it.
+
+**A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
+a command quietly stops firing for the user who worded it differently, and only a measured miss
+retires one — `/quenching:skill:eval`'s, per
+[skill-evaluation.md](/docs/standards/automation/skill-evaluation.md) §Description tuning
+is the one edit measurement authorizes. A trigger that looks like sediment is **reported** with the
+`/quenching:skill:eval <command>` that decides it.
 
 ## The loading hierarchy
 
