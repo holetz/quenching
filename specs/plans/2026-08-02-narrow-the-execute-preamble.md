@@ -717,10 +717,11 @@ nunca considera elegível.
       verify: python3 plugins/quenching/assets/bin/specs.py validate — 0 error(s), nenhum
       subject: plan/narrow-the-execute-preamble: 6.1 Passo 4 honra um §endereço no Impact
       `sp-impact-uncovered` novo
-- [ ] 6.2 Provar a tolerância por caso de `selftest`, contra um `## Impact` com endereço em um standard
+- [x] 6.2 Provar a tolerância por caso de `selftest`, contra um `## Impact` com endereço em um standard
       e sem endereço no outro. Provar editando a superfície real seria provar por coincidência.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 plugins/quenching/assets/bin/specs.py selftest
+      subject: plan/narrow-the-execute-preamble: 6.2 Provar a tolerância ao §endereço por selftest
 
 ### 7. Escrever o contrato de arquivo que os grupos 4–6 provaram
 
