@@ -870,11 +870,12 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: docs/standards/automation/skills.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/route-commands-without-always-on-descriptions: 2.2 escrever o critério de admissão e citar a medição em skills.md
-- [ ] 2.3 Pôr `budget` no bloco de verificação de `CLAUDE.md` §*Operating this repo*, ao lado de
+- [x] 2.3 Pôr `budget` no bloco de verificação de `CLAUDE.md` §*Operating this repo*, ao lado de
       `doctor` e `lint`. É a mitigação mais barata deste spec: sem ela, re-medir o teto não faz ninguém
       executar o instrumento, e o próximo estouro por crescimento de descrição passa igual.
       files: CLAUDE.md
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 2.3 pôr budget na rotina de verificação do CLAUDE.md
 
 ### 3. Classificar com confirmação, e re-medir o teto
 
