@@ -173,6 +173,23 @@ sentence, and **link out** rather than explaining in full here.
   committed to the base after it. The strategy was a human choice and the subject names the merge
   commit it is about to produce; recording both is what tells a future reader whether the per-task
   subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
+- [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
+  section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
+  human, weighing whether to build), `build` (the executor, at step 4 of `/specs:execute`), `close`
+  (`/specs:conclude`, at archive time). One value per section, declared in `schema.json` and in
+  `specs.py`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `specs.py section <slug>
+  --moment build` returns the six an executor needs, so a command body names the moment instead of
+  repeating a heading list that can drift from the schema. `## Discoveries` carries no moment at
+  all: captured indiscriminately while building, it is resolved by `/specs:develop`'s triage sweep
+  on its own schedule. The axis replaced a human/agent binary that was **prose nobody applied** —
+  measured, that binary cut 14% and named the wrong sections, leaving `## Out of Scope` invisible to
+  the one reader it exists to constrain.
+- [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
+  section is read at, one value per section: `decision` (the human, weighing whether to build),
+  `build` (the executor), `close` (`/specs:conclude`). Declared in `schema.json` and `DEFAULT_SCHEMA`
+  and **resolved rather than enumerated** — `specs.py section <slug> --moment build` returns the six
+  an executor needs, so a body names the moment instead of a heading list that can drift. Replaced
+  an `audience` field nobody read; `## Discoveries` carries no moment at all.
 - [**Origin key** (`source_uri`)](../standards/quality/bundle-verification.md) — the frontmatter key
   holding the **exact** URI or path of the source unit an imported doc was minted from, written by
   `/docs:import` and by no other command; a doc with no external origin simply does not have it.
