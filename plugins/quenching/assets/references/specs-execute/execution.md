@@ -10,8 +10,9 @@ committed leaves a checkbox that claims more than the repo can show.
 
 **Where this contract stops.** It ends at the last task's commit. Reviewing the whole branch,
 writing the `docs/` the work *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — a
-different scale of judgment, needing a different confirmation, and resumable on its own. This file
-never reaches past the loop.
+different scale of judgment, needing a different confirmation, and resumable on its own: a run that
+dies after task nine must be resumable without redoing tasks one through eight. This file never
+reaches past the loop.
 
 ## Contents
 
@@ -23,7 +24,9 @@ never reaches past the loop.
 - [The commit — one per task, carrying its own ticked box](#the-commit--one-per-task-carrying-its-own-ticked-box)
 - [Declared versus emergent `docs/`](#declared-versus-emergent-docs)
 - [Delegating an executor — permitted, and bounded](#delegating-an-executor--permitted-and-bounded)
+- [The Handoff cadence](#the-handoff-cadence)
 - [The section boundary — where a run may stop](#the-section-boundary--where-a-run-may-stop)
+- [Tooling asides, relocated](#tooling-asides-relocated)
 
 ## The precondition: a clean tree
 
@@ -291,6 +294,17 @@ Declared → write it. Emergent → record it in one line.
 **The orchestrator writes every `docs/` file itself.** This is never delegated to a sub-agent (see
 below), and a task that writes into `docs/` is not eligible for delegation at all.
 
+**Reading the declared files instead of their folder is measured, not assumed.** On this repo, the
+four subject folders a spec touched held 19 files (~31k tokens) against 5 files (~13k) for what
+`## Impact` declared, and that gap arrives at turn one, where every later turn re-sends it.
+
+**There is deliberately no mechanical net for a contract nobody declared**, the mirror image of the
+line above. `specs.py validate` already warns when a declared standard has no task
+(`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not derivable,
+because deciding a standard governs a task is reading, not parsing. Every approximation of it has
+to re-read the folder to have something to warn about, which is the cost `/quenching:specs:execute`
+step 4 removed by reading only the declared files.
+
 ## Delegating an executor — permitted, and bounded
 
 <!-- rules -->
@@ -373,6 +387,17 @@ eligible, **1** when any group overlaps or lacks `files:`. **Branch on that, nev
 a group reported ineligible runs serially, and the reason is stated in the report rather than
 argued about.
 
+## The Handoff cadence
+
+<!-- rationale -->
+
+Two cadences were tried before the four-event list and both failed. Measured on a 13-task run,
+rewriting `## Handoff` after every committed task produced revisions ~90% identical to one another.
+Substituting a judgment — "rewrite it when the underivable state changed" — fails the same way a
+threshold would: an unattended run never judges that something went stale, so a judgment-based
+trigger never fires. Each of the four events names an act the loop just performed, never an
+assessment it has to make, which is what lets the rule hold in an unattended run.
+
 ## The section boundary — where a run may stop
 
 <!-- rules -->
@@ -402,3 +427,19 @@ nothing — which holds only because the trail above was already being maintaine
 A section is the unit because it is the smallest independently deliverable one the front already
 defines; `per-section` is the default verification policy for the same reason, so a boundary is
 also the point where the suite has just run.
+
+## Tooling asides, relocated
+
+<!-- rationale -->
+
+### Why `Bash` is unrestricted
+
+`/quenching:specs:execute` is the one `/specs:*` command that runs the target repo's own toolchain
+— build, tests, linters, migrations, and `git` — as part of implementing a task. Its siblings are
+scoped to `python3`/`py` because they only ever talk to `specs.py`.
+
+### Why the resolved-whole notice matters
+
+When neither `skills.py` nor the target's `.claude/hooks/skills.py` resolves, the body falls back
+to `Read`ing the cited file whole and says so in the report — because that is the run's context
+cost changing, not a cosmetic difference.
