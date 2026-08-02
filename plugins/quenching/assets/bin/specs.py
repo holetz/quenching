@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.5.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.6.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -196,20 +196,20 @@ DEFAULT_SCHEMA: dict = {
         },
     },
     "sections": [
-        {"heading": "Overview", "order": 1, "group": "orientation", "audience": "human"},
-        {"heading": "Problem", "order": 2, "group": "definition", "audience": "human"},
-        {"heading": "Proposal", "order": 3, "group": "definition", "audience": "human"},
-        {"heading": "Out of Scope", "order": 4, "group": "definition", "audience": "human"},
-        {"heading": "Impact", "order": 5, "group": "definition", "audience": "human", "parsed": True},
-        {"heading": "Validation", "order": 6, "group": "definition", "audience": "both"},
-        {"heading": "Design", "order": 7, "group": "definition", "audience": "human"},
-        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "audience": "human"},
-        {"heading": "Open Decisions", "order": 9, "group": "definition", "audience": "human"},
-        {"heading": "Risks", "order": 10, "group": "definition", "audience": "human"},
-        {"heading": "Handoff", "order": 11, "group": "execution", "audience": "agent"},
-        {"heading": "Tasks", "order": 12, "group": "execution", "audience": "agent"},
-        {"heading": "Discoveries", "order": 13, "group": "execution", "audience": "triage"},
-        {"heading": "Outcome", "order": 14, "group": "archive", "audience": "human"},
+        {"heading": "Overview", "order": 1, "group": "orientation", "moment": "decision"},
+        {"heading": "Problem", "order": 2, "group": "definition", "moment": "decision"},
+        {"heading": "Proposal", "order": 3, "group": "definition", "moment": "build"},
+        {"heading": "Out of Scope", "order": 4, "group": "definition", "moment": "build"},
+        {"heading": "Impact", "order": 5, "group": "definition", "moment": "build", "parsed": True},
+        {"heading": "Validation", "order": 6, "group": "definition", "moment": "close"},
+        {"heading": "Design", "order": 7, "group": "definition", "moment": "build"},
+        {"heading": "Alternatives Considered", "order": 8, "group": "definition", "moment": "decision"},
+        {"heading": "Open Decisions", "order": 9, "group": "definition", "moment": "decision"},
+        {"heading": "Risks", "order": 10, "group": "definition", "moment": "decision"},
+        {"heading": "Handoff", "order": 11, "group": "execution", "moment": "build"},
+        {"heading": "Tasks", "order": 12, "group": "execution", "moment": "build"},
+        {"heading": "Discoveries", "order": 13, "group": "execution"},
+        {"heading": "Outcome", "order": 14, "group": "archive", "moment": "close"},
     ],
     "impact": {
         "parsedSubheading": "Standards this spec will write into docs/standards/",
@@ -296,15 +296,17 @@ verification: <VERIFICATION>
      and installs here into repos that never adopted the bundle, where that path resolves to
      nothing.)*
 
-     AUDIENCE. Each section names who reads it. `## Overview`/`## Problem`/`## Proposal`/
-     `## Design` are for the human — examples and plain language belong there.
-     `## Handoff`/`## Tasks` are for agents — terse, with `files:`/`verify:`/`pattern:`
-     metadata. An orchestrator never sends the human sections to an executor; that is what
-     lets one file serve both audiences without bloating agent context. -->
+     MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
+     (the human, deciding whether to build), `build` (the executor, in step 4 of
+     `/specs:execute`), `close` (`/specs:conclude`, at archive time). `## Discoveries` belongs
+     to none of them — captured indiscriminately while building, resolved later by
+     `/specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     exactly the `build` set; that is what lets one file serve every moment without bloating
+     agent context. -->
 
 ## Overview
 
-<!-- AUDIENCE: human. Warned on when empty once the ready gate is met.
+<!-- MOMENT: decision. Warned on when empty once the ready gate is met.
 
      Connective tissue for a reader who is not holding the whole spec in their head: how the
      other sections relate to one another, not a compressed restatement of each. Plain
@@ -315,21 +317,21 @@ verification: <VERIFICATION>
 
 ## Problem
 
-<!-- AUDIENCE: human. Gate: new (capture).
+<!-- MOMENT: decision. Gate: new (capture).
 
      The problem or opportunity this spec answers, and why now. This is the only section a
      freshly captured spec carries — write it even if it is two sentences. -->
 
 ## Proposal
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The change at a high level, in bullet points. What will be true afterwards that is not
      true now. -->
 
 ## Out of Scope
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      What this spec deliberately does NOT do, and why it was ruled out.
 
@@ -339,7 +341,7 @@ verification: <VERIFICATION>
 
 ## Impact
 
-<!-- AUDIENCE: human + PARSED. Gate: ready (derived).
+<!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
      docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
@@ -368,7 +370,7 @@ verification: <VERIFICATION>
 
 ## Validation
 
-<!-- AUDIENCE: human + agent. Gate: ready (derived).
+<!-- MOMENT: close (plus the agent's `verify:` fallback, resolved lazily). Gate: ready (derived).
 
      How anyone confirms this spec actually worked: the commands to run and the output they
      must produce, the fixtures to check, the invariants that must still hold afterwards.
@@ -380,7 +382,7 @@ verification: <VERIFICATION>
 
 ## Design
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      The choices made and their rationale, plus the background and binding contracts this
      design must not contradict. For each decision: what was chosen, why, and what was
@@ -390,7 +392,7 @@ verification: <VERIFICATION>
 
 ## Alternatives Considered
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      Whole-shape alternatives rejected at the spec level, each with the reason it lost.
      Per-decision alternatives can stay inside `## Design`; this section is for the ones that
@@ -400,7 +402,7 @@ verification: <VERIFICATION>
 
 ## Open Decisions
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What is deliberately still undecided, and how each will be decided — the evidence or the
      moment that settles it, not "TBD".
@@ -409,7 +411,7 @@ verification: <VERIFICATION>
 
 ## Risks
 
-<!-- AUDIENCE: human. Gate: ready (derived).
+<!-- MOMENT: decision. Gate: ready (derived).
 
      What could go wrong, and the mitigation for each. A risk taken knowingly is written
      `ACCEPTED — <why>`; a silent failure mode is the shape to hunt for.
@@ -418,7 +420,7 @@ verification: <VERIFICATION>
 
 ## Handoff
 
-<!-- AUDIENCE: agent. Warned on when empty once the ready gate is met.
+<!-- MOMENT: build. Warned on when empty once the ready gate is met.
 
      The context an executor needs and cannot derive: the state of play, the conventions in
      force, what was already tried. Small by construction — it is sent with EVERY task.
@@ -428,7 +430,7 @@ verification: <VERIFICATION>
 
 ## Tasks
 
-<!-- AUDIENCE: agent. Gate: ready (derived).
+<!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
      `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
@@ -477,7 +479,8 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- AUDIENCE: triage. No gate — appended during execution.
+<!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
+     not tied to one of the three. No gate — appended during execution.
 
      One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
@@ -490,7 +493,7 @@ verification: <VERIFICATION>
 
 ## Outcome
 
-<!-- AUDIENCE: archive reader. Gate: promote -> archive/.
+<!-- MOMENT: close. Gate: promote -> archive/.
 
      What actually happened, written at archive time: what shipped, what was left out, what
      the next reader needs to know. `outcome: done | abandoned` is stamped into the
@@ -876,6 +879,17 @@ def section_guidance(heading: str, template_text: str | None = None) -> str:
 def canonical_headings(schema: dict | None = None) -> list[str]:
     s = schema or load_schema()
     return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))]
+
+
+def headings_for_moment(moment: str, schema: dict | None = None) -> list[str]:
+    """The canonical headings declared `moment: <moment>`, in canonical order.
+
+    `## Discoveries` declares no `moment` — resolved on its own schedule by
+    `/specs:develop`'s triage sweep, not one of `decision` / `build` / `close` — so it never
+    matches here, by construction rather than by exclusion list."""
+    s = schema or load_schema()
+    return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))
+            if x.get("moment") == moment]
 
 
 def phase_spec(phase: str, schema: dict | None = None) -> dict:
@@ -1766,7 +1780,22 @@ def cmd_section(args, root: str) -> int:
     info, err = load_spec(root, args.spec)
     if err:
         return emit_err(args.json, err)
-    wanted = [h for h in (p.strip() for p in args.heading.split(",")) if h]
+    if args.moment:
+        wanted = headings_for_moment(args.moment)
+        if not wanted:
+            emit(args.json,
+                 {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
+                  "message": f"no canonical section declares moment '{args.moment}'"},
+                 f"error: no canonical section declares moment '{args.moment}'")
+            return 2
+    else:
+        wanted = [h for h in (p.strip() for p in (args.heading or "").split(",")) if h]
+        if not wanted:
+            emit(args.json,
+                 {"ok": False, "code": "sp-no-heading",
+                  "message": "give a heading, or --moment, to read"},
+                 "error: give a heading, or --moment, to read")
+            return 2
     headings, stray = [], []
     for name in wanted:
         h = _match_heading(name)
@@ -3029,6 +3058,44 @@ def cmd_selftest(args, root: str) -> int:
                                         "TASK_META_KEYS gets its own arm or is deliberately "
                                         "unread — never a trailing `else` that catches it"))
 
+    # `--moment build` is the set `/quenching:specs:execute` step 4 sends an executor — asserted
+    # against the literal list rather than eyeballed, so an edit to DEFAULT_SCHEMA that drops or
+    # reorders a `moment: build` section is caught here instead of at the first run that pays
+    # for it. Self-contained: DEFAULT_SCHEMA, not the loaded schema, so it covers an installed
+    # copy with no adjacent assets too.
+    want_build = ["Proposal", "Out of Scope", "Impact", "Design", "Handoff", "Tasks"]
+    got_build = headings_for_moment("build", DEFAULT_SCHEMA)
+    if got_build != want_build:
+        findings.append(_finding("sp-moment-build", "error",
+                                 f"headings_for_moment('build') is {got_build}, expected "
+                                 f"{want_build} — `/quenching:specs:execute` step 4 would read "
+                                 f"the wrong section set",
+                                 remedy="DEFAULT_SCHEMA's `moment: build` sections must match "
+                                        "docs/standards/workflows/plan-artifacts.md §Fourteen "
+                                        "canonical sections"))
+
+    # A `## Impact` bullet may carry a `§`address beside its path (the executor's optional
+    # narrowing in `/quenching:specs:execute` step 4). `parse_impact_standards` must tolerate
+    # it — one bullet addressed, one bare — without a line of code changing. Proved against a
+    # fixture, never the real command surface: editing that to pass would prove it by
+    # coincidence, not by contract.
+    impact_probe = parse_impact_standards(
+        "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
+        "- `docs/standards/automation/context-budget.md` §The two caps §The per-surface "
+        "ceiling — revisado.\n"
+        "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
+        "lê inteiro.\n", DEFAULT_SCHEMA)
+    want_impact = ["docs/standards/automation/context-budget.md",
+                   "docs/standards/workflows/plan-artifacts.md"]
+    if impact_probe != want_impact:
+        findings.append(_finding("sp-impact-address-tolerance", "error",
+                                 f"parse_impact_standards() on a §addressed bullet returned "
+                                 f"{impact_probe}, expected {want_impact} — a `§`address beside "
+                                 f"the path must not break the declaration it sits on",
+                                 remedy="parse_impact_standards must keep matching only the "
+                                        "docs/standards/**.md path and ignore the rest of the "
+                                        "line, addressed or not"))
+
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
     sch_path = os.path.join(ASSET_DIR, "schema.json")
     disk_tpl = read_text(tpl_path)
@@ -3217,8 +3284,12 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
     sp.add_argument("spec")
-    sp.add_argument("heading", help="one canonical heading, or several comma-separated; "
-                                    "returned in the order asked")
+    sp.add_argument("heading", nargs="?",
+                    help="one canonical heading, or several comma-separated; returned in "
+                         "the order asked. Omit when --moment resolves the list instead")
+    sp.add_argument("--moment", choices=["decision", "build", "close"],
+                    help="read every canonical section declared this moment, in canonical "
+                         "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 

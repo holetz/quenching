@@ -130,28 +130,33 @@ The canonical set, in canonical order. **Headings are a parsed contract** — ca
 frontmatter keys. A heading outside this set is a **stray** and `validate` flags it. Which language
 the body prose is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 
-| # | Heading | Phase | Audience |
+| # | Heading | Phase | Moment |
 | --- | --- | --- | --- |
-| 1 | `## Overview` | orientation | human |
-| 2 | `## Problem` | definition | human |
-| 3 | `## Proposal` | definition | human |
-| 4 | `## Out of Scope` | definition | human |
-| 5 | `## Impact` | definition | human + **parsed** |
-| 6 | `## Validation` | definition | human + agent (the `verify:` fallback) |
-| 7 | `## Design` | definition | human |
-| 8 | `## Alternatives Considered` | definition | human |
-| 9 | `## Open Decisions` | definition | human |
-| 10 | `## Risks` | definition | human |
-| 11 | `## Handoff` | execution | **agent** |
-| 12 | `## Tasks` | execution | **agent** |
-| 13 | `## Discoveries` | execution | triage |
-| 14 | `## Outcome` | archive | archive reader |
+| 1 | `## Overview` | orientation | decision |
+| 2 | `## Problem` | definition | decision |
+| 3 | `## Proposal` | definition | build |
+| 4 | `## Out of Scope` | definition | build |
+| 5 | `## Impact` | definition | build + **parsed** |
+| 6 | `## Validation` | definition | close (plus the agent's `verify:` fallback) |
+| 7 | `## Design` | definition | build |
+| 8 | `## Alternatives Considered` | definition | decision |
+| 9 | `## Open Decisions` | definition | decision |
+| 10 | `## Risks` | definition | decision |
+| 11 | `## Handoff` | execution | build |
+| 12 | `## Tasks` | execution | build |
+| 13 | `## Discoveries` | execution | — (no moment) |
+| 14 | `## Outcome` | archive | close |
 
-**Every section declares its audience, and that is load-bearing.** `## Overview` / `## Problem` /
-`## Proposal` / `## Design` are for the human — examples and plain language live there. `## Handoff`
-/ `## Tasks` are for agents — terse, carrying `files:` / `verify:` / `pattern:` metadata. An
-orchestrator never sends the human sections to an executor; this is what lets one file serve both
-audiences without bloating agent context.
+**Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
+/ `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
+`/quenching:specs:execute` step 4 sends an executor (`specs.py section <slug> --moment build`).
+`## Overview` / `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
+`decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
+`close` — `/quenching:specs:conclude`'s. `## Discoveries` carries no moment: captured
+indiscriminately while building, it is resolved later by `/quenching:specs:develop`'s triage sweep, on its own
+schedule. This replaces an earlier human/agent binary that named *who* read a section without
+saying *when* — `## Design` was human-only under it, yet an executor needs the decisions that stop
+a task from "fixing" something deliberate, which is exactly why it is `build` now.
 
 Two of these sections are load-bearing for machinery, not just for thinking:
 
@@ -254,6 +259,13 @@ the spec *may* resolve, and the product code it touches, name paths the spec nev
 write), and an unfilled `<placeholder>` declares nothing. A spec with no such sub-heading declares
 nothing and is never flagged — **the check is opt-in by writing the heading**.
 
+A bullet may carry a `§`address beside its path —
+`docs/standards/automation/context-budget.md §The two caps` — naming exactly which sections of that
+standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
+only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
+address, `/quenching:specs:execute` step 4 reads the file whole, exactly as before — the address is an
+assertion the spec's own author makes, never an economy the executor infers on its own.
+
 ## `## Tasks` and the `[!]` blocked marker
 
 <!-- rules -->
@@ -298,9 +310,13 @@ disjoint (`specs.py parallel`). Serial by default.
 - the whole `## Handoff` (small by construction),
 - the touched subjects' `docs/standards/` contracts.
 
-It does **not** receive `## Problem` / `## Proposal` / `## Design`. It returns a structured result
-— status, diff summary, `verify:` output, discoveries, handoff deltas — and **never writes the
-spec**. The orchestrator applies everything via `specs.py` (`task --check`, `discover`,
+It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
+`## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
+verbatim. The orchestrator itself reads the whole `build` set at step 4
+(`specs.py section <slug> --moment build`); a `## Design` decision that bears on the task reaches
+the executor distilled into the task line or `## Handoff`, never as the section itself. It returns
+a structured result — status, diff summary, `verify:` output, discoveries, handoff deltas — and
+**never writes the spec**. The orchestrator applies everything via `specs.py` (`task --check`, `discover`,
 `section --write`), runs `verify:` itself, and commits: **whoever commits, verifies.** This is also
 what makes one file safe under parallelism — one writer, mechanical writes.
 
