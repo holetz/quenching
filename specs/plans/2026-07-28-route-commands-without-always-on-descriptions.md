@@ -904,11 +904,12 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       tocou.
       verify: python3 plugins/quenching/assets/bin/skills.py selftest && python3 plugins/quenching/assets/bin/specs.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py selftest && python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/route-commands-without-always-on-descriptions: 4.2 provar os três selftests e o bundle OKF
-- [ ] 4.3 Confirmar o que a classe typed-only promete: um comando reclassificado continua com a
+- [x] 4.3 Confirmar o que a classe typed-only promete: um comando reclassificado continua com a
       descrição inteira no arquivo e continua com `total: 0` e `alwaysOn: false` no `budget`. A metade
       "continua digitável no menu `/`" é checagem **manual** e tem de ser dita como manual no relatório,
       porque nenhum instrumento deste repositório observa o menu.
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching budget --json
+      subject: plan/route-commands-without-always-on-descriptions: 4.3 provar a promessa da classe typed-only (metade manual declarada)
 
 ## Discoveries
 
@@ -921,3 +922,4 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 - 1.1: escopar os dois codigos por description_is_resident nao muda NADA na superficie real (11/10 antes e depois) — /skill:retro, o unico typed-only, carrega gatilho e fronteira. A regra so existe provada pelo caso de selftest, e o caso foi verificado por mutacao: trocar o if por True faz o selftest FALHAR com 'expected routing codes [], got [sk-no-boundary, sk-trigger-position]'.
 - 1.3: a superficie usa DUAS convencoes para nomear um estagio, e so uma e detectavel sozinha — (a) a forma de registro nua 'quenching:docs:align' (o que se passa ao Skill tool; a mesma com barra, '/quenching:docs:align', e citacao para humano) e (b) a forma com barra sem prefixo perto da frase 'Skill tool'. Um predicado so com (a) da 6 alvos e perde /specs:isolate e /specs:conclude; so contar mencao da 21 de 26. A uniao das duas da exatamente os 8 de ## Design §D3 linhas 1-3. A linha 4 (/specs:continue) e dinamica e corretamente fica de fora.
 - 3.1 (2026-08-02, confirmado pelo humano): a tabela dos 26 aplicou ZERO linhas. Todos os 25 comandos residentes passam no criterio de admissao — 8 sao alcancados por nome (instrumento da 1.3) e 17 por fala — e /skill:retro ja era typed-only. A classe typed-only e vazia nesta superficie, que e o resultado que skills.md §The admission criterion permite explicitamente. Nenhum frontmatter de invocacao foi editado. Confirma a critica aceita de ## Risks: a 26 comandos esta politica nao economiza nada, e quem fecha o estouro e a 3.2.
+- 4.3: a metade automatizavel esta provada em /skill:retro (nenhum comando foi reclassificado na 3.1, entao o sujeito e o typed-only pre-existente): descricao INTEIRA no arquivo — 876 chars pelo parser, com gatilhos entre aspas e fronteira Not for: — e budget reporta total 0 com alwaysOn false. A metade 'continua digitavel no menu /' NAO foi verificada: e checagem MANUAL, nenhum instrumento deste repositorio observa o menu, e nao esta sendo afirmada.
