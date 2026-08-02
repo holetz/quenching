@@ -725,12 +725,13 @@ nunca considera elegível.
 
 ### 7. Escrever o contrato de arquivo que os grupos 4–6 provaram
 
-- [ ] 7.1 Revisar `docs/standards/workflows/plan-artifacts.md`: §Fourteen canonical sections ganha a
+- [x] 7.1 Revisar `docs/standards/workflows/plan-artifacts.md`: §Fourteen canonical sections ganha a
       coluna `moment` com um valor por seção; §`## Impact` carries one parsed sub-heading ganha a forma
       opcional do `§`endereço e a nota de que o parser já a tolera; §There is a THIRD copy ganha o
       schema `moment` na lista do lockstep.
       files: docs/standards/workflows/plan-artifacts.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/narrow-the-execute-preamble: 7.1 Revisar plan-artifacts.md com o eixo moment
 - [ ] 7.2 Alinhar `specs-develop/spec-driven.md` — §The fourteen sections recebe o eixo de momento,
       §The executor contract passa a nomear o conjunto `build`, e §`## Impact` — the one parsed
       declaration ganha a forma do endereço.
