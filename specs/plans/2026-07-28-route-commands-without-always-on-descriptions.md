@@ -863,12 +863,13 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
       files: docs/standards/automation/context-budget.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
       subject: plan/route-commands-without-always-on-descriptions: 2.1 escrever o tier typed-only, a divisão e o modo de disparo por crescimento
-- [ ] 2.2 Escrever `docs/standards/automation/skills.md`: o critério de admissão à classe roteada em
+- [x] 2.2 Escrever `docs/standards/automation/skills.md`: o critério de admissão à classe roteada em
       §*Invocation and permission are authored decisions*, e a célula da tabela de invocação sobre
       invocação por nome passando a citar a linha medida em 0.2 — ou reescrita para dizer o que se sabe,
       se 0.1 a contradisser, conforme `## Open Decisions` item 2.
       files: docs/standards/automation/skills.md
       verify: python3 plugins/quenching/assets/hooks/okf-validate.py docs
+      subject: plan/route-commands-without-always-on-descriptions: 2.2 escrever o critério de admissão e citar a medição em skills.md
 - [ ] 2.3 Pôr `budget` no bloco de verificação de `CLAUDE.md` §*Operating this repo*, ao lado de
       `doctor` e `lint`. É a mitigação mais barata deste spec: sem ela, re-medir o teto não faz ninguém
       executar o instrumento, e o próximo estouro por crescimento de descrição passa igual.
