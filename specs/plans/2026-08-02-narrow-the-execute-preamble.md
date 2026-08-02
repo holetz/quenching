@@ -598,25 +598,22 @@ uma task; os que são viram task, e é assim que o premortem converte.
 
 ## Handoff
 
-**Nada construído.** Nenhuma task rodou, nenhum commit existe, a árvore está limpa. O spec foi
-definido em duas passadas de `/quenching:specs:develop` em 2026-08-02 — adversarial e gate — e espera
-o `approved` do humano.
+**Todas as 15 tasks commitadas, nenhuma bloqueada.** A árvore está limpa; nada falta implementar.
 
-**O que quem começar precisa saber antes da tarefa 0.1:**
+**O achado central de 9.1:** o depois mede 112.434 chars (-30,1%), não os -36% (103.091) que
+## Design §5 chamou de "garantido". A causa dos dois maiores desvios (execution.md, git.md) é uma
+subestimativa do próprio ## Design — essas §seções já custavam mais do que ele contou, mesmo antes
+desta spec tocar qualquer arquivo — não uma regressão introduzida aqui. Ver ## Discoveries.
 
-- **A ordem não é arbitrária.** Grupos 1 e 2 não têm julgamento nenhum (um caminho vira endereço, uma
-  referência de ramo condicional desce para o ramo) e por isso vêm antes do grupo 3, que escreve a
-  política que eles provaram. Mesma forma nos grupos 4–6 contra o 7.
-- **Cinco dos nove grupos editam `commands/specs/execute.md`.** Nenhum `[P]`, e o arquivo é o mesmo o
-  tempo todo — um rebase no meio do caminho custa caro.
-- **Este spec edita o comando que constrói specs.** A superfície é montada no início da sessão, então
-  nenhuma edição em `commands/**` é testável na sessão que a escreve. O que prova cada task é o
-  `verify:` dela, não a run em andamento.
-- **A convenção de contagem de 0.1 é pré-requisito de 9.1.** Sem o par medido sob a mesma convenção, a
-  afirmação de −36% não é verificável — e é a afirmação central do spec.
-- **`assets/checks/functional-checks.sh` não entra em `verify:` nenhum**, por
-  [surface-verification.md](/docs/standards/quality/surface-verification.md). Ele é da front de skill.
+**Uma ineficiência da própria tarefa 8.1 ficou registrada como discovery, não corrigida em 9.1**:
+o racional relocado foi colado dentro de `§Declared versus emergent docs/`, uma das sete seções
+sempre citadas pelo preâmbulo — +815 chars pagos em todo turno que cita essa seção. Mover esse
+racional para uma seção não citada (`§Tooling asides, relocated` já existe e é candidata) recupera
+isso. Não foi feito aqui porque a task 9.1 declara `files: (nenhum)` — é trabalho para
+`/quenching:specs:develop` triar a discovery, possivelmente como um novo spec ou um fold em outro.
 
+**Próximo passo:** `/quenching:specs:conclude` — revisão da branch inteira, nenhum `docs/` emergente
+além do que as tasks já escreveram, merge, e distilação de arquivo.
 ## Tasks
 
 Ordenado por `## Design`: medir com uma convenção só, converter o que não tem julgamento, escrever a
