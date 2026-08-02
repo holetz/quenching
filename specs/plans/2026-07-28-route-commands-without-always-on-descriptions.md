@@ -879,12 +879,13 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 
 ### 3. Classificar com confirmação, e re-medir o teto
 
-- [ ] 3.1 Propor ao humano UMA tabela com todos os 26 comandos contra o critério escrito em 2.2 — a
+- [x] 3.1 Propor ao humano UMA tabela com todos os 26 comandos contra o critério escrito em 2.2 — a
       coluna alcançável-por-nome vinda do instrumento de 1.3, não de julgamento — e aplicar só as linhas
       aprovadas. Apenas frontmatter de invocação: nenhum texto de descrição é alterado, nenhum caminho é
       movido.
       files: plugins/quenching/commands/**
       verify: python3 plugins/quenching/assets/bin/skills.py --root plugins/quenching doctor --json
+      subject: plan/route-commands-without-always-on-descriptions: 3.1 classificar os 26 contra o critério — zero linhas aplicadas
 - [ ] 3.2 Re-medir o teto de uma execução de `budget` e transcrever o número nos três lugares que o
       guardam — `skills.py` `DEFAULT_CEILING`, `context-budget.md` e `README.md` §*Cost model* — nunca
       estimá-lo, que é a regra do próprio padrão.
@@ -916,3 +917,4 @@ Nenhuma tarefa carrega `[P]`: as três do grupo 1 tocam o mesmo arquivo, e as do
 - 1.1: o baseline de lint em ## Validation esta defasado — diz 35 findings; a arvore (inclusive em main, antes de qualquer mudanca deste spec) da 36: 11 sk-trigger-position, 10 sk-no-boundary, 9 sk-step-criterion, 5 sk-unscoped-bash e 1 sk-bare-citation que o spec nao lista.
 - 1.1: escopar os dois codigos por description_is_resident nao muda NADA na superficie real (11/10 antes e depois) — /skill:retro, o unico typed-only, carrega gatilho e fronteira. A regra so existe provada pelo caso de selftest, e o caso foi verificado por mutacao: trocar o if por True faz o selftest FALHAR com 'expected routing codes [], got [sk-no-boundary, sk-trigger-position]'.
 - 1.3: a superficie usa DUAS convencoes para nomear um estagio, e so uma e detectavel sozinha — (a) a forma de registro nua 'quenching:docs:align' (o que se passa ao Skill tool; a mesma com barra, '/quenching:docs:align', e citacao para humano) e (b) a forma com barra sem prefixo perto da frase 'Skill tool'. Um predicado so com (a) da 6 alvos e perde /specs:isolate e /specs:conclude; so contar mencao da 21 de 26. A uniao das duas da exatamente os 8 de ## Design §D3 linhas 1-3. A linha 4 (/specs:continue) e dinamica e corretamente fica de fora.
+- 3.1 (2026-08-02, confirmado pelo humano): a tabela dos 26 aplicou ZERO linhas. Todos os 25 comandos residentes passam no criterio de admissao — 8 sao alcancados por nome (instrumento da 1.3) e 17 por fala — e /skill:retro ja era typed-only. A classe typed-only e vazia nesta superficie, que e o resultado que skills.md §The admission criterion permite explicitamente. Nenhum frontmatter de invocacao foi editado. Confirma a critica aceita de ## Risks: a 26 comandos esta politica nao economiza nada, e quem fecha o estouro e a 3.2.
