@@ -327,84 +327,26 @@ trabalho em que se está.
 
 ## Handoff
 
+**29/29 tasks concluídas — pronta para `/specs:conclude`.** O que segue é o que uma revisão de
+branch não deriva sozinha do `git log`.
+
 - O `specs.py` é stdlib-only e sem dependências: o transporte externo é `subprocess` sobre
-  `gh`/`az`, nunca uma biblioteca HTTP.
-- Nenhuma edição em `commands/**` é testável na sessão que a escreve.
-
-**Seções 1–5 completas. Seção 6 em andamento: 6.1 e 6.2 feitas, resta 6.3. Depois, seção 7
-(export e fechamento). 25/29.**
-
-**A BRANCH FOI RETOMADA APÓS UMA PAUSA — leia isto antes de qualquer coisa.** A run parou em
-5f40fd7 por custo de execução, e a main avançou 100+ commits nesse intervalo. O merge
-`61eccb6` trouxe a main `011d90c` para dentro e reconciliou os nove arquivos que conflitaram;
-`## Design` registra a única reconciliação que não foi textual (`show` × `section`). Três
-consequências para quem retoma:
-- **Não reintroduza `show --section`.** Quatro bodies (`develop`, `conclude`, `triage`,
-  `execute`) foram convertidos para `section`, e o `execute` usa o `--moment build` da main em
-  vez de enumerar as seis seções. O `show` hoje é mapa + `--task` + `--full`.
-- **O lockstep já está em 4.6.0** — VERSION e as três ferramentas concordam. A task 7.2 vira
-  re-conferência, não trabalho.
-- **O baseline de lint mudou de 35 para 36**, e o finding a mais é da main. Ver o bloco de
-  baseline no fim desta seção.
-
-- **Interface** — `SpecBackend` com 5 primitivas, sem derivação própria. `MemoryBackend` prova
-  igualdade contra `files` no selftest.
-- **Escrita de frontmatter**: `specs.py record <slug> <name> --set k=v` é o escritor dos sete
-  records — merge por campo, write-once imposto pelo schema, `outcome` recusado por declarar zero
-  `fields:`. `list --json` carrega os `records` de cada spec.
-- **Superfície (seção 5)**: nenhum body de `/specs:*` lê o corpo de um spec por caminho nem
-  escreve frontmatter com `Edit`. `triage` e `isolate` perderam a ferramenta `Edit` inteira.
-- **`azure-boards` (6.1–6.2)**: transporte `az boards` com SEIS recusas exit 2 — binário ausente,
-  extensão `azure-devops` ausente, não autenticado, sem org/project, sem `azureStates`, erro de
-  API. `AzureBoardsBackend` implementa as cinco primitivas; um spec é um work item, uma task é um
-  work item filho, ligados por `System.LinkTypes.Hierarchy-Forward`.
-- **A serialização híbrida virou compartilhada**: os helpers `gh_*` viraram `hybrid_*` e são usados
-  pelos dois backends externos. Nada além do rename mudou no `github`.
-
-**O QUE FALTA SABER NA 6.3** — é a única Open Decision aberta: se selecionar `azure-boards` emite
-aviso de não-validado. O custo real da falta de prova agora é visível e está registrado abaixo.
-
-**O que `azure-boards` tem em vez de prova E2E** (não há projeto Azure DevOps aqui, e
-`## Out of Scope` já aceitou isso):
-- `backend_completeness_failures` no selftest — as cinco primitivas implementadas em todo backend
-  declarado, nenhuma herdada; uma herdada viraria traceback, que é a promessa que todo backend
-  externo faz.
-- `az_refusal_failures` — as seis recusas, uma delas capturada do `az` 2.88 REAL deste ambiente
-  (`az boards query` sem org), não inventada.
-- A serialização é literalmente o mesmo código já provado pelo `github`.
-- **NÃO provado**: nenhuma chamada de escrita ao Azure DevOps jamais rodou. `AZ_SPEC_TYPE="Issue"`
-  e `AZ_TASK_TYPE="Task"` são palpites de processo Basic/Agile; Scrum e CMMI nomeiam diferente.
-  A extração de id de filho a partir da URL da relação nunca viu uma resposta real.
-
-**Armadilhas conhecidas (discoveries registradas, nenhuma bloqueante):**
-- `plugin-configuration.md` diz três chaves e agora são quatro (`azureStates`).
-- `align.md` é o único body ainda acoplado ao backend `files`.
-- `cmd_promote` checa destino via `os.path.exists` — sem sentido nos backends externos.
-- O campo `root` do JSON mente com backend externo ou repo migrado.
-- `doctor` reportaria `sp-no-workspace` falsamente num repo sem `specs/`.
-- `migrate` não é escritor classificado.
-- Custo de rede: o `azure-boards` faz UMA chamada `az work-item show` POR spec listado (a CLI não
-  tem forma em lote), pior que o `github`, que pagina. Mitigado só pelo cache por processo.
-- Workspace pré-migração não é serializado pelo lock da worktree (é o estado deste repo agora).
-- `TEMPLATE_SPEC` embutido ainda só documenta `--subject` na guidance comment.
-
-**Baseline pós-merge — medido contra a MAIN, não contra o commit de partida.** Os quatro números
-abaixo são idênticos aos da main `011d90c` medidos numa worktree destacada, o que é a forma
-honesta de dizer "esta branch não regrediu nada":
-- `skills.py doctor`: 26 comandos, 0 findings.
-- `skills.py lint`: **36** findings (`sk-trigger-position` 11 · `sk-no-boundary` 10 ·
-  `sk-step-criterion` 9 · `sk-unscoped-bash` 5 · `sk-bare-citation` 1). Eram 35 em 5f40fd7; o
-  `sk-bare-citation` a mais é da main, em `specs-execute/execution.md`, e não desta spec.
-- `okf-validate` sobre `docs/`: 0 erros, 23 warnings, todos `stale-doc` — o envelhecimento em
-  massa que a spec `stale-doc-mass-aging` da main já captura, não um efeito deste merge.
-- Os três selftests passam, e o do `specs.py` roda as checagens das DUAS histórias: 12 casos
-  canônicos de frontmatter + 8 de seção, 9 de backend, 5 recusas `gh` + 6 `az`, `--moment build`,
-  e a tolerância ao `§`endereço no `## Impact`.
-
-Provado também num workspace descartável, que é o único lugar onde o backend `files` em worktree
-pode ser exercitado: `new` → `section --write` → `section` plural → `--moment build` →
-`show --task` → `promote`, com o spec vivendo em `.claude/worktrees/specs/` na branch `specs` e
-`git status --porcelain` vazio na árvore de código.
+  `gh`/`az`, nunca uma biblioteca HTTP. Nenhum dos dois é dependência do plugin até um repo alvo
+  declarar aquele backend — `files` nunca invoca um binário externo.
+- **`azure-boards` ficou sem prova end-to-end** (`## Out of Scope` aceitou isso; não há projeto
+  Azure DevOps para exercitá-lo aqui). O que existe em vez disso: `backend_completeness_failures`
+  e `az_refusal_failures` no selftest (a última recusa capturada do `az` 2.88 REAL deste
+  ambiente, não inventada), mais o finding `sp-backend-unproved` (warn) no `doctor` e um aviso em
+  stderr na primeira escrita de cada processo (task 6.3). Nada disso prova uma escrita real —
+  `AZ_SPEC_TYPE`/`AZ_TASK_TYPE` e a extração de id de filho pela URL da relação continuam
+  palpites não exercitados.
+- **Baseline de lint pós-merge: 36 findings**, não 35 — o `sk-bare-citation` a mais nasceu na
+  `main` (`specs-execute/execution.md`), não neste branch. Uma revisão que vir 36 não deve tratar
+  isso como regressão desta spec.
+- Todas as `## Discoveries` seguem abertas e não bloqueantes — inclusive o gap em
+  `plugin-configuration.md` (falta documentar `azureStates`) e em `spec-driven.md` (falta a linha
+  de `specs.py export` na tabela de superfície) — nenhuma foi declarada por uma task, então
+  nenhuma foi escrita aqui.
 
 ## Tasks
 
