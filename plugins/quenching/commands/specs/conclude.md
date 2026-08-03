@@ -2,6 +2,7 @@
 description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
+model: opus
 ---
 
 # /quenching:specs:conclude — review, archive, distil, merge

@@ -2,6 +2,7 @@
 description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /specs:develop; a version bump or other release obligation → /specs:conclude; creating one → /specs:create; reviewing the branch, merging and archiving → /specs:conclude; being told which spec to build next → /specs:continue.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
+model: sonnet
 ---
 
 # /quenching:specs:execute — build one spec, one task at a time
