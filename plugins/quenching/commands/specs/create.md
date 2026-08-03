@@ -5,18 +5,15 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: sonnet
 ---
 
-# /quenching:specs:create — put one spec in `plans/`
+# /quenching:specs:create — capture one spec
 
 **Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Claude Code plan
 file. With neither, glob `~/.claude/plans/*.md`; if that is empty too, ask what to capture.
 
-Creates ONE spec in `specs/plans/`. That folder is a spec's
-whole active life, so what is created here is what gets built: this command creates the file,
-`/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and `/quenching:specs:conclude` closes it
-out under the same basename. Nothing here to retire, hand off, or reconcile — and no ledger.
-
-The date prefix is stamped **once, here**, and never rewritten: `promote` moves the file without
-renaming it, so this basename is the spec's identity for its whole lifecycle.
+Creates ONE spec. That locator is a spec's whole active life, so what is created here is what gets
+built: this command creates it, `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and
+`/quenching:specs:conclude` closes it out under the same identity. Nothing here to retire, hand off, or
+reconcile — and no ledger.
 
 The layout, the fourteen canonical sections, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
