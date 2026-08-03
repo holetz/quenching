@@ -1,4 +1,4 @@
-<!-- quenching v4.10.0 · operator manual · generated payload.
+<!-- quenching v4.11.0 · operator manual · generated payload.
      Refreshed by /specs:align (or /align). Edit the plugin asset, not this copy —
      a run with a newer plugin overwrites this file. Remove this banner to keep
      your own version: the align will then leave it alone and report it. -->
