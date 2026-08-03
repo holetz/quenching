@@ -7,7 +7,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: the nine `/specs:*` commands over a `specs/` front whose **backend is
+**spec-driven plan cycle**: the eight `/specs:*` commands over a `specs/` front whose **backend is
 configurable** — `files` (a dedicated branch), `github`, or `azure-boards` — with the OKF bundle
 as its knowledge substrate, driven end to end by the bundled stdlib `specs.py`.
 
@@ -50,13 +50,13 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The twenty-six commands
+## The twenty-five commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
-there is no `skills/` tree and no wrapper. The twenty-six split by front: `/docs:*` for the ten
+there is no `skills/` tree and no wrapper. The twenty-five split by front: `/docs:*` for the ten
 that act on the OKF `docs/` bundle (one nested a level deeper at `/docs:documentation:build`),
-`/specs:*` for the nine that act on the native `specs/` workspace, `/skill:*` for the six that
+`/specs:*` for the eight that act on the native `specs/` workspace, `/skill:*` for the six that
 act on the target's `.claude/` automation surface (two nested: `/skill:agent:new`,
 `/skill:hook:new`), and the root `/align` for the one that spans all three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
@@ -298,7 +298,7 @@ never acts on a front's reported residue — it names the residue and the comman
 Triggers: *"align everything"*, *"align the whole repo"*, *"run all the aligns"*, *"normalize
 this repo"*, *"install quenching in this repo"*, *"set the repo up end to end"*.
 
-## The `specs/` flow — the nine `/specs:*` commands
+## The `specs/` flow — the eight `/specs:*` commands
 
 The plugin's **spec-driven plan cycle**. **Where a spec is stored is declared, not fixed**: a
 target repo names its backend in `.claude/quenching.json` — `backend: "files"` (on a dedicated
@@ -431,7 +431,7 @@ and identical in every adopting repo:
 | Manual | Installed by | Covers |
 | --- | --- | --- |
 | `docs/QUENCHING.md` | `/docs:align` | the "I want to → run this" table, the homes and `type` vocabulary, the ten `/docs:*` commands, the shared operating model (probe first, one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
-| `specs/QUENCHING.md` | `/specs:align` | the single-folder layout, the create → develop → approve → execute → conclude lifecycle, the nine `/specs:*` commands, the frontmatter record vocabulary, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, and the older-workspace migrations |
+| `specs/QUENCHING.md` | `/specs:align` | the single-folder layout, the create → develop → approve → execute → conclude lifecycle, the eight `/specs:*` commands, the frontmatter record vocabulary, the `specs.py` tool, the `specs/` ↔ `standards/` boundary, the OKF bridge, and the older-workspace migrations |
 | `.claude/QUENCHING.md` | `/skill:align` | the single taxonomy axis, one file per entry point, the six `/skill:*` commands, the rule + registry artifacts, hook/settings hygiene |
 
 They complement, never duplicate, the reserved listings: `docs/index.md` says **what** is in the

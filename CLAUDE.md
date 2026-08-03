@@ -112,7 +112,7 @@ migrate/normalize, `/docs:harness` to keep this file thin.
 
 ## The plugin itself
 
-What the twenty-six commands are, what each front gets, the cost model and the install/upgrade
+What the twenty-five commands are, what each front gets, the cost model and the install/upgrade
 path are the **product's own documentation**, not repo standards — do not restate them here:
 
 - [plugins/quenching/README.md](plugins/quenching/README.md) — the command-by-command manual, the
