@@ -182,6 +182,9 @@ OUTCOMES = ("done", "abandoned")
 # strategy, not a gap in the record.
 MERGE_STRATEGIES = ("merge-commit", "squash", "rebase", "fast-forward")
 MERGE_ANCHORLESS_STRATEGIES = ("rebase", "fast-forward")
+# `gh pr merge --merge|--squash|--rebase` maps onto three of the four; `fast-forward` has no
+# `gh` equivalent, so the PR route is never offered under it and `pr:` has nothing to record.
+MERGE_NO_PR_STRATEGIES = ("fast-forward",)
 RECORD_NONE_RE = re.compile(r"^none\b", re.IGNORECASE)
 
 PLACEHOLDER_RE = re.compile(r"<[^>\n]+>")
@@ -220,9 +223,10 @@ DEFAULT_SCHEMA: dict = {
                        "writtenBy": "execute", "writeOnce": True},
             "reviewed": {"fields": ["date"],
                          "writtenBy": "conclude", "writeOnce": False},
-            "merge": {"fields": ["strategy", "subject"],
+            "merge": {"fields": ["strategy", "subject", "pr"],
                       "strategies": list(MERGE_STRATEGIES),
                       "anchorless": list(MERGE_ANCHORLESS_STRATEGIES),
+                      "noPr": list(MERGE_NO_PR_STRATEGIES),
                       "writtenBy": "conclude", "writeOnce": True},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
@@ -4397,6 +4401,16 @@ def cmd_record(args, root: str) -> int:
                  f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
             return 2
         merged[k] = v
+    if (args.name == "merge" and merged.get("pr")
+            and merged.get("strategy") in MERGE_NO_PR_STRATEGIES):
+        emit(args.json,
+             {"ok": False, "code": "sp-merge-pr-no-route", "record": args.name,
+              "strategy": merged.get("strategy"), "noPr": list(MERGE_NO_PR_STRATEGIES),
+              "message": f"`pr:` has no `gh pr merge` equivalent under "
+                         f"`{merged.get('strategy')}` — the PR route is never offered "
+                         f"under it, so there is nothing for `pr:` to record"},
+             f"refused: `pr:` is set but `{merged.get('strategy')}` has no PR route")
+        return 2
     # The schema's field order, so a record reads the same however it was assembled and a
     # re-stamp never reshuffles what a human wrote.
     ordered = {k: merged[k] for k in fields if k in merged}
@@ -6331,7 +6345,30 @@ def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
                         f"{where}: `{strategy}` creates a merge commit, so `subject:` must "
                         f"name it rather than be an explicit none", spec=slug, path=where,
                         remedy=remedy)
+    if str(rec.get("pr", "")).strip() and strategy in MERGE_NO_PR_STRATEGIES:
+        return _finding("sp-bad-merge", "warn",
+                        f"{where}: `pr:` is set but `{strategy}` has no `gh pr merge` "
+                        f"equivalent — the PR route is never offered under it",
+                        spec=slug, path=where, remedy="drop `pr:`, or record a strategy "
+                        f"`gh pr merge` supports ({', '.join(s for s in MERGE_STRATEGIES if s not in MERGE_NO_PR_STRATEGIES)})")
     return None
+
+
+def merge_pr_failures() -> list[str]:
+    """The two `pr:` rules `merge_record_finding` must get right: a local conclusion with no
+    `pr:` stays valid (most conclusions have no remote), and `pr:` under a strategy `gh pr
+    merge` cannot perform is flagged rather than silently accepted."""
+    failures: list[str] = []
+    local = {"strategy": "merge-commit", "subject": "plan/a: merge (merge-commit)"}
+    if merge_record_finding({"merge": local}, "plans/a.md", "a") is not None:
+        failures.append("a local conclusion with no `pr:` was flagged as bad-merge, and "
+                         "should not be")
+    ff_with_pr = {"strategy": "fast-forward", "subject": "none — fast-forward",
+                  "pr": "https://github.com/o/r/pull/1"}
+    finding = merge_record_finding({"merge": ff_with_pr}, "plans/a.md", "a")
+    if finding is None or finding.get("code") != "sp-bad-merge":
+        failures.append("`pr:` set under `fast-forward` was not flagged as bad-merge")
+    return failures
 
 
 def cmd_validate(args, root: str) -> int:
@@ -6591,6 +6628,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "trip; a comma-carrying or long value goes in the "
                                         "block form, and a re-stamp replaces the old "
                                         "field lines rather than orphaning them"))
+
+    # `pr:` on the merge record: a local conclusion without one stays valid, and one set
+    # under a strategy `gh pr merge` cannot perform is flagged rather than silently kept.
+    for failure in merge_pr_failures():
+        findings.append(_finding("sp-merge-pr-case", "error",
+                                 f"merge record `pr:` rule — {failure}",
+                                 remedy="merge_record_finding must accept `pr:` absent under "
+                                        "any strategy and flag it present under one "
+                                        "MERGE_NO_PR_STRATEGIES names"))
 
     # The `github` transport's promise that no failure reaches a human as a traceback, and
     # that each one arrives with the remedy that fixes it. Asserted against gh's literal
