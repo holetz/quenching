@@ -247,11 +247,12 @@ sentence, and **link out** rather than explaining in full here.
   same fact**: an issue's `created_at` is when the ISSUE was made, so the capture date has no
   faithful counterpart and stays in the document. A field with no honest native copy is not
   duplicated truth — it is the only copy.
-- [**Prose fan-out**](../standards/quality/schema-key-prose-fanout.md) — the set of prose sites a
-  machine-read schema key ages the moment it changes, and which every checker in this repo is blind
-  to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
+- [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
+  a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
+  which every checker in this repo is blind to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
   than descriptions of them, and `stale-doc` only fires where a doc's `resource:` happens to name
-  the schema file. Measured at **one field added → four sites stale**, across four homes. Found by
+  the schema file. Measured twice on one branch: **one field added → four sites stale** across four homes, and **one
+  command retired → ten sites stale** across four files, with every checker green in both. Found by
   grepping the record's **spelled-out** form (`merge: {strategy`), never its name, and fixed in the
   task that adds the key. Historical mentions are correct as written, which is why this stays a
   human sweep rather than a check — the same mention/use judgment
