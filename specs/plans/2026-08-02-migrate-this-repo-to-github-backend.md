@@ -276,7 +276,7 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
 - [ ] 3.1 Comparar campo a campo o baseline da 1.1 com os mesmos comandos sobre o `github`, com
       `path` e `root` como as únicas divergências admitidas
       subject: plan/migrate-this-repo-to-github-backend: 3.1 igualdade campo a campo entre files e github
-- [ ] 3.2 Escrever `.claude/quenching.json` com `backend: github` e reconfirmar pela CLI, sem
+- [x] 3.2 Escrever `.claude/quenching.json` com `backend: github` e reconfirmar pela CLI, sem
       `--root` e sem variável de ambiente
       files: .claude/quenching.json
       verify: python3 assets/bin/specs.py config --json
@@ -301,3 +301,4 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
 - BLOQUEIO na 2.1: o backend github lista issues com 'gh api --paginate --slurp', e --slurp so existe a partir do gh 2.52. O gh deste ambiente e 2.45.0, entao list_specs morre com 'unknown flag: --slurp' — uma mensagem crua do gh, nao uma recusa nomeada, o que contradiz o contrato de recusa da task 4.1 de configurable-spec-backend. Nada no plugin declara versao minima de gh. Medido: 'gh api --paginate --jq .[]' devolve JSONL compacto e funciona no 2.45, e o endpoint sub_issues responde normalmente. Vira a spec make-the-github-backend-work-on-shipped-gh.
 - Achado no ensaio (2.2): toda sub-issue nasce open, inclusive a de uma task ticada. _sync_tasks poe state no payload do POST /issues, e o GitHub ignora state na criacao — o proprio create_spec ja trata isso para a issue-mae ('closed is not a state an issue can be born in') e a mesma razao nunca foi aplicada um nivel abaixo. O dado nao se perde (o bloco carrega - [x] e parse_tasks le dele, por isso o round trip e byte a byte), mas o construto nativo que a serializacao hibrida existe para dar fica errado: um spec arquivado 6/7 aparece com 7 sub-issues abertas. Corrigido como task 2.3 desta spec.
 - Falso alarme descartado no ensaio: o titulo da sub-issue 2.1 aparece com 'A§' no GitHub, mas os bytes C3 82 C2 A7 estao no proprio arquivo em specs/archive/2026-07-26-verify-allowed-tools-enforcement.md:277. E mojibake pre-existente do repo, nao corrupcao do transporte — o corpo, que passa pelo mesmo json.dumps, volta byte a byte.
+- Observado na 3.2: no instante em que .claude/quenching.json passa a declarar github, todo tick e todo record param de tocar o disco e vao para a issue. A copia em specs/plans/ congela no estado anterior — este proprio documento e a prova, porque a 3.2 foi ticada aqui e nao la. Nao e defeito, e o ponto; mas torna a task 4.1 obrigatoria e nao cosmetica: deixar a pasta no repo deixaria um segundo documento que parece a fonte da verdade e ja diverge.
