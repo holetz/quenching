@@ -157,10 +157,8 @@ most-run commands costs friction for everyone to serve the minority who isolate 
 - Never invent content a source plan lacks. Absent, or an honest none that names the silence.
 - Never work around `specs.py new`'s exit 2 by inventing a slug variant — a near-duplicate slug is
   worse than a refusal, because identity *is* the slug.
-- Never rename a spec to change its date. The prefix records when it was born.
-- Never move, edit, or delete a `~/.claude/plans/*.md` file.
-- Never create or refresh a `plans/index.md`. The artifact is retired, and `specs.py list` derives
-  the same listing from disk on demand.
+- Never create or refresh `plans/index.md` — a retired artifact even where a target repo still
+  carries a legacy one.
 - Never stamp an OKF `type:` on a spec to quiet the bundle validator.
 - Never create a spec into a legacy `backlog/` or `ready/` folder — report and name
   `specs.py migrate`.
