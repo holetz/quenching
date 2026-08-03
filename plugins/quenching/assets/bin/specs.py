@@ -2054,6 +2054,46 @@ def hybrid_task_anchors(text: str) -> dict[int, int]:
     return {t["index"]: kept_before.get(t["lineno"], seen) for t in tasks}
 
 
+# The two ceilings a tracker imposes on the fields this serialisation writes. Named here,
+# beside the helpers both external backends share, rather than inside `GitHubBackend`: the
+# hybrid helpers stopped being GitHub's the moment `azure-boards` started using them.
+#
+# TITLE: 255, the SMALLER of GitHub's 256-character issue title and Azure Boards'
+# 255-character `System.Title`. One number for one shared helper — the alternative is a cap
+# per backend threaded through code that is deliberately backend-agnostic, to buy one
+# character. Neither figure appears in the REST reference either vendor publishes; GitHub's
+# is the widely documented UI limit and Azure's is from its field documentation, unproven
+# here like the rest of that backend.
+#
+# BODY: GitHub's 65,536-character issue body. Azure Boards' `System.Description` has no
+# comparable published limit, so this ceiling is enforced only where it is known to exist.
+HYBRID_TITLE_MAX = 255
+GH_BODY_MAX = 65_536
+
+
+def hybrid_short_title(text: str) -> str:
+    """A title that fits, cut on a word boundary and marked with an ellipsis.
+
+    CUTTING LOSES NOTHING, and that is what makes it the right answer rather than a
+    compromise. `hybrid_title` already records that an issue's title is a PROJECTION of the
+    document — rewritten from the frontmatter on every write, undone by the next write if a
+    human edits it in the web UI — and the same holds one level down: `parse_tasks` reads a
+    sub-issue's BODY, never its title, so the block stays whole no matter what the title says.
+
+    The alternative was to send it raw and let the tracker answer. Measured on this
+    repository on 2026-08-02: 15 tasks across 12 specs carry a checkbox line longer than the
+    cap, the longest at 946 characters — so "send it and see" is not a hypothetical branch,
+    it is what a migration would have hit twelve times."""
+    text = " ".join((text or "").split())
+    if len(text) <= HYBRID_TITLE_MAX:
+        return text
+    cut = text[:HYBRID_TITLE_MAX - 1]
+    space = cut.rfind(" ")
+    if space > HYBRID_TITLE_MAX // 2:
+        cut = cut[:space]
+    return cut.rstrip() + "…"
+
+
 def hybrid_task_key(task: dict) -> str:
     """The identity a task keeps across writes, so `write_spec` updates a sub-issue instead
     of retiring one and minting a new one for the same task.
@@ -2384,7 +2424,7 @@ class GitHubBackend(SpecBackend):
             key = hybrid_task_key(t)
             seen.add(key)
             block = hybrid_task_block(text, t)
-            payload = {"title": t["text"],
+            payload = {"title": hybrid_short_title(t["text"]),
                        "body": hybrid_wrap_task(key, t["index"], block,
                                                 anchors.get(t["index"], 0)),
                        "state": "closed" if t["checked"] else "open"}
@@ -2418,7 +2458,7 @@ def hybrid_title(slug: str, text: str) -> str:
     from the frontmatter on every write, so renaming a spec in its `title:` field renames
     the issue, and editing the issue title in the web UI is undone by the next write rather
     than silently becoming a competing name."""
-    return str(parse_frontmatter(text).get("title") or titleize(slug))
+    return hybrid_short_title(str(parse_frontmatter(text).get("title") or titleize(slug)))
 
 
 def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -2581,6 +2621,19 @@ def hybrid_serialization_failures() -> list[str]:
             if b != a:
                 failures.append(f"task '{b['id'] or before['index']}' drifted: "
                                 f"before={b!r} after={a!r}")
+
+    # THE TITLE IS CUT, THE BLOCK IS NOT. The tracker caps a title; nothing caps the body,
+    # and the body is the only half `parse_tasks` ever reads. This repository's own longest
+    # task line is 946 characters, so the cut is exercised on a length it really carries.
+    long_text = "9.9 " + " ".join(f"palavra{i:03d}" for i in range(120))
+    short = hybrid_short_title(long_text)
+    if len(short) > HYBRID_TITLE_MAX:
+        failures.append(f"hybrid_short_title returned {len(short)} characters, over the "
+                        f"{HYBRID_TITLE_MAX} a tracker accepts")
+    if not short.endswith("…") or not long_text.startswith(short[:-1].rstrip()):
+        failures.append("a cut title is not a prefix of the line it came from, marked as cut")
+    if hybrid_short_title("9.9 curta") != "9.9 curta":
+        failures.append("hybrid_short_title touched a title that already fitted")
 
     # A retired (removed-from-document) task must NEVER come back on the next rebuild —
     # this is the exact shape of a bug caught while writing this backend: closing a
@@ -3067,13 +3120,14 @@ class AzureBoardsBackend(SpecBackend):
             state = self.states["archive" if t["checked"] else "plans"]
             description = hybrid_wrap_task(key, t["index"], block,
                                            anchors.get(t["index"], 0))
+            title = hybrid_short_title(t["text"])
             if key in existing:
-                self._update(int(existing[key]["id"]), title=t["text"],
+                self._update(int(existing[key]["id"]), title=title,
                              description=description, state=state)
             else:
                 child = self._az("creating a child work item", "work-item", "create",
                                  "--project", self.project, "--type", AZ_TASK_TYPE,
-                                 "--title", t["text"], "--description", description,
+                                 "--title", title, "--description", description,
                                  "--state", state)
                 self._az(f"linking child work item {child.get('id')}", "work-item",
                          "relation", "add", "--id", str(child.get("id")),
