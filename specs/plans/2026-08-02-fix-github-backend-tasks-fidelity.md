@@ -259,16 +259,16 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 1.1 o shell preserva os grupos de ## Tasks
-- [ ] 1.2 `section` viaja no marcador da sub-issue ao lado de `index`, e a ausência da chave é lida
+- [x] 1.2 `section` viaja no marcador da sub-issue ao lado de `index`, e a ausência da chave é lida
       como 0 em vez de recusar
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
-      subject: plan/fix-github-backend-tasks-fidelity: 1.2 o marcador da sub-issue carrega section
-- [ ] 1.3 `hybrid_rebuild_tasks_section` interleava os blocos por `section` sob o heading
+      subject: plan/fix-github-backend-tasks-fidelity: 1.2+1.3 o marcador carrega o ancora e o rebuild restaura por ele
+- [x] 1.3 `hybrid_rebuild_tasks_section` interleava os blocos por `section` sob o heading
       correspondente, em vez de concatenar
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
-      subject: plan/fix-github-backend-tasks-fidelity: 1.3 o rebuild interleava por section
+      subject: plan/fix-github-backend-tasks-fidelity: 1.2+1.3 o marcador carrega o ancora e o rebuild restaura por ele
 - [ ] 1.4 A lista canônica de casos do selftest ganha um documento com `### N.` e prosa em
       `## Tasks`, asserido por igualdade estrita no round trip híbrido
       files: plugins/quenching/assets/bin/specs.py
@@ -303,3 +303,8 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
       de versão concordando
       verify: python3 assets/bin/skills.py --root . doctor --json
       subject: plan/fix-github-backend-tasks-fidelity: 3.3 fecha a superficie e o lockstep
+
+## Discoveries
+
+- As tasks 1.2 e 1.3 sairam numa commit so: o campo anchor no marcador nao tem leitor sem o rebuild que o consome, e o rebuild nao tem o dado sem o marcador. Separa-las produziria uma commit que nao roda. As duas gravam o mesmo subject, entao os dois registros resolvem.
+- Refinado na 1.2: o marcador carrega anchor (quantas linhas mantidas do ## Tasks precedem o bloco) e nao section, como o ## Design dizia. section diz a que grupo o bloco pertence mas nao onde dentro dele, e nao diz nada sobre as linhas em branco que o documento usa entre tasks — o round trip seria uma re-diagramacao, nao uma identidade. Medido: com anchor, 68 de 68 documentos reais voltam byte a byte.

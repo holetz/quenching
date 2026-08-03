@@ -2081,24 +2081,35 @@ def hybrid_task_block(text: str, task: dict) -> str:
     return "".join(lines[task["lineno"]:task["blockEndLineno"]])
 
 
-HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)\s*-->"
-                               r"[ \t]*\r?\n")
+HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)"
+                               r"(?:\s+anchor=(\d+))?\s*-->[ \t]*\r?\n")
 
 
-def hybrid_wrap_task(key: str, index: int, block: str) -> str:
-    return f"<!-- quenching-task: key={key} index={index} -->\n{block}"
+def hybrid_wrap_task(key: str, index: int, block: str, anchor: int = 0) -> str:
+    return f"<!-- quenching-task: key={key} index={index} anchor={anchor} -->\n{block}"
 
 
-def hybrid_unwrap_task(body: str) -> tuple[str, int, str]:
-    """`(key, index, block)` for a task sub-issue, or `("", -1, "")` for anything else.
+def hybrid_unwrap_task(body: str) -> tuple[str, int, str, int]:
+    """`(key, index, block, anchor)` for a task sub-issue, or `("", -1, "", 0)` for anything
+    else.
 
     `index` is what lets `read_spec` put the tasks back in DOCUMENT order rather than
     creation order or GitHub's own listing order, which is neither: sub-issues can be
     reprioritised in the UI, and a rebuild that trusted that order would silently reorder
-    the plan every time it was read back."""
+    the plan every time it was read back.
+
+    `anchor` is where in the shell's `## Tasks` the block goes back — see
+    `hybrid_task_anchors`. It is OPTIONAL in the pattern, and a marker without one reads as
+    0, which puts every block at the top of the section: that is a sub-issue written before
+    this key existed, whose parent shell was emptied of its groups anyway, so 0 reproduces
+    the layout that sub-issue was written for rather than inventing a worse one. Nothing in
+    the world is known to be in that state — the one issue the `github` end-to-end ever
+    created was removed at the end of it — so the fallback is discipline, not a migration."""
     body = (body or "").replace("\r\n", "\n")
     m = HYBRID_TASK_MARKER_RE.match(body)
-    return (m.group(1), int(m.group(2)), body[m.end():]) if m else ("", -1, "")
+    if not m:
+        return "", -1, "", 0
+    return m.group(1), int(m.group(2)), body[m.end():], int(m.group(3) or 0)
 
 
 def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
@@ -2115,32 +2126,48 @@ def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
     return f"<!-- quenching-task-removed: key={key} index={index} -->\n{block}"
 
 
-def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[str]) -> str:
-    """Splice the reconstructed `## Tasks` body — every sub-issue's raw block, in document
-    order — back into the shell `write_spec` emptied it into.
+def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[tuple[int, str]]) -> str:
+    """Splice the reconstructed `## Tasks` body back into the shell the blocks were lifted
+    out of — each `(anchor, block)` returned to the position it came from.
 
-    Each block is followed by a blank line. `parse_tasks` does not need it — a following
-    checkbox line ends the previous task's metadata scan on its own — but a human reading
-    the issue does, and `hybrid_task_block` never captured a trailing blank line in the first
-    place (its span ends where `parse_tasks` itself stops scanning), so without this every
-    task the github backend rebuilds would read as one unbroken paragraph.
+    IT USED TO CONCATENATE, with a blank line between blocks, into a section the shell had
+    emptied. That produced a well-formed document and a WRONG one: every `### N.` group
+    heading was already gone by then, and the blank lines were this function's invention
+    rather than the document's. Placing by anchor is what makes the round trip an identity —
+    the property `spec-backend.md` states as the one obligation an external backend has, and
+    which `backend_equivalence_failures` checks byte for byte between two backends.
 
-    `task_bodies` is already sorted by the caller; this function only concatenates and
-    upserts, so the ordering decision stays visible at the call site instead of buried in
-    a helper that also happens to sort."""
+    An anchor is a count of the shell's kept lines (see `hybrid_task_anchors`), so the walk
+    below is the inverse of the lift: before emitting kept line *k*, emit every block
+    anchored at *k*. Blocks are already in document order, which is what orders two tasks
+    sharing an anchor — adjacent tasks under the same heading, the normal case.
+
+    A block is nudged to end in a newline unless it ends the section. `hybrid_task_block`
+    slices verbatim and every block but a document's last one already ends that way; the
+    nudge exists because an issue tracker is free to trim trailing whitespace off a body it
+    stores, and a block that came back one newline short would weld itself to the line after
+    it."""
     if not task_bodies:
         return shell_text
-    sections = parse_sections(body_after_frontmatter(shell_text))
-    if "Tasks" not in sections:
+    span = hybrid_tasks_span(shell_text)
+    if span is None:
         return shell_text
-    # Blank line BETWEEN blocks, never after the last one — a trailing blank belongs to
-    # `upsert_section`'s own splice (it is what separates a REPLACED section from whatever
-    # follows it), and adding a second here is exactly the kind of divergence
-    # `backend_equivalence_failures` exists to catch: the files backend's document has no
-    # such line, so a github document that did would fail the byte-for-byte proof.
-    body = "\n\n".join(b.rstrip("\n") for b in task_bodies)
+    start, end = span
+    lines = shell_text.splitlines(keepends=True)
+    kept = lines[start:end]
+    placed: list[str] = []
+    pending = list(task_bodies)
+    for k in range(len(kept) + 1):
+        while pending and pending[0][0] <= k:
+            placed.append(pending.pop(0)[1])
+        if k < len(kept):
+            placed.append(kept[k])
+    placed.extend(block for _, block in pending)
+    body = "".join(b if b.endswith("\n") or i == len(placed) - 1 else b + "\n"
+                   for i, b in enumerate(placed))
+    sections = parse_sections(body_after_frontmatter(shell_text))
     new_text, _ = upsert_section({"text": shell_text, "sections": sections}, "Tasks",
-                                 f"## Tasks\n\n{body}\n")
+                                 lines[start - 1] + body)
     return new_text
 
 
@@ -2327,11 +2354,11 @@ class GitHubBackend(SpecBackend):
                          f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []
         marked = []
         for sub in subs:
-            key, index, block = hybrid_unwrap_task(sub.get("body") or "")
+            key, index, block, anchor = hybrid_unwrap_task(sub.get("body") or "")
             if key:      # an ordinary sub-issue a human added is not a task line
-                marked.append((index, block))
-        marked.sort(key=lambda pair: pair[0])
-        return [block for _, block in marked]
+                marked.append((index, anchor, block))
+        marked.sort(key=lambda row: row[0])
+        return [(anchor, block) for _, anchor, block in marked]
 
     def _sync_tasks(self, parent_number: int, text: str) -> None:
         """Make the parent's sub-issues match `text`'s `## Tasks` exactly: one sub-issue per
@@ -2348,15 +2375,18 @@ class GitHubBackend(SpecBackend):
         existing: dict[str, dict] = {}
         for sub in self._api(f"listing sub-issues of #{parent_number}",
                              f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []:
-            key, _, _ = hybrid_unwrap_task(sub.get("body") or "")
+            key, _, _, _ = hybrid_unwrap_task(sub.get("body") or "")
             if key:
                 existing[key] = sub
+        anchors = hybrid_task_anchors(text)
         seen: set[str] = set()
         for t in tasks:
             key = hybrid_task_key(t)
             seen.add(key)
             block = hybrid_task_block(text, t)
-            payload = {"title": t["text"], "body": hybrid_wrap_task(key, t["index"], block),
+            payload = {"title": t["text"],
+                       "body": hybrid_wrap_task(key, t["index"], block,
+                                                anchors.get(t["index"], 0)),
                        "state": "closed" if t["checked"] else "open"}
             if key in existing:
                 num = existing[key]["number"]
@@ -2374,7 +2404,7 @@ class GitHubBackend(SpecBackend):
         for key, sub in existing.items():
             if key in seen:
                 continue
-            _, index, block = hybrid_unwrap_task(sub.get("body") or "")
+            _, index, block, _ = hybrid_unwrap_task(sub.get("body") or "")
             self._write_api(f"retiring orphaned sub-issue #{sub['number']}", "PATCH",
                             f"repos/{self.repo}/issues/{sub['number']}",
                             {"state": "closed",
@@ -2512,15 +2542,18 @@ def hybrid_serialization_failures() -> list[str]:
     # Wrap each task's raw block as `_sync_tasks` would, store it through a CRLF round
     # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
     # a real sub-issue list.
-    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t)).replace("\n", "\r\n")
+    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t),
+                               hybrid_task_anchors(doc).get(t["index"], 0)).replace("\n", "\r\n")
              for k, t in zip(keys, tasks)]
     unwrapped = sorted((hybrid_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
-    for key, want_index, (got_key, got_index, _) in zip(keys, range(1, 5), unwrapped):
+    for key, want_index, (got_key, got_index, _, _) in zip(keys, range(1, 5), unwrapped):
         if (got_key, got_index) != (key, want_index):
             failures.append(f"task marker round trip: got key={got_key!r} "
                             f"index={got_index!r}, wanted key={key!r} index={want_index!r}")
 
-    rebuilt = hybrid_rebuild_tasks_section(shell, [block for _, _, block in unwrapped])
+    rebuilt = hybrid_rebuild_tasks_section(shell,
+                                           [(anchor, block)
+                                            for _, _, block, anchor in unwrapped])
     tasks2 = parse_tasks(rebuilt)
     if len(tasks2) != len(tasks):
         failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
@@ -2983,17 +3016,17 @@ class AzureBoardsBackend(SpecBackend):
                     ids.append(int(tail))
         return self._show_many(ids)
 
-    def _task_bodies(self, parent_id: int) -> list[str]:
-        """Every task child's raw block, in DOCUMENT order — ready for
-        `hybrid_rebuild_tasks_section`, which only concatenates."""
+    def _task_bodies(self, parent_id: int) -> list[tuple[int, str]]:
+        """Every task child's `(anchor, raw block)`, in DOCUMENT order — ready for
+        `hybrid_rebuild_tasks_section`, which places each block by its anchor."""
         marked = []
         for child in self._children(parent_id):
-            key, index, block = hybrid_unwrap_task(
+            key, index, block, anchor = hybrid_unwrap_task(
                 self._field(child, "System.Description"))
             if key:      # an ordinary child a human added is not a task line
-                marked.append((index, block))
-        marked.sort(key=lambda pair: pair[0])
-        return [block for _, block in marked]
+                marked.append((index, anchor, block))
+        marked.sort(key=lambda row: row[0])
+        return [(anchor, block) for _, anchor, block in marked]
 
     def _sync_tasks(self, parent_id: int, text: str) -> None:
         """Make the parent's children match `text`'s `## Tasks` exactly — the same contract
@@ -3003,9 +3036,10 @@ class AzureBoardsBackend(SpecBackend):
         the document, and one signal cannot mean both without a done-then-removed task
         resurrecting itself on the next read."""
         tasks = parse_tasks(text)
+        anchors = hybrid_task_anchors(text)
         existing: dict[str, dict] = {}
         for child in self._children(parent_id):
-            key, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
+            key, _, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
             if key:
                 existing[key] = child
         seen: set[str] = set()
@@ -3014,7 +3048,8 @@ class AzureBoardsBackend(SpecBackend):
             seen.add(key)
             block = hybrid_task_block(text, t)
             state = self.states["archive" if t["checked"] else "plans"]
-            description = hybrid_wrap_task(key, t["index"], block)
+            description = hybrid_wrap_task(key, t["index"], block,
+                                           anchors.get(t["index"], 0))
             if key in existing:
                 self._update(int(existing[key]["id"]), title=t["text"],
                              description=description, state=state)
@@ -3029,7 +3064,7 @@ class AzureBoardsBackend(SpecBackend):
         for key, child in existing.items():
             if key in seen:
                 continue
-            _, index, block = hybrid_unwrap_task(self._field(child, "System.Description"))
+            _, index, block, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
             self._update(int(child["id"]), state=self.states["archive"],
                          description=hybrid_wrap_task_removed(key, index, block))
 
