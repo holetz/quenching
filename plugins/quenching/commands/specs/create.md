@@ -71,11 +71,8 @@ Take a title and a one-sentence problem from the input, and derive a kebab slug 
 declared language. On the plan-file path, derive it from the plan's title or goal ("Add rate
 limiting to the API" → `add-api-rate-limiting`).
 
-**Do not list the front to check for a collision.** `specs.py new` already refuses a taken slug
-with `sp-slug-exists` and exit 2, naming where it is — so a listing here asks a question that is
-about to be answered anyway, and asks it the expensive way: under `github` it is a paginated fetch
-of every issue (2.4s measured), on the path whose whole promise is that one sentence becomes a
-spec in seconds.
+**The collision check is `specs.py new`'s exit 2** (`sp-slug-exists`, naming where it is) — never a
+front listing first, which under `github` is a paginated fetch of every issue (2.4s measured).
 **Done when:** a canonical slug is in hand.
 
 ### 3. Plan-file path only — read it, and read the bundle
