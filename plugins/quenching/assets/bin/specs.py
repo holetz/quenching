@@ -1621,9 +1621,13 @@ BACKEND_CASES = (
     ("create, then list", lambda b: _case_create(b)),
     ("read what was created", lambda b: _observable(b.read_spec("alpha")[0])),
     ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
+    ("validate what was created", lambda b: _case_validate(b)),
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
+    # AFTER the three cases that author the document, never on the fresh capture form. See
+    # `_case_front`: on a capture form the case passes with the reader broken.
+    ("rank the front", lambda b: _case_front(b)),
     ("move to archive", lambda b: _case_move(b)),
     ("list after the move", lambda b: _listing(b)),
 )
@@ -1653,6 +1657,36 @@ def _observable(info: dict | None) -> dict:
 def _case_create(b: "SpecBackend") -> list[dict]:
     b.create_spec("plans", "2026-01-01-alpha.md", _case_doc())
     return _listing(b)
+
+
+def _case_validate(b: "SpecBackend") -> list[dict]:
+    """Every finding for the one spec in the store — the READER, not just the store.
+
+    The cases above prove a backend can hand back the document it was given. This proves the
+    shared code ASKS it for one: a `validate_spec` that reaches around the interface to
+    `read_text(s["path"])` gets nothing from a `memory://` locator and reports a well-formed
+    document as missing every required key, while `files` reports the real findings. The two
+    disagree, and the case fails. Nothing asserted that before, which is how `validate`
+    shipped fabricating a finding per required key per spec against GitHub."""
+    return validate_spec(b, b.list_specs()[0])
+
+
+def _case_front(b: "SpecBackend") -> dict:
+    """One ranked candidate — the same trap on the other disk reader.
+
+    `_candidate` off the path ranks a `memory://` spec as an empty one with no tasks and no
+    priority, which is exactly what `/specs:continue` was handed against GitHub. `heads` and
+    `current` are pinned empty so the case asserts the READ and never the repository it
+    happens to run in.
+
+    IT MUST RUN ON AN AUTHORED DOCUMENT, which is why it is ordered last rather than beside
+    the other read case. Measured on the fresh capture form this case PASSED with the reader
+    fully broken: every field it compares collapses to the same value from an empty document
+    — `titleize("alpha")` gives back the same `Alpha` the frontmatter carries, and the task
+    counts, the progress and the stage are all already the empty ones. A fixture that cannot
+    tell the two apart is a case that asserts nothing, and the only reason this one is known
+    to discriminate is that reverting the reader was tried against it."""
+    return _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None)
 
 
 def _case_write(b: "SpecBackend") -> dict:
