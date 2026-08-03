@@ -1,7 +1,7 @@
 ---
 description: Capture ONE spec — effort proportional to what you gave it, never an interrogation. Triggers on "capture this", "park a spec", "add it to the backlog", "note this for later", "file a spec", "turn my plan into a spec", "convert this Claude Code plan", "make a spec from my plans folder". Not for: filling a spec's remaining sections, or interrogating one → /specs:develop; building one → /specs:execute; closing one out → /specs:conclude; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage.
 argument-hint: [what to capture, or a path to a plan file]
-allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: sonnet
 ---
 
