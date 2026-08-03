@@ -2799,18 +2799,48 @@ def hybrid_serialization_failures() -> list[str]:
     # carry neither `title:` nor the `# <TITLE>` heading, and putting the native title back
     # must return the document byte for byte — the same obligation the body is held to, on the
     # one field that is no longer inside it.
-    canonical = ("---\nslug: alpha\ntitle: Título com acento\ndate: 2026-01-01\n"
-                 "verification: per-task\n---\n\n# Título com acento\n\n## Problem\n\nAlgo.\n")
+    # THE FIXTURE IS THE SHAPE OF A REAL DOCUMENT, not a minimal one. Three properties, each
+    # from a way this repository's own specs really look: an accented title, because the
+    # harness language is pt-BR and an accent is where a title projection loses bytes if it
+    # ever re-encodes; `### N.` groups with prose inside `## Tasks`, because 49 of 68 specs
+    # carry groups and that is precisely the structure the retired sub-issue mapping dropped;
+    # and task metadata lines, because they are what a split is most likely to cut through.
+    canonical = (
+        "---\nslug: alpha\ntitle: Avaliar o fluxo de criação de specs\ndate: 2026-01-01\n"
+        "verification: per-section\n---\n\n"
+        "# Avaliar o fluxo de criação de specs\n\n"
+        "## Problem\n\nO documento não volta como entrou.\n\n"
+        "## Tasks\n\n"
+        "### 1. Primeiro grupo\n\n"
+        "Uma linha de prosa dentro de `## Tasks`, que também tem de voltar.\n\n"
+        "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n"
+        "- [x] 1.2 segunda\n\n"
+        "### 2. Segundo grupo\n\n"
+        "- [!] 2.1 terceira — blocked: esperando revisão\n\n"
+        "## Outcome\n\n")
+    # And the same document over GitHub's 65,536 ceiling. This is the case the projection
+    # makes newly interesting: the frontmatter and the `# <TITLE>` heading it removes both
+    # live in the HEAD chunk, which is exactly the chunk a spill cuts. Two of this
+    # repository's specs are over the ceiling as whole documents, one of them an active plan.
+    big = canonical.replace(
+        "## Outcome\n\n",
+        "### 3. Grupo grande\n\n"
+        + "".join(f"- [ ] 3.{i} tarefa com acentuação — número {i}\n"
+                  for i in range(1, 2600))
+        + "\n## Outcome\n\n")
+    if len(big) <= GH_BODY_MAX:
+        failures.append(f"the over-ceiling fixture is only {len(big)} characters — it does "
+                        f"not reach the {GH_BODY_MAX} it exists to cross")
     proj = hybrid_title_split(canonical)
     if proj is None:
         failures.append("the capture form's own shape was refused by the title projection — "
                         "every spec `new` creates would be stored with a duplicated title")
     else:
         stored, native = proj
-        if "title:" in stored or "# Título" in stored:
+        if "title:" in stored or f"# {native}" in stored:
             failures.append("the projected document still carries the title it handed to the "
                             "store — the duplication the projection exists to remove")
-        if native != "Título com acento":
+        if native != str(parse_frontmatter(canonical).get("title", "")).strip():
             failures.append(f"the title handed to the store was {native!r}, not the "
                             f"document's own")
         if hybrid_title_join(stored, native) != canonical:
@@ -2831,19 +2861,17 @@ def hybrid_serialization_failures() -> list[str]:
     # document exists to prevent, and it is cheap to refute here: the projection, the wrap, the
     # split and the reassembly are the whole write path, and none of it needs a network.
     for backend_name, ceiling in (("github", GH_PART_MAX), ("azure-boards", None)):
-        stored, native = hybrid_project("alpha", canonical)
-        parts = hybrid_split(stored, ceiling)
-        wrapped = hybrid_wrap("alpha.md", parts[0][0], len(parts))
-        name, chunk, count = hybrid_unwrap(wrapped.replace("\n", "\r\n"))
-        rebuilt = hybrid_title_join(chunk, native)
-        if (name, count) != ("alpha.md", 1):
-            failures.append(f"{backend_name}: the marker came back {name!r}/{count} parts "
-                            f"for a one-part document")
-        if rebuilt != canonical:
-            failures.append(f"{backend_name}: the document did not come back byte for byte "
-                            f"through the title projection — {rebuilt!r}")
-        if native != "Título com acento":
-            failures.append(f"{backend_name}: stored the title as {native!r}")
+        for label, source in (("one part", canonical), ("over the ceiling", big)):
+            stored, native = hybrid_project("alpha", source)
+            if native != str(parse_frontmatter(source).get("title", "")).strip():
+                failures.append(f"{backend_name}/{label}: stored the title as {native!r}")
+            if "title:" in stored.split("\n---\n", 1)[0]:
+                failures.append(f"{backend_name}/{label}: the body handed to the store still "
+                                f"carries `title:`")
+            rebuilt = hybrid_title_join(store(hybrid_split(stored, ceiling)), native)
+            if rebuilt != source:
+                failures.append(f"{backend_name}/{label}: the document did not come back byte "
+                                f"for byte through the title projection")
 
     # A title the tracker would cut is refused, because a cut title is now a renamed spec.
     long_title = ("---\nslug: alpha\ntitle: " + "t" * (HYBRID_TITLE_MAX + 1) +
