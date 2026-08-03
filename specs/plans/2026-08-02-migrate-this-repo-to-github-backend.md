@@ -243,11 +243,11 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
 
 ### 1. Capturar o estado de partida
 
-- [ ] 1.1 Capturar `list --json` e `status --json` de todos os specs sobre o backend `files`, mais o
+- [x] 1.1 Capturar `list --json` e `status --json` de todos os specs sobre o backend `files`, mais o
       texto de `section --moment build` de cada um, como baseline em disco fora do repo
       verify: python3 assets/bin/specs.py list --json
       subject: plan/migrate-this-repo-to-github-backend: 1.1 captura o baseline de todos os specs sobre files
-- [ ] 1.2 Confirmar que o pré-requisito está mergeado — o round trip híbrido devolve todos os
+- [x] 1.2 Confirmar que o pré-requisito está mergeado — o round trip híbrido devolve todos os
       documentos byte a byte
       verify: python3 assets/bin/specs.py selftest
       subject: plan/migrate-this-repo-to-github-backend: 1.2 confirma a fidelidade do round trip antes de escrever
