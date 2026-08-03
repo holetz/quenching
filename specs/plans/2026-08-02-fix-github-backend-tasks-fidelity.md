@@ -4,6 +4,10 @@ title: "Fidelidade do documento no backend github — grupos de task, títulos e
 verification: per-section
 branch: {base: main, work: plan/fix-github-backend-tasks-fidelity}
 approved: {date: 2026-08-02}
+reviewed: {date: 2026-08-02}
+merge:
+  strategy: merge-commit
+  subject: plan/fix-github-backend-tasks-fidelity: merge (merge-commit)
 ---
 
 # Fidelidade do documento no backend github — grupos de task, títulos e o cap de corpo
@@ -319,3 +323,54 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 - Refinado na 2.1: o teto compartilhado e 255 e nao 256 — o menor entre o titulo de issue do GitHub (256) e o System.Title do Azure Boards (255). Os helpers hybrid_* sao dos dois backends desde a task 6.2 de configurable-spec-backend, entao um teto por backend seria threading de estado por codigo deliberadamente agnostico para comprar um caractere. O numero do Azure vem da documentacao de campo e nao foi medido aqui.
 - Medido na 3.1 sobre os 68 specs em disco: 68/68 voltam byte a byte pelo caminho completo (wrap do marcador, round trip CRLF como o GitHub armazena, unwrap, rebuild). 49 deles carregam grupos ### N. — o ## Problem dizia 47 sobre 66, e as duas specs desta leva sao as duas a mais.
 - Medido na 3.3: doctor 26 comandos e 0 findings; lint 36 findings, o mesmo baseline que o Handoff de configurable-spec-backend declarou pos-merge; okf-validate 0 errors sobre docs/ e sobre assets/docs; budget 12.756 de 12.875, exit 0. O lockstep esta em 4.7.0 nos quatro artefatos — o bump para 4.8.0 e obrigacao de release do conclude, nao desta execucao.
+
+## Outcome
+
+**Entregue e mergeado em `main` por merge commit** (`--no-ff`), 9/9 tasks. As commits por task
+ficam na `main`, então todo `subject:` gravado resolve por
+`git log --grep="<subject>" --fixed-strings` a partir dela.
+
+### O que entrou
+
+- **O shell preserva a estrutura de `## Tasks`.** `hybrid_tasks_shell` levanta apenas os spans que
+  `parse_tasks` reporta por task; `### N.`, prosa e as linhas em branco ficam verbatim e em posição.
+- **`hybrid_task_anchors` e o campo `anchor=` no marcador da sub-issue.** O rebuild deixou de
+  concatenar: caminha as linhas mantidas do shell e emite cada bloco antes da linha que ele
+  precedia. É a inversa exata do split, e é o que torna o round trip uma **identidade** em vez de uma
+  re-diagramação.
+- **`hybrid_short_title`** — teto 255, o menor entre o título de issue do GitHub (256) e o
+  `System.Title` do Azure Boards (255), aplicado nos três sítios que escrevem título. Cortar não
+  perde nada: `parse_tasks` lê o corpo da sub-issue, nunca o título.
+- **`sp-gh-body-too-large`** em `_write_api` — o único ponto por onde toda escrita passa. Recusa
+  exit 2 nomeando o tamanho medido e o teto, sem emitir a chamada.
+- **A prova**: a fixture do selftest ganhou dois grupos e uma linha de prosa, e a asserção é
+  igualdade estrita do documento. O standard `spec-backend.md` ganhou
+  §"What 'the canonical document' covers", que nomeia o que a remontagem abrange e por que a prova é
+  igualdade e não asserção sobre as peças.
+
+### O que o próximo leitor precisa saber
+
+- **A mudança de marcador é compatível num sentido só, e foi isso que decidiu o bump.** Um marcador
+  antigo (sem `anchor=`) é lido pelo `specs.py` novo como `anchor` 0; um marcador **novo** não casa
+  com o regex **antigo**, então um repo alvo rodando uma cópia 4.7.0 contra sub-issues escritas pela
+  4.8.0 deixaria de reconhecê-las como tasks — elas sumiriam da leitura. Por isso 4.8.0 (minor) e
+  não 4.7.1: é mudança de formato armazenado, ainda que aditiva na escrita.
+- **Nenhuma sub-issue no mundo está no formato antigo** — a issue do E2E da task 4.6 de
+  `configurable-spec-backend` foi removida ao fim daquele exercício. O caminho de compatibilidade é
+  disciplina, não migração de dado.
+- **`azure-boards` herdou as três correções sem uma linha específica**, porque os helpers `hybrid_*`
+  já eram compartilhados desde a task 6.2 daquela spec. Continua sem prova end-to-end.
+- Medido no fechamento: **68/68** documentos reais voltam byte a byte; `doctor` 26 comandos e 0
+  findings; `lint` 36 findings, o mesmo baseline pós-merge que aquela spec declarou; `okf-validate`
+  0 errors nos dois bundles; `budget` 12.756 de 12.875.
+
+### Destilado no fechamento
+
+- `docs/standards/architecture/spec-backend.md` — a seção nova é a destilação, e ela mora ali porque
+  é regra de arquitetura e não história desta branch: **a obrigação de remontagem é o documento
+  inteiro byte a byte, e a prova é igualdade**. Junto foi a correção honesta de
+  §"What this standard does not yet cover": o `github` FOI exercitado end-to-end uma vez, e aquele
+  exercício valeu menos do que parecia porque a spec de teste não tinha grupos nem título longo.
+
+Nada mais cruzou. O resto — o `anchor`, o teto compartilhado, o controle negativo do selftest — é
+história do arquivo e de `## Discoveries`.
