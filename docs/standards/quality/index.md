@@ -21,6 +21,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [prose-sweeps.md](prose-sweeps.md) — a mechanical find-and-replace over prose corrupts exactly the
   sentences that talk *about* the form being swept, the checker that guards the sweep reports them
   clean, and the mitigation is to write a mention as a placeholder rather than an instance.
+* [schema-key-prose-fanout.md](schema-key-prose-fanout.md) — adding a key to a machine-read schema
+  ages every prose site that spells the record out and no checker sees it: why each validator is
+  blind by construction, the grep on the record's literal form that finds the sites, and why it
+  belongs to the task adding the key rather than to a later sweep.
 * [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
   an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
   prove, and the gate the three shipped selftests have not yet cleared.
