@@ -75,6 +75,7 @@ environment probe below, which belongs in this same call:
 git status --porcelain
 git branch --list "plan/<slug>"
 git branch --show-current
+git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
 specs.py status --spec "<slug>" --json
 # and the hook probe of 2b, in this same call
@@ -85,13 +86,23 @@ specs.py status --spec "<slug>" --json
 §The precondition. Offer to commit or stash. The human may override; then the first commit carries
 the pre-existing changes and the report says so.
 
-**Then check before offering.** `branch --list plan/<slug>` printing a ref, or the `branch`
-record already present in the `status` payload, means the spec **is already isolated** — go
-straight to the loop and offer nothing. Asking again buys nothing and costs the turns it takes.
+**Then resolve the work ref, and check before offering.** The spec's work branch is the `branch`
+record's `work` when the `status` payload carries one, else the default `plan/<slug>` — which is the
+ref already listed above. A record naming something else costs one more `git branch --list "<work>"`
+to know whether it is alive, and only on a spec that has a record. Two outcomes end the question
+here:
 
-Either way, read the state before the first task: a spec whose branch is **alive but checked out
-elsewhere** (`git worktree list`, or a ref this checkout is not on) is being built somewhere else,
-and starting here would fork the work. Say so and stop.
+- **This checkout is on the work ref** (`git branch --show-current` equals it) → the spec **is**
+  isolated. Go straight to the loop and offer nothing; asking again buys nothing and costs the
+  turns it takes.
+- **The ref is alive but held elsewhere** — a `git worktree list` entry, or a checkout this one is
+  not on — → it is being built somewhere else, and starting here would fork the work. Name where,
+  and stop.
+
+**A ref that merely exists is not isolation.** Standing on the base with the work ref sitting
+unclaimed one branch over, a short-circuit on its *existence* would send the loop to build and
+commit onto the base itself — the exact outcome the offer exists to prevent, reached by skipping
+it. Anything short of being **on** the ref falls through to the branches below.
 
 **Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
 record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
@@ -110,6 +121,13 @@ specs.py record "<slug>" branch --set base=<resolved base> --set work=<current b
 Then go straight to the loop. Never derive `base` from `git merge-base` or `--fork-point` here:
 both answer a commit, not a branch name, and a commit ancestral to three branches identifies none
 of them.
+
+**On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
+one.** Two forms, worktree first as always: `git worktree add ../<repo>-<slug> <work ref>` beside
+this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
+one exists, is write-once and already true, and a ref cut by hand with no record is the case
+`base` cannot honestly be inferred for from here. Declining leaves the run on the base, which is
+the human's to choose; say plainly that the commits will land there.
 
 **On the base branch, with nothing to check out → offer isolation here, inline.** Read what the
 workspace declares first, so the offer can show it:
@@ -404,9 +422,10 @@ front of you before the loop starts:
 
 ## Invariants to never violate
 
-- Require a clean tree before the first code change; **check whether the spec is already isolated
-  before offering**, and where it is not, offer isolation inline — recommend it, never impose it.
-  Checking first is what keeps the offer from being asked twice.
+- Require a clean tree before the first code change; **isolated means this checkout is ON the work
+  ref**, never that the ref exists somewhere — and where it is not, offer isolation inline (taking
+  a live ref, or cutting one), recommend it, and never impose it. Checking the right thing is what
+  keeps the offer from being asked twice *and* from being skipped onto the base.
 - Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
