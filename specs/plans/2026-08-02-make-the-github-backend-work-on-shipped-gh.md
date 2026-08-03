@@ -2,6 +2,8 @@
 slug: make-the-github-backend-work-on-shipped-gh
 title: O backend github funciona no gh que os repos realmente tem
 verification: per-section
+branch: {base: main, work: plan/make-the-github-backend-work-on-shipped-gh}
+approved: {date: 2026-08-02}
 ---
 
 # O backend github funciona no gh que os repos realmente tem
