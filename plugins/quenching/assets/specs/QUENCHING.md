@@ -68,9 +68,9 @@ specs/
   QUENCHING.md              # this manual (payload — not a spec)
   plans/                    # a spec's WHOLE pre-archive life — defined, approved, building
     index.md                # derived listing (generated zone, frontmatter-free)
-    2026-07-25-<slug>.md    # one spec per file
+    <slug>.md               # one spec per file — the basename IS the slug
   archive/                  # done or abandoned, told apart by `outcome:` frontmatter
-    2026-06-30-<slug>.md
+    <slug>.md
 ```
 
 **One active folder, one hop.** A spec sits in `plans/` from capture to completion and moves
@@ -87,8 +87,9 @@ because a backend with no filenames had nowhere to put it, and an issue's `creat
 the ISSUE was made, not the spec. `specs.py next --front` sorts on the declared date instead.
 
 **Identity is the slug, not the path.** Every command and cross-reference names the bare slug;
-`specs.py` resolves it to the one file ending in `-<slug>.md`, wherever it sits. Two matches is a
-refusal, never a guess.
+`specs.py` resolves it to the one spec whose basename is `<slug>.md`, wherever it sits — and
+then, only if nothing matched exactly, by title and by one close match above a threshold, which
+it announces. Two matches is a refusal at every rung, never a guess.
 
 **One truth, not two.** There is no "main spec" store and no proposed "delta" to reconcile with
 it. A spec writes its durable rule **directly** into the OKF `docs/` bundle — a decision into
