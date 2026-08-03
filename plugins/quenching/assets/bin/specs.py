@@ -5483,17 +5483,29 @@ def _finding(code: str, severity: str, message: str, **extra) -> dict:
     return {"code": code, "severity": severity, "message": message, **extra}
 
 
-def validate_spec(root: str, s: dict) -> list[dict]:
+def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     """Every finding for ONE spec file, in the v2 `sp-*` vocabulary.
 
     The phase-scoped rule is asserted against the schema's per-phase sets — the SAME sets
     `promote` gates on, so the two can never drift into disagreeing about what a phase
-    requires."""
+    requires.
+
+    ASKED OF THE BACKEND, never of the path — and the derivation is the shared one, so this
+    validates the same `frontmatter`/`sections`/`tasks` every other command reads. Against
+    GitHub the locator is an issue URL, so `read_text` returned nothing and EVERY spec was
+    reported missing every required key: 210 fabricated findings on this repository, from
+    documents that were entirely well-formed."""
     where = f"{s['folder']}/{s['file']}"
-    text = read_text(s["path"]) or ""
-    fm = parse_frontmatter(text)
-    sections = parse_sections(body_after_frontmatter(text))
-    tasks = parse_tasks(text)
+    info, rerr = backend.read_spec(s["slug"])
+    if rerr or info is None:
+        # The only refusal reachable here is an ambiguous slug — it came from the listing, so
+        # it cannot be unknown — and `cmd_validate` already names it `sp-duplicate-slug`.
+        # Deriving from an empty document instead, as `list` does to keep its row, would
+        # report a well-formed spec as missing everything: the same fabrication this function
+        # exists to stop, just narrowed to the duplicates.
+        return []
+    text, fm = info["text"], info["frontmatter"]
+    sections, tasks = info["sections"], info["tasks"]
     out: list[dict] = []
 
     # BEFORE the required-key checks, so a parse failure is never presented as a
@@ -5689,7 +5701,7 @@ def cmd_validate(args, root: str) -> int:
              f"error: no spec with slug '{args.spec}'")
         return 1
     for s in target:
-        findings.extend(validate_spec(root, s))
+        findings.extend(validate_spec(backend, s))
 
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
