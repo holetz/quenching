@@ -36,7 +36,7 @@ whole section, saying so, where it does not.
 opens on why that split holds.
 
 The git conventions live in
-[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §The read-if-present rule §Branch and worktree names §Recording the isolation §Commit messages
 §The subject is the anchor, whose command is `/quenching:specs:isolate`.
 
@@ -219,7 +219,7 @@ d. **Self-review the task's diff** on the four items — reuse · useless defens
    so what the chain commits is already the reviewed version.
 
 e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
-   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Commit messages, or the
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages, or the
    target's own convention where it declares one — and put it in both places it appears:
 
    ```bash
