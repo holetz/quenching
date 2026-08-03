@@ -2,6 +2,8 @@
 slug: fix-github-backend-tasks-fidelity
 title: "Fidelidade do documento no backend github — grupos de task, títulos e o cap de corpo"
 verification: per-section
+branch: {base: main, work: plan/fix-github-backend-tasks-fidelity}
+approved: {date: 2026-08-02}
 ---
 
 # Fidelidade do documento no backend github — grupos de task, títulos e o cap de corpo
