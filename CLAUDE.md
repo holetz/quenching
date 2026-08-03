@@ -94,9 +94,10 @@ validator finding → [docs/QUENCHING.md](docs/QUENCHING.md).
 - [docs/catalog/](docs/catalog/index.md), [docs/vision/](docs/vision/index.md) and
   [docs/documentation/](docs/documentation/index.md) exist but are empty — this repo has no data,
   and direction and the site layer have not been written.
-- `specs/plans/` — the spec workspace, a quenching-managed sibling **outside** the `docs/` bundle.
-  It carries no listing file: `python3 plugins/quenching/assets/bin/specs.py list` derives what the
-  folder holds from disk on demand.
+- The spec workspace — a quenching-managed front **outside** the `docs/` bundle, and **not a folder
+  in this repo**: `.claude/quenching.json` declares `backend: github`, so every spec is an issue and
+  there is nothing under `specs/` to read. `python3 plugins/quenching/assets/bin/specs.py list`
+  derives the front from the declared backend on demand, and is the only honest way to see it.
 
 To create / edit / move knowledge (keeping the listing in sync), use the plugin's own
 commands: `/docs:add` for one doc, `/docs:define` for a glossary term, `/docs:align` to
