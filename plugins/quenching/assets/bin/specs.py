@@ -12,9 +12,9 @@ never split it. The file lives in ONE folder until it is closed, and is never re
 
     specs/
       plans/                     # ACTIVE — captured -> proposed -> designed -> refined
-        2026-07-25-<slug>.md     #          -> ready -> approved -> executing
+        <slug>.md                #          -> ready -> approved -> executing
       archive/                   # done or abandoned, told apart by `outcome:` frontmatter
-        2026-06-30-<slug>.md
+        <slug>.md
 
 THE FOLDER IS THE PHASE, and it is the single truth — there is no `phase:` field,
 because two declared sources of one fact diverge and a folder cannot lie. The one
@@ -28,14 +28,20 @@ sections that used to be the `ready/` entry gate. Both legacy folders are still 
 a v2 workspace keeps working and `migrate` can fold it), never written; `canonical_phase`
 maps them onto `plans` so every derivation sees one phase.
 
-IDENTITY IS THE SLUG, not the path. Every command names the bare slug; this tool
-resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. Two
-matches is a REFUSAL (exit 2), never a guess.
+IDENTITY IS THE SLUG, not the path. THE BASENAME IS THE SLUG AND NOTHING ELSE. Every
+command names the bare slug; this tool resolves it to the one spec whose basename is
+`<slug>.md`, wherever it sits — and then, only if nothing matched exactly, by title and
+by one close match above a threshold, which it announces. Two matches is a REFUSAL
+(exit 2) at every rung, never a guess.
 
-THE DATE PREFIX is stamped once, at capture, and never rewritten — so the basename is
-stable for the whole lifecycle, `git log --follow` reads as one history, and a plain
-`ls` of any folder is chronological. A file listing IS the status view, and no file
-listing reads frontmatter.
+THE CAPTURE DATE IS `date:` IN THE FRONTMATTER, stamped once by `new` and never
+rewritten — `promote` moves the file without renaming it, so the basename is stable for
+the whole lifecycle and `git log --follow` reads as one history. It used to lead the
+basename, which made a plain `ls` chronological for free; it moved because a store with
+no filenames had to mint a synthetic one to hold it, and the native value that looks
+like a substitute is a different fact — an issue's `created_at` is when the ISSUE was
+made, and a migration stamps them all on one afternoon. `next --front` sorts on the
+declared date instead.
 
 FOURTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
 -----------------------------------------------------------------------
@@ -1216,16 +1222,6 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
     return out
 
 
-def resolve_slug(root: str, slug: str) -> tuple[dict | None, list[dict]]:
-    """The one spec file whose basename ends in `-<slug>.md`, wherever it sits.
-
-    Returns (spec, matches). TWO MATCHES IS A REFUSAL, never a guess: the caller exits 2
-    and names both paths. This is what makes N folder moves survivable — every
-    cross-reference names the bare slug and never a path."""
-    matches = [s for s in spec_files(root) if s["slug"] == slug]
-    return (matches[0] if len(matches) == 1 else None), matches
-
-
 # --------------------------------------------------------------------------- #
 # the single-file parser
 # --------------------------------------------------------------------------- #
@@ -1479,10 +1475,19 @@ def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
     return out
 
 
-# How close a slug or title has to be before it resolves at all. Tuned to accept a typo and a
-# copied fragment while refusing a merely adjacent spec: `0.62` matched
-# `decide-plan-quick-skill` against `decide-sp-unrefined-severity` on this repository's own
-# listing, which is not a near miss, it is a different spec.
+# How close a slug or title has to be before it resolves at all. Tuned to accept a TYPO —
+# `evaluate-spec-creation-flo` scores 0.98 against its slug — while refusing a merely adjacent
+# spec: `0.62` matched `decide-plan-quick-skill` against `decide-sp-unrefined-severity` on this
+# repository's own listing, which is not a near miss, it is a different spec.
+#
+# A COPIED FRAGMENT DOES NOT RESOLVE, and that is a property of the metric rather than of this
+# number. `SequenceMatcher.ratio()` is 2·M/(len(a)+len(b)), so a fragment's score is capped at
+# 2·len(fragment)/(len(fragment)+len(title)) no matter how perfectly it appears inside the
+# title: `fluxo de criação de specs` scores 0.5618 against the 62-character title it was copied
+# out of, and nothing shorter than ~60% of a title can clear 0.75 at all. Lowering the number
+# would not buy the fragment rung — it would only start matching adjacent specs, which is the
+# failure this threshold exists to prevent. Resolving a fragment needs a containment metric on
+# the title rung, which is a different design and is left to its own spec.
 FUZZY_MATCH_THRESHOLD = 0.75
 
 
@@ -2193,9 +2198,11 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # own state and identity, which is true and turned out not to be the question. The question is
 # whether anything READS the native state, and nothing ever did: `parse_tasks` takes a task's
 # checked/blocked from the raw block on both ends, never from the sub-issue, so the issue's own
-# open/closed was a projection written and never consulted — the same status `hybrid_title`
-# records for the issue title, but costing one to three API calls per task per write instead of
-# nothing. Measured on this repository on 2026-08-03: 68 spec issues against 689 task
+# open/closed was a projection written and never consulted — the status the issue TITLE also
+# held for its whole life, but costing one to three API calls per task per write instead of
+# nothing. The title was fixed rather than retired, by making a read consult it
+# (`hybrid_title_split`); a sub-issue could not be, because nothing about it was ever free.
+# Measured on this repository on 2026-08-03: 68 spec issues against 689 task
 # sub-issues, a listing of 8 pages and 4.4 MB taking 8.4s that EVERY specs command pays, and a
 # `write_spec` on a ten-task spec spending twelve round trips where one would do.
 #
@@ -2351,11 +2358,19 @@ GH_PART_MAX = GH_BODY_MAX - 1_024
 def hybrid_short_title(text: str) -> str:
     """A title that fits, cut on a word boundary and marked with an ellipsis.
 
-    CUTTING LOSES NOTHING, and that is what makes it the right answer rather than a
-    compromise. `hybrid_title` already records that an issue's title is a PROJECTION of the
-    document — rewritten from the frontmatter on every write, undone by the next write if a
-    human edits it in the web UI — and the same holds one level down: `parse_tasks` reads a
-    sub-issue's BODY, never its title, so the block stays whole no matter what the title says.
+    CUTTING LOSES NOTHING **ON THE PATH THAT STILL CUTS**, and that is what makes it the
+    right answer there rather than a compromise. That path is `hybrid_title`: the document is
+    stored whole, keeping its own `title:`, so the tracker's copy stays a PROJECTION and a cut
+    one loses nothing the document does not still hold.
+
+    IT IS ALSO THE REFUSAL TEST, and that is the other half. Where `hybrid_title_split`
+    projects, the native title is STORAGE — read back on every read — so a cut title would be
+    a renamed spec. `split` therefore refuses any title this function would touch, which is
+    why the two live next to each other: one cuts where cutting is free, the other declines to
+    project where it would not be.
+
+    The same reasoning holds one level down: `parse_tasks` reads a task's BODY, never a title,
+    so the block stays whole no matter what the title says.
 
     The alternative was to send it raw and let the tracker answer. Measured on this
     repository on 2026-08-02: 15 tasks across 12 specs carry a checkbox line longer than the
@@ -6194,8 +6209,8 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     if fm.get("slug") and fm["slug"] != s["slug"]:
         out.append(_finding("sp-slug-mismatch", "error",
                             f"{where}: frontmatter slug `{fm['slug']}` disagrees with the "
-                            f"filename suffix `{s['slug']}`", spec=s["slug"], path=where,
-                            remedy="make the frontmatter slug match the filename"))
+                            f"basename `{s['slug']}`", spec=s["slug"], path=where,
+                            remedy="make the frontmatter slug match the basename"))
     pol = str(fm.get("verification", "")).strip().lower()
     if pol and pol not in VERIFICATION_POLICIES:
         out.append(_finding("sp-bad-verification", "error",
