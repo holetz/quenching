@@ -168,9 +168,16 @@ command's job is questions, and a prompt about git in the middle of one is frict
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
   `/quenching:specs:execute`.
 - **Never write into `docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
-  understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define`, an out-of-scope follow-up to
-  `/quenching:specs:create` — **offered, never auto-written**. The rules a spec *proves* are written during
-  execution, not during definition.
+  understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define` — **offered, never
+  auto-written**. The rules a spec *proves* are written during execution, not during definition.
+- **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
+  not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
+  `specs.py discover <slug> "<finding>"` — landed inside the step 6 edit the human already
+  confirmed, never as a loose call mid-bank. Turning a follow-up into its own spec stays
+  `/quenching:specs:conclude`'s, which harvests it once the parent's fate is known. This route is
+  not an offer: nothing is created, so there is nothing to ask for.
+- **Inside a develop pass, `specs.py new` runs only as the discoveries bank's `promoted:`
+  resolution.** Nothing else here mints a spec.
 - Never write a section without showing it and getting the human's word first.
 - Never write anything mid-bank — accumulate, then apply once.
 - Never batch questions. One at a time, each with a recommendation.
