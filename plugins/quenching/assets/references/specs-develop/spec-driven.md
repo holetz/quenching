@@ -97,18 +97,25 @@ is `approved:` in frontmatter, so the fact survived and the folder did not.
 
 <!-- rules -->
 
-**Every spec file is named `YYYY-MM-DD-<slug>.md`, in both folders.** The date prefix records when
-the spec was **born** and is written **once, at creation** — `promote` moves the file and never
-renames it. The basename is therefore stable for the whole lifecycle, `git log --follow` reads as
-one history, and a plain `ls` of any folder is chronological. That last property is the point: a
-file listing IS the status view this design is built on, and no file listing reads frontmatter.
+**Every spec file is named `<slug>.md`, in both folders — the basename IS the slug.** The capture
+date is `date:` in the frontmatter, written **once, at creation**; `promote` moves the file and
+never renames it, so the basename is stable for the whole lifecycle and `git log --follow` reads as
+one history.
+
+**The date used to lead the basename, and it left for a reason.** That prefix made a plain `ls`
+chronological, which was worth having while every spec was a file. It stopped being payable the
+moment the front could live somewhere without filenames: an external backend had to mint a
+synthetic basename purely to carry a date, and the one native value that could have replaced it —
+an issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
+day. Measured on this repository: deriving it that way would have rewritten 68 of 70 capture dates
+to a single afternoon. So the date is declared in the document, where every backend reads it
+through the one shared derivation, and `next --front` sorts on it rather than on a listing's order.
 
 **Identity is the slug, not the path.** Every cross-reference names the bare slug; `specs.py`
-resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. **Two matches is a
-refusal (exit 2), never a guess.** This is what makes repeated folder moves survivable.
-
-The prefix earns its place in `plans/` as much as in `archive/`: birth order is the order a human
-wants at every stage — *how long has this sat unproposed? how long has this build been open?*
+resolves it to the one spec whose basename is `<slug>.md`, wherever it sits — and then, if nothing
+matched exactly, by title and by one close match above a threshold, announcing that it approximated.
+**Two matches is a refusal (exit 2) at every rung**, never a guess. This is what makes repeated
+folder moves survivable.
 
 ## Frontmatter
 
