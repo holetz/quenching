@@ -114,8 +114,10 @@ Nothing is written to the spec during this step. Keep a running list of
 Show every accumulated answer as a single plan: per section, what changes and the answer it came
 from. Draft each section per
 [artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md). Anything that
-turned out to belong outside the spec — a durable rule, a term, a follow-up — is listed as a
-**routed offer**, not an edit (§Invariants).
+turned out to belong outside the spec is shown here as well: a durable rule or a term as a
+**routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
+this edit will park** — a line, not an offer, because parking creates nothing to consent to
+(§Invariants).
 
 Wait. Declined → nothing is written, and the questions and answers are still reported so the
 thinking is not lost.
@@ -125,6 +127,12 @@ thinking is not lost.
 Write each confirmed section with `specs.py section <slug> "<Heading>" --write` (body on stdin) —
 it creates the heading in canonical position on first write, so creating and revising are the same
 call. An emptied section becomes an explicit `- none — <reason>`, never a deleted heading.
+
+Every follow-up the plan parked is written in this same edit — `specs.py discover <slug>
+"<finding>"`, one call per line — and never mid-bank, which
+[questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
+mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
+`## Discoveries` moves no derived stage, so the line costs the pass nothing but itself.
 
 Then the frontmatter records this command owns, each through `specs.py record` — **never by
 editing the frontmatter**, which merges nothing and works only while the backend is `files`:
