@@ -81,8 +81,11 @@ Resolve `specs.py` by the fallback in
 ## Workflow
 
 ### 1. Resolve the workspace and classify the input
-**Read `.claude/quenching.json` before assuming a folder is the front.** Its `backend` key is the
-declaration, and only `files` has a workspace on disk; absent or unreadable means `files`.
+**Read `.claude/quenching.json` before assuming a folder is the front.** Its `backend` key is
+the declaration, and only `files` has a workspace on disk; absent or unreadable means `files`.
+Read the file — do **not** spend a `specs.py config` invocation on it. The sentence path's whole
+promise is a spec in seconds, and it spends exactly three `specs.py` calls: `new`, `section
+--write`, `validate`.
 
 Under `files`: find `specs/` at the target repo root, and if `plans/` and `archive/` are
 **absent**, install the seed from `${CLAUDE_PLUGIN_ROOT}/assets/specs/` and continue. If a legacy
@@ -99,10 +102,15 @@ or an explicit ask to convert a plan → the plan-file path.
 
 ### 2. Derive the slug
 Take a title and a one-sentence problem from the input, and derive a kebab slug in the repo's
-declared language. On the
-plan-file path, derive it from the plan's title or goal ("Add rate limiting to the API" →
-`add-api-rate-limiting`). Run `specs.py list --json` to check for a collision.
-**Done when:** a free canonical slug is in hand.
+declared language. On the plan-file path, derive it from the plan's title or goal ("Add rate
+limiting to the API" → `add-api-rate-limiting`).
+
+**Do not list the front to check for a collision.** `specs.py new` already refuses a taken slug
+with `sp-slug-exists` and exit 2, naming where it is — so a listing here asks a question that is
+about to be answered anyway, and asks it the expensive way: under `github` it is a paginated fetch
+of every issue (2.4s measured), on the path whose whole promise is that one sentence becomes a
+spec in seconds.
+**Done when:** a canonical slug is in hand.
 
 ### 3. Plan-file path only — read it, and read the bundle
 Read the whole plan file and classify its parts against §The mapping below. Then, if the repo
