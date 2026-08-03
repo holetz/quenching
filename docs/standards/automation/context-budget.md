@@ -4,10 +4,10 @@ title: Always-on context budget
 description: What a command surface costs before anything fires — the two description caps, what the description may carry including the tier for one that is not in context at all, the per-surface ceiling and its two firing modes, and the disable-model-invocation exit that lets a typed-only command cost nothing at all, with the routed/typed-only split that keeps that exit auditable; and the other half — what a body costs once it fires, where every turn re-sends the whole conversation so a block costs tokens × turns remaining
 resource: plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, commands, context, budget, performance]
-timestamp: 2026-08-02
+timestamp: 2026-08-03
 audience: both
 authority: background
-source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31); the typed-only tier, the description-growth firing mode (+149 since a03f31a) and the routed/typed-only split added by route-commands-without-always-on-descriptions (2026-08-02), whose task 0.1 measured what the field actually closes
+source: instrument-and-extend-skill-front plan + collapse-skills-into-commands — measured on this plugin's own surface (28 commands 2026-07-26; 24 commands plus the agent surface 2026-07-27); the zero-cost exit distilled from improve-command-from-session, whose 26th command took it and left the total unchanged at 12,726; the turns-remaining integral measured on the cut-specs-execute-turns build run (344 turns, 2026-07-31); the typed-only tier, the description-growth firing mode (+149 since a03f31a) and the routed/typed-only split added by route-commands-without-always-on-descriptions (2026-08-02), whose task 0.1 measured what the field actually closes; the mode's second occurrence (+2,023) added by restore-routing-info-on-docs-commands (2026-08-03), which restored the trigger phrases and `Not for:` boundaries to eleven descriptions
 maintainer: quenching
 ---
 
@@ -119,14 +119,20 @@ skills.py budget --json              # against the default ceiling
 skills.py budget --ceiling 40000     # against a surface's own
 ```
 
-The current default is **12,875 characters** — this plugin's measured total across its 25 routed
-commands and 0 agent definitions, on 2026-08-02. It is a number a run produced, not one somebody
+The current default is **14,898 characters** — this plugin's measured total across its 25 routed
+commands and 0 agent definitions, on 2026-08-03. It is a number a run produced, not one somebody
 picked, and it is **revised only from a measurement**. The 26th command is typed-only and counts 0,
 holding a further 876 characters outside the total (§*The one command that costs nothing* below).
 
-The previous figure, **12,726** on 2026-07-28, was not replaced by growth in the surface's size:
-the command count did not change. It was replaced by three descriptions growing, which is the
-firing mode §*The ratchet's other firing mode* below exists to name.
+The previous figure, **12,875** on 2026-08-02, was not replaced by growth in the surface's size:
+the command count did not change. It was replaced by eleven descriptions regaining the trigger
+phrases and `Not for:` boundaries `restore-routing-info-on-docs-commands` restored — nine
+`/docs:*` plus `/skill:eval` and `/skill:new` — the description-growth firing mode's **second**
+occurrence, per §*The ratchet's other firing mode* below.
+
+Before that, **12,726** on 2026-07-28 was itself replaced the same way: three descriptions grew
+(`/specs:execute`, `/specs:develop`, `/specs:conclude`) with no command minted — the mode's
+**first** occurrence.
 
 **This ceiling has no headroom, and that is deliberate.** It equals the surface's current total, so
 the next **always-on** command crosses it on the day it is minted. Under §*A new command is not free* below,
@@ -188,6 +194,31 @@ The rule that follows, and it is the cheap half of this whole standard:
   above the ceiling for any reason. Both resolve the same way: re-measure and re-set from a run, or
   take the typed-only exit where it is the honest design.
 
+**The mode's second occurrence, 2026-08-03.** `restore-routing-info-on-docs-commands` restored the
+trigger phrases and `Not for:` boundaries the collapse had deleted from eleven descriptions —
+comparing against the commit that set `DEFAULT_CEILING = 12875`:
+
+| Command | then | now | delta |
+| --- | ---: | ---: | ---: |
+| `/docs:add` | 76 | 316 | +240 |
+| `/docs:define` | 69 | 287 | +218 |
+| `/docs:glossary-backfill` | 75 | 238 | +163 |
+| `/docs:harness` | 69 | 266 | +197 |
+| `/docs:import` | 79 | 315 | +236 |
+| `/docs:import-memory` | 73 | 263 | +190 |
+| `/docs:learn` | 72 | 277 | +205 |
+| `/docs:status` | 82 | 257 | +175 |
+| `/docs:documentation:build` | 65 | 253 | +188 |
+| `/skill:eval` | 80 | 306 | +226 |
+| `/skill:new` | 195 | 299 | +104 |
+| **whole surface** | **12,875** | **14,898** | **+2,023** |
+
+No command was minted and none was reclassified. `budget` was already in this repo's stated
+verification routine by the time this landed (the rule two paragraphs above), and it still exited
+1 on `sk-budget-ceiling` — running the instrument catches the firing; it does not prevent it, and
+was never meant to. A ratchet with no headroom fires on the first description that grows past it,
+by design.
+
 ### Why the ceiling went 2,083 → 11,565
 
 Not growth to be alarmed by — **the two numbers measure different surfaces.** The 2,083 was taken
@@ -212,7 +243,7 @@ it. A surface may legitimately be large, and the decision to cut is a human's.
 repo's own surface defines no agents, so its second line reads zero:
 
 ```json
-"breakdown": { "commands": 12726, "agents": 0 }
+"breakdown": { "commands": 14898, "agents": 0 }
 ```
 
 A repo that defines three agents averaging a 300-character description carries `"agents": 900` on
@@ -261,7 +292,7 @@ descriptions and one that falls the same way by flagging half its commands typed
 in the total alone. `budget --json` therefore reports both classes side by side —
 
 ```json
-"classes": {"routed":    {"commands": 25, "characters": 12875},
+"classes": {"routed":    {"commands": 25, "characters": 14898},
             "typedOnly": {"commands":  1, "characters":   876}}
 ```
 
