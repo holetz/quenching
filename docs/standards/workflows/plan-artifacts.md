@@ -4,10 +4,10 @@ title: Spec file contract
 description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-08-02
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5)
 maintainer: quenching
 ---
 
@@ -32,17 +32,22 @@ plan below is what a reader of those needs.
 ## One spec is one file
 
 A spec is a single markdown file for its entire lifecycle. Phases enrich it; they never split it.
-It is named `YYYY-MM-DD-<slug>.md` **in every folder**, and the date is stamped once, at capture,
-and never rewritten — a promote moves the file without renaming it.
+It is named `<slug>.md` **in every folder** — the basename IS the identity key — and the capture
+date is stamped once into the frontmatter's `date:` and never rewritten; a promote moves the file
+without renaming it.
 
 Two consequences are load-bearing:
 
-- **A plain `ls` is the status view.** Any folder listing is chronological, which answers *how long
-  has this sat here?* without a tool. No file listing reads frontmatter, which is why the date is
-  in the name and not in a field.
 - **Identity is the slug, not the path.** Every cross-reference names the bare slug; the tool
-  resolves it to the one file ending in `-<slug>.md`, wherever it sits. **Two matches is a refusal,
-  never a guess.**
+  resolves it to the one spec whose basename is `<slug>.md`, wherever it sits, and then — only if
+  nothing matched exactly — by title, and by a single close match above a threshold, which it
+  announces. **Two matches is a refusal at every rung**, never a guess.
+- **The one thing this cost was a chronological `ls`.** The date prefix made any folder listing
+  answer *how long has this sat here?* with no tool, precisely because no file listing reads
+  frontmatter. That was worth its keep while a spec was always a file, and it is what the move
+  gives up. What replaces it is `specs.py next --front`, which sorts on the declared `date` and
+  works in a store with no folder at all — and the trade is not optional, because the alternative
+  was a store minting synthetic filenames to keep a property only one backend could ever have.
 
 There is **no `phase:` frontmatter field**, because two declared sources of one fact diverge and a
 folder cannot lie. Which folders exist, and the one hop a spec makes between them, are
@@ -50,14 +55,36 @@ folder cannot lie. Which folders exist, and the one hop a spec makes between the
 
 ## Frontmatter carries only what a human reads
 
-`slug`, `title` and `verification` are required; every other key is a **record of a human judgment
-no derivation can reproduce**, and the admission test plus the full list live in
-[plan-lifecycle.md](plan-lifecycle.md) §Frontmatter records human judgments. The two exclusions are
-this file's: there is **no `created`** — the filename's date prefix is that fact — and **no attempt
-counter**, because machine state a human never reads does not belong in a spec.
+`slug`, `title` and `date` are required; every other key is either **optional by design** or a
+**record of a human judgment no derivation can reproduce**, and the admission test plus the full
+list live in [plan-lifecycle.md](plan-lifecycle.md) §Frontmatter records human judgments. The one
+exclusion is this file's: there is **no attempt counter**, because machine state a human never
+reads does not belong in a spec.
+
+**`date` is here because nothing else holds it honestly.** It was the filename's `YYYY-MM-DD-`
+prefix, which made a plain `ls` chronological and cost nothing — while every spec was a file. A
+store without filenames has to mint a synthetic one to carry it, and the native value that looks
+like a replacement is not the same fact: an issue's `created_at` is when the ISSUE was made, and a
+migration makes them all in one afternoon. So the basename is now the bare slug and the date is
+declared. That is not duplicated truth; it is the only copy.
+
+**`verification` is OPTIONAL, and absent means the default** (`per-section`), applied on read by
+`_policy`. It is never stamped into a document to make it explicit: writing the default would
+record a decision nobody made. It stopped being required because it answers how long *this repo's*
+suite takes — a judgment a one-sentence capture has nobody to make yet — and requiring it forced
+`new` to invent a value at the one moment there is no opinion to record. The post-capture writer is
+`specs.py verification <slug> [<policy>]`; before it existed the policy was decidable exactly once,
+at capture, and under an external backend it could not be changed at all.
+
+**The slug is kebab in the repo's declared language**, not in English. The language is declared
+once, in the harness contract ([communication.md](../agents/communication.md)), and never again in
+a config key of this front's own. `slugify` normalises to NFD and drops the combining marks before
+reducing, so `criação` becomes `criacao` — the slug stays typeable without becoming a language
+nobody wrote. Without that fold, `[^a-z0-9]+` treats an accent as a separator and the identity key
+comes out `cria-o`.
 
 `slug` is the deliberate exception to the no-duplicate-truth rule: it is the identity key, so a
-mirror inside the file is worth its keep, and `validate` compares it to the filename. A merely
+mirror inside the file is worth its keep, and `validate` compares it to the basename. A merely
 derived fact earns no such mirror.
 
 ## Fourteen canonical sections
