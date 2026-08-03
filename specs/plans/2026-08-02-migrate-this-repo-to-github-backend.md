@@ -263,7 +263,7 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
 - [x] 2.2 Ensaiar contra UM spec com grupos e uma task de título longo, conferir a issue e as
       sub-issues, e remover o que o ensaio criou
       subject: plan/migrate-this-repo-to-github-backend: 2.2 ensaio de um spec com grupos e titulo longo
-- [ ] 2.3 Fechar a sub-issue de uma task ticada depois de criá-la — o GitHub ignora `state` no POST,
+- [x] 2.3 Fechar a sub-issue de uma task ticada depois de criá-la — o GitHub ignora `state` no POST,
       como `create_spec` já sabe para a issue-mãe
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
