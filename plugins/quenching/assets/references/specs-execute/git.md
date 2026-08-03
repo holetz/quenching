@@ -64,12 +64,21 @@ session is standing on the repository's base branch:
 
 | Where the session stands | What `execute` does |
 | --- | --- |
-| on the base branch | offers worktree · branch · in place, and stamps whichever was taken |
-| on any other branch | **adopts it** as `work`, stamps `branch:`, and goes straight to the loop |
+| **on** the spec's work ref | nothing — the spec is isolated, and the loop starts |
+| on any other non-base branch | **adopts it** as `work`, stamps `branch:`, and starts the loop |
+| on the base, work ref alive and unclaimed | offers to **take** it — worktree over it, or checkout — and stamps nothing |
+| on the base, no work ref | offers worktree · branch · in place, and stamps whichever was taken |
 
 Standing anywhere but the base means the human already answered the isolation question at checkout,
 so asking again buys nothing and costs the turns it takes. Isolation stays optional, is recommended
 before building, and is never imposed.
+
+**Isolated means "this checkout is on the work ref", never "the ref exists".** The two come apart in
+one ordinary case — the base checked out, `plan/<slug>` sitting one branch over from an earlier
+session, nobody holding it — and treating existence as the answer sends the loop to build and commit
+onto the base, which is precisely what the offer is for. The work ref itself is the `branch` record's
+`work` when one is stamped, else `plan/<slug>`; a live ref held by another worktree is a **stop**,
+not an offer, because two checkouts building one spec fork it.
 
 `/quenching:specs:create` and `/quenching:specs:develop` take no branch at all — they write into
 `plans/` and stay wherever they were run. That is a narrowing from the retired command, and the
