@@ -181,6 +181,14 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
   contra ordem de listagem do GitHub); `section` é o segundo fato da mesma família. Uma sub-issue
   escrita pelo formato antigo não carrega a chave, e a ausência é lida como `section` 0 — o
   comportamento de hoje, que é o pior caso e não uma quebra.
+- **Refinado (tasks 1.2/1.3): o campo é `anchor`, não `section`.** `section` diz a que grupo um
+  bloco pertence e nada sobre onde dentro dele, e nada mesmo sobre as linhas em branco que o
+  documento usa entre duas tasks — bastaria para não perder os headings, e não para devolver o
+  documento **igual**. `anchor` é a contagem de linhas mantidas do `## Tasks` que precedem o bloco,
+  e o rebuild é a inversa exata do split: antes de emitir a linha mantida *k*, emite todo bloco
+  ancorado em *k*. A diferença é a diferença entre não perder estrutura e ser uma identidade, e é
+  a segunda que `spec-backend.md` cobra e que `backend_equivalence_failures` já mede byte a byte.
+  Medido: com `anchor`, **68 de 68** documentos reais deste repositório voltam byte a byte.
 - **Decisão: o título da sub-issue é recortado em 256 caracteres, e isso não é perda.** O docstring
   de `hybrid_title` já declara o título da issue-mãe como **projeção** do documento, reescrita a
   cada escrita e nunca fonte: editá-la na web é desfeito pela próxima escrita. O mesmo vale para a
@@ -269,7 +277,7 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 1.2+1.3 o marcador carrega o ancora e o rebuild restaura por ele
-- [ ] 1.4 A lista canônica de casos do selftest ganha um documento com `### N.` e prosa em
+- [x] 1.4 A lista canônica de casos do selftest ganha um documento com `### N.` e prosa em
       `## Tasks`, asserido por igualdade estrita no round trip híbrido
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest

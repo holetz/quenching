@@ -2495,10 +2495,12 @@ def gh_refusal_failures() -> list[str]:
     return failures
 
 
-# The fields `parse_tasks` derives, minus the ones a rebuild is not expected to reproduce:
-# `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/`commitLineno` are
-# POSITIONS in a specific document, and the rebuilt document is flat (no `### N.` grouping —
-# see `hybrid_serialization_failures`'s docstring), so they are never asked to match.
+# The fields `parse_tasks` derives, minus the ones a rebuild reproduces only because the
+# document does: `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/
+# `commitLineno` are POSITIONS. They are covered by the byte-for-byte equality below —
+# a document that comes back identical necessarily reparses to the same line numbers — so
+# this tuple stays what it is: the semantic comparison for the field-by-field message that
+# names WHICH task drifted when the stricter check has already said the document did.
 HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
                          "files", "pattern", "verify", "subject", "commit")
 
@@ -2508,10 +2510,14 @@ def hybrid_serialization_failures() -> list[str]:
     text and its metadata survive shell → sub-issue → shell exactly, with `parse_tasks` —
     the one shared derivation — doing the reading on both ends.
 
-    NOT ROUND-TRIPPED: `### N.` group headings. Grouping lives in the ORIGINAL document's
-    `## Tasks` body, which this backend empties into a flat list of sub-issues with no
-    heading of their own to remember — a known, declared gap versus `files`, not a silent
-    one; a spec with grouped tasks reads back flat on `github`. Nothing here hides that.
+    AND THE DOCUMENT COMES BACK BYTE FOR BYTE. That is the stronger claim, and it is the one
+    `spec-backend.md` actually makes of an external backend ("reassembles the canonical
+    document on read"). The fixture below is grouped under `### N.` headings and carries a
+    line of prose inside `## Tasks`, because a fixture without them proves nothing about the
+    case that was broken: the shell used to empty the whole section, the rebuild used to
+    concatenate, and 47 of this repository's 66 specs came back a structure short with no
+    error anywhere. A check for "the headings are still there" would pass with them
+    reordered and the prose gone; equality is the only assertion that cannot.
 
     Self-contained: no network, no `gh`. Simulates CRLF storage the same way the marker
     round trip above does, because a check that used clean LF would not catch a backend
@@ -2519,21 +2525,28 @@ def hybrid_serialization_failures() -> list[str]:
     doc = ("---\ntitle: Alpha\nverification: per-task\n---\n\n"
           "## Problem\n\nAlgo.\n\n"
           "## Tasks\n\n"
-          "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n\n"
+          "### 1. Primeiro grupo\n\n"
+          "Uma linha de prosa dentro de `## Tasks`, que tambem tem de voltar.\n\n"
+          "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n"
           "- [x] 1.2 segunda\n\n"
-          "- [!] 1.3 terceira — blocked: esperando review\n\n"
+          "### 2. Segundo grupo\n\n"
+          "- [!] 2.1 terceira — blocked: esperando review\n\n"
           "- [ ] [P] quarta sem id\n\n"
           "## Outcome\n\n")
     tasks = parse_tasks(doc)
+    anchors = hybrid_task_anchors(doc)
     shell = hybrid_tasks_shell(doc)
     failures: list[str] = []
+    if "### 1. Primeiro grupo" not in shell or "### 2. Segundo grupo" not in shell:
+        failures.append("hybrid_tasks_shell dropped a `### N.` group heading — the rebuild "
+                        "has nothing to put it back from")
     if "1.1 primeira" in shell or "1.2 segunda" in shell:
         failures.append("hybrid_tasks_shell left a checkbox behind — sub-issues would duplicate it")
     if "## Outcome" not in shell or "## Problem" not in shell:
         failures.append("hybrid_tasks_shell dropped a section other than Tasks")
 
     keys = [hybrid_task_key(t) for t in tasks]
-    if keys != ["1.1", "1.2", "1.3", "#4"]:
+    if keys != ["1.1", "1.2", "2.1", "#4"]:
         failures.append(f"hybrid_task_key: got {keys!r}, expected explicit ids and one "
                         f"positional fallback for the task with none")
     if len(set(keys)) != len(keys):
@@ -2543,7 +2556,7 @@ def hybrid_serialization_failures() -> list[str]:
     # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
     # a real sub-issue list.
     stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t),
-                               hybrid_task_anchors(doc).get(t["index"], 0)).replace("\n", "\r\n")
+                               anchors.get(t["index"], 0)).replace("\n", "\r\n")
              for k, t in zip(keys, tasks)]
     unwrapped = sorted((hybrid_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
     for key, want_index, (got_key, got_index, _, _) in zip(keys, range(1, 5), unwrapped):
@@ -2554,6 +2567,10 @@ def hybrid_serialization_failures() -> list[str]:
     rebuilt = hybrid_rebuild_tasks_section(shell,
                                            [(anchor, block)
                                             for _, _, block, anchor in unwrapped])
+    if rebuilt != doc:
+        failures.append("shell -> sub-issue -> shell did not return the document byte for "
+                        "byte — the one obligation spec-backend.md puts on an external "
+                        "backend")
     tasks2 = parse_tasks(rebuilt)
     if len(tasks2) != len(tasks):
         failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
@@ -6095,9 +6112,9 @@ def cmd_selftest(args, root: str) -> int:
               f"each refuse with their own remedy, the unproved-backend warning says its "
               f"piece once per process on stderr and only for "
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
-              f"written, a task's shell -> sub-issue -> shell round trip reconstructs its "
-              f"checked/blocked state and metadata exactly, and the embedded schema and "
-              f"template match their asset files.")
+              f"written, a grouped document survives shell -> sub-issue -> shell byte for "
+              f"byte with its checked/blocked state and metadata intact, and the embedded "
+              f"schema and template match their asset files.")
     return 1 if errors else 0
 
 
