@@ -8,6 +8,7 @@ priority: {level: 16, criticality: high, date: 2026-08-01}
 branch: {base: main, work: claude/configurable-spec-backend-50928f}
 reviewed: {date: 2026-08-02}
 outcome: done
+merge: {strategy: merge-commit, subject: plan/configurable-spec-backend: merge (merge-commit)}
 ---
 
 # Configurable backend for spec management (files, GitHub, Azure DevOps)
