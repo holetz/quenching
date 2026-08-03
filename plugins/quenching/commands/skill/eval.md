@@ -1,5 +1,5 @@
 ---
-description: Measure whether a skill teaches anything — with/without runs, graded on evidence
+description: Measure whether a skill/command teaches anything — with/without runs, graded on evidence. Triggers on "measure whether this command teaches anything", "run the with/without eval on this skill", "tune this command's description on the hit rates". Not for: minting or editing ONE command's body → /skill:new.
 argument-hint: [skill-name]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
