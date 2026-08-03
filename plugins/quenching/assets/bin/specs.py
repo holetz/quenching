@@ -197,9 +197,9 @@ DEFAULT_SCHEMA: dict = {
         "example": "session-tokens.md",
     },
     "frontmatter": {
-        "required": ["slug", "title", "date", "verification"],
-        "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge",
-                     "outcome"],
+        "required": ["slug", "title", "date"],
+        "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed",
+                     "merge", "outcome"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
