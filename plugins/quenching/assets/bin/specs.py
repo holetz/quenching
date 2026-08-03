@@ -2697,6 +2697,13 @@ def hybrid_title_split(text: str) -> tuple[str, str] | None:
         return None
     if [ln.split(":", 1)[0].strip() for ln in lines[1:close]][:2] != ["slug", "title"]:
         return None
+    # THE RAW LINE, not the parsed value. A quoted title — `title: "…"` — parses to the same
+    # string with the quotes gone, so a rebuild from the value alone silently drops them:
+    # measured on this repository, 4 of 73 specs quote their title and each came back two
+    # characters short. The projection stores a VALUE and can only reproduce a line it would
+    # have written itself, so anything else is stored whole.
+    if lines[2] != f"title: {title}\n":
+        return None
     if lines[close + 1:close + 4] != ["\n", f"# {title}\n", "\n"]:
         return None
     return "".join(lines[:2] + lines[3:close + 2] + lines[close + 4:]), title
@@ -3048,6 +3055,33 @@ def hybrid_serialization_failures() -> list[str]:
             if rebuilt != source:
                 failures.append(f"{backend_name}/{label}: the document did not come back byte "
                                 f"for byte through the title projection")
+
+    # A QUOTED title is refused, and this one was found by the corpus rather than by reasoning.
+    # `title: "…"` parses to the same string with the quotes gone, so a rebuild from the value
+    # writes an unquoted line and the document comes back two characters short — 4 of this
+    # repository's 73 specs quote their title, and all four failed the byte-for-byte round trip
+    # before the raw line was checked instead of the parsed value.
+    quoted = canonical.replace("title: Avaliar o fluxo de criação de specs\n",
+                               'title: "Avaliar o fluxo de criação de specs"\n', 1)
+    if hybrid_title_split(quoted) is not None:
+        failures.append("a quoted `title:` was projected — the reassembly writes the value "
+                        "back unquoted, so the document loses the two quote characters")
+
+    # The marker fold, which is the only thing that moves a capture date out of a basename.
+    folded = legacy_marker_fold("2026-07-25-alpha.md", canonical)
+    if folded is None or folded[0] != "alpha.md":
+        failures.append(f"the marker fold answered {folded!r} for a dated basename")
+    elif str(parse_frontmatter(folded[1]).get("date", "")) != "2026-01-01":
+        failures.append("the marker fold overwrote a `date:` the document already declared — "
+                        "the basename's copy is never allowed to win")
+    undated = canonical.replace("date: 2026-01-01\n", "", 1)
+    folded = legacy_marker_fold("2026-07-25-alpha.md", undated)
+    if folded is None or str(parse_frontmatter(folded[1]).get("date", "")) != "2026-07-25":
+        failures.append("the marker fold did not carry the basename's date into `date:` — "
+                        "the prefix is the only copy, so dropping it without moving it loses "
+                        "the capture date outright")
+    elif legacy_marker_fold("alpha.md", undated) is not None:
+        failures.append("the marker fold fired on a basename that is already folded")
 
     # A title the tracker would cut is refused, because a cut title is now a renamed spec.
     long_title = ("---\nslug: alpha\ntitle: " + "t" * (HYBRID_TITLE_MAX + 1) +
@@ -4105,12 +4139,19 @@ def cmd_section(args, root: str) -> int:
     return 0
 
 
-def set_frontmatter_key(text: str, key: str, value: str) -> str:
+def set_frontmatter_key(text: str, key: str, value: str,
+                        after: str | None = None) -> str:
     """Set one top-level frontmatter key, preserving every other line as authored.
 
     Rewriting the block wholesale would reformat a human's `refined: {mode, date}` and
     reorder their keys — a promote is a move, and the outcome stamp is the ONLY content it
-    is allowed to write."""
+    is allowed to write.
+
+    `after` places a key that does not exist yet directly below a named one, instead of at
+    the end of the block. It exists for `date`, which the marker fold inserts into documents
+    written before the field did: appended, it would land under `verification` and every
+    migrated spec would read in a different order from every freshly captured one, for no
+    reason a reader could see. An absent `after` key falls back to the end."""
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         return f"---\n{key}: {value}\n---\n\n" + text
@@ -4121,8 +4162,36 @@ def set_frontmatter_key(text: str, key: str, value: str) -> str:
         if lines[i].split(":", 1)[0].strip() == key:
             lines[i] = f"{key}: {value}\n"
             return "".join(lines)
-    lines.insert(close, f"{key}: {value}\n")
+    at = close
+    if after:
+        for i in range(1, close):
+            if lines[i].split(":", 1)[0].strip() == after:
+                at = i + 1
+                break
+    lines.insert(at, f"{key}: {value}\n")
     return "".join(lines)
+
+
+def legacy_marker_fold(filename: str, text: str) -> tuple[str, str] | None:
+    """`("<slug>.md", the document carrying its own `date:`)` for a spec still stored under
+    the dated basename — or None when there is nothing to fold.
+
+    THE PREFIX IS THE ONLY COPY OF THE DATE. A document written before `date:` existed keeps
+    its capture date nowhere but that basename, so the fold has to move it into the
+    frontmatter in the SAME step that drops it. Dropping first loses the fact; adding first
+    and dropping later leaves two copies free to disagree in between. One function, both
+    halves, so no caller can perform half of it.
+
+    A document that already declares `date:` keeps its own — only the name was stale. The
+    basename's copy is never allowed to win, because a human may have corrected the field and
+    nobody ever renames an issue's marker to correct a date."""
+    m = LEGACY_DATED_FILE_RE.match(filename)
+    if not m:
+        return None
+    date, slug = m.group(1), m.group(2)
+    if str(parse_frontmatter(text).get("date", "")).strip():
+        return f"{slug}.md", text
+    return f"{slug}.md", set_frontmatter_key(text, "date", date, after="title")
 
 
 def _render_record(key: str, rec: dict) -> list[str]:
