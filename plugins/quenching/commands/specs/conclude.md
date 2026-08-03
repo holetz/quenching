@@ -33,7 +33,7 @@ The distillation doctrine — what crosses into `docs/`, what stays, and how it 
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md).
 The merge strategies, the squash caveat and the **read-if-present** rule for a target's
 `docs/standards/git/**` live in
-[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md).
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
 The layout, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 All three are cited, never restated.
@@ -161,7 +161,7 @@ no bundle.
 
 ### 4. Choose the merge strategy, then write `## Outcome` and archive
 For `done` with a `branch` record, offer the strategies in
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Merge strategies with
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
 delete the branch** — a squash collapses every per-task commit, so each task's recorded `subject:`
 resolves only while the branch survives. Say that plainly rather than deleting and discovering it
@@ -229,7 +229,7 @@ It is write-once, so a spec already carrying one refuses (exit 2) with the value
 is the finding §Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
-none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §When there is no
+none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §When there is no
 merge commit to name. `specs.py validate` reports a record that gets this backwards either way
 (`sp-bad-merge`).
 
