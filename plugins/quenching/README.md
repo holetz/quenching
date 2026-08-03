@@ -315,7 +315,7 @@ on its first write each process, name that gap every time it is selected. `/spec
 as context going in and distils durable knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole pre-archive life.
-Under `files` it is a real file, `specs/plans/YYYY-MM-DD-<slug>.md`, moving exactly once to
+Under `files` it is a real file, `specs/plans/<slug>.md`, moving exactly once to
 `specs/archive/`; under `github` or `azure-boards` it is an issue or work item
 **whose body is the whole document** — no sub-issues, no child work items; a document past
 GitHub's 65,536-character body ceiling (two of this repository's 69 specs) spills into
@@ -392,7 +392,7 @@ docs/                    # OKF bundle root
 ```
 
 The **spec workspace** lives **outside** this bundle, at `specs/` (`plans/` +
-`archive/`, one `YYYY-MM-DD-<slug>.md` per spec, and no listing file — `specs.py list` derives
+`archive/`, one `<slug>.md` per spec, and no listing file — `specs.py list` derives
 what the folder holds) — a quenching-managed sibling created by `/specs:create` and ranked by `/specs:triage`,
 not scanned by the OKF validator. An
 agreed-but-unproven decision is a `standard` with `authority: background` (there is no separate

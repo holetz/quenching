@@ -197,7 +197,7 @@ with this skill's deltas kept inline:
   <slug>` as the self-check per
   [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
   (the OKF hook does not cover `specs/`); the bundle-log line is
-  `**Creation**: [<title>](/specs/plans/<YYYY-MM-DD-slug>.md) — migrated from project memory`.
+  `**Creation**: [<title>](/specs/plans/<slug>.md) — migrated from project memory`.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/quenching:specs:triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell

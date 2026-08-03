@@ -38,9 +38,10 @@ only pays for itself when a program can prove it is fresh, and this one duplicat
 `specs.py list` already derived.
 
 **The on-write check is `specs.py validate`** — the spec's own contract, and the whole of it. The
-OKF validator is never pointed at `specs/`: a spec carries `slug`/`title`/`verification` and
-deliberately **no OKF `type:`**, so stamping one to satisfy a validator that does not model it
-would be the second source of truth this front exists to avoid.
+OKF validator is never pointed at `specs/`: a spec carries `slug`/`title`/`date` — plus an
+optional `verification`, whose absence means the default applied on read — and deliberately **no
+OKF `type:`**, so stamping one to satisfy a validator that does not model it would be the second
+source of truth this front exists to avoid.
 
 ## Resolving the tool
 
@@ -112,8 +113,15 @@ own frontmatter records (`priority`, `refined`, `approved`, `branch`, `reviewed`
 derived from disk on demand (§The folder is the listing). Nothing here is a cross-front event, so
 nothing here is the bundle's business.
 
+**A spec's basename is its slug and nothing else** — `<slug>.md`, with the capture date declared
+as `date:` inside the document rather than encoded in the name. That is what lets the same
+identity work in a store with no filenames at all: under `github` the slug rides in the issue
+body's marker, and the date is read from the frontmatter exactly as it is on disk.
+
 **Those seven records are written by `specs.py record`, never by editing the frontmatter** — it
 merges field by field, so a re-stamp never drops what an earlier pass wrote, and it refuses (exit
 2) a second write to a write-once record rather than overwriting it. `outcome` is the exception
 and declares no fields: its one writer is `promote --outcome`. An in-place edit would do the same
-thing only while the backend happens to be `files`.
+thing only while the backend happens to be `files`. `verification` is not one of the seven — it is
+a declared scalar with its own verb, `specs.py verification <slug> [<policy>]`, which exists
+because `new --verification` answers at the one moment nobody has an opinion yet.

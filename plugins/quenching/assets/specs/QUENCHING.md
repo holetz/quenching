@@ -68,9 +68,9 @@ specs/
   QUENCHING.md              # this manual (payload — not a spec)
   plans/                    # a spec's WHOLE pre-archive life — defined, approved, building
     index.md                # derived listing (generated zone, frontmatter-free)
-    2026-07-25-<slug>.md    # one spec per file
+    <slug>.md               # one spec per file — the basename IS the slug
   archive/                  # done or abandoned, told apart by `outcome:` frontmatter
-    2026-06-30-<slug>.md
+    <slug>.md
 ```
 
 **One active folder, one hop.** A spec sits in `plans/` from capture to completion and moves
@@ -79,15 +79,17 @@ that split used to imply about completeness is **derived** from the spec's own s
 one fact it carried that no derivation reproduces — *a human said go* — is now the
 `approved: {date}` frontmatter record (§7).
 
-**Every file is `YYYY-MM-DD-<slug>.md`, in both folders.** The date records when the spec was
-**born** and is stamped once, at creation — archiving moves the file and never renames it. So the
-basename is stable for the whole lifecycle, `git log --follow` reads as one history, and a plain
-`ls` of either folder is chronological: a file listing IS the status view, and no file listing
-reads frontmatter.
+**Every file is `<slug>.md`, in both folders — the basename IS the slug.** The capture date is
+`date:` in the frontmatter, stamped once at creation; archiving moves the file and never renames
+it, so the basename is stable for the whole lifecycle and `git log --follow` reads as one history.
+The date used to lead the basename, which made a plain `ls` chronological for free — it moved
+because a backend with no filenames had nowhere to put it, and an issue's `created_at` is when
+the ISSUE was made, not the spec. `specs.py next --front` sorts on the declared date instead.
 
 **Identity is the slug, not the path.** Every command and cross-reference names the bare slug;
-`specs.py` resolves it to the one file ending in `-<slug>.md`, wherever it sits. Two matches is a
-refusal, never a guess.
+`specs.py` resolves it to the one spec whose basename is `<slug>.md`, wherever it sits — and
+then, only if nothing matched exactly, by title and by one close match above a threshold, which
+it announces. Two matches is a refusal at every rung, never a guess.
 
 **One truth, not two.** There is no "main spec" store and no proposed "delta" to reconcile with
 it. A spec writes its durable rule **directly** into the OKF `docs/` bundle — a decision into
@@ -105,7 +107,7 @@ One file, one move, and a frontmatter that narrates the history.
    create                enrich, in place                approve            build             close
       │                        │                            │                 │                  │
       ▼                        ▼                            ▼                 ▼                  ▼
-  plans/2026-07-25-<slug>.md ──────────────────────────────────────────────────────►  archive/…-<slug>.md
+  plans/<slug>.md ─────────────────────────────────────────────────────────────────►  archive/<slug>.md
       │   ## Problem           derived stages:            approved: {date}   branch: {base,work}   │
       │      ↓ ## Proposal     captured → proposed →      (develop offers    per-task subject: …   │
       │      ↓ ## Design       designed → refined →        it at the gate;   blocked → - [!] …     │
@@ -163,7 +165,7 @@ it needs you. It speaks the sweep's own `sp-*` vocabulary, so it doubles as an h
 ### `/specs:create` — park ONE spec, or convert a plan file
 
 Effort proportional to input, **zero interrogation**. A sentence becomes
-`plans/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else, in seconds — every other
+`plans/<slug>.md` carrying `## Problem` and nothing else, in seconds — every other
 heading left absent, a *not-yet*, which is what keeps a fresh capture from deriving as `designed`.
 A Claude Code plan file (`~/.claude/plans/*.md`, or a path you give it) becomes every section it
 actually supports — mapped, never invented — so the work gains the lifecycle and the archive-time
@@ -433,6 +435,7 @@ code and the JSON, never on prose.
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
 | `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`; exit 0 whether or not anything is declared |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
+| `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. **The post-capture writer**: `new --verification` answers at the one moment nobody has an opinion yet, and an external backend has no file to hand-edit |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
 | `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing keeps it in sync, so it is a rescue copy for an external backend and never a second store |
 

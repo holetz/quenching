@@ -4,10 +4,10 @@ title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, and the append-only archive rule for facts that did not exist at the move
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records]
-timestamp: 2026-07-29
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from
 maintainer: quenching
 ---
 
@@ -24,8 +24,8 @@ superseded by this one.
 ## One active folder
 
 A spec spends its whole pre-archive life in `specs/plans/` and moves exactly once, to
-`specs/archive/` when it closes. The filename — `YYYY-MM-DD-<slug>.md`, date stamped at capture
-and never rewritten — and the bare-slug identity rule are unchanged from
+`specs/archive/` when it closes. The basename — `<slug>.md`, with the capture date declared as
+`date:` in the frontmatter and never rewritten — and the bare-slug identity rule are unchanged from
 [plan-artifacts.md](plan-artifacts.md) §One spec is one file.
 
 v3 folded `backlog/` and `ready/` into `plans/` because the split lied twice: `backlog/` held both
@@ -68,9 +68,22 @@ The organizing principle, and the admission test for every frontmatter key:
 > A field earns its place only when it records a **human judgment no derivation can reproduce**.
 > The filesystem, git, and section presence record everything else.
 
-That is why there is no `created` (the filename's date prefix), no `phase` (the folder), no
-`ready` flag (the ten gate sections), and no attempt counter (the visible `- [!]` marker). Beyond
-the declared identity (`slug`, `title`, `verification`), every optional key is one record:
+That is why there is no `phase` (the folder), no `ready` flag (the ten gate sections), and no
+attempt counter (the visible `- [!]` marker).
+
+**`date` is the one fact that moved the other way, and the test is what moved it.** It used to be
+excluded on exactly these grounds — the filename's `YYYY-MM-DD-` prefix recorded it, so a field
+would have been a second copy. The test says a field earns its place when no derivation reproduces
+it, and the derivation that supported the exclusion was *the basename*. A store with no filenames
+has none, and the native value that looks like a substitute is a different fact: an issue's
+`created_at` is when the issue was made, and a migration stamps them all on one day — measured
+here, 68 of 70 capture dates would have been rewritten to the migration's own afternoon. So `date`
+is **declared, not derived**, and the basename went back to being the slug alone. The rule did not
+bend; the derivation it relied on stopped existing.
+
+Beyond the declared identity (`slug`, `title`, `date`) and the optional `verification` — absent
+means the default, applied on read, never stamped to make it explicit — every optional key is one
+record:
 
 | Record | Written by | Write-once | What only a human can answer |
 | --- | --- | --- | --- |

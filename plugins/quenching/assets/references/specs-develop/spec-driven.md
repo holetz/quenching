@@ -97,18 +97,25 @@ is `approved:` in frontmatter, so the fact survived and the folder did not.
 
 <!-- rules -->
 
-**Every spec file is named `YYYY-MM-DD-<slug>.md`, in both folders.** The date prefix records when
-the spec was **born** and is written **once, at creation** — `promote` moves the file and never
-renames it. The basename is therefore stable for the whole lifecycle, `git log --follow` reads as
-one history, and a plain `ls` of any folder is chronological. That last property is the point: a
-file listing IS the status view this design is built on, and no file listing reads frontmatter.
+**Every spec file is named `<slug>.md`, in both folders — the basename IS the slug.** The capture
+date is `date:` in the frontmatter, written **once, at creation**; `promote` moves the file and
+never renames it, so the basename is stable for the whole lifecycle and `git log --follow` reads as
+one history.
+
+**The date used to lead the basename, and it left for a reason.** That prefix made a plain `ls`
+chronological, which was worth having while every spec was a file. It stopped being payable the
+moment the front could live somewhere without filenames: an external backend had to mint a
+synthetic basename purely to carry a date, and the one native value that could have replaced it —
+an issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
+day. Measured on this repository: deriving it that way would have rewritten 68 of 70 capture dates
+to a single afternoon. So the date is declared in the document, where every backend reads it
+through the one shared derivation, and `next --front` sorts on it rather than on a listing's order.
 
 **Identity is the slug, not the path.** Every cross-reference names the bare slug; `specs.py`
-resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. **Two matches is a
-refusal (exit 2), never a guess.** This is what makes repeated folder moves survivable.
-
-The prefix earns its place in `plans/` as much as in `archive/`: birth order is the order a human
-wants at every stage — *how long has this sat unproposed? how long has this build been open?*
+resolves it to the one spec whose basename is `<slug>.md`, wherever it sits — and then, if nothing
+matched exactly, by title and by one close match above a threshold, announcing that it approximated.
+**Two matches is a refusal (exit 2) at every rung**, never a guess. This is what makes repeated
+folder moves survivable.
 
 ## Frontmatter
 
@@ -124,7 +131,8 @@ something no derivation can answer.
 | --- | --- | --- | --- |
 | `slug` | always | `create` | the identity key every command and cross-reference names |
 | `title` | always | `create` | one human-readable line |
-| `verification` | always | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs |
+| `date` | always | `create` | `YYYY-MM-DD`, the capture date — stamped once and never rewritten. It used to be the basename's prefix; it moved here because a store with no filenames cannot hold it there, and no tracker carries an honest copy of it |
+| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `specs.py verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
@@ -368,12 +376,13 @@ Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok �
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/YYYY-MM-DD-<slug>.md` with `## Problem` as its only section; the date is stamped here and never again |
+| `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
 | `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
+| `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
 | `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates` |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |

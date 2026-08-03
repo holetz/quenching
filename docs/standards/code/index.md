@@ -21,6 +21,11 @@ its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standa
   the comment rule, the canonical case list all three must decide identically, the anomaly set each
   must be able to name, and the three-copy lockstep obligation that stands in for the shared module
   they cannot have.
+* [superseded-format-recognition.md](superseded-format-recognition.md) — how a recogniser is changed
+  when the format it reads is superseded: the new pattern must be asserted against the OLD form,
+  because one that describes the new form correctly often matches the old one whole and answers
+  confidently with no finding; and a store's recogniser must separate "not mine" from "mine, but
+  stale", because sending both to one discard makes a half-migrated front vanish in silence.
 
 ## Candidate sub-standards
 

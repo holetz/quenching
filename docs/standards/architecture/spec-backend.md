@@ -7,7 +7,7 @@ tags: [architecture, specs, backend, interface, serialization]
 timestamp: 2026-08-03
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day
 maintainer: quenching
 ---
 
@@ -80,8 +80,14 @@ one section with a native counterpart carrying its own state and identity. That 
 not the question. The question is whether anything ever **read** the native state, and nothing did:
 `parse_tasks` takes a task's checked/blocked from its raw block text on both ends, never from the
 issue. A construct written on every save and never consulted is a **projection**, and a projection
-belongs wherever it is free — the issue title is one, rewritten from the frontmatter on every write
-at no extra call — never wherever it costs a call per item per write.
+belongs wherever it is free — never wherever it costs a call per item per write.
+
+**The issue title was the other one, and it was fixed rather than retired.** It too was rewritten
+from the frontmatter on every write and never read, which made it duplicated truth that merely
+happened to be cheap. The test above admits exactly one remedy for that: make something read it
+back. So the canonical document is now stored **without** its `title:` key and without the
+`# <TITLE>` heading, both reassembled on read from the native title — one native mapping that
+earns its cost, at no extra call, because the write was already being made.
 
 The price of putting it where it was not free, measured on this repository on 2026-08-03,
 mid-migration:
@@ -106,6 +112,36 @@ the part that renders: `- [ ]` in an issue body is a native GitHub task list, wi
 progress count, and ticking it in the web UI **edits the document** — which closing a sub-issue
 never did.
 
+**The same now holds for the title, and it is a deliberate reversal.** Editing an issue's title in the web UI renames the spec instead of being undone by the next write. That is what storage
+means: the value is read back, so a human's edit to it is an edit to the document. The reversal is
+bounded by the refusal above — a title the tracker would cut is never projected — so the one case
+where a web edit could silently truncate a spec's name is the one case that is not stored there.
+
+### A native value is the same fact, or it is not a mapping at all
+
+The test above asks whether anything reads the native value back. It has a twin, and the twin is
+what decides *which* fields may be mapped in the first place:
+
+> A native mapping is valid only when the native value is **the same fact** as the canonical one.
+
+The two spec fields that look mappable answer it differently, and both were measured rather than
+argued:
+
+- **The title passes.** An issue's title and a spec's `title:` are the same fact — one line naming
+  the spec — so storing it once, natively, removes a duplicate.
+- **The capture date fails.** An issue's `created_at` is when the ISSUE was created, not when the
+  spec was captured. On this repository, on 2026-08-03, issue #776 carried `created_at
+  2026-08-03T03:32:51Z` for a spec captured on **2026-07-25**: the numbers jump from 7 to 776
+  because a migration created ~769 issues in one afternoon. Deriving the date natively would have
+  rewritten **68 of 70** capture dates to the migration's own day, destroying the one thing the
+  field records.
+
+So the date is **not** projected. It is `date:` in the canonical frontmatter, in every backend, and
+that is not duplicated truth precisely because no store holds an honest copy of it to duplicate.
+The rule generalises: a field with no faithful native counterpart stays in the document, and a
+backend that invents one — a synthetic filename minted only to carry a date — has moved the
+duplication rather than removed it.
+
 ### What "the canonical document" covers, and how the obligation is checked
 
 **The whole document, byte for byte** — not the fields a backend happens to model. The obligation
@@ -129,9 +165,13 @@ next one to take the native-construct permission up:
   still there" passes with them reordered and the prose gone. `specs.py selftest` runs a grouped
   fixture through store-and-reload — including the CRLF round trip a tracker really performs — and
   compares the result to the original with `==`.
-- **A store's own ceilings are the backend's problem, not the caller's.** A title that a tracker
-  will not accept is cut by the backend, because a title is a projection of the document and cutting
-  it loses nothing. A **document** over the ceiling is not cut and is no longer refused: a GitHub
+- **A store's own ceilings are the backend's problem, not the caller's.** A title over the
+  tracker's limit used to be cut, because a title was a projection and cutting one lost nothing.
+  **That stopped being true the moment the title became storage**: a cut title read back is a
+  renamed spec. So the projection is now *refused* for a title that would not survive — the
+  document keeps its own `title:` and the tracker gets the cut copy it can hold — and the general
+  rule is that **a native mapping is taken only where it round-trips**, checked rather than
+  assumed. A **document** over the ceiling is not cut and is no longer refused: a GitHub
   issue body holds 65,536 characters, and of this repository's 69 specs **two exceed that as whole
   documents — 69,498 and 74,180 — one of them an active plan**. Refusing would mean refusing to
   store a spec somebody is building, so an over-size document spills into **continuation comments on
