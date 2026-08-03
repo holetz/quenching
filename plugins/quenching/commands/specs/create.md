@@ -43,21 +43,11 @@ what you were given, and nothing more.**
 - **Never invent what the input lacks.** On the plan-file path, `- none — the plan recorded no
   alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
   the heading absent or write an explicit none that *says* the source was silent.
-- **The date is stamped once, and never again.** Never rename a spec to "fix" its date.
-- **Kebab slug in the repo's declared language, flat home.** One spec per file, no subfolders.
-  The language is the one the harness declares — the contract is
-  [communication.md](docs/standards/agents/communication.md), and it is declared once, there,
-  never again in a config key of this front's own. A pt-BR repo gets `avaliar-o-fluxo-de-criacao`,
-  not a translation nobody wrote: `slugify` folds the accents (`criação` → `criacao`), so the slug
-  stays typeable without becoming a different language. The slug is the identity every command
-  names, so it is worth a moment's thought — two specs resolving to one slug makes every later
-  command refuse (exit 2).
+- **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
+  and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
+  [communication.md](docs/standards/agents/communication.md) declares.
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
   answer: sharpen the existing spec instead, or pick a different slug.
-- **The folder is the listing.** There is no index to update — `specs.py list` derives what
-  `plans/` holds from disk on demand, so creating a spec is one file write and nothing else.
-- **A Claude Code plan file is read-only.** Never move, edit, or delete `~/.claude/plans/*.md` —
-  it stays where Claude Code put it.
 
 ## Resolving the tool
 
