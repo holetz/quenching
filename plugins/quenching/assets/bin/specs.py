@@ -90,6 +90,7 @@ import os
 import pathlib
 import re
 import sys
+import unicodedata
 
 VERSION = "4.9.1"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
@@ -805,8 +806,41 @@ def canonical_case_failures() -> list[str]:
 # helpers
 # --------------------------------------------------------------------------- #
 def slugify(name: str) -> str:
-    s = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
+    """A kebab identity key, in the language the repo actually writes in.
+
+    UNICODE IS NORMALISED AND STRIPPED FIRST, and that is the whole of it. Without it the
+    `[^a-z0-9]+` below treats every accented letter as a SEPARATOR, so `criação` reduced to
+    `cria-o` and `avaliar-o-fluxo-de-criacao-de-specs` came out
+    `avaliar-o-fluxo-de-cria-o-de-specs` — an identity key that is neither readable nor
+    guessable, in a repository whose declared harness language is pt-BR. NFD splits a letter
+    from its combining marks and the marks are then dropped, so `ç` becomes `c` and `ã`
+    becomes `a`: exactly the transliteration a human types when the accent is unavailable.
+
+    A character that does not decompose (`ß`, `ø`) still falls to the separator rule. That is
+    a real limit and it is left alone rather than papered over with a lookup table nobody
+    maintains — the languages this front is used in are covered, and a slug that loses a
+    letter is visible the moment it is printed."""
+    folded = unicodedata.normalize("NFD", name.strip().lower())
+    folded = "".join(c for c in folded if not unicodedata.combining(c))
+    s = re.sub(r"[^a-z0-9]+", "-", folded).strip("-")
     return re.sub(r"-{2,}", "-", s)
+
+
+# What `slugify` must answer, asserted by `selftest`. The accented rows are the point: they
+# are what the identity key of every spec captured in pt-BR runs through.
+SLUG_CASES = (
+    ("Avaliar o fluxo de criação de specs", "avaliar-o-fluxo-de-criacao-de-specs"),
+    ("Ação e Manutenção", "acao-e-manutencao"),
+    ("Sessão — tokens", "sessao-tokens"),
+    ("session tokens", "session-tokens"),
+    ("  Trim  --  Me  ", "trim-me"),
+    ("JÁ-EM-CAIXA-ALTA", "ja-em-caixa-alta"),
+)
+
+
+def slug_case_failures() -> list[str]:
+    return [f"slugify({given!r}) = {slugify(given)!r}, expected {want!r}"
+            for given, want in SLUG_CASES if slugify(given) != want]
 
 
 def titleize(slug: str) -> str:
@@ -6103,6 +6137,15 @@ def cmd_selftest(args, root: str) -> int:
     # The section rule, against the SAME canonical list `skills.py` proves. Self-contained,
     # so it runs on an installed copy too — which is exactly where a `## ` inside a shell
     # block in somebody's `## Tasks` would otherwise open a phantom section unnoticed.
+    # The identity key, on the accented input this repository actually captures. Self-contained,
+    # so it runs on an installed copy — which is where a slug quietly losing a letter would
+    # otherwise surface only as a spec nobody can resolve by name.
+    for failure in slug_case_failures():
+        findings.append(_finding("sp-slug-case", "error", f"canonical slug case — {failure}",
+                                 remedy="slugify normalises to NFD and drops combining marks "
+                                        "before reducing to kebab; an accent is a letter, "
+                                        "never a separator"))
+
     for failure in section_case_failures():
         findings.append(_finding("sp-section-case", "error",
                                  f"canonical section case — {failure}",
