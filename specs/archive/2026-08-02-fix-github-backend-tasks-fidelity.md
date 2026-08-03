@@ -8,6 +8,7 @@ reviewed: {date: 2026-08-02}
 merge:
   strategy: merge-commit
   subject: plan/fix-github-backend-tasks-fidelity: merge (merge-commit)
+outcome: done
 ---
 
 # Fidelidade do documento no backend github — grupos de task, títulos e o cap de corpo
