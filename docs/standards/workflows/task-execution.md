@@ -4,10 +4,10 @@ title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-07-31
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03)
 maintainer: quenching
 ---
 
@@ -105,6 +105,17 @@ judges the inputs unchanged, is a judgment about correctness made at build time,
 already refuses judgment as a trigger (§A cadence trigger can never be a judgment). Scoping at
 authoring needs no judgment while building and holds for every future spec, not only the measured
 one.
+
+**A `verify:` naming a whole-bundle validator asserts zero *errors*, never a warning total.**
+`stale-doc` rises structurally on any branch that edits a path some standard governs — the resource
+moved, the rule did not — so a warning total is not a property of the change under test, and
+[bundle-verification.md](../quality/bundle-verification.md) already says to read the gate as zero
+errors for exactly that reason. A `verify:` written as `okf-validate.py docs → 0 error(s), 0
+warning(s)` is therefore false about any mature bundle *before the spec is written*, and it fails
+at the gate having proved nothing about the task. Measured 2026-08-03: that assertion, authored
+against the shipped `assets/docs` skeleton — conformant by construction — stopped a build whose
+deliverable was correct, over 29 warnings the bundle already carried at the branch point. Assert
+zero errors, and name the doc the task wrote.
 
 ## A blocked task is a visible marker, not a hidden counter
 
