@@ -1139,7 +1139,7 @@ def load_config(root: str) -> dict:
 
     Whether `worktreeSetup` actually resolves is deliberately NOT answered here: it is judged
     relative to the freshly created worktree, whose path this tool never learns.
-    `/specs:isolate` runs it there and reports the exit code."""
+    `/specs:execute`'s inline isolation offer runs it there and reports the exit code."""
     repo = find_repo_root(root)
     path = os.path.join(repo, CONFIG_FILE)
     legacy = os.path.join(root, LEGACY_CONFIG_FILE)
