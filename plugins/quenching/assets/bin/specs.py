@@ -3980,6 +3980,54 @@ def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
     return "".join(lines[:close] + new_lines + lines[close:])
 
 
+def cmd_verification(args, root: str) -> int:
+    """Read ONE spec's verification policy, or set it — through the backend, after capture.
+
+    THE ONLY WRITER USED TO BE `new --verification`, and that is the one moment nobody has an
+    opinion: the policy answers how long THIS repo's suite takes and whether a section is the
+    smallest safe unit, which is what `/quenching:specs:develop`'s gate bank exists to ask.
+    With no writer after capture that bank could only land its answer by editing the
+    frontmatter by hand — which needs a file, and an external backend has none. So under
+    `github` the policy was decidable exactly once, before anyone knew the answer, and
+    unchangeable afterwards.
+
+    It is NOT a `record`: the seven records are `{field: value}` judgments with their own
+    write-once rules, and this is a declared scalar with a closed value set. Folding it into
+    `record` would have meant inventing a one-field record and a `value=` field name for it."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+    declared = str(info["frontmatter"].get("verification", "")).strip().lower()
+
+    if not args.policy:
+        emit(args.json,
+             {"ok": True, "slug": info["slug"], "verification": info["verification"],
+              "declared": declared or None, "default": DEFAULT_VERIFICATION},
+             f"{info['slug']} — verification: {info['verification']}"
+             + ("" if declared else "  (the default — nothing declared)"))
+        return 0
+
+    policy = args.policy.strip().lower()
+    if policy not in VERIFICATION_POLICIES:
+        emit(args.json,
+             {"ok": False, "code": "sp-bad-verification", "slug": info["slug"],
+              "given": args.policy, "policies": list(VERIFICATION_POLICIES),
+              "message": f"'{args.policy}' is not one of "
+                         f"{', '.join(VERIFICATION_POLICIES)}"},
+             f"error: '{args.policy}' is not one of {', '.join(VERIFICATION_POLICIES)}")
+        return 2
+    backend.write_spec(info, set_frontmatter_key(info["text"], "verification", policy))
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "verification": policy,
+          "previous": declared or None},
+         f"{info['slug']} — verification: {policy}"
+         + (f"  (was {declared})" if declared and declared != policy else ""))
+    return 0
+
+
 def cmd_record(args, root: str) -> int:
     """Read or merge ONE frontmatter record, through the backend.
 
@@ -5003,7 +5051,7 @@ def _now_iso() -> str:
 
 # Every subcommand that can MODIFY a spec. `list`/`status`/`show`/`next`/`parallel`/`validate`/
 # `config`/`doctor`/`selftest` are absent because they only read.
-WRITING_COMMANDS = ("new", "task", "discover", "section", "promote")
+WRITING_COMMANDS = ("new", "task", "discover", "section", "promote", "verification")
 
 
 def command_writes(args) -> bool:
@@ -5023,6 +5071,8 @@ def command_writes(args) -> bool:
         return bool(getattr(args, "write", False))
     if cmd == "record":
         return bool(getattr(args, "set", None))
+    if cmd == "verification":
+        return bool(getattr(args, "policy", None))
     if cmd == "promote":
         return not bool(getattr(args, "dry_run", False))
     return False
@@ -6618,6 +6668,16 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 
+    sp = add_json(sub.add_parser("verification",
+                                 help="read or set ONE spec's verification policy"))
+    sp.add_argument("spec")
+    # No `choices=`: argparse would refuse a bad value with a usage message on stderr and
+    # exit 2 with no JSON, and every caller of this tool is told to branch on the exit code
+    # AND the `--json` payload. The check lives in the command, where the refusal carries
+    # `sp-bad-verification` and the declared set like every other refusal here.
+    sp.add_argument("policy", nargs="?",
+                    help="omit to read; one of " + ", ".join(VERIFICATION_POLICIES))
+
     sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
     sp.add_argument("spec")
     sp.add_argument("name", help="one of the declared records")
@@ -6692,6 +6752,7 @@ DISPATCH: dict = {
     "status": cmd_status,
     "show": cmd_show,
     "section": cmd_section,
+    "verification": cmd_verification,
     "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,
