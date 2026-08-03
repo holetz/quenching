@@ -288,3 +288,7 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
       files: CLAUDE.md
       verify: python3 assets/bin/skills.py --root . doctor --json
       subject: plan/migrate-this-repo-to-github-backend: 4.2 CLAUDE.md descreve a frente sem pasta local
+
+## Discoveries
+
+- BLOQUEIO na 2.1: o backend github lista issues com 'gh api --paginate --slurp', e --slurp so existe a partir do gh 2.52. O gh deste ambiente e 2.45.0, entao list_specs morre com 'unknown flag: --slurp' — uma mensagem crua do gh, nao uma recusa nomeada, o que contradiz o contrato de recusa da task 4.1 de configurable-spec-backend. Nada no plugin declara versao minima de gh. Medido: 'gh api --paginate --jq .[]' devolve JSONL compacto e funciona no 2.45, e o endpoint sub_issues responde normalmente. Vira a spec make-the-github-backend-work-on-shipped-gh.
