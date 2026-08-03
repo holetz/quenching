@@ -2299,7 +2299,7 @@ class GitHubBackend(SpecBackend):
         # so a default (open-only) listing would report every archived spec as missing.
         pages = self._api("listing the repository's issues", "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
-        rows: list[tuple[dict, int, str, int]] = []
+        rows: list[tuple[dict, int, str, int, str]] = []
         for page in (pages or []):
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -2324,7 +2324,8 @@ class GitHubBackend(SpecBackend):
                     # For a one-part spec — every spec but the largest — `head` IS the whole
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
-                }, int(issue.get("number") or 0), head, parts))
+                }, int(issue.get("number") or 0), head, parts,
+                    str(issue.get("title") or "")))
         self._rows = rows
         return rows
 
@@ -2337,7 +2338,7 @@ class GitHubBackend(SpecBackend):
     def _issue_parts(self, slug: str) -> tuple[int, int]:
         """`(issue number, how many parts are stored)` — both from the listing already in hand,
         so knowing whether there are stale continuation comments to clean up costs no call."""
-        for descriptor, number, _, parts in self._load():
+        for descriptor, number, _, parts, _title in self._load():
             if descriptor["slug"] == slug:
                 return number, parts
         raise BackendRefusal({
@@ -2349,7 +2350,7 @@ class GitHubBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
@@ -2358,26 +2359,41 @@ class GitHubBackend(SpecBackend):
         spec, err = resolve_one(self.list_specs(), slug)
         if err:
             return None, err
-        number, head, parts = next((n, d, p) for descriptor, n, d, p in rows
-                                   if descriptor["slug"] == slug)
+        number, head, parts, native = next((n, d, p, t)
+                                           for descriptor, n, d, p, t in rows
+                                           if descriptor["slug"] == slug)
         full_text = head if parts <= 1 else self._joined(number, head, parts)
-        return derive_info(spec, full_text), {}
+        # The title comes back from the issue's own, which is where the write put it. A
+        # document that still carries its own `title:` is returned untouched.
+        return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         number, had_parts = self._issue_parts(info["slug"])
-        chunks = hybrid_split(text, GH_PART_MAX)
+        stored, title = self._project(info["slug"], text)
+        chunks = hybrid_split(stored, GH_PART_MAX)
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
-                        {"title": hybrid_title(info["slug"], text),
+                        {"title": title,
                          "body": hybrid_wrap(info["file"], chunks[0][0], len(chunks))})
         self._sync_parts(number, chunks, had_parts)
         self._invalidate()
 
+    @staticmethod
+    def _project(slug: str, text: str) -> tuple[str, str]:
+        """`(what goes in the body, what goes in the title)`.
+
+        One place, so create and update cannot disagree about what was stored — a create that
+        projected and an update that did not would leave the title reading as the spec's while
+        the body carried a second, competing one."""
+        proj = hybrid_title_split(text)
+        return proj if proj else (text, hybrid_title(slug, text))
+
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        chunks = hybrid_split(text, GH_PART_MAX)
+        stored, title = self._project(m.group(1) if m else filename, text)
+        chunks = hybrid_split(stored, GH_PART_MAX)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                {"title": hybrid_title(m.group(1) if m else filename, text),
+                                {"title": title,
                                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
@@ -2485,6 +2501,58 @@ def hybrid_title(slug: str, text: str) -> str:
     the issue, and editing the issue title in the web UI is undone by the next write rather
     than silently becoming a competing name."""
     return hybrid_short_title(str(parse_frontmatter(text).get("title") or titleize(slug)))
+
+
+def hybrid_title_split(text: str) -> tuple[str, str] | None:
+    """`(the document without its title, the title)` — or None when it must be stored whole.
+
+    THE ONE NATIVE MAPPING THAT PAYS FOR ITSELF. `spec-backend.md` allows an external backend
+    to use its host's constructs where a mapping exists, and holds it to one test: something
+    must READ the native value back. The issue title failed that test for its whole life — it
+    was rewritten from the frontmatter on every write and never once consulted — which made it
+    a projection, and a projection is duplicated truth. Reading it back is what turns it into
+    storage, and it costs nothing: the title was already being written on every write.
+
+    Returning None is the safety, and it is checked rather than assumed. The document is only
+    projected when it is in the shape `new` stamps — `title:` immediately after `slug:`, and
+    the `# <TITLE>` heading alone between the frontmatter and the first section — because the
+    reassembly has to put both back at an exact offset and the store keeps no note of where
+    they were. A title the tracker would cut is also refused: cutting used to lose nothing
+    precisely because nothing read it, and the moment something does, a cut title is a
+    renamed spec."""
+    title = str(parse_frontmatter(text).get("title", "")).strip()
+    if not title or hybrid_short_title(title) != title:
+        return None
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return None
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return None
+    if [ln.split(":", 1)[0].strip() for ln in lines[1:close]][:2] != ["slug", "title"]:
+        return None
+    if lines[close + 1:close + 4] != ["\n", f"# {title}\n", "\n"]:
+        return None
+    return "".join(lines[:2] + lines[3:close + 2] + lines[close + 4:]), title
+
+
+def hybrid_title_join(stored: str, title: str) -> str:
+    """Put `title:` and the `# <TITLE>` heading back, at the offsets `hybrid_title_split` cut
+    them from. The inverse, and asserted as one by the round-trip case.
+
+    A stored document that still HAS a `title:` was never projected — an older issue, or one
+    whose shape `split` refused — and comes back untouched. That is the whole signal: `title`
+    is a required frontmatter key, so its absence can only mean the store is holding it."""
+    if str(parse_frontmatter(stored).get("title", "")).strip():
+        return stored
+    lines = stored.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return stored
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return stored
+    return "".join(lines[:2] + [f"title: {title}\n"] + lines[2:close + 2]
+                   + [f"# {title}\n", "\n"] + lines[close + 2:])
 
 
 def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -2724,6 +2792,44 @@ def hybrid_serialization_failures() -> list[str]:
         failures.append("a cut title is not a prefix of the line it came from, marked as cut")
     if hybrid_short_title("9.9 curta") != "9.9 curta":
         failures.append("hybrid_short_title touched a title that already fitted")
+
+    # THE TITLE PROJECTION, on the shape `new` actually stamps. What the store holds must
+    # carry neither `title:` nor the `# <TITLE>` heading, and putting the native title back
+    # must return the document byte for byte — the same obligation the body is held to, on the
+    # one field that is no longer inside it.
+    canonical = ("---\nslug: alpha\ntitle: Título com acento\ndate: 2026-01-01\n"
+                 "verification: per-task\n---\n\n# Título com acento\n\n## Problem\n\nAlgo.\n")
+    proj = hybrid_title_split(canonical)
+    if proj is None:
+        failures.append("the capture form's own shape was refused by the title projection — "
+                        "every spec `new` creates would be stored with a duplicated title")
+    else:
+        stored, native = proj
+        if "title:" in stored or "# Título" in stored:
+            failures.append("the projected document still carries the title it handed to the "
+                            "store — the duplication the projection exists to remove")
+        if native != "Título com acento":
+            failures.append(f"the title handed to the store was {native!r}, not the "
+                            f"document's own")
+        if hybrid_title_join(stored, native) != canonical:
+            failures.append("the title projection is not reversible — "
+                            f"{hybrid_title_join(stored, native)!r} != {canonical!r}")
+
+    # A document the projection REFUSES is stored whole, and a read must not then graft a
+    # second title onto it. `doc` above is exactly that shape: no `slug:`, no heading.
+    if hybrid_title_split(doc) is not None:
+        failures.append("a document outside the capture shape was projected anyway — the "
+                        "reassembly has no note of where its title was")
+    if hybrid_title_join(doc, "whatever the tracker says") != doc:
+        failures.append("a document that still carries its own `title:` was rewritten on read")
+
+    # A title the tracker would cut is refused, because a cut title is now a renamed spec.
+    long_title = ("---\nslug: alpha\ntitle: " + "t" * (HYBRID_TITLE_MAX + 1) +
+                  "\ndate: 2026-01-01\n---\n\n# " + "t" * (HYBRID_TITLE_MAX + 1) +
+                  "\n\n## Problem\n\nAlgo.\n")
+    if hybrid_title_split(long_title) is not None:
+        failures.append("a title over the tracker's ceiling was projected — storing it cuts "
+                        "it, and reading it back would rename the spec")
     return failures
 
 
