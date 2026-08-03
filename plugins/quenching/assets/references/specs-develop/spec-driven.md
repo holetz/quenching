@@ -28,7 +28,8 @@ format"**, and the four clauses did not survive equally:
   ONE store, and it is whichever backend was declared. What is prohibited is a *second*,
   authoritative local copy shadowing it.
 - **no delta format** — still true in the sense that mattered. A backend may serialize natively
-  (GitHub's `## Tasks` become sub-issues) as long as it reconstructs the canonical document on
+  (a GitHub issue body *is* the whole document, spilling into continuation comments when it does
+  not fit) as long as it reconstructs the canonical document on
   read; that is a mapping inside one implementation, not a delta bridging two copies that can
   disagree.
 
