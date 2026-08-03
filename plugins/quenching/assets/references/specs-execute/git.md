@@ -20,6 +20,7 @@ somebody else's history.
 - [The subject is the anchor](#the-subject-is-the-anchor)
 - [Merge strategies](#merge-strategies)
   - [The worktree is removed after a successful merge](#the-worktree-is-removed-after-a-successful-merge)
+- [The pull-request route](#the-pull-request-route)
 - [What is never done, on any repo](#what-is-never-done-on-any-repo)
 
 ## The read-if-present rule
@@ -349,6 +350,63 @@ the worktree stays.
 
 Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
 **not** delete the branch — that stays the separate offer it already was.
+
+## The pull-request route
+
+<!-- rules -->
+
+`/quenching:specs:conclude` offers a **route** — pull request, or local — **alongside** the strategy, not instead
+of it. The route decides how the merge reaches the base; the strategy decides what shape it takes
+once it does. Offered only where `gh` resolves the repository — no route, no offer, on any other
+host or with `gh` unauthenticated.
+
+```
+gh pr merge --merge      # strategy: merge commit
+gh pr merge --squash     # strategy: squash
+gh pr merge --rebase     # strategy: rebase
+```
+
+Three of the four strategies map one-to-one onto a `gh pr merge` flag, so the PR route invents no
+vocabulary of its own — `MERGE_STRATEGIES` is unchanged. **`fast-forward` has no `gh` equivalent**,
+so the PR route is never offered under it; choosing that strategy answers the route question by
+itself, in one line, rather than offering a form that would fail.
+
+**Pushing the branch and opening the PR carry their own confirmation.** The route chosen at the
+offer above is not the OK for either — both publish to a remote host, which the local strategies
+never do. The block that runs them shows the remote, the name the branch pushes under, and the
+PR's title and body, and asks there:
+
+```bash
+git push -u origin plan/<slug>
+gh pr create --title "<title>" --body "<body>"
+```
+
+**The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
+in the same block, before the run reports done:
+
+```bash
+gh pr merge <number> --merge|--squash|--rebase
+```
+
+Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
+[plan-git-record.md](../../../../../docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+written before the merge and says what the run **delivered** — an open, unmerged PR archived as
+`done` would assert something that has not happened yet. And `merge:` is stamped before the merge
+so that it is the run's last action; a run that ends before the merge leaves the record stamped and
+nothing merged, which is recoverable but is not what "the merge is last" promises.
+
+**The merge is asserted, not assumed.** After `gh pr merge` returns, the run confirms the base
+actually advanced before reporting success:
+
+```bash
+git -C <the base's checkout> pull --ff-only
+gh pr view <number> --json state,mergeCommit
+```
+
+`git pull --ff-only` first, because the base's local checkout has no reason to know about a merge
+that happened on the remote until it is told; `gh pr view` then reads back `state: MERGED` and the
+resulting `mergeCommit`, which is what `merge: {strategy, subject, pr}` records — `pr` alongside
+the strategy and subject a local conclusion already carries.
 
 ## What is never done, on any repo
 
