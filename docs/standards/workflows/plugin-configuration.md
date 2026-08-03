@@ -2,9 +2,9 @@
 type: standard
 title: Plugin configuration contract
 description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the four recognised keys and their defaults, the one key that deliberately has none and refuses instead, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
+resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
 tags: [workflows, specs, configuration, backend, plugin]
-timestamp: 2026-08-02
+timestamp: 2026-08-03
 audience: both
 authority: current
 source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code
@@ -42,7 +42,7 @@ Read by `specs.py` with `json.load` — a plain object, no new format, no prose 
 | --- | --- | --- | --- |
 | `backend` | `files` · `github` · `azure-boards` | `files` | the spec backend selection |
 | `specsBranch` | any branch name | `specs` | the `files` backend only |
-| `worktreeSetup` | a shell command, run as written | none | `/specs:isolate`, after `git worktree add` |
+| `worktreeSetup` | a shell command, run as written | none | `/specs:execute`'s isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
 
 `worktreeSetup` keeps the contract it had in its old home unchanged — who runs it, with which cwd,

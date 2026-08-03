@@ -1,5 +1,5 @@
 ---
-description: Create ONE spec in plans/ — effort proportional to what you gave it, never an interrogation. Triggers on "capture this", "park a spec", "add it to the backlog", "note this for later", "file a spec", "turn my plan into a spec", "convert this Claude Code plan", "make a spec from my plans folder". A sentence becomes the Problem section and nothing else, in seconds; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Not for: filling a spec's remaining sections, or interrogating one → /specs:develop; building one → /specs:execute; closing one out → /specs:conclude; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage.
+description: Create ONE spec in plans/ — effort proportional to what you gave it, never an interrogation. Triggers on "capture this", "park a spec", "add it to the backlog", "note this for later", "file a spec", "turn my plan into a spec", "convert this Claude Code plan", "make a spec from my plans folder". A sentence becomes the Problem section and nothing else, in seconds; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Not for: filling a spec's remaining sections, or interrogating one → /specs:develop; building one → /specs:execute; closing one out → /specs:conclude; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
 argument-hint: [what to capture, or a path to a plan file]
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: sonnet
@@ -188,9 +188,10 @@ next across the whole front.
 
 **Isolation is forwarded, never offered.** If the human asks for a branch or a worktree — now, or
 because they want the spec to live on the branch that will carry its work — name
-`/quenching:specs:isolate <slug>` as the next command. It owns the branch name, the worktree placement and the
-`branch: {base, work}` record. Do **not** raise it unprompted: a new prompt in one of the two
-most-run commands costs friction for everyone to serve the minority who isolate this early.
+`/quenching:specs:execute <slug>` as the next command: its inline offer (worktree · branch · here) owns the
+branch name, the worktree placement and the `branch: {base, work}` record. Do **not** raise it
+unprompted: a new prompt in one of the two most-run commands costs friction for everyone to serve
+the minority who isolate this early.
 **Done when:** the summary is shown.
 
 ## The mapping — a Claude Code plan → canonical sections

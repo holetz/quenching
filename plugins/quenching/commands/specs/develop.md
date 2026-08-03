@@ -1,5 +1,5 @@
 ---
-description: Develop ONE spec by asking about it — one question at a time, with the question bank chosen by the spec's own derived stage rather than by a mode flag. Triggers on "develop this spec", "think this through", "explore this idea", "what shape should this take", "refine the spec", "poke holes in this", "what are the alternatives", "premortem this", "fill in the missing sections", "is this ready to build", "resolve the discoveries", "approve this spec". A raw spec gets shape questions; a proposed one gets argued with; a designed one gets its gate gaps closed; one at the gate gets offered the approval stamp. Answers accumulate and land in ONE confirmed edit per bank. Never edits code. Not for: creating a spec → /specs:create; building one → /specs:execute; closing one out and merging → /specs:conclude; a version bump or release obligation → /specs:conclude; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage; being told which spec to pick up next → /specs:continue.
+description: Develop ONE spec by asking about it — one question at a time, with the question bank chosen by the spec's own derived stage rather than by a mode flag. Triggers on "develop this spec", "think this through", "explore this idea", "what shape should this take", "refine the spec", "poke holes in this", "what are the alternatives", "premortem this", "fill in the missing sections", "is this ready to build", "resolve the discoveries", "approve this spec". A raw spec gets shape questions; a proposed one gets argued with; a designed one gets its gate gaps closed; one at the gate gets offered the approval stamp. Answers accumulate and land in ONE confirmed edit per bank. Never edits code. Not for: creating a spec → /specs:create; building one → /specs:execute; closing one out and merging → /specs:conclude; a version bump or release obligation → /specs:conclude; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage; being told which spec to pick up next → /specs:continue.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
@@ -163,9 +163,10 @@ the next step — `/quenching:specs:execute <slug>` once `approved` is stamped, 
 for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
 
 **Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
-tree, so the human may want it on a branch — when they ask, name `/quenching:specs:isolate <slug>` as the
-next command. It owns the branch name and the `branch: {base, work}` record. Never raise it unprompted; this
-command's job is questions, and a prompt about git in the middle of one is friction for everyone.
+tree, so the human may want it on a branch — when they ask, name `/quenching:specs:execute <slug>` as the
+next command: its inline offer owns the branch name and the `branch: {base, work}` record. Never
+raise it unprompted; this command's job is questions, and a prompt about git in the middle of one
+is friction for everyone.
 **Done when:** the summary is shown.
 
 ## Invariants to never violate
