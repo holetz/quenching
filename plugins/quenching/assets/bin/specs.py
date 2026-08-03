@@ -2458,6 +2458,17 @@ class GitHubBackend(SpecBackend):
                 self._write_api(f"linking sub-issue #{sub_issue['number']}", "POST",
                                 f"repos/{self.repo}/issues/{parent_number}/sub_issues",
                                 {"sub_issue_id": sub_issue["id"]})
+                if payload["state"] == "closed":
+                    # A THIRD call, for the same reason `create_spec` needs a second one for
+                    # an archived parent: `state` in a POST is ignored, because closed is not
+                    # a state an issue can be born in. The reasoning was applied one level up
+                    # and not here, so every sub-issue of a done task was created open —
+                    # measured on a rehearsal migration of an archived spec, which came back
+                    # 6-of-7 done in the document and 7 open in the tracker. Nothing was lost
+                    # (the block carries `- [x]` and `parse_tasks` reads state from the block,
+                    # never from the issue), but the native construct this serialisation
+                    # exists to provide was wrong for every task ever migrated as done.
+                    self._set_state(int(sub_issue["number"]), "closed")
         for key, sub in existing.items():
             if key in seen:
                 continue

@@ -127,6 +127,9 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
 
 ### Product code this spec expects to touch
 
+- `plugins/quenching/assets/bin/specs.py` — **não previsto na captura**: o ensaio da task 2.2 achou
+  a sub-issue de uma task ticada nascendo aberta, e o conserto é uma linha de produto. Declarado
+  aqui porque a task 2.3 o nomeia, e não porque a migração toca código por hábito
 - `.claude/quenching.json` — criado, com `backend: github`
 - `specs/plans/**`, `specs/archive/**` — removidos do repositório após a migração verificada
 - `CLAUDE.md` — a seção "Where knowledge lives" descreve `specs/plans/` como pasta em disco
@@ -254,14 +257,19 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
 
 ### 2. Migrar
 
-- [ ] 2.1 Escrever o migrador descartável — importa `specs.py`, abre o backend `github`
+- [x] 2.1 Escrever o migrador descartável — importa `specs.py`, abre o backend `github`
       explicitamente, pula por slug o que já existe e pausa entre escritas
       subject: plan/migrate-this-repo-to-github-backend: 2.1 migrador idempotente sobre as cinco primitivas
-- [ ] 2.2 Ensaiar contra UM spec com grupos e uma task de título longo, conferir a issue e as
+- [x] 2.2 Ensaiar contra UM spec com grupos e uma task de título longo, conferir a issue e as
       sub-issues, e remover o que o ensaio criou
       subject: plan/migrate-this-repo-to-github-backend: 2.2 ensaio de um spec com grupos e titulo longo
-- [ ] 2.3 Rodar a migração de todos os specs, retomando quantas vezes o rate limit exigir
-      subject: plan/migrate-this-repo-to-github-backend: 2.3 migra todos os specs para issues e sub-issues
+- [ ] 2.3 Fechar a sub-issue de uma task ticada depois de criá-la — o GitHub ignora `state` no POST,
+      como `create_spec` já sabe para a issue-mãe
+      files: plugins/quenching/assets/bin/specs.py
+      verify: python3 assets/bin/specs.py selftest
+      subject: plan/migrate-this-repo-to-github-backend: 2.3 sub-issue de task ticada nasce e entao fecha
+- [ ] 2.4 Rodar a migração de todos os specs, retomando quantas vezes o rate limit exigir
+      subject: plan/migrate-this-repo-to-github-backend: 2.4 migra todos os specs para issues e sub-issues
 
 ### 3. Verificar e assumir o backend
 
@@ -288,7 +296,8 @@ já é o que os standards preferem. A concessão só se aposenta quando a migra�
       files: CLAUDE.md
       verify: python3 assets/bin/skills.py --root . doctor --json
       subject: plan/migrate-this-repo-to-github-backend: 4.2 CLAUDE.md descreve a frente sem pasta local
-
 ## Discoveries
 
 - BLOQUEIO na 2.1: o backend github lista issues com 'gh api --paginate --slurp', e --slurp so existe a partir do gh 2.52. O gh deste ambiente e 2.45.0, entao list_specs morre com 'unknown flag: --slurp' — uma mensagem crua do gh, nao uma recusa nomeada, o que contradiz o contrato de recusa da task 4.1 de configurable-spec-backend. Nada no plugin declara versao minima de gh. Medido: 'gh api --paginate --jq .[]' devolve JSONL compacto e funciona no 2.45, e o endpoint sub_issues responde normalmente. Vira a spec make-the-github-backend-work-on-shipped-gh.
+- Achado no ensaio (2.2): toda sub-issue nasce open, inclusive a de uma task ticada. _sync_tasks poe state no payload do POST /issues, e o GitHub ignora state na criacao — o proprio create_spec ja trata isso para a issue-mae ('closed is not a state an issue can be born in') e a mesma razao nunca foi aplicada um nivel abaixo. O dado nao se perde (o bloco carrega - [x] e parse_tasks le dele, por isso o round trip e byte a byte), mas o construto nativo que a serializacao hibrida existe para dar fica errado: um spec arquivado 6/7 aparece com 7 sub-issues abertas. Corrigido como task 2.3 desta spec.
+- Falso alarme descartado no ensaio: o titulo da sub-issue 2.1 aparece com 'A§' no GitHub, mas os bytes C3 82 C2 A7 estao no proprio arquivo em specs/archive/2026-07-26-verify-allowed-tools-enforcement.md:277. E mojibake pre-existente do repo, nao corrupcao do transporte — o corpo, que passa pelo mesmo json.dumps, volta byte a byte.
