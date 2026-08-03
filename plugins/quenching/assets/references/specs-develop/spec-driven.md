@@ -29,9 +29,8 @@ format"**, and the four clauses did not survive equally:
   authoritative local copy shadowing it.
 - **no delta format** — still true in the sense that mattered. A backend may serialize natively
   (a GitHub issue body *is* the whole document, spilling into continuation comments when it does
-  not fit) as long as it reconstructs the canonical document on
-  read; that is a mapping inside one implementation, not a delta bridging two copies that can
-  disagree.
+  not fit) as long as it reconstructs the canonical document on read; that is a mapping inside one
+  implementation, not a delta bridging two copies that can disagree.
 
 A **spec** still writes straight into the OKF `docs/` bundle (a decision into `docs/standards/`, an
 understanding into `docs/knowledge/`), isolated on a branch while it is built.

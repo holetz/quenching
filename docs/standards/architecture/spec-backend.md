@@ -83,26 +83,28 @@ issue. A construct written on every save and never consulted is a **projection**
 belongs wherever it is free — the issue title is one, rewritten from the frontmatter on every write
 at no extra call — never wherever it costs a call per item per write.
 
-The price of putting it where it was not free, measured on this repository on 2026-08-03 mid-migration:
+The price of putting it where it was not free, measured on this repository on 2026-08-03,
+mid-migration:
 
 - **68 spec issues against 689 task sub-issues.** 91% of the tracker's volume was the projection;
   43 specs were open, and 332 sub-issues with them.
 - **The full listing every specs command pays was 8 pages, 4.4 MB and 8.4 seconds.** Collapsed, it
   is one page.
-- **`write_spec` on a ten-task spec spent twelve round trips where one now does** — one PATCH on the
-  parent, one GET of the sub-issues, one PATCH per task. A newly created task cost three of its own
-  (POST, POST to link it as a child, PATCH to close it when the box was already ticked).
-- **`read_spec` paid one GET of sub-issues per spec read.** A one-part spec now costs nothing beyond
-  the listing, which already carries every body.
+- **`write_spec` on a ten-task spec spent twelve round trips where one now does** — one PATCH on
+  the parent, one GET of the sub-issues, one PATCH per task. A newly created task cost three of its
+  own (POST, POST to link it as a child, PATCH to close it when the box was already ticked).
+- **`read_spec` paid one GET of sub-issues per spec read.** A one-part spec now costs nothing
+  beyond the listing, which already carries every body.
 
 So the mapping is retired. On both external backends the **whole canonical document is the issue
 body / the work item description**, and there are no sub-issues and no child work items.
 
 What is given up, stated plainly, is **per-task addressability** — an assignee, labels, a comment
-thread of its own, a PR that closes a task issue. Nothing in quenching used any of it; `/specs:execute`
-anchors a task to its commit by the sha recorded in the document. What is kept is the part that
-renders: `- [ ]` in an issue body is a native GitHub task list, with a checkbox and a progress count,
-and ticking it in the web UI **edits the document** — which closing a sub-issue never did.
+thread of its own, a PR that closes a task issue. Nothing in quenching used any of it;
+`/specs:execute` anchors a task to its commit by the sha recorded in the document. What is kept is
+the part that renders: `- [ ]` in an issue body is a native GitHub task list, with a checkbox and a
+progress count, and ticking it in the web UI **edits the document** — which closing a sub-issue
+never did.
 
 ### What "the canonical document" covers, and how the obligation is checked
 
@@ -115,9 +117,9 @@ Measured across this repository's own specs, 49 of 68 carry groups.
 
 That loss was the sub-issue mapping's, and the mapping is retired (above) along with the per-task
 keys, indices and anchors its reassembly ran on. **The obligation did not go with it.** It is now
-close to free on both external backends — the document is what is *stored*, not what is rebuilt — and
-it is checked exactly as before, because these three rules hold for any backend, including the next
-one to take the native-construct permission up:
+close to free on both external backends — the document is what is *stored*, not what is rebuilt —
+and it is checked exactly as before, because these three rules hold for any backend, including the
+next one to take the native-construct permission up:
 
 - **Structure a backend does not model is structure it must carry, not structure it may drop.** A
   section's grouping, its prose and the blank lines between its items are content. A mapping that
