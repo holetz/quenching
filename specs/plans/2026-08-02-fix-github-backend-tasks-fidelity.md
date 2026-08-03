@@ -298,7 +298,7 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 
 ### 3. Prova sobre os documentos reais
 
-- [ ] 3.1 Provar split e rebuild sobre todo spec em `specs/plans/` e `specs/archive/`, exigindo
+- [x] 3.1 Provar split e rebuild sobre todo spec em `specs/plans/` e `specs/archive/`, exigindo
       identidade byte a byte em todos
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 3.1 os specs reais sobrevivem ao round trip
@@ -317,3 +317,4 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 - As tasks 1.2 e 1.3 sairam numa commit so: o campo anchor no marcador nao tem leitor sem o rebuild que o consome, e o rebuild nao tem o dado sem o marcador. Separa-las produziria uma commit que nao roda. As duas gravam o mesmo subject, entao os dois registros resolvem.
 - Refinado na 1.2: o marcador carrega anchor (quantas linhas mantidas do ## Tasks precedem o bloco) e nao section, como o ## Design dizia. section diz a que grupo o bloco pertence mas nao onde dentro dele, e nao diz nada sobre as linhas em branco que o documento usa entre tasks — o round trip seria uma re-diagramacao, nao uma identidade. Medido: com anchor, 68 de 68 documentos reais voltam byte a byte.
 - Refinado na 2.1: o teto compartilhado e 255 e nao 256 — o menor entre o titulo de issue do GitHub (256) e o System.Title do Azure Boards (255). Os helpers hybrid_* sao dos dois backends desde a task 6.2 de configurable-spec-backend, entao um teto por backend seria threading de estado por codigo deliberadamente agnostico para comprar um caractere. O numero do Azure vem da documentacao de campo e nao foi medido aqui.
+- Medido na 3.1 sobre os 68 specs em disco: 68/68 voltam byte a byte pelo caminho completo (wrap do marcador, round trip CRLF como o GitHub armazena, unwrap, rebuild). 49 deles carregam grupos ### N. — o ## Problem dizia 47 sobre 66, e as duas specs desta leva sao as duas a mais.
