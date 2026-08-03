@@ -435,6 +435,7 @@ code and the JSON, never on prose.
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
 | `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`; exit 0 whether or not anything is declared |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
+| `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. **The post-capture writer**: `new --verification` answers at the one moment nobody has an opinion yet, and an external backend has no file to hand-edit |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
 | `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing keeps it in sync, so it is a rescue copy for an external backend and never a second store |
 
