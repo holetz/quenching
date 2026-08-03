@@ -99,8 +99,10 @@ STALENESS (CLI only — advisory, never blocking)
   not change. It runs in CLI mode only — never `PostToolUse`, never `Stop` — since it
   shells out once per doc, and a tree that is not a git checkout skips it silently.
 
-Config (`hooks-config.json` + `hooks-config.local.json`, block `okfValidate`):
-  enabled, docsDir, warnAsError, blockOnFail, hardBlock, deadlineMs, stopScan.
+Config (target repo's `.claude/hooks/hooks-config.json` + `hooks-config.local.json`, block
+  `okfValidate`): enabled, docsDir, warnAsError, blockOnFail, hardBlock, deadlineMs, stopScan.
+`docsDir` alone has a second, preferred home: `.claude/quenching.json`'s own `docsDir` key,
+  read whether or not either hooks-config file exists — the plugin's config, not a hook-only one.
 An empty/absent config uses the defaults below; `enabled: false` makes the hook inert.
 
 Trust note: hook config is executable code with shell privileges. This script reads
@@ -182,10 +184,10 @@ DEFAULTS: dict = {
 # --------------------------------------------------------------------------- #
 # config + IO
 # --------------------------------------------------------------------------- #
-def _load_config() -> dict:
+def _load_config(project_dir: str) -> dict:
     cfg = dict(DEFAULTS)
     for name in ("hooks-config.json", "hooks-config.local.json"):
-        path = os.path.join(HERE, name)
+        path = os.path.join(project_dir, ".claude", "hooks", name)
         if not pathlib.Path(path).exists():
             continue
         try:
@@ -194,6 +196,18 @@ def _load_config() -> dict:
         except (OSError, json.JSONDecodeError):
             continue
         cfg.update(data.get("okfValidate") or {})
+    # docsDir's own home: HERE is the plugin's own assets/hooks/ when this script runs
+    # wired by the plugin path, never the target repo, so it cannot anchor a per-repo
+    # override — .claude/quenching.json can, since it is read relative to project_dir.
+    qpath = os.path.join(project_dir, ".claude", "quenching.json")
+    if pathlib.Path(qpath).exists():
+        try:
+            with pathlib.Path(qpath).open(encoding="utf-8") as fh:
+                qcfg = json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            qcfg = {}
+        if "docsDir" in qcfg:
+            cfg["docsDir"] = qcfg["docsDir"]
     return cfg
 
 
@@ -1247,7 +1261,7 @@ def run_cli(argv: list[str]) -> int:
     if "--version" in argv:
         print(f"okf-validate {VERSION}")
         return 0
-    cfg = _load_config()
+    cfg = _load_config(_project_dir({}))
     as_json = "--json" in argv
     paths = [a for a in argv if not a.startswith("-")]
     # intercepted before the target resolves — this CLI reads its first positional as
@@ -1277,13 +1291,13 @@ def run_cli(argv: list[str]) -> int:
 # HOOK
 # --------------------------------------------------------------------------- #
 def run_hook() -> int:
-    cfg = _load_config()
+    data = _read_stdin()
+    project = _project_dir(data)
+    cfg = _load_config(project)
     if cfg.get("enabled") is False:
         return 0
-    data = _read_stdin()
     event = data.get("hook_event_name") or ""
     docs_dir = str(cfg.get("docsDir", "docs")).replace("\\", "/").strip("/")
-    project = _project_dir(data)
     bundle_root = os.path.join(project, docs_dir)
     started = time.monotonic()
     deadline = float(cfg.get("deadlineMs", DEFAULTS["deadlineMs"])) / 1000.0
