@@ -2,6 +2,8 @@
 slug: migrate-this-repo-to-github-backend
 title: Migrar as specs deste repositório para o backend github
 verification: per-section
+branch: {base: main, work: plan/migrate-this-repo-to-github-backend}
+approved: {date: 2026-08-02}
 ---
 
 # Migrar as specs deste repositório para o backend github
