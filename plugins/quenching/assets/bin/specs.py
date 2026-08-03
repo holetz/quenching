@@ -4911,11 +4911,21 @@ def _work_ref(fm: dict, slug: str) -> str:
     return work or f"plan/{slug}"
 
 
-def _candidate(s: dict, schema: dict, heads: set[str], current: str | None) -> dict:
-    raw = read_text(s["path"]) or ""
-    fm = parse_frontmatter(raw)
-    sections = parse_sections(body_after_frontmatter(raw))
-    tasks = parse_tasks(raw)
+def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
+               current: str | None) -> dict:
+    # ASKED OF THE BACKEND, never of the path. Against GitHub the locator is an issue URL, so
+    # every candidate derived from an EMPTY document — the whole front ranked as `captured`
+    # with no title, no tasks and nothing executing, and `/specs:continue` handed out its
+    # single next action from exactly that.
+    info, rerr = backend.read_spec(s["slug"])
+    unreadable = (rerr or {}).get("code")
+    if info is None:
+        # Ambiguous slug — the slug came from the listing, so it cannot be unknown, and
+        # `validate` names it `sp-duplicate-slug`. The candidate SURVIVES, derived from an
+        # empty document exactly as `list` keeps its row: dropping it would hide a spec from
+        # the ranking, and `unreadable` says why it ranks as an empty one.
+        info = derive_info(s, "")
+    fm, sections, tasks = info["frontmatter"], info["sections"], info["tasks"]
     checked, blocked, total = task_progress(tasks)
     stage = derive_stage(s, sections, fm, tasks, schema)
     ready = ready_report({"sections": sections}, schema)
@@ -4937,6 +4947,7 @@ def _candidate(s: dict, schema: dict, heads: set[str], current: str | None) -> d
         "approved": fm.get("approved") or None,
         "priority": fm.get("priority") or None,
         "ageDays": _days_since(s["date"]),
+        "unreadable": unreadable,
         "branch": {"work": work, "live": live, "current": on_it},
         "_key": (branch_rank, 0 if executing else 1, -progress, prank,
                  s["date"], s["slug"]),
@@ -4987,7 +4998,7 @@ def _next_front(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    cands = [_candidate(s, schema, heads, current)
+    cands = [_candidate(backend, s, schema, heads, current)
              for s in backend.list_specs("plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
