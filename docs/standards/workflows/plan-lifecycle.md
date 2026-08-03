@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan lifecycle contract
-description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, and the append-only archive rule for facts that did not exist at the move
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, specs/**
-tags: [workflows, specs, lifecycle, stages, frontmatter, records]
-timestamp: 2026-07-29
+description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, the append-only archive rule for facts that did not exist at the move, and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
+resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, plugins/quenching/assets/references/specs-develop/questions.md, specs/**
+tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1)
 maintainer: quenching
 ---
 
@@ -107,6 +107,48 @@ is filled. `execute` on an unapproved spec **never refuses**: it asks inline, st
 `approved: {date}` on a yes, and proceeds — refusing would rebuild the folder hop v3 removed. The
 distinction matters because an agent can satisfy every section itself (`- none — <reason>` counts
 as filled), so section completeness can never stand in for the human OK.
+
+## When a follow-up becomes a spec
+
+A pass that **defines** parks; only the pass that **closes out** mints. The rule is about the
+moment in the lifecycle, not about which command happens to be running:
+
+| Moment | What happens to an out-of-scope finding |
+| --- | --- |
+| definition — `/specs:develop`, any bank | one line of `## Discoveries` on the spec being developed, written with `specs.py discover` inside the pass's one confirmed edit |
+| close-out — `/specs:conclude` on a `done` outcome | the harvest turns it into a fresh spec, if it still deserves one |
+
+The asymmetry is the whole rule. At definition time nobody knows whether the parent will ship, so
+a spec minted then is a bet placed before the information arrives; at close-out that fact is in
+hand, which is why the harvest table in `specs-conclude/distill.md` is the only place a follow-up
+becomes a file.
+
+**The measurement.** One autonomous `/specs:develop` pass over 32 open specs, one agent per spec,
+raised 4–6 follow-up candidates each — well over a hundred — and the same `specs.py` defects
+surfaced independently in three or four agents that could not see one another. A definition-time
+offer scales with what the pass *imagines*, and the queue it fills is charged again to every
+`specs.py next --front` ranking, `/specs:continue` table and `/specs:triage` read that has to walk
+past it. Duplicates arriving through that door are turned away at it: the discoveries bank's
+`promoted:` resolution reads the front first and resolves a line an open spec already covers as
+`dismissed: already covered by {slug}` — still three resolutions, never a fourth token.
+
+Where the rule is written: `commands/specs/develop.md` carries it as an `## Invariants` entry, with
+the guard that `specs.py new` runs inside a develop pass **only** as that `promoted:` resolution;
+its step 5 shows the parked line in the consolidated plan and its step 6 makes the `specs.py
+discover` call part of that same edit, because nothing may be written mid-bank.
+`assets/references/specs-develop/questions.md` carries the dedup step on the bank's resolution
+table.
+
+**The dependency that makes parking free.** `assets/specs/schema.json` derives the stage ladder
+from `## Problem` through `## Risks` plus `## Tasks`; `## Discoveries` appears in no stage rule, so
+filling it moves nothing. Parking therefore costs one line and no derived state. A future change
+that made `## Discoveries` a stage trigger would silently turn every parked finding into a stage
+regression — which is why the independence is recorded here rather than left to be rediscovered.
+
+**One route this does not touch.** A human who asks mid-pass for something that would rewrite an
+already-agreed spec is not filing a follow-up: the alternative there is damaging the spec that
+exists, so `/specs:develop`'s intent-change route still names `/specs:create`. Parking is for what
+the pass surfaced on its own.
 
 ## The v2→v3 migration
 

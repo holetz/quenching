@@ -270,9 +270,16 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <slug>` | it is work someone will do | one `specs.py new` — offer it, and write the slug back |
+| `promoted: <slug>` | it is work someone will do, and the front does not already hold it | one `specs.py list --json` to check, then one `specs.py new` — offer it, and write the slug back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
-| `dismissed: <reason>` | it is real but not worth acting on | one line, and the reason is the whole value |
+| `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
+
+**Check the front before minting.** `promoted:` reads the open specs first — `specs.py list --json`
+— and where one of them already covers the line, the resolution is
+`dismissed: already covered by {slug}` instead. That is the third resolution doing its ordinary
+job, not a fourth token: the resolutions stay `promoted:`, `folded:` and `dismissed:`, and the slug
+is the reason. A queue filled by executors that could not see each other produces the same finding
+several times, so the duplicate arrives through the front door and has to be turned away there.
 
 A line is never deleted, and never left unresolved with a shrug. `dismissed: acceptable` with no
 reason is the failure mode to hunt for.
