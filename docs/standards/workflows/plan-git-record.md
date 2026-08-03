@@ -2,12 +2,12 @@
 type: standard
 title: Plan git record contract
 description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/
-resource: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-07-31
+timestamp: 2026-08-03
 audience: both
-authority: current
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5)
+authority: background
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption
 maintainer: quenching
 ---
 
@@ -15,7 +15,7 @@ maintainer: quenching
 
 What links a plan's checkboxes to the commits that implemented them, which git facts are recorded
 in the spec, and whose conventions govern the commits themselves. The procedures implementing this
-live in `assets/references/specs-isolate/git.md` and `.../specs-execute/execution.md`; this
+live in `assets/references/specs-execute/git.md` and `.../specs-execute/execution.md`; this
 standard is the contract they answer to.
 
 ## Every record is written before the thing it describes
@@ -117,12 +117,24 @@ commit exists either way, and a tick that silently did not land would claim proo
 Both belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the same
 admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `/specs:isolate`, write-once, at the moment isolation is
-  taken. `work` is derivable while the branch is checked out; `base` is not — **after the merge,
-  git cannot say what the branch was cut from**, which is the whole reason the record exists and
-  why it is captured while still true. Work done in place stamps nothing: a record whose `base`
-  equals its `work` states no fact. A later run reads the record; a current branch that disagrees
-  with `work` is a finding to report, never a value to correct.
+- **`branch: {base, work}`** — stamped by `/specs:execute`'s inline isolation offer, write-once, at
+  the moment isolation is taken. `work` is derivable while the branch is checked out; `base` is
+  not — **after the merge, git cannot say what the branch was cut from**, which is the whole
+  reason the record exists and why it is captured while still true. Work done in place stamps
+  nothing: a record whose `base` equals its `work` states no fact. A later run reads the record; a
+  current branch that disagrees with `work` is a finding to report, never a value to correct.
+
+  **Every branch that is not the repository's base gets this stamped**, including one the plugin
+  never cut. A human may check one out by hand before running `execute`; a spec built there with
+  nothing stamped leaves `conclude` unable to say what it merges into. `base` is then **inferred**
+  rather than observed, stopping at the first that answers: the spec's own `branch.base` record,
+  when one already exists; `git symbolic-ref refs/remotes/origin/HEAD`; `git config
+  init.defaultBranch`; then `main`. The inference is shown on the same line as the confirmation,
+  before stamping, because the record is write-once and that is the only moment disagreeing with
+  it is cheap. **Never `git merge-base` or `--fork-point`** — both answer a commit, not a branch
+  name, and a commit ancestral to three branches identifies none of them. The mechanics live in
+  [git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Recording the isolation,
+  cited rather than restated.
 - **`merge: {strategy, subject}`** — stamped by `conclude`, write-once, **on the work branch before
   the merge**. The strategy was a human choice and the subject names the merge it will produce.
   Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none;
