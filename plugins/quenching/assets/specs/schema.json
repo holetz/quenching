@@ -3,14 +3,14 @@
   "version": "3.0.0",
 
   "filename": {
-    "pattern": "^(\\d{4}-\\d{2}-\\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
-    "groups": ["date", "slug"],
-    "example": "2026-07-25-session-tokens.md",
-    "note": "The same pattern in EVERY folder. The date is stamped once at capture and never rewritten: promote moves the file, never renames it."
+    "pattern": "^([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
+    "groups": ["slug"],
+    "example": "session-tokens.md",
+    "note": "The same pattern in EVERY folder, and the basename is the slug alone. The capture date is the frontmatter's date:, stamped once by new and never rewritten — it left the basename because a store with no filenames cannot hold it there, and no external store carries an honest copy of it to project from."
   },
 
   "frontmatter": {
-    "required": ["slug", "title", "verification"],
+    "required": ["slug", "title", "date", "verification"],
     "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge", "outcome"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],

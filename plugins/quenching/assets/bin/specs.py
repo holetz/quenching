@@ -116,7 +116,26 @@ def canonical_phase(folder: str) -> str:
     return PHASE_ALIASES.get(folder, folder)
 
 
-SPEC_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
+# THE BASENAME IS THE SLUG, and nothing else. It used to carry a `YYYY-MM-DD-` prefix, so the
+# identity key and the capture date lived in one string — which meant a store with no filenames
+# had to invent one to hold a date, and the `github` marker did exactly that. The date is a
+# frontmatter field now (`date:`), in EVERY backend, because no external store carries an honest
+# copy of it: an issue's `created_at` is when the issue was made, and a migration makes them all
+# on the same day. The citable identity is the bare slug, which is already the only thing a human
+# ever typed and the only thing `--spec` ever took.
+#
+# THE LOOKAHEAD IS LOAD-BEARING. `[a-z0-9]` matches digits, so without it the old
+# `2026-07-25-<slug>.md` matches this pattern *whole* and the date is swallowed INTO the
+# identity key — measured against this repository's 72 specs, every one of them came back
+# slugged `2026-07-25-decide-agents-md-harness-default` with an empty date, and nothing
+# reported a thing. Refusing the dated shape turns that silent corruption into the
+# `sp-bad-filename` finding it always was. A slug may still begin with digits (`2026-roadmap`);
+# only the full date prefix is rejected.
+SPEC_FILE_RE = re.compile(r"^(?!\d{4}-\d{2}-\d{2}-)([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
+# The pre-date-in-frontmatter basename, read ONLY by the migration folds — which exist precisely
+# to recognise a layout this tool no longer writes. Nothing else may match on it: a file still
+# named this way is a `sp-bad-filename` finding, not a second supported form.
+LEGACY_DATED_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 # `- [ ]` / `- [x]` / `- [!]` — the third is a BLOCKED task, visible and human-legible,
@@ -173,12 +192,12 @@ DEFAULT_SCHEMA: dict = {
     "schema": "spec-lifecycle",
     "version": "3.0.0",
     "filename": {
-        "pattern": r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
-        "groups": ["date", "slug"],
-        "example": "2026-07-25-session-tokens.md",
+        "pattern": r"^([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
+        "groups": ["slug"],
+        "example": "session-tokens.md",
     },
     "frontmatter": {
-        "required": ["slug", "title", "verification"],
+        "required": ["slug", "title", "date", "verification"],
         "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge",
                      "outcome"],
         "verification": list(VERIFICATION_POLICIES),
@@ -262,6 +281,7 @@ DEFAULT_SCHEMA: dict = {
 TEMPLATE_SPEC = """---
 slug: <SLUG>
 title: <TITLE>
+date: <DATE>
 verification: <VERIFICATION>
 ---
 
@@ -1132,8 +1152,13 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
     a v3 file in `plans/`). Passing `phase` filters on the canonical phase, so
     `phase="plans"` sweeps up the legacy folders too.
 
-    A file whose name does not match `YYYY-MM-DD-<slug>.md` is NOT returned — it is a
-    finding for `validate`/`doctor` to report, not something to silently half-support."""
+    A file whose name does not match `<slug>.md` is NOT returned — it is a finding for
+    `validate`/`doctor` to report, not something to silently half-support.
+
+    The rows are in BASENAME order, which is slug order. It used to be date order, for free,
+    because the date led the basename; ordering by date now would mean opening every file to
+    read its frontmatter, and the one caller that ranks by date — `_next_front` — already
+    reads each document and sorts on `info["date"]` itself."""
     out: list[dict] = []
     for folder in PHASE_DIRS:
         ph = canonical_phase(folder)
@@ -1152,8 +1177,7 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
                 "legacy": folder in LEGACY_PHASES,
                 "file": name,
                 "path": os.path.join(d, name),
-                "date": m.group(1),
-                "slug": m.group(2),
+                "slug": m.group(1),
             })
     return out
 
@@ -1459,6 +1483,11 @@ def derive_info(spec: dict, text: str) -> dict:
         "tasks": tasks,
         "stage": derive_stage(spec, sections, fm, tasks),
         "verification": _policy(fm),
+        # THE DATE COMES FROM THE DOCUMENT, not from the descriptor. It used to be the
+        # basename's prefix, which every backend without filenames then had to fake. Reading
+        # it here — in the one shared derivation — is what makes it the same fact in `files`,
+        # in `github` and in a dict, and it is why no descriptor carries a `date` key at all.
+        "date": str(fm.get("date", "")).strip(),
     })
     return info
 
@@ -1572,11 +1601,12 @@ class MemoryBackend(SpecBackend):
     name = "memory"
 
     def __init__(self) -> None:
-        # slug -> (phase, filename, document). THE FILENAME IS STORED, not derived: the
-        # files backend reads a spec's date out of its filename, where `new` stamped it once
-        # and never again. A backend that recomputed the date from anything else would hand
-        # back a different one for the same spec — which is precisely the divergence the
-        # equality check caught the first time this was written.
+        # slug -> (phase, filename, document). The filename is stored rather than rebuilt
+        # from the slug so that this backend can hand back exactly what it was given, the
+        # way a filesystem does. It no longer carries the capture date: that moved into the
+        # document's `date:`, which every backend reads through the one derivation — the
+        # divergence the equality check caught here was a backend RECOMPUTING the date, and
+        # the fix was to stop having a second place able to compute it at all.
         self.docs: dict[str, tuple[str, str, str]] = {}
 
     def _descriptor(self, slug: str) -> dict:
@@ -1587,7 +1617,7 @@ class MemoryBackend(SpecBackend):
         m = SPEC_FILE_RE.match(filename)
         return {"phase": phase, "folder": phase, "legacy": False, "file": filename,
                 "path": f"memory://{phase}/{filename}",
-                "date": m.group(1) if m else "", "slug": m.group(2) if m else slug}
+                "slug": m.group(1) if m else slug}
 
     def list_specs(self, phase: str | None = None) -> list[dict]:
         rows = [self._descriptor(s) for s in self.docs
@@ -1606,7 +1636,7 @@ class MemoryBackend(SpecBackend):
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        slug = m.group(2) if m else filename
+        slug = m.group(1) if m else filename
         self.docs[slug] = (phase, filename, text)
         return f"memory://{phase}/{filename}"
 
@@ -1622,6 +1652,7 @@ BACKEND_CASES = (
     ("read what was created", lambda b: _observable(b.read_spec("alpha")[0])),
     ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
     ("validate what was created", lambda b: _case_validate(b)),
+    ("the capture date survives the store", lambda b: _case_date(b)),
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
@@ -1639,8 +1670,11 @@ def _listing(b: "SpecBackend") -> list[dict]:
 
 
 def _case_doc(slug: str = "alpha") -> str:
+    # A FIXED date, never `today()`: it is the fact the case asserts travels intact through
+    # each store, and one computed at call time would compare equal to itself no matter what
+    # either backend did with it.
     return (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
-            .replace("<VERIFICATION>", "per-task"))
+            .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
 
 
 def _observable(info: dict | None) -> dict:
@@ -1655,8 +1689,18 @@ def _observable(info: dict | None) -> dict:
 
 
 def _case_create(b: "SpecBackend") -> list[dict]:
-    b.create_spec("plans", "2026-01-01-alpha.md", _case_doc())
+    b.create_spec("plans", "alpha.md", _case_doc())
     return _listing(b)
+
+
+def _case_date(b: "SpecBackend") -> str:
+    """The capture date, read back out of whatever the store did with the document.
+
+    It used to ride in the basename, so `_listing` alone proved it survived. Now it is a
+    frontmatter field, and the only thing that proves a backend did not drop, rewrite or
+    recompute it is asking for it after a round trip."""
+    info, _ = b.read_spec("alpha")
+    return (info or {}).get("date", "")
 
 
 def _case_validate(b: "SpecBackend") -> list[dict]:
@@ -1994,18 +2038,18 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # GitHub task list anyway: it renders as a checkbox with a progress count, and ticking it in the
 # web UI edits the document, which closing a sub-issue never did.
 #
-# THE MARKER ON THE BODY CARRIES THE FILENAME, and the filename carries the date. A spec's date
-# is stamped once by `new` into its basename and never recomputed — the `MemoryBackend`
-# docstring records that deriving it from anything else is precisely the divergence the equality
-# check caught the first time a second backend was written. GitHub has no filename, so the
-# document's own store has to hold it, and an HTML comment is the one place in a markdown body
-# that survives a round trip through the issue editor while staying invisible to a human reading
-# the issue.
+# THE MARKER ON THE BODY CARRIES THE FILENAME, which is now the bare `<slug>.md`. It used to
+# carry `YYYY-MM-DD-<slug>.md`, and that prefix was the ONLY reason this marker held a date: the
+# files backend read a spec's capture date out of its basename, so a store with no filenames had
+# to keep a synthetic one to stay equal to it. The date is a frontmatter field now, read by the
+# one shared derivation in every backend, and the marker is back to doing its one job.
 #
-# The marker is also what makes a spec issue distinguishable from an ordinary one: a repo's
-# issue tracker belongs to its humans, and a backend that treated every open issue as a spec
-# would list the bug reports and then write over them. The same reasoning applies one level
-# down to a continuation comment's own marker, below.
+# That job is what makes a spec issue distinguishable from an ordinary one, and it is why the
+# marker did not simply disappear with the date: a repo's issue tracker belongs to its humans,
+# and a backend that treated every open issue as a spec would list the bug reports and then
+# write over them. An HTML comment is the one place in a markdown body that survives a round
+# trip through the issue editor while staying invisible to a human reading the issue, and the
+# same reasoning applies one level down to a continuation comment's own marker, below.
 HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
                               r"\s*-->[ \t]*\r?\n")
 
@@ -2276,7 +2320,7 @@ class GitHubBackend(SpecBackend):
                     "phase": phase, "folder": phase, "legacy": False, "file": filename,
                     "path": issue.get("html_url")
                             or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
-                    "date": m.group(1), "slug": m.group(2),
+                    "slug": m.group(1),
                     # For a one-part spec — every spec but the largest — `head` IS the whole
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
@@ -2333,7 +2377,7 @@ class GitHubBackend(SpecBackend):
         m = SPEC_FILE_RE.match(filename)
         chunks = hybrid_split(text, GH_PART_MAX)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                {"title": hybrid_title(m.group(2) if m else filename, text),
+                                {"title": hybrid_title(m.group(1) if m else filename, text),
                                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
@@ -2506,11 +2550,11 @@ def gh_refusal_failures() -> list[str]:
     # The round trip the shell serialisation rests on, including the CRLF GitHub actually
     # stores bodies with.
     doc = "---\ntitle: Alpha\n---\n\n## Problem\n\nUm problema.\n"
-    for label, body in (("as written", hybrid_wrap("2026-01-01-alpha.md", doc)),
+    for label, body in (("as written", hybrid_wrap("alpha.md", doc)),
                         ("as GitHub returns it",
-                         hybrid_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
+                         hybrid_wrap("alpha.md", doc).replace("\n", "\r\n"))):
         name, back, parts = hybrid_unwrap(body)
-        if (name, back, parts) != ("2026-01-01-alpha.md", doc, 1):
+        if (name, back, parts) != ("alpha.md", doc, 1):
             failures.append(f"marker round trip {label}: got {(name, back, parts)!r}")
     # A marker written WITHOUT `parts=` must read as one part, because that is the form every
     # spec but a spilled one is stored in and the form every issue already in a repository
@@ -2603,7 +2647,7 @@ def hybrid_serialization_failures() -> list[str]:
 
     def store(chunks: list[tuple[str, bool]]) -> str:
         """What comes back after a store-and-reload, with each part CRLF'd on its own."""
-        wrapped = [hybrid_wrap("2026-01-01-alpha.md", chunks[0][0], len(chunks))] + [
+        wrapped = [hybrid_wrap("alpha.md", chunks[0][0], len(chunks))] + [
             hybrid_wrap_part(i, len(chunks), c, eol)
             for i, (c, eol) in enumerate(chunks[1:], start=2)]
         stored = [w.replace("\n", "\r\n") for w in wrapped]
@@ -3030,7 +3074,7 @@ class AzureBoardsBackend(SpecBackend):
                 "phase": phase, "folder": phase, "legacy": False, "file": filename,
                 "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
                         f"{item.get('id')}",
-                "date": m.group(1), "slug": m.group(2),
+                "slug": m.group(1),
             }, int(item.get("id") or 0), doc))
         self._rows = rows
         return rows
@@ -3088,7 +3132,7 @@ class AzureBoardsBackend(SpecBackend):
         m = SPEC_FILE_RE.match(filename)
         item = self._az("creating a work item", "work-item", "create", "--project",
                         self.project, "--type", AZ_SPEC_TYPE,
-                        "--title", hybrid_title(m.group(2) if m else filename, text),
+                        "--title", hybrid_title(m.group(1) if m else filename, text),
                         "--description", hybrid_wrap(filename,
                                                      hybrid_split(text, None)[0][0]),
                         "--state", self.states[phase])
@@ -3251,10 +3295,12 @@ def emit_err(as_json: bool, err: dict) -> int:
 # commands
 # --------------------------------------------------------------------------- #
 def cmd_new(args, root: str) -> int:
-    """Scaffold `plans/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else.
+    """Scaffold `plans/<slug>.md` carrying `## Problem` and nothing else.
 
-    THE DATE IS STAMPED HERE AND NEVER AGAIN — `promote` moves the file without renaming
-    it, so this basename is the spec's identity for its whole lifecycle."""
+    THE DATE IS STAMPED HERE AND NEVER AGAIN, now into the frontmatter's `date:` rather than
+    into the basename. `promote` moves the file without renaming it, so the basename — the
+    bare slug — is the spec's identity for its whole lifecycle, and the date is a fact the
+    document carries instead of a fact its name encodes."""
     slug = slugify(args.name)
     if not SLUG_RE.match(slug):
         emit(args.json, {"ok": False, "code": "sp-bad-slug", "slug": args.name,
@@ -3276,10 +3322,11 @@ def cmd_new(args, root: str) -> int:
         return 2
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
-    name = f"{today()}-{slug}.md"
+    name = f"{slug}.md"
     body = (capture_form()
             .replace("<SLUG>", slug)
             .replace("<TITLE>", title)
+            .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
     path = backend.create_spec("plans", name, body)
     emit(args.json,
@@ -3316,7 +3363,7 @@ def cmd_list(args, root: str) -> int:
         checked, blocked, total = task_progress(info["tasks"])
         rows.append({
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
-            "legacy": s["legacy"], "file": s["file"], "date": s["date"],
+            "legacy": s["legacy"], "file": s["file"], "date": info["date"],
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
@@ -4973,18 +5020,18 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     on_it = live and work == current
     branch_rank = 0 if on_it else (2 if live else 1)
     return {
-        "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": s["date"],
+        "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": info["date"],
         "title": fm.get("title", titleize(s["slug"])), "stage": stage,
         "tasks": {"checked": checked, "blocked": blocked, "total": total},
         "progress": round(progress, 3),
         "readyGateMet": ready["ok"],
         "approved": fm.get("approved") or None,
         "priority": fm.get("priority") or None,
-        "ageDays": _days_since(s["date"]),
+        "ageDays": _days_since(info["date"]),
         "unreadable": unreadable,
         "branch": {"work": work, "live": live, "current": on_it},
         "_key": (branch_rank, 0 if executing else 1, -progress, prank,
-                 s["date"], s["slug"]),
+                 info["date"], s["slug"]),
         "_why": pwhy,
         "_executing": executing,
     }
@@ -5332,7 +5379,7 @@ def _migrate_plan(root: str, name: str, dry: bool) -> dict:
             else phase_spec(dest_phase).get("entryGate", []))
 
     fm = [f"slug: {slug}", f"title: {meta.get('title') or titleize(slug)}",
-          f"verification: {_policy(meta)}"]
+          f"date: {date}", f"verification: {_policy(meta)}"]
     if isinstance(meta.get("refined"), dict) and meta["refined"].get("mode"):
         r = meta["refined"]
         fm.append(f"refined: {{mode: {r.get('mode')}, date: {r.get('date', date)}}}")
@@ -5350,8 +5397,8 @@ def _migrate_plan(root: str, name: str, dry: bool) -> dict:
     strays = sorted(f for f in os.listdir(plan_dir)
                     if f not in (".specs.json", "proposal.md", "design.md", "tasks.md")
                     and os.path.isfile(os.path.join(plan_dir, f)))
-    dest = os.path.join(root, dest_phase, f"{date}-{slug}.md")
-    rec = {"from": f"{name}/", "slug": slug, "to": f"{dest_phase}/{date}-{slug}.md",
+    dest = os.path.join(root, dest_phase, f"{slug}.md")
+    rec = {"from": f"{name}/", "slug": slug, "to": f"{dest_phase}/{slug}.md",
            "date": date, "dateSource": "created" if meta.get("created") else "git/mtime",
            "sections": sorted(collected), "strays": strays}
     if dry:
@@ -5387,11 +5434,11 @@ def _migrate_task(root: str, path: str, dry: bool) -> dict:
     if body and fm.get("description") and body not in problem:
         problem += f"\n\n{body}"
     out = ["---", f"slug: {slug}", f"title: {fm.get('title') or titleize(slug)}",
-           f"verification: {DEFAULT_VERIFICATION}", "---", "",
+           f"date: {date}", f"verification: {DEFAULT_VERIFICATION}", "---", "",
            f"# {fm.get('title') or titleize(slug)}", "", "## Problem", "", problem, ""]
-    dest = os.path.join(root, "plans", f"{date}-{slug}.md")
+    dest = os.path.join(root, "plans", f"{slug}.md")
     rec = {"from": f"backlog/{os.path.basename(path)}", "slug": slug,
-           "to": f"plans/{date}-{slug}.md", "date": date, "kind": "task"}
+           "to": f"plans/{slug}.md", "date": date, "kind": "task"}
     if dry:
         return rec
     os.makedirs(os.path.join(root, "plans"), exist_ok=True)
@@ -5403,34 +5450,52 @@ def _migrate_task(root: str, path: str, dry: bool) -> dict:
 def _v2_leftovers(root: str) -> list[dict]:
     """Every spec file still sitting in a v2 folder, in scan order.
 
-    This is a pure FILE MOVE, not a fold: v2 and v3 spec files are the same format, and
-    the folder was the only thing that changed. So the file is never opened, never
-    reformatted, and never renamed — which is what makes the migration lossless and what
-    lets it work on a file this tool could not parse."""
+    It used to be a pure FILE MOVE — v2 and v3 spec files were the same format and only the
+    folder had changed, so the file was never opened, never reformatted and never renamed.
+    That stopped being true when the capture date left the basename: a v2 file is named
+    `YYYY-MM-DD-<slug>.md` and carries no `date:`, which is a format difference and not a
+    location one. So BOTH names are collected here, and `_migrate_v2_file` moves the already
+    conformant one untouched and rewrites the dated one."""
     out = []
     for folder in LEGACY_PHASES:
         d = os.path.join(root, folder)
         if not os.path.isdir(d):
             continue
         for name in sorted(os.listdir(d)):
-            if SPEC_FILE_RE.match(name) and os.path.isfile(os.path.join(d, name)):
+            if not os.path.isfile(os.path.join(d, name)):
+                continue
+            if SPEC_FILE_RE.match(name) or LEGACY_DATED_FILE_RE.match(name):
                 out.append({"folder": folder, "file": name,
                             "path": os.path.join(d, name)})
     return out
 
 
 def _migrate_v2_file(root: str, item: dict, dry: bool) -> dict:
+    """Move one v2 spec file into `plans/`, renaming it only if it still carries a date.
+
+    A file already named `<slug>.md` is moved and NOT opened — the lossless case the v2 fold
+    was written for, and the one that still works on a file this tool could not parse. A
+    `YYYY-MM-DD-<slug>.md` one is the format change: the date is the only copy of a fact the
+    basename is about to stop holding, so it is written into the frontmatter as `date:`
+    BEFORE the rename, and never dropped on the floor."""
     dest_dir = os.path.join(root, "plans")
-    dest = os.path.join(dest_dir, item["file"])
-    rec = {"from": f"{item['folder']}/{item['file']}", "slug": None,
-           "to": f"plans/{item['file']}", "kind": "v2-file"}
-    m = SPEC_FILE_RE.match(item["file"])
-    if m:
-        rec["slug"] = m.group(2)
+    legacy = LEGACY_DATED_FILE_RE.match(item["file"])
+    slug = legacy.group(2) if legacy else SPEC_FILE_RE.match(item["file"]).group(1)
+    name = f"{slug}.md" if legacy else item["file"]
+    rec = {"from": f"{item['folder']}/{item['file']}", "slug": slug,
+           "to": f"plans/{name}", "kind": "v2-file"}
+    if legacy:
+        rec["date"] = legacy.group(1)
     if dry:
         return rec
     os.makedirs(dest_dir, exist_ok=True)
-    os.rename(item["path"], dest)
+    if legacy:
+        text = read_text(item["path"]) or ""
+        # Only when it has none of its own: a v2 file that somebody already gave a `date:`
+        # has a human's answer in it, and the basename is the derived copy, not the source.
+        if not str(parse_frontmatter(text).get("date", "")).strip():
+            write_text(item["path"], set_frontmatter_key(text, "date", legacy.group(1)))
+    os.rename(item["path"], os.path.join(dest_dir, name))
     return rec
 
 
@@ -5451,7 +5516,11 @@ def cmd_migrate(args, root: str) -> int:
     if os.path.isdir(bdir):
         for name in sorted(os.listdir(bdir)):
             p = os.path.join(bdir, name)
-            if name == "index.md" or not os.path.isfile(p) or SPEC_FILE_RE.match(name):
+            # A conformant spec file in `backlog/` — under EITHER name — is the v2 fold's,
+            # not the v1 task fold's. Matching only the current name would hand every dated
+            # v2 file to the task fold, which rewrites it into a `## Problem` stub.
+            if (name == "index.md" or not os.path.isfile(p)
+                    or SPEC_FILE_RE.match(name) or LEGACY_DATED_FILE_RE.match(name)):
                 continue
             if str(parse_frontmatter(read_text(p) or "").get("type", "")) == "task":
                 tasks.append(p)
@@ -5733,11 +5802,15 @@ def cmd_validate(args, root: str) -> int:
                                          path=f"{ph}/{name}",
                                          remedy="a v1 plan folder? run `specs.py migrate`"))
             elif not SPEC_FILE_RE.match(name):
+                dated = LEGACY_DATED_FILE_RE.match(name)
                 findings.append(_finding("sp-bad-filename", "error",
-                                         f"{ph}/{name} is not `YYYY-MM-DD-<slug>.md`",
+                                         f"{ph}/{name} is not `<slug>.md`",
                                          path=f"{ph}/{name}",
-                                         remedy="rename it to the one filename pattern all "
-                                                "three folders share"))
+                                         remedy="run `specs.py migrate` — the date belongs in "
+                                                "`date:` now, not in the basename"
+                                         if dated else
+                                         "rename it to the one filename pattern all "
+                                         "three folders share"))
 
     target = [s for s in specs if s["slug"] == args.spec] if args.spec else specs
     if args.spec and not target:
