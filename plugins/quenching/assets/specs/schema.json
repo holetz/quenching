@@ -47,12 +47,13 @@
         "why": "that a human read the whole branch diff — restamped if the diff changes and is read again"
       },
       "merge": {
-        "fields": ["strategy", "subject"],
+        "fields": ["strategy", "subject", "pr"],
         "strategies": ["merge-commit", "squash", "rebase", "fast-forward"],
         "anchorless": ["rebase", "fast-forward"],
+        "noPr": ["fast-forward"],
         "writtenBy": "conclude",
         "writeOnce": true,
-        "why": "the strategy was a choice and the subject names the merge it produced. The subject is known BEFORE the merge, so the record is stamped on the work branch and the merge is the last action of the run — nothing is written to the base after it. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none. A spec archived before this change carries `{strategy, commit}` and is read as-is, never backfilled: a recorded sha describes a commit that exists."
+        "why": "the strategy was a choice and the subject names the merge it produced. The subject is known BEFORE the merge, so the record is stamped on the work branch and the merge is the last action of the run — nothing is written to the base after it. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none. A spec archived before this change carries `{strategy, commit}` and is read as-is, never backfilled: a recorded sha describes a commit that exists. `pr:` is optional and absent on every local conclusion; `gh pr merge --merge|--squash|--rebase` maps onto three of the four strategies, so `pr:` under `fast-forward` — which has no `gh` equivalent — is refused."
       },
       "outcome": {
         "valuesFrom": "frontmatter.outcome",

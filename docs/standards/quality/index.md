@@ -21,6 +21,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [prose-sweeps.md](prose-sweeps.md) — a mechanical find-and-replace over prose corrupts exactly the
   sentences that talk *about* the form being swept, the checker that guards the sweep reports them
   clean, and the mitigation is to write a mention as a placeholder rather than an instance.
+* [computed-fact-prose-fanout.md](computed-fact-prose-fanout.md) — any fact a tool computes and
+  prose restates ages every site that spells it out, and no checker sees it: why each validator is
+  blind by construction, the two measurements the rule was set from, the grep on the fact's literal
+  form that finds the sites, and why it belongs to the task that makes the change.
 * [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
   an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
   prove, and the gate the three shipped selftests have not yet cleared.

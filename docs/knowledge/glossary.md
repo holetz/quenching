@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 audience: both
 authority: current
 source: quenching skeleton
@@ -84,13 +84,15 @@ sentence, and **link out** rather than explaining in full here.
   clause, no fact the owner states, and never a narrowing; the third is what caught
   `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-  frontmatter entry stamped by `/specs:isolate` at the moment isolation is taken, write-once.
-  `work` is derivable while the branch is checked out; **`base` is not** — after the merge, git
+  frontmatter entry stamped by `/specs:execute` for **any** branch that is not the repo's base —
+  the one it cut and the one a human already had open alike — write-once. `work` is derivable
+  while the branch is checked out; **`base` is not** — after the merge, git
   cannot say what the branch was cut from, which is the whole reason the record exists and why it
-  is captured while still true. Work done in place stamps nothing, because a record whose `base`
+  is captured while still true. Work done on the base stamps nothing, because a record whose `base`
   equals its `work` states no fact. **The record is never the signal**: anything asking whether a
-  spec is in flight asks git for a live `plan/<slug>` ref, since a human may cut a branch with no
-  record and a record outlives the branch it names.
+  spec is in flight asks git whether the ref is alive — the record's `work`, falling back to
+  `plan/<slug>` — since a human may cut a branch with no record and a record outlives the branch
+  it names.
 - [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/docs:status`
   prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
   which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
@@ -167,12 +169,15 @@ sentence, and **link out** rather than explaining in full here.
   form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
   constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/docs:harness` classing
   the line **KEEP** is the only thing between it and a silent deletion.
-- [**Merge record**](../standards/workflows/plan-git-record.md) — the `merge: {strategy, subject}`
-  frontmatter entry stamped by `/specs:conclude`, write-once, **on the work branch before the
-  merge** — which is what makes the merge that command's last action and leaves nothing to be
-  committed to the base after it. The strategy was a human choice and the subject names the merge
-  commit it is about to produce; recording both is what tells a future reader whether the per-task
-  subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
+- [**Merge record**](../standards/workflows/plan-git-record.md) — the
+  `merge: {strategy, subject, pr}` frontmatter entry stamped by `/specs:conclude`, write-once,
+  **on the work branch before the merge** — which is what makes the merge that command's last
+  action and leaves nothing to be committed to the base after it. The strategy was a human choice
+  and the subject names the merge commit it is about to produce; recording both is what tells a
+  future reader whether the per-task subjects still resolve from the base. An **anchorless
+  strategy** carries an explicit none here. `pr` exists only on the **pull-request route** and
+  names the pull request the merge went through — absent on every local conclusion, and refused
+  under `fast-forward`, which `gh pr merge` cannot perform (`sp-merge-pr-no-route`).
 - [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
   human, weighing whether to build), `build` (the executor, at step 4 of `/specs:execute`), `close`
@@ -242,6 +247,18 @@ sentence, and **link out** rather than explaining in full here.
   same fact**: an issue's `created_at` is when the ISSUE was made, so the capture date has no
   faithful counterpart and stays in the document. A field with no honest native copy is not
   duplicated truth — it is the only copy.
+- [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
+  a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
+  which every checker in this repo is blind to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
+  than descriptions of them, and `stale-doc` only fires where a doc's `resource:` happens to name
+  the schema file. Measured twice on one branch: **one field added → four sites stale** across four homes, and **one
+  command retired → ten sites stale** across four files, with every checker green in both. Found by
+  grepping the record's **spelled-out** form (`merge: {strategy`), never its name, and fixed in the
+  task that adds the key. Historical mentions are correct as written, which is why this stays a
+  human sweep rather than a check — the same mention/use judgment
+  [prose-sweeps.md](../standards/quality/prose-sweeps.md) already establishes is invisible to a
+  regex, reached from the opposite direction: that one is the sweep you ran, this one the sweep you
+  never ran.
 - [**Promote**](../standards/workflows/plan-lifecycle.md) — the gated `git mv` that moves a spec
   from `plans/` to `archive/` without renaming it, stamping `outcome: done | abandoned`. Under v3
   it is the ONE hop a spec ever makes: the `backlog/` → `ready/` promote is retired, and the human
@@ -333,7 +350,7 @@ sentence, and **link out** rather than explaining in full here.
   repository at all. Distinct from the **Canonical case list**, which is the lockstep unit for the
   three tools' *parser behaviour* rather than their version strings.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
-  in `specs/config.json`, holding a command `/specs:isolate` runs once inside a newly created
+  in `.claude/quenching.json`, holding a command `/specs:execute` runs once inside a newly created
   worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at
   the first `verify:`. `specs.py` reads it and never executes it. Declaring nothing is the normal
   case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`

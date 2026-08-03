@@ -4,7 +4,7 @@ title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
 resource: .claude/commands/
 tags: [automation, commands]
-timestamp: 2026-08-02
+timestamp: 2026-08-03
 audience: both
 authority: current
 source: quenching-skill-align first run
@@ -22,7 +22,7 @@ defines — a **domain-bound** command is pathed after the one folder it serves
 level (`/skill-map` maps whatever it is pointed at, so no single folder claims it). The rule
 itself is [/docs/standards/automation/skills.md](/docs/standards/automation/skills.md).
 
-The `quenching` plugin installed from this marketplace contributes the twenty-six
+The `quenching` plugin installed from this marketplace contributes the twenty-five
 `/docs:*`, `/specs:*`, `/skill:*` and `/align` commands. Those are the **product's** surface,
 documented in [plugins/quenching/README.md](/plugins/quenching/README.md), and they stay out
 of the table below — the zone lists only what this repository itself ships in
@@ -36,6 +36,29 @@ them is overwritten by the next run, not merged.
 <!-- GENERATED:BEGIN -->
 | Command | Serves | Typical trigger |
 | --- | --- | --- |
-| /docs:storyteller | docs/ | "transformar/gerar os md em mkdocs" |
-| /skill-map | generic | "kit map" |
+| /align | generic | "align the repo" |
+| /docs:add | docs/ | "insert new information into the base" |
+| /docs:align | docs/ | "align the docs" |
+| /docs:define | docs/ | "add a term to the glossary" |
+| /docs:documentation:build | docs/documentation/ | "build the docs site" |
+| /docs:glossary-backfill | docs/ | "scan the docs for glossary terms" |
+| /docs:harness | docs/ | "refactor CLAUDE.md" |
+| /docs:import | docs/ | "import/ingest a source into the base" |
+| /docs:import-memory | docs/ | "convert the memory into docs" |
+| /docs:learn | docs/ | "add this knowledge" |
+| /docs:status | docs/ | "what's the status of the docs" |
+| /skill:agent:new | skill/agent/ | "create an agent" |
+| /skill:align | skill/ | "align the skills" |
+| /skill:eval | skill/ | "measure whether this command teaches anything" |
+| /skill:hook:new | skill/hook/ | "create a hook" |
+| /skill:new | skill/ | "create a command" |
+| /skill:retro | skill/ | "what did this command cost" |
+| /specs:align | specs/ | "align specs" |
+| /specs:conclude | specs/ | "conclude this spec" |
+| /specs:continue | specs/ | "which spec now, and which command?" |
+| /specs:create | specs/ | "capture this" |
+| /specs:develop | specs/ | "develop this spec" |
+| /specs:execute | specs/ | "execute this spec" |
+| /specs:status | specs/ | "specs status" |
+| /specs:triage | specs/ | "triage the specs" |
 <!-- GENERATED:END -->

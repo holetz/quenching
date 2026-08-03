@@ -7,7 +7,7 @@ tags: [workflows, specs, lifecycle, stages, frontmatter, records]
 timestamp: 2026-08-03
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4)
 maintainer: quenching
 ---
 
@@ -47,7 +47,7 @@ spec that run is closing, and both before the merge:
 
 | Append | Why it cannot be written earlier |
 | --- | --- |
-| `merge: {strategy, subject}` | the subject names a merge commit that does not exist yet — and stamping it *after* the merge would mean a write on the base branch, the exact thing the merge-last ordering exists to prevent |
+| `merge: {strategy, subject, pr}` | the subject names a merge commit that does not exist yet, and — on the PR route — `pr` names a pull request that does not exist until it is opened; stamping any of it *after* the merge would mean a write on the base branch, the exact thing the merge-last ordering exists to prevent |
 | the distillation's one line per minted doc, appended to `## Outcome` | `## Outcome` is drafted at the archive gate, before the distillation pass knows what it minted; the paths do not exist until the harvest runs |
 
 The shape of the test is what generalizes, not the count: an append is permitted only when the
@@ -90,9 +90,9 @@ record:
 | `priority: {level, criticality, complexity, date}` | `triage` | no | this spec's rank against every other one |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
 | `approved: {date}` | `develop`, or `execute` inline | yes | that a human said go |
-| `branch: {base, work}` | `isolate` | yes | after a merge, git cannot say what the base was |
+| `branch: {base, work}` | `execute` | yes | after a merge, git cannot say what the base was |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
-| `merge: {strategy, subject}` | `conclude` | yes | the strategy was a choice; the subject names the merge it produced |
+| `merge: {strategy, subject, pr}` | `conclude` | yes | the strategy was a choice; the subject names the merge it produced; `pr` names the pull request on the PR route, unwritable before it exists |
 | `outcome: done \| abandoned` | `conclude` | yes | the verdict on whether the work completed |
 
 Read top to bottom, the records narrate the spec's history in order: ranked, interrogated,
