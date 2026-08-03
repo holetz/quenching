@@ -1,5 +1,5 @@
 ---
-description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp
+description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on "insert new information into the base", "add a standard/table/announcement". Not for: capturing ONE fact a human just stated → /docs:learn; ONE glossary term → /docs:define; importing an external source in bulk → /docs:import.
 argument-hint: [the-knowledge-to-add]
 allowed-tools: Read, Grep, Glob, Write, Edit
 hooks:

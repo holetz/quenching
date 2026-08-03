@@ -1,5 +1,5 @@
 ---
-description: Create or update the mkdocs site over the docs/documentation home
+description: Create or update the mkdocs-material site over the docs/documentation home. Triggers on "build the docs site", "generate the mkdocs site for docs/documentation", "fix the documentation site's nav". Not for: page-level content inside docs/ → /docs:align.
 argument-hint: [optional-section-or-mkdocs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
