@@ -7,6 +7,7 @@ approved: {date: 2026-07-31}
 priority: {level: 16, criticality: high, date: 2026-08-01}
 branch: {base: main, work: claude/configurable-spec-backend-50928f}
 reviewed: {date: 2026-08-02}
+outcome: done
 ---
 
 # Configurable backend for spec management (files, GitHub, Azure DevOps)
@@ -500,3 +501,67 @@ branch não deriva sozinha do `git log`.
 - A spec refuse-a-mis-levelled-specs-root (main, plans/) trata do --root de specs.py vs skills.py apontarem para niveis diferentes da arvore. Esta branch acrescentou resolve_files_root e a worktree de specs, que mudam o que --root resolve num repo migrado. As duas se tocam: quem pegar aquela spec precisa ler resolve_files_root primeiro.
 - A pausa desta branch foi por custo de execucao, e a main entregou trabalho direto nisso enquanto ela esperava: read-by-section-not-by-file, cut-specs-execute-turns e narrow-the-execute-preamble mergeados, mais duas specs vivas (reduce-execute-conclude-cost 0/14 e cut-conclude-run-cost). A retomada herda esse ganho de graca — nao replanejar custo de execucao dentro desta spec.
 - RESOLVIDO na revisão de branch do conclude: `specs.py export` entrou nas DUAS tabelas que enumeram a superfície — spec-driven.md §The specs.py tool surface e assets/specs/QUENCHING.md — e a linha do `config` nas duas passou a nomear `azureStates`.
+
+## Outcome
+
+**Entregue e mergeado em `main` por merge commit** (`--no-ff`, subject
+`plan/configurable-spec-backend: merge (merge-commit)`), 29/29 tasks. A estratégia importa para quem
+for ler esta spec depois: as 34 commits por task ficaram na `main`, então **todo `subject:` gravado
+nas tasks resolve** por `git log --grep="<subject>" --fixed-strings` a partir dela.
+
+### O que entrou
+
+- **A interface de backend**: cinco primitivas sobre o documento canônico — `list_specs`,
+  `read_spec`, `write_spec`, `create_spec`, `move_spec` — e os oito verbos da CLI como código
+  compartilhado por cima. Nenhum backend deriva nada; `resolve_one` e `derive_info` são puros e
+  únicos. O standard é `docs/standards/architecture/spec-backend.md`.
+- **Três backends**: `files` (worktree persistente sobre uma branch dedicada, com lockfile
+  serializando escritores), `github` (issues + sub-issues, transporte `gh api` em subprocess) e
+  `azure-boards` (work items, transporte `az boards`).
+- **A config em `.claude/quenching.json`**, quatro chaves — `backend`, `specsBranch`,
+  `worktreeSetup`, `azureStates` — com `specs/config.json` nomeado como stranded e nunca mesclado.
+  Standard: `docs/standards/workflows/plugin-configuration.md`.
+- **O anchor task→commit por sha**: `task --check <id> --commit <sha>`, **aditivo** a `--subject` e
+  nunca seu substituto. Os dois standards reescritos preservam o argumento antigo como o que foi
+  revertido, não apagado.
+- **`specs.py record`** como escritor único dos sete records de frontmatter — merge campo a campo,
+  recusa exit 2 sobre write-once — e a leitura granular (`show`, `section` com N headings). Os nove
+  bodies de `/specs:*` deixaram de ler o caminho; `triage` e `isolate` perderam o `Edit` do
+  `allowed-tools`.
+- **`specs.py export --spec | --all`**: despejo write-only do markdown canônico. Nada o lê de
+  volta, e é isso que o mantém fora de ser um segundo store.
+
+### O que ficou de fora, e continua fora
+
+- **`azure-boards` não foi exercitado end-to-end** — não havia projeto Azure DevOps para provar. O
+  selftest prova o contrato de interface contra o fake, e o `doctor` levanta `sp-backend-unproved`
+  mais um aviso write-time uma vez por processo. `AZ_SPEC_TYPE`/`AZ_TASK_TYPE` são constantes que
+  um projeto real ainda pode desmentir.
+- **As specs deste repositório continuam na branch do código** — 33 em `plans/` e 21 em `archive/`.
+  A migração é trabalho à parte, e é por isso que `task-execution.md` documenta que este repo ainda
+  tica com `--subject` antes da commit. O `export` entregue aqui é o que a torna viável.
+- Sincronização bidirecional, webhooks, e migração automática ao trocar de backend: fora de escopo
+  por decisão, não por falta de tempo.
+
+### O que o próximo leitor precisa saber
+
+A revisão de branch fechou duas lacunas (`azureStates` na tabela de chaves, `specs.py export` nas
+duas tabelas de superfície) e deixou **cinco achados abertos**, todos já registrados em
+`## Discoveries` e nenhum deles um defeito no que foi entregue:
+
+1. `cmd_promote` ainda deriva `dest_path` do `root` e checa `os.path.exists` para `sp-dest-exists` —
+   inerte sob backend externo, e uma suposição do `files` vivendo na camada compartilhada de verbos.
+2. `cmd_doctor` lê o `root` cru: num repo migrado reporta `sp-no-workspace` falsamente. Falta o modo
+   resolve-mas-não-crie (diagnosticar não pode criar worktree).
+3. O campo `root` do JSON emite o root declarado em oito sites de `emit`; `list` diz
+   "no specs under /…/specs" tendo consultado o GitHub.
+4. O selftest só tem a asserção específica `sp-plans-subcommand-back`; falta a genérica
+   `set(parser.choices) == set(DISPATCH)`.
+5. `align.md` é o único body ainda acoplado ao backend `files` — o que `/specs:align` significa sem
+   pasta, sem filename e sem rename é uma decisão que esta spec deliberadamente não tomou.
+
+Duas specs vivas na `main` foram tocadas por este merge e precisam ser relidas antes de serem
+pegas: **check-canonical-cases-and-map-the-scripts** mediu `specs.py` em 3.108 linhas e concluiu que
+modularizar não se paga — esta branch levou o arquivo a 6.199, então a premissa numérica venceu; e
+**refuse-a-mis-levelled-specs-root** trata do `--root`, que `resolve_files_root` e a worktree de
+specs mudaram.
