@@ -74,6 +74,8 @@ environment probe below, which belongs in this same call:
 ```bash
 git status --porcelain
 git branch --list "plan/<slug>"
+git branch --show-current
+git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
 specs.py status --spec "<slug>" --json
 # and the hook probe of 2b, in this same call
 ```
@@ -91,8 +93,26 @@ Either way, read the state before the first task: a spec whose branch is **alive
 elsewhere** (`git worktree list`, or a ref this checkout is not on) is being built somewhere else,
 and starting here would fork the work. Say so and stop.
 
-**Nothing to check out → offer isolation here, inline.** Read what the workspace declares first,
-so the offer can show it:
+**Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
+record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
+above); else `git config init.defaultBranch`, and then `main`.
+
+**Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
+disagreeing with the resolved base means the human already answered the isolation question at
+checkout — asking again is friction the loop does not need to pay. Show the inference on the same
+line as the confirmation, before stamping — `base: main — inferred; this branch was not cut by
+this command` — and stamp:
+
+```bash
+specs.py record "<slug>" branch --set base=<resolved base> --set work=<current branch>
+```
+
+Then go straight to the loop. Never derive `base` from `git merge-base` or `--fork-point` here:
+both answer a commit, not a branch name, and a commit ancestral to three branches identifies none
+of them.
+
+**On the base branch, with nothing to check out → offer isolation here, inline.** Read what the
+workspace declares first, so the offer can show it:
 
 ```bash
 specs.py config --json        # `worktreeSetup`, or null — exit 0 either way
