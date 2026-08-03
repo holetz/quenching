@@ -460,8 +460,8 @@ The plugin keeps its context and token footprint predictable on three levels:
    Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
 
-   **Where it stands now: 12,875 characters** (~3,219 approximate tokens) across 26 commands and
-   0 agent definitions, measured 2026-08-02 — 25 of those commands routed, 1 typed-only holding a
+   **Where it stands now: 14,898 characters** (~3,724 approximate tokens) across 26 commands and
+   0 agent definitions, measured 2026-08-03 — 25 of those commands routed, 1 typed-only holding a
    further 876 characters *outside* the total. Most of the difference between 2,083 and that figure
    is the routing information being bought back deliberately — the triggers and boundaries the
    collapse had dropped. That measurement is also the current default ceiling, which has **no
@@ -470,11 +470,12 @@ The plugin keeps its context and token footprint predictable on three levels:
    `disable-model-invocation: true` drops its description from the always-on total entirely, so
    it cost **0** and the ceiling never fired.
 
-   **The ceiling has now fired twice, the second time with nothing minted.** The 2026-07-28
+   **The ceiling has now fired three times, the last two with nothing minted.** The 2026-07-28
    figure of 12,726 was set when `/specs:isolate` became the 25th command. It was crossed again
    by **+149** with no new command at all — three descriptions grew — which is why `budget` is
-   now part of this repo's stated verification routine rather than an instrument nobody ran. The
-   rule and the revision procedure live in
+   now part of this repo's stated verification routine. It crossed a third time by **+2,023** when
+   eleven descriptions regained the trigger phrases and `Not for:` boundaries the collapse had
+   dropped. The rule and the revision procedure live in
    [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md).
 2. **Body on invocation.** A command's body loads only when it runs; every body stays well
    under 500 lines. Shared procedure lives once, in its owners —
