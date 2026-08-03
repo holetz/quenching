@@ -231,6 +231,17 @@ sentence, and **link out** rather than explaining in full here.
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
   the same programs run again as the closing verification.
+- [**Projection / storage**](../standards/architecture/spec-backend.md) — the pair that decides
+  whether a backend may map a canonical field onto a native construct. A **projection** is written
+  from the document on every write and never read back, which makes it duplicated truth however
+  cheap it is; **storage** is a value something actually reads, which makes the native copy the
+  only one. The test is one question — *does anything read the native value back?* — and it admits
+  exactly two remedies: retire the mapping, or make a read consult it. The issue title took the
+  second (stored without `title:`, reassembled on read, so a web-UI edit now renames the spec); the
+  `## Tasks`→sub-issue mapping took the first. A mapping also needs the native value to be **the
+  same fact**: an issue's `created_at` is when the ISSUE was made, so the capture date has no
+  faithful counterpart and stays in the document. A field with no honest native copy is not
+  duplicated truth — it is the only copy.
 - [**Promote**](../standards/workflows/plan-lifecycle.md) — the gated `git mv` that moves a spec
   from `plans/` to `archive/` without renaming it, stamping `outcome: done | abandoned`. Under v3
   it is the ONE hop a spec ever makes: the `backlog/` → `ready/` promote is retired, and the human
