@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 audience: both
 authority: current
 source: quenching skeleton
@@ -84,13 +84,15 @@ sentence, and **link out** rather than explaining in full here.
   clause, no fact the owner states, and never a narrowing; the third is what caught
   `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-  frontmatter entry stamped by `/specs:isolate` at the moment isolation is taken, write-once.
-  `work` is derivable while the branch is checked out; **`base` is not** — after the merge, git
+  frontmatter entry stamped by `/specs:execute` for **any** branch that is not the repo's base —
+  the one it cut and the one a human already had open alike — write-once. `work` is derivable
+  while the branch is checked out; **`base` is not** — after the merge, git
   cannot say what the branch was cut from, which is the whole reason the record exists and why it
-  is captured while still true. Work done in place stamps nothing, because a record whose `base`
+  is captured while still true. Work done on the base stamps nothing, because a record whose `base`
   equals its `work` states no fact. **The record is never the signal**: anything asking whether a
-  spec is in flight asks git for a live `plan/<slug>` ref, since a human may cut a branch with no
-  record and a record outlives the branch it names.
+  spec is in flight asks git whether the ref is alive — the record's `work`, falling back to
+  `plan/<slug>` — since a human may cut a branch with no record and a record outlives the branch
+  it names.
 - [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/docs:status`
   prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
   which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
@@ -333,7 +335,7 @@ sentence, and **link out** rather than explaining in full here.
   repository at all. Distinct from the **Canonical case list**, which is the lockstep unit for the
   three tools' *parser behaviour* rather than their version strings.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
-  in `specs/config.json`, holding a command `/specs:isolate` runs once inside a newly created
+  in `.claude/quenching.json`, holding a command `/specs:execute` runs once inside a newly created
   worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at
   the first `verify:`. `specs.py` reads it and never executes it. Declaring nothing is the normal
   case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`
