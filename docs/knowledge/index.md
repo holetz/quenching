@@ -30,6 +30,10 @@ but are not a contract, a procedure, or a fact about a specific external asset. 
   `quenching-docs-define` on demand, `quenching-docs-glossary-backfill` in bulk, and, as a tail
   step, by the other knowledge skills.
 
+## Subject subfolders
+
+* [automation/](automation/index.md) — understanding about this plugin's own tooling.
+
 ## How to organize
 
 Which *other* knowledge exists and how it is grouped is **this repo's** decision —
