@@ -79,11 +79,12 @@ that split used to imply about completeness is **derived** from the spec's own s
 one fact it carried that no derivation reproduces — *a human said go* — is now the
 `approved: {date}` frontmatter record (§7).
 
-**Every file is `YYYY-MM-DD-<slug>.md`, in both folders.** The date records when the spec was
-**born** and is stamped once, at creation — archiving moves the file and never renames it. So the
-basename is stable for the whole lifecycle, `git log --follow` reads as one history, and a plain
-`ls` of either folder is chronological: a file listing IS the status view, and no file listing
-reads frontmatter.
+**Every file is `<slug>.md`, in both folders — the basename IS the slug.** The capture date is
+`date:` in the frontmatter, stamped once at creation; archiving moves the file and never renames
+it, so the basename is stable for the whole lifecycle and `git log --follow` reads as one history.
+The date used to lead the basename, which made a plain `ls` chronological for free — it moved
+because a backend with no filenames had nowhere to put it, and an issue's `created_at` is when
+the ISSUE was made, not the spec. `specs.py next --front` sorts on the declared date instead.
 
 **Identity is the slug, not the path.** Every command and cross-reference names the bare slug;
 `specs.py` resolves it to the one file ending in `-<slug>.md`, wherever it sits. Two matches is a
@@ -105,7 +106,7 @@ One file, one move, and a frontmatter that narrates the history.
    create                enrich, in place                approve            build             close
       │                        │                            │                 │                  │
       ▼                        ▼                            ▼                 ▼                  ▼
-  plans/2026-07-25-<slug>.md ──────────────────────────────────────────────────────►  archive/…-<slug>.md
+  plans/<slug>.md ─────────────────────────────────────────────────────────────────►  archive/<slug>.md
       │   ## Problem           derived stages:            approved: {date}   branch: {base,work}   │
       │      ↓ ## Proposal     captured → proposed →      (develop offers    per-task subject: …   │
       │      ↓ ## Design       designed → refined →        it at the gate;   blocked → - [!] …     │
@@ -163,7 +164,7 @@ it needs you. It speaks the sweep's own `sp-*` vocabulary, so it doubles as an h
 ### `/specs:create` — park ONE spec, or convert a plan file
 
 Effort proportional to input, **zero interrogation**. A sentence becomes
-`plans/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else, in seconds — every other
+`plans/<slug>.md` carrying `## Problem` and nothing else, in seconds — every other
 heading left absent, a *not-yet*, which is what keeps a fresh capture from deriving as `designed`.
 A Claude Code plan file (`~/.claude/plans/*.md`, or a path you give it) becomes every section it
 actually supports — mapped, never invented — so the work gains the lifecycle and the archive-time

@@ -71,16 +71,16 @@ work would be the worst outcome the probe can produce.
 specs/
   QUENCHING.md                 # the operator manual (payload — not a spec)
   plans/                       # a spec's whole active life: captured → … → ready → executing
-    YYYY-MM-DD-<slug>.md       # ONE spec per file — no listing file; `specs.py list` derives it
+    <slug>.md                  # ONE spec per file — no listing file; `specs.py list` derives it
   archive/                     # done or abandoned (`outcome:` tells them apart)
-    YYYY-MM-DD-<slug>.md
+    <slug>.md
     YYYY-MM-DD-<name>/         # v1 plan folders — HISTORICAL, never migrated
 ```
 
 Three invariants define conformance, and every code below traces to one of them:
 
-1. **One spec is one file**, named `YYYY-MM-DD-<slug>.md` in both folders. A directory inside
-   `plans/` is unmigrated v1 work.
+1. **One spec is one file**, named `<slug>.md` in both folders — the capture date is `date:` in
+   the frontmatter, not a basename prefix. A directory inside `plans/` is unmigrated v1 work.
 2. **The folder is the phase**, and there are only two — `plans/` and `archive/`. There is no
    `phase:` frontmatter field to disagree with them, and the stages *within* `plans/` are derived
    from section presence and frontmatter, never from a third folder.
@@ -102,7 +102,7 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 | `sp-legacy-workspace` | A legacy `openspec/` tree is present | The one-way `openspec/` fold (§below). The only place `openspec/` is touched. |
 | `sp-missing-phase` **(tool)** | `plans/` or `archive/` is absent | Create it. The folder IS the phase, so a missing one makes its specs unfindable. |
 | `sp-stray-file` **(tool)** | A file at the specs root other than `QUENCHING.md` / `schema.json` | Move it into a phase folder, or report it. |
-| `sp-bad-filename` | A file in a phase folder is not `YYYY-MM-DD-<slug>.md` | Rename to the canonical form, deriving the date from frontmatter or the path's first commit — **never** from mtime, which a checkout rewrites. No date derivable → report, never guess. |
+| `sp-bad-filename` | A file in a phase folder is not `<slug>.md` | Rename to the bare slug. A basename still carrying a `YYYY-MM-DD-` prefix is folded by `specs.py migrate`, which moves that date into `date:` in the same step — the prefix is the only copy, so dropping it without moving it loses the capture date. |
 | `sp-slug-mismatch` **(tool)** | Frontmatter `slug` disagrees with the filename suffix | Make the frontmatter match the filename — the filename is the identity a human reads in a listing. |
 | `sp-missing-frontmatter` **(tool)** | `slug`, `title`, or `verification` absent | Stamp it (MERGE — fill what is missing, preserve what is filled, including third-party keys). |
 | `sp-bad-verification` **(tool)** | `verification` outside the three declared values | Set the default (`per-section`) and say so, or take the value the human states. |
@@ -142,7 +142,8 @@ It covers two shapes, and a workspace holding both is folded in one run:
   every checkbox state preserved.
 - **The birth date is never invented.** It comes from `.specs.json`'s `created`, falling back to
   the path's first commit date, and only then to mtime. A folder already named
-  `YYYY-MM-DD-<slug>` keeps that date rather than gaining a second one.
+  `YYYY-MM-DD-<slug>` keeps that date, which the fold writes into `date:` rather than into a
+  second basename prefix.
 - **A gate section the v1 plan never recorded** is written `- none — not recorded in the v1 plan`
   — a fact about the v1 plan, not an invented answer.
 - **A folder still holding any other file is KEPT**, never deleted, and the leftover is reported:
