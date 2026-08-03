@@ -316,8 +316,10 @@ as context going in and distils durable knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole pre-archive life.
 Under `files` it is a real file, `specs/plans/YYYY-MM-DD-<slug>.md`, moving exactly once to
-`specs/archive/`; under `github` or `azure-boards` it is an issue or work item — `## Tasks`
-serialized as sub-issues / child work items, everything else as markdown — and there may be **no
+`specs/archive/`; under `github` or `azure-boards` it is an issue or work item
+**whose body is the whole document** — no sub-issues, no child work items; a document past
+GitHub's 65,536-character body ceiling (two of this repository's 69 specs) spills into
+continuation comments on its own issue and comes back byte for byte — and there may be **no
 `specs/` folder on disk at all**. **Frontmatter records human judgments** (`priority`, `refined`,
 `approved`, `branch`, `reviewed`, `merge`, `outcome`); the filesystem or backend, git and section
 presence record everything else — `ready` is a *derived* stage, and the OK to build is the
