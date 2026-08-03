@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit subject as the task→commit anchor, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/
 resource: plugins/quenching/assets/references/specs-isolate/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-07-29
+timestamp: 2026-07-31
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1)
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5)
 maintainer: quenching
 ---
 
@@ -37,10 +37,51 @@ Two consequences, and they are why the anchor changed:
 A record that cannot be written beforehand is a record that forces a write afterwards, and a write
 after the merge lands where the spec's own branch cannot account for it.
 
-## The task→commit link is the commit's own subject
+## The task→commit link is the commit's own sha, where the spec no longer shares a branch with it
 
-Each completed task line carries the subject of the commit that implements it, in the metadata
+Each completed task line carries a fact about the commit that implements it, in the metadata
 grammar `files:` and `verify:` already use:
+
+```markdown
+- [x] 3.2 Validate the token
+      files: src/auth.py
+      verify: pytest tests/auth
+      commit: 4f2a9c1
+```
+
+Written mechanically by `specs.py task --check <id> --commit <sha>` — never by string surgery —
+and only **after** the task verified, self-reviewed, and the commit exists:
+
+```bash
+git add <the task's files> && git commit -m "<subject>"
+specs.py task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
+```
+
+### Why a post-commit write stopped being the thing this contract forbade
+
+§Every record is written before the thing it describes is still the rule, and reads for a reason
+that has not changed: a record naming something only the commit can produce, written into a file
+that shares the commit's own branch, forces a second commit on that branch to carry the record —
+turning "one commit per task" into two.
+
+**What changed is which branch the record lands on.** [The spec backend](../architecture/spec-backend.md)
+guarantees no backend lets a spec share a branch with the code being committed: the `files` backend
+writes the tick to its own dedicated specs branch (by way of a worktree, not by way of a second
+commit on the code branch — see [worktree-setup.md](worktree-setup.md)), and an external backend
+writes it outside git entirely. Writing `commit: <sha>` after the code commit no longer touches the
+code branch a second time, because the write was never going to land there. The rule that forced
+subject-before-commit was never "sha is illegal" — it was "never a second commit on the branch
+being committed to", and a sha-carrying write that lands on a different store altogether does not
+break it.
+
+### Subject is not deprecated; it is what a co-branching spec still needs
+
+A repository whose specs still live on the code branch — this repository's own `plans/`/`archive/`
+at the time of writing, per [spec-backend.md](../architecture/spec-backend.md) §The selected
+backend is the source of truth — still pays the cost a second commit would carry, because for that
+spec the record and the code genuinely do share a branch. `specs.py task --check <id> --subject
+<line>` is unchanged and still the right tool there, ticked **before** the commit so the box travels
+inside it:
 
 ```markdown
 - [x] 3.2 Validate the token
@@ -49,30 +90,27 @@ grammar `files:` and `verify:` already use:
       subject: plan/session-tokens: 3.2 Validate the token
 ```
 
-Written mechanically by `specs.py task --check <id> --subject <line>` — never by string surgery —
-and only **after** the task verified and self-reviewed, **before** its commit. It resolves by
-substring match:
+It resolves by substring match, `git log --grep="<the recorded subject>" --fixed-strings`, and is
+still **not a trailer and not a machine-readable anchor bolted into the message** — the subject the
+target repo's own convention produced, recorded verbatim. `--subject` and `--commit` are accepted
+together or alone by the same `task --check`; neither is a special case of the other.
 
-```bash
-git log --grep="<the recorded subject>" --fixed-strings
-```
+**Both forms are read, forever, and both are now written.** A spec built before subject was
+introduced carries `commit: <sha>` from that era; one built during co-branching carries `subject:`;
+one built on a non-co-branching backend carries `commit: <sha>` again, for the opposite reason.
+Nothing is backfilled and neither form is an error: rewriting an archived spec to modernise its
+anchor would falsify when the record was actually made.
 
-The link is still **not a trailer and not a machine-readable anchor bolted into the message**. It is
-the subject the target repo's own convention produced, recorded verbatim: Conventional Commits,
-ticket prefixes and required sign-offs all keep working, and the link still resolves. What changed
-is only *which* fact about the commit is stored — never who decides the message.
+### Where each form can fail
 
-**Two forms are read, forever.** A spec built before this change carries `commit: <sha>` and
-resolves by sha. Neither form is backfilled and neither is an error: a recorded sha describes a
-commit that exists, and rewriting an archived spec to modernise it would falsify when the record
-was made. Tools read both; only `subject:` is ever written.
-
-### Where the subject can fail
-
-A `commit-msg` hook that **replaces** the subject outright breaks the link. Substring matching
-survives every hook that merely *adds*, which is nearly all of them. `/specs:execute` compares
-`git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding, writing
-nothing** — correcting it after the commit would restore the ordering this contract removed.
+A `commit-msg` hook that **replaces** the subject outright breaks a subject-anchored link; substring
+matching survives every hook that merely *adds*, which is nearly all of them. `/specs:execute`
+compares `git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding,
+writing nothing** — correcting it after the commit would restore the ordering this contract removed.
+A sha-anchored link has no equivalent failure mode — the sha is read back from git itself, not
+matched against rewritable prose — but a `--commit` write that fails (a network error against an
+external backend, mid-way through recording it) must be **reported, never left implicit**: the
+commit exists either way, and a tick that silently did not land would claim proof of nothing.
 
 ## Two frontmatter records carry the underivable git facts
 

@@ -1,7 +1,7 @@
 ---
 description: Rank the whole plans/ front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads every spec's frontmatter and derived stage directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes the priority record — level, criticality, complexity, date — and nothing else. Never removes a spec, never infers completion, never treats staleness as abandonment. Not for: closing a spec out or abandoning it → /specs:conclude; resolving a spec's discoveries → /specs:develop; being handed the single next action → /specs:continue; the conformance view of the workspace → /specs:status.
 argument-hint: [optional-slug]
-allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 ---
 
 # /quenching:specs:triage — rank the front, once, on one confirmation
@@ -88,11 +88,12 @@ command writes it.
 Find `specs/plans/` at the target repo root. Missing → stop and offer `/quenching:specs:create`, which
 installs the seed. Then:
 ```bash
-specs.py list --json                    # every spec, its folder, its derived stage
+specs.py list --json                    # every spec: folder, derived stage, and its records
+specs.py section <slug> Problem         # per spec being ranked, for the reason column
 ```
-Read each spec's frontmatter and its `## Problem` first lines directly — no sub-agents. Read
-`docs/vision/` when present, to ground the ordering in where the repo is going rather than in what
-is loudest.
+`list --json` carries the seven `records`, so the current `priority` of every spec arrives in that
+one call — **never open a spec file to read it.** Read `docs/vision/` when present, to ground the
+ordering in where the repo is going rather than in what is loudest. No sub-agents.
 
 Note what the table will have to explain: specs already ranked, specs whose ranking predates their
 current stage, near-duplicates, and any `priority` whose shape does not match §The record this
@@ -121,9 +122,15 @@ rather than open-ended.
 **Done when:** the human has approved, adjusted, or rejected the whole table.
 
 ### 4. Apply exactly what was approved
-Edit each approved spec's frontmatter, **merging** the `priority` record — fill or replace only the
-approved fields, never rewrite the frontmatter wholesale (`slug`, `title`, `verification` and every
-other record must survive). Stamp `date` on every write.
+One call per approved spec, and **never an edit to the file**:
+```bash
+specs.py record <slug> priority --set level=<n> --set criticality=<word> \
+  [--set complexity=<hours>] --set date=<today>
+```
+The tool merges: a field not named survives, and `slug`, `title`, `verification` and the other six
+records are never in reach of this write. Stamp `date` on every write. Leave `--set complexity` off
+rather than guessing it. Editing the frontmatter by hand would do the same thing only while the
+backend is `files` — against a backend whose specs are issues there is no file to edit.
 **Done when:** each approved row is on disk and no unapproved row was touched.
 
 ### 5. Check
@@ -150,6 +157,8 @@ consumer of what this just wrote.
   sweep cannot honestly place.
 - Never write a field outside the `priority` record. This command ranks; it does not develop,
   execute, or conclude.
+- Never edit a spec's frontmatter directly. `specs.py record` is the writer, and it is what keeps
+  the merge honest and the write backend-agnostic.
 - Never remove a spec, move a spec, tick a checkbox, or resolve a `## Discoveries` line.
 - Never infer completion or abandonment, and never treat staleness as evidence of either.
 - Never create or refresh a `plans/index.md`. The artifact is retired; `specs.py list` derives the

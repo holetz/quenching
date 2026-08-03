@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.6.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.7.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -133,10 +133,17 @@ TASK_META_RE = re.compile(rf"^\s+({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
 # stays untouched. A field nobody reads costs one alternation and moves no turn.
 #
 # The anchor is written into a one-line grammar and read back, so the only hard requirement
-# is that it holds text and stays on its line. `commit:` is the older form of the same
-# field — still READ from specs written before the anchor became the subject, never written
-# again, and never rewritten in place.
+# is that it holds text and stays on its line. `commit:` is both the legacy form of the same
+# field — still READ from specs written before the anchor became the subject — AND, since
+# `task --commit`, a form written again on purpose: a real git sha, upserted by the CLI once
+# the commit that implements the task already exists. `subject:` stays the default `--check`
+# writes; `commit:` is opt-in via the new flag. See `task --commit`'s help and `## Design`
+# ("Decisão: o anchor task→commit é o sha") for why both anchors coexist for now.
 SUBJECT_RE = re.compile(r"^[^\r\n]+$")
+# A git object id, short or full — hex only. Loose on purpose (git accepts abbreviations down
+# to a repo-dependent minimum well below 7), but tight enough to catch an obvious mistake like
+# passing a commit MESSAGE where a sha was meant.
+COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DEFAULT_META_INDENT = "      "
 PARALLEL_RE = re.compile(r"^\[P\](?:\s|$)")
 BLOCKED_REASON_RE = re.compile(r"—\s*blocked\s*:\s*(.+?)\s*$", re.IGNORECASE)
@@ -798,7 +805,27 @@ def read_text(path: str) -> str | None:
 
 
 def write_text(path: str, text: str) -> None:
-    pathlib.Path(path).write_text(text, encoding="utf-8")
+    """Replace a file's whole content ATOMICALLY — a reader never sees half a spec.
+
+    Write-then-rename rather than `Path.write_text`, which truncates first: a reader landing in
+    the window between the truncate and the write gets an empty or torn document. That window
+    is why this is here rather than left alone — `SpecsLock` serialises WRITERS ONLY, and the
+    argument for letting readers run unlocked is exactly that a write is never observable
+    half-done. `os.replace` is atomic on POSIX and on Windows.
+
+    The temp file is created in the SAME directory, so the rename never crosses a filesystem,
+    and carries the pid, so two writers cannot collide on the temp name even where no lock
+    covers them (a workspace still in the code tree has no worktree and takes no lock)."""
+    p = pathlib.Path(path)
+    tmp = p.with_name(f".{p.name}.tmp-{os.getpid()}")
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, p)
+    finally:
+        try:
+            tmp.unlink()      # a no-op after a successful replace; cleanup after a failure
+        except OSError:
+            pass
 
 
 def load_schema() -> dict:
@@ -968,26 +995,95 @@ def find_specs_root(root_arg: str | None) -> str:
     return os.path.join(cur, "specs")   # default (created by `new`)
 
 
-CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("worktreeSetup",)
+CONFIG_FILE = os.path.join(".claude", "quenching.json")
+LEGACY_CONFIG_FILE = "config.json"
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates")
+BACKENDS = ("files", "github", "azure-boards")
+DEFAULT_BACKEND = "files"
+DEFAULT_SPECS_BRANCH = "specs"
+# `azureStates` has NO default, and that is the decision rather than an omission. GitHub's
+# open/closed is universal, so `github` needs no such key; an Azure Boards state is defined
+# by the project's PROCESS — Basic says To Do/Doing/Done, Agile says New/Active/Resolved/
+# Closed, Scrum says New/…/Done/Removed, and a customised process says whatever it likes.
+# Guessing would not fail loudly: it would read every archived spec as active in half the
+# projects it ran against.
+
+# The backends that ship without ever having run against a real target. `## Out of Scope`
+# accepts that for `azure-boards`, and the selftest's completeness and refusal checks are
+# what it has instead. Named HERE rather than inside the backend so that retiring the
+# caveat is one edit: a real Azure DevOps project exercises it, this tuple loses a name,
+# and the doctor finding and the write-time line go quiet together.
+UNPROVED_BACKENDS = ("azure-boards",)
+
+_UNPROVED_ANNOUNCED: set[str] = set()
+
+
+def announce_unproved(name: str) -> None:
+    """One line on stderr, once per process, before an unproved backend's first WRITE.
+
+    THE DECISION IS "WARN, BUT NOT ON EVERY OPERATION". A line per operation is honest and
+    becomes a per-call tax on the agent reading this CLI, paid forever for a fact that never
+    changes between calls. Silence is not defensible either, because the unproved paths do
+    not all fail the same way: a wrong `AZ_SPEC_TYPE` fails LOUDLY — `az` answers with an
+    API error and the transport turns it into an exit-2 refusal — but a relation whose child
+    ids do not extract fails QUIETLY, returning a spec with no tasks, and a write that fails
+    halfway leaves work items behind on somebody's real board. So the line lands on the
+    writes, where an unproved path can cost something that does not announce itself, and
+    reads — the overwhelming majority of a build loop's calls — stay silent. The permanent,
+    zero-noise half of the same answer is `sp-backend-unproved` in `doctor`.
+
+    stderr and never stdout: every caller branches on the `--json` payload, and a warning
+    printed into it would break the parse it is trying to inform."""
+    if name not in UNPROVED_BACKENDS or name in _UNPROVED_ANNOUNCED:
+        return
+    _UNPROVED_ANNOUNCED.add(name)
+    print(f"warning: backend '{name}' ships without an end-to-end run against a real "
+          f"target — its writes have never seen a live response, so this one may fail, or "
+          f"half-succeed and leave items behind. `specs.py selftest` proves its five "
+          f"primitives and its refusals; nothing proves this call.", file=sys.stderr)
+
+
+def find_repo_root(specs_root: str) -> str:
+    """The target repo's root — where `.claude/` lives.
+
+    Git's own top level first, because it is the answer that survives being invoked from a
+    subdirectory. Falling back to the specs workspace's parent, which is the repo root by
+    construction: `specs/` sits beside `.claude/`, never below it."""
+    top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
+    return top or os.path.dirname(os.path.abspath(specs_root))
 
 
 def load_config(root: str) -> dict:
-    """`specs/config.json` — the ONE declarative parameter a target repo may set, read as
-    data and never as a refusal.
+    """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
+    as a refusal.
 
-    Absent file, absent key, malformed JSON: all yield `worktreeSetup: None`, because a
-    workspace without a setup script is the normal case and must cost nothing. The two
-    ways it can be *wrong* — an unrecognised key, unparseable JSON — come back as fields
-    rather than as findings, so `doctor` decides what they are worth and every other
+    THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `specs/config.json`, at the
+    root of the specs workspace, holding one key. Two things broke that home: a repo whose
+    backend is external may have no `specs/` folder at all, so a config that lives inside
+    the workspace cannot say where the workspace is; and the config stopped being the specs
+    front's alone. `.claude/` is the one directory every front already shares.
+
+    A leftover `specs/config.json` comes back as `legacyPath` rather than being read. Merging
+    the two silently would leave a repo with a config that half-works and no way to tell which
+    file won; `doctor` names it instead.
+
+    Absent file, absent key, malformed JSON: all yield the defaults, because a repo that
+    declares nothing is the normal case and must cost nothing. Every way the file can be
+    *wrong* — an unrecognised key, an unrecognised backend, unparseable JSON — comes back as
+    a field rather than as a finding, so `doctor` decides what each is worth and every other
     caller is spared the question.
 
-    Whether the declared command actually resolves is deliberately NOT answered here:
-    it is judged relative to the freshly created worktree, whose path this tool never
-    learns. `/specs:isolate` runs it there and reports the exit code."""
-    path = os.path.join(root, CONFIG_FILE)
+    Whether `worktreeSetup` actually resolves is deliberately NOT answered here: it is judged
+    relative to the freshly created worktree, whose path this tool never learns.
+    `/specs:isolate` runs it there and reports the exit code."""
+    repo = find_repo_root(root)
+    path = os.path.join(repo, CONFIG_FILE)
+    legacy = os.path.join(root, LEGACY_CONFIG_FILE)
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
-           "unknownKeys": [], "worktreeSetup": None}
+           "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
+           "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
+           "azureStates": None,
+           "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
     try:
@@ -999,9 +1095,32 @@ def load_config(root: str) -> dict:
         out["unparseable"] = f"top level is {type(obj).__name__}, not an object"
         return out
     out["unknownKeys"] = sorted(k for k in obj if k not in CONFIG_KEYS)
+
+    backend = obj.get("backend")
+    if isinstance(backend, str) and backend.strip():
+        if backend.strip() in BACKENDS:
+            out["backend"] = backend.strip()
+        else:
+            # The declared value is kept, not discarded: `doctor` must be able to quote back
+            # what was typed. The effective backend stays the default, so a typo degrades to
+            # the local one rather than to no backend at all.
+            out["unknownBackend"] = backend.strip()
+
+    branch = obj.get("specsBranch")
+    if isinstance(branch, str) and branch.strip():
+        out["specsBranch"] = branch.strip()
+
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+
+    # Both phases or neither. A half-declared mapping is worse than none: it would archive a
+    # spec into a state the project has and then fail to recognise it on the way back.
+    states = obj.get("azureStates")
+    if isinstance(states, dict):
+        named = {p: str(states.get(p, "")).strip() for p in PHASES}
+        if all(named.values()):
+            out["azureStates"] = named
     return out
 
 
@@ -1227,11 +1346,21 @@ def parse_tasks(text: str) -> list[dict]:
             "verify": verify,
             "subject": subject,
             "commit": commit,
+            # ONE PAST the task's own last line — checkbox plus every indented metadata
+            # line under it, exactly the span `block_end` already tracked to find the
+            # metadata. Exists so a caller can slice `lines[lineno:blockEndLineno]` and get
+            # the task's literal source text, verbatim, with nothing re-rendered. The
+            # `github` backend is the first reader: a task's raw block IS what a sub-issue
+            # stores, so `checked`/`blocked` round-trip by re-parsing the same text through
+            # THIS function again on read, rather than the backend inventing its own
+            # encoding of state.
+            "blockEndLineno": base + block_end,
             # where the anchor line is, and where one would go — so `task` upserts it
             # mechanically instead of the caller doing string surgery on the file. Both
-            # forms are tracked because both are read: nothing writes `commit:` any more,
-            # but a spec written before the change carries one and `--uncheck` must still
-            # be able to drop it.
+            # forms are tracked because both are read AND, as of `task --commit`, both can be
+            # written: `subject:` by `--check --subject`, `commit:` by `--check --commit` once
+            # the real sha exists. A spec written before either form applied to it carries
+            # only whichever one it has, and `--uncheck` must still be able to drop it.
             "subjectLineno": (base + subject_off) if subject_off is not None else None,
             "commitLineno": (base + commit_off) if commit_off is not None else None,
             # After the last metadata line when there is one; otherwise after the WHOLE
@@ -1292,12 +1421,13 @@ def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
     return out
 
 
-def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
-    """Resolve a slug and read everything derivable from its file in one pass.
+def resolve_one(specs: list[dict], slug: str) -> tuple[dict | None, dict]:
+    """Pick one spec descriptor out of a listing by slug.
 
-    Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
-    ambiguous, so every command handles both the same way."""
-    spec, matches = resolve_slug(root, slug)
+    Pure over the listing, so every backend resolves a slug the same way and gets the same
+    two refusals — an ambiguous slug is exit 2 whether the duplicates are two files or two
+    issues. TWO MATCHES IS A REFUSAL, never a guess."""
+    matches = [s for s in specs if s["slug"] == slug]
     if len(matches) > 1:
         return None, {
             "code": "sp-ambiguous-slug", "exit": 2, "slug": slug,
@@ -1305,10 +1435,19 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
             "message": f"slug '{slug}' matches {len(matches)} files — "
                        f"{', '.join(m['phase'] + '/' + m['file'] for m in matches)}",
         }
-    if not spec:
+    if not matches:
         return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
                       "message": f"no spec with slug '{slug}'"}
-    text = read_text(spec["path"]) or ""
+    return matches[0], {}
+
+
+def derive_info(spec: dict, text: str) -> dict:
+    """Everything derivable from one spec's document, in one pass.
+
+    THE SINGLE DERIVATION. Every backend hands its canonical document here and gets the same
+    `info` back — frontmatter, sections, tasks, stage and policy. No backend derives any of
+    it, which is why "every backend behaves identically" is a property of the code rather
+    than a claim to be re-tested per target."""
     fm = parse_frontmatter(text)
     sections = parse_sections(body_after_frontmatter(text))
     tasks = parse_tasks(text)
@@ -1321,7 +1460,1548 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
         "stage": derive_stage(spec, sections, fm, tasks),
         "verification": _policy(fm),
     })
-    return info, {}
+    return info
+
+
+def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
+    """Resolve a slug against the files workspace and derive its document.
+
+    Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
+    ambiguous, so every command handles both the same way."""
+    spec, err = resolve_one(spec_files(root), slug)
+    if err:
+        return None, err
+    return derive_info(spec, read_text(spec["path"]) or ""), {}
+
+
+# --------------------------------------------------------------------------- #
+# the spec backend
+# --------------------------------------------------------------------------- #
+class SpecBackend:
+    """Where a repo's specs actually live. One implementation per target; every command
+    above talks to this and never to a path.
+
+    THE INTERFACE IS THE DOCUMENT, NOT THE VERBS. `status`, `show`, `section`, `task`,
+    `discover`, `promote` and `validate` are shared code layered on the five primitives
+    below — they are not methods each backend reimplements. That is what makes "every
+    backend behaves identically" provable by construction rather than by hoping three
+    parsers agree: the canonical markdown document is the contract, the derivation of
+    stages, gates, records and tasks happens once, and a backend's only job is to produce
+    that document and to store it again.
+
+    A backend is therefore free to serialise natively — `## Tasks` as sub-issues, sections
+    as fields — provided it reassembles the canonical document on read. The hybrid
+    serialisation lives inside each external implementation, exactly where it belongs, and
+    it can never drift the JSON the CLI prints.
+
+    Granular reading is unaffected by this split, because the cost it addresses is the
+    agent's context and not I/O: `section` hands back the headings asked for whether or not
+    the backend had to fetch the whole document to find them."""
+
+    name = "abstract"
+
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        """Every spec descriptor, oldest first within each phase."""
+        raise NotImplementedError
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        """`(info, err)` — the canonical document plus everything derived from it, or a
+        ready-to-emit refusal. Never raises for an unknown or ambiguous slug."""
+        raise NotImplementedError
+
+    def write_spec(self, info: dict, text: str) -> None:
+        """Replace one spec's whole document with `text`."""
+        raise NotImplementedError
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        """Store a new spec and return the locator a report can show a human."""
+        raise NotImplementedError
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
+        raise NotImplementedError
+
+
+class FilesBackend(SpecBackend):
+    """Specs as markdown files under the specs workspace. The reference implementation:
+    when the interface and this backend disagree, this backend is right, because it is the
+    one whose behaviour every other backend is asserted against."""
+
+    name = "files"
+
+    def __init__(self, root: str) -> None:
+        self.root = root
+
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        return spec_files(self.root, phase)
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        return load_spec(self.root, slug)
+
+    def write_spec(self, info: dict, text: str) -> None:
+        write_text(info["path"], text)
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        dest_dir = os.path.join(self.root, phase)
+        os.makedirs(dest_dir, exist_ok=True)
+        path = os.path.join(dest_dir, filename)
+        write_text(path, text)
+        return path
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        dest_dir = os.path.join(self.root, dest_phase)
+        os.makedirs(dest_dir, exist_ok=True)
+        dest = os.path.join(dest_dir, info["file"])
+        os.rename(info["path"], dest)
+        return dest
+
+
+class MemoryBackend(SpecBackend):
+    """Specs in a dict. No disk, no network, no repository to stage.
+
+    This exists to be the OTHER side of the selftest's equality: the canonical case list runs
+    against `files` and against this, and the two must agree. A backend that shares nothing
+    with the filesystem but the interface is the only honest way to prove the interface is
+    what the CLI depends on — if a command reaches around it to a path, this backend is where
+    that shows up, immediately and without a fixture.
+
+    It is deliberately NOT a cache and never reachable from the config: nothing a human can
+    declare selects it, because a store that forgets on exit must never be somewhere real
+    work can land."""
+
+    name = "memory"
+
+    def __init__(self) -> None:
+        # slug -> (phase, filename, document). THE FILENAME IS STORED, not derived: the
+        # files backend reads a spec's date out of its filename, where `new` stamped it once
+        # and never again. A backend that recomputed the date from anything else would hand
+        # back a different one for the same spec — which is precisely the divergence the
+        # equality check caught the first time this was written.
+        self.docs: dict[str, tuple[str, str, str]] = {}
+
+    def _descriptor(self, slug: str) -> dict:
+        # The SAME key set `spec_files` returns, and nothing more. An extra key here would
+        # be a field some command could come to depend on and that the files backend would
+        # then not have.
+        phase, filename, _ = self.docs[slug]
+        m = SPEC_FILE_RE.match(filename)
+        return {"phase": phase, "folder": phase, "legacy": False, "file": filename,
+                "path": f"memory://{phase}/{filename}",
+                "date": m.group(1) if m else "", "slug": m.group(2) if m else slug}
+
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        rows = [self._descriptor(s) for s in self.docs
+                if phase is None or self.docs[s][0] == phase]
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        spec, err = resolve_one(self.list_specs(), slug)
+        if err:
+            return None, err
+        return derive_info(spec, self.docs[spec["slug"]][2]), {}
+
+    def write_spec(self, info: dict, text: str) -> None:
+        phase, filename, _ = self.docs[info["slug"]]
+        self.docs[info["slug"]] = (phase, filename, text)
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        m = SPEC_FILE_RE.match(filename)
+        slug = m.group(2) if m else filename
+        self.docs[slug] = (phase, filename, text)
+        return f"memory://{phase}/{filename}"
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        _, filename, text = self.docs[info["slug"]]
+        self.docs[info["slug"]] = (dest_phase, filename, text)
+        return f"memory://{dest_phase}/{filename}"
+
+
+BACKEND_CASES = (
+    ("list an empty store", lambda b: _listing(b)),
+    ("create, then list", lambda b: _case_create(b)),
+    ("read what was created", lambda b: _observable(b.read_spec("alpha")[0])),
+    ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
+    ("write a section, then re-read", lambda b: _case_write(b)),
+    ("tick a task", lambda b: _case_task(b)),
+    ("stamp a record, then re-read", lambda b: _case_record(b)),
+    ("move to archive", lambda b: _case_move(b)),
+    ("list after the move", lambda b: _listing(b)),
+)
+
+
+def _listing(b: "SpecBackend") -> list[dict]:
+    """A listing minus `path` — the one field the locator is allowed to differ on."""
+    return [{k: v for k, v in s.items() if k != "path"} for s in b.list_specs()]
+
+
+def _case_doc(slug: str = "alpha") -> str:
+    return (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
+            .replace("<VERIFICATION>", "per-task"))
+
+
+def _observable(info: dict | None) -> dict:
+    """One spec's info minus the two fields a backend is SUPPOSED to disagree on.
+
+    `path` is the locator — a filesystem path here, a URL there — and `text` is echoed back
+    verbatim from what was written, so neither can distinguish a correct backend from a
+    broken one. Everything else must match exactly, including the derived stage."""
+    if info is None:
+        return {}
+    return {k: v for k, v in info.items() if k not in ("path", "text")}
+
+
+def _case_create(b: "SpecBackend") -> list[dict]:
+    b.create_spec("plans", "2026-01-01-alpha.md", _case_doc())
+    return _listing(b)
+
+
+def _case_write(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    block, _ = upsert_section(info, "Problem", "## Problem\n\nUm problema.\n")
+    b.write_spec(info, block)
+    return _observable(b.read_spec("alpha")[0])
+
+
+def _case_task(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    block, _ = upsert_section(info, "Tasks", "## Tasks\n\n- [x] 1.1 feito\n")
+    b.write_spec(info, block)
+    info, _ = b.read_spec("alpha")
+    return {"progress": task_progress(info["tasks"]), "stage": info["stage"]}
+
+
+def _case_record(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    b.write_spec(info, set_frontmatter_record(
+        info["text"], "priority", {"level": "1", "criticality": "high"}))
+    info, _ = b.read_spec("alpha")
+    return spec_records(info["frontmatter"])
+
+
+def _case_move(b: "SpecBackend") -> dict:
+    info, _ = b.read_spec("alpha")
+    b.move_spec(info, "archive")
+    return _observable(b.read_spec("alpha")[0])
+
+
+def backend_equivalence_failures() -> list[str]:
+    """Run the canonical case list against `files` and against `memory`, and name every
+    case where they disagree.
+
+    THIS IS THE PROOF OF THE CENTRAL CLAIM. "Every backend behaves identically" is the
+    sentence the whole configurable-backend design rests on, and a sentence nobody checks is
+    a wish. Two backends sharing nothing but the interface — one on real files in a temp
+    directory, one in a dict — must produce byte-identical results for every case but the
+    locator.
+
+    Self-contained: `tempfile` is stdlib and the documents come from the embedded template,
+    so this runs on an installed copy with no assets beside it."""
+    import tempfile
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        root = os.path.join(tmp, "specs")
+        os.makedirs(os.path.join(root, "plans"))
+        os.makedirs(os.path.join(root, "archive"))
+        files: SpecBackend = FilesBackend(root)
+        memory: SpecBackend = MemoryBackend()
+        for label, case in BACKEND_CASES:
+            try:
+                got_f, got_m = case(files), case(memory)
+            except Exception as e:                      # noqa: BLE001 — reported, not raised
+                failures.append(f"{label}: raised {type(e).__name__}: {e}")
+                continue
+            if json.dumps(got_f, sort_keys=True, default=str) != \
+                    json.dumps(got_m, sort_keys=True, default=str):
+                failures.append(f"{label}: files={got_f!r} memory={got_m!r}")
+    return failures
+
+
+_BACKEND_CACHE: dict[str, SpecBackend] = {}
+
+
+def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
+    """The backend this workspace declares, or a ready-to-emit refusal.
+
+    Memoised per root because resolving it reads the config from disk, and a single command
+    asks for it more than once. The cache holds no mutable state — a backend is its root and
+    nothing else — so this is a lookup table, not a session.
+
+    THIS IS WHERE "ON DEMAND" IS MADE TRUE for the `files` backend's specs worktree, and the
+    reason it is here rather than in `FilesBackend.__init__`. Every command that reads or
+    writes a spec passes through here and nothing else does — `doctor`, `config` and `selftest`
+    never open a backend — so the worktree is created by the first command that actually needs
+    the specs and never as a side effect of a diagnostic. A constructor could not make that
+    distinction: `FilesBackend(root)` is also how the equivalence cases instantiate it over a
+    bare temp directory with no repository, which must keep costing nothing and touching
+    nothing.
+
+    A backend named in the config but not yet implemented refuses with exit 2 rather than
+    falling back to `files`. Silently writing specs to the local filesystem for a repo that
+    asked for GitHub is the one failure that loses work instead of reporting it."""
+    if root in _BACKEND_CACHE:
+        return _BACKEND_CACHE[root], {}
+    cfg = load_config(root)
+    name = cfg["backend"]
+    if name == "files":
+        target, err = resolve_files_root(root, cfg)
+        if err:
+            # A worktree that could not be created — unignored, occupied, or refused by git.
+            # Nothing falls back to the declared root: the specs are on the specs branch, and
+            # writing them beside the code is the state this backend exists to end.
+            return None, err
+        backend: SpecBackend = FilesBackend(target)
+    elif name == "github":
+        gh, err = open_github_backend(root)
+        if err:
+            # `gh` missing, nobody logged in, or no repository to point at. Each is an
+            # exit-2 refusal for the same reason the worktree failures above are: nothing
+            # falls back to `files` when the repo asked for GitHub.
+            return None, err
+        backend = gh                                        # type: ignore[assignment]
+    elif name == "azure-boards":
+        az, err = open_azure_backend(root)
+        if err:
+            # No `az`, no extension, nobody logged in, no configured project, or no declared
+            # phase-to-state mapping. Each is an exit-2 refusal, and nothing falls back to
+            # `files` when the repo asked for Azure Boards.
+            return None, err
+        backend = az                                        # type: ignore[assignment]
+    else:
+        return None, {
+            "code": "sp-backend-unavailable", "exit": 2, "backend": name,
+            "message": f"backend '{name}' is declared in {CONFIG_FILE} but this copy of "
+                       f"specs.py does not implement it yet — no spec was read or written",
+        }
+    _BACKEND_CACHE[root] = backend
+    return backend, {}
+
+
+# --------------------------------------------------------------------------- #
+# the github backend — transport over the `gh` CLI
+# --------------------------------------------------------------------------- #
+# `gh`'s own exit code for "no host is authenticated", distinct from the 1 it uses for an
+# API that answered with an error. Telling the two apart is the whole point of shelling out
+# to `gh` instead of speaking HTTP: one is fixed by `gh auth login`, the other is not.
+GH_NOT_AUTHENTICATED = 4
+# OURS, never one of gh's: the binary is not on PATH, so no process ever started.
+GH_MISSING = 127
+
+
+class BackendRefusal(Exception):
+    """An external backend's call that failed, carried to the CLI boundary as a
+    ready-to-emit refusal. Shared by `github` and `azure-boards`.
+
+    THREE OF THE FIVE PRIMITIVES RETURN A LOCATOR AND NOT `(value, err)` — `write_spec`,
+    `create_spec` and `move_spec` were shaped around a backend that cannot fail halfway.
+    A network target can, and the contract is "never a traceback", so the failure travels
+    as an exception carrying the refusal already built and is converted exactly once, in
+    `main`. Widening the interface instead would make every backend and every command pay,
+    in every signature, for a failure mode only the external backends have."""
+
+    def __init__(self, err: dict) -> None:
+        super().__init__(err.get("message", "the backend failed"))
+        self.err = err
+
+
+def _gh_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    """Exit code, stdout AND stderr of one `gh` command.
+
+    A SIBLING of `_git_run`, deliberately not a reuse of it. The two binaries fail
+    differently and the difference IS the contract here: `gh` answers "nobody is logged in"
+    with its own exit 4 and a body-less stderr, and "GitHub said no" with exit 1 plus an
+    `HTTP <code>` line, while the JSON explaining why goes to STDOUT. A runner that
+    flattened those to "nonzero" could not tell a human to run `gh auth login` rather than
+    to check the repository name.
+
+    A missing binary comes back as `GH_MISSING` rather than as an exception, so the one
+    failure a user is most likely to hit is an ordinary return value on the path every
+    caller already handles — never a traceback out of a `subprocess` call.
+
+    A cwd that does not exist is an error and NOT a fallback to `"."`, for the same reason
+    `_git_run` refuses it: `gh repo view` reads the git remote of wherever it runs, so the
+    fallback would resolve some other repository and then write specs into it.
+
+    60s and not git's 30: this is a round trip to api.github.com, not a local object
+    lookup, and a paginated listing of a busy repository legitimately takes seconds."""
+    import subprocess
+    if not os.path.isdir(cwd):
+        return 1, "", f"not a directory: {cwd}"
+    try:
+        out = subprocess.run(["gh", *argv], capture_output=True, text=True, timeout=60,
+                             cwd=cwd, input=stdin)
+        return out.returncode, out.stdout, out.stderr
+    except FileNotFoundError as e:
+        return GH_MISSING, "", str(e)
+    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+        return 1, "", str(e)
+
+
+def _gh_said(stdout: str, stderr: str) -> str:
+    """The one line worth quoting back from a failed `gh` call.
+
+    `gh api` SPLITS A FAILURE ACROSS BOTH STREAMS: stderr carries its own one-liner
+    (`gh: Not Found (HTTP 404)`) and stdout carries GitHub's JSON body, whose `message` is
+    the half that says why — "API rate limit exceeded for user ID 1" against a bare
+    "HTTP 403". Quoting only stderr loses the reason; quoting only stdout loses the status
+    code, and loses everything for the failures that never reach the API at all."""
+    head = next((ln.strip() for ln in (stderr or "").splitlines() if ln.strip()), "")
+    # gh prefixes its own one-liners with `gh: `, and every refusal built from this already
+    # says "gh said" — kept, the message reads "gh said: gh: Not Found".
+    head = head[4:].strip() if head.startswith("gh: ") else head
+    detail = ""
+    try:
+        obj = json.loads(stdout or "")
+        if isinstance(obj, dict) and isinstance(obj.get("message"), str):
+            detail = obj["message"].strip()
+    except (json.JSONDecodeError, TypeError, ValueError):
+        detail = ""
+    if detail and detail.lower() not in head.lower():
+        return f"{head} — {detail}" if head else detail
+    return head or "gh failed without saying why"
+
+
+def gh_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
+    """Every way a `gh` call can fail, as an exit-2 refusal a human can act on.
+
+    THREE OUTCOMES, THREE DIFFERENT REMEDIES, and separating them is the reason this
+    backend is a subprocess and not an HTTP client: the binary is missing (install it),
+    the binary is there but nobody is logged in (`gh auth login`), or GitHub itself said
+    no (read what it said). Collapsing them into "github failed" would leave the first two
+    looking like an outage and send a human hunting a network problem that is not there.
+
+    Authentication is recognised by TWO signals, not one. `gh api` exits 4 when no host is
+    configured at all, but a configured host holding a revoked or wrong token gets as far
+    as the API and comes back as an ordinary exit 1 with `HTTP 401` — the same shape as a
+    404, and the wrong remedy for it.
+
+    Always exit 2, always a refusal and never a finding: nothing was read and nothing was
+    written, which is a different statement from "the specs have a problem"."""
+    if code == GH_MISSING:
+        return {
+            "code": "sp-gh-missing", "exit": 2, "action": action,
+            "message": "backend 'github' needs the `gh` CLI and it is not on PATH — install "
+                       "GitHub CLI (https://cli.github.com), then run `gh auth login`; no "
+                       "spec was read or written",
+        }
+    said = _gh_said(stdout, stderr)
+    if code == GH_NOT_AUTHENTICATED or "HTTP 401" in (stderr or "") \
+            or "gh auth login" in (stderr or ""):
+        return {
+            "code": "sp-gh-unauthenticated", "exit": 2, "action": action, "gh": said,
+            "message": f"`gh` is installed but not authenticated for this repository — run "
+                       f"`gh auth login`; gh said: {said}",
+        }
+    return {
+        "code": "sp-gh-api-error", "exit": 2, "action": action, "gh": said, "ghExit": code,
+        "message": f"github refused {action} — gh said: {said}",
+    }
+
+
+GH_REMOTE_RE = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
+
+
+def resolve_github_repo(cwd: str) -> tuple[str, dict]:
+    """`owner/name` for the repository this checkout points at, or a refusal.
+
+    ASK `gh` FIRST, because it answers the question the API will actually be called with:
+    it resolves the remote gh itself would use, honours the `gh repo set-default` a human
+    set for a fork, and surfaces the auth failure at RESOLUTION time rather than three
+    calls later in the middle of a write.
+
+    The git remote is the fallback and not the primary for exactly that reason — it is a
+    string, not an answer: on a fork, `origin` names the fork rather than the repository
+    the issues live in. It is kept because a checkout whose gh-to-git integration fails
+    (no git on PATH, a checkout gh cannot attribute) still has a legible answer, and
+    refusing there would be refusing over a detail of how gh finds the remote.
+
+    Never guesses a repository it cannot name. A wrong answer here does not fail — it
+    silently reads and writes somebody else's issues."""
+    code, out, err = _gh_run(cwd, "repo", "view", "--json", "nameWithOwner",
+                             "--jq", ".nameWithOwner")
+    if code == 0 and out.strip():
+        return out.strip(), {}
+    # The two failures the remote cannot repair — no binary, nobody logged in — refuse here
+    # with their own remedy instead of degrading into "could not resolve the repository".
+    if code in (GH_MISSING, GH_NOT_AUTHENTICATED) or "gh auth login" in (err or ""):
+        return "", gh_refusal("resolving the repository", code, out, err)
+    url = _git(cwd, "remote", "get-url", "origin").strip()
+    m = GH_REMOTE_RE.search(url) if url else None
+    if m:
+        return f"{m.group(1)}/{m.group(2)}", {}
+    return "", {
+        "code": "sp-gh-repo-unresolved", "exit": 2, "remote": url or None,
+        "gh": _gh_said(out, err),
+        "message": f"backend 'github' could not tell which repository holds the specs — "
+                   f"`gh repo view` failed ({_gh_said(out, err)}) and origin "
+                   f"({url or 'absent'}) is not a github.com remote; add one, or pick the "
+                   f"repository with `gh repo set-default`",
+    }
+
+
+# HYBRID SERIALISATION (task 4.2) — `## Tasks` becomes sub-issues, one per task; every
+# other section stays as markdown in the parent issue's body, exactly as 4.1 left it.
+#
+# THE PARENT ISSUE BODY HOLDS "THE SHELL": the canonical document with `## Tasks`'s own
+# body emptied. The marker on it exists to carry the FILENAME, and the filename exists to
+# carry the date. A spec's date is stamped once by `new` into its basename and never
+# recomputed — the `MemoryBackend` docstring records that deriving it from anything else is
+# precisely the divergence the equality check caught the first time a second backend was
+# written. GitHub has no filename, so the document's own store has to hold it, and an HTML
+# comment is the one place in a markdown body that survives a round trip through the issue
+# editor while staying invisible to a human reading the issue.
+#
+# The marker is also what makes a spec issue distinguishable from an ordinary one: a repo's
+# issue tracker belongs to its humans, and a backend that treated every open issue as a spec
+# would list the bug reports and then write over them. The same reasoning applies one level
+# down to a task's own marker, below.
+HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)\s*-->[ \t]*\r?\n")
+
+
+def hybrid_wrap(filename: str, text: str) -> str:
+    return f"<!-- quenching-spec: {filename} -->\n{text}"
+
+
+def hybrid_unwrap(body: str) -> tuple[str, str]:
+    """`(filename, document)` for a spec issue, or `("", "")` for any other issue.
+
+    Line endings are normalised on the way in. GitHub stores and returns issue bodies with
+    CRLF, so a document written as LF comes back different from what was stored — every
+    section parse, every diff and the round-trip equality would all read that as content
+    having changed."""
+    body = (body or "").replace("\r\n", "\n")
+    m = HYBRID_MARKER_RE.match(body)
+    return (m.group(1), body[m.end():]) if m else ("", "")
+
+
+def hybrid_tasks_shell(text: str) -> str:
+    """The canonical document with `## Tasks`'s own body emptied down to the bare heading.
+
+    Built with `upsert_section` — the SAME splice every command already writes a section
+    through — rather than a bespoke one for this backend. The tasks themselves move to
+    sub-issues; nothing about a `## Tasks` heading with no body under it is backend-specific
+    enough to earn its own splicing code."""
+    sections = parse_sections(body_after_frontmatter(text))
+    if "Tasks" not in sections:
+        return text
+    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks", "## Tasks\n\n")
+    return new_text
+
+
+def hybrid_task_key(task: dict) -> str:
+    """The identity a task keeps across writes, so `write_spec` updates a sub-issue instead
+    of retiring one and minting a new one for the same task.
+
+    The explicit `id` (`4.1`, `4.2`, …) when the document carries one — it is the identity
+    every OTHER surface already resolves a task by (`specs.py task <id>`, `_find_task`).
+    Positional `#<index>` is the fallback for a task with none, and it is honest about its
+    own weakness: reordering an id-less task changes its index and this backend reads that
+    as a different task, closing the old sub-issue and opening a new one. Every task in this
+    repository's own specs carries an explicit id; an id-less spec pays this cost, and only
+    on GitHub."""
+    return task["id"] or f"#{task['index']}"
+
+
+def hybrid_task_block(text: str, task: dict) -> str:
+    """One task's literal source — the checkbox line plus every indented metadata line
+    under it — sliced verbatim from `text` and never re-rendered from the parsed fields.
+
+    This is why a sub-issue needs no separate encoding for `checked` or `blocked`: the
+    slice already contains `- [x]` or `- [!] … — blocked: …`, and reading it back through
+    `parse_tasks` — the SAME shared derivation every backend uses — recovers the state.
+    A backend that instead re-serialised state from `task["checked"]` would be deriving
+    its own second notion of what a checkbox line looks like."""
+    lines = text.splitlines(keepends=True)
+    return "".join(lines[task["lineno"]:task["blockEndLineno"]])
+
+
+HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)\s*-->"
+                               r"[ \t]*\r?\n")
+
+
+def hybrid_wrap_task(key: str, index: int, block: str) -> str:
+    return f"<!-- quenching-task: key={key} index={index} -->\n{block}"
+
+
+def hybrid_unwrap_task(body: str) -> tuple[str, int, str]:
+    """`(key, index, block)` for a task sub-issue, or `("", -1, "")` for anything else.
+
+    `index` is what lets `read_spec` put the tasks back in DOCUMENT order rather than
+    creation order or GitHub's own listing order, which is neither: sub-issues can be
+    reprioritised in the UI, and a rebuild that trusted that order would silently reorder
+    the plan every time it was read back."""
+    body = (body or "").replace("\r\n", "\n")
+    m = HYBRID_TASK_MARKER_RE.match(body)
+    return (m.group(1), int(m.group(2)), body[m.end():]) if m else ("", -1, "")
+
+
+def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
+    """A task's sub-issue after the document stops carrying it.
+
+    Closing the sub-issue alone is NOT enough: `checked` already closes one for a task that
+    is done and still very much in the document, so "closed" cannot also mean "gone" without
+    the two colliding — a removed-but-once-checked task would come back from the very next
+    read, resurrected by its own leftover marker. Retiring the marker (this function) is
+    what makes `hybrid_unwrap_task` skip it: the text stays, for a human's audit trail, but it
+    no longer parses as `quenching-task:` — deliberately a PREFIX MISMATCH and not a new
+    marker `hybrid_unwrap_task` also has to know about, so one regex stays the single place a
+    body is read as an active task."""
+    return f"<!-- quenching-task-removed: key={key} index={index} -->\n{block}"
+
+
+def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[str]) -> str:
+    """Splice the reconstructed `## Tasks` body — every sub-issue's raw block, in document
+    order — back into the shell `write_spec` emptied it into.
+
+    Each block is followed by a blank line. `parse_tasks` does not need it — a following
+    checkbox line ends the previous task's metadata scan on its own — but a human reading
+    the issue does, and `hybrid_task_block` never captured a trailing blank line in the first
+    place (its span ends where `parse_tasks` itself stops scanning), so without this every
+    task the github backend rebuilds would read as one unbroken paragraph.
+
+    `task_bodies` is already sorted by the caller; this function only concatenates and
+    upserts, so the ordering decision stays visible at the call site instead of buried in
+    a helper that also happens to sort."""
+    if not task_bodies:
+        return shell_text
+    sections = parse_sections(body_after_frontmatter(shell_text))
+    if "Tasks" not in sections:
+        return shell_text
+    # Blank line BETWEEN blocks, never after the last one — a trailing blank belongs to
+    # `upsert_section`'s own splice (it is what separates a REPLACED section from whatever
+    # follows it), and adding a second here is exactly the kind of divergence
+    # `backend_equivalence_failures` exists to catch: the files backend's document has no
+    # such line, so a github document that did would fail the byte-for-byte proof.
+    body = "\n\n".join(b.rstrip("\n") for b in task_bodies)
+    new_text, _ = upsert_section({"text": shell_text, "sections": sections}, "Tasks",
+                                 f"## Tasks\n\n{body}\n")
+    return new_text
+
+
+class GitHubBackend(SpecBackend):
+    """Specs as GitHub issues, reached through `gh api` in a subprocess.
+
+    ONE ISSUE IS ONE SPEC, and the phase is the issue's own state: open is `plans`, closed
+    is `archive`. That mapping is not a shortcut — it is the same fact told once. A label
+    would be a second declaration of a phase the tracker already knows, and the two would
+    diverge the first time somebody closed an issue from the web UI.
+
+    ONE TASK IS ONE SUB-ISSUE. Every other section stays as markdown in the parent's body
+    (the "shell" — see `hybrid_tasks_shell`), because only `## Tasks` has a native GitHub
+    counterpart with its own state and identity; a `## Design` or `## Risks` section has
+    no equivalent to move to and gains nothing by trying.
+
+    It derives NOTHING. `resolve_one` picks the spec, `derive_info` produces the stages,
+    gates, records and tasks, exactly as they are produced for a file on disk; `parse_tasks`
+    is the ONLY thing that ever decides a task is checked or blocked, on the shell and on a
+    sub-issue's raw block alike. This class turns issues (plus their sub-issues) into the
+    canonical document and back and does no more than that.
+
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE SHELL, none of them a label. Multi-field
+    records (`priority`, `branch`, `merge`, `refined`) have no honest single-string label
+    form — encoding `{level, criticality, complexity, date}` into a label name would invent
+    a second format only a new parser could read back, which is the backend deriving its
+    own encoding exactly where the interface forbids it. Keeping them in the shell costs
+    the records being invisible in the issue list without opening the issue — accepted,
+    because `parse_frontmatter` already reads them for free and a label would not remove
+    that read, only add a second, driftable copy beside it.
+
+    The listing is fetched once per process and cached, which is a local cache and NOT a
+    store: it is not authoritative, nothing outside this object reads it, and every write
+    drops it. It exists because the CLI asks for the listing more than once per command,
+    and each ask is a network round trip. Sub-issues are fetched only for the ONE spec a
+    command actually reads — the same "granular by construction" reasoning `## Design`
+    applies to `section`, here applied to the transport itself: `list` never pays for a
+    body no command asked to see."""
+
+    name = "github"
+
+    def __init__(self, repo: str, cwd: str) -> None:
+        self.repo = repo
+        self.cwd = cwd
+        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, issue, shell doc
+
+    # -- transport ---------------------------------------------------------- #
+    def _api(self, action: str, *argv: str, stdin: str | None = None):
+        """One `gh api` call, parsed. Raises `BackendRefusal` for every way it can fail."""
+        code, out, err = _gh_run(self.cwd, "api", *argv, stdin=stdin)
+        if code != 0:
+            raise BackendRefusal(gh_refusal(action, code, out, err))
+        try:
+            return json.loads(out or "null")
+        except json.JSONDecodeError as e:
+            # Not an API error — gh exited 0 and handed back something unparseable. Named
+            # separately so it can never be read as "GitHub said no".
+            raise BackendRefusal({
+                "code": "sp-gh-bad-response", "exit": 2, "action": action,
+                "message": f"`gh api` exited 0 while {action} but its output is not JSON: {e}",
+            }) from e
+
+    def _write_api(self, action: str, method: str, path: str, payload: dict):
+        """A mutating call, with the payload on STDIN rather than in argv.
+
+        `--input -` and not `-f body=…`: a spec document is kilobytes of markdown with
+        newlines, quotes and backticks in it, and every one of those is a way for argv
+        quoting to corrupt what lands in the issue."""
+        return self._api(action, "-X", method, path, "--input", "-",
+                         stdin=json.dumps(payload))
+
+    # -- the listing, fetched once ------------------------------------------- #
+    def _load(self) -> list[tuple[dict, int, str]]:
+        if self._rows is not None:
+            return self._rows
+        # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
+        # is not a JSON document. state=all: `archive` is the closed half of the tracker,
+        # so a default (open-only) listing would report every archived spec as missing.
+        pages = self._api("listing the repository's issues", "--paginate", "--slurp",
+                          f"repos/{self.repo}/issues?state=all&per_page=100")
+        rows: list[tuple[dict, int, str]] = []
+        for page in (pages or []):
+            for issue in (page or []):
+                if not isinstance(issue, dict) or "pull_request" in issue:
+                    # GitHub models a pull request AS an issue, so `/issues` answers with
+                    # both. A PR can never be a spec, and one that happened to carry the
+                    # marker would otherwise be listed and then written over.
+                    continue
+                filename, shell = hybrid_unwrap(issue.get("body") or "")
+                m = SPEC_FILE_RE.match(filename)
+                if not m:
+                    continue
+                phase = "archive" if issue.get("state") == "closed" else "plans"
+                rows.append(({
+                    # The SAME key set `spec_files` returns and nothing more — an extra key
+                    # here is a field some command comes to depend on and that the files
+                    # backend does not have. `legacy` is False by construction: the v2
+                    # folder split never existed here.
+                    "phase": phase, "folder": phase, "legacy": False, "file": filename,
+                    "path": issue.get("html_url")
+                            or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
+                    "date": m.group(1), "slug": m.group(2),
+                    # `## Tasks`'s own body is NOT here — the shell only, deliberately: a
+                    # sub-issue fetch per listed spec would make `list` pay a per-spec
+                    # network cost for something no command asked to see. `read_spec` fetches
+                    # sub-issues for the one slug it was actually given.
+                }, int(issue.get("number") or 0), shell))
+        self._rows = rows
+        return rows
+
+    def _invalidate(self) -> None:
+        self._rows = None
+
+    def _issue_number(self, slug: str) -> int:
+        for descriptor, number, _ in self._load():
+            if descriptor["slug"] == slug:
+                return number
+        raise BackendRefusal({
+            "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
+            "message": f"spec '{slug}' was in the listing and is not there any more — the "
+                       f"issue was deleted or transferred while this command ran; nothing "
+                       f"was written",
+        })
+
+    # -- the five primitives -------------------------------------------------- #
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        rows = [dict(d) for d, _, _ in self._load()
+                if phase is None or d["phase"] == phase]
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        rows = self._load()
+        spec, err = resolve_one(self.list_specs(), slug)
+        if err:
+            return None, err
+        number, shell = next((n, d) for descriptor, n, d in rows
+                             if descriptor["slug"] == slug)
+        full_text = hybrid_rebuild_tasks_section(shell, self._task_bodies(number))
+        return derive_info(spec, full_text), {}
+
+    def write_spec(self, info: dict, text: str) -> None:
+        number = self._issue_number(info["slug"])
+        self._write_api(f"updating issue #{number}", "PATCH",
+                        f"repos/{self.repo}/issues/{number}",
+                        {"title": hybrid_title(info["slug"], text),
+                         "body": hybrid_wrap(info["file"], hybrid_tasks_shell(text))})
+        self._sync_tasks(number, text)
+        self._invalidate()
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        m = SPEC_FILE_RE.match(filename)
+        issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
+                                {"title": hybrid_title(m.group(2) if m else filename, text),
+                                 "body": hybrid_wrap(filename, hybrid_tasks_shell(text))})
+        number = int((issue or {}).get("number") or 0)
+        url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        # `capture_form` never stamps a `## Tasks` body, so this is a no-op for every spec
+        # `new` creates and only matters for the migration path that hands `create_spec` a
+        # document that already carries tasks.
+        self._sync_tasks(number, text)
+        if phase == "archive":
+            # Created open and then closed, because "closed" is not a state an issue can be
+            # born in. Two calls for a case `new` never takes — only a migration does.
+            self._set_state(number, "closed")
+        self._invalidate()
+        return url
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        number = self._issue_number(info["slug"])
+        issue = self._set_state(number, "closed" if dest_phase == "archive" else "open")
+        self._invalidate()
+        return (issue or {}).get("html_url") \
+            or f"https://github.com/{self.repo}/issues/{number}"
+
+    def _set_state(self, number: int, state: str):
+        return self._write_api(f"setting issue #{number} to {state}", "PATCH",
+                               f"repos/{self.repo}/issues/{number}", {"state": state})
+
+    # -- tasks as sub-issues --------------------------------------------------- #
+    def _task_bodies(self, parent_number: int) -> list[str]:
+        """Every task sub-issue's raw body, in DOCUMENT order — ready for
+        `hybrid_rebuild_tasks_section`, which only concatenates."""
+        subs = self._api(f"listing sub-issues of #{parent_number}",
+                         f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []
+        marked = []
+        for sub in subs:
+            key, index, block = hybrid_unwrap_task(sub.get("body") or "")
+            if key:      # an ordinary sub-issue a human added is not a task line
+                marked.append((index, block))
+        marked.sort(key=lambda pair: pair[0])
+        return [block for _, block in marked]
+
+    def _sync_tasks(self, parent_number: int, text: str) -> None:
+        """Make the parent's sub-issues match `text`'s `## Tasks` exactly: one sub-issue per
+        task, matched by `hybrid_task_key` so an update never mints a duplicate, and a task the
+        document no longer carries is CLOSED AND its marker retired — a normal `gh` token
+        cannot delete an issue, so closing is the closest a tracker gets to "no longer
+        active" (the same loss `files` accepts: a task removed from a file is simply gone
+        from the next `git log`). The marker must go too, and not just the state: `checked`
+        already means "closed" for a task very much still in the document, so closing alone
+        cannot ALSO mean "removed" without the two meanings colliding — a done-then-removed
+        task would resurrect itself on the next `read_spec`, which is exactly the bug this
+        two-part retirement exists to prevent."""
+        tasks = parse_tasks(text)
+        existing: dict[str, dict] = {}
+        for sub in self._api(f"listing sub-issues of #{parent_number}",
+                             f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []:
+            key, _, _ = hybrid_unwrap_task(sub.get("body") or "")
+            if key:
+                existing[key] = sub
+        seen: set[str] = set()
+        for t in tasks:
+            key = hybrid_task_key(t)
+            seen.add(key)
+            block = hybrid_task_block(text, t)
+            payload = {"title": t["text"], "body": hybrid_wrap_task(key, t["index"], block),
+                       "state": "closed" if t["checked"] else "open"}
+            if key in existing:
+                num = existing[key]["number"]
+                self._write_api(f"updating sub-issue #{num}", "PATCH",
+                                f"repos/{self.repo}/issues/{num}", payload)
+            else:
+                sub_issue = self._write_api("creating a sub-issue", "POST",
+                                            f"repos/{self.repo}/issues", payload)
+                # Creating an issue does not make it a CHILD of another — that relationship
+                # is a second call, keyed by the sub-issue's own `id` (not its `number`,
+                # which is the per-repo display number the first call already returned).
+                self._write_api(f"linking sub-issue #{sub_issue['number']}", "POST",
+                                f"repos/{self.repo}/issues/{parent_number}/sub_issues",
+                                {"sub_issue_id": sub_issue["id"]})
+        for key, sub in existing.items():
+            if key in seen:
+                continue
+            _, index, block = hybrid_unwrap_task(sub.get("body") or "")
+            self._write_api(f"retiring orphaned sub-issue #{sub['number']}", "PATCH",
+                            f"repos/{self.repo}/issues/{sub['number']}",
+                            {"state": "closed",
+                             "body": hybrid_wrap_task_removed(key, index, block)})
+
+
+def hybrid_title(slug: str, text: str) -> str:
+    """What a human sees in the issue list: the spec's own title, or the slug titleised.
+
+    The title is a PROJECTION of the document and never a second source — it is rewritten
+    from the frontmatter on every write, so renaming a spec in its `title:` field renames
+    the issue, and editing the issue title in the web UI is undone by the next write rather
+    than silently becoming a competing name."""
+    return str(parse_frontmatter(text).get("title") or titleize(slug))
+
+
+def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
+    """The `github` backend for this workspace, or the refusal that says why not.
+
+    Resolution happens HERE and not in `GitHubBackend.__init__`, so the cost — one `gh`
+    round trip — is paid by the first command that actually needs a spec, on the same
+    "on demand" rule `open_backend` applies to the files worktree. It is also what makes
+    the missing-binary and not-logged-in refusals arrive at the START of a command instead
+    of halfway through a write."""
+    cwd = find_repo_root(root)
+    repo, err = resolve_github_repo(cwd)
+    if err:
+        return None, err
+    return GitHubBackend(repo, cwd), {}
+
+
+GH_REFUSAL_CASES = (
+    # (label, gh exit, stdout, stderr, expected code) — the literal streams `gh` 2.97
+    # produces, captured by running it. Every one is exit 2: a refusal, never a finding.
+    ("no binary on PATH", GH_MISSING, "", "", "sp-gh-missing"),
+    ("no host authenticated", GH_NOT_AUTHENTICATED, "",
+     "To get started with GitHub CLI, please run:  gh auth login\n",
+     "sp-gh-unauthenticated"),
+    ("a revoked token", 1, '{"message":"Bad credentials","status":"401"}',
+     "gh: Bad credentials (HTTP 401)\n", "sp-gh-unauthenticated"),
+    ("a repository that is not there", 1, '{"message":"Not Found","status":"404"}',
+     "gh: Not Found (HTTP 404)\n", "sp-gh-api-error"),
+    ("rate limited", 1,
+     '{"message":"API rate limit exceeded for user ID 1.","status":"403"}',
+     "gh: API rate limit exceeded (HTTP 403)\n", "sp-gh-api-error"),
+)
+
+
+def gh_refusal_failures() -> list[str]:
+    """The transport's classifier, asserted against gh's real output.
+
+    THE ONE THING THIS BACKEND PROMISES BEFORE IT PROMISES ANYTHING ELSE is that no failure
+    reaches a human as a traceback and that each one arrives with the remedy that fixes it.
+    That promise lives entirely in `gh_refusal`, it is decided by string matching on another
+    program's stderr, and a `gh` release that reworded one line would break it silently —
+    so the cases hold the literal streams rather than a paraphrase of them.
+
+    Self-contained: no network, no `gh`, no repository. It runs on an installed copy, which
+    is exactly where a classifier quietly reduced to "github failed" would go unnoticed."""
+    failures: list[str] = []
+    for label, code, out, err, want in GH_REFUSAL_CASES:
+        got = gh_refusal("reading a spec", code, out, err)
+        if got.get("code") != want:
+            failures.append(f"{label}: classified as {got.get('code')!r}, not {want!r}")
+        if got.get("exit") != 2:
+            failures.append(f"{label}: exits {got.get('exit')!r}, and a refusal is exit 2")
+        if not str(got.get("message") or "").strip():
+            failures.append(f"{label}: refused with an empty message")
+    # The remedy each refusal has to carry, checked as text because that is what a human
+    # reads. A missing binary that did not name `gh auth login` would leave the reader
+    # installing the CLI and stopping there.
+    for code, needle in ((GH_MISSING, "gh auth login"),
+                         (GH_NOT_AUTHENTICATED, "gh auth login")):
+        msg = gh_refusal("reading a spec", code, "", "")["message"]
+        if needle not in msg:
+            failures.append(f"exit {code}: the refusal does not name `{needle}` — {msg}")
+    # The round trip the shell serialisation rests on, including the CRLF GitHub actually
+    # stores bodies with.
+    doc = "---\ntitle: Alpha\n---\n\n## Problem\n\nUm problema.\n"
+    for label, body in (("as written", hybrid_wrap("2026-01-01-alpha.md", doc)),
+                        ("as GitHub returns it",
+                         hybrid_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
+        name, back = hybrid_unwrap(body)
+        if (name, back) != ("2026-01-01-alpha.md", doc):
+            failures.append(f"marker round trip {label}: got {(name, back)!r}")
+    if hybrid_unwrap("An ordinary bug report.\n") != ("", ""):
+        failures.append("an issue with no marker was read as a spec")
+    return failures
+
+
+# The fields `parse_tasks` derives, minus the ones a rebuild is not expected to reproduce:
+# `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/`commitLineno` are
+# POSITIONS in a specific document, and the rebuilt document is flat (no `### N.` grouping —
+# see `hybrid_serialization_failures`'s docstring), so they are never asked to match.
+HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
+                         "files", "pattern", "verify", "subject", "commit")
+
+
+def hybrid_serialization_failures() -> list[str]:
+    """The claim the hybrid serialisation rests on: a task's checked/blocked state, its
+    text and its metadata survive shell → sub-issue → shell exactly, with `parse_tasks` —
+    the one shared derivation — doing the reading on both ends.
+
+    NOT ROUND-TRIPPED: `### N.` group headings. Grouping lives in the ORIGINAL document's
+    `## Tasks` body, which this backend empties into a flat list of sub-issues with no
+    heading of their own to remember — a known, declared gap versus `files`, not a silent
+    one; a spec with grouped tasks reads back flat on `github`. Nothing here hides that.
+
+    Self-contained: no network, no `gh`. Simulates CRLF storage the same way the marker
+    round trip above does, because a check that used clean LF would not catch a backend
+    that broke on what GitHub actually returns."""
+    doc = ("---\ntitle: Alpha\nverification: per-task\n---\n\n"
+          "## Problem\n\nAlgo.\n\n"
+          "## Tasks\n\n"
+          "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n\n"
+          "- [x] 1.2 segunda\n\n"
+          "- [!] 1.3 terceira — blocked: esperando review\n\n"
+          "- [ ] [P] quarta sem id\n\n"
+          "## Outcome\n\n")
+    tasks = parse_tasks(doc)
+    shell = hybrid_tasks_shell(doc)
+    failures: list[str] = []
+    if "1.1 primeira" in shell or "1.2 segunda" in shell:
+        failures.append("hybrid_tasks_shell left a checkbox behind — sub-issues would duplicate it")
+    if "## Outcome" not in shell or "## Problem" not in shell:
+        failures.append("hybrid_tasks_shell dropped a section other than Tasks")
+
+    keys = [hybrid_task_key(t) for t in tasks]
+    if keys != ["1.1", "1.2", "1.3", "#4"]:
+        failures.append(f"hybrid_task_key: got {keys!r}, expected explicit ids and one "
+                        f"positional fallback for the task with none")
+    if len(set(keys)) != len(keys):
+        failures.append(f"hybrid_task_key produced a collision: {keys!r}")
+
+    # Wrap each task's raw block as `_sync_tasks` would, store it through a CRLF round
+    # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
+    # a real sub-issue list.
+    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t)).replace("\n", "\r\n")
+             for k, t in zip(keys, tasks)]
+    unwrapped = sorted((hybrid_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
+    for key, want_index, (got_key, got_index, _) in zip(keys, range(1, 5), unwrapped):
+        if (got_key, got_index) != (key, want_index):
+            failures.append(f"task marker round trip: got key={got_key!r} "
+                            f"index={got_index!r}, wanted key={key!r} index={want_index!r}")
+
+    rebuilt = hybrid_rebuild_tasks_section(shell, [block for _, _, block in unwrapped])
+    tasks2 = parse_tasks(rebuilt)
+    if len(tasks2) != len(tasks):
+        failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
+    else:
+        for before, after in zip(tasks, tasks2):
+            b = {k: before[k] for k in HYBRID_TASK_SEMANTIC_KEYS}
+            a = {k: after[k] for k in HYBRID_TASK_SEMANTIC_KEYS}
+            if b != a:
+                failures.append(f"task '{b['id'] or before['index']}' drifted: "
+                                f"before={b!r} after={a!r}")
+
+    # A retired (removed-from-document) task must NEVER come back on the next rebuild —
+    # this is the exact shape of a bug caught while writing this backend: closing a
+    # checked task's sub-issue without also retiring its marker let it resurrect itself,
+    # because `checked` and `removed` both wanted to mean "closed".
+    checked_block = hybrid_task_block(doc, tasks[1])   # "1.2 segunda", never checked in `doc`
+    removed = hybrid_wrap_task_removed("1.2", 2, checked_block).replace("\n", "\r\n")
+    if hybrid_unwrap_task(removed)[0]:
+        failures.append("a retired task's marker still parses as an active one — it would "
+                        "resurrect on the next read_spec")
+    return failures
+
+
+# --------------------------------------------------------------------------- #
+# the azure-boards backend — transport over the `az` CLI
+# --------------------------------------------------------------------------- #
+# OURS, never one of az's: the binary is not on PATH, so no process ever started. Same
+# number and same meaning as `GH_MISSING`, kept separate so neither constant becomes the
+# other's by accident.
+AZ_MISSING = 127
+
+# `az` does NOT have gh's exit 4 — it answers almost everything with exit 1 and says why in
+# stderr, so the split into remedies is made on what it SAID rather than on the code. Each
+# tuple is (fragment lowercased, refusal code, remedy), tried in order; the first match
+# wins, so the more specific fragments come first.
+AZ_STDERR_SIGNALS = (
+    ("az extension add", "sp-az-extension-missing",
+     "run `az extension add --name azure-devops`"),
+    ("is not in the 'az' command group", "sp-az-extension-missing",
+     "run `az extension add --name azure-devops`"),
+    ("az devops login", "sp-az-unauthenticated", "run `az devops login`"),
+    ("az login", "sp-az-unauthenticated", "run `az login`"),
+    ("before you can run azure devops commands", "sp-az-unauthenticated",
+     "run `az devops login`"),
+    ("tf400813", "sp-az-unauthenticated",
+     "the identity is authenticated but not authorised for this project"),
+    # Captured from az 2.88 by running `az boards query` with no defaults set. It reaches
+    # this table only when the defaults vanish BETWEEN `resolve_azure_project` and the call
+    # — otherwise resolution refuses first, with `sp-az-no-project`, which is why both
+    # carry the same code and the same remedy.
+    ("must be specified", "sp-az-no-project",
+     "run `az devops configure --defaults organization=https://dev.azure.com/<org> "
+     "project=<project>`"),
+)
+
+
+def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    """Exit code, stdout AND stderr of one `az` command.
+
+    A SIBLING of `_gh_run` for the same reason that one is a sibling of `_git_run`: the two
+    CLIs fail differently, and here the difference is that `az` has no dedicated
+    "unauthenticated" exit code — it says so in stderr and exits 1, the same as an API
+    error. Flattening them would tell a human to check the project name when the real fix is
+    `az devops login`.
+
+    `--only-show-errors` suppresses az's upgrade notices and preview warnings, which
+    otherwise land in stderr and would be quoted back as the reason a call failed.
+
+    A missing binary comes back as `AZ_MISSING` rather than as an exception, so the failure
+    a user is most likely to hit stays an ordinary return value.
+
+    60s and not git's 30, matching `_gh_run`: this is a round trip to dev.azure.com."""
+    import subprocess
+    if not os.path.isdir(cwd):
+        return 1, "", f"not a directory: {cwd}"
+    try:
+        out = subprocess.run(["az", *argv, "--only-show-errors"], capture_output=True,
+                             text=True, timeout=60, cwd=cwd, input=stdin)
+        return out.returncode, out.stdout, out.stderr
+    except FileNotFoundError as e:
+        return AZ_MISSING, "", str(e)
+    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+        return 1, "", str(e)
+
+
+def _az_said(stdout: str, stderr: str) -> str:
+    """The one line worth quoting back from a failed `az` call.
+
+    Unlike `gh`, `az` puts the whole story in stderr and prefixes it with `ERROR: `. Stdout
+    is read as a fallback only, for the calls that fail with a JSON body and an empty
+    stderr."""
+    for line in (stderr or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        return line[6:].strip() if line.upper().startswith("ERROR:") else line
+    head = next((ln.strip() for ln in (stdout or "").splitlines() if ln.strip()), "")
+    return head or "az failed without saying why"
+
+
+def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
+    """Every way an `az` call can fail, as an exit-2 refusal a human can act on.
+
+    FOUR OUTCOMES, FOUR REMEDIES — one more than the `gh` transport has, because `az boards`
+    lives in an extension that is not installed by default. A human whose `az` is installed
+    and logged in still gets "not recognised" until they add it, and telling them to log in
+    again would be the wrong remedy delivered confidently.
+
+    Always exit 2, always a refusal and never a finding: nothing was read and nothing was
+    written."""
+    if code == AZ_MISSING:
+        return {
+            "code": "sp-az-missing", "exit": 2, "action": action,
+            "message": "backend 'azure-boards' needs the Azure CLI and it is not on PATH — "
+                       "install `az` (https://aka.ms/azure-cli), then run "
+                       "`az extension add --name azure-devops` and `az devops login`; no "
+                       "spec was read or written",
+        }
+    said = _az_said(stdout, stderr)
+    haystack = f"{stderr or ''}\n{stdout or ''}".lower()
+    for fragment, refusal_code, remedy in AZ_STDERR_SIGNALS:
+        if fragment in haystack:
+            return {
+                "code": refusal_code, "exit": 2, "action": action, "az": said,
+                "message": f"azure-boards refused {action} — {remedy}; az said: {said}",
+            }
+    return {
+        "code": "sp-az-api-error", "exit": 2, "action": action, "az": said, "azExit": code,
+        "message": f"azure devops refused {action} — az said: {said}",
+    }
+
+
+def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
+    """`(organization, project)` for this checkout, or a refusal.
+
+    ASK `az` FOR ITS OWN DEFAULTS, the same reasoning `resolve_github_repo` applies to `gh`:
+    the answer that matters is the one the CLI will actually use, and a human who ran
+    `az devops configure --defaults organization=… project=…` has already stated it in the
+    place `az` reads. Deriving it from a git remote instead would be a guess dressed as an
+    answer — an Azure DevOps remote URL carries an organization and a REPOSITORY, and the
+    repository is not the project.
+
+    Never guesses. Missing defaults are a refusal naming the exact command that sets them,
+    because a wrong answer here does not fail — it reads and writes somebody else's board."""
+    code, out, err = _az_run(cwd, "devops", "configure", "--list")
+    if code != 0:
+        return ("", ""), az_refusal("resolving the organization and project", code, out, err)
+    defaults = {}
+    for line in (out or "").splitlines():
+        key, sep, value = line.partition("=")
+        if sep:
+            defaults[key.strip().lower()] = value.strip()
+    org, project = defaults.get("organization", ""), defaults.get("project", "")
+    if not org or not project:
+        missing = " and ".join(n for n, v in (("organization", org), ("project", project))
+                               if not v)
+        return ("", ""), {
+            "code": "sp-az-no-project", "exit": 2, "missing": missing,
+            "message": f"backend 'azure-boards' has no default {missing} — run "
+                       f"`az devops configure --defaults organization=https://dev.azure.com/"
+                       f"<org> project=<project>`; no spec was read or written",
+        }
+    return (org, project), {}
+
+
+AZ_REFUSAL_CASES = (
+    # (label, az exit, stdout, stderr, expected code). `az` reports almost everything as
+    # exit 1 and explains in stderr, so these are the literal stderr shapes its 2.6x
+    # releases produce — a reworded release breaks the check rather than the refusal.
+    ("no binary on PATH", AZ_MISSING, "", "", "sp-az-missing"),
+    ("the azure-devops extension is not installed", 2, "",
+     "ERROR: 'boards' is not in the 'az' command group. Run `az extension add --name "
+     "azure-devops`.\n", "sp-az-extension-missing"),
+    ("nobody logged in", 1, "",
+     "ERROR: Before you can run Azure DevOps commands, you need to run the login command "
+     "(az login if using AAD/MSA identity...).\n", "sp-az-unauthenticated"),
+    ("an identity without access", 1, "",
+     "ERROR: TF400813: The user 'x' is not authorized to access this resource.\n",
+     "sp-az-unauthenticated"),
+    ("a work item that is not there", 1, "",
+     "ERROR: TF401232: Work item 4242 does not exist, or you do not have permissions to "
+     "read it.\n", "sp-az-api-error"),
+    # Captured VERBATIM from az 2.88 on 2026-08-01, by running `az boards query` in a
+    # checkout with no defaults configured. It is the failure a first-time user actually
+    # hits, and it is not an API error: nothing was asked of Azure DevOps at all.
+    ("no organization configured", 1, "",
+     "ERROR: --organization must be specified. The value should be the URI of your Azure "
+     "DevOps organization, for example: https://dev.azure.com/MyOrganization/. You can set "
+     "a default value by running: az devops configure --defaults "
+     "organization=https://dev.azure.com/MyOrganization/.\n", "sp-az-no-project"),
+)
+
+
+SPEC_PRIMITIVES = ("list_specs", "read_spec", "write_spec", "create_spec", "move_spec")
+
+
+def backend_completeness_failures() -> list[str]:
+    """Every declared backend implements all five primitives — none left inherited.
+
+    THIS IS WHAT `azure-boards` HAS INSTEAD OF END-TO-END PROOF. `## Out of Scope` accepts
+    shipping it without a real Azure DevOps project to exercise, and `backend_equivalence_
+    failures` cannot cover it: that check runs the canonical cases against two backends, and
+    running them here would mean a network. What CAN be checked without a network is the
+    failure a half-written backend actually takes — a primitive left inheriting the base
+    class's `NotImplementedError`, which reaches a human as a traceback rather than as a
+    refusal, breaking the one promise every external backend makes.
+
+    Self-contained: reads the classes, calls nothing."""
+    failures: list[str] = []
+    for cls in (FilesBackend, MemoryBackend, GitHubBackend, AzureBoardsBackend):
+        for primitive in SPEC_PRIMITIVES:
+            if getattr(cls, primitive, None) is getattr(SpecBackend, primitive):
+                failures.append(f"{cls.__name__} inherits `{primitive}` — it would raise "
+                                f"NotImplementedError as a traceback")
+        if getattr(cls, "name", "abstract") == "abstract":
+            failures.append(f"{cls.__name__} never named itself — `name` is what a refusal "
+                            f"and every report call it")
+    return failures
+
+
+def az_refusal_failures() -> list[str]:
+    """Every `az` failure must arrive as its own exit-2 refusal, carrying the remedy that
+    fixes THAT failure — never a traceback, and never the wrong remedy stated confidently.
+
+    Self-contained: no network and no `az`. Asserted against the literal streams the CLI
+    produces, because the split into remedies is made on what it said."""
+    failures: list[str] = []
+    for label, code, out, err, want in AZ_REFUSAL_CASES:
+        got = az_refusal("reading a spec", code, out, err)
+        if got.get("code") != want:
+            failures.append(f"{label}: got {got.get('code')!r}, expected {want!r}")
+        if got.get("exit") != 2:
+            failures.append(f"{label}: exited {got.get('exit')!r}, every refusal is 2")
+        if not str(got.get("message", "")).strip():
+            failures.append(f"{label}: refused with an empty message")
+    return failures
+
+
+def unproved_backend_failures() -> list[str]:
+    """The unproved-backend warning says its piece once, on stderr, and only for a backend
+    that is actually declared unproved.
+
+    Three ways this decision could ship broken, and all three are silent. A name misspelled
+    in `UNPROVED_BACKENDS` matches no backend, so the warning never fires and the caveat is
+    dead code that reads as coverage. A warning that repeats is the per-operation noise the
+    decision rejected, arriving anyway. A warning on stdout breaks the `--json` parse of
+    every caller, which is a worse failure than the one it was warning about.
+
+    Self-contained: no network, no `az`, and the process-level flag is restored so the check
+    cannot change what a later command prints."""
+    import contextlib
+    import io
+    failures: list[str] = []
+    for name in UNPROVED_BACKENDS:
+        if name not in BACKENDS:
+            failures.append(f"`{name}` is declared unproved and is not a backend — the "
+                            f"warning it names can never fire")
+    held = set(_UNPROVED_ANNOUNCED)
+    _UNPROVED_ANNOUNCED.clear()
+    try:
+        for name, want in [(b, b in UNPROVED_BACKENDS) for b in BACKENDS]:
+            err, out = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                announce_unproved(name)
+                announce_unproved(name)
+            said = err.getvalue().strip()
+            if bool(said) != want:
+                failures.append(f"{name}: warned={bool(said)!r}, expected {want!r}")
+            if said.count("warning:") > 1:
+                failures.append(f"{name}: warned twice in one process — the decision is one "
+                                f"line per process, not one per operation")
+            if out.getvalue():
+                failures.append(f"{name}: wrote to stdout, which is the `--json` payload")
+    finally:
+        _UNPROVED_ANNOUNCED.clear()
+        _UNPROVED_ANNOUNCED.update(held)
+    return failures
+
+
+class AzureBoardsBackend(SpecBackend):
+    """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
+
+    ONE WORK ITEM IS ONE SPEC and ONE TASK IS ONE CHILD WORK ITEM — the same hybrid shape
+    the `github` backend uses, through the same `hybrid_*` helpers, which is the point of
+    those helpers having stopped being `gh_*`. Everything the two backends agree on is
+    literally shared code rather than two implementations that must be kept in step.
+
+    IT DERIVES NOTHING, exactly as `GitHubBackend` derives nothing: `derive_info` produces
+    the stages, gates and records, and `parse_tasks` is the only thing that ever decides a
+    task is checked or blocked.
+
+    THE PHASE IS A DECLARED STATE, and this is the one place the two external backends
+    genuinely differ. GitHub's open/closed is universal, so the mapping could be written in
+    code. An Azure Boards state belongs to the project's process — Basic, Agile, Scrum and
+    CMMI each name their states differently, and a customised process names them however it
+    likes — so the mapping is read from `azureStates` in `.claude/quenching.json` and is
+    NEVER guessed. Absent, the backend refuses (exit 2) naming the key: a guess would not
+    fail loudly, it would silently report every archived spec as active.
+
+    A state this tool did not write is read as `plans` — a work item moved to `Active` or
+    `Resolved` by a human on the board is still in flight, and only the declared archive
+    state means closed. That is the same one-way reading `github` gets from `state=closed`.
+
+    The listing is fetched once per process and cached — a local cache and NOT a store:
+    not authoritative, read by nothing outside this object, dropped on every write."""
+
+    name = "azure-boards"
+
+    def __init__(self, org: str, project: str, states: dict, cwd: str) -> None:
+        self.org = org
+        self.project = project
+        self.states = states
+        self.cwd = cwd
+        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
+
+    # -- transport ---------------------------------------------------------- #
+    def _az(self, action: str, *argv: str):
+        """One `az boards` call, parsed. Raises `BackendRefusal` for every way it can fail.
+
+        `--org` and `--project` on every call rather than relying on the configured
+        defaults: resolution already read them once, and passing them explicitly means a
+        human changing their `az` defaults mid-session cannot silently redirect a write to
+        another project."""
+        code, out, err = _az_run(self.cwd, "boards", *argv,
+                                 "--org", self.org, "--output", "json")
+        if code != 0:
+            raise BackendRefusal(az_refusal(action, code, out, err))
+        try:
+            return json.loads(out or "null")
+        except json.JSONDecodeError as e:
+            raise BackendRefusal({
+                "code": "sp-az-bad-response", "exit": 2, "action": action,
+                "message": f"`az boards` exited 0 while {action} but its output is not "
+                           f"JSON: {e}",
+            }) from e
+
+    def _field(self, item: dict, name: str) -> str:
+        return str((item.get("fields") or {}).get(name, "") or "")
+
+    def _phase_of(self, item: dict) -> str:
+        return "archive" if self._field(item, "System.State") == self.states["archive"] \
+            else "plans"
+
+    # -- the listing, fetched once ------------------------------------------- #
+    def _load(self) -> list[tuple[dict, int, str]]:
+        if self._rows is not None:
+            return self._rows
+        # WIQL rather than a saved query: the filter is this tool's, not the project's, and
+        # a saved query is one more thing a human has to create before the backend works.
+        found = self._az("querying the project's work items", "query", "--project",
+                         self.project, "--wiql",
+                         "SELECT [System.Id] FROM WorkItems WHERE "
+                         "[System.TeamProject] = @project") or []
+        ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
+               for r in found]
+        rows: list[tuple[dict, int, str]] = []
+        for item in self._show_many([i for i in ids if i]):
+            filename, shell = hybrid_unwrap(self._field(item, "System.Description"))
+            m = SPEC_FILE_RE.match(filename)
+            if not m:
+                # An ordinary work item a human created. The marker is what tells a spec
+                # apart from the project's real backlog, which this backend must never
+                # list and must never write over.
+                continue
+            phase = self._phase_of(item)
+            rows.append(({
+                # The SAME key set `spec_files` returns and nothing more.
+                "phase": phase, "folder": phase, "legacy": False, "file": filename,
+                "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
+                        f"{item.get('id')}",
+                "date": m.group(1), "slug": m.group(2),
+            }, int(item.get("id") or 0), shell))
+        self._rows = rows
+        return rows
+
+    def _show_many(self, ids: list[int]) -> list[dict]:
+        """Each work item's fields. One call per id — `az boards work-item show` takes a
+        single id, and there is no batch form in the CLI. The cost is declared rather than
+        hidden: it is why the listing is cached for the whole process."""
+        return [self._az(f"reading work item {i}", "work-item", "show", "--id", str(i))
+                for i in ids]
+
+    def _invalidate(self) -> None:
+        self._rows = None
+
+    def _item_id(self, slug: str) -> int:
+        for descriptor, item_id, _ in self._load():
+            if descriptor["slug"] == slug:
+                return item_id
+        raise BackendRefusal({
+            "code": "sp-az-item-gone", "exit": 2, "slug": slug,
+            "message": f"spec '{slug}' was in the listing and is not there any more — the "
+                       f"work item was deleted or moved while this command ran; nothing "
+                       f"was written",
+        })
+
+    # -- the five primitives -------------------------------------------------- #
+    def list_specs(self, phase: str | None = None) -> list[dict]:
+        rows = [dict(d) for d, _, _ in self._load()
+                if phase is None or d["phase"] == phase]
+        return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
+
+    def read_spec(self, slug: str) -> tuple[dict | None, dict]:
+        rows = self._load()
+        spec, err = resolve_one(self.list_specs(), slug)
+        if err:
+            return None, err
+        item_id, shell = next((i, d) for descriptor, i, d in rows
+                              if descriptor["slug"] == slug)
+        full_text = hybrid_rebuild_tasks_section(shell, self._task_bodies(item_id))
+        return derive_info(spec, full_text), {}
+
+    def write_spec(self, info: dict, text: str) -> None:
+        announce_unproved(self.name)
+        item_id = self._item_id(info["slug"])
+        self._update(item_id, title=hybrid_title(info["slug"], text),
+                     description=hybrid_wrap(info["file"], hybrid_tasks_shell(text)))
+        self._sync_tasks(item_id, text)
+        self._invalidate()
+
+    def create_spec(self, phase: str, filename: str, text: str) -> str:
+        announce_unproved(self.name)
+        m = SPEC_FILE_RE.match(filename)
+        item = self._az("creating a work item", "work-item", "create", "--project",
+                        self.project, "--type", AZ_SPEC_TYPE,
+                        "--title", hybrid_title(m.group(2) if m else filename, text),
+                        "--description", hybrid_wrap(filename, hybrid_tasks_shell(text)),
+                        "--state", self.states[phase])
+        item_id = int((item or {}).get("id") or 0)
+        self._sync_tasks(item_id, text)
+        self._invalidate()
+        return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def move_spec(self, info: dict, dest_phase: str) -> str:
+        announce_unproved(self.name)
+        item_id = self._item_id(info["slug"])
+        self._update(item_id, state=self.states[dest_phase])
+        self._invalidate()
+        return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def _update(self, item_id: int, **fields: str):
+        argv: list[str] = ["work-item", "update", "--id", str(item_id)]
+        for key, value in fields.items():
+            argv += [f"--{key}", value]
+        return self._az(f"updating work item {item_id}", *argv)
+
+    # -- tasks as child work items --------------------------------------------- #
+    def _children(self, parent_id: int) -> list[dict]:
+        """Every child work item of the parent, as full items.
+
+        Relations come back on the parent under `--expand relations`, as URLs whose last
+        segment is the child's id — the CLI has no "list children" verb."""
+        parent = self._az(f"reading work item {parent_id}", "work-item", "show",
+                          "--id", str(parent_id), "--expand", "relations") or {}
+        ids = []
+        for rel in (parent.get("relations") or []):
+            if str(rel.get("rel")) == "System.LinkTypes.Hierarchy-Forward":
+                tail = str(rel.get("url") or "").rstrip("/").rsplit("/", 1)[-1]
+                if tail.isdigit():
+                    ids.append(int(tail))
+        return self._show_many(ids)
+
+    def _task_bodies(self, parent_id: int) -> list[str]:
+        """Every task child's raw block, in DOCUMENT order — ready for
+        `hybrid_rebuild_tasks_section`, which only concatenates."""
+        marked = []
+        for child in self._children(parent_id):
+            key, index, block = hybrid_unwrap_task(
+                self._field(child, "System.Description"))
+            if key:      # an ordinary child a human added is not a task line
+                marked.append((index, block))
+        marked.sort(key=lambda pair: pair[0])
+        return [block for _, block in marked]
+
+    def _sync_tasks(self, parent_id: int, text: str) -> None:
+        """Make the parent's children match `text`'s `## Tasks` exactly — the same contract
+        `GitHubBackend._sync_tasks` implements, and the same two-part retirement: a task the
+        document no longer carries is moved to the archive state AND has its marker retired,
+        because `checked` already means "in the archive state" for a task still very much in
+        the document, and one signal cannot mean both without a done-then-removed task
+        resurrecting itself on the next read."""
+        tasks = parse_tasks(text)
+        existing: dict[str, dict] = {}
+        for child in self._children(parent_id):
+            key, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
+            if key:
+                existing[key] = child
+        seen: set[str] = set()
+        for t in tasks:
+            key = hybrid_task_key(t)
+            seen.add(key)
+            block = hybrid_task_block(text, t)
+            state = self.states["archive" if t["checked"] else "plans"]
+            description = hybrid_wrap_task(key, t["index"], block)
+            if key in existing:
+                self._update(int(existing[key]["id"]), title=t["text"],
+                             description=description, state=state)
+            else:
+                child = self._az("creating a child work item", "work-item", "create",
+                                 "--project", self.project, "--type", AZ_TASK_TYPE,
+                                 "--title", t["text"], "--description", description,
+                                 "--state", state)
+                self._az(f"linking child work item {child.get('id')}", "work-item",
+                         "relation", "add", "--id", str(child.get("id")),
+                         "--relation-type", "parent", "--target-id", str(parent_id))
+        for key, child in existing.items():
+            if key in seen:
+                continue
+            _, index, block = hybrid_unwrap_task(self._field(child, "System.Description"))
+            self._update(int(child["id"]), state=self.states["archive"],
+                         description=hybrid_wrap_task_removed(key, index, block))
+
+
+# The work item types this backend creates. `Issue` and `Task` exist in the Basic and Agile
+# processes; Scrum and CMMI name their equivalents differently, which is the same
+# process-dependence `azureStates` exists for. Left as constants rather than a fifth config
+# key until a real Azure DevOps project says otherwise — `## Out of Scope` accepts that this
+# backend ships without end-to-end proof, and inventing configuration for an unproven
+# guess is worse than one named place to change.
+AZ_SPEC_TYPE = "Issue"
+AZ_TASK_TYPE = "Task"
+
+
+def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
+    """The `azure-boards` backend for this workspace, or the refusal that says why not.
+
+    Resolution happens HERE and not in the constructor, on the same "on demand" rule
+    `open_backend` applies to the files worktree and the github backend: the round trip is
+    paid by the first command that needs a spec, and the missing-binary, not-logged-in and
+    nothing-declared refusals arrive at the START of a command rather than halfway through
+    a write."""
+    cwd = find_repo_root(root)
+    cfg = load_config(root)
+    states = cfg["azureStates"]
+    if not states:
+        return None, {
+            "code": "sp-az-no-states", "exit": 2, "config": cfg["path"],
+            "message": "backend 'azure-boards' needs the phase-to-state mapping declared in "
+                       f"{CONFIG_FILE} — add "
+                       '`"azureStates": {"plans": "<your active state>", "archive": '
+                       '"<your closed state>"}`; an Azure Boards state is defined by the '
+                       "project's process, so this tool never guesses it. No spec was read "
+                       "or written",
+        }
+    (org, project), err = resolve_azure_project(cwd)
+    if err:
+        return None, err
+    return AzureBoardsBackend(org, project, states, cwd), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -1395,6 +3075,19 @@ def ready_report(info: dict, schema: dict | None = None) -> dict:
 # --------------------------------------------------------------------------- #
 # output
 # --------------------------------------------------------------------------- #
+def display_locator(locator: str, root: str) -> str:
+    """A backend's locator as a report should print it.
+
+    `path` is the ONE field the backends are allowed to differ on — a filesystem path for
+    `files`, an issue URL for `github` — and only one of the two is a path. Making a URL
+    relative to the workspace produces a string that is neither, and that no reader can
+    follow: `../../../https:/github.com/o/r/issues/2`. A remote locator is already the
+    address a human would open, so it is printed exactly as the backend gave it."""
+    if "://" in locator:
+        return locator
+    return os.path.relpath(locator, os.path.dirname(root)).replace(os.sep, "/")
+
+
 def emit(as_json: bool, obj: dict, human: str) -> None:
     if as_json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
@@ -1422,7 +3115,12 @@ def cmd_new(args, root: str) -> int:
                          "message": f"'{args.name}' does not reduce to a kebab-case slug"},
              f"error: '{args.name}' does not reduce to a kebab-case slug")
         return 2
-    _, matches = resolve_slug(root, slug)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    # Asked of the backend, not of the filesystem: a slug already taken in GitHub must
+    # refuse here exactly as one already taken on disk does.
+    matches = [s for s in backend.list_specs() if s["slug"] == slug]
     if matches:
         m = matches[0]
         emit(args.json, {"ok": False, "code": "sp-slug-exists", "slug": slug,
@@ -1433,38 +3131,55 @@ def cmd_new(args, root: str) -> int:
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{today()}-{slug}.md"
-    dest_dir = os.path.join(root, "plans")
-    os.makedirs(dest_dir, exist_ok=True)
     body = (capture_form()
             .replace("<SLUG>", slug)
             .replace("<TITLE>", title)
             .replace("<VERIFICATION>", policy))
-    path = os.path.join(dest_dir, name)
-    write_text(path, body)
+    path = backend.create_spec("plans", name, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
           "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
-          "path": os.path.relpath(path, os.path.dirname(root)).replace(os.sep, "/")},
+          "path": display_locator(path, root)},
          f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
          f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
     return 0
 
 
 def cmd_list(args, root: str) -> int:
-    specs = spec_files(root)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    specs = backend.list_specs()
     rows = []
     for s in specs:
-        text = read_text(s["path"]) or ""
-        fm = parse_frontmatter(text)
-        sections = parse_sections(body_after_frontmatter(text))
-        tasks = parse_tasks(text)
-        checked, blocked, total = task_progress(tasks)
+        # ASKED OF THE BACKEND, never of the path. This was the last command reading
+        # `read_text(s["path"])` directly, which worked only because the files backend's
+        # locator happens to be a filesystem path — against GitHub it is an issue URL, and
+        # `list` would have reported every spec as empty rather than failing.
+        info, rerr = backend.read_spec(s["slug"])
+        if rerr or info is None:
+            # The only refusal reachable here is an ambiguous slug — the slug came from the
+            # listing, so it cannot be unknown — and `list` is exactly the command a human
+            # runs to SEE that duplicate. The row survives, derived from an empty document
+            # so every field still comes from the one shared derivation, and `unreadable`
+            # says so rather than letting the spec look empty. `validate` names it
+            # sp-duplicate-slug.
+            info, unreadable = derive_info(s, ""), (rerr or {}).get("code")
+        else:
+            unreadable = None
+        checked, blocked, total = task_progress(info["tasks"])
         rows.append({
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
             "legacy": s["legacy"], "file": s["file"], "date": s["date"],
-            "title": fm.get("title", titleize(s["slug"])),
-            "stage": derive_stage(s, sections, fm, tasks),
-            "outcome": fm.get("outcome") or None,
+            "title": info["frontmatter"].get("title", titleize(s["slug"])),
+            "stage": info["stage"],
+            "outcome": info["frontmatter"].get("outcome") or None,
+            # The seven records, on every row. Without them a caller that wants the front's
+            # rankings — `triage` reading `priority`, `status` narrating a spec's history —
+            # has to open each file itself, which is a path read and so only works while the
+            # backend happens to be `files`.
+            "records": spec_records(info["frontmatter"]),
+            "unreadable": unreadable,
             "tasks": {"checked": checked, "blocked": blocked, "total": total},
         })
     if args.json:
@@ -1487,7 +3202,8 @@ def cmd_list(args, root: str) -> int:
                     if r["tasks"]["total"] else "")
             blk = f" · {r['tasks']['blocked']} blocked" if r["tasks"]["blocked"] else ""
             oc = f" · {r['outcome']}" if r["outcome"] else ""
-            print(f"    {r['date']}  {r['slug']:<28} [{r['stage']}]{prog}{blk}{oc}")
+            un = f" · {r['unreadable']} (nothing derived)" if r["unreadable"] else ""
+            print(f"    {r['date']}  {r['slug']:<28} [{r['stage']}]{prog}{blk}{oc}{un}")
     return 0
 
 
@@ -1497,7 +3213,10 @@ def _next_phase(phase: str, schema: dict | None = None) -> str | None:
 
 
 def cmd_status(args, root: str) -> int:
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     checked, blocked, total = task_progress(info["tasks"])
@@ -1776,8 +3495,15 @@ def cmd_section(args, root: str) -> int:
     replaced. Comma-separated, one call, back in the order asked.
 
     `--write` stays singular: it takes stdin, and there is no unambiguous way to split one
-    stream across several sections."""
-    info, err = load_spec(root, args.spec)
+    stream across several sections.
+
+    The document comes from the BACKEND, never from a path: this is the reader every other
+    front calls, so a backend that could not serve it would leave the whole surface tied to
+    `files`."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     if args.moment:
@@ -1837,10 +3563,10 @@ def cmd_section(args, root: str) -> int:
     block = (f"## {heading}\n\n{content.strip()}\n"
              if content.strip() else section_guidance(heading))
     new_text, action = upsert_section(info, heading, block)
-    write_text(info["path"], new_text)
+    backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
-          "path": os.path.relpath(info["path"], os.path.dirname(root)).replace(os.sep, "/")},
+          "path": display_locator(info["path"], root)},
          f"{action} ## {heading} in {info['phase']}/{info['file']}")
     return 0
 
@@ -1865,6 +3591,164 @@ def set_frontmatter_key(text: str, key: str, value: str) -> str:
     return "".join(lines)
 
 
+def _render_record(key: str, rec: dict) -> list[str]:
+    """A record as frontmatter lines — flow where flow survives a round trip, block where
+    it would not. A value carrying a comma cannot go in `{a: b, c: d}`, which
+    `parse_frontmatter` splits on commas; a long one wraps in an editor and stops parsing
+    as one line. Both are the block form's whole reason to exist."""
+    parts = [f"{k}: {v}" for k, v in rec.items()]
+    line = f"{key}: {{{', '.join(parts)}}}"
+    if len(line) <= 96 and not any("," in str(v) for v in rec.values()):
+        return [line + "\n"]
+    return [f"{key}:\n"] + [f"  {p}\n" for p in parts]
+
+
+def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
+    """Replace ONE record, its continuation lines included, preserving every other line.
+
+    `set_frontmatter_key` cannot do this: a record already written in block form occupies
+    lines the single-line replacement would leave orphaned below the new value, where they
+    would parse as a second record's fields."""
+    new_lines = _render_record(key, rec)
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return "---\n" + "".join(new_lines) + "---\n\n" + text
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return text
+    for i in range(1, close):
+        if lines[i][:1] in (" ", "\t") or ":" not in lines[i]:
+            continue
+        if lines[i].split(":", 1)[0].strip() != key:
+            continue
+        end = i + 1
+        while end < close and lines[end][:1] in (" ", "\t") and lines[end].strip():
+            end += 1
+        return "".join(lines[:i] + new_lines + lines[end:])
+    return "".join(lines[:close] + new_lines + lines[close:])
+
+
+def cmd_record(args, root: str) -> int:
+    """Read or merge ONE frontmatter record, through the backend.
+
+    The seven records were the last thing the command surface wrote by editing the file at
+    its path — `triage` stamping `priority`, `isolate` stamping `branch`, `conclude`
+    stamping `merge`. That is a path write, so it worked only while the backend happened to
+    be `files`; against GitHub there is no file to edit.
+
+    Which records exist, which fields each declares and which are write-once all come from
+    the schema, so adding a record stays a schema edit. A record declaring no `fields:` is
+    not writable here at all — that is `outcome`, whose one writer is `promote --outcome`,
+    and it falls out of the declaration rather than being named in the code."""
+    schema = load_schema()
+    declared = schema.get("frontmatter", {}).get("records", {})
+    if args.name not in record_keys(schema):
+        emit(args.json,
+             {"ok": False, "code": "sp-unknown-record", "record": args.name,
+              "declared": record_keys(schema),
+              "message": f"'{args.name}' is not a declared record — the declared ones are "
+                         f"{', '.join(record_keys(schema))}"},
+             f"error: '{args.name}' is not a declared record")
+        return 2
+    rspec = declared.get(args.name, {})
+    fields = list(rspec.get("fields", []))
+
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+    current = info["frontmatter"].get(args.name) or None
+
+    if not args.set:
+        if args.json:
+            print(json.dumps({"ok": current is not None, "slug": info["slug"],
+                              "record": args.name, "value": current},
+                             indent=2, ensure_ascii=False))
+        else:
+            print(f"{args.name}: {current}" if current is not None
+                  else f"({args.name}: is unset)")
+        return 0 if current is not None else 1
+
+    if not fields:
+        emit(args.json,
+             {"ok": False, "code": "sp-record-not-writable", "record": args.name,
+              "writtenBy": rspec.get("writtenBy", ""),
+              "message": f"`{args.name}:` declares no fields — its one writer is "
+                         f"{rspec.get('writtenBy', 'another command')}"},
+             f"refused: `{args.name}:` is not written through this command")
+        return 2
+    if rspec.get("writeOnce") and current:
+        emit(args.json,
+             {"ok": False, "code": "sp-record-write-once", "record": args.name,
+              "current": current,
+              "message": f"`{args.name}:` is write-once and already reads {current} — a "
+                         f"record that disagrees with reality is a finding to report, "
+                         f"never a value to overwrite"},
+             f"refused: `{args.name}:` is already set to {current}")
+        return 2
+
+    merged = dict(current) if isinstance(current, dict) else {}
+    for pair in args.set:
+        k, sep, v = pair.partition("=")
+        k, v = k.strip(), v.strip()
+        if not sep or k not in fields:
+            emit(args.json,
+                 {"ok": False, "code": "sp-unknown-record-field", "record": args.name,
+                  "given": pair, "fields": fields,
+                  "message": f"expected `field=value` with field one of "
+                             f"{', '.join(fields)} — got '{pair}'"},
+                 f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
+            return 2
+        merged[k] = v
+    # The schema's field order, so a record reads the same however it was assembled and a
+    # re-stamp never reshuffles what a human wrote.
+    ordered = {k: merged[k] for k in fields if k in merged}
+    backend.write_spec(info, set_frontmatter_record(info["text"], args.name, ordered))
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "record": args.name, "value": ordered},
+         f"{info['slug']} — {args.name}: "
+         f"{{{', '.join(f'{k}: {v}' for k, v in ordered.items())}}}")
+    return 0
+
+
+def record_round_trip_failures() -> list[str]:
+    """Every record this tool writes must read back as what was written.
+
+    A record is written once and read by every later command, so a serialisation that
+    round-trips for the short values and silently truncates a long or comma-carrying one
+    fails months later, on the spec that finally had a subject with a comma in it — and it
+    fails as a record that reads *plausibly*, missing only its tail."""
+    failures: list[str] = []
+    base = "---\nslug: alpha\ntitle: Alpha\nverification: per-task\n---\n\n## Problem\n\nx\n"
+    cases = {
+        "short": {"level": "1", "criticality": "high"},
+        "comma": {"strategy": "merge-commit", "subject": "plan/a: merge, then tidy"},
+        "long": {"strategy": "merge-commit",
+                 "subject": "plan/a-rather-long-slug-name-here: merge (merge-commit) " +
+                            "carrying every task"},
+    }
+    for label, rec in cases.items():
+        text = set_frontmatter_record(base, "priority", rec)
+        got = parse_frontmatter(text).get("priority")
+        if got != rec:
+            failures.append(f"{label}: wrote {rec!r}, read back {got!r}")
+        for k, v in (("slug", "alpha"), ("title", "Alpha"), ("verification", "per-task")):
+            if parse_frontmatter(text).get(k) != v:
+                failures.append(f"{label}: writing a record lost `{k}: {v}`")
+
+    # Block -> flow, the shape that orphans lines: the block form's fields sit on their own
+    # lines, and replacing only the `key:` line would leave them below the new value, where
+    # they parse as fields of whatever record comes next.
+    blocked = set_frontmatter_record(base, "merge", cases["comma"])
+    reflowed = set_frontmatter_record(blocked, "merge", {"strategy": "rebase"})
+    if parse_frontmatter(reflowed).get("merge") != {"strategy": "rebase"}:
+        failures.append("re-stamping a block record left its old fields behind: "
+                        f"{parse_frontmatter(reflowed).get('merge')!r}")
+    return failures
+
+
 def cmd_promote(args, root: str) -> int:
     """The one remaining transition: `plans/` -> `archive/`, closing a spec out.
 
@@ -1876,7 +3760,10 @@ def cmd_promote(args, root: str) -> int:
     The file is MOVED, never renamed: the date prefix was stamped at capture and the
     basename is the spec's identity for its whole lifecycle. Git detects the rename by
     content, so `git log --follow` reads as one history without this tool shelling out."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     dest = args.to or _next_phase(info["phase"])
@@ -1940,8 +3827,7 @@ def cmd_promote(args, root: str) -> int:
                  "\n  pass --force to archive anyway, or --outcome abandoned")
             return 2
 
-    dest_dir = os.path.join(root, dest)
-    dest_path = os.path.join(dest_dir, info["file"])
+    dest_path = os.path.join(root, dest, info["file"])
     rel = f"{dest}/{info['file']}"
     if args.dry_run:
         emit(args.json,
@@ -1956,10 +3842,12 @@ def cmd_promote(args, root: str) -> int:
                          "message": f"{rel} already exists"},
              f"error: {rel} already exists")
         return 1
-    os.makedirs(dest_dir, exist_ok=True)
+    # The outcome is stamped BEFORE the hop, so the document that moves already carries it —
+    # a backend whose move is not atomic must never be able to land an archived spec with no
+    # outcome on it.
     if outcome:
-        write_text(info["path"], set_frontmatter_key(info["text"], "outcome", outcome))
-    os.rename(info["path"], dest_path)
+        backend.write_spec(info, set_frontmatter_key(info["text"], "outcome", outcome))
+    backend.move_spec(info, dest)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "from": info["folder"], "to": dest,
           "outcome": outcome, "dest": rel, "warn": gates["warn"]},
@@ -1981,8 +3869,18 @@ def cmd_task(args, root: str) -> int:
 
     `--block` writes the reason into the line itself. That visibility is the whole point:
     v1 kept an attempt counter in `.specs.json` that nobody read, and a task went quiet
-    after five failures with no trace of why."""
-    info, err = load_spec(root, args.spec)
+    after five failures with no trace of why.
+
+    `--check` may carry `--subject`, `--commit`, both, or neither. `--commit <sha>` is
+    called AFTER the commit implementing the task already exists — the CLI records the sha
+    it is given, it never resolves or invents one — and is additive: `--subject` keeps
+    working exactly as before for any caller that has not moved to the sha anchor. Whichever
+    write actually lands the anchor (`backend.write_spec`, below) is where a failure — a
+    `gh api` call included — is reported, never swallowed."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block
@@ -2004,6 +3902,23 @@ def cmd_task(args, root: str) -> int:
         emit(args.json, {"ok": False, "code": "sp-bad-subject", "subject": args.subject,
                          "message": "a commit subject must be one non-empty line"},
              "error: a commit subject must be one non-empty line")
+        return 1
+    # --commit is the sha form of the SAME anchor, meant to be called AFTER the commit that
+    # implements the task already exists — the CLI never invents or looks up a sha, it only
+    # records the one the caller already has. Same rule as --subject: meaningful only on the
+    # transition that says the task is done, so it goes with --check too. It is additive,
+    # not a replacement: a caller may still pass --subject alone, exactly as before.
+    if args.commit and not args.check:
+        emit(args.json, {"ok": False, "code": "sp-commit-without-check",
+                         "message": "--commit records the sha of the commit that implements "
+                                    "a task, so it goes with --check"},
+             "error: --commit goes with --check")
+        return 1
+    if args.commit is not None and not COMMIT_SHA_RE.match(args.commit.strip()):
+        emit(args.json, {"ok": False, "code": "sp-bad-commit-sha", "commit": args.commit,
+                         "message": "--commit takes a git sha (hex, 7-40 characters), not "
+                                    "free text"},
+             "error: --commit takes a git sha (hex, 7-40 characters), not free text")
         return 1
     if args.block and not args.reason:
         emit(args.json, {"ok": False, "code": "sp-no-reason",
@@ -2035,31 +3950,185 @@ def cmd_task(args, root: str) -> int:
         body = f"{body} — blocked: {args.reason.strip()}"
     lines[t["lineno"]] = f"{m.group(1)}- [{mark}] {body}\n"
 
-    # Upsert the `subject:` metadata line — replace one that is already there, otherwise
-    # append it after the task's last metadata line (or right under the checkbox).
+    # Upsert the `subject:`/`commit:` metadata lines — replace one that is already there,
+    # otherwise append it after the task's last metadata line (or right under the
+    # checkbox). The two anchors are independent: passing one never disturbs an existing
+    # line for the other, and both may be written in the same call while a spec transitions
+    # from the subject anchor to the sha one. New lines are inserted together in ONE slice
+    # so inserting one never shifts the position computed for the other.
     subject = None
+    commit = None
+    new_entries: list[str] = []
     if args.subject:
         subject = args.subject.strip()
         entry = f"{t['metaIndent']}subject: {subject}\n"
         if t["subjectLineno"] is not None:
             lines[t["subjectLineno"]] = entry
         else:
-            lines.insert(t["metaInsertAt"], entry)
-    elif args.uncheck:
-        # Drop whichever anchor the line carries — `subject:` now, `commit:` on a spec
-        # written before the anchor changed form. Highest offset first, so deleting one
-        # cannot shift the index of the other.
+            new_entries.append(entry)
+    if args.commit:
+        commit = args.commit.strip()
+        entry = f"{t['metaIndent']}commit: {commit}\n"
+        if t["commitLineno"] is not None:
+            lines[t["commitLineno"]] = entry
+        else:
+            new_entries.append(entry)
+    if new_entries:
+        lines[t["metaInsertAt"]:t["metaInsertAt"]] = new_entries
+    if not args.subject and not args.commit and args.uncheck:
+        # Drop whichever anchor the line carries — `subject:`, `commit:` written by
+        # `--commit`, or the legacy `commit:` on a spec written before either form applied
+        # to it. Highest offset first, so deleting one cannot shift the index of the other.
         for off in sorted((o for o in (t["subjectLineno"], t["commitLineno"])
                            if o is not None), reverse=True):
             del lines[off]
-    write_text(info["path"], "".join(lines))
+    # THE FAILURE-REPORTING CONTRACT: this call is the one that can fail out from under a
+    # tick that already looks applied to `lines`. `FilesBackend` either writes the file or
+    # raises. `GitHubBackend` pushes the same edited task block into the task's own
+    # sub-issue (`_sync_tasks`, inside `write_spec`) and raises `BackendRefusal` — never swallowed
+    # — the instant `gh api` fails, e.g. on a network error. `main()` is the one place that
+    # exception becomes an exit code and an `ok: false` JSON body; nothing here catches it
+    # and nothing here prints a success message before this line returns.
+    backend.write_spec(info, "".join(lines))
 
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
+    anchor_lines = ((f"\n  subject: {subject}" if subject else "") +
+                    (f"\n  commit: {commit}" if commit else ""))
     emit(args.json,
          {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
-          "state": mark, "text": body, "subject": subject,
+          "state": mark, "text": body, "subject": subject, "commit": commit,
           "reason": args.reason if args.block else None},
-         f"task {ident} {verb}: {body}" + (f"\n  subject: {subject}" if subject else ""))
+         f"task {ident} {verb}: {body}" + anchor_lines)
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# granular reading
+# --------------------------------------------------------------------------- #
+# The reader's view of a task. `metaInsertAt`, `metaIndent`, `subjectLineno` and
+# `commitLineno` are deliberately NOT here: they are the offsets `task` upserts by, and
+# handing them to a reader is an invitation to do the string surgery `task` exists to
+# prevent. `lineno` stays, because locating a task in the file is reading, not writing.
+SHOWN_TASK_KEYS = ("index", "id", "state", "checked", "blocked", "reason", "text",
+                   "section", "parallel", "files", "pattern", "verify", "subject",
+                   "commit", "lineno")
+
+
+def _task_view(t: dict) -> dict:
+    return {k: t[k] for k in SHOWN_TASK_KEYS}
+
+
+def _show_index(info: dict) -> dict:
+    """The MAP of one spec — which sections exist, how big each is, which task ids there are.
+
+    Bounded by the fourteen headings and the task count no matter how long the document is,
+    which is what makes it affordable as the default. It also makes the NEXT call exact: a
+    caller that knows the heading spellings and the task ids never has to read the document
+    to find out what it may ask for."""
+    return {
+        "sections": [{"heading": h,
+                      "state": section_state(info["sections"], h),
+                      "lines": len(info["sections"].get(h, {}).get("lines", []))}
+                     for h in canonical_headings()],
+        "strays": stray_headings(info["sections"]),
+        "tasks": [{"id": t["id"], "index": t["index"], "state": t["state"], "text": t["text"]}
+                  for t in info["tasks"]],
+    }
+
+
+def _show_human(obj: dict, info: dict) -> str:
+    head = (f"{obj['slug']} — {obj['title']}\n"
+            f"  {info['folder']}/{info['file']}  [{obj['stage']}]")
+    if obj["view"] == "full":
+        return info["text"].rstrip("\n")
+    marks = {"filled": "✓", "empty": "!", "absent": "·"}
+    out = [head]
+    if obj["view"] == "index":
+        out.append(f"  sections ({sum(1 for s in obj['sections'] if s['state'] != 'absent')}"
+                   f"/{len(obj['sections'])} present)")
+        for s in obj["sections"]:
+            size = f"  {s['lines']} line(s)" if s["state"] != "absent" else ""
+            out.append(f"    {marks[s['state']]} ## {s['heading']}{size}")
+        if obj["strays"]:
+            out.append(f"  strays: {', '.join(obj['strays'])}")
+        if obj["tasks"]:
+            out.append(f"  tasks ({len(obj['tasks'])})")
+            for t in obj["tasks"]:
+                out.append(f"    [{t['state']}] {t['text']}")
+        out.append(f"  read sections: specs.py section {obj['slug']} \"<Heading>,<Heading>\"\n"
+                   f"  read one task: specs.py show --spec {obj['slug']} --task <id>"
+                   f"   (--full for the whole document)")
+        return "\n".join(out)
+    for t in obj["tasks"]:
+        out.append(f"\n- [{t['state']}] {t['text']}")
+        for key in ("files", "pattern", "verify", "subject", "commit"):
+            val = t[key]
+            if val:
+                val = ", ".join(val) if isinstance(val, list) else val
+                out.append(f"      {key}: {val}")
+    return "\n".join(out)
+
+
+def cmd_show(args, root: str) -> int:
+    """Read ONE task, or the map of what is there — the whole document only when it is asked
+    for by name.
+
+    THE COST THIS ADDRESSES IS THE AGENT'S CONTEXT, NOT I/O. A backend may well have fetched
+    the entire document to answer `--task 3.1`, and that is fine — reading a file twice is
+    free. What is not free is an executor handed fourteen sections in order to edit one: it
+    carries the other thirteen through every remaining turn of its conversation and pays for
+    them again on each. So the DEFAULT IS THE INDEX AND NEVER THE DOCUMENT, and `--full`
+    exists precisely so that the whole document has to be typed on purpose.
+
+    **Section bodies are `section`'s, not this command's.** That reader is already plural and
+    already resolves a `--moment` to its section set, so a second way to ask for a heading
+    would be a second spelling of a measured answer — and the two would drift. What is left
+    here is what `section` cannot say: WHICH headings and task ids exist (the index), one
+    task's line and metadata, and the whole document under a name nobody types by accident.
+
+    An unknown task id is a finding (exit 1), the same as an unknown slug."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+
+    wanted_tasks = list(args.task or [])
+    if args.full and wanted_tasks:
+        # Two different cost profiles in one request. Silently letting one win would hand
+        # back the whole document to a caller that asked for a slice, which is the exact
+        # failure this command exists to make impossible.
+        emit(args.json,
+             {"ok": False, "code": "sp-conflicting-selection",
+              "message": "--full asks for the whole document and --task for a slice of it "
+                         "— pass one or the other"},
+             "error: --full does not combine with --task")
+        return 2
+
+    tasks: list[dict] = []
+    for ident in wanted_tasks:
+        t = _find_task(info["tasks"], ident)
+        if not t:
+            emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
+                             "message": f"no task '{ident}' in {info['slug']}"},
+                 f"error: no task '{ident}' in {info['slug']}")
+            return 1
+        tasks.append(_task_view(t))
+
+    view = "full" if args.full else ("slice" if tasks else "index")
+    obj = {"ok": True, "slug": info["slug"],
+           "title": info["frontmatter"].get("title", ""),
+           "stage": info["stage"], "phase": info["phase"], "folder": info["folder"],
+           "file": info["file"], "view": view}
+    if view == "full":
+        obj["document"] = info["text"]
+        obj["lines"] = len(info["text"].splitlines())
+    elif view == "slice":
+        obj["tasks"] = tasks
+    else:
+        obj.update(_show_index(info))
+    emit(args.json, obj, _show_human(obj, info))
     return 0
 
 
@@ -2105,6 +4174,605 @@ def _git(cwd: str, *argv: str) -> str:
         return out.stdout if out.returncode == 0 else ""
     except (OSError, ValueError, subprocess.SubprocessError):
         return ""
+
+
+SPECS_WORKTREE_DIR = ".claude/worktrees"
+
+
+def worktree_dir_ignored(cwd: str, rel: str = SPECS_WORKTREE_DIR) -> bool:
+    """Whether git ignores the path the `files` backend puts its specs worktree at.
+
+    `git check-ignore` prints the path when it is ignored and nothing when it is not, so the
+    existing `_git` — which swallows the exit code — answers this without a second helper. A
+    path that does not exist yet answers the same way, which is exactly what the guard needs:
+    the question is asked BEFORE `git worktree add`, never after.
+
+    Resolved against the repo top level, not against `cwd`: this tool's `cwd` is the specs
+    workspace, and `.claude/worktrees/` relative to `<repo>/specs/` is a different path that
+    would answer the wrong question. No git and no repo answer `False` — a tree git cannot
+    speak for is one where nothing can promise the worktree stays out of `git status`."""
+    top = _git(cwd, "rev-parse", "--show-toplevel").strip()
+    if not top:
+        return False
+    return bool(_git(top, "check-ignore", os.path.join(top, rel, "")).strip())
+
+
+def worktree_guard(ignored: bool, rel: str = SPECS_WORKTREE_DIR) -> dict:
+    """The refusal that stops the `files` backend sabotaging itself, or `{}` to proceed.
+
+    Pure policy over the one fact `worktree_dir_ignored` establishes, kept separate from it so
+    the decision is assertable without a repository to stage.
+
+    Exit 2 rather than a warning, and rather than writing the line itself: `.gitignore` belongs
+    to the target repo, and a tool that edits it uninvited to unblock its own feature is making
+    the human's decision for them. Naming the one line to add is the whole remedy."""
+    if ignored:
+        return {}
+    return {
+        "code": "sp-worktree-unignored", "exit": 2, "path": rel,
+        "message": f"git does not ignore '{rel}/' — add it to .gitignore before the files "
+                   f"backend creates its specs worktree there; an untracked worktree breaks "
+                   f"the clean-tree gate /specs:execute requires before its first task",
+    }
+
+
+# --------------------------------------------------------------------------- #
+# the persistent specs worktree — where the `files` backend puts the specs branch
+# --------------------------------------------------------------------------- #
+def _git_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
+    """Exit code, stdout AND stderr of one git command — the two halves `_git` throws away.
+
+    A SIBLING of `_git`, never a change to it: every existing caller reads `""` as "this repo
+    has no git facts", which is a real state and never an error. Creating a worktree needs the
+    opposite reading — the difference between "the branch is not there" and "git could not
+    answer" is what decides whether a branch gets created — and it needs git's own message to
+    quote back in a refusal.
+
+    A cwd that does not exist is `127` and no subprocess, where `_git` falls back to `"."`.
+    That fallback is harmless when the answer is only ever read as a fact; here it would run
+    `git worktree add` in whatever directory the process happens to sit in."""
+    import subprocess
+    if not os.path.isdir(cwd):
+        return 127, "", f"not a directory: {cwd}"
+    try:
+        out = subprocess.run(["git", *argv], capture_output=True, text=True, timeout=30,
+                             cwd=cwd, input=stdin)
+        return out.returncode, out.stdout, out.stderr
+    except (OSError, ValueError, subprocess.SubprocessError) as e:   # noqa: BLE001
+        return 127, "", str(e)
+
+
+def _repo_main_worktree(start: str) -> str:
+    """The MAIN checkout of the repository `start` belongs to, or `""` when git cannot say.
+
+    The main checkout and NOT `--show-toplevel`, because the specs worktree is ONE per
+    repository and is reused: asked from inside a plan worktree, `--show-toplevel` answers with
+    that plan worktree, so the backend would try to grow a second specs worktree per branch
+    under development — each one wanting the same branch, which git refuses outright. Every
+    linked worktree agrees on `--git-common-dir`, so it is the one answer that makes "created
+    on demand and reused" true from anywhere in the repo.
+
+    `start` may not exist yet (the default specs root is `<cwd>/specs` whether or not it is
+    there), so the question is asked from the nearest ancestor that does."""
+    d = os.path.abspath(start)
+    while not os.path.isdir(d):
+        parent = os.path.dirname(d)
+        if parent == d:
+            return ""
+        d = parent
+    common = _git(d, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    # `--path-format` landed in git 2.31; on an older one the flag itself fails, and the main
+    # checkout is still the right answer for every repo that has no linked worktree.
+    top = os.path.dirname(common) if common else _git(d, "rev-parse", "--show-toplevel").strip()
+    return top if top and os.path.isdir(top) else ""
+
+
+def specs_worktree_path(top: str, branch: str) -> str:
+    """Where the specs branch is checked out — one fixed, derivable path per branch.
+
+    Derived rather than recorded: a path this tool can recompute from the branch name needs no
+    state file, and a second process finds the SAME worktree instead of creating a rival one.
+    `/` becomes `-` so a namespaced branch (`quenching/specs`) stays one directory deep and can
+    never nest inside another worktree's path."""
+    return os.path.join(top, SPECS_WORKTREE_DIR, branch.replace("/", "-").strip("-") or "specs")
+
+
+def _create_empty_branch(top: str, branch: str) -> tuple[int, str]:
+    """Point `branch` at a commit whose tree is EMPTY, for a git too old for `--orphan`.
+
+    `git worktree add --orphan` (git 2.42) leaves the branch unborn, which is emptier still and
+    is what this prefers. Below that version the same intent costs three plumbing calls and
+    lands one root commit holding nothing — the specs branch still shares no history and no
+    file with the code branches, which is the property the whole design rests on.
+
+    `mktree` over empty input is the empty tree without depending on `/dev/null` or on a
+    hardcoded hash, which differs between a sha1 and a sha256 repository."""
+    code, tree, err = _git_run(top, "mktree", stdin="")
+    if code != 0:
+        return code, err
+    code, commit, err = _git_run(top, "commit-tree", tree.strip(),
+                                 "-m", f"quenching: initialise the {branch} branch", stdin="")
+    if code != 0:
+        return code, err
+    code, _, err = _git_run(top, "branch", branch, commit.strip())
+    return code, err
+
+
+def specs_worktree(top: str, branch: str) -> tuple[str, dict]:
+    """The checkout of the specs branch the `files` backend reads and writes — reused when it
+    is already there, created on demand when it is not. Returns `(path, err)`.
+
+    PERSISTENT, not per-command: the branch is checked out once and left in place, so the cost
+    of the whole design is one `git worktree add` in a repository's life and one `os.path.isdir`
+    per command afterwards. A worktree created and removed around every call would pay a
+    checkout per `status`.
+
+    THE GUARD RUNS BEFORE ANYTHING IS CREATED, and only on the creation path. An unignored
+    worktree is untracked content in the working tree, which breaks the clean-tree gate
+    `/specs:execute` demands before its first task — the backend would sabotage the command
+    that drives it. That damage is done by the `git worktree add`, so that is what the guard
+    stands in front of; the reuse path creates nothing and pays no subprocess for it.
+
+    The branch is created EMPTY when it does not exist. Not branched off the current HEAD: a
+    specs branch sharing history with the code is the very thing the backend exists to undo,
+    and one that starts with the whole repository in it would put every code file one merge
+    away from the specs."""
+    path = specs_worktree_path(top, branch)
+    if os.path.isdir(path):
+        # The reuse test is `--show-toplevel`, NOT `--is-inside-work-tree`: this path sits
+        # inside the repository by construction, so "are you in a work tree" answers `true` for
+        # any ordinary directory left there and the backend would happily write specs into a
+        # folder that belongs to the code branch. Only a real linked worktree answers with its
+        # OWN path as the top level.
+        if os.path.realpath(_git(path, "rev-parse", "--show-toplevel").strip() or os.sep) \
+                == os.path.realpath(path):
+            return path, {}
+        return path, {
+            "code": "sp-worktree-unusable", "exit": 2, "path": path, "branch": branch,
+            "message": f"'{path}' exists but git does not know it as a worktree — the files "
+                       f"backend will not write specs into a directory it cannot attribute to "
+                       f"the '{branch}' branch; move it aside or `git worktree repair`",
+        }
+
+    refusal = worktree_guard(worktree_dir_ignored(top))
+    if refusal:
+        return path, refusal
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    exists, _, _ = _git_run(top, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}")
+    if exists == 0:
+        code, _, err = _git_run(top, "worktree", "add", path, branch)
+    else:
+        code, _, err = _git_run(top, "worktree", "add", "--orphan", "-b", branch, path)
+        if code != 0 and not os.path.isdir(path):
+            # Either `--orphan` is not understood (git < 2.42) or the add failed outright. The
+            # `isdir` test is what tells the two apart without parsing git's prose: a refused
+            # flag creates nothing, so retrying the long way is safe; anything that got as far
+            # as making the directory is reported instead of being retried on top of itself.
+            code, err = _create_empty_branch(top, branch)
+            if code == 0:
+                code, _, err = _git_run(top, "worktree", "add", path, branch)
+    if code != 0 or not os.path.isdir(path):
+        return path, {
+            "code": "sp-worktree-failed", "exit": 2, "path": path, "branch": branch,
+            "git": err.strip(),
+            "message": f"could not check out the specs branch '{branch}' at '{path}' — git "
+                       f"said: {err.strip() or 'nothing'}",
+        }
+    return path, {}
+
+
+def _inside_worktree_dir(path: str, rel: str = SPECS_WORKTREE_DIR) -> bool:
+    """Whether `path` already sits under a worktree directory, so nothing nests another one
+    inside it. Compared segment by segment rather than as a substring — a repository legitimately
+    named `.claude/worktrees-archive` is not a worktree."""
+    parts = os.path.abspath(path).split(os.sep)
+    want = rel.split("/")
+    return any(parts[i:i + len(want)] == want for i in range(len(parts)))
+
+
+def _holds_phase_folder(root: str) -> bool:
+    return any(os.path.isdir(os.path.join(root, p)) for p in PHASE_DIRS)
+
+
+def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
+    """Which directory the `files` backend actually operates on: the workspace as declared, or
+    the persistent worktree of the specs branch. Returns `(root, err)`.
+
+    Three shapes answer WITHOUT git, and they answer first — which is what keeps the resolution
+    free for everything that is not a migrated repository, and what lets the backend be
+    exercised over a bare temp directory with no repository at all:
+
+      already inside a worktree   nothing nests a worktree in a worktree; the specs branch is
+                                  already the tree underfoot.
+      the workspace is populated  a `specs/` holding phase folders in the code tree is the
+                                  PRE-MIGRATION store and stays authoritative until a human
+                                  moves it. Switching silently would make every repository that
+                                  upgrades this tool look like it had lost every spec it has —
+                                  the loudest regression this change could ship, and the one
+                                  this repository would have taken on the very next `list`.
+                                  Moving those files is deliberate work (`## Out of Scope`),
+                                  so the presence of the old store is the honest signal that it
+                                  has not happened yet.
+      no repository               there is no branch to check out, so there is nowhere else the
+                                  specs could be.
+
+    Otherwise the specs live on the specs branch, and the worktree is created on demand. The
+    workspace keeps its own basename inside it, so `SPECS_ROOT=<x>/design` resolves to
+    `<worktree>/design` and the layout is the same on both sides of the migration.
+
+    Memoised per declared root: the answer costs subprocesses, and it is asked twice per
+    writing command — once by `writer_lock`, once by `open_backend`. The cache is what makes
+    the lock and the backend point at the SAME worktree by construction rather than by two
+    resolutions agreeing."""
+    if root in _FILES_ROOT_CACHE:
+        return _FILES_ROOT_CACHE[root]
+    out = _resolve_files_root(root, cfg)
+    _FILES_ROOT_CACHE[root] = out
+    return out
+
+
+_FILES_ROOT_CACHE: dict[str, tuple[str, dict]] = {}
+
+
+def _resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
+    if _inside_worktree_dir(root) or _holds_phase_folder(root):
+        return root, {}
+    top = _repo_main_worktree(root)
+    if not top:
+        return root, {}
+    path, err = specs_worktree(top, cfg.get("specsBranch") or DEFAULT_SPECS_BRANCH)
+    if err:
+        return root, err
+    return os.path.join(path, os.path.basename(os.path.normpath(root)) or "specs"), {}
+
+
+def files_specs_worktree(root: str, cfg: dict) -> tuple[str | None, dict]:
+    """The specs worktree the `files` backend resolved to, or `None` when it did not use one.
+
+    `None` is not a failure — it is the pre-migration workspace still sitting in the code tree,
+    which is a legal and currently common state. Anything that guards the worktree has to be
+    able to tell the two apart without triggering a second resolution."""
+    target, err = resolve_files_root(root, cfg)
+    if err:
+        return None, err
+    if os.path.abspath(target) == os.path.abspath(root):
+        return None, {}
+    return os.path.dirname(os.path.abspath(target)), {}
+
+
+def files_root_failures() -> list[str]:
+    """The shapes `resolve_files_root` must answer without reaching for git, checked rather
+    than asserted in prose.
+
+    Every one of them is a case where creating a worktree would be WRONG, and the cost of
+    getting it wrong is not a bad answer but a branch and a checkout appearing in someone's
+    repository. Self-contained — a temp directory and pure path arithmetic, so this runs on an
+    installed copy with no repository staged."""
+    import tempfile
+    cfg = {"specsBranch": DEFAULT_SPECS_BRANCH}
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        populated = os.path.join(tmp, "specs")
+        os.makedirs(os.path.join(populated, "plans"))
+        got, err = resolve_files_root(populated, cfg)
+        if got != populated or err:
+            out.append(f"a populated workspace resolved to {got!r} (err={err.get('code')!r}), "
+                       f"not to itself — the pre-migration store must stay authoritative")
+
+        nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", "specs")
+        os.makedirs(nested)
+        got, err = resolve_files_root(nested, cfg)
+        if got != nested or err:
+            out.append(f"a workspace already inside {SPECS_WORKTREE_DIR}/ resolved to {got!r} "
+                       f"(err={err.get('code')!r}) — nothing nests a worktree in a worktree")
+
+    want = os.path.join("/repo", SPECS_WORKTREE_DIR, "quenching-specs")
+    got_path = specs_worktree_path("/repo", "quenching/specs")
+    if got_path != want:
+        out.append(f"a namespaced branch resolved to {got_path!r}, not {want!r} — a `/` in the "
+                   f"branch name must not deepen the worktree path")
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# the specs worktree lock — one writer at a time, per worktree
+# --------------------------------------------------------------------------- #
+LOCK_SUFFIX = ".lock"
+LOCK_WAIT_SECONDS = 10.0
+LOCK_POLL_SECONDS = 0.05
+
+
+def specs_lock_path(worktree: str) -> str:
+    """`<…>/.claude/worktrees/<name>.lock` — BESIDE the worktree, never inside it.
+
+    Inside, the lock would be untracked content in the one tree whose whole job is to hold a
+    clean, committable set of specs, and every `git status` run there would report the tool's
+    own bookkeeping. Beside, it is already covered by the `.claude/worktrees/` ignore rule that
+    `worktree_guard` refuses to run without — so the lock costs no new ignore line, and cannot
+    dirty the code tree either."""
+    return os.path.normpath(worktree) + LOCK_SUFFIX
+
+
+def _lock_holder(path: str) -> dict:
+    """Who the lock file says is holding it. An unreadable or unparseable lock comes back as an
+    empty record rather than as an error: the file existing is the lock, and its contents are
+    only ever used to describe the holder to a human or to prove it is gone."""
+    try:
+        obj = json.loads(read_text(path) or "")
+        return obj if isinstance(obj, dict) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _holder_is_gone(info: dict) -> bool:
+    """True ONLY when this process can prove the recorded holder no longer exists.
+
+    AGE IS NEVER THE REASON. "The lock is old, so I will take it" is the tempting rule and the
+    wrong one: a `promote` on a slow filesystem and a crashed process look identical through a
+    timestamp, and the fast case for guessing wrong is two writers in the same document. Age
+    appears in the refusal message as information for the human and never as a decision.
+
+    Proof, and the three things that make it unavailable:
+
+      another host      a pid is meaningless off the machine that issued it, and a specs
+                        worktree on a network share can legitimately be held from elsewhere.
+      not POSIX         `os.kill(pid, 0)` is a liveness probe on POSIX and NOT on Windows,
+                        where `os.kill` terminates the target whatever signal it is handed.
+                        A probe that kills the process it asks about is not a probe.
+      pid alive, or not ours  `ProcessLookupError` is the only answer that proves absence.
+                        `PermissionError` means it is running under another user, which is
+                        alive. Pid reuse can only make a dead holder look ALIVE, which errs
+                        toward refusing — the safe direction."""
+    import socket
+    if os.name != "posix":
+        return False
+    if str(info.get("host") or "") != socket.gethostname():
+        return False
+    try:
+        pid = int(info.get("pid") or 0)
+    except (TypeError, ValueError):
+        return False
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    except (OSError, OverflowError):
+        return False
+    return False
+
+
+class SpecsLock:
+    """Serialises the `specs.py` invocations that WRITE into one specs worktree.
+
+    THE SCOPE IS THE WHOLE COMMAND, not the write syscall. Every writing command is a
+    read-modify-write — `task --check` reads the document, flips one character, writes the
+    whole file back — so a lock held only around the write would still let two processes read
+    the same document and each store its own edit over the other's. Nothing would look corrupt
+    and one tick would simply be gone, which is the worse failure: it leaves no trace.
+
+    ONE LOCK PER WORKTREE, because the worktree is the resource. Two agents ticking tasks on
+    DIFFERENT specs do contend under this, and that is right rather than unfortunate: they
+    share one checkout of one branch, and the next thing that touches it commits everything in
+    it. Contention costs milliseconds — the work under the lock is one parse and one rename.
+
+    `O_CREAT | O_EXCL` is the primitive, not `fcntl` and not `msvcrt.locking`: exclusive create
+    is one syscall with the same meaning on POSIX and on Windows, and this tool ships to both
+    (`_force_utf8_output` is here for the same reason). The cost is a file left behind when a
+    process dies, which is what `_holder_is_gone` answers; the gain is a lock with no platform
+    branch inside it.
+
+    READERS TAKE NO LOCK. `list`, `status`, `show`, `next`, `validate` and `doctor` are the
+    commands a skill calls most, several of them per turn, and putting them in a queue behind a
+    writer would make the lock the front's throughput limit. What makes that safe is not luck:
+    `write_text` replaces a document by rename, so a reader sees the old text or the new one and
+    never a half-written file."""
+
+    def __init__(self, path: str, label: str = "") -> None:
+        self.path = path
+        self.label = label
+        self.held = False
+
+    def acquire(self, wait: float = LOCK_WAIT_SECONDS) -> dict:
+        """`{}` once held, or a ready-to-emit refusal naming the holder. Never raises, never
+        waits forever: a bounded wait absorbs the normal case, where the process ahead is
+        finishing a rename, and anything beyond it is reported to whoever can act on it."""
+        import socket
+        import time
+        deadline = time.monotonic() + max(0.0, wait)
+        record = json.dumps({"pid": os.getpid(), "host": socket.gethostname(),
+                             "command": self.label, "since": _now_iso(),
+                             "tool": f"specs.py {VERSION}"}, ensure_ascii=False)
+        while True:
+            try:
+                os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+                fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            except FileExistsError:
+                pass
+            except OSError as e:
+                return {"code": "sp-lock-unwritable", "exit": 2, "path": self.path,
+                        "message": f"could not create the specs worktree lock at "
+                                   f"'{self.path}': {e}"}
+            else:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    fh.write(record)
+                self.held = True
+                return {}
+
+            holder = _lock_holder(self.path)
+            if _holder_is_gone(holder):
+                try:
+                    os.remove(self.path)      # PROVEN dead — not merely old
+                except OSError:
+                    pass                      # someone else got there first, or we may not
+            else:
+                time.sleep(LOCK_POLL_SECONDS)
+            if time.monotonic() >= deadline:
+                return self._refusal(holder, wait)
+
+    def _refusal(self, holder: dict, waited: float) -> dict:
+        who = (f"pid {holder.get('pid')} on {holder.get('host')}"
+               if holder.get("pid") else "an unidentified process")
+        what = f" running `{holder['command']}`" if holder.get("command") else ""
+        since = f" since {holder['since']}" if holder.get("since") else ""
+        return {
+            "code": "sp-specs-locked", "exit": 2, "path": self.path, "holder": holder,
+            "waited": round(waited, 2),
+            "message": f"the specs worktree is locked by {who}{what}{since} — waited "
+                       f"{waited:g}s and gave up; nothing was written. If that process is gone, "
+                       f"delete '{self.path}'",
+        }
+
+    def release(self) -> None:
+        """Drop the lock. Idempotent and silent about a file already gone — a release that
+        raised would turn a successful write into a nonzero exit in the `finally` that runs
+        after it."""
+        if not self.held:
+            return
+        self.held = False
+        try:
+            os.remove(self.path)
+        except OSError:
+            pass
+
+    def __enter__(self) -> "SpecsLock":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.release()
+
+
+def _now_iso() -> str:
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+# Every subcommand that can MODIFY a spec. `list`/`status`/`show`/`next`/`parallel`/`validate`/
+# `config`/`doctor`/`selftest` are absent because they only read.
+WRITING_COMMANDS = ("new", "task", "discover", "section", "promote")
+
+
+def command_writes(args) -> bool:
+    """Whether THIS invocation will modify a spec — the scope the lock is taken for.
+
+    Per invocation and not per subcommand: `section` without `--write` and `promote --dry-run`
+    read and report, and queueing them behind a writer would put the lock in front of the two
+    reads a skill makes most.
+
+    `migrate` is deliberately absent. It rewrites the DECLARED workspace's own folder layout —
+    the pre-migration `specs/` in the code tree — and never touches the specs worktree, so the
+    worktree's lock would guard nothing it writes."""
+    cmd = getattr(args, "cmd", "")
+    if cmd in ("new", "task", "discover"):
+        return True
+    if cmd == "section":
+        return bool(getattr(args, "write", False))
+    if cmd == "record":
+        return bool(getattr(args, "set", None))
+    if cmd == "promote":
+        return not bool(getattr(args, "dry_run", False))
+    return False
+
+
+def writer_lock(args, root: str) -> tuple[SpecsLock | None, dict]:
+    """The lock this invocation must hold before it runs, or `(None, {})` when it needs none.
+
+    Three ways to need none, each a fact about where the specs are rather than a policy:
+
+      the command only reads    see `command_writes`.
+      an external backend       GitHub and Azure Boards serialise on their own server; a local
+                                file could not make a remote write atomic and would only add a
+                                second thing to get stuck.
+      no specs worktree         a pre-migration workspace in the code tree has nowhere to put a
+                                lock that git ignores, and an untracked file there is exactly
+                                the breakage `worktree_guard` exists to prevent. It is left
+                                unserialised knowingly — that workspace is the state this
+                                backend exists to end, and adding a second untracked artifact
+                                to it would buy safety for a layout on its way out at the price
+                                of the clean-tree gate `/specs:execute` runs under."""
+    if not command_writes(args):
+        return None, {}
+    cfg = load_config(root)
+    if cfg["backend"] != DEFAULT_BACKEND:
+        return None, {}
+    worktree, err = files_specs_worktree(root, cfg)
+    if err:
+        return None, err
+    if worktree is None:
+        return None, {}
+    lock = SpecsLock(specs_lock_path(worktree), label=_invocation_label(args))
+    return lock, lock.acquire()
+
+
+def _invocation_label(args) -> str:
+    """A short, honest name for what is holding the lock — the subcommand and the spec it is
+    writing. Read by a human staring at a refusal, so it names the spec rather than echoing the
+    whole argv, which would carry `--json` and other noise into the message."""
+    spec = getattr(args, "spec", None) or getattr(args, "title", None) or ""
+    return f"{getattr(args, 'cmd', '?')} {spec}".strip()
+
+
+def lock_failures() -> list[str]:
+    """The lock's invariants, checked rather than asserted in prose.
+
+    The direction that is asserted here is the DANGEROUS one: a lock that is taken while
+    someone holds it, or a holder judged gone on evidence that does not prove it, silently
+    loses a human's edit. Both are decidable with no repository and no second process.
+
+    The opposite direction — a genuinely dead holder being reclaimed — is exercised in a
+    disposable repository and NOT here, because asserting it needs a pid that is provably dead,
+    and the only cheap way to get one is a process that just exited, whose pid the operating
+    system may reuse. A selftest that fails once a month teaches people to ignore it."""
+    import socket
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "specs.lock")
+        first = SpecsLock(path, label="task alpha")
+        if first.acquire(wait=0.0):
+            out.append("a free lock refused to be acquired")
+        if not os.path.isfile(path):
+            out.append("acquiring left no lock file, so nothing marks the worktree as held")
+
+        second = SpecsLock(path, label="promote alpha")
+        err = second.acquire(wait=0.0)
+        if err.get("code") != "sp-specs-locked" or err.get("exit") != 2:
+            out.append(f"a held lock was acquired again (got {err.get('code')!r}) — two "
+                       f"writers in one worktree is the whole failure this prevents")
+        if str(err.get("holder", {}).get("pid")) != str(os.getpid()):
+            out.append(f"the refusal names holder {err.get('holder')!r}, not the process that "
+                       f"actually holds it")
+
+        first.release()
+        if os.path.exists(path):
+            out.append("releasing left the lock file behind, which wedges the next writer")
+        if second.acquire(wait=0.0):
+            out.append("a released lock could not be re-acquired")
+        second.release()
+
+    live = {"pid": os.getpid(), "host": socket.gethostname()}
+    if _holder_is_gone(live):
+        out.append("this very process was judged gone — the liveness proof is inverted")
+    if not _holder_is_gone({"pid": 1, "host": "a-host-that-is-not-this-one"}):
+        pass          # correct: another host is unknowable, never reclaimed
+    else:
+        out.append("a holder on another host was judged gone — a pid does not travel")
+    if _holder_is_gone({"host": socket.gethostname()}) or \
+            _holder_is_gone({"pid": 0, "host": socket.gethostname()}):
+        out.append("a holder with no usable pid was judged gone — absence of evidence is not "
+                   "proof of death")
+
+    reads = argparse.Namespace(cmd="section", write=False, spec="x")
+    writes = argparse.Namespace(cmd="section", write=True, spec="x")
+    if command_writes(reads) or not command_writes(writes):
+        out.append("`section` is classified wrong — the lock follows the invocation, not the "
+                   "subcommand")
+    for cmd in ("list", "status", "show", "next", "parallel", "validate", "config",
+                "doctor", "selftest"):
+        if command_writes(argparse.Namespace(cmd=cmd)):
+            out.append(f"`{cmd}` takes the writer lock, but it only reads")
+    return out
 
 
 def _git_refs(root: str) -> tuple[set[str], str | None]:
@@ -2203,7 +4871,11 @@ def _next_front(args, root: str) -> int:
     branch with no record, and a record outlives the branch it names."""
     schema = load_schema()
     heads, current = _git_refs(root)
-    cands = [_candidate(s, schema, heads, current) for s in spec_files(root, "plans")]
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    cands = [_candidate(s, schema, heads, current)
+             for s in backend.list_specs("plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
     for c in cands:
@@ -2263,7 +4935,10 @@ def cmd_next(args, root: str) -> int:
                                     "or --front for the ranked candidate list"},
              "error: pass --spec <slug>, or --front")
         return 1
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
@@ -2343,7 +5018,10 @@ def cmd_parallel(args, root: str) -> int:
     """Prove a `[P]` group's `files:` sets are disjoint — MECHANICALLY, never judged in
     prose. A group with an undeclared `files:` is ineligible: nothing can be proven about
     a task that never said what it touches."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     findings = []
@@ -2384,7 +5062,10 @@ def cmd_discover(args, root: str) -> int:
     Captured INDISCRIMINATELY during execution — whether a discovery is worth acting on is
     triage's judgment, not the executor's, and the cost of asking mid-build is a human
     interrupted for something that may not matter."""
-    info, err = load_spec(root, args.spec)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
     if err:
         return emit_err(args.json, err)
     entry = f"- {args.text.strip()}"
@@ -2394,7 +5075,7 @@ def cmd_discover(args, root: str) -> int:
     else:
         block = f"## Discoveries\n\n{entry}\n"
     new_text, _ = upsert_section(info, "Discoveries", block)
-    write_text(info["path"], new_text)
+    backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "entry": args.text.strip()},
          f"recorded in ## Discoveries: {args.text.strip()}")
@@ -2847,7 +5528,10 @@ def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
 
 
 def cmd_validate(args, root: str) -> int:
-    specs = spec_files(root)
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    specs = backend.list_specs()
     findings: list[dict] = []
 
     seen: dict[str, list[str]] = {}
@@ -3019,6 +5703,137 @@ def cmd_selftest(args, root: str) -> int:
                                      remedy="`plans/index.md` is a retired artifact: no "
                                             "command produces it and none may reindex it"))
 
+    # The guard that keeps the `files` backend from breaking the clean-tree gate it runs
+    # under. Asserted on the pure half, so it needs no repository staged and runs on an
+    # installed copy too — which is where a guard quietly downgraded to a warning, or to
+    # `{}` on both branches, would otherwise never be noticed.
+    for ignored, want in ((True, False), (False, True)):
+        got = worktree_guard(ignored)
+        if bool(got) is not want:
+            findings.append(_finding("sp-worktree-guard-broken", "error",
+                                     f"worktree_guard(ignored={ignored}) "
+                                     f"{'refused' if got else 'allowed'} — an unignored specs "
+                                     f"worktree must refuse, and an ignored one must proceed",
+                                     remedy="the guard is the only thing standing between the "
+                                            "files backend and the clean-tree gate it needs"))
+    refusal = worktree_guard(False)
+    if refusal.get("exit") != 2:
+        findings.append(_finding("sp-worktree-guard-broken", "error",
+                                 f"the unignored-worktree refusal exits "
+                                 f"{refusal.get('exit')!r}, not 2 — a missing `.gitignore` line "
+                                 f"is a refusal the human must fix, not a finding to report",
+                                 remedy="exit 2 is this tool's refusal code; 1 is findings"))
+
+    # The three shapes that must NEVER reach for a specs worktree. Getting one of them wrong
+    # does not produce a bad answer — it produces a branch and a checkout in a repository that
+    # asked for neither, or a workspace full of specs reported as empty.
+    for failure in files_root_failures():
+        findings.append(_finding("sp-files-root-drift", "error",
+                                 f"the files root resolved wrong — {failure}",
+                                 remedy="resolve_files_root answers the git-free shapes first: "
+                                        "already inside a worktree, a populated pre-migration "
+                                        "workspace, no repository at all"))
+
+    # The lock, asserted in the direction that loses work: taken while held, or a holder judged
+    # gone on evidence that does not prove it. Both decide silently, and both end in an edit
+    # nobody can find afterwards.
+    for failure in lock_failures():
+        findings.append(_finding("sp-lock-broken", "error",
+                                 f"the specs worktree lock is unsound — {failure}",
+                                 remedy="one writer per worktree, held for the whole command; "
+                                        "a lock is only ever reclaimed on proof the holder is "
+                                        "gone, never on its age"))
+
+    # The claim the configurable-backend design rests on, checked rather than asserted in
+    # prose. Runs before the early return: an installed copy is exactly where a backend that
+    # quietly started deriving its own stages would go unnoticed.
+    for failure in backend_equivalence_failures():
+        findings.append(_finding("sp-backend-divergence", "error",
+                                 f"backends disagree — {failure}",
+                                 remedy="every backend supplies the canonical document and "
+                                        "derives nothing; a difference outside `path` and "
+                                        "`text` means one of them is deriving its own"))
+
+    # The records, which no other check covers: they are frontmatter rather than a section,
+    # so the canonical case list never sees them, and they are written once and read forever.
+    for failure in record_round_trip_failures():
+        findings.append(_finding("sp-record-round-trip-broken", "error",
+                                 f"a record does not read back as written — {failure}",
+                                 remedy="flow (`{a: b}`) only where it survives the round "
+                                        "trip; a comma-carrying or long value goes in the "
+                                        "block form, and a re-stamp replaces the old "
+                                        "field lines rather than orphaning them"))
+
+    # The `github` transport's promise that no failure reaches a human as a traceback, and
+    # that each one arrives with the remedy that fixes it. Asserted against gh's literal
+    # stderr, so a reworded release breaks the check rather than the refusal. Needs no
+    # network and no `gh`, and runs before the early return for the same reason the rest do.
+    for failure in gh_refusal_failures():
+        findings.append(_finding("sp-gh-refusal-broken", "error",
+                                 f"the gh transport misreports a failure — {failure}",
+                                 remedy="a missing binary, an unauthenticated one and an API "
+                                        "error are three refusals with three remedies; all "
+                                        "exit 2 and none is a traceback"))
+
+    # What `azure-boards` has instead of an end-to-end run, and the reason it runs before
+    # the early return: a primitive left inherited reaches a human as a traceback, which is
+    # the one thing every external backend promises never to do.
+    for failure in backend_completeness_failures():
+        findings.append(_finding("sp-backend-incomplete", "error",
+                                 f"a backend is half-implemented — {failure}",
+                                 remedy="all five primitives on every declared backend; a "
+                                        "failure travels as a BackendRefusal carrying its "
+                                        "own remedy, never as an exception"))
+
+    # The `azure-boards` transport's half of the same promise, and the reason it is its own
+    # check: `az` has no dedicated exit code for "not logged in", so every refusal here is
+    # split on what stderr SAID. A reworded release must break this check rather than start
+    # telling a human to log in when the real fix is installing the extension.
+    for failure in az_refusal_failures():
+        findings.append(_finding("sp-az-refusal-broken", "error",
+                                 f"the az transport misreports a failure — {failure}",
+                                 remedy="a missing binary, a missing azure-devops "
+                                        "extension, an unauthenticated identity and an API "
+                                        "error are four refusals with four remedies; all "
+                                        "exit 2 and none is a traceback"))
+
+    # The other thing `azure-boards` ships with instead of proof: the warning that says so.
+    # It runs here, beside the two checks above, because all three answer the same question
+    # — what an unproved backend owes the human who selects it — and because a warning that
+    # silently stopped firing would leave that debt unpaid with nothing to show for it.
+    for failure in unproved_backend_failures():
+        findings.append(_finding("sp-unproved-warning-broken", "error",
+                                 f"the unproved-backend warning misfires — {failure}",
+                                 remedy="one line per process on stderr, only for a backend "
+                                        "named in UNPROVED_BACKENDS, never on stdout; the "
+                                        "permanent half is doctor's sp-backend-unproved"))
+
+    # The hybrid serialisation's own claim: a task's checked/blocked state survives
+    # shell -> sub-issue -> shell, derived by `parse_tasks` on both ends and never by the
+    # backend's own notion of what a checkbox means.
+    for failure in hybrid_serialization_failures():
+        findings.append(_finding("sp-gh-task-serialization-broken", "error",
+                                 f"the github task serialisation misreads a task — {failure}",
+                                 remedy="a task's raw block is stored and re-parsed by the "
+                                        "same `parse_tasks` that reads a file — nothing "
+                                        "about checked/blocked/metadata is derived twice"))
+
+    # The config defaults, asserted where nothing is declared. A repo that declares nothing
+    # is the overwhelmingly common case, so a loader that started returning `None` for the
+    # backend would break every such repo while every configured one kept working — the
+    # failure shape that goes unnoticed longest. Read against a path that cannot exist, so
+    # it stays self-contained and never depends on this checkout's own config.
+    blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
+    for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
+                      ("worktreeSetup", None), ("present", False)):
+        if blank[key] != want:
+            findings.append(_finding("sp-config-default-drift", "error",
+                                     f"with nothing declared, config `{key}` is "
+                                     f"{blank[key]!r} and not {want!r}",
+                                     key=key,
+                                     remedy="an absent .claude/quenching.json must yield the "
+                                            "documented defaults, never a null backend"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -3166,9 +5981,21 @@ def cmd_selftest(args, root: str) -> int:
         for line in f.get("diff", [])[:12]:
             print(f"            {line}")
     if not findings:
-        print("  OK — the canonical frontmatter and section cases pass, the capture form "
-              "stamps exactly the entry-gate headings, and the embedded schema and "
-              "template match their asset files.")
+        print(f"  OK — the canonical frontmatter and section cases pass, the capture form "
+              f"stamps exactly the entry-gate headings, the task metadata grammar is closed "
+              f"on both the key list and the indent, `--moment build` resolves the six "
+              f"sections an executor is sent, a §addressed Impact bullet still declares its "
+              f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
+              f"`memory`, the config defaults hold with nothing declared, the files root "
+              f"reaches for no specs worktree where there must not be one, the worktree lock "
+              f"admits one writer and reclaims nothing it cannot prove dead, the "
+              f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
+              f"each refuse with their own remedy, the unproved-backend warning says its "
+              f"piece once per process on stderr and only for "
+              f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
+              f"written, a task's shell -> sub-issue -> shell round trip reconstructs its "
+              f"checked/blocked state and metadata exactly, and the embedded schema and "
+              f"template match their asset files.")
     return 1 if errors else 0
 
 
@@ -3176,10 +6003,16 @@ def cmd_config(args, root: str) -> int:
     """The workspace's declared parameters, as data. Exit 0 even with nothing declared —
     a missing config is the normal case, and `doctor` is where a malformed one is judged."""
     cfg = load_config(root)
-    emit(args.json, {"ok": True, "root": root, **cfg},
-         f"specs config — {cfg['path']}\n"
-         + (f"  worktreeSetup: {cfg['worktreeSetup']}" if cfg["worktreeSetup"]
-            else "  worktreeSetup: (none declared)"))
+    lines = [f"quenching config — {cfg['path']}",
+             f"  backend: {cfg['backend']}"
+             + (" (default)" if not cfg["present"] else ""),
+             f"  specsBranch: {cfg['specsBranch']}",
+             "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
+             "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
+                                  if cfg["azureStates"] else "(none declared)")]
+    if cfg["legacyPath"]:
+        lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
+    emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
     return 0
 
 
@@ -3223,6 +6056,43 @@ def cmd_doctor(args, root: str) -> int:
                                  f"{CONFIG_FILE} declares `{key}`, which nothing reads",
                                  path=CONFIG_FILE, key=key,
                                  remedy=f"the recognised key(s): {', '.join(CONFIG_KEYS)}"))
+    if cfg["unknownBackend"]:
+        findings.append(_finding("sp-config-unknown-backend", "warn",
+                                 f"{CONFIG_FILE} declares backend `{cfg['unknownBackend']}`, "
+                                 f"which is not one this tool implements — `{cfg['backend']}` "
+                                 f"is in effect instead",
+                                 path=CONFIG_FILE, backend=cfg["unknownBackend"],
+                                 remedy=f"the implemented backend(s): {', '.join(BACKENDS)}"))
+    # The permanent half of the "warn or stay silent" answer, and the reason it is a finding
+    # and not a line on every call: a backend that was never run against a real target is a
+    # fact about the CONFIGURATION, unchanged between operations, so it belongs where a
+    # human goes to ask what is wrong with this workspace rather than in the output of every
+    # command. The write-time line in `announce_unproved` is the other half. A warning on
+    # every operation would be noise nobody reads twice; silence would let the untested
+    # guesses (AZ_SPEC_TYPE/AZ_TASK_TYPE, the child-id URL parse) surface only when they are
+    # already wrong in a real project. `doctor` is the middle the Open Decision asked for.
+    if cfg["backend"] in UNPROVED_BACKENDS:
+        findings.append(_finding("sp-backend-unproved", "warn",
+                                 f"{CONFIG_FILE} declares backend `{cfg['backend']}`, which "
+                                 f"ships without ever having been run against a real target "
+                                 f"— its writes are unproved",
+                                 path=CONFIG_FILE, backend=cfg["backend"],
+                                 remedy="verify AZ_SPEC_TYPE/AZ_TASK_TYPE match this "
+                                        "project's process template before relying on it, "
+                                        "or declare a proven backend: "
+                                        f"{', '.join(b for b in BACKENDS if b not in UNPROVED_BACKENDS)}"))
+    # The config moved to `.claude/`, and a repo that upgrades without moving its file is the
+    # one shape where every command keeps working while nothing it declared is read — the
+    # silence the two findings above exist to prevent, reappearing one directory over. Named
+    # here rather than merged in load_config: two configs with no stated winner is worse than
+    # one that is plainly stranded.
+    if cfg["legacyPath"]:
+        findings.append(_finding("sp-config-legacy-location", "warn",
+                                 f"`specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
+                                 f"longer read — the plugin's config is {CONFIG_FILE}",
+                                 path=f"specs/{LEGACY_CONFIG_FILE}",
+                                 remedy=f"move its keys into {CONFIG_FILE} and delete it; "
+                                        f"whatever it declares is doing nothing today"))
 
     leftovers = _v1_leftovers(root)
     for name in leftovers:
@@ -3233,7 +6103,11 @@ def cmd_doctor(args, root: str) -> int:
                                         f"specs/archive/** is never touched)"))
     for entry in sorted(os.listdir(root)):
         full = os.path.join(root, entry)
-        if os.path.isfile(full) and entry not in ("QUENCHING.md", "schema.json", CONFIG_FILE) \
+        # `config.json` stays exempt even though nothing reads it any more: it has its own
+        # finding above, which says where it went. Reporting it as a stray would offer
+        # "move it into a phase folder", which is the one thing that must not happen to it.
+        if os.path.isfile(full) \
+                and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
                 and not entry.startswith("."):
             findings.append(_finding("sp-stray-file", "warn",
                                      f"stray file at the specs root: {entry}", path=entry,
@@ -3255,6 +6129,35 @@ def _emit_doctor(args, root: str, findings: list[dict]) -> int:
         if not findings:
             print("  OK — workspace conforms.")
     return 1 if errors else 0
+
+
+def cmd_export(args, root: str) -> int:
+    """Dump the canonical markdown of one spec, or every spec, to disk — write-only.
+
+    THE MITIGATION `## Risks` NAMES FOR LOSING AN EXTERNAL BACKEND, AND NOTHING MORE. Nothing
+    in this tool reads the dump back and nothing keeps it in sync with the backend, so it is
+    never a second store — a stale copy on disk cannot silently outrank the backend the way a
+    cache could. `info["text"]` is the same canonical document every other command derives
+    from and shows under `show --full`; this command only adds the write to disk."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    slugs = [s["slug"] for s in backend.list_specs()] if args.all else [args.spec]
+    written = []
+    for slug in slugs:
+        info, rerr = backend.read_spec(slug)
+        if rerr:
+            return emit_err(args.json, rerr)
+        dest = os.path.join(args.out, info["folder"], info["file"])
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, "w", encoding="utf-8") as f:
+            f.write(info["text"])
+        written.append(dest)
+    obj = {"ok": True, "out": args.out, "count": len(written), "files": written}
+    human = f"exported {len(written)} spec(s) to {args.out}/\n" + \
+            "\n".join(f"  {w}" for w in written)
+    emit(args.json, obj, human)
+    return 0
 
 
 # --------------------------------------------------------------------------- #
@@ -3282,6 +6185,16 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
 
+    sp = add_json(sub.add_parser("show", help="granular read: ONE task, the map by default, "
+                                              "the document only with --full (section "
+                                              "bodies are `section`'s)"))
+    sp.add_argument("--spec", required=True)
+    sp.add_argument("--task", action="append", metavar="ID",
+                    help="one task's line and metadata, by id or index; repeatable")
+    sp.add_argument("--full", action="store_true",
+                    help="the WHOLE document — never the default, because every caller "
+                         "that did not need it pays for it in context on every later turn")
+
     sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
     sp.add_argument("spec")
     sp.add_argument("heading", nargs="?",
@@ -3292,6 +6205,13 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                          "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
+
+    sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
+    sp.add_argument("spec")
+    sp.add_argument("name", help="one of the declared records")
+    sp.add_argument("--set", action="append", metavar="FIELD=VALUE",
+                    help="merge one field; repeatable. Fields not named survive, so a "
+                         "re-stamp never drops what an earlier pass wrote")
 
     sp = add_json(sub.add_parser("promote", help="the gated close-out: plans/ → archive/"))
     sp.add_argument("spec")
@@ -3311,6 +6231,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--subject", help="the subject of the commit that implements the task, "
                                       "recorded as a `subject:` metadata line "
                                       "(goes with --check)")
+    sp.add_argument("--commit", help="the sha of the commit that implements the task, "
+                                     "recorded as a `commit:` metadata line — call it AFTER "
+                                     "the commit exists (goes with --check; additive to "
+                                     "--subject, not a replacement for it)")
 
     sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
                                               "ranked candidate list"))
@@ -3339,6 +6263,14 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                                                  "(v1 → v3, and backlog/ + ready/ → plans/)"))
     sp.add_argument("--dry-run", action="store_true", dest="dry_run")
 
+    sp = add_json(sub.add_parser("export", help="dump the canonical markdown to disk — "
+                                                "write-only, nothing reads it back"))
+    grp = sp.add_mutually_exclusive_group(required=True)
+    grp.add_argument("--spec", help="one slug")
+    grp.add_argument("--all", action="store_true", help="every spec")
+    sp.add_argument("--out", default="specs-export",
+                    help="destination directory (default: ./specs-export)")
+
     return p, sub
 
 
@@ -3346,7 +6278,9 @@ DISPATCH: dict = {
     "new": cmd_new,
     "list": cmd_list,
     "status": cmd_status,
+    "show": cmd_show,
     "section": cmd_section,
+    "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,
     "next": cmd_next,
@@ -3357,6 +6291,7 @@ DISPATCH: dict = {
     "doctor": cmd_doctor,
     "selftest": cmd_selftest,
     "migrate": cmd_migrate,
+    "export": cmd_export,
 }
 
 
@@ -3386,7 +6321,25 @@ def main(argv: list[str]) -> int:
     if not hasattr(args, "json"):
         args.json = False
     root = find_specs_root(args.root)
-    return DISPATCH[args.cmd](args, root)
+    # The lock is taken HERE and not inside the backend, because the unit it protects is the
+    # whole command: every writing subcommand reads a document, edits it and writes it back,
+    # and a lock that only spanned the write would let two of them read the same text and each
+    # store its own edit over the other's. `finally` and not `atexit`: the lock must be gone by
+    # the time the process reports its exit code, so whatever runs next sees a free worktree.
+    lock, err = writer_lock(args, root)
+    if err:
+        return emit_err(args.json, err)
+    try:
+        return DISPATCH[args.cmd](args, root)
+    except BackendRefusal as e:
+        # THE ONE PLACE A TRANSPORT FAILURE BECOMES AN EXIT CODE. An external backend can
+        # fail in the middle of a primitive that has no error channel, and the contract is
+        # a legible refusal and never a traceback — so the failure is raised where it
+        # happens, carrying the message already built, and converted exactly once here.
+        return emit_err(args.json, e.err)
+    finally:
+        if lock is not None:
+            lock.release()
 
 
 if __name__ == "__main__":

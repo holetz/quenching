@@ -106,7 +106,7 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "4.6.0"  # tracks the plugin; deliberately OUTSIDE the six-artifact lockstep (see above)
+VERSION = "4.7.0"  # tracks the plugin; deliberately OUTSIDE the six-artifact lockstep (see above)
 
 OK, FINDINGS, REFUSAL = 0, 1, 2
 
