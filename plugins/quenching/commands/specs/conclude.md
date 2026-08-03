@@ -1,5 +1,5 @@
 ---
-description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:isolate; ranking the whole front → /specs:triage.
+description: Close ONE spec out — review the whole branch, write the docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 ---
@@ -159,7 +159,7 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 **Done when:** the emergent docs are written and committed, or the offer was declined, or there is
 no bundle.
 
-### 4. Choose the merge strategy, then write `## Outcome` and archive
+### 4. Choose the merge strategy and route, then write `## Outcome` and archive
 For `done` with a `branch` record, offer the strategies in
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
@@ -167,8 +167,16 @@ delete the branch** — a squash collapses every per-task commit, so each task's
 resolves only while the branch survives. Say that plainly rather than deleting and discovering it
 later.
 
-The choice comes **before** `## Outcome` because the Outcome has to state it, and before the
-`merge:` stamp in step 5 because that stamp records it. Nothing is merged yet.
+**Then, separately, offer the route** — pull request, or local — per
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
+Offer it only where `gh` resolves the repository (`gh repo view` exits 0); with no route to offer,
+say nothing and proceed local, silently — a repo with no GitHub remote is the ordinary case, not a
+finding. **Under `fast-forward`, do not ask** — `gh pr merge` has no fast-forward mode, so the
+route question answers itself; say so in one line and proceed local.
+
+The choices come **before** `## Outcome` because the Outcome has to state them, and before the
+`merge:` stamp in step 5 because that stamp records both. Nothing is merged yet — choosing the PR
+route here is not the consent to push or open one; that lives in its own block in step 6.
 
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
 ```bash
@@ -176,8 +184,9 @@ specs.py section "<slug>" Outcome --write     # body on stdin
 specs.py promote "<slug>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **including the merge
-strategy**, because a squash changes what a future reader can resolve. For `abandoned`: the reason
-it will not be built is the whole content.
+strategy and, when the PR route was taken, the PR itself**, because a squash changes what a future
+reader can resolve and a merged PR is where the review and the checks still live. For `abandoned`:
+the reason it will not be built is the whole content.
 
 A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
 let the human decide; **never pass `--force` on your own initiative.** Commit the move on the
@@ -217,16 +226,20 @@ so does a repo with no bundle. What a standard *does* require is presented as ON
 standard quoted, taken on one confirmation, and committed on the branch. A requirement the diff
 already satisfies is reported as already done, never redone.
 
-**Finally, stamp the merge record**, still on the branch, naming the subject the merge commit is
-about to carry:
+**Finally, stamp the merge record — on the local route only.** `merge:` is write-once, and the PR
+route cannot know `pr:` until the PR exists, which happens after the gate in step 6; stamping here
+with `pr` still unknown would burn the one write this record gets. **Local route, stamp it now**,
+still on the branch, naming the subject the merge commit is about to carry:
 
 ```bash
 specs.py record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)"
 ```
 
-It is write-once, so a spec already carrying one refuses (exit 2) with the value it holds — which
-is the finding §Resuming describes, never a value to edit past.
+**PR route, stamp nothing here** — step 6's push/PR block stamps `strategy`, `subject` and `pr`
+together, in one call, once the PR exists and the gate has already passed. Either way the record is
+write-once: a spec already carrying one refuses (exit 2) with the value it holds — the finding
+§Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
 none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §When there is no
@@ -241,8 +254,9 @@ alternative is a write on the base after the merge. Commit them on the branch.
 For `abandoned` nothing is merged, so nothing is stamped **and no release obligation is settled** —
 a version nobody adopted is a claim the history should not carry. The distillation above still runs.
 **Done when:** the distillation offer was made and applied or declined, the release obligations were
-applied, reported as already satisfied, or reported as none, and `merge` is stamped for a `done`
-outcome — all committed on the work branch.
+applied, reported as already satisfied, or reported as none, and — for a `done` outcome on the local
+route — `merge` is stamped, committed on the work branch. On the PR route, this step ends with
+`merge` still unstamped; step 6 stamps it.
 
 ### 6. Prove it on the branch, then merge — the last action of this command
 Nothing after this point writes anything.
@@ -261,9 +275,11 @@ only narrate — the base already carries the change, and the only repair left i
 base, which is the exact thing this ordering exists to prevent. Run on the branch, a red check
 still has somewhere to be fixed.
 
-**Nothing is stranded by stopping here.** `merge:` was stamped in step 5, and §Resuming names
-*stamped but unmerged* as the recoverable state: the next run re-reads the recorded subject and
-merges with it.
+**Nothing is stranded by stopping here.** On the local route `merge:` was already stamped in step
+5; on the PR route it is stamped a few paragraphs below, immediately before the PR merges. Either
+way, §Resuming names *stamped but unmerged* as the recoverable state: the next run re-reads the
+recorded subject and merges with it — a gate failure before that point leaves nothing stamped at
+all, which §Resuming also covers.
 
 **The gate grades the branch, so the branch must already carry the base.** If the base moved since
 the branch was cut, the merge produces a tree *neither* side ever validated, and a green gate says
@@ -291,8 +307,10 @@ whole suite by reflex is the expensive way to learn nothing. When the repo's `##
 the scope, follow it; when it does not, run what it says and report the cost as a finding worth a
 selector.
 
-Then find **which checkout holds the base**, and merge into it in place, using exactly the subject
-recorded in step 5:
+The gate passed. What happens next branches on the route chosen in step 4.
+
+**Local route.** Find **which checkout holds the base**, and merge into it in place, using exactly
+the subject recorded in step 5:
 
 ```bash
 git worktree list --porcelain                    # which checkout has <base> checked out
@@ -317,10 +335,42 @@ finding** — never repaired with another commit, because a commit on the base a
 exact thing this ordering exists to prevent. If something must be fixed, say so and let the human
 start a new change.
 
-**`## Validation` is not re-run here.** It gated the merge above, on the branch, with the base
-already in it — so a second full run grades the same tree and buys a restatement at full price.
-Where that price is a fleet of fresh agent sessions, it was the largest recurring cost this command
-had.
+**PR route.** Push, open the PR, stamp the merge record now that it exists, and merge it — **one
+consented block**, per
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
+Show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
+choosing the PR route in step 4 was not this consent:
+
+```bash
+git push -u origin plan/<slug>
+gh pr create --title "<title>" --body "<body>"
+specs.py record "<slug>" merge --set strategy=<chosen in step 4> \
+  --set subject="plan/<slug>: merge (<strategy>)" --set pr=<the PR's URL>
+gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<strategy>)"
+```
+
+`fast-forward` never reaches this block — step 4 already ruled the PR route out under it, so
+`gh pr merge`'s missing fast-forward mode is never a live gap. `specs.py record` refuses `pr:` set
+under `fast-forward` regardless (`sp-merge-pr-no-route`), so a slip here is caught rather than
+silently written.
+
+Then, **reading only**, the assertion this route makes instead of comparing a local log line — the
+base's local checkout has no reason to know about a merge that happened on the remote until told:
+
+```bash
+git -C <the base's checkout> pull --ff-only
+gh pr view <number> --json state,mergeCommit
+```
+
+`state` must read `MERGED`. Anything else — `OPEN` after `gh pr merge` returned, a network error
+mid-sequence — is **reported as a finding**, never repaired by re-running `gh pr merge` blind: read
+the PR's actual state on GitHub first, because a repeated merge call against one already merged is
+the failure mode this assertion exists to catch before it compounds.
+
+**`## Validation` is not re-run here, on either route.** It gated the merge above, on the branch,
+with the base already in it — so a second full run grades the same tree and buys a restatement at
+full price. Where that price is a fleet of fresh agent sessions, it was the largest recurring cost
+this command had.
 
 **Then, when the merge exited 0 and this spec was isolated in a worktree, remove it** — run from
 the checkout that holds the base, because nobody removes the tree they are standing in:
