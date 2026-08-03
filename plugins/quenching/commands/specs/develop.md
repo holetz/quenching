@@ -133,10 +133,14 @@ editing the frontmatter**, which merges nothing and works only while the backend
 | --- | --- | --- |
 | `refined: {mode, date}` | the adversarial or gate bank ran | `specs.py record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
 | `approved: {date}` | the human said go in the approval bank | `specs.py record <slug> approved --set date=<today>` |
+| `verification` | the gate bank settled the policy | `specs.py verification <slug> <per-task\|per-section\|end-of-plan>` |
 
-`verification` is a plain frontmatter key rather than a record, so the gate bank settling it is the
-one frontmatter edit left here — one of the three in spec-driven.md §Frontmatter, written with
-`slug` and `title` left exactly as they were.
+`verification` is a plain frontmatter key rather than a record, which is why it has a verb of its
+own instead of a `--set`. **It is written through that verb and never by editing the frontmatter**
+— a hand edit needs a file, and under an external backend there is none, so this bank's answer had
+nowhere to land at all. Omit the value to read what is in force and whether anything declared it;
+absent means the default, and stamping the default to make it explicit records a decision nobody
+made.
 
 `approved` is write-once: a spec that already carries it refuses (exit 2) with the date it holds,
 which is the answer, not an obstacle.
