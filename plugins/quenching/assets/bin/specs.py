@@ -2657,12 +2657,15 @@ class GitHubBackend(SpecBackend):
 
 
 def hybrid_title(slug: str, text: str) -> str:
-    """What a human sees in the issue list: the spec's own title, or the slug titleised.
+    """What a human sees in the issue list, for a document stored WHOLE.
 
-    The title is a PROJECTION of the document and never a second source — it is rewritten
-    from the frontmatter on every write, so renaming a spec in its `title:` field renames
-    the issue, and editing the issue title in the web UI is undone by the next write rather
-    than silently becoming a competing name."""
+    This is the fallback half of `hybrid_project`, and the sentence that used to be written
+    here — the title is a projection, rewritten on every write, so a web edit is undone by
+    the next one — is now true only of this path. Where the projection applies, the native
+    title is the STORAGE: editing it in the web UI renames the spec, exactly as ticking a
+    `- [ ]` in the body edits the document. That is the deliberate consequence of making
+    something read the mapping back, and it is why `hybrid_title_split` refuses a title the
+    tracker would cut."""
     return hybrid_short_title(str(parse_frontmatter(text).get("title") or titleize(slug)))
 
 
