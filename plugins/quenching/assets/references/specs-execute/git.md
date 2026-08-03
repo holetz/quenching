@@ -84,11 +84,18 @@ archived, and would have to duplicate every refusal `conclude` already owns.
 plan/<slug>
 ```
 
-The spec's slug, unaltered — kebab-case, no date prefix, no id. The slug is the identity every
-command names, so a branch that carries it verbatim is greppable against `specs.py list`, and
-`git branch --list 'plan/*'` is the list of work in flight. That is not only a convenience:
-`specs.py next --front` ranks on whether `plan/<slug>` is **alive**, so a branch named to the
-default is what tells `/quenching:specs:continue` this spec is already under way.
+The **suggested default** when the inline offer cuts a new branch or worktree — kebab-case, no
+date prefix, no id. A branch named to it is greppable against `specs.py list`, and `git branch
+--list 'plan/*'` is the list of work cut by the default. `specs.py next --front` ranks on whether
+`plan/<slug>` is **alive**, so a branch named to the default is what tells `/quenching:specs:continue` this
+spec is already under way without a stamped `branch` record.
+
+**The name is a suggestion, never a contract.** When `/quenching:specs:execute` starts on a branch that is not
+the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
+rename, no refusal, and no requirement that it match `plan/<slug>`. A human who already checked out
+`fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
+second one cut beside it. §Recording the isolation below covers how `base` is captured for an
+adopted branch, which is not the same fact as for one this plugin cut itself.
 
 A worktree goes beside the repo, never inside it:
 
@@ -101,10 +108,10 @@ status`, every glob, and every checker this plugin runs.
 
 ### The worktree is the preferred form
 
-`/quenching:specs:isolate` offers **Worktree first and recommends it**, unconditionally — a plain branch and
-working in place stay available, in that order after it. A worktree leaves the main checkout
-untouched, which is what lets several specs be built at once and what keeps satisfying the clean
-tree `/quenching:specs:execute` demands.
+`/quenching:specs:execute`'s inline isolation offer leads with **Worktree and recommends it**, unconditionally — a
+plain branch and working in place stay available, in that order after it. A worktree leaves the
+main checkout untouched, which is what lets several specs be built at once and what keeps
+satisfying the clean tree the loop demands of itself.
 
 **Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. A
 recommendation that changes from repo to repo cannot be documented in one sentence, and guessing
@@ -129,7 +136,7 @@ with the rest of it. See
 [plugin-configuration.md](../../../../docs/standards/workflows/plugin-configuration.md).
 
 Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
-`/quenching:specs:isolate`, immediately after `git worktree add`, with **cwd inside the new worktree** — the
+the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
 tree lacking the dependencies is the tree that must install them. `specs.py` reads the value and
 never executes it: whether the command resolves can only be judged against the new worktree's path,
 which `specs.py` is never told.
@@ -140,9 +147,9 @@ reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key
 `sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
 `worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
 
-**Its consent is the isolation offer.** The command is displayed **verbatim** in `/quenching:specs:isolate`'s
-plan block, and choosing Worktree is the OK for it: no second prompt, no remembered authorisation.
-A failing setup is reported and **never undoes the worktree**.
+**Its consent is the isolation offer.** The command is displayed **verbatim** in `/quenching:specs:execute`'s
+isolation-offer block, and choosing Worktree is the OK for it: no second prompt, no remembered
+authorisation. A failing setup is reported and **never undoes the worktree**.
 
 ## Recording the isolation
 
@@ -157,8 +164,25 @@ specs.py record <slug> branch --set base=main --set work=plan/<slug>
 not — **after the merge, git cannot say what the branch was cut from**, which is the whole reason
 the record exists and why it is captured while still true.
 
-Stamp nothing when the human declines isolation and works in place: a record whose `base` equals
-its `work` states no fact. Say in the report that the spec carries no `branch` record and why.
+**Every branch that is not the repository's base gets `branch:` stamped**, including one this
+plugin never cut — a human may have checked one out by hand before running `execute`, and a spec
+built there with nothing stamped leaves `/quenching:specs:conclude` unable to say what it merges into.
+Stamp nothing only in the true in-place case: the human declined isolation and stayed on the base
+branch, where a record whose `base` equals its `work` would state no fact.
+
+**For a branch this plugin cuts, `base` is an observed fact** — it was what stood checked out the
+moment the branch was created. **For a branch it adopts, `base` is inferred**, in this order,
+stopping at the first that answers:
+
+1. the spec's own `branch.base` record, when one already exists;
+2. `git symbolic-ref refs/remotes/origin/HEAD` — the default the remote declares;
+3. `git config init.defaultBranch`, and then `main`.
+
+**Show the inference on the same line as the confirmation, before stamping** —
+`base: main — inferred; this branch was not cut by this command` — because the record is
+write-once and that is the only moment disagreeing with it is cheap. Never derive `base` from
+`git merge-base` or `--fork-point`: both answer a **commit**, not a branch name, and a commit
+ancestral to three branches identifies none of them.
 
 The record is `writeOnce: true`, and `specs.py record` enforces it: a second stamp refuses (exit 2)
 naming the value already held. A later run **reads** it rather than rewriting it, and a current
