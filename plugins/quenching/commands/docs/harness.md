@@ -1,5 +1,5 @@
 ---
-description: Refactor CLAUDE.md/AGENTS.md into thin pointers over the docs/ bundle
+description: Refactor CLAUDE.md/AGENTS.md into thin pointers over the docs/ bundle. Triggers on "refactor CLAUDE.md", "slim down CLAUDE.md", "move CLAUDE.md content into docs", "align CLAUDE.md/AGENTS.md with docs/". Not for: writing a standalone doc into the bundle → /docs:add.
 argument-hint: [optional-harness-file]
 allowed-tools: Read, Grep, Glob, Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---
