@@ -12,9 +12,9 @@ never split it. The file lives in ONE folder until it is closed, and is never re
 
     specs/
       plans/                     # ACTIVE — captured -> proposed -> designed -> refined
-        2026-07-25-<slug>.md     #          -> ready -> approved -> executing
+        <slug>.md                #          -> ready -> approved -> executing
       archive/                   # done or abandoned, told apart by `outcome:` frontmatter
-        2026-06-30-<slug>.md
+        <slug>.md
 
 THE FOLDER IS THE PHASE, and it is the single truth — there is no `phase:` field,
 because two declared sources of one fact diverge and a folder cannot lie. The one
@@ -28,14 +28,20 @@ sections that used to be the `ready/` entry gate. Both legacy folders are still 
 a v2 workspace keeps working and `migrate` can fold it), never written; `canonical_phase`
 maps them onto `plans` so every derivation sees one phase.
 
-IDENTITY IS THE SLUG, not the path. Every command names the bare slug; this tool
-resolves it to the one file whose name ends in `-<slug>.md`, wherever it sits. Two
-matches is a REFUSAL (exit 2), never a guess.
+IDENTITY IS THE SLUG, not the path. THE BASENAME IS THE SLUG AND NOTHING ELSE. Every
+command names the bare slug; this tool resolves it to the one spec whose basename is
+`<slug>.md`, wherever it sits — and then, only if nothing matched exactly, by title and
+by one close match above a threshold, which it announces. Two matches is a REFUSAL
+(exit 2) at every rung, never a guess.
 
-THE DATE PREFIX is stamped once, at capture, and never rewritten — so the basename is
-stable for the whole lifecycle, `git log --follow` reads as one history, and a plain
-`ls` of any folder is chronological. A file listing IS the status view, and no file
-listing reads frontmatter.
+THE CAPTURE DATE IS `date:` IN THE FRONTMATTER, stamped once by `new` and never
+rewritten — `promote` moves the file without renaming it, so the basename is stable for
+the whole lifecycle and `git log --follow` reads as one history. It used to lead the
+basename, which made a plain `ls` chronological for free; it moved because a store with
+no filenames had to mint a synthetic one to hold it, and the native value that looks
+like a substitute is a different fact — an issue's `created_at` is when the ISSUE was
+made, and a migration stamps them all on one afternoon. `next --front` sorts on the
+declared date instead.
 
 FOURTEEN CANONICAL SECTIONS, and the explicit-none rule is PHASE-SCOPED
 -----------------------------------------------------------------------
@@ -90,8 +96,9 @@ import os
 import pathlib
 import re
 import sys
+import unicodedata
 
-VERSION = "4.9.1"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.10.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -116,7 +123,26 @@ def canonical_phase(folder: str) -> str:
     return PHASE_ALIASES.get(folder, folder)
 
 
-SPEC_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
+# THE BASENAME IS THE SLUG, and nothing else. It used to carry a `YYYY-MM-DD-` prefix, so the
+# identity key and the capture date lived in one string — which meant a store with no filenames
+# had to invent one to hold a date, and the `github` marker did exactly that. The date is a
+# frontmatter field now (`date:`), in EVERY backend, because no external store carries an honest
+# copy of it: an issue's `created_at` is when the issue was made, and a migration makes them all
+# on the same day. The citable identity is the bare slug, which is already the only thing a human
+# ever typed and the only thing `--spec` ever took.
+#
+# THE LOOKAHEAD IS LOAD-BEARING. `[a-z0-9]` matches digits, so without it the old
+# `2026-07-25-<slug>.md` matches this pattern *whole* and the date is swallowed INTO the
+# identity key — measured against this repository's 72 specs, every one of them came back
+# slugged `2026-07-25-decide-agents-md-harness-default` with an empty date, and nothing
+# reported a thing. Refusing the dated shape turns that silent corruption into the
+# `sp-bad-filename` finding it always was. A slug may still begin with digits (`2026-roadmap`);
+# only the full date prefix is rejected.
+SPEC_FILE_RE = re.compile(r"^(?!\d{4}-\d{2}-\d{2}-)([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
+# The pre-date-in-frontmatter basename, read ONLY by the migration folds — which exist precisely
+# to recognise a layout this tool no longer writes. Nothing else may match on it: a file still
+# named this way is a `sp-bad-filename` finding, not a second supported form.
+LEGACY_DATED_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 # `- [ ]` / `- [x]` / `- [!]` — the third is a BLOCKED task, visible and human-legible,
@@ -173,14 +199,14 @@ DEFAULT_SCHEMA: dict = {
     "schema": "spec-lifecycle",
     "version": "3.0.0",
     "filename": {
-        "pattern": r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
-        "groups": ["date", "slug"],
-        "example": "2026-07-25-session-tokens.md",
+        "pattern": r"^([a-z0-9]+(?:-[a-z0-9]+)*)\.md$",
+        "groups": ["slug"],
+        "example": "session-tokens.md",
     },
     "frontmatter": {
-        "required": ["slug", "title", "verification"],
-        "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge",
-                     "outcome"],
+        "required": ["slug", "title", "date"],
+        "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed",
+                     "merge", "outcome"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
@@ -262,6 +288,7 @@ DEFAULT_SCHEMA: dict = {
 TEMPLATE_SPEC = """---
 slug: <SLUG>
 title: <TITLE>
+date: <DATE>
 verification: <VERIFICATION>
 ---
 
@@ -785,8 +812,41 @@ def canonical_case_failures() -> list[str]:
 # helpers
 # --------------------------------------------------------------------------- #
 def slugify(name: str) -> str:
-    s = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
+    """A kebab identity key, in the language the repo actually writes in.
+
+    UNICODE IS NORMALISED AND STRIPPED FIRST, and that is the whole of it. Without it the
+    `[^a-z0-9]+` below treats every accented letter as a SEPARATOR, so `criação` reduced to
+    `cria-o` and `avaliar-o-fluxo-de-criacao-de-specs` came out
+    `avaliar-o-fluxo-de-cria-o-de-specs` — an identity key that is neither readable nor
+    guessable, in a repository whose declared harness language is pt-BR. NFD splits a letter
+    from its combining marks and the marks are then dropped, so `ç` becomes `c` and `ã`
+    becomes `a`: exactly the transliteration a human types when the accent is unavailable.
+
+    A character that does not decompose (`ß`, `ø`) still falls to the separator rule. That is
+    a real limit and it is left alone rather than papered over with a lookup table nobody
+    maintains — the languages this front is used in are covered, and a slug that loses a
+    letter is visible the moment it is printed."""
+    folded = unicodedata.normalize("NFD", name.strip().lower())
+    folded = "".join(c for c in folded if not unicodedata.combining(c))
+    s = re.sub(r"[^a-z0-9]+", "-", folded).strip("-")
     return re.sub(r"-{2,}", "-", s)
+
+
+# What `slugify` must answer, asserted by `selftest`. The accented rows are the point: they
+# are what the identity key of every spec captured in pt-BR runs through.
+SLUG_CASES = (
+    ("Avaliar o fluxo de criação de specs", "avaliar-o-fluxo-de-criacao-de-specs"),
+    ("Ação e Manutenção", "acao-e-manutencao"),
+    ("Sessão — tokens", "sessao-tokens"),
+    ("session tokens", "session-tokens"),
+    ("  Trim  --  Me  ", "trim-me"),
+    ("JÁ-EM-CAIXA-ALTA", "ja-em-caixa-alta"),
+)
+
+
+def slug_case_failures() -> list[str]:
+    return [f"slugify({given!r}) = {slugify(given)!r}, expected {want!r}"
+            for given, want in SLUG_CASES if slugify(given) != want]
 
 
 def titleize(slug: str) -> str:
@@ -1132,8 +1192,13 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
     a v3 file in `plans/`). Passing `phase` filters on the canonical phase, so
     `phase="plans"` sweeps up the legacy folders too.
 
-    A file whose name does not match `YYYY-MM-DD-<slug>.md` is NOT returned — it is a
-    finding for `validate`/`doctor` to report, not something to silently half-support."""
+    A file whose name does not match `<slug>.md` is NOT returned — it is a finding for
+    `validate`/`doctor` to report, not something to silently half-support.
+
+    The rows are in BASENAME order, which is slug order. It used to be date order, for free,
+    because the date led the basename; ordering by date now would mean opening every file to
+    read its frontmatter, and the one caller that ranks by date — `_next_front` — already
+    reads each document and sorts on `info["date"]` itself."""
     out: list[dict] = []
     for folder in PHASE_DIRS:
         ph = canonical_phase(folder)
@@ -1152,20 +1217,9 @@ def spec_files(root: str, phase: str | None = None) -> list[dict]:
                 "legacy": folder in LEGACY_PHASES,
                 "file": name,
                 "path": os.path.join(d, name),
-                "date": m.group(1),
-                "slug": m.group(2),
+                "slug": m.group(1),
             })
     return out
-
-
-def resolve_slug(root: str, slug: str) -> tuple[dict | None, list[dict]]:
-    """The one spec file whose basename ends in `-<slug>.md`, wherever it sits.
-
-    Returns (spec, matches). TWO MATCHES IS A REFUSAL, never a guess: the caller exits 2
-    and names both paths. This is what makes N folder moves survivable — every
-    cross-reference names the bare slug and never a path."""
-    matches = [s for s in spec_files(root) if s["slug"] == slug]
-    return (matches[0] if len(matches) == 1 else None), matches
 
 
 # --------------------------------------------------------------------------- #
@@ -1421,24 +1475,104 @@ def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
     return out
 
 
-def resolve_one(specs: list[dict], slug: str) -> tuple[dict | None, dict]:
-    """Pick one spec descriptor out of a listing by slug.
+# How close a slug or title has to be before it resolves at all. Tuned to accept a TYPO —
+# `evaluate-spec-creation-flo` scores 0.98 against its slug — while refusing a merely adjacent
+# spec: `0.62` matched `decide-plan-quick-skill` against `decide-sp-unrefined-severity` on this
+# repository's own listing, which is not a near miss, it is a different spec.
+#
+# A COPIED FRAGMENT DOES NOT RESOLVE, and that is a property of the metric rather than of this
+# number. `SequenceMatcher.ratio()` is 2·M/(len(a)+len(b)), so a fragment's score is capped at
+# 2·len(fragment)/(len(fragment)+len(title)) no matter how perfectly it appears inside the
+# title: `fluxo de criação de specs` scores 0.5618 against the 62-character title it was copied
+# out of, and nothing shorter than ~60% of a title can clear 0.75 at all. Lowering the number
+# would not buy the fragment rung — it would only start matching adjacent specs, which is the
+# failure this threshold exists to prevent. Resolving a fragment needs a containment metric on
+# the title rung, which is a different design and is left to its own spec.
+FUZZY_MATCH_THRESHOLD = 0.75
 
-    Pure over the listing, so every backend resolves a slug the same way and gets the same
-    two refusals — an ambiguous slug is exit 2 whether the duplicates are two files or two
-    issues. TWO MATCHES IS A REFUSAL, never a guess."""
+
+def _norm(text: str) -> str:
+    """Case, accents and runs of whitespace folded away — the form both sides of a title
+    comparison are reduced to, so `Criação` and `criacao ` are the same string."""
+    folded = unicodedata.normalize("NFD", " ".join((text or "").split()).lower())
+    return "".join(c for c in folded if not unicodedata.combining(c))
+
+
+def resolve_one(specs: list[dict], slug: str,
+                titles: dict | None = None) -> tuple[dict | None, dict]:
+    """Pick one spec descriptor out of a listing, by slug and then by title.
+
+    Pure over the listing, so every backend resolves the same way and gets the same refusals
+    — an ambiguous slug is exit 2 whether the duplicates are two files or two issues. THE
+    TOLERANCE LIVES HERE AND NOWHERE ELSE, for that same reason.
+
+    Four rungs, tried in order and stopping at the first that answers:
+
+      1. the exact slug          the only path that costs anything today
+      2. the exact title         normalised for case, accents and whitespace
+      3. the closest slug OR title above the threshold, if exactly ONE clears it
+      4. nothing                 `sp-unknown-slug`, exit 1
+
+    TWO MATCHES IS STILL A REFUSAL at every rung — never a guess, and the refusal names the
+    candidates so the human picks. A rung-3 answer is announced: the descriptor comes back
+    carrying `resolvedBy: "approximate"` and what it matched, because a command that silently
+    acted on a spec the human did not name is worse than one that asked.
+
+    `titles` is `{slug: title}`, or a callable returning one. It is consulted ONLY after the
+    exact slug misses, so the common path never pays to build it — which is what lets the
+    `files` backend hand over a callable that opens every document."""
     matches = [s for s in specs if s["slug"] == slug]
     if len(matches) > 1:
-        return None, {
-            "code": "sp-ambiguous-slug", "exit": 2, "slug": slug,
-            "matches": [f"{m['phase']}/{m['file']}" for m in matches],
-            "message": f"slug '{slug}' matches {len(matches)} files — "
-                       f"{', '.join(m['phase'] + '/' + m['file'] for m in matches)}",
-        }
-    if not matches:
-        return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
-                      "message": f"no spec with slug '{slug}'"}
-    return matches[0], {}
+        return None, _ambiguous(slug, matches, "slug")
+    if matches:
+        return matches[0], {}
+
+    index = (titles() if callable(titles) else titles) or {}
+    want = _norm(slug)
+
+    exact = [s for s in specs if _norm(index.get(s["slug"], "")) == want]
+    if len(exact) > 1:
+        return None, _ambiguous(slug, exact, "title")
+    if exact:
+        return dict(exact[0], resolvedBy="title",
+                    resolvedFrom=index.get(exact[0]["slug"], "")), {}
+
+    scored = []
+    for s in specs:
+        ratio = max(
+            difflib.SequenceMatcher(None, want, _norm(s["slug"])).ratio(),
+            difflib.SequenceMatcher(None, want, _norm(index.get(s["slug"], ""))).ratio()
+            if index.get(s["slug"]) else 0.0)
+        if ratio >= FUZZY_MATCH_THRESHOLD:
+            scored.append((ratio, s))
+    if len(scored) > 1:
+        best = max(r for r, _ in scored)
+        tied = [s for r, s in scored if r == best]
+        # A single clear winner among several that merely cleared the bar still resolves;
+        # what refuses is a genuine tie, where picking either one would be a coin flip.
+        if len(tied) > 1:
+            return None, _ambiguous(slug, tied, "approximate")
+        return dict(tied[0], resolvedBy="approximate",
+                    resolvedFrom=index.get(tied[0]["slug"], "") or tied[0]["slug"]), {}
+    if scored:
+        s = scored[0][1]
+        return dict(s, resolvedBy="approximate",
+                    resolvedFrom=index.get(s["slug"], "") or s["slug"]), {}
+
+    return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
+                  "message": f"no spec with slug '{slug}'"}
+
+
+def _ambiguous(slug: str, matches: list[dict], rung: str) -> dict:
+    """The one refusal every rung of `resolve_one` shares — exit 2, with the candidates
+    named. `rung` says WHICH comparison tied, because "two specs share a slug" and "your
+    fragment is close to two titles" are fixed by different things."""
+    where = [f"{m['phase']}/{m['file']}" for m in matches]
+    return {
+        "code": "sp-ambiguous-slug", "exit": 2, "slug": slug, "matchedOn": rung,
+        "matches": where,
+        "message": f"'{slug}' matches {len(matches)} specs by {rung} — {', '.join(where)}",
+    }
 
 
 def derive_info(spec: dict, text: str) -> dict:
@@ -1459,6 +1593,11 @@ def derive_info(spec: dict, text: str) -> dict:
         "tasks": tasks,
         "stage": derive_stage(spec, sections, fm, tasks),
         "verification": _policy(fm),
+        # THE DATE COMES FROM THE DOCUMENT, not from the descriptor. It used to be the
+        # basename's prefix, which every backend without filenames then had to fake. Reading
+        # it here — in the one shared derivation — is what makes it the same fact in `files`,
+        # in `github` and in a dict, and it is why no descriptor carries a `date` key at all.
+        "date": str(fm.get("date", "")).strip(),
     })
     return info
 
@@ -1468,7 +1607,10 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
 
     Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
     ambiguous, so every command handles both the same way."""
-    spec, err = resolve_one(spec_files(root), slug)
+    specs = spec_files(root)
+    spec, err = resolve_one(specs, slug, lambda: {
+        s["slug"]: str(parse_frontmatter(read_text(s["path"]) or "").get("title", ""))
+        for s in specs})
     if err:
         return None, err
     return derive_info(spec, read_text(spec["path"]) or ""), {}
@@ -1572,11 +1714,12 @@ class MemoryBackend(SpecBackend):
     name = "memory"
 
     def __init__(self) -> None:
-        # slug -> (phase, filename, document). THE FILENAME IS STORED, not derived: the
-        # files backend reads a spec's date out of its filename, where `new` stamped it once
-        # and never again. A backend that recomputed the date from anything else would hand
-        # back a different one for the same spec — which is precisely the divergence the
-        # equality check caught the first time this was written.
+        # slug -> (phase, filename, document). The filename is stored rather than rebuilt
+        # from the slug so that this backend can hand back exactly what it was given, the
+        # way a filesystem does. It no longer carries the capture date: that moved into the
+        # document's `date:`, which every backend reads through the one derivation — the
+        # divergence the equality check caught here was a backend RECOMPUTING the date, and
+        # the fix was to stop having a second place able to compute it at all.
         self.docs: dict[str, tuple[str, str, str]] = {}
 
     def _descriptor(self, slug: str) -> dict:
@@ -1587,7 +1730,7 @@ class MemoryBackend(SpecBackend):
         m = SPEC_FILE_RE.match(filename)
         return {"phase": phase, "folder": phase, "legacy": False, "file": filename,
                 "path": f"memory://{phase}/{filename}",
-                "date": m.group(1) if m else "", "slug": m.group(2) if m else slug}
+                "slug": m.group(1) if m else slug}
 
     def list_specs(self, phase: str | None = None) -> list[dict]:
         rows = [self._descriptor(s) for s in self.docs
@@ -1595,7 +1738,8 @@ class MemoryBackend(SpecBackend):
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        spec, err = resolve_one(self.list_specs(), slug)
+        spec, err = resolve_one(self.list_specs(), slug, lambda: {
+            k: str(parse_frontmatter(d[2]).get("title", "")) for k, d in self.docs.items()})
         if err:
             return None, err
         return derive_info(spec, self.docs[spec["slug"]][2]), {}
@@ -1606,7 +1750,7 @@ class MemoryBackend(SpecBackend):
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        slug = m.group(2) if m else filename
+        slug = m.group(1) if m else filename
         self.docs[slug] = (phase, filename, text)
         return f"memory://{phase}/{filename}"
 
@@ -1621,9 +1765,14 @@ BACKEND_CASES = (
     ("create, then list", lambda b: _case_create(b)),
     ("read what was created", lambda b: _observable(b.read_spec("alpha")[0])),
     ("read an unknown slug", lambda b: b.read_spec("nope")[1]),
+    ("validate what was created", lambda b: _case_validate(b)),
+    ("the capture date survives the store", lambda b: _case_date(b)),
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
+    # AFTER the three cases that author the document, never on the fresh capture form. See
+    # `_case_front`: on a capture form the case passes with the reader broken.
+    ("rank the front", lambda b: _case_front(b)),
     ("move to archive", lambda b: _case_move(b)),
     ("list after the move", lambda b: _listing(b)),
 )
@@ -1635,8 +1784,11 @@ def _listing(b: "SpecBackend") -> list[dict]:
 
 
 def _case_doc(slug: str = "alpha") -> str:
+    # A FIXED date, never `today()`: it is the fact the case asserts travels intact through
+    # each store, and one computed at call time would compare equal to itself no matter what
+    # either backend did with it.
     return (capture_form().replace("<SLUG>", slug).replace("<TITLE>", "Alpha")
-            .replace("<VERIFICATION>", "per-task"))
+            .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
 
 
 def _observable(info: dict | None) -> dict:
@@ -1651,8 +1803,48 @@ def _observable(info: dict | None) -> dict:
 
 
 def _case_create(b: "SpecBackend") -> list[dict]:
-    b.create_spec("plans", "2026-01-01-alpha.md", _case_doc())
+    b.create_spec("plans", "alpha.md", _case_doc())
     return _listing(b)
+
+
+def _case_date(b: "SpecBackend") -> str:
+    """The capture date, read back out of whatever the store did with the document.
+
+    It used to ride in the basename, so `_listing` alone proved it survived. Now it is a
+    frontmatter field, and the only thing that proves a backend did not drop, rewrite or
+    recompute it is asking for it after a round trip."""
+    info, _ = b.read_spec("alpha")
+    return (info or {}).get("date", "")
+
+
+def _case_validate(b: "SpecBackend") -> list[dict]:
+    """Every finding for the one spec in the store — the READER, not just the store.
+
+    The cases above prove a backend can hand back the document it was given. This proves the
+    shared code ASKS it for one: a `validate_spec` that reaches around the interface to
+    `read_text(s["path"])` gets nothing from a `memory://` locator and reports a well-formed
+    document as missing every required key, while `files` reports the real findings. The two
+    disagree, and the case fails. Nothing asserted that before, which is how `validate`
+    shipped fabricating a finding per required key per spec against GitHub."""
+    return validate_spec(b, b.list_specs()[0])
+
+
+def _case_front(b: "SpecBackend") -> dict:
+    """One ranked candidate — the same trap on the other disk reader.
+
+    `_candidate` off the path ranks a `memory://` spec as an empty one with no tasks and no
+    priority, which is exactly what `/specs:continue` was handed against GitHub. `heads` and
+    `current` are pinned empty so the case asserts the READ and never the repository it
+    happens to run in.
+
+    IT MUST RUN ON AN AUTHORED DOCUMENT, which is why it is ordered last rather than beside
+    the other read case. Measured on the fresh capture form this case PASSED with the reader
+    fully broken: every field it compares collapses to the same value from an empty document
+    — `titleize("alpha")` gives back the same `Alpha` the frontmatter carries, and the task
+    counts, the progress and the stage are all already the empty ones. A fixture that cannot
+    tell the two apart is a case that asserts nothing, and the only reason this one is known
+    to discriminate is that reverting the reader was tried against it."""
+    return _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None)
 
 
 def _case_write(b: "SpecBackend") -> dict:
@@ -1682,6 +1874,66 @@ def _case_move(b: "SpecBackend") -> dict:
     info, _ = b.read_spec("alpha")
     b.move_spec(info, "archive")
     return _observable(b.read_spec("alpha")[0])
+
+
+def resolution_failures() -> list[str]:
+    """The four rungs of `resolve_one`, over a fixed listing. No backend, no store.
+
+    It is asserted here rather than through a backend precisely because the tolerance is pure
+    over the listing: if it were reachable only through one store, "every backend refuses the
+    same way" would again be a claim rather than a property."""
+    listing = [
+        {"phase": "plans", "folder": "plans", "legacy": False,
+         "file": "avaliar-o-fluxo-de-criacao-de-specs.md", "path": "x",
+         "slug": "avaliar-o-fluxo-de-criacao-de-specs"},
+        {"phase": "plans", "folder": "plans", "legacy": False,
+         "file": "fechar-vazamentos-do-backend-files.md", "path": "y",
+         "slug": "fechar-vazamentos-do-backend-files"},
+    ]
+    titles = {"avaliar-o-fluxo-de-criacao-de-specs":
+              "Avaliar o fluxo de criação de specs, sobretudo no backend github",
+              "fechar-vazamentos-do-backend-files":
+              "Fechar os vazamentos do backend files"}
+    out: list[str] = []
+
+    def rung(label: str, given: str, want_slug: str | None, want_by: str | None,
+             want_exit: int | None = None, specs: list[dict] | None = None) -> None:
+        spec, err = resolve_one(specs if specs is not None else listing, given, titles)
+        if want_exit is not None:
+            if err.get("exit") != want_exit or err.get("code") != "sp-ambiguous-slug":
+                out.append(f"{label}: expected an exit-{want_exit} sp-ambiguous-slug for "
+                           f"{given!r}, got {err or spec}")
+            return
+        if err or spec is None:
+            out.append(f"{label}: {given!r} did not resolve — {err}")
+            return
+        if spec["slug"] != want_slug:
+            out.append(f"{label}: {given!r} resolved to {spec['slug']!r}, not {want_slug!r}")
+        if spec.get("resolvedBy") != want_by:
+            out.append(f"{label}: {given!r} announced resolvedBy="
+                       f"{spec.get('resolvedBy')!r}, expected {want_by!r}")
+
+    # 1. the exact slug — and it announces NOTHING, because nothing was inferred.
+    rung("exact slug", "avaliar-o-fluxo-de-criacao-de-specs",
+         "avaliar-o-fluxo-de-criacao-de-specs", None)
+    # 2. the exact title, accents and case folded — a fragment copied out of the issue.
+    rung("exact title", "AVALIAR O FLUXO DE CRIACAO DE SPECS, SOBRETUDO NO BACKEND GITHUB",
+         "avaliar-o-fluxo-de-criacao-de-specs", "title")
+    # 3. a slug with a typo — resolves, and SAYS it approximated.
+    rung("approximate", "avaliar-o-fluxo-de-criacao-de-spec",
+         "avaliar-o-fluxo-de-criacao-de-specs", "approximate")
+    # 4. two specs sharing a slug — still exit 2, still naming both.
+    dup = listing + [dict(listing[0], file="outro.md", phase="archive", folder="archive")]
+    rung("ambiguous", "avaliar-o-fluxo-de-criacao-de-specs", None, None,
+         want_exit=2, specs=dup)
+
+    # And the rung that must NOT fire: something genuinely absent stays exit 1, never the
+    # nearest spec on the front. This is what the threshold is for.
+    spec, err = resolve_one(listing, "algo-completamente-diferente", titles)
+    if err.get("code") != "sp-unknown-slug" or err.get("exit") != 1:
+        out.append(f"an absent slug resolved to {spec and spec['slug']!r} instead of "
+                   f"refusing with sp-unknown-slug")
+    return out
 
 
 def backend_equivalence_failures() -> list[str]:
@@ -1946,9 +2198,11 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # own state and identity, which is true and turned out not to be the question. The question is
 # whether anything READS the native state, and nothing ever did: `parse_tasks` takes a task's
 # checked/blocked from the raw block on both ends, never from the sub-issue, so the issue's own
-# open/closed was a projection written and never consulted — the same status `hybrid_title`
-# records for the issue title, but costing one to three API calls per task per write instead of
-# nothing. Measured on this repository on 2026-08-03: 68 spec issues against 689 task
+# open/closed was a projection written and never consulted — the status the issue TITLE also
+# held for its whole life, but costing one to three API calls per task per write instead of
+# nothing. The title was fixed rather than retired, by making a read consult it
+# (`hybrid_title_split`); a sub-issue could not be, because nothing about it was ever free.
+# Measured on this repository on 2026-08-03: 68 spec issues against 689 task
 # sub-issues, a listing of 8 pages and 4.4 MB taking 8.4s that EVERY specs command pays, and a
 # `write_spec` on a ten-task spec spending twelve round trips where one would do.
 #
@@ -1960,18 +2214,18 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # GitHub task list anyway: it renders as a checkbox with a progress count, and ticking it in the
 # web UI edits the document, which closing a sub-issue never did.
 #
-# THE MARKER ON THE BODY CARRIES THE FILENAME, and the filename carries the date. A spec's date
-# is stamped once by `new` into its basename and never recomputed — the `MemoryBackend`
-# docstring records that deriving it from anything else is precisely the divergence the equality
-# check caught the first time a second backend was written. GitHub has no filename, so the
-# document's own store has to hold it, and an HTML comment is the one place in a markdown body
-# that survives a round trip through the issue editor while staying invisible to a human reading
-# the issue.
+# THE MARKER ON THE BODY CARRIES THE FILENAME, which is now the bare `<slug>.md`. It used to
+# carry `YYYY-MM-DD-<slug>.md`, and that prefix was the ONLY reason this marker held a date: the
+# files backend read a spec's capture date out of its basename, so a store with no filenames had
+# to keep a synthetic one to stay equal to it. The date is a frontmatter field now, read by the
+# one shared derivation in every backend, and the marker is back to doing its one job.
 #
-# The marker is also what makes a spec issue distinguishable from an ordinary one: a repo's
-# issue tracker belongs to its humans, and a backend that treated every open issue as a spec
-# would list the bug reports and then write over them. The same reasoning applies one level
-# down to a continuation comment's own marker, below.
+# That job is what makes a spec issue distinguishable from an ordinary one, and it is why the
+# marker did not simply disappear with the date: a repo's issue tracker belongs to its humans,
+# and a backend that treated every open issue as a spec would list the bug reports and then
+# write over them. An HTML comment is the one place in a markdown body that survives a round
+# trip through the issue editor while staying invisible to a human reading the issue, and the
+# same reasoning applies one level down to a continuation comment's own marker, below.
 HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
                               r"\s*-->[ \t]*\r?\n")
 
@@ -2104,11 +2358,19 @@ GH_PART_MAX = GH_BODY_MAX - 1_024
 def hybrid_short_title(text: str) -> str:
     """A title that fits, cut on a word boundary and marked with an ellipsis.
 
-    CUTTING LOSES NOTHING, and that is what makes it the right answer rather than a
-    compromise. `hybrid_title` already records that an issue's title is a PROJECTION of the
-    document — rewritten from the frontmatter on every write, undone by the next write if a
-    human edits it in the web UI — and the same holds one level down: `parse_tasks` reads a
-    sub-issue's BODY, never its title, so the block stays whole no matter what the title says.
+    CUTTING LOSES NOTHING **ON THE PATH THAT STILL CUTS**, and that is what makes it the
+    right answer there rather than a compromise. That path is `hybrid_title`: the document is
+    stored whole, keeping its own `title:`, so the tracker's copy stays a PROJECTION and a cut
+    one loses nothing the document does not still hold.
+
+    IT IS ALSO THE REFUSAL TEST, and that is the other half. Where `hybrid_title_split`
+    projects, the native title is STORAGE — read back on every read — so a cut title would be
+    a renamed spec. `split` therefore refuses any title this function would touch, which is
+    why the two live next to each other: one cuts where cutting is free, the other declines to
+    project where it would not be.
+
+    The same reasoning holds one level down: `parse_tasks` reads a task's BODY, never a title,
+    so the block stays whole no matter what the title says.
 
     The alternative was to send it raw and let the tracker answer. Measured on this
     repository on 2026-08-02: 15 tasks across 12 specs carry a checkbox line longer than the
@@ -2164,7 +2426,8 @@ class GitHubBackend(SpecBackend):
         self.repo = repo
         self.cwd = cwd
         # descriptor, issue number, first chunk, how many parts the marker declares
-        self._rows: list[tuple[dict, int, str, int]] | None = None
+        self._rows: list[tuple[dict, int, str, int, str]] | None = None
+        self._legacy: list[tuple[int, str, str, int, str]] = []
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
@@ -2221,7 +2484,8 @@ class GitHubBackend(SpecBackend):
         # so a default (open-only) listing would report every archived spec as missing.
         pages = self._api("listing the repository's issues", "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
-        rows: list[tuple[dict, int, str, int]] = []
+        rows: list[tuple[dict, int, str, int, str]] = []
+        legacy: list[tuple[int, str, str, int, str]] = []
         for page in (pages or []):
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -2232,6 +2496,13 @@ class GitHubBackend(SpecBackend):
                 filename, head, parts = hybrid_unwrap(issue.get("body") or "")
                 m = SPEC_FILE_RE.match(filename)
                 if not m:
+                    # A marker in the pre-fold `YYYY-MM-DD-<slug>.md` form is a SPEC, and it
+                    # is kept apart rather than skipped. Skipping is what an ordinary issue
+                    # gets, and treating an un-migrated spec that way makes the whole front
+                    # vanish silently — `migrate` reads this bucket and nothing else does.
+                    if LEGACY_DATED_FILE_RE.match(filename):
+                        legacy.append((int(issue.get("number") or 0), filename,
+                                       head, parts, str(issue.get("title") or "")))
                     continue
                 phase = "archive" if issue.get("state") == "closed" else "plans"
                 rows.append(({
@@ -2242,16 +2513,26 @@ class GitHubBackend(SpecBackend):
                     "phase": phase, "folder": phase, "legacy": False, "file": filename,
                     "path": issue.get("html_url")
                             or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
-                    "date": m.group(1), "slug": m.group(2),
+                    "slug": m.group(1),
                     # For a one-part spec — every spec but the largest — `head` IS the whole
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
-                }, int(issue.get("number") or 0), head, parts))
+                }, int(issue.get("number") or 0), head, parts,
+                    str(issue.get("title") or "")))
         self._rows = rows
+        self._legacy = legacy
         return rows
+
+    def legacy_rows(self) -> list[tuple[int, str, str, int, str]]:
+        """`(number, dated filename, head, parts, issue title)` for every spec still stored
+        under the pre-fold basename. `migrate` is the only caller; the read path never sees
+        these, because a half-migrated front that half-works is worse than one that says so."""
+        self._load()
+        return list(self._legacy)
 
     def _invalidate(self) -> None:
         self._rows = None
+        self._legacy = []
 
     def _issue_number(self, slug: str) -> int:
         return self._issue_parts(slug)[0]
@@ -2259,7 +2540,7 @@ class GitHubBackend(SpecBackend):
     def _issue_parts(self, slug: str) -> tuple[int, int]:
         """`(issue number, how many parts are stored)` — both from the listing already in hand,
         so knowing whether there are stale continuation comments to clean up costs no call."""
-        for descriptor, number, _, parts in self._load():
+        for descriptor, number, _, parts, _title in self._load():
             if descriptor["slug"] == slug:
                 return number, parts
         raise BackendRefusal({
@@ -2271,35 +2552,55 @@ class GitHubBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug)
+        spec, err = resolve_one(self.list_specs(), slug,
+                                {d["slug"]: t for d, _, _, _, t in rows})
         if err:
             return None, err
-        number, head, parts = next((n, d, p) for descriptor, n, d, p in rows
-                                   if descriptor["slug"] == slug)
+        # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
+        # resolved to a different one, and looking the document up by the request would
+        # raise right after the resolution succeeded.
+        number, head, parts, native = next((n, d, p, t)
+                                           for descriptor, n, d, p, t in rows
+                                           if descriptor["slug"] == spec["slug"])
         full_text = head if parts <= 1 else self._joined(number, head, parts)
-        return derive_info(spec, full_text), {}
+        # The title comes back from the issue's own, which is where the write put it. A
+        # document that still carries its own `title:` is returned untouched.
+        return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         number, had_parts = self._issue_parts(info["slug"])
-        chunks = hybrid_split(text, GH_PART_MAX)
+        self._store(number, info["slug"], info["file"], text, had_parts)
+        self._invalidate()
+
+    def _store(self, number: int, slug: str, filename: str, text: str,
+               had_parts: int) -> None:
+        """The whole write, given an issue number already in hand.
+
+        Split out for `migrate`, which knows every number from its own scan and must not go
+        back to the listing between writes: `_invalidate` after each one would make the next
+        lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
+        the SAME serialisation either way — a migration with a writer of its own would be a
+        second implementation that runs exactly once, on the day it matters most."""
+        stored, title = hybrid_project(slug, text)
+        chunks = hybrid_split(stored, GH_PART_MAX)
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
-                        {"title": hybrid_title(info["slug"], text),
-                         "body": hybrid_wrap(info["file"], chunks[0][0], len(chunks))})
+                        {"title": title,
+                         "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
         self._sync_parts(number, chunks, had_parts)
-        self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        chunks = hybrid_split(text, GH_PART_MAX)
+        stored, title = hybrid_project(m.group(1) if m else filename, text)
+        chunks = hybrid_split(stored, GH_PART_MAX)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                {"title": hybrid_title(m.group(2) if m else filename, text),
+                                {"title": title,
                                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
@@ -2400,13 +2701,87 @@ class GitHubBackend(SpecBackend):
 
 
 def hybrid_title(slug: str, text: str) -> str:
-    """What a human sees in the issue list: the spec's own title, or the slug titleised.
+    """What a human sees in the issue list, for a document stored WHOLE.
 
-    The title is a PROJECTION of the document and never a second source — it is rewritten
-    from the frontmatter on every write, so renaming a spec in its `title:` field renames
-    the issue, and editing the issue title in the web UI is undone by the next write rather
-    than silently becoming a competing name."""
+    This is the fallback half of `hybrid_project`, and the sentence that used to be written
+    here — the title is a projection, rewritten on every write, so a web edit is undone by
+    the next one — is now true only of this path. Where the projection applies, the native
+    title is the STORAGE: editing it in the web UI renames the spec, exactly as ticking a
+    `- [ ]` in the body edits the document. That is the deliberate consequence of making
+    something read the mapping back, and it is why `hybrid_title_split` refuses a title the
+    tracker would cut."""
     return hybrid_short_title(str(parse_frontmatter(text).get("title") or titleize(slug)))
+
+
+def hybrid_title_split(text: str) -> tuple[str, str] | None:
+    """`(the document without its title, the title)` — or None when it must be stored whole.
+
+    THE ONE NATIVE MAPPING THAT PAYS FOR ITSELF. `spec-backend.md` allows an external backend
+    to use its host's constructs where a mapping exists, and holds it to one test: something
+    must READ the native value back. The issue title failed that test for its whole life — it
+    was rewritten from the frontmatter on every write and never once consulted — which made it
+    a projection, and a projection is duplicated truth. Reading it back is what turns it into
+    storage, and it costs nothing: the title was already being written on every write.
+
+    Returning None is the safety, and it is checked rather than assumed. The document is only
+    projected when it is in the shape `new` stamps — `title:` immediately after `slug:`, and
+    the `# <TITLE>` heading alone between the frontmatter and the first section — because the
+    reassembly has to put both back at an exact offset and the store keeps no note of where
+    they were. A title the tracker would cut is also refused: cutting used to lose nothing
+    precisely because nothing read it, and the moment something does, a cut title is a
+    renamed spec."""
+    title = str(parse_frontmatter(text).get("title", "")).strip()
+    if not title or hybrid_short_title(title) != title:
+        return None
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return None
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return None
+    if [ln.split(":", 1)[0].strip() for ln in lines[1:close]][:2] != ["slug", "title"]:
+        return None
+    # THE RAW LINE, not the parsed value. A quoted title — `title: "…"` — parses to the same
+    # string with the quotes gone, so a rebuild from the value alone silently drops them:
+    # measured on this repository, 4 of 73 specs quote their title and each came back two
+    # characters short. The projection stores a VALUE and can only reproduce a line it would
+    # have written itself, so anything else is stored whole.
+    if lines[2] != f"title: {title}\n":
+        return None
+    if lines[close + 1:close + 4] != ["\n", f"# {title}\n", "\n"]:
+        return None
+    return "".join(lines[:2] + lines[3:close + 2] + lines[close + 4:]), title
+
+
+def hybrid_project(slug: str, text: str) -> tuple[str, str]:
+    """`(what goes in the body, what goes in the title)`, for every external backend.
+
+    ONE place, for two reasons. Within a backend, a create that projected and an update that
+    did not would leave the title reading as the spec's while the body carried a second,
+    competing one. Across backends, `github` and `azure-boards` storing the title differently
+    is exactly the drift `spec-backend.md` forbids — the canonical document is the contract,
+    and two external stores disagreeing about what it holds is that contract broken twice."""
+    proj = hybrid_title_split(text)
+    return proj if proj else (text, hybrid_title(slug, text))
+
+
+def hybrid_title_join(stored: str, title: str) -> str:
+    """Put `title:` and the `# <TITLE>` heading back, at the offsets `hybrid_title_split` cut
+    them from. The inverse, and asserted as one by the round-trip case.
+
+    A stored document that still HAS a `title:` was never projected — an older issue, or one
+    whose shape `split` refused — and comes back untouched. That is the whole signal: `title`
+    is a required frontmatter key, so its absence can only mean the store is holding it."""
+    if str(parse_frontmatter(stored).get("title", "")).strip():
+        return stored
+    lines = stored.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return stored
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return stored
+    return "".join(lines[:2] + [f"title: {title}\n"] + lines[2:close + 2]
+                   + [f"# {title}\n", "\n"] + lines[close + 2:])
 
 
 def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -2472,11 +2847,11 @@ def gh_refusal_failures() -> list[str]:
     # The round trip the shell serialisation rests on, including the CRLF GitHub actually
     # stores bodies with.
     doc = "---\ntitle: Alpha\n---\n\n## Problem\n\nUm problema.\n"
-    for label, body in (("as written", hybrid_wrap("2026-01-01-alpha.md", doc)),
+    for label, body in (("as written", hybrid_wrap("alpha.md", doc)),
                         ("as GitHub returns it",
-                         hybrid_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
+                         hybrid_wrap("alpha.md", doc).replace("\n", "\r\n"))):
         name, back, parts = hybrid_unwrap(body)
-        if (name, back, parts) != ("2026-01-01-alpha.md", doc, 1):
+        if (name, back, parts) != ("alpha.md", doc, 1):
             failures.append(f"marker round trip {label}: got {(name, back, parts)!r}")
     # A marker written WITHOUT `parts=` must read as one part, because that is the form every
     # spec but a spilled one is stored in and the form every issue already in a repository
@@ -2569,7 +2944,7 @@ def hybrid_serialization_failures() -> list[str]:
 
     def store(chunks: list[tuple[str, bool]]) -> str:
         """What comes back after a store-and-reload, with each part CRLF'd on its own."""
-        wrapped = [hybrid_wrap("2026-01-01-alpha.md", chunks[0][0], len(chunks))] + [
+        wrapped = [hybrid_wrap("alpha.md", chunks[0][0], len(chunks))] + [
             hybrid_wrap_part(i, len(chunks), c, eol)
             for i, (c, eol) in enumerate(chunks[1:], start=2)]
         stored = [w.replace("\n", "\r\n") for w in wrapped]
@@ -2646,6 +3021,119 @@ def hybrid_serialization_failures() -> list[str]:
         failures.append("a cut title is not a prefix of the line it came from, marked as cut")
     if hybrid_short_title("9.9 curta") != "9.9 curta":
         failures.append("hybrid_short_title touched a title that already fitted")
+
+    # THE TITLE PROJECTION, on the shape `new` actually stamps. What the store holds must
+    # carry neither `title:` nor the `# <TITLE>` heading, and putting the native title back
+    # must return the document byte for byte — the same obligation the body is held to, on the
+    # one field that is no longer inside it.
+    # THE FIXTURE IS THE SHAPE OF A REAL DOCUMENT, not a minimal one. Three properties, each
+    # from a way this repository's own specs really look: an accented title, because the
+    # harness language is pt-BR and an accent is where a title projection loses bytes if it
+    # ever re-encodes; `### N.` groups with prose inside `## Tasks`, because 49 of 68 specs
+    # carry groups and that is precisely the structure the retired sub-issue mapping dropped;
+    # and task metadata lines, because they are what a split is most likely to cut through.
+    canonical = (
+        "---\nslug: alpha\ntitle: Avaliar o fluxo de criação de specs\ndate: 2026-01-01\n"
+        "verification: per-section\n---\n\n"
+        "# Avaliar o fluxo de criação de specs\n\n"
+        "## Problem\n\nO documento não volta como entrou.\n\n"
+        "## Tasks\n\n"
+        "### 1. Primeiro grupo\n\n"
+        "Uma linha de prosa dentro de `## Tasks`, que também tem de voltar.\n\n"
+        "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n"
+        "- [x] 1.2 segunda\n\n"
+        "### 2. Segundo grupo\n\n"
+        "- [!] 2.1 terceira — blocked: esperando revisão\n\n"
+        "## Outcome\n\n")
+    # And the same document over GitHub's 65,536 ceiling. This is the case the projection
+    # makes newly interesting: the frontmatter and the `# <TITLE>` heading it removes both
+    # live in the HEAD chunk, which is exactly the chunk a spill cuts. Two of this
+    # repository's specs are over the ceiling as whole documents, one of them an active plan.
+    big = canonical.replace(
+        "## Outcome\n\n",
+        "### 3. Grupo grande\n\n"
+        + "".join(f"- [ ] 3.{i} tarefa com acentuação — número {i}\n"
+                  for i in range(1, 2600))
+        + "\n## Outcome\n\n")
+    if len(big) <= GH_BODY_MAX:
+        failures.append(f"the over-ceiling fixture is only {len(big)} characters — it does "
+                        f"not reach the {GH_BODY_MAX} it exists to cross")
+    proj = hybrid_title_split(canonical)
+    if proj is None:
+        failures.append("the capture form's own shape was refused by the title projection — "
+                        "every spec `new` creates would be stored with a duplicated title")
+    else:
+        stored, native = proj
+        if "title:" in stored or f"# {native}" in stored:
+            failures.append("the projected document still carries the title it handed to the "
+                            "store — the duplication the projection exists to remove")
+        if native != str(parse_frontmatter(canonical).get("title", "")).strip():
+            failures.append(f"the title handed to the store was {native!r}, not the "
+                            f"document's own")
+        if hybrid_title_join(stored, native) != canonical:
+            failures.append("the title projection is not reversible — "
+                            f"{hybrid_title_join(stored, native)!r} != {canonical!r}")
+
+    # A document the projection REFUSES is stored whole, and a read must not then graft a
+    # second title onto it. `doc` above is exactly that shape: no `slug:`, no heading.
+    if hybrid_title_split(doc) is not None:
+        failures.append("a document outside the capture shape was projected anyway — the "
+                        "reassembly has no note of where its title was")
+    if hybrid_title_join(doc, "whatever the tracker says") != doc:
+        failures.append("a document that still carries its own `title:` was rewritten on read")
+
+    # THE SAME ROUND TRIP, AGAINST BOTH EXTERNAL BACKENDS — each with the ceiling it really
+    # passes to `hybrid_split`: `github` splits at GH_PART_MAX, `azure-boards` hands None and
+    # gets one chunk. Two stores that serialise a title differently is the drift the canonical
+    # document exists to prevent, and it is cheap to refute here: the projection, the wrap, the
+    # split and the reassembly are the whole write path, and none of it needs a network.
+    for backend_name, ceiling in (("github", GH_PART_MAX), ("azure-boards", None)):
+        for label, source in (("one part", canonical), ("over the ceiling", big)):
+            stored, native = hybrid_project("alpha", source)
+            if native != str(parse_frontmatter(source).get("title", "")).strip():
+                failures.append(f"{backend_name}/{label}: stored the title as {native!r}")
+            if "title:" in stored.split("\n---\n", 1)[0]:
+                failures.append(f"{backend_name}/{label}: the body handed to the store still "
+                                f"carries `title:`")
+            rebuilt = hybrid_title_join(store(hybrid_split(stored, ceiling)), native)
+            if rebuilt != source:
+                failures.append(f"{backend_name}/{label}: the document did not come back byte "
+                                f"for byte through the title projection")
+
+    # A QUOTED title is refused, and this one was found by the corpus rather than by reasoning.
+    # `title: "…"` parses to the same string with the quotes gone, so a rebuild from the value
+    # writes an unquoted line and the document comes back two characters short — 4 of this
+    # repository's 73 specs quote their title, and all four failed the byte-for-byte round trip
+    # before the raw line was checked instead of the parsed value.
+    quoted = canonical.replace("title: Avaliar o fluxo de criação de specs\n",
+                               'title: "Avaliar o fluxo de criação de specs"\n', 1)
+    if hybrid_title_split(quoted) is not None:
+        failures.append("a quoted `title:` was projected — the reassembly writes the value "
+                        "back unquoted, so the document loses the two quote characters")
+
+    # The marker fold, which is the only thing that moves a capture date out of a basename.
+    folded = legacy_marker_fold("2026-07-25-alpha.md", canonical)
+    if folded is None or folded[0] != "alpha.md":
+        failures.append(f"the marker fold answered {folded!r} for a dated basename")
+    elif str(parse_frontmatter(folded[1]).get("date", "")) != "2026-01-01":
+        failures.append("the marker fold overwrote a `date:` the document already declared — "
+                        "the basename's copy is never allowed to win")
+    undated = canonical.replace("date: 2026-01-01\n", "", 1)
+    folded = legacy_marker_fold("2026-07-25-alpha.md", undated)
+    if folded is None or str(parse_frontmatter(folded[1]).get("date", "")) != "2026-07-25":
+        failures.append("the marker fold did not carry the basename's date into `date:` — "
+                        "the prefix is the only copy, so dropping it without moving it loses "
+                        "the capture date outright")
+    elif legacy_marker_fold("alpha.md", undated) is not None:
+        failures.append("the marker fold fired on a basename that is already folded")
+
+    # A title the tracker would cut is refused, because a cut title is now a renamed spec.
+    long_title = ("---\nslug: alpha\ntitle: " + "t" * (HYBRID_TITLE_MAX + 1) +
+                  "\ndate: 2026-01-01\n---\n\n# " + "t" * (HYBRID_TITLE_MAX + 1) +
+                  "\n\n## Problem\n\nAlgo.\n")
+    if hybrid_title_split(long_title) is not None:
+        failures.append("a title over the tracker's ceiling was projected — storing it cuts "
+                        "it, and reading it back would rename the spec")
     return failures
 
 
@@ -2981,7 +3469,7 @@ class AzureBoardsBackend(SpecBackend):
                          "[System.TeamProject] = @project") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str]] = []
+        rows: list[tuple[dict, int, str, str]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
             m = SPEC_FILE_RE.match(filename)
@@ -2996,8 +3484,9 @@ class AzureBoardsBackend(SpecBackend):
                 "phase": phase, "folder": phase, "legacy": False, "file": filename,
                 "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
                         f"{item.get('id')}",
-                "date": m.group(1), "slug": m.group(2),
-            }, int(item.get("id") or 0), doc))
+                "slug": m.group(1),
+            }, int(item.get("id") or 0), doc,
+                self._field(item, "System.Title")))
         self._rows = rows
         return rows
 
@@ -3012,7 +3501,7 @@ class AzureBoardsBackend(SpecBackend):
         self._rows = None
 
     def _item_id(self, slug: str) -> int:
-        for descriptor, item_id, _ in self._load():
+        for descriptor, item_id, _, _title in self._load():
             if descriptor["slug"] == slug:
                 return item_id
         raise BackendRefusal({
@@ -3024,18 +3513,19 @@ class AzureBoardsBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug)
+        spec, err = resolve_one(self.list_specs(), slug,
+                                {d["slug"]: t for d, _, _, t in rows})
         if err:
             return None, err
-        _, full_text = next((i, d) for descriptor, i, d in rows
-                            if descriptor["slug"] == slug)
-        return derive_info(spec, full_text), {}
+        _, full_text, native = next((i, d, t) for descriptor, i, d, t in rows
+                                    if descriptor["slug"] == spec["slug"])
+        return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
@@ -3044,19 +3534,21 @@ class AzureBoardsBackend(SpecBackend):
         # and answers with the one chunk that is the whole document. The call is made anyway,
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
-        chunks = hybrid_split(text, None)
-        self._update(item_id, title=hybrid_title(info["slug"], text),
+        stored, title = hybrid_project(info["slug"], text)
+        chunks = hybrid_split(stored, None)
+        self._update(item_id, title=title,
                      description=hybrid_wrap(info["file"], chunks[0][0]))
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
+        stored, title = hybrid_project(m.group(1) if m else filename, text)
         item = self._az("creating a work item", "work-item", "create", "--project",
                         self.project, "--type", AZ_SPEC_TYPE,
-                        "--title", hybrid_title(m.group(2) if m else filename, text),
+                        "--title", title,
                         "--description", hybrid_wrap(filename,
-                                                     hybrid_split(text, None)[0][0]),
+                                                     hybrid_split(stored, None)[0][0]),
                         "--state", self.states[phase])
         item_id = int((item or {}).get("id") or 0)
         self._invalidate()
@@ -3217,10 +3709,12 @@ def emit_err(as_json: bool, err: dict) -> int:
 # commands
 # --------------------------------------------------------------------------- #
 def cmd_new(args, root: str) -> int:
-    """Scaffold `plans/YYYY-MM-DD-<slug>.md` carrying `## Problem` and nothing else.
+    """Scaffold `plans/<slug>.md` carrying `## Problem` and nothing else.
 
-    THE DATE IS STAMPED HERE AND NEVER AGAIN — `promote` moves the file without renaming
-    it, so this basename is the spec's identity for its whole lifecycle."""
+    THE DATE IS STAMPED HERE AND NEVER AGAIN, now into the frontmatter's `date:` rather than
+    into the basename. `promote` moves the file without renaming it, so the basename — the
+    bare slug — is the spec's identity for its whole lifecycle, and the date is a fact the
+    document carries instead of a fact its name encodes."""
     slug = slugify(args.name)
     if not SLUG_RE.match(slug):
         emit(args.json, {"ok": False, "code": "sp-bad-slug", "slug": args.name,
@@ -3242,10 +3736,11 @@ def cmd_new(args, root: str) -> int:
         return 2
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
-    name = f"{today()}-{slug}.md"
+    name = f"{slug}.md"
     body = (capture_form()
             .replace("<SLUG>", slug)
             .replace("<TITLE>", title)
+            .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
     path = backend.create_spec("plans", name, body)
     emit(args.json,
@@ -3282,7 +3777,7 @@ def cmd_list(args, root: str) -> int:
         checked, blocked, total = task_progress(info["tasks"])
         rows.append({
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
-            "legacy": s["legacy"], "file": s["file"], "date": s["date"],
+            "legacy": s["legacy"], "file": s["file"], "date": info["date"],
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
@@ -3343,6 +3838,11 @@ def cmd_status(args, root: str) -> int:
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],
+        # How the slug was reached, when it was not reached exactly. `null` on the ordinary
+        # path. A caller that acts on a spec the human did not name has to be able to see
+        # that it happened — the resolution is tolerant, and tolerance without a receipt is
+        # just a wrong answer delivered confidently.
+        "resolvedBy": info.get("resolvedBy"), "resolvedFrom": info.get("resolvedFrom"),
         # every human-judgment record in one place and in schema order, so `conclude` and
         # `continue` read state instead of re-parsing the file
         "records": records,
@@ -3683,12 +4183,19 @@ def cmd_section(args, root: str) -> int:
     return 0
 
 
-def set_frontmatter_key(text: str, key: str, value: str) -> str:
+def set_frontmatter_key(text: str, key: str, value: str,
+                        after: str | None = None) -> str:
     """Set one top-level frontmatter key, preserving every other line as authored.
 
     Rewriting the block wholesale would reformat a human's `refined: {mode, date}` and
     reorder their keys — a promote is a move, and the outcome stamp is the ONLY content it
-    is allowed to write."""
+    is allowed to write.
+
+    `after` places a key that does not exist yet directly below a named one, instead of at
+    the end of the block. It exists for `date`, which the marker fold inserts into documents
+    written before the field did: appended, it would land under `verification` and every
+    migrated spec would read in a different order from every freshly captured one, for no
+    reason a reader could see. An absent `after` key falls back to the end."""
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         return f"---\n{key}: {value}\n---\n\n" + text
@@ -3699,8 +4206,36 @@ def set_frontmatter_key(text: str, key: str, value: str) -> str:
         if lines[i].split(":", 1)[0].strip() == key:
             lines[i] = f"{key}: {value}\n"
             return "".join(lines)
-    lines.insert(close, f"{key}: {value}\n")
+    at = close
+    if after:
+        for i in range(1, close):
+            if lines[i].split(":", 1)[0].strip() == after:
+                at = i + 1
+                break
+    lines.insert(at, f"{key}: {value}\n")
     return "".join(lines)
+
+
+def legacy_marker_fold(filename: str, text: str) -> tuple[str, str] | None:
+    """`("<slug>.md", the document carrying its own `date:`)` for a spec still stored under
+    the dated basename — or None when there is nothing to fold.
+
+    THE PREFIX IS THE ONLY COPY OF THE DATE. A document written before `date:` existed keeps
+    its capture date nowhere but that basename, so the fold has to move it into the
+    frontmatter in the SAME step that drops it. Dropping first loses the fact; adding first
+    and dropping later leaves two copies free to disagree in between. One function, both
+    halves, so no caller can perform half of it.
+
+    A document that already declares `date:` keeps its own — only the name was stale. The
+    basename's copy is never allowed to win, because a human may have corrected the field and
+    nobody ever renames an issue's marker to correct a date."""
+    m = LEGACY_DATED_FILE_RE.match(filename)
+    if not m:
+        return None
+    date, slug = m.group(1), m.group(2)
+    if str(parse_frontmatter(text).get("date", "")).strip():
+        return f"{slug}.md", text
+    return f"{slug}.md", set_frontmatter_key(text, "date", date, after="title")
 
 
 def _render_record(key: str, rec: dict) -> list[str]:
@@ -3738,6 +4273,54 @@ def set_frontmatter_record(text: str, key: str, rec: dict) -> str:
             end += 1
         return "".join(lines[:i] + new_lines + lines[end:])
     return "".join(lines[:close] + new_lines + lines[close:])
+
+
+def cmd_verification(args, root: str) -> int:
+    """Read ONE spec's verification policy, or set it — through the backend, after capture.
+
+    THE ONLY WRITER USED TO BE `new --verification`, and that is the one moment nobody has an
+    opinion: the policy answers how long THIS repo's suite takes and whether a section is the
+    smallest safe unit, which is what `/quenching:specs:develop`'s gate bank exists to ask.
+    With no writer after capture that bank could only land its answer by editing the
+    frontmatter by hand — which needs a file, and an external backend has none. So under
+    `github` the policy was decidable exactly once, before anyone knew the answer, and
+    unchangeable afterwards.
+
+    It is NOT a `record`: the seven records are `{field: value}` judgments with their own
+    write-once rules, and this is a declared scalar with a closed value set. Folding it into
+    `record` would have meant inventing a one-field record and a `value=` field name for it."""
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+    declared = str(info["frontmatter"].get("verification", "")).strip().lower()
+
+    if not args.policy:
+        emit(args.json,
+             {"ok": True, "slug": info["slug"], "verification": info["verification"],
+              "declared": declared or None, "default": DEFAULT_VERIFICATION},
+             f"{info['slug']} — verification: {info['verification']}"
+             + ("" if declared else "  (the default — nothing declared)"))
+        return 0
+
+    policy = args.policy.strip().lower()
+    if policy not in VERIFICATION_POLICIES:
+        emit(args.json,
+             {"ok": False, "code": "sp-bad-verification", "slug": info["slug"],
+              "given": args.policy, "policies": list(VERIFICATION_POLICIES),
+              "message": f"'{args.policy}' is not one of "
+                         f"{', '.join(VERIFICATION_POLICIES)}"},
+             f"error: '{args.policy}' is not one of {', '.join(VERIFICATION_POLICIES)}")
+        return 2
+    backend.write_spec(info, set_frontmatter_key(info["text"], "verification", policy))
+    emit(args.json,
+         {"ok": True, "slug": info["slug"], "verification": policy,
+          "previous": declared or None},
+         f"{info['slug']} — verification: {policy}"
+         + (f"  (was {declared})" if declared and declared != policy else ""))
+    return 0
 
 
 def cmd_record(args, root: str) -> int:
@@ -4763,7 +5346,7 @@ def _now_iso() -> str:
 
 # Every subcommand that can MODIFY a spec. `list`/`status`/`show`/`next`/`parallel`/`validate`/
 # `config`/`doctor`/`selftest` are absent because they only read.
-WRITING_COMMANDS = ("new", "task", "discover", "section", "promote")
+WRITING_COMMANDS = ("new", "task", "discover", "section", "promote", "verification")
 
 
 def command_writes(args) -> bool:
@@ -4783,6 +5366,8 @@ def command_writes(args) -> bool:
         return bool(getattr(args, "write", False))
     if cmd == "record":
         return bool(getattr(args, "set", None))
+    if cmd == "verification":
+        return bool(getattr(args, "policy", None))
     if cmd == "promote":
         return not bool(getattr(args, "dry_run", False))
     return False
@@ -4911,11 +5496,21 @@ def _work_ref(fm: dict, slug: str) -> str:
     return work or f"plan/{slug}"
 
 
-def _candidate(s: dict, schema: dict, heads: set[str], current: str | None) -> dict:
-    raw = read_text(s["path"]) or ""
-    fm = parse_frontmatter(raw)
-    sections = parse_sections(body_after_frontmatter(raw))
-    tasks = parse_tasks(raw)
+def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
+               current: str | None) -> dict:
+    # ASKED OF THE BACKEND, never of the path. Against GitHub the locator is an issue URL, so
+    # every candidate derived from an EMPTY document — the whole front ranked as `captured`
+    # with no title, no tasks and nothing executing, and `/specs:continue` handed out its
+    # single next action from exactly that.
+    info, rerr = backend.read_spec(s["slug"])
+    unreadable = (rerr or {}).get("code")
+    if info is None:
+        # Ambiguous slug — the slug came from the listing, so it cannot be unknown, and
+        # `validate` names it `sp-duplicate-slug`. The candidate SURVIVES, derived from an
+        # empty document exactly as `list` keeps its row: dropping it would hide a spec from
+        # the ranking, and `unreadable` says why it ranks as an empty one.
+        info = derive_info(s, "")
+    fm, sections, tasks = info["frontmatter"], info["sections"], info["tasks"]
     checked, blocked, total = task_progress(tasks)
     stage = derive_stage(s, sections, fm, tasks, schema)
     ready = ready_report({"sections": sections}, schema)
@@ -4929,17 +5524,18 @@ def _candidate(s: dict, schema: dict, heads: set[str], current: str | None) -> d
     on_it = live and work == current
     branch_rank = 0 if on_it else (2 if live else 1)
     return {
-        "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": s["date"],
+        "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": info["date"],
         "title": fm.get("title", titleize(s["slug"])), "stage": stage,
         "tasks": {"checked": checked, "blocked": blocked, "total": total},
         "progress": round(progress, 3),
         "readyGateMet": ready["ok"],
         "approved": fm.get("approved") or None,
         "priority": fm.get("priority") or None,
-        "ageDays": _days_since(s["date"]),
+        "ageDays": _days_since(info["date"]),
+        "unreadable": unreadable,
         "branch": {"work": work, "live": live, "current": on_it},
         "_key": (branch_rank, 0 if executing else 1, -progress, prank,
-                 s["date"], s["slug"]),
+                 info["date"], s["slug"]),
         "_why": pwhy,
         "_executing": executing,
     }
@@ -4987,7 +5583,7 @@ def _next_front(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    cands = [_candidate(s, schema, heads, current)
+    cands = [_candidate(backend, s, schema, heads, current)
              for s in backend.list_specs("plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
@@ -5287,7 +5883,7 @@ def _migrate_plan(root: str, name: str, dry: bool) -> dict:
             else phase_spec(dest_phase).get("entryGate", []))
 
     fm = [f"slug: {slug}", f"title: {meta.get('title') or titleize(slug)}",
-          f"verification: {_policy(meta)}"]
+          f"date: {date}", f"verification: {_policy(meta)}"]
     if isinstance(meta.get("refined"), dict) and meta["refined"].get("mode"):
         r = meta["refined"]
         fm.append(f"refined: {{mode: {r.get('mode')}, date: {r.get('date', date)}}}")
@@ -5305,8 +5901,8 @@ def _migrate_plan(root: str, name: str, dry: bool) -> dict:
     strays = sorted(f for f in os.listdir(plan_dir)
                     if f not in (".specs.json", "proposal.md", "design.md", "tasks.md")
                     and os.path.isfile(os.path.join(plan_dir, f)))
-    dest = os.path.join(root, dest_phase, f"{date}-{slug}.md")
-    rec = {"from": f"{name}/", "slug": slug, "to": f"{dest_phase}/{date}-{slug}.md",
+    dest = os.path.join(root, dest_phase, f"{slug}.md")
+    rec = {"from": f"{name}/", "slug": slug, "to": f"{dest_phase}/{slug}.md",
            "date": date, "dateSource": "created" if meta.get("created") else "git/mtime",
            "sections": sorted(collected), "strays": strays}
     if dry:
@@ -5342,11 +5938,11 @@ def _migrate_task(root: str, path: str, dry: bool) -> dict:
     if body and fm.get("description") and body not in problem:
         problem += f"\n\n{body}"
     out = ["---", f"slug: {slug}", f"title: {fm.get('title') or titleize(slug)}",
-           f"verification: {DEFAULT_VERIFICATION}", "---", "",
+           f"date: {date}", f"verification: {DEFAULT_VERIFICATION}", "---", "",
            f"# {fm.get('title') or titleize(slug)}", "", "## Problem", "", problem, ""]
-    dest = os.path.join(root, "plans", f"{date}-{slug}.md")
+    dest = os.path.join(root, "plans", f"{slug}.md")
     rec = {"from": f"backlog/{os.path.basename(path)}", "slug": slug,
-           "to": f"plans/{date}-{slug}.md", "date": date, "kind": "task"}
+           "to": f"plans/{slug}.md", "date": date, "kind": "task"}
     if dry:
         return rec
     os.makedirs(os.path.join(root, "plans"), exist_ok=True)
@@ -5358,35 +5954,95 @@ def _migrate_task(root: str, path: str, dry: bool) -> dict:
 def _v2_leftovers(root: str) -> list[dict]:
     """Every spec file still sitting in a v2 folder, in scan order.
 
-    This is a pure FILE MOVE, not a fold: v2 and v3 spec files are the same format, and
-    the folder was the only thing that changed. So the file is never opened, never
-    reformatted, and never renamed — which is what makes the migration lossless and what
-    lets it work on a file this tool could not parse."""
+    It used to be a pure FILE MOVE — v2 and v3 spec files were the same format and only the
+    folder had changed, so the file was never opened, never reformatted and never renamed.
+    That stopped being true when the capture date left the basename: a v2 file is named
+    `YYYY-MM-DD-<slug>.md` and carries no `date:`, which is a format difference and not a
+    location one. So BOTH names are collected here, and `_migrate_v2_file` moves the already
+    conformant one untouched and rewrites the dated one."""
     out = []
     for folder in LEGACY_PHASES:
         d = os.path.join(root, folder)
         if not os.path.isdir(d):
             continue
         for name in sorted(os.listdir(d)):
-            if SPEC_FILE_RE.match(name) and os.path.isfile(os.path.join(d, name)):
+            if not os.path.isfile(os.path.join(d, name)):
+                continue
+            if SPEC_FILE_RE.match(name) or LEGACY_DATED_FILE_RE.match(name):
                 out.append({"folder": folder, "file": name,
                             "path": os.path.join(d, name)})
     return out
 
 
 def _migrate_v2_file(root: str, item: dict, dry: bool) -> dict:
+    """Move one v2 spec file into `plans/`, renaming it only if it still carries a date.
+
+    A file already named `<slug>.md` is moved and NOT opened — the lossless case the v2 fold
+    was written for, and the one that still works on a file this tool could not parse. A
+    `YYYY-MM-DD-<slug>.md` one is the format change: the date is the only copy of a fact the
+    basename is about to stop holding, so it is written into the frontmatter as `date:`
+    BEFORE the rename, and never dropped on the floor."""
     dest_dir = os.path.join(root, "plans")
-    dest = os.path.join(dest_dir, item["file"])
-    rec = {"from": f"{item['folder']}/{item['file']}", "slug": None,
-           "to": f"plans/{item['file']}", "kind": "v2-file"}
-    m = SPEC_FILE_RE.match(item["file"])
-    if m:
-        rec["slug"] = m.group(2)
+    legacy = LEGACY_DATED_FILE_RE.match(item["file"])
+    slug = legacy.group(2) if legacy else SPEC_FILE_RE.match(item["file"]).group(1)
+    name = f"{slug}.md" if legacy else item["file"]
+    rec = {"from": f"{item['folder']}/{item['file']}", "slug": slug,
+           "to": f"plans/{name}", "kind": "v2-file"}
+    if legacy:
+        rec["date"] = legacy.group(1)
     if dry:
         return rec
     os.makedirs(dest_dir, exist_ok=True)
-    os.rename(item["path"], dest)
+    if legacy:
+        text = read_text(item["path"]) or ""
+        # Only when it has none of its own: a v2 file that somebody already gave a `date:`
+        # has a human's answer in it, and the basename is the derived copy, not the source.
+        if not str(parse_frontmatter(text).get("date", "")).strip():
+            write_text(item["path"], set_frontmatter_key(text, "date", legacy.group(1)))
+    os.rename(item["path"], os.path.join(dest_dir, name))
     return rec
+
+
+def _migrate_markers(backend, dry: bool) -> list[dict]:
+    """Fold every spec an external backend still stores under a dated basename.
+
+    ONE WRITE PER SPEC, and the document that goes out has already been proved: the fold is
+    `legacy_marker_fold` — the same pure function `selftest` exercises — and the write is
+    `write_spec`, the same path every other command uses. Nothing here has a serialisation of
+    its own, because a migration with its own writer is a second implementation that only
+    ever runs once, on the day it matters most.
+
+    `--dry-run` performs the WHOLE fold offline and compares byte for byte, so the answer to
+    "will this lose anything" is measured against the real corpus rather than argued."""
+    out: list[dict] = []
+    for number, filename, head, parts, _title in backend.legacy_rows():
+        text = head if parts <= 1 else backend._joined(number, head, parts)
+        folded = legacy_marker_fold(filename, text)
+        if folded is None:
+            continue
+        name, new_text = folded
+        slug = SPEC_FILE_RE.match(name).group(1)
+        # What the store WILL hold, and what a read WILL rebuild from it — run here, before
+        # anything is sent, so a document that would not survive is reported and skipped
+        # rather than written and lost.
+        body, native = hybrid_project(slug, new_text)
+        chunks = hybrid_split(body, GH_PART_MAX)
+        rebuilt = hybrid_title_join(hybrid_join(
+            [(chunks[0][0].replace("\r\n", "\n"), False)]
+            + [(c.replace("\r\n", "\n"), eol) for c, eol in chunks[1:]]), native)
+        rec = {"issue": number, "from": filename, "to": name, "slug": slug,
+               "date": str(parse_frontmatter(new_text).get("date", "")),
+               "parts": len(chunks), "projectedTitle": hybrid_title_split(new_text) is not None,
+               "roundTrip": rebuilt == new_text}
+        if not rec["roundTrip"]:
+            rec["skipped"] = "the document would not come back byte for byte"
+            out.append(rec)
+            continue
+        if not dry:
+            # The number came from this scan, so no lookup and no re-listing between writes.
+            backend._store(number, slug, name, new_text, parts)
+        out.append(rec)
+    return out
 
 
 def cmd_migrate(args, root: str) -> int:
@@ -5406,16 +6062,42 @@ def cmd_migrate(args, root: str) -> int:
     if os.path.isdir(bdir):
         for name in sorted(os.listdir(bdir)):
             p = os.path.join(bdir, name)
-            if name == "index.md" or not os.path.isfile(p) or SPEC_FILE_RE.match(name):
+            # A conformant spec file in `backlog/` — under EITHER name — is the v2 fold's,
+            # not the v1 task fold's. Matching only the current name would hand every dated
+            # v2 file to the task fold, which rewrites it into a `## Problem` stub.
+            if (name == "index.md" or not os.path.isfile(p)
+                    or SPEC_FILE_RE.match(name) or LEGACY_DATED_FILE_RE.match(name)):
                 continue
             if str(parse_frontmatter(read_text(p) or "").get("type", "")) == "task":
                 tasks.append(p)
     v2 = _v2_leftovers(root)
+
+    # The external fold: specs an issue tracker still holds under the dated basename. It is
+    # asked of the backend, not of the filesystem, and it is the only fold that can apply to a
+    # repo with no `specs/` folder at all.
+    markers: list[dict] = []
+    backend, berr = open_backend(root)
+    if not berr and backend is not None and hasattr(backend, "legacy_rows"):
+        markers = _migrate_markers(backend, args.dry_run)
+        if markers:
+            broken = [r for r in markers if not r["roundTrip"]]
+            emit(args.json,
+                 {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
+                  "kind": "markers", "count": len(markers),
+                  "projected": sum(1 for r in markers if r["projectedTitle"]),
+                  "spilled": sum(1 for r in markers if r["parts"] > 1),
+                  "skipped": broken, "specs": markers},
+                 f"{'would fold' if args.dry_run else 'folded'} {len(markers)} spec(s) out of "
+                 f"the dated basename" + (f" — {len(broken)} SKIPPED, see --json" if broken
+                                          else ", all byte-for-byte"))
+            return 1 if broken else 0
+
     if not plans and not tasks and not v2:
         emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
-                         "message": "no v1 plan folders, no v1 backlog tasks and no specs "
-                                    "in backlog/ or ready/ — this workspace is already v3"},
-             "refused: nothing to migrate — this workspace is already v3")
+                         "message": "no v1 plan folders, no v1 backlog tasks, no specs in "
+                                    "backlog/ or ready/ and no dated markers — this workspace "
+                                    "is already current"},
+             "refused: nothing to migrate — this workspace is already current")
         return 2
 
     # A name collision is the one way this could destroy work, so it is checked for the
@@ -5483,17 +6165,29 @@ def _finding(code: str, severity: str, message: str, **extra) -> dict:
     return {"code": code, "severity": severity, "message": message, **extra}
 
 
-def validate_spec(root: str, s: dict) -> list[dict]:
+def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
     """Every finding for ONE spec file, in the v2 `sp-*` vocabulary.
 
     The phase-scoped rule is asserted against the schema's per-phase sets — the SAME sets
     `promote` gates on, so the two can never drift into disagreeing about what a phase
-    requires."""
+    requires.
+
+    ASKED OF THE BACKEND, never of the path — and the derivation is the shared one, so this
+    validates the same `frontmatter`/`sections`/`tasks` every other command reads. Against
+    GitHub the locator is an issue URL, so `read_text` returned nothing and EVERY spec was
+    reported missing every required key: 210 fabricated findings on this repository, from
+    documents that were entirely well-formed."""
     where = f"{s['folder']}/{s['file']}"
-    text = read_text(s["path"]) or ""
-    fm = parse_frontmatter(text)
-    sections = parse_sections(body_after_frontmatter(text))
-    tasks = parse_tasks(text)
+    info, rerr = backend.read_spec(s["slug"])
+    if rerr or info is None:
+        # The only refusal reachable here is an ambiguous slug — it came from the listing, so
+        # it cannot be unknown — and `cmd_validate` already names it `sp-duplicate-slug`.
+        # Deriving from an empty document instead, as `list` does to keep its row, would
+        # report a well-formed spec as missing everything: the same fabrication this function
+        # exists to stop, just narrowed to the duplicates.
+        return []
+    text, fm = info["text"], info["frontmatter"]
+    sections, tasks = info["sections"], info["tasks"]
     out: list[dict] = []
 
     # BEFORE the required-key checks, so a parse failure is never presented as a
@@ -5515,8 +6209,8 @@ def validate_spec(root: str, s: dict) -> list[dict]:
     if fm.get("slug") and fm["slug"] != s["slug"]:
         out.append(_finding("sp-slug-mismatch", "error",
                             f"{where}: frontmatter slug `{fm['slug']}` disagrees with the "
-                            f"filename suffix `{s['slug']}`", spec=s["slug"], path=where,
-                            remedy="make the frontmatter slug match the filename"))
+                            f"basename `{s['slug']}`", spec=s["slug"], path=where,
+                            remedy="make the frontmatter slug match the basename"))
     pol = str(fm.get("verification", "")).strip().lower()
     if pol and pol not in VERIFICATION_POLICIES:
         out.append(_finding("sp-bad-verification", "error",
@@ -5676,11 +6370,15 @@ def cmd_validate(args, root: str) -> int:
                                          path=f"{ph}/{name}",
                                          remedy="a v1 plan folder? run `specs.py migrate`"))
             elif not SPEC_FILE_RE.match(name):
+                dated = LEGACY_DATED_FILE_RE.match(name)
                 findings.append(_finding("sp-bad-filename", "error",
-                                         f"{ph}/{name} is not `YYYY-MM-DD-<slug>.md`",
+                                         f"{ph}/{name} is not `<slug>.md`",
                                          path=f"{ph}/{name}",
-                                         remedy="rename it to the one filename pattern all "
-                                                "three folders share"))
+                                         remedy="run `specs.py migrate` — the date belongs in "
+                                                "`date:` now, not in the basename"
+                                         if dated else
+                                         "rename it to the one filename pattern all "
+                                         "three folders share"))
 
     target = [s for s in specs if s["slug"] == args.spec] if args.spec else specs
     if args.spec and not target:
@@ -5689,7 +6387,7 @@ def cmd_validate(args, root: str) -> int:
              f"error: no spec with slug '{args.spec}'")
         return 1
     for s in target:
-        findings.extend(validate_spec(root, s))
+        findings.extend(validate_spec(backend, s))
 
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
@@ -5764,6 +6462,23 @@ def cmd_selftest(args, root: str) -> int:
     # The section rule, against the SAME canonical list `skills.py` proves. Self-contained,
     # so it runs on an installed copy too — which is exactly where a `## ` inside a shell
     # block in somebody's `## Tasks` would otherwise open a phantom section unnoticed.
+    # The identity key, on the accented input this repository actually captures. Self-contained,
+    # so it runs on an installed copy — which is where a slug quietly losing a letter would
+    # otherwise surface only as a spec nobody can resolve by name.
+    # The four rungs of slug resolution, plus the one that must not fire.
+    for failure in resolution_failures():
+        findings.append(_finding("sp-resolution-case", "error",
+                                 f"slug resolution — {failure}",
+                                 remedy="resolve_one tries exact slug, exact title, then one "
+                                        "close match above the threshold; a tie is exit 2 and "
+                                        "an approximation announces itself"))
+
+    for failure in slug_case_failures():
+        findings.append(_finding("sp-slug-case", "error", f"canonical slug case — {failure}",
+                                 remedy="slugify normalises to NFD and drops combining marks "
+                                        "before reducing to kebab; an accent is a letter, "
+                                        "never a separator"))
+
     for failure in section_case_failures():
         findings.append(_finding("sp-section-case", "error",
                                  f"canonical section case — {failure}",
@@ -6329,6 +7044,16 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
 
+    sp = add_json(sub.add_parser("verification",
+                                 help="read or set ONE spec's verification policy"))
+    sp.add_argument("spec")
+    # No `choices=`: argparse would refuse a bad value with a usage message on stderr and
+    # exit 2 with no JSON, and every caller of this tool is told to branch on the exit code
+    # AND the `--json` payload. The check lives in the command, where the refusal carries
+    # `sp-bad-verification` and the declared set like every other refusal here.
+    sp.add_argument("policy", nargs="?",
+                    help="omit to read; one of " + ", ".join(VERIFICATION_POLICIES))
+
     sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
     sp.add_argument("spec")
     sp.add_argument("name", help="one of the declared records")
@@ -6403,6 +7128,7 @@ DISPATCH: dict = {
     "status": cmd_status,
     "show": cmd_show,
     "section": cmd_section,
+    "verification": cmd_verification,
     "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,

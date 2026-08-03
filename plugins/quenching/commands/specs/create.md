@@ -55,9 +55,14 @@ because this command worked harder at it.
   alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
   the heading absent or write an explicit none that *says* the source was silent.
 - **The date is stamped once, and never again.** Never rename a spec to "fix" its date.
-- **English kebab slug, flat home.** One spec per file, no subfolders. The slug is the identity
-  every command names, so it is worth a moment's thought — two specs resolving to one slug makes
-  every later command refuse (exit 2).
+- **Kebab slug in the repo's declared language, flat home.** One spec per file, no subfolders.
+  The language is the one the harness declares — the contract is
+  [communication.md](docs/standards/agents/communication.md), and it is declared once, there,
+  never again in a config key of this front's own. A pt-BR repo gets `avaliar-o-fluxo-de-criacao`,
+  not a translation nobody wrote: `slugify` folds the accents (`criação` → `criacao`), so the slug
+  stays typeable without becoming a different language. The slug is the identity every command
+  names, so it is worth a moment's thought — two specs resolving to one slug makes every later
+  command refuse (exit 2).
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
   answer: sharpen the existing spec instead, or pick a different slug.
 - **The folder is the listing.** There is no index to update — `specs.py list` derives what
@@ -76,19 +81,36 @@ Resolve `specs.py` by the fallback in
 ## Workflow
 
 ### 1. Resolve the workspace and classify the input
-Find `specs/` at the target repo root. If `plans/` and `archive/` are **absent**, install the seed
-from `${CLAUDE_PLUGIN_ROOT}/assets/specs/` and continue. If a legacy `backlog/` or `ready/` still
-holds specs, say so once and name `specs.py migrate` — never create a spec into a legacy folder.
+**Read `.claude/quenching.json` before assuming a folder is the front.** Its `backend` key is
+the declaration, and only `files` has a workspace on disk; absent or unreadable means `files`.
+Read the file — do **not** spend a `specs.py config` invocation on it. The sentence path's whole
+promise is a spec in seconds, and it spends exactly three `specs.py` calls: `new`, `section
+--write`, `validate`.
+
+Under `files`: find `specs/` at the target repo root, and if `plans/` and `archive/` are
+**absent**, install the seed from `${CLAUDE_PLUGIN_ROOT}/assets/specs/` and continue. If a legacy
+`backlog/` or `ready/` still holds specs, say so once and name `specs.py migrate` — never create a
+spec into a legacy folder.
+
+Under any **external** backend (`github`, `azure-boards`) there is no workspace and **no seed is
+installed**: the specs are issues or work items, and scaffolding `specs/plans/` beside them would
+plant an empty folder that looks like the front and holds none of it.
 
 Then classify what you were given: **prose** → the sentence path; **a path to an existing `.md`**,
 or an explicit ask to convert a plan → the plan-file path.
 **Done when:** the workspace resolves and the path is chosen.
 
 ### 2. Derive the slug
-Take a title and a one-sentence problem from the input, and derive an English kebab slug. On the
-plan-file path, derive it from the plan's title or goal ("Add rate limiting to the API" →
-`add-api-rate-limiting`). Run `specs.py list --json` to check for a collision.
-**Done when:** a free canonical slug is in hand.
+Take a title and a one-sentence problem from the input, and derive a kebab slug in the repo's
+declared language. On the plan-file path, derive it from the plan's title or goal ("Add rate
+limiting to the API" → `add-api-rate-limiting`).
+
+**Do not list the front to check for a collision.** `specs.py new` already refuses a taken slug
+with `sp-slug-exists` and exit 2, naming where it is — so a listing here asks a question that is
+about to be answered anyway, and asks it the expensive way: under `github` it is a paginated fetch
+of every issue (2.4s measured), on the path whose whole promise is that one sentence becomes a
+spec in seconds.
+**Done when:** a canonical slug is in hand.
 
 ### 3. Plan-file path only — read it, and read the bundle
 Read the whole plan file and classify its parts against §The mapping below. Then, if the repo
@@ -101,7 +123,8 @@ exactly the cost this command exists to avoid.
 **Done when:** the plan's parts are classified, or the sentence path skipped this.
 
 ### 4. Plan-file path only — ONE plan → one confirmation
-Show, in one plan: the slug and destination `plans/YYYY-MM-DD-<slug>.md`; which sections will be
+Show, in one plan: the slug and where it will land (`plans/<slug>.md` under `files`, an issue
+under an external backend — never a path this command invented); which sections will be
 filled and a one-line preview of each; the number of tasks derived; and which sections will carry
 an explicit none because the source was silent. Wait. Declined → nothing is written.
 
@@ -116,7 +139,7 @@ specs.py new <slug> --title "<title>" [--verification per-task|per-section|end-o
 Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it.
 `--verification` is passed **only** if the source stated a policy; otherwise the default stands and
 `/quenching:specs:develop` can set it later.
-**Done when:** `plans/YYYY-MM-DD-<slug>.md` exists and the tool exited 0.
+**Done when:** the tool exited 0 and reported the locator it created.
 
 ### 6. Write the sections
 Always write `## Problem` — the problem or opportunity in the source's own framing. Two sentences
@@ -153,7 +176,10 @@ validator is never pointed at `specs/`: a spec carries no OKF `type:`, per
 **Done when:** the check is clean, or the residue is reported verbatim.
 
 ### 8. Report
-Name the spec (`plans/YYYY-MM-DD-<slug>.md`) and its slug. On the plan-file path, add which
+**Report the locator `specs.py new` returned** — its `path` field — and the slug. It is
+`plans/<slug>.md` under `files` and an issue URL under `github`, and it is the tool's answer
+rather than a filename this command assembled: a body that prints a path the backend never wrote
+sends a human to a file that does not exist. On the plan-file path, add which
 sections were filled from which part of the source, the task count derived, which sections carry an
 explicit none — and say plainly that the source file was **read, never moved or deleted**. Name the
 next step: `/quenching:specs:develop <slug>` to take it further, or `/quenching:specs:continue` to be told what to do

@@ -3,15 +3,15 @@
   "version": "3.0.0",
 
   "filename": {
-    "pattern": "^(\\d{4}-\\d{2}-\\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
-    "groups": ["date", "slug"],
-    "example": "2026-07-25-session-tokens.md",
-    "note": "The same pattern in EVERY folder. The date is stamped once at capture and never rewritten: promote moves the file, never renames it."
+    "pattern": "^([a-z0-9]+(?:-[a-z0-9]+)*)\\.md$",
+    "groups": ["slug"],
+    "example": "session-tokens.md",
+    "note": "The same pattern in EVERY folder, and the basename is the slug alone. The capture date is the frontmatter's date:, stamped once by new and never rewritten — it left the basename because a store with no filenames cannot hold it there, and no external store carries an honest copy of it to project from."
   },
 
   "frontmatter": {
-    "required": ["slug", "title", "verification"],
-    "optional": ["priority", "refined", "approved", "branch", "reviewed", "merge", "outcome"],
+    "required": ["slug", "title", "date"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed", "merge", "outcome"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 
@@ -63,7 +63,7 @@
       "note": "Every record here is a human judgment no derivation can reproduce — that is the whole admission test, and it is why there is no `created`, no `phase`, no `ready` and no attempt counter. Read top to bottom in `optional` order, the records narrate the spec's history: ranked, interrogated, approved, built, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition, where rewriting the value would falsify a fact that already happened. `writeOnce: false` marks a standing judgment its OWNING command may restamp — a triage sweep re-ranks, a second interrogation records a new mode, a re-read diff is reviewed again — which is why those three carry their own `date`. In neither case may a command other than `writtenBy` touch the record."
     },
 
-    "note": "Frontmatter records human judgments; the filesystem, git and section presence record everything else. No `created` field — the filename's date prefix is that fact. No `phase` field — the folder is that fact. No `ready` field — the ten gate sections are that fact (stages.derived.ready). See `records` for what each optional key holds and why it earns its place."
+    "note": "Frontmatter records human judgments; the filesystem, git and section presence record everything else. `date` is the exception that proves it: it is a fact about the spec rather than a judgment, but no store carries an honest copy of it — the basename stopped holding it, and an issue's created_at is when the issue was made — so it is declared here. No `phase` field: the folder is that fact. No `ready` field: the ten gate sections are that fact (stages.derived.ready). `verification` is OPTIONAL, and absent means the default applied on read — never stamped into a document to make it explicit, because a one-sentence capture has nobody to decide it yet. See `records` for what each optional key holds."
   },
 
   "sections": [
