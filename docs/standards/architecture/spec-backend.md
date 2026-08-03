@@ -4,10 +4,10 @@ title: Spec backend interface
 description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-02
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back
 maintainer: quenching
 ---
 
@@ -64,13 +64,47 @@ to the sha.
 
 ## Hybrid serialisation lives inside each external implementation
 
-An external backend is free to use its host's native constructs where a mapping exists — `## Tasks`
-as sub-issues or child work items — and to fall back to serialised markdown where none does. The one
-obligation is that it **reassembles the canonical document on read**.
+An external backend is free to use its host's native constructs where a mapping exists, and to fall
+back to serialised markdown where none does. The one obligation is that it **reassembles the
+canonical document on read**.
 
 That obligation is not a restriction on native storage; it is what makes native storage safe. The
 mapping is confined to the one implementation that owns it, and it can never leak into the JSON the
 CLI prints, because the CLI never sees the storage.
+
+### A native mapping earns its cost only if something reads it back
+
+The permission above is not an invitation. Both external backends took it up for `## Tasks` — one
+sub-issue per task on `github`, one child work item on `azure-boards` — because `## Tasks` is the
+one section with a native counterpart carrying its own state and identity. That is true, and it was
+not the question. The question is whether anything ever **read** the native state, and nothing did:
+`parse_tasks` takes a task's checked/blocked from its raw block text on both ends, never from the
+issue. A construct written on every save and never consulted is a **projection**, and a projection
+belongs wherever it is free — the issue title is one, rewritten from the frontmatter on every write
+at no extra call — never wherever it costs a call per item per write.
+
+The price of putting it where it was not free, measured on this repository on 2026-08-03,
+mid-migration:
+
+- **68 spec issues against 689 task sub-issues.** 91% of the tracker's volume was the projection;
+  43 specs were open, and 332 sub-issues with them.
+- **The full listing every specs command pays was 8 pages, 4.4 MB and 8.4 seconds.** Collapsed, it
+  is one page.
+- **`write_spec` on a ten-task spec spent twelve round trips where one now does** — one PATCH on
+  the parent, one GET of the sub-issues, one PATCH per task. A newly created task cost three of its
+  own (POST, POST to link it as a child, PATCH to close it when the box was already ticked).
+- **`read_spec` paid one GET of sub-issues per spec read.** A one-part spec now costs nothing
+  beyond the listing, which already carries every body.
+
+So the mapping is retired. On both external backends the **whole canonical document is the issue
+body / the work item description**, and there are no sub-issues and no child work items.
+
+What is given up, stated plainly, is **per-task addressability** — an assignee, labels, a comment
+thread of its own, a PR that closes a task issue. Nothing in quenching used any of it;
+`/specs:execute` anchors a task to its commit by the sha recorded in the document. What is kept is
+the part that renders: `- [ ]` in an issue body is a native GitHub task list, with a checkbox and a
+progress count, and ticking it in the web UI **edits the document** — which closing a sub-issue
+never did.
 
 ### What "the canonical document" covers, and how the obligation is checked
 
@@ -81,7 +115,11 @@ heading and every line of prose the section carried. Nothing failed. The write s
 returned a well-formed document, and the loss was visible only by comparing it to what went in.
 Measured across this repository's own specs, 49 of 68 carry groups.
 
-So the obligation is stated as a checked property rather than as a principle:
+That loss was the sub-issue mapping's, and the mapping is retired (above) along with the per-task
+keys, indices and anchors its reassembly ran on. **The obligation did not go with it.** It is now
+close to free on both external backends — the document is what is *stored*, not what is rebuilt —
+and it is checked exactly as before, because these three rules hold for any backend, including the
+next one to take the native-construct permission up:
 
 - **Structure a backend does not model is structure it must carry, not structure it may drop.** A
   section's grouping, its prose and the blank lines between its items are content. A mapping that
@@ -93,9 +131,15 @@ So the obligation is stated as a checked property rather than as a principle:
   compares the result to the original with `==`.
 - **A store's own ceilings are the backend's problem, not the caller's.** A title that a tracker
   will not accept is cut by the backend, because a title is a projection of the document and cutting
-  it loses nothing; a body over the ceiling is a **refusal (exit 2) naming the measured size**, made
-  before the call, so the failure carries the spec's name instead of the tracker's anonymous
-  validation error.
+  it loses nothing. A **document** over the ceiling is not cut and is no longer refused: a GitHub
+  issue body holds 65,536 characters, and of this repository's 69 specs **two exceed that as whole
+  documents — 69,498 and 74,180 — one of them an active plan**. Refusing would mean refusing to
+  store a spec somebody is building, so an over-size document spills into **continuation comments on
+  its own issue**, cut on line boundaries and joined back on read. The refusal survives as a
+  backstop at the one point every write passes through, so no later caller can hand the tracker a
+  body it will answer 422 to; and a declared part the comments no longer hold is its own **refusal
+  (`sp-gh-parts-missing`, exit 2)** — returning the shorter document would let the next write
+  persist that truncation as the new truth.
 
 ## Granular reading is about context, not I/O
 
@@ -142,6 +186,12 @@ it sounds, and the gap is the reason this section stays: the test spec had no `#
 over-long task line, so the run proved the transport and not the shape of real documents — which is
 exactly where the loss described above was hiding. **A backend is proved by the documents it will
 actually be given, not by the ones written to exercise it.**
+
+That sentence has since been earned a second time by the same test spec: it was also nowhere near
+the 65,536-character body ceiling, and two of this repository's 69 real specs are over it. So the
+retirement was paid for the way the sentence asks — **all 69 real documents were run through the new
+serialisation offline**, split, wrapped, put through the CRLF round trip a tracker performs,
+unwrapped and joined, and every one came back byte for byte, the two that spill included.
 
 A finding that an external implementation cannot satisfy some rule above is a reason to revisit this
 document, not to work around it quietly.
