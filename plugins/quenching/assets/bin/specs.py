@@ -2369,7 +2369,7 @@ class GitHubBackend(SpecBackend):
 
     def write_spec(self, info: dict, text: str) -> None:
         number, had_parts = self._issue_parts(info["slug"])
-        stored, title = self._project(info["slug"], text)
+        stored, title = hybrid_project(info["slug"], text)
         chunks = hybrid_split(stored, GH_PART_MAX)
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
@@ -2378,19 +2378,9 @@ class GitHubBackend(SpecBackend):
         self._sync_parts(number, chunks, had_parts)
         self._invalidate()
 
-    @staticmethod
-    def _project(slug: str, text: str) -> tuple[str, str]:
-        """`(what goes in the body, what goes in the title)`.
-
-        One place, so create and update cannot disagree about what was stored — a create that
-        projected and an update that did not would leave the title reading as the spec's while
-        the body carried a second, competing one."""
-        proj = hybrid_title_split(text)
-        return proj if proj else (text, hybrid_title(slug, text))
-
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        stored, title = self._project(m.group(1) if m else filename, text)
+        stored, title = hybrid_project(m.group(1) if m else filename, text)
         chunks = hybrid_split(stored, GH_PART_MAX)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
                                 {"title": title,
@@ -2534,6 +2524,18 @@ def hybrid_title_split(text: str) -> tuple[str, str] | None:
     if lines[close + 1:close + 4] != ["\n", f"# {title}\n", "\n"]:
         return None
     return "".join(lines[:2] + lines[3:close + 2] + lines[close + 4:]), title
+
+
+def hybrid_project(slug: str, text: str) -> tuple[str, str]:
+    """`(what goes in the body, what goes in the title)`, for every external backend.
+
+    ONE place, for two reasons. Within a backend, a create that projected and an update that
+    did not would leave the title reading as the spec's while the body carried a second,
+    competing one. Across backends, `github` and `azure-boards` storing the title differently
+    is exactly the drift `spec-backend.md` forbids — the canonical document is the contract,
+    and two external stores disagreeing about what it holds is that contract broken twice."""
+    proj = hybrid_title_split(text)
+    return proj if proj else (text, hybrid_title(slug, text))
 
 
 def hybrid_title_join(stored: str, title: str) -> str:
@@ -2822,6 +2824,26 @@ def hybrid_serialization_failures() -> list[str]:
                         "reassembly has no note of where its title was")
     if hybrid_title_join(doc, "whatever the tracker says") != doc:
         failures.append("a document that still carries its own `title:` was rewritten on read")
+
+    # THE SAME ROUND TRIP, AGAINST BOTH EXTERNAL BACKENDS — each with the ceiling it really
+    # passes to `hybrid_split`: `github` splits at GH_PART_MAX, `azure-boards` hands None and
+    # gets one chunk. Two stores that serialise a title differently is the drift the canonical
+    # document exists to prevent, and it is cheap to refute here: the projection, the wrap, the
+    # split and the reassembly are the whole write path, and none of it needs a network.
+    for backend_name, ceiling in (("github", GH_PART_MAX), ("azure-boards", None)):
+        stored, native = hybrid_project("alpha", canonical)
+        parts = hybrid_split(stored, ceiling)
+        wrapped = hybrid_wrap("alpha.md", parts[0][0], len(parts))
+        name, chunk, count = hybrid_unwrap(wrapped.replace("\n", "\r\n"))
+        rebuilt = hybrid_title_join(chunk, native)
+        if (name, count) != ("alpha.md", 1):
+            failures.append(f"{backend_name}: the marker came back {name!r}/{count} parts "
+                            f"for a one-part document")
+        if rebuilt != canonical:
+            failures.append(f"{backend_name}: the document did not come back byte for byte "
+                            f"through the title projection — {rebuilt!r}")
+        if native != "Título com acento":
+            failures.append(f"{backend_name}: stored the title as {native!r}")
 
     # A title the tracker would cut is refused, because a cut title is now a renamed spec.
     long_title = ("---\nslug: alpha\ntitle: " + "t" * (HYBRID_TITLE_MAX + 1) +
@@ -3165,7 +3187,7 @@ class AzureBoardsBackend(SpecBackend):
                          "[System.TeamProject] = @project") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str]] = []
+        rows: list[tuple[dict, int, str, str]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
             m = SPEC_FILE_RE.match(filename)
@@ -3181,7 +3203,8 @@ class AzureBoardsBackend(SpecBackend):
                 "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
                         f"{item.get('id')}",
                 "slug": m.group(1),
-            }, int(item.get("id") or 0), doc))
+            }, int(item.get("id") or 0), doc,
+                self._field(item, "System.Title")))
         self._rows = rows
         return rows
 
@@ -3196,7 +3219,7 @@ class AzureBoardsBackend(SpecBackend):
         self._rows = None
 
     def _item_id(self, slug: str) -> int:
-        for descriptor, item_id, _ in self._load():
+        for descriptor, item_id, _, _title in self._load():
             if descriptor["slug"] == slug:
                 return item_id
         raise BackendRefusal({
@@ -3208,7 +3231,7 @@ class AzureBoardsBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
@@ -3217,9 +3240,9 @@ class AzureBoardsBackend(SpecBackend):
         spec, err = resolve_one(self.list_specs(), slug)
         if err:
             return None, err
-        _, full_text = next((i, d) for descriptor, i, d in rows
-                            if descriptor["slug"] == slug)
-        return derive_info(spec, full_text), {}
+        _, full_text, native = next((i, d, t) for descriptor, i, d, t in rows
+                                    if descriptor["slug"] == slug)
+        return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
@@ -3228,19 +3251,21 @@ class AzureBoardsBackend(SpecBackend):
         # and answers with the one chunk that is the whole document. The call is made anyway,
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
-        chunks = hybrid_split(text, None)
-        self._update(item_id, title=hybrid_title(info["slug"], text),
+        stored, title = hybrid_project(info["slug"], text)
+        chunks = hybrid_split(stored, None)
+        self._update(item_id, title=title,
                      description=hybrid_wrap(info["file"], chunks[0][0]))
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
+        stored, title = hybrid_project(m.group(1) if m else filename, text)
         item = self._az("creating a work item", "work-item", "create", "--project",
                         self.project, "--type", AZ_SPEC_TYPE,
-                        "--title", hybrid_title(m.group(1) if m else filename, text),
+                        "--title", title,
                         "--description", hybrid_wrap(filename,
-                                                     hybrid_split(text, None)[0][0]),
+                                                     hybrid_split(stored, None)[0][0]),
                         "--state", self.states[phase])
         item_id = int((item or {}).get("id") or 0)
         self._invalidate()
