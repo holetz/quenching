@@ -2411,7 +2411,8 @@ class GitHubBackend(SpecBackend):
         self.repo = repo
         self.cwd = cwd
         # descriptor, issue number, first chunk, how many parts the marker declares
-        self._rows: list[tuple[dict, int, str, int]] | None = None
+        self._rows: list[tuple[dict, int, str, int, str]] | None = None
+        self._legacy: list[tuple[int, str, str, int, str]] = []
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
@@ -2469,6 +2470,7 @@ class GitHubBackend(SpecBackend):
         pages = self._api("listing the repository's issues", "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
         rows: list[tuple[dict, int, str, int, str]] = []
+        legacy: list[tuple[int, str, str, int, str]] = []
         for page in (pages or []):
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -2479,6 +2481,13 @@ class GitHubBackend(SpecBackend):
                 filename, head, parts = hybrid_unwrap(issue.get("body") or "")
                 m = SPEC_FILE_RE.match(filename)
                 if not m:
+                    # A marker in the pre-fold `YYYY-MM-DD-<slug>.md` form is a SPEC, and it
+                    # is kept apart rather than skipped. Skipping is what an ordinary issue
+                    # gets, and treating an un-migrated spec that way makes the whole front
+                    # vanish silently — `migrate` reads this bucket and nothing else does.
+                    if LEGACY_DATED_FILE_RE.match(filename):
+                        legacy.append((int(issue.get("number") or 0), filename,
+                                       head, parts, str(issue.get("title") or "")))
                     continue
                 phase = "archive" if issue.get("state") == "closed" else "plans"
                 rows.append(({
@@ -2496,10 +2505,19 @@ class GitHubBackend(SpecBackend):
                 }, int(issue.get("number") or 0), head, parts,
                     str(issue.get("title") or "")))
         self._rows = rows
+        self._legacy = legacy
         return rows
+
+    def legacy_rows(self) -> list[tuple[int, str, str, int, str]]:
+        """`(number, dated filename, head, parts, issue title)` for every spec still stored
+        under the pre-fold basename. `migrate` is the only caller; the read path never sees
+        these, because a half-migrated front that half-works is worse than one that says so."""
+        self._load()
+        return list(self._legacy)
 
     def _invalidate(self) -> None:
         self._rows = None
+        self._legacy = []
 
     def _issue_number(self, slug: str) -> int:
         return self._issue_parts(slug)[0]
@@ -2542,14 +2560,25 @@ class GitHubBackend(SpecBackend):
 
     def write_spec(self, info: dict, text: str) -> None:
         number, had_parts = self._issue_parts(info["slug"])
-        stored, title = hybrid_project(info["slug"], text)
+        self._store(number, info["slug"], info["file"], text, had_parts)
+        self._invalidate()
+
+    def _store(self, number: int, slug: str, filename: str, text: str,
+               had_parts: int) -> None:
+        """The whole write, given an issue number already in hand.
+
+        Split out for `migrate`, which knows every number from its own scan and must not go
+        back to the listing between writes: `_invalidate` after each one would make the next
+        lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
+        the SAME serialisation either way — a migration with a writer of its own would be a
+        second implementation that runs exactly once, on the day it matters most."""
+        stored, title = hybrid_project(slug, text)
         chunks = hybrid_split(stored, GH_PART_MAX)
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
                         {"title": title,
-                         "body": hybrid_wrap(info["file"], chunks[0][0], len(chunks))})
+                         "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
         self._sync_parts(number, chunks, had_parts)
-        self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
@@ -5959,6 +5988,48 @@ def _migrate_v2_file(root: str, item: dict, dry: bool) -> dict:
     return rec
 
 
+def _migrate_markers(backend, dry: bool) -> list[dict]:
+    """Fold every spec an external backend still stores under a dated basename.
+
+    ONE WRITE PER SPEC, and the document that goes out has already been proved: the fold is
+    `legacy_marker_fold` — the same pure function `selftest` exercises — and the write is
+    `write_spec`, the same path every other command uses. Nothing here has a serialisation of
+    its own, because a migration with its own writer is a second implementation that only
+    ever runs once, on the day it matters most.
+
+    `--dry-run` performs the WHOLE fold offline and compares byte for byte, so the answer to
+    "will this lose anything" is measured against the real corpus rather than argued."""
+    out: list[dict] = []
+    for number, filename, head, parts, _title in backend.legacy_rows():
+        text = head if parts <= 1 else backend._joined(number, head, parts)
+        folded = legacy_marker_fold(filename, text)
+        if folded is None:
+            continue
+        name, new_text = folded
+        slug = SPEC_FILE_RE.match(name).group(1)
+        # What the store WILL hold, and what a read WILL rebuild from it — run here, before
+        # anything is sent, so a document that would not survive is reported and skipped
+        # rather than written and lost.
+        body, native = hybrid_project(slug, new_text)
+        chunks = hybrid_split(body, GH_PART_MAX)
+        rebuilt = hybrid_title_join(hybrid_join(
+            [(chunks[0][0].replace("\r\n", "\n"), False)]
+            + [(c.replace("\r\n", "\n"), eol) for c, eol in chunks[1:]]), native)
+        rec = {"issue": number, "from": filename, "to": name, "slug": slug,
+               "date": str(parse_frontmatter(new_text).get("date", "")),
+               "parts": len(chunks), "projectedTitle": hybrid_title_split(new_text) is not None,
+               "roundTrip": rebuilt == new_text}
+        if not rec["roundTrip"]:
+            rec["skipped"] = "the document would not come back byte for byte"
+            out.append(rec)
+            continue
+        if not dry:
+            # The number came from this scan, so no lookup and no re-listing between writes.
+            backend._store(number, slug, name, new_text, parts)
+        out.append(rec)
+    return out
+
+
 def cmd_migrate(args, root: str) -> int:
     """One-way, to the CURRENT layout. `specs/archive/**` is NEVER touched — it is
     historical and read-only, and churning it would break every link into it for no gain.
@@ -5985,11 +6056,33 @@ def cmd_migrate(args, root: str) -> int:
             if str(parse_frontmatter(read_text(p) or "").get("type", "")) == "task":
                 tasks.append(p)
     v2 = _v2_leftovers(root)
+
+    # The external fold: specs an issue tracker still holds under the dated basename. It is
+    # asked of the backend, not of the filesystem, and it is the only fold that can apply to a
+    # repo with no `specs/` folder at all.
+    markers: list[dict] = []
+    backend, berr = open_backend(root)
+    if not berr and backend is not None and hasattr(backend, "legacy_rows"):
+        markers = _migrate_markers(backend, args.dry_run)
+        if markers:
+            broken = [r for r in markers if not r["roundTrip"]]
+            emit(args.json,
+                 {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
+                  "kind": "markers", "count": len(markers),
+                  "projected": sum(1 for r in markers if r["projectedTitle"]),
+                  "spilled": sum(1 for r in markers if r["parts"] > 1),
+                  "skipped": broken, "specs": markers},
+                 f"{'would fold' if args.dry_run else 'folded'} {len(markers)} spec(s) out of "
+                 f"the dated basename" + (f" — {len(broken)} SKIPPED, see --json" if broken
+                                          else ", all byte-for-byte"))
+            return 1 if broken else 0
+
     if not plans and not tasks and not v2:
         emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
-                         "message": "no v1 plan folders, no v1 backlog tasks and no specs "
-                                    "in backlog/ or ready/ — this workspace is already v3"},
-             "refused: nothing to migrate — this workspace is already v3")
+                         "message": "no v1 plan folders, no v1 backlog tasks, no specs in "
+                                    "backlog/ or ready/ and no dated markers — this workspace "
+                                    "is already current"},
+             "refused: nothing to migrate — this workspace is already current")
         return 2
 
     # A name collision is the one way this could destroy work, so it is checked for the
