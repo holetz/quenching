@@ -307,7 +307,7 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
       files: docs/standards/architecture/spec-backend.md
       verify: python3 assets/hooks/okf-validate.py docs
       subject: plan/fix-github-backend-tasks-fidelity: 3.2 o standard nomeia o que a remontagem abrange
-- [ ] 3.3 Fechar a superfície: doctor com 26 comandos e 0 findings, okf-validate limpo e o lockstep
+- [x] 3.3 Fechar a superfície: doctor com 26 comandos e 0 findings, okf-validate limpo e o lockstep
       de versão concordando
       verify: python3 assets/bin/skills.py --root . doctor --json
       subject: plan/fix-github-backend-tasks-fidelity: 3.3 fecha a superficie e o lockstep
@@ -318,3 +318,4 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 - Refinado na 1.2: o marcador carrega anchor (quantas linhas mantidas do ## Tasks precedem o bloco) e nao section, como o ## Design dizia. section diz a que grupo o bloco pertence mas nao onde dentro dele, e nao diz nada sobre as linhas em branco que o documento usa entre tasks — o round trip seria uma re-diagramacao, nao uma identidade. Medido: com anchor, 68 de 68 documentos reais voltam byte a byte.
 - Refinado na 2.1: o teto compartilhado e 255 e nao 256 — o menor entre o titulo de issue do GitHub (256) e o System.Title do Azure Boards (255). Os helpers hybrid_* sao dos dois backends desde a task 6.2 de configurable-spec-backend, entao um teto por backend seria threading de estado por codigo deliberadamente agnostico para comprar um caractere. O numero do Azure vem da documentacao de campo e nao foi medido aqui.
 - Medido na 3.1 sobre os 68 specs em disco: 68/68 voltam byte a byte pelo caminho completo (wrap do marcador, round trip CRLF como o GitHub armazena, unwrap, rebuild). 49 deles carregam grupos ### N. — o ## Problem dizia 47 sobre 66, e as duas specs desta leva sao as duas a mais.
+- Medido na 3.3: doctor 26 comandos e 0 findings; lint 36 findings, o mesmo baseline que o Handoff de configurable-spec-backend declarou pos-merge; okf-validate 0 errors sobre docs/ e sobre assets/docs; budget 12.756 de 12.875, exit 0. O lockstep esta em 4.7.0 nos quatro artefatos — o bump para 4.8.0 e obrigacao de release do conclude, nao desta execucao.
