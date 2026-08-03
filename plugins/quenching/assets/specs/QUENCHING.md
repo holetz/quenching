@@ -273,11 +273,17 @@ ran, so a second call picks up where the first stopped:
    only knowable once the last task is written, and a bump made here starts from the base you are
    actually merging into. An abandoned spec settles none of it. The archive move, the distillation
    and these all land on the **work branch**.
-4. **Merge — the last action, without exception.** Strategy offered, never chosen for you: merge
-   commit (default), squash, rebase, or fast-forward. `merge: {strategy, subject}` is stamped on
-   the branch *before* the merge, so **nothing is ever committed to the base after it** and one
-   merge carries the code, the emergent docs, the archived spec and the distillation together.
-   **On a squash it offers to keep the branch**, because the per-task commits survive only there.
+4. **Merge — the last action, without exception.** Two choices, offered separately and never made
+   for you. **Strategy:** merge commit (default), squash, rebase, or fast-forward. **Route:** a
+   pull request, or local — offered only where `gh` resolves your repository, silently local
+   everywhere else, and not asked at all under `fast-forward`, which `gh pr merge` cannot perform.
+   `merge: {strategy, subject, pr}` is stamped on the branch *before* the merge, so **nothing is
+   ever committed to the base after it** and one merge carries the code, the emergent docs, the
+   archived spec and the distillation together. On the PR route the push, the `gh pr create` and
+   the `gh pr merge` are **one block you consent to** — choosing the route earlier was not that
+   consent — and `pr:` records the pull request, which is where the review and the checks still
+   live once the branch is gone. **On a squash it offers to keep the branch**, because the
+   per-task commits survive only there.
 
 ### `/specs:triage` — rank the whole front
 
@@ -353,7 +359,7 @@ refined: {mode: premortem, date: 2026-07-25}   # once a real interrogation has r
 approved: {date: 2026-07-26}                   # a human said go — develop offers it, execute asks inline
 branch: {base: main, work: plan/session-tokens} # stamped when isolation is taken; write-once
 reviewed: {date: 2026-07-28}                   # a human read the whole branch diff
-merge: {strategy: merge-commit, commit: abc1234} # the chosen strategy and its resulting sha
+merge: {strategy: merge-commit, subject: "plan/session-tokens: merge (merge-commit)"}  # + pr: on the PR route
 outcome: done                                  # stamped at archive — done | abandoned
 ---
 ```
