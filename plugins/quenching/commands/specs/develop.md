@@ -2,6 +2,7 @@
 description: Develop ONE spec by asking about it — one question at a time, with the question bank chosen by the spec's own derived stage rather than by a mode flag. Triggers on "develop this spec", "think this through", "explore this idea", "what shape should this take", "refine the spec", "poke holes in this", "what are the alternatives", "premortem this", "fill in the missing sections", "is this ready to build", "resolve the discoveries", "approve this spec". A raw spec gets shape questions; a proposed one gets argued with; a designed one gets its gate gaps closed; one at the gate gets offered the approval stamp. Answers accumulate and land in ONE confirmed edit per bank. Never edits code. Not for: creating a spec → /specs:create; building one → /specs:execute; closing one out and merging → /specs:conclude; a version bump or release obligation → /specs:conclude; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage; being told which spec to pick up next → /specs:continue.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
+model: opus
 ---
 
 # /quenching:specs:develop — ask one spec the questions its stage calls for
