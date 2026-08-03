@@ -325,20 +325,19 @@ continuation comments on its own issue and comes back byte for byte — and ther
 presence record everything else — `ready` is a *derived* stage, and the OK to build is the
 `approved: {date}` stamp. Because a spec writes its durable rule **directly into
 `docs/standards/`** (honestly `authority`-graded), there is no second store to bridge to:
-isolation-while-building is a real git **branch or worktree** (taken by `/specs:isolate` at any
-stage, recorded as `branch: {base, work}`, each task committed alone with its sha on the task
-line). `specs.py export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
+isolation-while-building is a real git **branch or worktree** (offered inline by `/specs:execute`
+when it starts from the base branch, recorded as `branch: {base, work}`, each task committed alone
+with its sha on the task line). `specs.py export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
 write-only, nothing reads it back, so it is never a second store — the mitigation `## Risks`
 names for losing access to an external backend.
 
 | Command | Role |
 | --- | --- |
 | `/specs:continue` | The router: one `specs.py next --front` call ranks every candidate with a reason per row and hands off to the one command that fits. Never builds, edits, or closes anything itself. |
-| `/specs:isolate` | Takes **or reports** git isolation for ONE spec at any stage: the `plan/<slug>` branch or a worktree beside the repo, and the write-once `branch: {base, work}` stamp. Reporting is a complete use of it. `execute` delegates here; `create` and `develop` name it on request. Never merges — that keeps `conclude`'s gates. |
 | `/specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results — split into what `/specs:align` would fix, what a cycle command closes, and what neither closes. |
 | `/specs:create` | ONE spec in `plans/` — effort proportional to input, never an interrogation. A sentence becomes `## Problem` alone; a Claude Code plan file becomes every section it actually supports, mapped and never invented. |
 | `/specs:develop` | One question at a time with an inline recommendation, the bank chosen by the spec's derived stage — generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
-| `/specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation delegated to `/specs:isolate`, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`specs.py task --check --subject`) so code and box land in ONE commit. Writes only the `docs/standards/` a task explicitly names; everything else is one `specs.py discover` line. Stops at the last commit. |
+| `/specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`specs.py task --check --subject`) so code and box land in ONE commit. Writes only the `docs/standards/` a task explicitly names; everything else is one `specs.py discover` line. Stops at the last commit. |
 | `/specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject}` stamp — all on the work branch — and only then the merge. Nothing is committed to the base after it. |
 | `/specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/specs:align` | The front's align + installer — see below. |
@@ -349,7 +348,7 @@ vocabulary, the `specs.py` surface, and the `specs/`↔`docs/` boundary in
 the execution mechanics in
 [`specs-execute/execution.md`](assets/references/specs-execute/execution.md),
 the git defaults (read-if-present, never installed) in
-[`specs-isolate/git.md`](assets/references/specs-isolate/git.md),
+[`specs-execute/git.md`](assets/references/specs-execute/git.md),
 the distillation doctrine in
 [`specs-conclude/distill.md`](assets/references/specs-conclude/distill.md).
 The per-spec commands are never conducted by any sweep, because each needs fresh human intent a
@@ -460,18 +459,26 @@ The plugin keeps its context and token footprint predictable on three levels:
    Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
 
-   **Where it stands now: 14,898 characters** (~3,724 approximate tokens) across 26 commands and
-   0 agent definitions, measured 2026-08-03 — 25 of those commands routed, 1 typed-only holding a
+   **Where it stands now: 14,224 characters** (~3,556 approximate tokens) across 25 commands and
+   0 agent definitions, measured 2026-08-03 — 24 of those commands routed, 1 typed-only holding a
    further 876 characters *outside* the total. Most of the difference between 2,083 and that figure
    is the routing information being bought back deliberately — the triggers and boundaries the
-   collapse had dropped. That measurement is also the current default ceiling, which has **no
-   headroom by construction**: it equals the surface's total, so the next always-on command
-   crosses it the day it is minted — `/skill:retro`, the 26th, took the other exit instead:
+   collapse had dropped. `/skill:retro` took the other exit instead:
    `disable-model-invocation: true` drops its description from the always-on total entirely, so
    it cost **0** and the ceiling never fired.
 
+   **The default ceiling stays at 14,898** — the peak measured before the standalone isolation
+   command was retired and its offer folded inline into `/specs:execute`. It is revised only from
+   a measurement, and
+   this change makes none: the total coming in under the ceiling is the proof the retirement
+   returned budget rather than being reabsorbed by the descriptions that grew to replace it. The
+   rule and the revision procedure live in
+   [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md)
+   §The per-surface ceiling.
+
    **The ceiling has now fired three times, the last two with nothing minted.** The 2026-07-28
-   figure of 12,726 was set when `/specs:isolate` became the 25th command. It was crossed again
+   figure of 12,726 was set when the isolation command (since retired) became the 25th command.
+   It was crossed again
    by **+149** with no new command at all — three descriptions grew — which is why `budget` is
    now part of this repo's stated verification routine. It crossed a third time by **+2,023** when
    eleven descriptions regained the trigger phrases and `Not for:` boundaries the collapse had
@@ -506,7 +513,6 @@ graded and with a should-not-trigger arm.
 | `/docs:define` | **no pin** — the edit is mechanical, but an inline `effort: low` is part of the session's prompt-cache key, so it recomputes every input token on the next request ([`capabilities.md`](assets/references/skill-new/capabilities.md) §The cache trap). A single-entry edit does not buy that back. Carries a frontmatter `hooks:` block instead — `okf-validate.py` on its own `Write`/`Edit`, the scope ladder's narrowest rung, costing nothing to any other operation |
 | `/specs:create` | **no pin** — same cache-trap reasoning; the capture is mechanical and effort-proportional, and its cost was never the model tier. Zero interrogation, no sub-agents |
 | `/specs:triage` | no pin, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the session model exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
-| `/specs:isolate` | no pin, no sub-agents — a handful of `git` reads, one branch or worktree creation, and one frontmatter stamp. `Bash` is scoped to `git`/`python3`/`py`; the whole command is a decision the human makes and a record it writes |
 | `/specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `specs.py status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
 | `/docs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — the `docs` counterpart of the row above, and its `effort: low` was dropped for the same reason. Both bodies also forbid `context: fork` by name: each doubles as a sweep's preview, and the report has to land in the conversation where the OK will be given |
 | `/specs:conclude` | no pin, no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade |
@@ -582,7 +588,7 @@ the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`). Six so
   `merge: {strategy, subject}` stamp all land on the work branch, and **the merge is its last
   action** — one merge carries the spec's whole footprint and nothing is committed to the base
   after it. Rebase stops destroying the record, since a subject survives a rewrite; the squash
-  caveat stands. A **25th command**, `/specs:isolate`, extracts the git *action* — branch or
+  caveat stands. A **25th command** (an isolation command, since retired) extracts the git *action* — branch or
   worktree, at **any** stage rather than only at build time — and `specs.py next --front` became
   branch-aware, so `/specs:continue` returns the spec whose branch you are standing on and demotes
   one alive elsewhere. `parse_frontmatter` learned block mappings (indent-scoped), which is what
