@@ -59,25 +59,12 @@ Resolve `specs.py` by the fallback in
 
 ## Workflow
 
-### 1. Resolve the workspace and classify the input
-**Read `.claude/quenching.json` before assuming a folder is the front.** Its `backend` key is
-the declaration, and only `files` has a workspace on disk; absent or unreadable means `files`.
-Read the file — do **not** spend a `specs.py config` invocation on it. The sentence path's whole
-promise is a spec in seconds, and it spends exactly three `specs.py` calls: `new`, `section
---write`, `validate`.
-
-Under `files`: find `specs/` at the target repo root, and if `plans/` and `archive/` are
-**absent**, install the seed from `${CLAUDE_PLUGIN_ROOT}/assets/specs/` and continue. If a legacy
-`backlog/` or `ready/` still holds specs, say so once and name `specs.py migrate` — never create a
-spec into a legacy folder.
-
-Under any **external** backend (`github`, `azure-boards`) there is no workspace and **no seed is
-installed**: the specs are issues or work items, and scaffolding `specs/plans/` beside them would
-plant an empty folder that looks like the front and holds none of it.
-
-Then classify what you were given: **prose** → the sentence path; **a path to an existing `.md`**,
-or an explicit ask to convert a plan → the plan-file path.
-**Done when:** the workspace resolves and the path is chosen.
+### 1. Classify the input
+**Prose** → the sentence path. **A path to an existing `.md`**, or an explicit ask to convert a
+plan → the plan-file path. This is the one decision the CLI cannot make for you: `specs.py new`
+(step 5) resolves the backend, the workspace and the seed on its own, and reports a legacy
+`backlog/`/`ready/` folder as a finding rather than writing into one.
+**Done when:** the path is chosen.
 
 ### 2. Derive the slug
 Take a title and a one-sentence problem from the input, and derive a kebab slug in the repo's
@@ -115,7 +102,9 @@ cost more than the thing being confirmed.
 ```bash
 specs.py new <slug> --title "<title>" [--verification per-task|per-section|end-of-plan]
 ```
-Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it.
+Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it. Any
+other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`, `sp-worktree-failed`) is
+reported verbatim, naming `/quenching:specs:align`.
 `--verification` is passed **only** if the source stated a policy; otherwise the default stands and
 `/quenching:specs:develop` can set it later.
 **Done when:** the tool exited 0 and reported the locator it created.
