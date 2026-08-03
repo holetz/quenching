@@ -290,7 +290,7 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 2.1 titulo de sub-issue recortado em 256
-- [ ] 2.2 `_write_api` recusa (exit 2, `sp-gh-body-too-large`) um corpo acima de 65.536 caracteres,
+- [x] 2.2 `_write_api` recusa (exit 2, `sp-gh-body-too-large`) um corpo acima de 65.536 caracteres,
       nomeando o tamanho medido e o teto, sem emitir a chamada
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest

@@ -2275,7 +2275,24 @@ class GitHubBackend(SpecBackend):
 
         `--input -` and not `-f body=…`: a spec document is kilobytes of markdown with
         newlines, quotes and backticks in it, and every one of those is a way for argv
-        quoting to corrupt what lands in the issue."""
+        quoting to corrupt what lands in the issue.
+
+        THE BODY CEILING IS CHECKED HERE, at the one point every write passes through,
+        rather than at each caller — a check per caller is the shape that leaves one out.
+        Refusing beats letting GitHub answer 422: in the middle of a migration of dozens of
+        specs a 422 is a validation error with no spec's name on it, while this names the
+        measured size and the ceiling and emits no call at all. The margin is real and not
+        theoretical — this repository's largest shell measured 63,686 characters on
+        2026-08-02, 1.8 KB under."""
+        body = payload.get("body")
+        if isinstance(body, str) and len(body) > GH_BODY_MAX:
+            raise BackendRefusal({
+                "code": "sp-gh-body-too-large", "exit": 2, "action": action,
+                "size": len(body), "max": GH_BODY_MAX,
+                "message": f"the document is {len(body)} characters and a GitHub issue body "
+                           f"holds {GH_BODY_MAX} — shorten a section while {action}; nothing "
+                           f"was written",
+            })
         return self._api(action, "-X", method, path, "--input", "-",
                          stdin=json.dumps(payload))
 
@@ -2543,6 +2560,39 @@ def gh_refusal_failures() -> list[str]:
 # names WHICH task drifted when the stricter check has already said the document did.
 HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
                          "files", "pattern", "verify", "subject", "commit")
+
+
+def gh_body_ceiling_failures() -> list[str]:
+    """A body over the ceiling refuses BEFORE any call is made — proved with a transport that
+    records every call it is asked to make and fails the check if it was asked at all.
+
+    No network and no `gh`: the point is not that GitHub says no, it is that this backend
+    never gives it the chance."""
+    failures: list[str] = []
+    backend = GitHubBackend("owner/repo", os.getcwd())
+    calls: list[str] = []
+    backend._api = lambda action, *argv, stdin=None: calls.append(action)   # type: ignore
+    try:
+        backend._write_api("creating an issue", "POST", "repos/owner/repo/issues",
+                           {"title": "x", "body": "a" * (GH_BODY_MAX + 1)})
+    except BackendRefusal as e:
+        if e.err.get("code") != "sp-gh-body-too-large":
+            failures.append(f"an oversized body refused with {e.err.get('code')!r}, "
+                            f"not sp-gh-body-too-large")
+        if e.err.get("exit") != 2:
+            failures.append("an oversized body refused with an exit other than 2")
+    else:
+        failures.append("an oversized body was sent to GitHub instead of refusing")
+    if calls:
+        failures.append(f"the refusal still made {len(calls)} call(s) — it must emit none")
+    try:
+        backend._write_api("creating an issue", "POST", "repos/owner/repo/issues",
+                           {"title": "x", "body": "a" * GH_BODY_MAX})
+    except BackendRefusal:
+        failures.append("a body exactly at the ceiling was refused — the ceiling is inclusive")
+    if len(calls) != 1:
+        failures.append("a body within the ceiling did not reach the transport")
+    return failures
 
 
 def hybrid_serialization_failures() -> list[str]:
@@ -5991,6 +6041,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "same `parse_tasks` that reads a file — nothing "
                                         "about checked/blocked/metadata is derived twice"))
 
+    # A document too large for an issue body refuses without making the call, so a migration
+    # fails on a named spec instead of on GitHub's anonymous 422.
+    for failure in gh_body_ceiling_failures():
+        findings.append(_finding("sp-gh-body-ceiling-broken", "error",
+                                 f"the issue body ceiling does not hold — {failure}",
+                                 remedy="`_write_api` is the one point every write passes "
+                                        "through; the check belongs there and must emit no "
+                                        "call when it refuses"))
+
     # The config defaults, asserted where nothing is declared. A repo that declares nothing
     # is the overwhelmingly common case, so a loader that started returning `None` for the
     # backend would break every such repo while every configured one kept working — the
@@ -6167,7 +6226,8 @@ def cmd_selftest(args, root: str) -> int:
               f"piece once per process on stderr and only for "
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
               f"written, a grouped document survives shell -> sub-issue -> shell byte for "
-              f"byte with its checked/blocked state and metadata intact, and the embedded "
+              f"byte with its checked/blocked state and metadata intact, an oversized body "
+              f"refuses without making the call, and the embedded "
               f"schema and template match their asset files.")
     return 1 if errors else 0
 
