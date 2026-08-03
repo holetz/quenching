@@ -32,15 +32,6 @@ what you were given, and nothing more.**
 | a sentence | `## Problem`, alone | seconds |
 | a Claude Code plan file | every section the plan actually supports | one read, one confirmation |
 
-Both obey the same prohibition — **zero interrogation**. Never ask for scope, tasks, design, or a
-verification policy. What was not said is left out, and an absent heading is a *not-yet*, not an
-omission. The gates get walked by `/quenching:specs:develop`; the hard questions get asked by
-`/quenching:specs:develop` too. Neither belongs here.
-
-The difference between the two rows is **not** effort spent thinking — it is only how much the
-input already contained. A rich plan file gets more sections because it *has* more sections, never
-because this command worked harder at it.
-
 ## Doctrine
 
 - **A sentence becomes `## Problem` and stops.** `specs.py new` stamps the frontmatter (`slug`,
