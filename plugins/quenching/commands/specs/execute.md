@@ -134,8 +134,9 @@ subjects, and **`verification`** — the spec's declared policy, which decides w
 this command never has to.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  stamp `approved: {date}` on a yes. **Never refuse over it** — refusing would rebuild the folder
-  hop this front removed. A no ends the run cleanly.
+  on a yes stamp it with `specs.py record "<slug>" approved --set date=<today>` — never by editing
+  the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
+  removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
   sections and route to `/quenching:specs:develop <slug>`, then stop. The gate refuses nothing itself; the
   tool simply has no task to hand out until it is closed.
@@ -351,7 +352,8 @@ front of you before the loop starts:
   subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
 - Never write a record after the commit it describes. A subject that drifted is reported, not
   corrected.
-- Never refuse over a missing `approved`; ask inline and stamp it.
+- Never refuse over a missing `approved`; ask inline and stamp it with `specs.py record`, never by
+  editing the frontmatter.
 - Never stamp or rewrite a `branch` record here — that record belongs to `/quenching:specs:isolate`.
 - Write **only** the `docs/` a task explicitly names. Emergent findings are one `specs.py discover`
   line — never an unrequested standard, and never a loose code comment.

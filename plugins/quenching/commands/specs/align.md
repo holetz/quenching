@@ -11,9 +11,13 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bas
 One of the plugin's three aligns. Where `/quenching:docs:align` converges a repo's `docs/` bundle and
 `/quenching:skill:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
 so every repo that adopts the plugin carries the same `specs/` too. Quenching-native: this front is
-**entirely plugin-owned** — no external CLI, no Node runtime, no `config.yaml`, no separate spec
-store, no delta format. It is what installs the front (there is no `init` step — scaffolding is an
-asset copy) and what keeps it conformant.
+**entirely plugin-owned** — no Node runtime, no `config.yaml`, no second spec store shadowing the
+declared one, no delta format. It is what installs the front (there is no `init` step — scaffolding
+is an asset copy) and what keeps it conformant.
+
+**This command converges the `files` backend's workspace**, which is the only backend with a folder
+to converge. A repo that declares `github` or `azure-boards` in `.claude/quenching.json` may hold no
+`specs/` at all, and there is nothing here to scaffold, rename or fold — say so and stop.
 
 **It probes before it inventories.** Two tool calls decide whether there is any work at all, and a
 conformant workspace ends the run there. That is what makes this safe to run habitually rather than

@@ -40,9 +40,9 @@ Resolve `specs.py` by the fallback in
 `python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
-**No deltas.** This front is entirely native: a spec writes its durable rules **directly** into
-`docs/standards/` while it is built, isolated on a branch. There is no second store to bridge to,
-so nothing here writes a delta and nothing later syncs one.
+**No deltas.** A spec writes its durable rules **directly** into `docs/standards/` while it is
+built, isolated on a branch. Whichever backend holds the spec is the only one that holds it, so
+there is no second store to bridge to: nothing here writes a delta and nothing later syncs one.
 
 ## Doctrine
 
@@ -77,10 +77,12 @@ meant. An archived spec has nothing to develop: say so and stop.
 ```bash
 specs.py status --spec <slug> --json      # stage, section states, records, tasks, gate
 ```
-Read the spec's filled sections at the path `status` resolved — never assume filenames. Then, if
-the repo carries an OKF bundle (`docs/index.md` with `okf_version`), read the `docs/standards/`
-subjects this spec touches and `docs/knowledge/glossary.md`, so the questions use the repo's own
-vocabulary and can catch a spec that contradicts a binding contract. No bundle → skip silently.
+Then pull the body of every section `status` reported `filled` — one call naming them all,
+`specs.py section <slug> "<Heading1>,<Heading2>,…"` — never the whole document and never assume
+filenames. Then, if the repo carries an OKF bundle (`docs/index.md` with
+`okf_version`), read the `docs/standards/` subjects this spec touches and
+`docs/knowledge/glossary.md`, so the questions use the repo's own vocabulary and can catch a spec
+that contradicts a binding contract. No bundle → skip silently.
 **Done when:** the spec's state and the binding context are in hand.
 
 ### 3. Select the bank
@@ -124,14 +126,20 @@ Write each confirmed section with `specs.py section <slug> "<Heading>" --write` 
 it creates the heading in canonical position on first write, so creating and revising are the same
 call. An emptied section becomes an explicit `- none — <reason>`, never a deleted heading.
 
-Then the frontmatter records this command owns, **merged into the existing frontmatter, never
-rewritten from scratch** (`slug`, `title` and `verification` must survive):
+Then the frontmatter records this command owns, each through `specs.py record` — **never by
+editing the frontmatter**, which merges nothing and works only while the backend is `files`:
 
-| Record | When | Value |
+| Record | When | Call |
 | --- | --- | --- |
-| `verification` | the gate bank settled it | one of the three in spec-driven.md §Frontmatter |
-| `refined: {mode, date}` | the adversarial or gate bank ran | per questions.md §Recording the pass |
-| `approved: {date}` | the human said go in the approval bank | today's date |
+| `refined: {mode, date}` | the adversarial or gate bank ran | `specs.py record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
+| `approved: {date}` | the human said go in the approval bank | `specs.py record <slug> approved --set date=<today>` |
+
+`verification` is a plain frontmatter key rather than a record, so the gate bank settling it is the
+one frontmatter edit left here — one of the three in spec-driven.md §Frontmatter, written with
+`slug` and `title` left exactly as they were.
+
+`approved` is write-once: a spec that already carries it refuses (exit 2) with the date it holds,
+which is the answer, not an obstacle.
 
 Re-run `specs.py validate --spec <slug>` and report what it says.
 **Done when:** the sections are written, the records this bank earned are stamped, and validate has
@@ -174,6 +182,8 @@ command's job is questions, and a prompt about git in the middle of one is frict
   unanswered question: it goes in `## Open Decisions` with how it will be decided, which is a
   result, not a failure.
 - Never create a heading you are not filling in the same edit.
+- **Never edit a frontmatter record by hand.** `specs.py record` is the writer — it merges, it
+  enforces write-once, and it is the only form that survives a backend with no file to edit.
 - **Never fabricate a record.** `refined` is stamped only after real questions got real answers;
   `approved` only after a human actually said go. Neither can be inferred from the sections — that
   is the entire reason they exist.

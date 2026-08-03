@@ -220,6 +220,13 @@ sentence, and **link out** rather than explaining in full here.
 - [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task when
   the tasks are written, declaring it may run concurrently with its group; honoured only when
   `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
+- [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
+  single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
+  `worktreeSetup` and `azureStates`. It replaced `specs/config.json`, whose home stopped working once
+  a repository could have no `specs/` folder at all. Absence yields the documented defaults, never a
+  null and never a refusal — except `azureStates`, which has no default because the project's own
+  process defines the states, and whose absence refuses instead of guessing; every other way it can
+  be wrong comes back as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
@@ -287,6 +294,14 @@ sentence, and **link out** rather than explaining in full here.
   invitation*, a key only one writer may legitimately set stays **out** of it and lives with that
   writer's own contract — an annotation inside the mold is not equivalent, as the `resource:`
   precedent showed. The test is not "may this be absent?" but "may this citer write it at all?".
+- [**Spec backend**](../standards/architecture/spec-backend.md) — where a repository's specs
+  actually live: markdown files on a dedicated branch, GitHub issues, or Azure Boards work items,
+  declared by `backend` in [the plugin config](../standards/workflows/plugin-configuration.md).
+  Every backend implements **five primitives over the canonical document** — never one method per
+  CLI verb — so the fourteen sections, the frontmatter records and the derived stages are shared
+  code and cannot diverge between targets. The selected backend is the sole source of truth: there
+  is no shadow local store, and a declared-but-unimplemented backend refuses rather than falling
+  back to `files`.
 - [**Typed-only command**](../standards/automation/context-budget.md) — a command carrying
   `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
   every session's context and `skills.py budget` charges it **0**. Residency and content are
