@@ -1,8 +1,9 @@
 # Git for the `specs/` front — taking isolation, wording a commit, merging
 
 The owner of **how** a spec's work is isolated, how its commits are worded, and how the branch
-comes home. `/quenching:specs:isolate` performs the isolation; `/quenching:specs:execute` and `/quenching:specs:conclude` cite
-this file for the conventions their own steps depend on. None of the three restates it.
+comes home. `/quenching:specs:execute` performs the isolation, inline on its way into a build;
+`/quenching:specs:conclude` cites this file for the conventions its own steps depend on. Neither
+restates it.
 
 Everything here is a **default**, not a rule. A target repo that has written down its own git
 conventions has already decided, and a plugin that ignored that would be imposing house style on
@@ -11,7 +12,7 @@ somebody else's history.
 ## Contents
 
 - [The read-if-present rule](#the-read-if-present-rule)
-- [Isolation is available at any stage](#isolation-is-available-at-any-stage)
+- [Isolation happens on the way into a build](#isolation-happens-on-the-way-into-a-build)
 - [Branch and worktree names](#branch-and-worktree-names)
   - [The worktree is the preferred form](#the-worktree-is-the-preferred-form)
   - [A target may declare a setup command](#a-target-may-declare-a-setup-command)
@@ -53,25 +54,31 @@ without anyone having agreed to it. If a human wants their conventions written d
 An `authority: background` git standard in the target still wins over these defaults. It is an
 agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion either way.
 
-## Isolation is available at any stage
+## Isolation happens on the way into a build
 
 <!-- rules -->
 
-Isolation used to exist only inside `/quenching:specs:execute`, which made it a privilege of building. It is
-not: creating and developing a spec both write into `specs/plans/` and dirty the tree, and a spec
-sometimes ought to be born on the branch that will carry its work.
+Isolation was a command of its own for one release, offered at any stage. It is now a **step inside**
+`/quenching:specs:execute`, taken once, before the first task is written — and offered only when the
+session is standing on the repository's base branch:
 
-`/quenching:specs:isolate` takes or reports isolation for ONE spec at **any** stage:
-
-| Stage | What isolating buys |
+| Where the session stands | What `execute` does |
 | --- | --- |
-| just created | the spec file itself lands on the branch, so the base keeps no trace of work that may be abandoned |
-| being developed | an interrogation that rewrites half the spec does not sit in the base branch's tree |
-| about to be built | the original case: code, docs and the ticked boxes are all on one branch |
+| on the base branch | offers worktree · branch · in place, and stamps whichever was taken |
+| on any other branch | **adopts it** as `work`, stamps `branch:`, and goes straight to the loop |
 
-`/quenching:specs:execute` **delegates** here rather than reimplementing; `/quenching:specs:create` and
-`/quenching:specs:develop` forward on request and never offer unprompted. Isolation stays optional, is
-recommended before building, and is never imposed.
+Standing anywhere but the base means the human already answered the isolation question at checkout,
+so asking again buys nothing and costs the turns it takes. Isolation stays optional, is recommended
+before building, and is never imposed.
+
+`/quenching:specs:create` and `/quenching:specs:develop` take no branch at all — they write into
+`plans/` and stay wherever they were run. That is a narrowing from the retired command, and the
+trade is deliberate: the offer costs a confirmation, and the stage where it reliably pays is the one
+about to write code.
+
+**Asking "am I isolated?" writes nothing and is answered elsewhere.** `/quenching:specs:continue`
+reads the live ref and reports it, and demotes a spec whose branch is checked out somewhere else.
+`/quenching:specs:status` reads the frontmatter records and deliberately never asks git.
 
 **Merging is not here.** It stays inside `/quenching:specs:conclude`, behind that command's review and
 archive gates — a merge invocable on its own could run against a spec nobody reviewed and nothing
@@ -134,7 +141,7 @@ the specs workspace — which only had a place to live while every repo was guar
 folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
 configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
 with the rest of it. See
-[plugin-configuration.md](../../../../docs/standards/workflows/plugin-configuration.md).
+[plugin-configuration.md](../../../../../docs/standards/workflows/plugin-configuration.md).
 
 Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
 the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
