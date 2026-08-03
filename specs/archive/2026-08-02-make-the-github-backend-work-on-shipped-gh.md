@@ -2,6 +2,10 @@
 slug: make-the-github-backend-work-on-shipped-gh
 title: O backend github funciona no gh que os repos realmente tem
 verification: per-section
+branch: {base: main, work: plan/make-the-github-backend-work-on-shipped-gh}
+approved: {date: 2026-08-02}
+reviewed: {date: 2026-08-02}
+outcome: abandoned
 ---
 
 # O backend github funciona no gh que os repos realmente tem
@@ -215,3 +219,35 @@ objeto por linha, e funciona no 2.45.
       files: plugins/quenching/README.md
       verify: python3 assets/bin/skills.py --root . doctor --json
       subject: plan/make-the-github-backend-work-on-shipped-gh: 2.1 README declara a versao minima de gh
+
+## Outcome
+
+**Abandonada sem entregar nada**, por decisão do humano em 2026-08-02, no mesmo dia em que foi
+capturada. Nenhuma linha de produto mudou: a troca de `--slurp` por JSONL chegou a ser escrita nesta
+branch e foi revertida antes do fechamento.
+
+**O que a tornou desnecessária aqui:** o `gh` deste ambiente foi atualizado de 2.45.0 para 2.97.0, e
+o 2.97 tem `--slurp`. O bloqueio que a spec existia para remover deixou de existir nesta máquina, e
+a migração — que era o que ela desbloqueava — pôde seguir direto.
+
+**O que continua verdadeiro, e não foi consertado:**
+
+- O backend `github` exige `gh >= 2.52` e **não declara isso em lugar nenhum** — nem no README, nem
+  em `plugin-configuration.md`, nem na recusa `sp-gh-missing`, que fala em instalar o GitHub CLI
+  como se qualquer versão servisse.
+- Num `gh` mais velho, a falha chega como a linha crua `unknown flag: --slurp` e não como recusa
+  nomeada, o que contradiz o contrato que a task 4.1 de `configurable-spec-backend` estabeleceu para
+  todo modo de falha do transporte.
+- Um repositório alvo que use o `gh` empacotado pela sua distribuição pega isso na primeira
+  operação. Foi exatamente o que aconteceu aqui.
+
+A substituição medida e descartada fica registrada para quem retomar: `gh api --paginate --jq '.[]'`
+devolve JSONL — um objeto JSON compacto por linha, sem precisar de `-c` — funciona desde muito antes
+do 2.52, e resolve a mesma objeção que o `--slurp` resolve, porque o consumidor nunca quis a página,
+quis os itens.
+
+**Nada foi destilado.** O que esta spec teria ensinado já está escrito: `spec-backend.md`
+§"What this standard does not yet cover" diz que um backend é provado pelos documentos que vai
+realmente receber e não pelos escritos para exercitá-lo, e o ambiente é a mesma família de variável
+não declarada. O E2E da task 4.6 passou porque aquela máquina por acaso tinha a versão certa — é a
+segunda vez, na mesma semana, que uma capacidade provada uma vez encontra a realidade na migração.
