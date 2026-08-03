@@ -122,19 +122,8 @@ specs.py section <slug> Problem --write   # body on stdin
 writing others around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
-**Nothing to regenerate.** The file on disk IS the record — `specs.py list` and `specs.py status`
-derive what `plans/` holds when asked, so a spec becomes visible the moment it is written. No
-listing is rebuilt here, and none may be: `plans/index.md` is a retired artifact.
-
-**Nothing is written into `docs/`.** Creating a spec used to append a line to the bundle's
-`docs/log.md`; that artifact is retired, and the spec's own frontmatter already records when it
-was captured. `specs/` stands on its own.
-
-**No glossary tail here.** Every other capture command runs **Enriching the glossary** as its tail;
-this one deliberately does not. A new spec names work, not a concept — the step was a no-op in the
-overwhelming majority of runs, and paying to read `knowledge/glossary.md` on a path whose contract
-is "seconds" is the wrong trade. A term a spec genuinely coins is caught by
-`/quenching:docs:glossary-backfill`, or by `/quenching:docs:define` when the human says the word matters.
+**No glossary tail.** Every other capture command runs **Enriching the glossary** as its tail; this
+one deliberately does not — a new spec names work, not a concept.
 
 ### 7. Check
 Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check. The OKF
