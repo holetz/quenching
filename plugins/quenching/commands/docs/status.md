@@ -1,5 +1,5 @@
 ---
-description: Read the whole docs/ front and report where the OKF bundle stands — writes nothing
+description: Read the whole docs/ front and report where the OKF bundle stands — writes nothing. Triggers on "what's the status of the docs", "how healthy is the knowledge base", "is the bundle conformant". Not for: forcing the bundle into canonical shape → /docs:align.
 argument-hint: [optional-home-or-path]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---

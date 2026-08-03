@@ -122,7 +122,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.9.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
+VERSION = "4.9.1"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
@@ -195,7 +195,14 @@ LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an infere
 # +31) since a03f31a. That is the ratchet's second firing mode, silent by construction,
 # and it went unseen because nothing in the repo's verification routine ran `budget`;
 # that routine now does. Revised from the measurement `budget` printed, never estimated.
-DEFAULT_CEILING = 12875
+#
+# 2026-08-03: re-measured at 14898 over the same 26 commands (25 routed, 0 agents),
+# replacing 12875. NO command was minted and none was reclassified — the +2023 is
+# eleven descriptions regaining the trigger phrases and `Not for:` boundaries that
+# `restore-routing-info-on-docs-commands` restored (nine `/docs:*` plus `/skill:eval`,
+# `/skill:new`), the description-growth firing mode's SECOND occurrence (2026-08-02 was
+# its first). Revised from the measurement `budget` printed, never estimated.
+DEFAULT_CEILING = 14898
 CHARS_PER_TOKEN = 4             # a rule of thumb for the report, never a tokenizer count
 
 # the registry's derived zone — markers, cells, and location, per the automation mold
