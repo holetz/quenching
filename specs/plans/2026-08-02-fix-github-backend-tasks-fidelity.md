@@ -302,7 +302,7 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
       identidade byte a byte em todos
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 3.1 os specs reais sobrevivem ao round trip
-- [ ] 3.2 Reescrever `docs/standards/architecture/spec-backend.md` §Hybrid serialisation para nomear
+- [x] 3.2 Reescrever `docs/standards/architecture/spec-backend.md` §Hybrid serialisation para nomear
       o que a remontagem abrange e a igualdade estrita como prova declarada
       files: docs/standards/architecture/spec-backend.md
       verify: python3 assets/hooks/okf-validate.py docs
