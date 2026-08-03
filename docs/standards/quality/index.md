@@ -24,6 +24,11 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
   an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
   prove, and the gate the three shipped selftests have not yet cleared.
+* [unproven-capability-warning.md](unproven-capability-warning.md) — where a caveat about a
+  capability that ships without end-to-end proof belongs: the two failure shapes that decide it, the
+  standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a
+  per-operation warning is a permanent context tax and silence is not the alternative, and the one
+  edit that retires both together.
 * [surface-verification.md](surface-verification.md) — how a change to the command surface is
   proven: a fresh process because the registry is built at session start, assertions on captured
   `tool_use` rather than prose, and the three preconditions a functional check must satisfy.

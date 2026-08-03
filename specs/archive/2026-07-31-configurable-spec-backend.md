@@ -565,3 +565,19 @@ pegas: **check-canonical-cases-and-map-the-scripts** mediu `specs.py` em 3.108 l
 modularizar não se paga — esta branch levou o arquivo a 6.199, então a premissa numérica venceu; e
 **refuse-a-mis-levelled-specs-root** trata do `--root`, que `resolve_files_root` e a worktree de
 specs mudaram.
+
+### Destilado no fechamento
+
+- `docs/standards/quality/unproven-capability-warning.md` (`authority: current`) — onde mora o aviso
+  sobre uma capacidade que embarca sem prova end-to-end. Era a decisão que `## Open Decisions`
+  deferiu para a task 6.3 e que até aqui vivia só num comentário em `announce_unproved`:
+  o fato permanente vira finding do verificador, o risco do momento vira UMA linha em stderr por
+  processo antes da primeira escrita, e as duas se aposentam pela mesma edição da coleção nomeada.
+- `specs/plans/2026-08-02-close-the-files-backend-leaks-in-specs-py.md` — os quatro achados 1–4
+  acima, que são o mesmo tema: restos do backend `files` na camada compartilhada de verbos.
+- `specs/plans/2026-08-02-decide-what-specs-align-means-without-a-folder.md` — o achado 5, que é
+  decisão de produto antes de ser código.
+
+Nada mais cruzou. As cinco `docs/standards/` que as tasks nomearam entraram durante a execução e as
+duas correções da revisão de branch entraram antes do arquivamento; o resto de `## Design`,
+`## Proposal` e `## Tasks` é história do arquivo, e copiá-lo para `docs/` duplicaria a fonte.
