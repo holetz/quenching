@@ -161,7 +161,10 @@ or the same bank selected again with nothing left to ask → go to step 8.
 
 ### 8. Report
 The spec and the bank(s) that ran; how many questions were asked and answered; the sections edited;
-the records stamped; the routed offers and whether each was taken; the stage before and after; and
+the records stamped; the routed offers and whether each was taken; **every follow-up parked into
+`## Discoveries`, quoted** — a parked line was never offered, so nothing else in this list reports
+it, and an unreported one is indistinguishable from a finding the pass dropped; the stage before
+and after; and
 the next step — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
 for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
 
