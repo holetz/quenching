@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.8.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.9.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -1938,120 +1938,144 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
     }
 
 
-# HYBRID SERIALISATION (task 4.2) — `## Tasks` becomes sub-issues, one per task; every
-# other section stays as markdown in the parent issue's body, exactly as 4.1 left it.
+# HYBRID SERIALISATION — the WHOLE canonical document is one issue body, and a document too
+# large for one body spills into continuation comments on that same issue.
 #
-# THE PARENT ISSUE BODY HOLDS "THE SHELL": the canonical document with `## Tasks`'s own
-# body emptied. The marker on it exists to carry the FILENAME, and the filename exists to
-# carry the date. A spec's date is stamped once by `new` into its basename and never
-# recomputed — the `MemoryBackend` docstring records that deriving it from anything else is
-# precisely the divergence the equality check caught the first time a second backend was
-# written. GitHub has no filename, so the document's own store has to hold it, and an HTML
-# comment is the one place in a markdown body that survives a round trip through the issue
-# editor while staying invisible to a human reading the issue.
+# IT USED TO PUT `## Tasks` IN SUB-ISSUES, one per task, and that mapping is retired. It was
+# chosen because `## Tasks` is the one section with a native tracker counterpart carrying its
+# own state and identity, which is true and turned out not to be the question. The question is
+# whether anything READS the native state, and nothing ever did: `parse_tasks` takes a task's
+# checked/blocked from the raw block on both ends, never from the sub-issue, so the issue's own
+# open/closed was a projection written and never consulted — the same status `hybrid_title`
+# records for the issue title, but costing one to three API calls per task per write instead of
+# nothing. Measured on this repository on 2026-08-03: 68 spec issues against 689 task
+# sub-issues, a listing of 8 pages and 4.4 MB taking 8.4s that EVERY specs command pays, and a
+# `write_spec` on a ten-task spec spending twelve round trips where one would do.
+#
+# What the collapse buys, beyond the calls: the round-trip obligation `spec-backend.md` puts on
+# an external backend stops being a property to check and becomes the thing that is stored. No
+# anchors, no positional keys, no two-part retirement of a removed task's marker — the three
+# mechanisms that produced this backend's only two measured defects (every `### N.` group
+# heading dropped; a checked task's sub-issue born open). `- [ ]` in an issue body is a native
+# GitHub task list anyway: it renders as a checkbox with a progress count, and ticking it in the
+# web UI edits the document, which closing a sub-issue never did.
+#
+# THE MARKER ON THE BODY CARRIES THE FILENAME, and the filename carries the date. A spec's date
+# is stamped once by `new` into its basename and never recomputed — the `MemoryBackend`
+# docstring records that deriving it from anything else is precisely the divergence the equality
+# check caught the first time a second backend was written. GitHub has no filename, so the
+# document's own store has to hold it, and an HTML comment is the one place in a markdown body
+# that survives a round trip through the issue editor while staying invisible to a human reading
+# the issue.
 #
 # The marker is also what makes a spec issue distinguishable from an ordinary one: a repo's
 # issue tracker belongs to its humans, and a backend that treated every open issue as a spec
 # would list the bug reports and then write over them. The same reasoning applies one level
-# down to a task's own marker, below.
-HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)\s*-->[ \t]*\r?\n")
+# down to a continuation comment's own marker, below.
+HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
+                              r"\s*-->[ \t]*\r?\n")
 
 
-def hybrid_wrap(filename: str, text: str) -> str:
-    return f"<!-- quenching-spec: {filename} -->\n{text}"
+def hybrid_wrap(filename: str, text: str, parts: int = 1) -> str:
+    """The marker line a spec issue is recognised by, and the document under it.
+
+    `parts=` is written ONLY when there is more than one. The single-part form — every document
+    but the two largest this repository holds — is therefore byte-identical to the marker as it
+    was before continuations existed, and one regex reads both."""
+    count = f" parts={parts}" if parts > 1 else ""
+    return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
 
 
-def hybrid_unwrap(body: str) -> tuple[str, str]:
-    """`(filename, document)` for a spec issue, or `("", "")` for any other issue.
+def hybrid_unwrap(body: str) -> tuple[str, str, int]:
+    """`(filename, chunk, parts)` for a spec issue, or `("", "", 0)` for anything else.
 
     Line endings are normalised on the way in. GitHub stores and returns issue bodies with
-    CRLF, so a document written as LF comes back different from what was stored — every
-    section parse, every diff and the round-trip equality would all read that as content
-    having changed."""
+    CRLF, so a document written as LF comes back different from what was stored — every section
+    parse, every diff and the round-trip equality would all read that as content having changed.
+
+    `parts` is what tells a reader whether the chunk it just got IS the document or only its
+    head, and it is read from the body already in hand. A one-part spec — the normal case —
+    never pays a call to discover there is nothing more to fetch."""
     body = (body or "").replace("\r\n", "\n")
     m = HYBRID_MARKER_RE.match(body)
-    return (m.group(1), body[m.end():]) if m else ("", "")
+    if not m:
+        return "", "", 0
+    return m.group(1), body[m.end():], int(m.group(2) or 1)
 
 
-def hybrid_tasks_span(text: str) -> tuple[int, int] | None:
-    """`(start, end)` line indices of `## Tasks`'s BODY in the whole document, or `None`.
-
-    Whole-document coordinates, because that is what `parse_tasks` already hands back in
-    `lineno`/`blockEndLineno` and the shell has to line the two up. `parse_sections` is run
-    over the body, so the frontmatter's own lines are added back the same way
-    `upsert_section` adds them."""
-    sections = parse_sections(body_after_frontmatter(text))
-    if "Tasks" not in sections:
-        return None
-    lines = text.splitlines(keepends=True)
-    fm_offset = len(lines) - len(body_after_frontmatter(text).splitlines(keepends=True))
-    start = sections["Tasks"]["lineno"] + fm_offset + 1
-    return start, start + len(sections["Tasks"]["lines"])
+HYBRID_PART_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec-part:\s*(\d+)/(\d+)"
+                                   r"(?:\s+eol=(\d))?\s*-->[ \t]*\r?\n")
 
 
-def hybrid_tasks_shell(text: str) -> str:
-    """The canonical document with the task BLOCKS lifted out of `## Tasks` and everything
-    else in that section left exactly where it was.
+def hybrid_wrap_part(index: int, total: int, chunk: str, eol: bool) -> str:
+    """One continuation chunk, marked with its own position.
 
-    IT USED TO EMPTY THE WHOLE SECTION, and that was a silent loss. `### N. <Section>` group
-    headings are documented grammar (the template's `## Tasks` guidance), they are counted by
-    `parse_tasks` into every task's `section`, and `verification: per-section` and `[P]` both
-    reason over them. Emptying the body threw them away, `hybrid_rebuild_tasks_section` had
-    nothing to put back, and the write neither failed nor warned: the document came back
-    well-formed with one level of structure gone. Measured on 2026-08-02, 47 of this
-    repository's 66 specs used groups and ~35 documents did not survive the round trip.
-
-    What is lifted is exactly the span `parse_tasks` reports for each task — the checkbox line
-    plus its indented metadata. Group headings, prose and the blank lines around them stay,
-    verbatim and in position, which is what lets the rebuild put the blocks back where they
-    came from rather than in a layout of its own invention.
-
-    Built with `upsert_section` — the SAME splice every command already writes a section
-    through — rather than a bespoke one for this backend."""
-    span = hybrid_tasks_span(text)
-    if span is None:
-        return text
-    start, end = span
-    lines = text.splitlines(keepends=True)
-    drop: set[int] = set()
-    for task in parse_tasks(text):
-        drop.update(range(task["lineno"], task["blockEndLineno"]))
-    kept = [ln for i, ln in enumerate(lines[start:end], start=start) if i not in drop]
-    sections = parse_sections(body_after_frontmatter(text))
-    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks",
-                                 lines[start - 1] + "".join(kept))
-    return new_text
+    `eol` describes THE CUT THAT PRECEDES THIS CHUNK, not the one after it — that is why the
+    flag can live on the continuation comment and the body marker needs no second field. The
+    rebuild reads it as "the part before me ended at a line boundary", which is what lets it
+    restore a newline the store may have trimmed off the end of a body without ever inventing
+    one at a cut that landed mid-line."""
+    return f"<!-- quenching-spec-part: {index}/{total} eol={1 if eol else 0} -->\n{chunk}"
 
 
-def hybrid_task_anchors(text: str) -> dict[int, int]:
-    """`{task index: how many non-task lines of `## Tasks` precede its block}`.
+def hybrid_unwrap_part(body: str) -> tuple[int, str, bool]:
+    """`(index, chunk, eol)` for a continuation comment, or `(0, "", False)` for a comment a
+    human wrote. Ordinary discussion on a spec issue must stay possible."""
+    body = (body or "").replace("\r\n", "\n")
+    m = HYBRID_PART_MARKER_RE.match(body)
+    if not m:
+        return 0, "", False
+    return int(m.group(1)), body[m.end():], m.group(3) == "1"
 
-    THE ANCHOR IS WHAT MAKES THE ROUND TRIP AN IDENTITY rather than a re-layout. The rebuild
-    is handed a shell and a pile of blocks; `section` alone would say which group a block
-    belongs to but not where inside it, and it cannot say anything at all about the blank
-    lines a document happens to use between its tasks. Every spec in this repository writes
-    its tasks adjacent inside a group and separated by a blank line between groups — a rebuild
-    that normalised instead of restoring would change every one of them, and the equality
-    `spec-backend.md` rests on is byte-for-byte.
 
-    Counted against the SHELL's kept lines, which is the coordinate system the rebuild
-    actually walks. `hybrid_tasks_shell` and this function drop the same spans by
-    construction: both ask `parse_tasks` and nothing else."""
-    span = hybrid_tasks_span(text)
-    if span is None:
-        return {}
-    start, end = span
-    tasks = parse_tasks(text)
-    drop: set[int] = set()
-    for task in tasks:
-        drop.update(range(task["lineno"], task["blockEndLineno"]))
-    kept_before = {}
-    seen = 0
-    for i in range(start, end):
-        kept_before[i] = seen
-        if i not in drop:
-            seen += 1
-    return {t["index"]: kept_before.get(t["lineno"], seen) for t in tasks}
+def hybrid_split(text: str, limit: int | None) -> list[tuple[str, bool]]:
+    """The document as `(chunk, preceding-cut-was-at-a-line-boundary)` pairs, each within
+    `limit`. The first pair's flag is always False: nothing precedes it.
+
+    ONE PART IS THE NORMAL CASE and the only one most repositories will ever take: `limit` is
+    None for a store with no published body ceiling, and a document under the ceiling comes back
+    as a single pair whatever the store. Measured on this repository's 69 specs on 2026-08-03,
+    two exceed GitHub's 65,536 — one of them an ACTIVE plan, not an archived one — so the
+    alternative to spilling is refusing to store a spec somebody is building.
+
+    Cuts are made at line boundaries, falling back to a mid-line cut only for the pathological
+    single line longer than a whole body. That fallback exists so the loop cannot fail to make
+    progress; nothing in this repository takes it."""
+    if limit is None or len(text) <= limit:
+        return [(text, False)]
+    chunks: list[tuple[str, bool]] = []
+    rest = text
+    pending_eol = False
+    while len(rest) > limit:
+        # `limit` and not `limit + 1`: the slice below keeps the newline it cuts on, so a
+        # boundary found AT `limit` would produce a chunk one character over the very ceiling
+        # this loop exists to respect.
+        cut = rest.rfind("\n", 0, limit)
+        if cut <= 0:
+            chunks.append((rest[:limit], pending_eol))
+            rest, pending_eol = rest[limit:], False
+            continue
+        chunks.append((rest[:cut + 1], pending_eol))
+        rest, pending_eol = rest[cut + 1:], True
+    chunks.append((rest, pending_eol))
+    return chunks
+
+
+def hybrid_join(chunks: list[tuple[str, bool]]) -> str:
+    """The document back from its parts.
+
+    A chunk whose flag says the cut before it was a line boundary nudges its PREDECESSOR to end
+    in a newline. `hybrid_split` slices verbatim and every such predecessor already ends that
+    way; the nudge is there because an issue tracker is free to trim trailing whitespace off a
+    body it stores, and a chunk that came back one newline short would weld itself to the line
+    after it. A cut made MID-line is never nudged, because the newline would be this function's
+    invention rather than the document's."""
+    out: list[str] = []
+    for chunk, eol in chunks:
+        if out and eol and not out[-1].endswith("\n"):
+            out[-1] += "\n"
+        out.append(chunk)
+    return "".join(out)
 
 
 # The two ceilings a tracker imposes on the fields this serialisation writes. Named here,
@@ -2069,6 +2093,12 @@ def hybrid_task_anchors(text: str) -> dict[int, int]:
 # comparable published limit, so this ceiling is enforced only where it is known to exist.
 HYBRID_TITLE_MAX = 255
 GH_BODY_MAX = 65_536
+
+# What one CHUNK of a document may hold, as opposed to what GitHub will accept. The margin
+# covers the marker line a chunk is wrapped in and leaves room for a longer one later; a
+# chunk sized to the ceiling itself would put the wrapped body one marker over it, which is
+# the off-by-a-header every "just use the limit" split makes once.
+GH_PART_MAX = GH_BODY_MAX - 1_024
 
 
 def hybrid_short_title(text: str) -> str:
@@ -2094,123 +2124,6 @@ def hybrid_short_title(text: str) -> str:
     return cut.rstrip() + "…"
 
 
-def hybrid_task_key(task: dict) -> str:
-    """The identity a task keeps across writes, so `write_spec` updates a sub-issue instead
-    of retiring one and minting a new one for the same task.
-
-    The explicit `id` (`4.1`, `4.2`, …) when the document carries one — it is the identity
-    every OTHER surface already resolves a task by (`specs.py task <id>`, `_find_task`).
-    Positional `#<index>` is the fallback for a task with none, and it is honest about its
-    own weakness: reordering an id-less task changes its index and this backend reads that
-    as a different task, closing the old sub-issue and opening a new one. Every task in this
-    repository's own specs carries an explicit id; an id-less spec pays this cost, and only
-    on GitHub."""
-    return task["id"] or f"#{task['index']}"
-
-
-def hybrid_task_block(text: str, task: dict) -> str:
-    """One task's literal source — the checkbox line plus every indented metadata line
-    under it — sliced verbatim from `text` and never re-rendered from the parsed fields.
-
-    This is why a sub-issue needs no separate encoding for `checked` or `blocked`: the
-    slice already contains `- [x]` or `- [!] … — blocked: …`, and reading it back through
-    `parse_tasks` — the SAME shared derivation every backend uses — recovers the state.
-    A backend that instead re-serialised state from `task["checked"]` would be deriving
-    its own second notion of what a checkbox line looks like."""
-    lines = text.splitlines(keepends=True)
-    return "".join(lines[task["lineno"]:task["blockEndLineno"]])
-
-
-HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)"
-                               r"(?:\s+anchor=(\d+))?\s*-->[ \t]*\r?\n")
-
-
-def hybrid_wrap_task(key: str, index: int, block: str, anchor: int = 0) -> str:
-    return f"<!-- quenching-task: key={key} index={index} anchor={anchor} -->\n{block}"
-
-
-def hybrid_unwrap_task(body: str) -> tuple[str, int, str, int]:
-    """`(key, index, block, anchor)` for a task sub-issue, or `("", -1, "", 0)` for anything
-    else.
-
-    `index` is what lets `read_spec` put the tasks back in DOCUMENT order rather than
-    creation order or GitHub's own listing order, which is neither: sub-issues can be
-    reprioritised in the UI, and a rebuild that trusted that order would silently reorder
-    the plan every time it was read back.
-
-    `anchor` is where in the shell's `## Tasks` the block goes back — see
-    `hybrid_task_anchors`. It is OPTIONAL in the pattern, and a marker without one reads as
-    0, which puts every block at the top of the section: that is a sub-issue written before
-    this key existed, whose parent shell was emptied of its groups anyway, so 0 reproduces
-    the layout that sub-issue was written for rather than inventing a worse one. Nothing in
-    the world is known to be in that state — the one issue the `github` end-to-end ever
-    created was removed at the end of it — so the fallback is discipline, not a migration."""
-    body = (body or "").replace("\r\n", "\n")
-    m = HYBRID_TASK_MARKER_RE.match(body)
-    if not m:
-        return "", -1, "", 0
-    return m.group(1), int(m.group(2)), body[m.end():], int(m.group(3) or 0)
-
-
-def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
-    """A task's sub-issue after the document stops carrying it.
-
-    Closing the sub-issue alone is NOT enough: `checked` already closes one for a task that
-    is done and still very much in the document, so "closed" cannot also mean "gone" without
-    the two colliding — a removed-but-once-checked task would come back from the very next
-    read, resurrected by its own leftover marker. Retiring the marker (this function) is
-    what makes `hybrid_unwrap_task` skip it: the text stays, for a human's audit trail, but it
-    no longer parses as `quenching-task:` — deliberately a PREFIX MISMATCH and not a new
-    marker `hybrid_unwrap_task` also has to know about, so one regex stays the single place a
-    body is read as an active task."""
-    return f"<!-- quenching-task-removed: key={key} index={index} -->\n{block}"
-
-
-def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[tuple[int, str]]) -> str:
-    """Splice the reconstructed `## Tasks` body back into the shell the blocks were lifted
-    out of — each `(anchor, block)` returned to the position it came from.
-
-    IT USED TO CONCATENATE, with a blank line between blocks, into a section the shell had
-    emptied. That produced a well-formed document and a WRONG one: every `### N.` group
-    heading was already gone by then, and the blank lines were this function's invention
-    rather than the document's. Placing by anchor is what makes the round trip an identity —
-    the property `spec-backend.md` states as the one obligation an external backend has, and
-    which `backend_equivalence_failures` checks byte for byte between two backends.
-
-    An anchor is a count of the shell's kept lines (see `hybrid_task_anchors`), so the walk
-    below is the inverse of the lift: before emitting kept line *k*, emit every block
-    anchored at *k*. Blocks are already in document order, which is what orders two tasks
-    sharing an anchor — adjacent tasks under the same heading, the normal case.
-
-    A block is nudged to end in a newline unless it ends the section. `hybrid_task_block`
-    slices verbatim and every block but a document's last one already ends that way; the
-    nudge exists because an issue tracker is free to trim trailing whitespace off a body it
-    stores, and a block that came back one newline short would weld itself to the line after
-    it."""
-    if not task_bodies:
-        return shell_text
-    span = hybrid_tasks_span(shell_text)
-    if span is None:
-        return shell_text
-    start, end = span
-    lines = shell_text.splitlines(keepends=True)
-    kept = lines[start:end]
-    placed: list[str] = []
-    pending = list(task_bodies)
-    for k in range(len(kept) + 1):
-        while pending and pending[0][0] <= k:
-            placed.append(pending.pop(0)[1])
-        if k < len(kept):
-            placed.append(kept[k])
-    placed.extend(block for _, block in pending)
-    body = "".join(b if b.endswith("\n") or i == len(placed) - 1 else b + "\n"
-                   for i, b in enumerate(placed))
-    sections = parse_sections(body_after_frontmatter(shell_text))
-    new_text, _ = upsert_section({"text": shell_text, "sections": sections}, "Tasks",
-                                 lines[start - 1] + body)
-    return new_text
-
-
 class GitHubBackend(SpecBackend):
     """Specs as GitHub issues, reached through `gh api` in a subprocess.
 
@@ -2219,22 +2132,21 @@ class GitHubBackend(SpecBackend):
     would be a second declaration of a phase the tracker already knows, and the two would
     diverge the first time somebody closed an issue from the web UI.
 
-    ONE TASK IS ONE SUB-ISSUE. Every other section stays as markdown in the parent's body
-    (the "shell" — see `hybrid_tasks_shell`), because only `## Tasks` has a native GitHub
-    counterpart with its own state and identity; a `## Design` or `## Risks` section has
-    no equivalent to move to and gains nothing by trying.
+    ONE ISSUE BODY IS THE WHOLE DOCUMENT. There are no sub-issues: the retirement and what
+    measured it are recorded at HYBRID SERIALISATION above. A document past GitHub's body
+    ceiling spills into continuation comments on its own issue, which is the only reason this
+    class ever makes a second call for one spec.
 
     It derives NOTHING. `resolve_one` picks the spec, `derive_info` produces the stages,
     gates, records and tasks, exactly as they are produced for a file on disk; `parse_tasks`
-    is the ONLY thing that ever decides a task is checked or blocked, on the shell and on a
-    sub-issue's raw block alike. This class turns issues (plus their sub-issues) into the
-    canonical document and back and does no more than that.
+    is the ONLY thing that ever decides a task is checked or blocked. This class turns issues
+    into the canonical document and back and does no more than that.
 
-    THE SEVEN FRONTMATTER RECORDS STAY IN THE SHELL, none of them a label. Multi-field
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, none of them a label. Multi-field
     records (`priority`, `branch`, `merge`, `refined`) have no honest single-string label
     form — encoding `{level, criticality, complexity, date}` into a label name would invent
     a second format only a new parser could read back, which is the backend deriving its
-    own encoding exactly where the interface forbids it. Keeping them in the shell costs
+    own encoding exactly where the interface forbids it. Keeping them in the body costs
     the records being invisible in the issue list without opening the issue — accepted,
     because `parse_frontmatter` already reads them for free and a label would not remove
     that read, only add a second, driftable copy beside it.
@@ -2242,17 +2154,17 @@ class GitHubBackend(SpecBackend):
     The listing is fetched once per process and cached, which is a local cache and NOT a
     store: it is not authoritative, nothing outside this object reads it, and every write
     drops it. It exists because the CLI asks for the listing more than once per command,
-    and each ask is a network round trip. Sub-issues are fetched only for the ONE spec a
-    command actually reads — the same "granular by construction" reasoning `## Design`
-    applies to `section`, here applied to the transport itself: `list` never pays for a
-    body no command asked to see."""
+    and each ask is a network round trip. Since the listing already carries every body,
+    `read_spec` costs NOTHING beyond it for a one-part spec — which is every spec but the
+    largest two this repository holds."""
 
     name = "github"
 
     def __init__(self, repo: str, cwd: str) -> None:
         self.repo = repo
         self.cwd = cwd
-        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, issue, shell doc
+        # descriptor, issue number, first chunk, how many parts the marker declares
+        self._rows: list[tuple[dict, int, str, int]] | None = None
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
@@ -2281,9 +2193,13 @@ class GitHubBackend(SpecBackend):
         rather than at each caller — a check per caller is the shape that leaves one out.
         Refusing beats letting GitHub answer 422: in the middle of a migration of dozens of
         specs a 422 is a validation error with no spec's name on it, while this names the
-        measured size and the ceiling and emits no call at all. The margin is real and not
-        theoretical — this repository's largest shell measured 63,686 characters on
-        2026-08-02, 1.8 KB under."""
+        measured size and the ceiling and emits no call at all.
+
+        IT IS A BACKSTOP AND NO LONGER THE POLICY. Every document write goes through
+        `hybrid_split`, which cuts to `GH_PART_MAX` before a payload is ever built, so this
+        refusal cannot fire for a spec's own text. It stays because it guards the one point
+        every write passes through, and a future caller that builds a body some other way
+        must still be unable to hand GitHub something it will answer 422 to."""
         body = payload.get("body")
         if isinstance(body, str) and len(body) > GH_BODY_MAX:
             raise BackendRefusal({
@@ -2297,7 +2213,7 @@ class GitHubBackend(SpecBackend):
                          stdin=json.dumps(payload))
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str]]:
+    def _load(self) -> list[tuple[dict, int, str, int]]:
         if self._rows is not None:
             return self._rows
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
@@ -2305,7 +2221,7 @@ class GitHubBackend(SpecBackend):
         # so a default (open-only) listing would report every archived spec as missing.
         pages = self._api("listing the repository's issues", "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
-        rows: list[tuple[dict, int, str]] = []
+        rows: list[tuple[dict, int, str, int]] = []
         for page in (pages or []):
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
@@ -2313,7 +2229,7 @@ class GitHubBackend(SpecBackend):
                     # both. A PR can never be a spec, and one that happened to carry the
                     # marker would otherwise be listed and then written over.
                     continue
-                filename, shell = hybrid_unwrap(issue.get("body") or "")
+                filename, head, parts = hybrid_unwrap(issue.get("body") or "")
                 m = SPEC_FILE_RE.match(filename)
                 if not m:
                     continue
@@ -2327,11 +2243,10 @@ class GitHubBackend(SpecBackend):
                     "path": issue.get("html_url")
                             or f"https://github.com/{self.repo}/issues/{issue.get('number')}",
                     "date": m.group(1), "slug": m.group(2),
-                    # `## Tasks`'s own body is NOT here — the shell only, deliberately: a
-                    # sub-issue fetch per listed spec would make `list` pay a per-spec
-                    # network cost for something no command asked to see. `read_spec` fetches
-                    # sub-issues for the one slug it was actually given.
-                }, int(issue.get("number") or 0), shell))
+                    # For a one-part spec — every spec but the largest — `head` IS the whole
+                    # document and this listing has already paid for it. Only a spilled one
+                    # costs `read_spec` a second call, and only for the slug it was given.
+                }, int(issue.get("number") or 0), head, parts))
         self._rows = rows
         return rows
 
@@ -2339,9 +2254,14 @@ class GitHubBackend(SpecBackend):
         self._rows = None
 
     def _issue_number(self, slug: str) -> int:
-        for descriptor, number, _ in self._load():
+        return self._issue_parts(slug)[0]
+
+    def _issue_parts(self, slug: str) -> tuple[int, int]:
+        """`(issue number, how many parts are stored)` — both from the listing already in hand,
+        so knowing whether there are stale continuation comments to clean up costs no call."""
+        for descriptor, number, _, parts in self._load():
             if descriptor["slug"] == slug:
-                return number
+                return number, parts
         raise BackendRefusal({
             "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
             "message": f"spec '{slug}' was in the listing and is not there any more — the "
@@ -2351,7 +2271,7 @@ class GitHubBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
@@ -2360,31 +2280,30 @@ class GitHubBackend(SpecBackend):
         spec, err = resolve_one(self.list_specs(), slug)
         if err:
             return None, err
-        number, shell = next((n, d) for descriptor, n, d in rows
-                             if descriptor["slug"] == slug)
-        full_text = hybrid_rebuild_tasks_section(shell, self._task_bodies(number))
+        number, head, parts = next((n, d, p) for descriptor, n, d, p in rows
+                                   if descriptor["slug"] == slug)
+        full_text = head if parts <= 1 else self._joined(number, head, parts)
         return derive_info(spec, full_text), {}
 
     def write_spec(self, info: dict, text: str) -> None:
-        number = self._issue_number(info["slug"])
+        number, had_parts = self._issue_parts(info["slug"])
+        chunks = hybrid_split(text, GH_PART_MAX)
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}",
                         {"title": hybrid_title(info["slug"], text),
-                         "body": hybrid_wrap(info["file"], hybrid_tasks_shell(text))})
-        self._sync_tasks(number, text)
+                         "body": hybrid_wrap(info["file"], chunks[0][0], len(chunks))})
+        self._sync_parts(number, chunks, had_parts)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
+        chunks = hybrid_split(text, GH_PART_MAX)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
                                 {"title": hybrid_title(m.group(2) if m else filename, text),
-                                 "body": hybrid_wrap(filename, hybrid_tasks_shell(text))})
+                                 "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
-        # `capture_form` never stamps a `## Tasks` body, so this is a no-op for every spec
-        # `new` creates and only matters for the migration path that hands `create_spec` a
-        # document that already carries tasks.
-        self._sync_tasks(number, text)
+        self._sync_parts(number, chunks)
         if phase == "archive":
             # Created open and then closed, because "closed" is not a state an issue can be
             # born in. Two calls for a case `new` never takes — only a migration does.
@@ -2403,69 +2322,81 @@ class GitHubBackend(SpecBackend):
         return self._write_api(f"setting issue #{number} to {state}", "PATCH",
                                f"repos/{self.repo}/issues/{number}", {"state": state})
 
-    # -- tasks as sub-issues --------------------------------------------------- #
-    def _task_bodies(self, parent_number: int) -> list[str]:
-        """Every task sub-issue's raw body, in DOCUMENT order — ready for
-        `hybrid_rebuild_tasks_section`, which only concatenates."""
-        subs = self._api(f"listing sub-issues of #{parent_number}",
-                         f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []
-        marked = []
-        for sub in subs:
-            key, index, block, anchor = hybrid_unwrap_task(sub.get("body") or "")
-            if key:      # an ordinary sub-issue a human added is not a task line
-                marked.append((index, anchor, block))
-        marked.sort(key=lambda row: row[0])
-        return [(anchor, block) for _, anchor, block in marked]
+    # -- the continuation comments a spilled document uses --------------------- #
+    def _comments(self, number: int) -> list[dict]:
+        return self._api(f"listing comments on #{number}",
+                         "--paginate", "--slurp",
+                         f"repos/{self.repo}/issues/{number}/comments?per_page=100") or []
 
-    def _sync_tasks(self, parent_number: int, text: str) -> None:
-        """Make the parent's sub-issues match `text`'s `## Tasks` exactly: one sub-issue per
-        task, matched by `hybrid_task_key` so an update never mints a duplicate, and a task the
-        document no longer carries is CLOSED AND its marker retired — a normal `gh` token
-        cannot delete an issue, so closing is the closest a tracker gets to "no longer
-        active" (the same loss `files` accepts: a task removed from a file is simply gone
-        from the next `git log`). The marker must go too, and not just the state: `checked`
-        already means "closed" for a task very much still in the document, so closing alone
-        cannot ALSO mean "removed" without the two meanings colliding — a done-then-removed
-        task would resurrect itself on the next `read_spec`, which is exactly the bug this
-        two-part retirement exists to prevent."""
-        tasks = parse_tasks(text)
-        existing: dict[str, dict] = {}
-        for sub in self._api(f"listing sub-issues of #{parent_number}",
-                             f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []:
-            key, _, _, _ = hybrid_unwrap_task(sub.get("body") or "")
-            if key:
-                existing[key] = sub
-        anchors = hybrid_task_anchors(text)
-        seen: set[str] = set()
-        for t in tasks:
-            key = hybrid_task_key(t)
-            seen.add(key)
-            block = hybrid_task_block(text, t)
-            payload = {"title": hybrid_short_title(t["text"]),
-                       "body": hybrid_wrap_task(key, t["index"], block,
-                                                anchors.get(t["index"], 0)),
-                       "state": "closed" if t["checked"] else "open"}
-            if key in existing:
-                num = existing[key]["number"]
-                self._write_api(f"updating sub-issue #{num}", "PATCH",
-                                f"repos/{self.repo}/issues/{num}", payload)
+    def _part_comments(self, number: int) -> list[tuple[int, dict]]:
+        """`(index, comment)` for this issue's continuation comments, in part order.
+
+        Ordinary discussion on a spec issue stays possible and is skipped here, the same way
+        `_load` skips an issue without the spec marker: a store that assumed every comment was
+        its own would eat a human's note the first time somebody left one."""
+        found: list[tuple[int, dict]] = []
+        for page in self._comments(number):
+            for comment in (page if isinstance(page, list) else [page]):
+                index, _, _ = hybrid_unwrap_part((comment or {}).get("body") or "")
+                if index:
+                    found.append((index, comment))
+        found.sort(key=lambda row: row[0])
+        return found
+
+    def _joined(self, number: int, head: str, parts: int) -> str:
+        """The whole document for a spilled spec — one extra call, made only when the marker
+        on the body says there is more.
+
+        A part the marker promised and the comments do not hold is a REFUSAL, not a shorter
+        document: silently returning the head would hand every downstream command a spec whose
+        `## Tasks` simply stops, and the next write would then persist that truncation as the
+        new truth."""
+        chunks = [(head, False)]      # nothing precedes the head, so its flag is unused
+        for _, comment in self._part_comments(number):
+            _, chunk, eol = hybrid_unwrap_part(comment.get("body") or "")
+            chunks.append((chunk, eol))
+        if len(chunks) != parts:
+            raise BackendRefusal({
+                "code": "sp-gh-parts-missing", "exit": 2, "issue": number,
+                "found": len(chunks), "declared": parts,
+                "message": f"issue #{number} declares {parts} document parts and "
+                           f"{len(chunks)} are present — a continuation comment was deleted; "
+                           f"nothing was read and nothing was written",
+            })
+        return hybrid_join(chunks)
+
+    def _sync_parts(self, number: int, chunks: list[tuple[str, bool]],
+                    had_parts: int = 1) -> None:
+        """Make the issue's continuation comments match `chunks[1:]` exactly.
+
+        COSTS NOTHING FOR A ONE-PART SPEC THAT WAS ALREADY ONE PART, which is every write this
+        repository will make but two: `chunks` is in hand and `had_parts` comes from the listing
+        already fetched, so the common case returns before any call is made.
+
+        `had_parts` is why the early return is safe. A document that USED to spill and no longer
+        does still has stale comments to delete, and a check that only looked at the new part
+        count would leave them there to be joined back on the next read — a truncation that
+        would then be persisted as the truth by the write after it.
+
+        A comment the document no longer needs is DELETED, not retired: unlike an issue, a
+        comment really can be deleted with an ordinary token, so there is no leftover to skip
+        on the next read and no second meaning for a marker to carry."""
+        want = chunks[1:]
+        if not want and had_parts <= 1:
+            return
+        existing = self._part_comments(number)
+        for position, (chunk, eol) in enumerate(want, start=2):
+            body = hybrid_wrap_part(position, len(chunks), chunk, eol)
+            if position - 2 < len(existing):
+                cid = existing[position - 2][1]["id"]
+                self._write_api(f"updating continuation comment {cid} on #{number}", "PATCH",
+                                f"repos/{self.repo}/issues/comments/{cid}", {"body": body})
             else:
-                sub_issue = self._write_api("creating a sub-issue", "POST",
-                                            f"repos/{self.repo}/issues", payload)
-                # Creating an issue does not make it a CHILD of another — that relationship
-                # is a second call, keyed by the sub-issue's own `id` (not its `number`,
-                # which is the per-repo display number the first call already returned).
-                self._write_api(f"linking sub-issue #{sub_issue['number']}", "POST",
-                                f"repos/{self.repo}/issues/{parent_number}/sub_issues",
-                                {"sub_issue_id": sub_issue["id"]})
-        for key, sub in existing.items():
-            if key in seen:
-                continue
-            _, index, block, _ = hybrid_unwrap_task(sub.get("body") or "")
-            self._write_api(f"retiring orphaned sub-issue #{sub['number']}", "PATCH",
-                            f"repos/{self.repo}/issues/{sub['number']}",
-                            {"state": "closed",
-                             "body": hybrid_wrap_task_removed(key, index, block)})
+                self._write_api(f"adding a continuation comment to #{number}", "POST",
+                                f"repos/{self.repo}/issues/{number}/comments", {"body": body})
+        for _, comment in existing[len(want):]:
+            self._api(f"deleting a stale continuation comment on #{number}",
+                      "-X", "DELETE", f"repos/{self.repo}/issues/comments/{comment['id']}")
 
 
 def hybrid_title(slug: str, text: str) -> str:
@@ -2544,10 +2475,15 @@ def gh_refusal_failures() -> list[str]:
     for label, body in (("as written", hybrid_wrap("2026-01-01-alpha.md", doc)),
                         ("as GitHub returns it",
                          hybrid_wrap("2026-01-01-alpha.md", doc).replace("\n", "\r\n"))):
-        name, back = hybrid_unwrap(body)
-        if (name, back) != ("2026-01-01-alpha.md", doc):
-            failures.append(f"marker round trip {label}: got {(name, back)!r}")
-    if hybrid_unwrap("An ordinary bug report.\n") != ("", ""):
+        name, back, parts = hybrid_unwrap(body)
+        if (name, back, parts) != ("2026-01-01-alpha.md", doc, 1):
+            failures.append(f"marker round trip {label}: got {(name, back, parts)!r}")
+    # A marker written WITHOUT `parts=` must read as one part, because that is the form every
+    # spec but a spilled one is stored in and the form every issue already in a repository
+    # carries. A reader that answered 0 here would treat the whole corpus as truncated.
+    if hybrid_unwrap("<!-- quenching-spec: x.md -->\n" + doc)[2] != 1:
+        failures.append("a marker with no `parts=` did not read as a single-part document")
+    if hybrid_unwrap("An ordinary bug report.\n") != ("", "", 0):
         failures.append("an issue with no marker was read as a spec")
     return failures
 
@@ -2596,22 +2532,27 @@ def gh_body_ceiling_failures() -> list[str]:
 
 
 def hybrid_serialization_failures() -> list[str]:
-    """The claim the hybrid serialisation rests on: a task's checked/blocked state, its
-    text and its metadata survive shell → sub-issue → shell exactly, with `parse_tasks` —
-    the one shared derivation — doing the reading on both ends.
+    """The one obligation `spec-backend.md` puts on an external backend: it reassembles the
+    canonical document on read, BYTE FOR BYTE.
 
-    AND THE DOCUMENT COMES BACK BYTE FOR BYTE. That is the stronger claim, and it is the one
-    `spec-backend.md` actually makes of an external backend ("reassembles the canonical
-    document on read"). The fixture below is grouped under `### N.` headings and carries a
-    line of prose inside `## Tasks`, because a fixture without them proves nothing about the
-    case that was broken: the shell used to empty the whole section, the rebuild used to
-    concatenate, and 47 of this repository's 66 specs came back a structure short with no
-    error anywhere. A check for "the headings are still there" would pass with them
-    reordered and the prose gone; equality is the only assertion that cannot.
+    It used to be a hard claim, because `## Tasks` was stored apart from the rest and the
+    document had to be rebuilt from an anchored pile of blocks. With the whole document in one
+    body the claim is nearly free — which is most of why the mapping was retired — and what is
+    left to prove is the part that is still real:
 
-    Self-contained: no network, no `gh`. Simulates CRLF storage the same way the marker
-    round trip above does, because a check that used clean LF would not catch a backend
-    that broke on what GitHub actually returns."""
+    - a document under the ceiling is ONE part, stored and returned unchanged;
+    - a document over it splits, and the parts JOIN BACK to exactly what went in;
+    - both survive the CRLF a tracker really stores bodies with, applied per part, because that
+      is how the parts come back — separately, each normalised on its own;
+    - `parse_tasks` reads the same tasks out the other end, since that shared derivation is the
+      only thing that ever decides a task is checked or blocked.
+
+    The fixture stays grouped under `### N.` headings with a line of prose inside `## Tasks`. It
+    was written for the loss that motivated it — the shell used to empty that section, and 47 of
+    this repository's 66 specs came back a structure short with no error anywhere — and it stays
+    because a split is still free to cut through a group heading.
+
+    Self-contained: no network, no `gh`."""
     doc = ("---\ntitle: Alpha\nverification: per-task\n---\n\n"
           "## Problem\n\nAlgo.\n\n"
           "## Tasks\n\n"
@@ -2623,47 +2564,62 @@ def hybrid_serialization_failures() -> list[str]:
           "- [!] 2.1 terceira — blocked: esperando review\n\n"
           "- [ ] [P] quarta sem id\n\n"
           "## Outcome\n\n")
-    tasks = parse_tasks(doc)
-    anchors = hybrid_task_anchors(doc)
-    shell = hybrid_tasks_shell(doc)
     failures: list[str] = []
-    if "### 1. Primeiro grupo" not in shell or "### 2. Segundo grupo" not in shell:
-        failures.append("hybrid_tasks_shell dropped a `### N.` group heading — the rebuild "
-                        "has nothing to put it back from")
-    if "1.1 primeira" in shell or "1.2 segunda" in shell:
-        failures.append("hybrid_tasks_shell left a checkbox behind — sub-issues would duplicate it")
-    if "## Outcome" not in shell or "## Problem" not in shell:
-        failures.append("hybrid_tasks_shell dropped a section other than Tasks")
+    tasks = parse_tasks(doc)
 
-    keys = [hybrid_task_key(t) for t in tasks]
-    if keys != ["1.1", "1.2", "2.1", "#4"]:
-        failures.append(f"hybrid_task_key: got {keys!r}, expected explicit ids and one "
-                        f"positional fallback for the task with none")
-    if len(set(keys)) != len(keys):
-        failures.append(f"hybrid_task_key produced a collision: {keys!r}")
+    def store(chunks: list[tuple[str, bool]]) -> str:
+        """What comes back after a store-and-reload, with each part CRLF'd on its own."""
+        wrapped = [hybrid_wrap("2026-01-01-alpha.md", chunks[0][0], len(chunks))] + [
+            hybrid_wrap_part(i, len(chunks), c, eol)
+            for i, (c, eol) in enumerate(chunks[1:], start=2)]
+        stored = [w.replace("\n", "\r\n") for w in wrapped]
+        _, head, parts = hybrid_unwrap(stored[0])
+        if parts != len(chunks):
+            failures.append(f"the marker declared {parts} parts for a {len(chunks)}-part "
+                            f"document — a reader would stop early or ask for one too many")
+        back = [(head, False)]
+        for body in stored[1:]:
+            index, chunk, eol = hybrid_unwrap_part(body)
+            if not index:
+                failures.append("a continuation comment did not read back as one")
+            back.append((chunk, eol))
+        return hybrid_join(back)
 
-    # Wrap each task's raw block as `_sync_tasks` would, store it through a CRLF round
-    # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
-    # a real sub-issue list.
-    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t),
-                               anchors.get(t["index"], 0)).replace("\n", "\r\n")
-             for k, t in zip(keys, tasks)]
-    unwrapped = sorted((hybrid_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
-    for key, want_index, (got_key, got_index, _, _) in zip(keys, range(1, 5), unwrapped):
-        if (got_key, got_index) != (key, want_index):
-            failures.append(f"task marker round trip: got key={got_key!r} "
-                            f"index={got_index!r}, wanted key={key!r} index={want_index!r}")
+    # ONE PART — the case every spec in this repository but two takes.
+    whole = hybrid_split(doc, GH_PART_MAX)
+    if len(whole) != 1:
+        failures.append(f"a {len(doc)}-character document split into {len(whole)} parts under "
+                        f"a {GH_PART_MAX} ceiling")
+    if store(whole) != doc:
+        failures.append("a one-part document did not come back byte for byte — the one "
+                        "obligation spec-backend.md puts on an external backend")
 
-    rebuilt = hybrid_rebuild_tasks_section(shell,
-                                           [(anchor, block)
-                                            for _, _, block, anchor in unwrapped])
-    if rebuilt != doc:
-        failures.append("shell -> sub-issue -> shell did not return the document byte for "
-                        "byte — the one obligation spec-backend.md puts on an external "
-                        "backend")
-    tasks2 = parse_tasks(rebuilt)
+    # MANY PARTS, forced with a ceiling small enough that this fixture spills. A real spill is
+    # a 70 KB document and would make the check unreadable; what a split has to survive is the
+    # same either way, and a small ceiling exercises MORE boundaries per character, including
+    # cuts that land inside a group and inside a task's own metadata block.
+    spilled = hybrid_split(doc, 90)
+    if len(spilled) < 3:
+        failures.append(f"a 90-character ceiling produced {len(spilled)} parts — the "
+                        f"multi-part path is not being exercised")
+    if any(len(c) > 90 for c, _ in spilled):
+        failures.append("a chunk came back over the ceiling it was split to")
+    if store(spilled) != doc:
+        failures.append("a spilled document did not join back byte for byte")
+
+    # The pathological single line longer than a whole part. It must not hang and it must not
+    # lose a byte; nothing in this repository takes this branch, and a split that could not
+    # make progress would take it as an infinite loop rather than as an error.
+    long_line = "x" * 250 + "\n"
+    cut = hybrid_split(long_line, 90)
+    if hybrid_join(cut) != long_line:
+        failures.append("a line longer than one part did not survive the split")
+
+    # A part joined back must reparse to the same tasks — the shared derivation is the only
+    # thing that reads state, so this is what "identical" means to every caller downstream.
+    tasks2 = parse_tasks(store(spilled))
     if len(tasks2) != len(tasks):
-        failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
+        failures.append(f"a rebuilt document parsed {len(tasks2)} tasks from {len(tasks)}")
     else:
         for before, after in zip(tasks, tasks2):
             b = {k: before[k] for k in HYBRID_TASK_SEMANTIC_KEYS}
@@ -2672,9 +2628,15 @@ def hybrid_serialization_failures() -> list[str]:
                 failures.append(f"task '{b['id'] or before['index']}' drifted: "
                                 f"before={b!r} after={a!r}")
 
-    # THE TITLE IS CUT, THE BLOCK IS NOT. The tracker caps a title; nothing caps the body,
-    # and the body is the only half `parse_tasks` ever reads. This repository's own longest
-    # task line is 946 characters, so the cut is exercised on a length it really carries.
+    # A comment a human left on a spec issue is not a document part. The reverse of the marker
+    # rule one level up: a repo's issues belong to its humans, and a backend that read every
+    # comment as its own storage would splice a note into the middle of the spec.
+    if hybrid_unwrap_part("Concordo, mas a task 2.1 depende da 1.2.\n")[0]:
+        failures.append("an ordinary comment was read as a continuation part")
+
+    # THE TITLE IS CUT, THE DOCUMENT IS NOT. The tracker caps a title; the body is the only
+    # half `parse_tasks` ever reads. This repository's own longest task line is 946 characters,
+    # so the cut is exercised on a length it really carries.
     long_text = "9.9 " + " ".join(f"palavra{i:03d}" for i in range(120))
     short = hybrid_short_title(long_text)
     if len(short) > HYBRID_TITLE_MAX:
@@ -2684,16 +2646,6 @@ def hybrid_serialization_failures() -> list[str]:
         failures.append("a cut title is not a prefix of the line it came from, marked as cut")
     if hybrid_short_title("9.9 curta") != "9.9 curta":
         failures.append("hybrid_short_title touched a title that already fitted")
-
-    # A retired (removed-from-document) task must NEVER come back on the next rebuild —
-    # this is the exact shape of a bug caught while writing this backend: closing a
-    # checked task's sub-issue without also retiring its marker let it resurrect itself,
-    # because `checked` and `removed` both wanted to mean "closed".
-    checked_block = hybrid_task_block(doc, tasks[1])   # "1.2 segunda", never checked in `doc`
-    removed = hybrid_wrap_task_removed("1.2", 2, checked_block).replace("\n", "\r\n")
-    if hybrid_unwrap_task(removed)[0]:
-        failures.append("a retired task's marker still parses as an active one — it would "
-                        "resurrect on the next read_spec")
     return failures
 
 
@@ -3031,7 +2983,7 @@ class AzureBoardsBackend(SpecBackend):
                for r in found]
         rows: list[tuple[dict, int, str]] = []
         for item in self._show_many([i for i in ids if i]):
-            filename, shell = hybrid_unwrap(self._field(item, "System.Description"))
+            filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
             m = SPEC_FILE_RE.match(filename)
             if not m:
                 # An ordinary work item a human created. The marker is what tells a spec
@@ -3045,7 +2997,7 @@ class AzureBoardsBackend(SpecBackend):
                 "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
                         f"{item.get('id')}",
                 "date": m.group(1), "slug": m.group(2),
-            }, int(item.get("id") or 0), shell))
+            }, int(item.get("id") or 0), doc))
         self._rows = rows
         return rows
 
@@ -3081,17 +3033,20 @@ class AzureBoardsBackend(SpecBackend):
         spec, err = resolve_one(self.list_specs(), slug)
         if err:
             return None, err
-        item_id, shell = next((i, d) for descriptor, i, d in rows
-                              if descriptor["slug"] == slug)
-        full_text = hybrid_rebuild_tasks_section(shell, self._task_bodies(item_id))
+        _, full_text = next((i, d) for descriptor, i, d in rows
+                            if descriptor["slug"] == slug)
         return derive_info(spec, full_text), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
+        # `System.Description` has no published ceiling, so `hybrid_split` is handed None
+        # and answers with the one chunk that is the whole document. The call is made anyway,
+        # rather than skipped, so this backend goes through the SAME serialisation as the
+        # proved one instead of a shorter path of its own that nothing checks.
+        chunks = hybrid_split(text, None)
         self._update(item_id, title=hybrid_title(info["slug"], text),
-                     description=hybrid_wrap(info["file"], hybrid_tasks_shell(text)))
-        self._sync_tasks(item_id, text)
+                     description=hybrid_wrap(info["file"], chunks[0][0]))
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -3100,10 +3055,10 @@ class AzureBoardsBackend(SpecBackend):
         item = self._az("creating a work item", "work-item", "create", "--project",
                         self.project, "--type", AZ_SPEC_TYPE,
                         "--title", hybrid_title(m.group(2) if m else filename, text),
-                        "--description", hybrid_wrap(filename, hybrid_tasks_shell(text)),
+                        "--description", hybrid_wrap(filename,
+                                                     hybrid_split(text, None)[0][0]),
                         "--state", self.states[phase])
         item_id = int((item or {}).get("id") or 0)
-        self._sync_tasks(item_id, text)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
@@ -3120,84 +3075,18 @@ class AzureBoardsBackend(SpecBackend):
             argv += [f"--{key}", value]
         return self._az(f"updating work item {item_id}", *argv)
 
-    # -- tasks as child work items --------------------------------------------- #
-    def _children(self, parent_id: int) -> list[dict]:
-        """Every child work item of the parent, as full items.
 
-        Relations come back on the parent under `--expand relations`, as URLs whose last
-        segment is the child's id — the CLI has no "list children" verb."""
-        parent = self._az(f"reading work item {parent_id}", "work-item", "show",
-                          "--id", str(parent_id), "--expand", "relations") or {}
-        ids = []
-        for rel in (parent.get("relations") or []):
-            if str(rel.get("rel")) == "System.LinkTypes.Hierarchy-Forward":
-                tail = str(rel.get("url") or "").rstrip("/").rsplit("/", 1)[-1]
-                if tail.isdigit():
-                    ids.append(int(tail))
-        return self._show_many(ids)
-
-    def _task_bodies(self, parent_id: int) -> list[tuple[int, str]]:
-        """Every task child's `(anchor, raw block)`, in DOCUMENT order — ready for
-        `hybrid_rebuild_tasks_section`, which places each block by its anchor."""
-        marked = []
-        for child in self._children(parent_id):
-            key, index, block, anchor = hybrid_unwrap_task(
-                self._field(child, "System.Description"))
-            if key:      # an ordinary child a human added is not a task line
-                marked.append((index, anchor, block))
-        marked.sort(key=lambda row: row[0])
-        return [(anchor, block) for _, anchor, block in marked]
-
-    def _sync_tasks(self, parent_id: int, text: str) -> None:
-        """Make the parent's children match `text`'s `## Tasks` exactly — the same contract
-        `GitHubBackend._sync_tasks` implements, and the same two-part retirement: a task the
-        document no longer carries is moved to the archive state AND has its marker retired,
-        because `checked` already means "in the archive state" for a task still very much in
-        the document, and one signal cannot mean both without a done-then-removed task
-        resurrecting itself on the next read."""
-        tasks = parse_tasks(text)
-        anchors = hybrid_task_anchors(text)
-        existing: dict[str, dict] = {}
-        for child in self._children(parent_id):
-            key, _, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
-            if key:
-                existing[key] = child
-        seen: set[str] = set()
-        for t in tasks:
-            key = hybrid_task_key(t)
-            seen.add(key)
-            block = hybrid_task_block(text, t)
-            state = self.states["archive" if t["checked"] else "plans"]
-            description = hybrid_wrap_task(key, t["index"], block,
-                                           anchors.get(t["index"], 0))
-            title = hybrid_short_title(t["text"])
-            if key in existing:
-                self._update(int(existing[key]["id"]), title=title,
-                             description=description, state=state)
-            else:
-                child = self._az("creating a child work item", "work-item", "create",
-                                 "--project", self.project, "--type", AZ_TASK_TYPE,
-                                 "--title", title, "--description", description,
-                                 "--state", state)
-                self._az(f"linking child work item {child.get('id')}", "work-item",
-                         "relation", "add", "--id", str(child.get("id")),
-                         "--relation-type", "parent", "--target-id", str(parent_id))
-        for key, child in existing.items():
-            if key in seen:
-                continue
-            _, index, block, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
-            self._update(int(child["id"]), state=self.states["archive"],
-                         description=hybrid_wrap_task_removed(key, index, block))
-
-
-# The work item types this backend creates. `Issue` and `Task` exist in the Basic and Agile
-# processes; Scrum and CMMI name their equivalents differently, which is the same
-# process-dependence `azureStates` exists for. Left as constants rather than a fifth config
-# key until a real Azure DevOps project says otherwise — `## Out of Scope` accepts that this
-# backend ships without end-to-end proof, and inventing configuration for an unproven
-# guess is worse than one named place to change.
+# The work item type this backend creates. `Issue` exists in the Basic and Agile processes;
+# Scrum and CMMI name their equivalent differently, which is the same process-dependence
+# `azureStates` exists for. Left a constant rather than a fifth config key until a real Azure
+# DevOps project says otherwise — `## Out of Scope` accepts that this backend ships without
+# end-to-end proof, and inventing configuration for an unproven guess is worse than one named
+# place to change.
+#
+# There is no second type any more: a spec was one work item plus one CHILD PER TASK until the
+# `## Tasks`-as-children mapping was retired for the reasons at HYBRID SERIALISATION, and one
+# work item now carries the whole document.
 AZ_SPEC_TYPE = "Issue"
-AZ_TASK_TYPE = "Task"
 
 
 def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -4208,7 +4097,8 @@ def cmd_task(args, root: str) -> int:
     # THE FAILURE-REPORTING CONTRACT: this call is the one that can fail out from under a
     # tick that already looks applied to `lines`. `FilesBackend` either writes the file or
     # raises. `GitHubBackend` pushes the same edited task block into the task's own
-    # sub-issue (`_sync_tasks`, inside `write_spec`) and raises `BackendRefusal` — never swallowed
+    # `GitHubBackend` pushes the same edited document into the issue body (`write_spec`) and
+    # raises `BackendRefusal` — never swallowed
     # — the instant `gh api` fails, e.g. on a network error. `main()` is the one place that
     # exception becomes an exit code and an `ok: false` JSON body; nothing here catches it
     # and nothing here prints a success message before this line returns.
@@ -6031,15 +5921,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "named in UNPROVED_BACKENDS, never on stdout; the "
                                         "permanent half is doctor's sp-backend-unproved"))
 
-    # The hybrid serialisation's own claim: a task's checked/blocked state survives
-    # shell -> sub-issue -> shell, derived by `parse_tasks` on both ends and never by the
-    # backend's own notion of what a checkbox means.
+    # The hybrid serialisation's own claim: the canonical document comes back byte for byte,
+    # whether it fitted in one issue body or spilled into continuation comments, and it
+    # reparses to the same tasks through the one shared derivation.
     for failure in hybrid_serialization_failures():
-        findings.append(_finding("sp-gh-task-serialization-broken", "error",
-                                 f"the github task serialisation misreads a task — {failure}",
-                                 remedy="a task's raw block is stored and re-parsed by the "
-                                        "same `parse_tasks` that reads a file — nothing "
-                                        "about checked/blocked/metadata is derived twice"))
+        findings.append(_finding("sp-gh-doc-serialization-broken", "error",
+                                 f"the github document serialisation loses content — {failure}",
+                                 remedy="the whole document is stored and returned verbatim; a "
+                                        "document over the ceiling splits on line boundaries "
+                                        "and joins back with nothing added and nothing dropped"))
 
     # A document too large for an issue body refuses without making the call, so a migration
     # fails on a named spec instead of on GitHub's anonymous 422.
@@ -6225,8 +6115,8 @@ def cmd_selftest(args, root: str) -> int:
               f"each refuse with their own remedy, the unproved-backend warning says its "
               f"piece once per process on stderr and only for "
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
-              f"written, a grouped document survives shell -> sub-issue -> shell byte for "
-              f"byte with its checked/blocked state and metadata intact, an oversized body "
+              f"written, a grouped document survives store-and-reload byte for byte whether "
+              f"it fits one issue body or spills into continuation comments, an oversized body "
               f"refuses without making the call, and the embedded "
               f"schema and template match their asset files.")
     return 1 if errors else 0
@@ -6302,7 +6192,7 @@ def cmd_doctor(args, root: str) -> int:
     # human goes to ask what is wrong with this workspace rather than in the output of every
     # command. The write-time line in `announce_unproved` is the other half. A warning on
     # every operation would be noise nobody reads twice; silence would let the untested
-    # guesses (AZ_SPEC_TYPE/AZ_TASK_TYPE, the child-id URL parse) surface only when they are
+    # guesses (AZ_SPEC_TYPE, the state mapping) surface only when they are
     # already wrong in a real project. `doctor` is the middle the Open Decision asked for.
     if cfg["backend"] in UNPROVED_BACKENDS:
         findings.append(_finding("sp-backend-unproved", "warn",
@@ -6310,7 +6200,7 @@ def cmd_doctor(args, root: str) -> int:
                                  f"ships without ever having been run against a real target "
                                  f"— its writes are unproved",
                                  path=CONFIG_FILE, backend=cfg["backend"],
-                                 remedy="verify AZ_SPEC_TYPE/AZ_TASK_TYPE match this "
+                                 remedy="verify AZ_SPEC_TYPE matches this "
                                         "project's process template before relying on it, "
                                         "or declare a proven backend: "
                                         f"{', '.join(b for b in BACKENDS if b not in UNPROVED_BACKENDS)}"))
