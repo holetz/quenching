@@ -1479,24 +1479,95 @@ def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
     return out
 
 
-def resolve_one(specs: list[dict], slug: str) -> tuple[dict | None, dict]:
-    """Pick one spec descriptor out of a listing by slug.
+# How close a slug or title has to be before it resolves at all. Tuned to accept a typo and a
+# copied fragment while refusing a merely adjacent spec: `0.62` matched
+# `decide-plan-quick-skill` against `decide-sp-unrefined-severity` on this repository's own
+# listing, which is not a near miss, it is a different spec.
+FUZZY_MATCH_THRESHOLD = 0.75
 
-    Pure over the listing, so every backend resolves a slug the same way and gets the same
-    two refusals — an ambiguous slug is exit 2 whether the duplicates are two files or two
-    issues. TWO MATCHES IS A REFUSAL, never a guess."""
+
+def _norm(text: str) -> str:
+    """Case, accents and runs of whitespace folded away — the form both sides of a title
+    comparison are reduced to, so `Criação` and `criacao ` are the same string."""
+    folded = unicodedata.normalize("NFD", " ".join((text or "").split()).lower())
+    return "".join(c for c in folded if not unicodedata.combining(c))
+
+
+def resolve_one(specs: list[dict], slug: str,
+                titles: dict | None = None) -> tuple[dict | None, dict]:
+    """Pick one spec descriptor out of a listing, by slug and then by title.
+
+    Pure over the listing, so every backend resolves the same way and gets the same refusals
+    — an ambiguous slug is exit 2 whether the duplicates are two files or two issues. THE
+    TOLERANCE LIVES HERE AND NOWHERE ELSE, for that same reason.
+
+    Four rungs, tried in order and stopping at the first that answers:
+
+      1. the exact slug          the only path that costs anything today
+      2. the exact title         normalised for case, accents and whitespace
+      3. the closest slug OR title above the threshold, if exactly ONE clears it
+      4. nothing                 `sp-unknown-slug`, exit 1
+
+    TWO MATCHES IS STILL A REFUSAL at every rung — never a guess, and the refusal names the
+    candidates so the human picks. A rung-3 answer is announced: the descriptor comes back
+    carrying `resolvedBy: "approximate"` and what it matched, because a command that silently
+    acted on a spec the human did not name is worse than one that asked.
+
+    `titles` is `{slug: title}`, or a callable returning one. It is consulted ONLY after the
+    exact slug misses, so the common path never pays to build it — which is what lets the
+    `files` backend hand over a callable that opens every document."""
     matches = [s for s in specs if s["slug"] == slug]
     if len(matches) > 1:
-        return None, {
-            "code": "sp-ambiguous-slug", "exit": 2, "slug": slug,
-            "matches": [f"{m['phase']}/{m['file']}" for m in matches],
-            "message": f"slug '{slug}' matches {len(matches)} files — "
-                       f"{', '.join(m['phase'] + '/' + m['file'] for m in matches)}",
-        }
-    if not matches:
-        return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
-                      "message": f"no spec with slug '{slug}'"}
-    return matches[0], {}
+        return None, _ambiguous(slug, matches, "slug")
+    if matches:
+        return matches[0], {}
+
+    index = (titles() if callable(titles) else titles) or {}
+    want = _norm(slug)
+
+    exact = [s for s in specs if _norm(index.get(s["slug"], "")) == want]
+    if len(exact) > 1:
+        return None, _ambiguous(slug, exact, "title")
+    if exact:
+        return dict(exact[0], resolvedBy="title",
+                    resolvedFrom=index.get(exact[0]["slug"], "")), {}
+
+    scored = []
+    for s in specs:
+        ratio = max(
+            difflib.SequenceMatcher(None, want, _norm(s["slug"])).ratio(),
+            difflib.SequenceMatcher(None, want, _norm(index.get(s["slug"], ""))).ratio()
+            if index.get(s["slug"]) else 0.0)
+        if ratio >= FUZZY_MATCH_THRESHOLD:
+            scored.append((ratio, s))
+    if len(scored) > 1:
+        best = max(r for r, _ in scored)
+        tied = [s for r, s in scored if r == best]
+        # A single clear winner among several that merely cleared the bar still resolves;
+        # what refuses is a genuine tie, where picking either one would be a coin flip.
+        if len(tied) > 1:
+            return None, _ambiguous(slug, tied, "approximate")
+        return dict(tied[0], resolvedBy="approximate",
+                    resolvedFrom=index.get(tied[0]["slug"], "") or tied[0]["slug"]), {}
+    if scored:
+        s = scored[0][1]
+        return dict(s, resolvedBy="approximate",
+                    resolvedFrom=index.get(s["slug"], "") or s["slug"]), {}
+
+    return None, {"code": "sp-unknown-slug", "exit": 1, "slug": slug,
+                  "message": f"no spec with slug '{slug}'"}
+
+
+def _ambiguous(slug: str, matches: list[dict], rung: str) -> dict:
+    """The one refusal every rung of `resolve_one` shares — exit 2, with the candidates
+    named. `rung` says WHICH comparison tied, because "two specs share a slug" and "your
+    fragment is close to two titles" are fixed by different things."""
+    where = [f"{m['phase']}/{m['file']}" for m in matches]
+    return {
+        "code": "sp-ambiguous-slug", "exit": 2, "slug": slug, "matchedOn": rung,
+        "matches": where,
+        "message": f"'{slug}' matches {len(matches)} specs by {rung} — {', '.join(where)}",
+    }
 
 
 def derive_info(spec: dict, text: str) -> dict:
@@ -1531,7 +1602,10 @@ def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
 
     Returns (info, err). `err` carries a ready-to-emit refusal when the slug is unknown or
     ambiguous, so every command handles both the same way."""
-    spec, err = resolve_one(spec_files(root), slug)
+    specs = spec_files(root)
+    spec, err = resolve_one(specs, slug, lambda: {
+        s["slug"]: str(parse_frontmatter(read_text(s["path"]) or "").get("title", ""))
+        for s in specs})
     if err:
         return None, err
     return derive_info(spec, read_text(spec["path"]) or ""), {}
@@ -1659,7 +1733,8 @@ class MemoryBackend(SpecBackend):
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        spec, err = resolve_one(self.list_specs(), slug)
+        spec, err = resolve_one(self.list_specs(), slug, lambda: {
+            k: str(parse_frontmatter(d[2]).get("title", "")) for k, d in self.docs.items()})
         if err:
             return None, err
         return derive_info(spec, self.docs[spec["slug"]][2]), {}
@@ -1794,6 +1869,66 @@ def _case_move(b: "SpecBackend") -> dict:
     info, _ = b.read_spec("alpha")
     b.move_spec(info, "archive")
     return _observable(b.read_spec("alpha")[0])
+
+
+def resolution_failures() -> list[str]:
+    """The four rungs of `resolve_one`, over a fixed listing. No backend, no store.
+
+    It is asserted here rather than through a backend precisely because the tolerance is pure
+    over the listing: if it were reachable only through one store, "every backend refuses the
+    same way" would again be a claim rather than a property."""
+    listing = [
+        {"phase": "plans", "folder": "plans", "legacy": False,
+         "file": "avaliar-o-fluxo-de-criacao-de-specs.md", "path": "x",
+         "slug": "avaliar-o-fluxo-de-criacao-de-specs"},
+        {"phase": "plans", "folder": "plans", "legacy": False,
+         "file": "fechar-vazamentos-do-backend-files.md", "path": "y",
+         "slug": "fechar-vazamentos-do-backend-files"},
+    ]
+    titles = {"avaliar-o-fluxo-de-criacao-de-specs":
+              "Avaliar o fluxo de criação de specs, sobretudo no backend github",
+              "fechar-vazamentos-do-backend-files":
+              "Fechar os vazamentos do backend files"}
+    out: list[str] = []
+
+    def rung(label: str, given: str, want_slug: str | None, want_by: str | None,
+             want_exit: int | None = None, specs: list[dict] | None = None) -> None:
+        spec, err = resolve_one(specs if specs is not None else listing, given, titles)
+        if want_exit is not None:
+            if err.get("exit") != want_exit or err.get("code") != "sp-ambiguous-slug":
+                out.append(f"{label}: expected an exit-{want_exit} sp-ambiguous-slug for "
+                           f"{given!r}, got {err or spec}")
+            return
+        if err or spec is None:
+            out.append(f"{label}: {given!r} did not resolve — {err}")
+            return
+        if spec["slug"] != want_slug:
+            out.append(f"{label}: {given!r} resolved to {spec['slug']!r}, not {want_slug!r}")
+        if spec.get("resolvedBy") != want_by:
+            out.append(f"{label}: {given!r} announced resolvedBy="
+                       f"{spec.get('resolvedBy')!r}, expected {want_by!r}")
+
+    # 1. the exact slug — and it announces NOTHING, because nothing was inferred.
+    rung("exact slug", "avaliar-o-fluxo-de-criacao-de-specs",
+         "avaliar-o-fluxo-de-criacao-de-specs", None)
+    # 2. the exact title, accents and case folded — a fragment copied out of the issue.
+    rung("exact title", "AVALIAR O FLUXO DE CRIACAO DE SPECS, SOBRETUDO NO BACKEND GITHUB",
+         "avaliar-o-fluxo-de-criacao-de-specs", "title")
+    # 3. a slug with a typo — resolves, and SAYS it approximated.
+    rung("approximate", "avaliar-o-fluxo-de-criacao-de-spec",
+         "avaliar-o-fluxo-de-criacao-de-specs", "approximate")
+    # 4. two specs sharing a slug — still exit 2, still naming both.
+    dup = listing + [dict(listing[0], file="outro.md", phase="archive", folder="archive")]
+    rung("ambiguous", "avaliar-o-fluxo-de-criacao-de-specs", None, None,
+         want_exit=2, specs=dup)
+
+    # And the rung that must NOT fire: something genuinely absent stays exit 1, never the
+    # nearest spec on the front. This is what the threshold is for.
+    spec, err = resolve_one(listing, "algo-completamente-diferente", titles)
+    if err.get("code") != "sp-unknown-slug" or err.get("exit") != 1:
+        out.append(f"an absent slug resolved to {spec and spec['slug']!r} instead of "
+                   f"refusing with sp-unknown-slug")
+    return out
 
 
 def backend_equivalence_failures() -> list[str]:
@@ -2390,12 +2525,16 @@ class GitHubBackend(SpecBackend):
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug)
+        spec, err = resolve_one(self.list_specs(), slug,
+                                {d["slug"]: t for d, _, _, _, t in rows})
         if err:
             return None, err
+        # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
+        # resolved to a different one, and looking the document up by the request would
+        # raise right after the resolution succeeded.
         number, head, parts, native = next((n, d, p, t)
                                            for descriptor, n, d, p, t in rows
-                                           if descriptor["slug"] == slug)
+                                           if descriptor["slug"] == spec["slug"])
         full_text = head if parts <= 1 else self._joined(number, head, parts)
         # The title comes back from the issue's own, which is where the write put it. A
         # document that still carries its own `title:` is returned untouched.
@@ -3299,11 +3438,12 @@ class AzureBoardsBackend(SpecBackend):
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug)
+        spec, err = resolve_one(self.list_specs(), slug,
+                                {d["slug"]: t for d, _, _, t in rows})
         if err:
             return None, err
         _, full_text, native = next((i, d, t) for descriptor, i, d, t in rows
-                                    if descriptor["slug"] == slug)
+                                    if descriptor["slug"] == spec["slug"])
         return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
@@ -3617,6 +3757,11 @@ def cmd_status(args, root: str) -> int:
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],
+        # How the slug was reached, when it was not reached exactly. `null` on the ordinary
+        # path. A caller that acts on a spec the human did not name has to be able to see
+        # that it happened — the resolution is tolerant, and tolerance without a receipt is
+        # just a wrong answer delivered confidently.
+        "resolvedBy": info.get("resolvedBy"), "resolvedFrom": info.get("resolvedFrom"),
         # every human-judgment record in one place and in schema order, so `conclude` and
         # `continue` read state instead of re-parsing the file
         "records": records,
@@ -6140,6 +6285,14 @@ def cmd_selftest(args, root: str) -> int:
     # The identity key, on the accented input this repository actually captures. Self-contained,
     # so it runs on an installed copy — which is where a slug quietly losing a letter would
     # otherwise surface only as a spec nobody can resolve by name.
+    # The four rungs of slug resolution, plus the one that must not fire.
+    for failure in resolution_failures():
+        findings.append(_finding("sp-resolution-case", "error",
+                                 f"slug resolution — {failure}",
+                                 remedy="resolve_one tries exact slug, exact title, then one "
+                                        "close match above the threshold; a tie is exit 2 and "
+                                        "an approximation announces itself"))
+
     for failure in slug_case_failures():
         findings.append(_finding("sp-slug-case", "error", f"canonical slug case — {failure}",
                                  remedy="slugify normalises to NFD and drops combining marks "
