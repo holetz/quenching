@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/
 resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-03
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md
 maintainer: quenching
 ---
 
@@ -135,15 +135,43 @@ admission test — a fact no derivation can reproduce:
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
   [git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Recording the isolation,
   cited rather than restated.
-- **`merge: {strategy, subject}`** — stamped by `conclude`, write-once, **on the work branch before
-  the merge**. The strategy was a human choice and the subject names the merge it will produce.
-  Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none;
-  `specs.py validate` reports a record that gets this backwards either way, as `sp-bad-merge`.
+- **`merge: {strategy, subject, pr}`** — stamped by `conclude`, write-once, **on the work branch
+  before the merge**. The strategy was a human choice and the subject names the merge it will
+  produce. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit
+  none; `specs.py validate` reports a record that gets this backwards either way, as `sp-bad-merge`.
+
+  **`pr` names the pull request, and exists only on the PR route.** Most conclusions are local and
+  carry no `pr:` at all — its absence is never a finding. Where it is present it records a fact the
+  base branch's history cannot reproduce: which pull request the merge went through, and therefore
+  where the review and the checks still live once the branch is gone.
 
 **The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
 live ref — which is what `specs.py next --front` does, and why `/specs:continue` demotes a spec
 whose branch is alive but checked out elsewhere.
+
+## The route is a second choice, and it moves when `merge:` is stamped
+
+`conclude` offers a **route** — pull request, or local — alongside the strategy. The route decides
+how the merge reaches the base; the strategy decides what shape it takes once it does. Three of the
+four strategies map one-to-one onto a `gh pr merge` flag (`--merge`, `--squash`, `--rebase`), so the
+route borrows the strategy vocabulary rather than inventing one. **`fast-forward` has no `gh`
+equivalent**, so the PR route is never offered under it: `specs.py record` refuses `pr:` set
+alongside that strategy (`sp-merge-pr-no-route`) and `validate` warns on one already written.
+
+The route also decides **when** the record can be stamped, and this is the one place the
+write-before-the-thing rule bends without breaking:
+
+| Route | When `merge:` is stamped | Why not earlier or later |
+| --- | --- | --- |
+| local | on the branch, before the merge | the subject is knowable the moment the strategy is chosen |
+| pull request | on the branch, after the PR is opened and before it is merged | `pr:` names something that does not exist until `gh pr create` returns, and the record is write-once — stamping without it would burn the single write |
+
+Both stamps still land **before** the merge and **on the work branch**, which is the invariant that
+matters: nothing is written to the base after it. A run interrupted between the stamp and the merge
+leaves the record written and the branch unmerged, which is recoverable — the next run reads the
+recorded subject and merges with it. The reverse can only come from a merge `conclude` did not
+make, and is reported rather than repaired.
 
 ## The squash caveat, and what rebase no longer costs
 

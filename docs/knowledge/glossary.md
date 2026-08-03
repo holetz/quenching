@@ -169,12 +169,15 @@ sentence, and **link out** rather than explaining in full here.
   form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
   constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/docs:harness` classing
   the line **KEEP** is the only thing between it and a silent deletion.
-- [**Merge record**](../standards/workflows/plan-git-record.md) — the `merge: {strategy, subject}`
-  frontmatter entry stamped by `/specs:conclude`, write-once, **on the work branch before the
-  merge** — which is what makes the merge that command's last action and leaves nothing to be
-  committed to the base after it. The strategy was a human choice and the subject names the merge
-  commit it is about to produce; recording both is what tells a future reader whether the per-task
-  subjects still resolve from the base. An **anchorless strategy** carries an explicit none here.
+- [**Merge record**](../standards/workflows/plan-git-record.md) — the
+  `merge: {strategy, subject, pr}` frontmatter entry stamped by `/specs:conclude`, write-once,
+  **on the work branch before the merge** — which is what makes the merge that command's last
+  action and leaves nothing to be committed to the base after it. The strategy was a human choice
+  and the subject names the merge commit it is about to produce; recording both is what tells a
+  future reader whether the per-task subjects still resolve from the base. An **anchorless
+  strategy** carries an explicit none here. `pr` exists only on the **pull-request route** and
+  names the pull request the merge went through — absent on every local conclusion, and refused
+  under `fast-forward`, which `gh pr merge` cannot perform (`sp-merge-pr-no-route`).
 - [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
   human, weighing whether to build), `build` (the executor, at step 4 of `/specs:execute`), `close`
