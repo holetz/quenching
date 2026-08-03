@@ -1,17 +1,17 @@
 ---
 type: standard
-title: A schema key's prose fan-out
-description: Adding a key to a machine-read schema ages every prose site that spells the record out, and no checker sees it — why the validators are all blind to this by construction, the grep that finds the sites while the change is still cheap, and why it belongs to the task that adds the key rather than to a later sweep
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py
+title: A computed fact's prose fan-out
+description: Any fact a tool computes and prose restates — a schema's fields, a surface's command count — fans out the moment it changes, and no checker sees it: why the validators are blind by construction, the two independent measurements this rule was set from, the grep on the fact's spelled-out form that finds the sites while the change is still cheap, and why it belongs to the task that makes the change rather than to a later sweep
+resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/**
 tags: [quality, schema, records, documentation, sweeps]
 timestamp: 2026-08-03
 audience: both
 authority: current
-source: rework-specs-isolate-flow plan (2026-08-03) — `merge:` gained one field, `pr`; the branch review at conclude found four prose sites still spelling the record as `{strategy, subject}`, in four different homes, every checker green
+source: rework-specs-isolate-flow plan (2026-08-03), from two independent measurements on one branch — `merge:` gained one field, `pr`, and four prose sites still spelled the record as `{strategy, subject}` in four homes; the same branch retired one command, and ten sites across four files still counted twenty-six. Every checker green in both cases
 maintainer: quenching
 ---
 
-# A schema key's prose fan-out
+# A computed fact's prose fan-out
 
 A machine-read schema is written once and **described many times**. Adding a key to it is a small,
 well-tested edit; the descriptions it invalidates are scattered, untested, and invisible to every
@@ -38,7 +38,18 @@ the glossary. Three of the four were never named by the spec's `## Impact`; one 
 written only halfway, because the field arrived in a later section than the task that owned the
 file.
 
-## Grep the record's literal form, in the task that adds the key
+**A second, independent measurement on the same branch, from a different trigger.** The same change
+**retired a command**, and the count of commands is the same kind of fact as the shape of a record —
+written once in code, described many times in prose. Ten sites still said *twenty-six commands* and
+*nine `/specs:*` commands*, across four files, while `skills.py doctor` reported the true figure of
+25 with no findings and every grep the spec's own gate ran came back empty. The trigger differs; the
+failure and the mitigation do not.
+
+Generalise it that way: **any fact a tool computes and prose restates** — a schema's fields, a
+surface's count, an enum's members — fans out the moment it changes, and the checker that owns the
+fact is precisely the one that cannot see the restatements.
+
+## Grep the fact's literal form, in the task that changes it
 
 The mitigation is cheap and has to happen while the change is still open:
 
@@ -50,7 +61,7 @@ Search for the **spelled-out form** — the brace list, the field names in seque
 record's name. `merge` alone matches every sentence about merging; `merge: {strategy` matches
 exactly the sites that enumerate the fields, which is exactly the set that just went stale.
 
-**It belongs to the task that adds the key**, not to a sweep afterwards, for the same reason
+**It belongs to the task that makes the change**, not to a sweep afterwards, for the same reason
 `base` is captured at isolation rather than at conclude: the person adding the field is the only one
 who knows what the field means, and the set of sites is smallest and cheapest to fix before the rest
 of the branch is written on top of it.
