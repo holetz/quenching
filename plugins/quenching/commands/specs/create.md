@@ -76,7 +76,9 @@ front listing first, which under `github` is a paginated fetch of every issue (2
 **Done when:** a canonical slug is in hand.
 
 ### 3. Plan-file path only — read it, and read the bundle
-Read the whole plan file and classify its parts against §The mapping below. Then, if the repo
+Read the whole plan file, then read
+[specs-create/plan-mapping.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plan-mapping.md)
+§The mapping and classify the plan's parts against it. Then, if the repo
 carries an OKF bundle (`docs/index.md` with `okf_version`), read what constrains the work:
 `docs/standards/` for the subjects it touches, and `docs/knowledge/glossary.md` so the spec uses
 the repo's canonical terms. No bundle → skip silently.
@@ -156,30 +158,6 @@ because they want the spec to live on the branch that will carry its work — na
 `branch: {base, work}` record. Do **not** raise it unprompted: a new prompt in one of the two
 most-run commands costs friction for everyone to serve the minority who isolate this early.
 **Done when:** the summary is shown.
-
-## The mapping — a Claude Code plan → canonical sections
-
-A Claude Code plan is prose with loose headings, and they may be in any language
-(`## Context` / `## Contexto`, `## Decisions` / `## Decisões`) — **match on meaning, never on the
-literal string.**
-
-| Native plan part | Canonical section |
-| --- | --- |
-| context, background, the problem, why now | `## Problem` |
-| the goal, what it changes | `## Proposal` |
-| non-goals, "fora de escopo", what it will not do | `## Out of Scope` |
-| declared scope, files and docs it will touch | `## Impact` |
-| acceptance criteria, how to confirm it worked | `## Validation` |
-| decisions, chosen approach, architecture, "Decisões" | `## Design` |
-| approaches weighed and dropped | `## Alternatives Considered` |
-| open questions, "a decidir", unresolved choices | `## Open Decisions` |
-| risks, trade-offs, "Riscos" | `## Risks` |
-| phases, steps, numbered work, "Etapas" | `## Tasks` (`- [ ]` under `### N. <Section>`) |
-| a verification / testing section | `## Tasks` (trailing verification items) |
-
-A plan that carries none of the middle rows produces a spec with `## Problem` and `## Proposal`
-and stops — which is the correct outcome, not a failure. **There is no rule that a converted plan
-must reach the ready gate**; `/quenching:specs:develop` takes it the rest of the way.
 
 ## Invariants to never violate
 
