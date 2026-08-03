@@ -91,7 +91,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.7.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.8.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -1973,18 +1973,125 @@ def hybrid_unwrap(body: str) -> tuple[str, str]:
     return (m.group(1), body[m.end():]) if m else ("", "")
 
 
-def hybrid_tasks_shell(text: str) -> str:
-    """The canonical document with `## Tasks`'s own body emptied down to the bare heading.
+def hybrid_tasks_span(text: str) -> tuple[int, int] | None:
+    """`(start, end)` line indices of `## Tasks`'s BODY in the whole document, or `None`.
 
-    Built with `upsert_section` — the SAME splice every command already writes a section
-    through — rather than a bespoke one for this backend. The tasks themselves move to
-    sub-issues; nothing about a `## Tasks` heading with no body under it is backend-specific
-    enough to earn its own splicing code."""
+    Whole-document coordinates, because that is what `parse_tasks` already hands back in
+    `lineno`/`blockEndLineno` and the shell has to line the two up. `parse_sections` is run
+    over the body, so the frontmatter's own lines are added back the same way
+    `upsert_section` adds them."""
     sections = parse_sections(body_after_frontmatter(text))
     if "Tasks" not in sections:
+        return None
+    lines = text.splitlines(keepends=True)
+    fm_offset = len(lines) - len(body_after_frontmatter(text).splitlines(keepends=True))
+    start = sections["Tasks"]["lineno"] + fm_offset + 1
+    return start, start + len(sections["Tasks"]["lines"])
+
+
+def hybrid_tasks_shell(text: str) -> str:
+    """The canonical document with the task BLOCKS lifted out of `## Tasks` and everything
+    else in that section left exactly where it was.
+
+    IT USED TO EMPTY THE WHOLE SECTION, and that was a silent loss. `### N. <Section>` group
+    headings are documented grammar (the template's `## Tasks` guidance), they are counted by
+    `parse_tasks` into every task's `section`, and `verification: per-section` and `[P]` both
+    reason over them. Emptying the body threw them away, `hybrid_rebuild_tasks_section` had
+    nothing to put back, and the write neither failed nor warned: the document came back
+    well-formed with one level of structure gone. Measured on 2026-08-02, 47 of this
+    repository's 66 specs used groups and ~35 documents did not survive the round trip.
+
+    What is lifted is exactly the span `parse_tasks` reports for each task — the checkbox line
+    plus its indented metadata. Group headings, prose and the blank lines around them stay,
+    verbatim and in position, which is what lets the rebuild put the blocks back where they
+    came from rather than in a layout of its own invention.
+
+    Built with `upsert_section` — the SAME splice every command already writes a section
+    through — rather than a bespoke one for this backend."""
+    span = hybrid_tasks_span(text)
+    if span is None:
         return text
-    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks", "## Tasks\n\n")
+    start, end = span
+    lines = text.splitlines(keepends=True)
+    drop: set[int] = set()
+    for task in parse_tasks(text):
+        drop.update(range(task["lineno"], task["blockEndLineno"]))
+    kept = [ln for i, ln in enumerate(lines[start:end], start=start) if i not in drop]
+    sections = parse_sections(body_after_frontmatter(text))
+    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks",
+                                 lines[start - 1] + "".join(kept))
     return new_text
+
+
+def hybrid_task_anchors(text: str) -> dict[int, int]:
+    """`{task index: how many non-task lines of `## Tasks` precede its block}`.
+
+    THE ANCHOR IS WHAT MAKES THE ROUND TRIP AN IDENTITY rather than a re-layout. The rebuild
+    is handed a shell and a pile of blocks; `section` alone would say which group a block
+    belongs to but not where inside it, and it cannot say anything at all about the blank
+    lines a document happens to use between its tasks. Every spec in this repository writes
+    its tasks adjacent inside a group and separated by a blank line between groups — a rebuild
+    that normalised instead of restoring would change every one of them, and the equality
+    `spec-backend.md` rests on is byte-for-byte.
+
+    Counted against the SHELL's kept lines, which is the coordinate system the rebuild
+    actually walks. `hybrid_tasks_shell` and this function drop the same spans by
+    construction: both ask `parse_tasks` and nothing else."""
+    span = hybrid_tasks_span(text)
+    if span is None:
+        return {}
+    start, end = span
+    tasks = parse_tasks(text)
+    drop: set[int] = set()
+    for task in tasks:
+        drop.update(range(task["lineno"], task["blockEndLineno"]))
+    kept_before = {}
+    seen = 0
+    for i in range(start, end):
+        kept_before[i] = seen
+        if i not in drop:
+            seen += 1
+    return {t["index"]: kept_before.get(t["lineno"], seen) for t in tasks}
+
+
+# The two ceilings a tracker imposes on the fields this serialisation writes. Named here,
+# beside the helpers both external backends share, rather than inside `GitHubBackend`: the
+# hybrid helpers stopped being GitHub's the moment `azure-boards` started using them.
+#
+# TITLE: 255, the SMALLER of GitHub's 256-character issue title and Azure Boards'
+# 255-character `System.Title`. One number for one shared helper — the alternative is a cap
+# per backend threaded through code that is deliberately backend-agnostic, to buy one
+# character. Neither figure appears in the REST reference either vendor publishes; GitHub's
+# is the widely documented UI limit and Azure's is from its field documentation, unproven
+# here like the rest of that backend.
+#
+# BODY: GitHub's 65,536-character issue body. Azure Boards' `System.Description` has no
+# comparable published limit, so this ceiling is enforced only where it is known to exist.
+HYBRID_TITLE_MAX = 255
+GH_BODY_MAX = 65_536
+
+
+def hybrid_short_title(text: str) -> str:
+    """A title that fits, cut on a word boundary and marked with an ellipsis.
+
+    CUTTING LOSES NOTHING, and that is what makes it the right answer rather than a
+    compromise. `hybrid_title` already records that an issue's title is a PROJECTION of the
+    document — rewritten from the frontmatter on every write, undone by the next write if a
+    human edits it in the web UI — and the same holds one level down: `parse_tasks` reads a
+    sub-issue's BODY, never its title, so the block stays whole no matter what the title says.
+
+    The alternative was to send it raw and let the tracker answer. Measured on this
+    repository on 2026-08-02: 15 tasks across 12 specs carry a checkbox line longer than the
+    cap, the longest at 946 characters — so "send it and see" is not a hypothetical branch,
+    it is what a migration would have hit twelve times."""
+    text = " ".join((text or "").split())
+    if len(text) <= HYBRID_TITLE_MAX:
+        return text
+    cut = text[:HYBRID_TITLE_MAX - 1]
+    space = cut.rfind(" ")
+    if space > HYBRID_TITLE_MAX // 2:
+        cut = cut[:space]
+    return cut.rstrip() + "…"
 
 
 def hybrid_task_key(task: dict) -> str:
@@ -2014,24 +2121,35 @@ def hybrid_task_block(text: str, task: dict) -> str:
     return "".join(lines[task["lineno"]:task["blockEndLineno"]])
 
 
-HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)\s*-->"
-                               r"[ \t]*\r?\n")
+HYBRID_TASK_MARKER_RE = re.compile(r"\A<!--\s*quenching-task:\s*key=(\S+)\s+index=(\d+)"
+                               r"(?:\s+anchor=(\d+))?\s*-->[ \t]*\r?\n")
 
 
-def hybrid_wrap_task(key: str, index: int, block: str) -> str:
-    return f"<!-- quenching-task: key={key} index={index} -->\n{block}"
+def hybrid_wrap_task(key: str, index: int, block: str, anchor: int = 0) -> str:
+    return f"<!-- quenching-task: key={key} index={index} anchor={anchor} -->\n{block}"
 
 
-def hybrid_unwrap_task(body: str) -> tuple[str, int, str]:
-    """`(key, index, block)` for a task sub-issue, or `("", -1, "")` for anything else.
+def hybrid_unwrap_task(body: str) -> tuple[str, int, str, int]:
+    """`(key, index, block, anchor)` for a task sub-issue, or `("", -1, "", 0)` for anything
+    else.
 
     `index` is what lets `read_spec` put the tasks back in DOCUMENT order rather than
     creation order or GitHub's own listing order, which is neither: sub-issues can be
     reprioritised in the UI, and a rebuild that trusted that order would silently reorder
-    the plan every time it was read back."""
+    the plan every time it was read back.
+
+    `anchor` is where in the shell's `## Tasks` the block goes back — see
+    `hybrid_task_anchors`. It is OPTIONAL in the pattern, and a marker without one reads as
+    0, which puts every block at the top of the section: that is a sub-issue written before
+    this key existed, whose parent shell was emptied of its groups anyway, so 0 reproduces
+    the layout that sub-issue was written for rather than inventing a worse one. Nothing in
+    the world is known to be in that state — the one issue the `github` end-to-end ever
+    created was removed at the end of it — so the fallback is discipline, not a migration."""
     body = (body or "").replace("\r\n", "\n")
     m = HYBRID_TASK_MARKER_RE.match(body)
-    return (m.group(1), int(m.group(2)), body[m.end():]) if m else ("", -1, "")
+    if not m:
+        return "", -1, "", 0
+    return m.group(1), int(m.group(2)), body[m.end():], int(m.group(3) or 0)
 
 
 def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
@@ -2048,32 +2166,48 @@ def hybrid_wrap_task_removed(key: str, index: int, block: str) -> str:
     return f"<!-- quenching-task-removed: key={key} index={index} -->\n{block}"
 
 
-def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[str]) -> str:
-    """Splice the reconstructed `## Tasks` body — every sub-issue's raw block, in document
-    order — back into the shell `write_spec` emptied it into.
+def hybrid_rebuild_tasks_section(shell_text: str, task_bodies: list[tuple[int, str]]) -> str:
+    """Splice the reconstructed `## Tasks` body back into the shell the blocks were lifted
+    out of — each `(anchor, block)` returned to the position it came from.
 
-    Each block is followed by a blank line. `parse_tasks` does not need it — a following
-    checkbox line ends the previous task's metadata scan on its own — but a human reading
-    the issue does, and `hybrid_task_block` never captured a trailing blank line in the first
-    place (its span ends where `parse_tasks` itself stops scanning), so without this every
-    task the github backend rebuilds would read as one unbroken paragraph.
+    IT USED TO CONCATENATE, with a blank line between blocks, into a section the shell had
+    emptied. That produced a well-formed document and a WRONG one: every `### N.` group
+    heading was already gone by then, and the blank lines were this function's invention
+    rather than the document's. Placing by anchor is what makes the round trip an identity —
+    the property `spec-backend.md` states as the one obligation an external backend has, and
+    which `backend_equivalence_failures` checks byte for byte between two backends.
 
-    `task_bodies` is already sorted by the caller; this function only concatenates and
-    upserts, so the ordering decision stays visible at the call site instead of buried in
-    a helper that also happens to sort."""
+    An anchor is a count of the shell's kept lines (see `hybrid_task_anchors`), so the walk
+    below is the inverse of the lift: before emitting kept line *k*, emit every block
+    anchored at *k*. Blocks are already in document order, which is what orders two tasks
+    sharing an anchor — adjacent tasks under the same heading, the normal case.
+
+    A block is nudged to end in a newline unless it ends the section. `hybrid_task_block`
+    slices verbatim and every block but a document's last one already ends that way; the
+    nudge exists because an issue tracker is free to trim trailing whitespace off a body it
+    stores, and a block that came back one newline short would weld itself to the line after
+    it."""
     if not task_bodies:
         return shell_text
-    sections = parse_sections(body_after_frontmatter(shell_text))
-    if "Tasks" not in sections:
+    span = hybrid_tasks_span(shell_text)
+    if span is None:
         return shell_text
-    # Blank line BETWEEN blocks, never after the last one — a trailing blank belongs to
-    # `upsert_section`'s own splice (it is what separates a REPLACED section from whatever
-    # follows it), and adding a second here is exactly the kind of divergence
-    # `backend_equivalence_failures` exists to catch: the files backend's document has no
-    # such line, so a github document that did would fail the byte-for-byte proof.
-    body = "\n\n".join(b.rstrip("\n") for b in task_bodies)
+    start, end = span
+    lines = shell_text.splitlines(keepends=True)
+    kept = lines[start:end]
+    placed: list[str] = []
+    pending = list(task_bodies)
+    for k in range(len(kept) + 1):
+        while pending and pending[0][0] <= k:
+            placed.append(pending.pop(0)[1])
+        if k < len(kept):
+            placed.append(kept[k])
+    placed.extend(block for _, block in pending)
+    body = "".join(b if b.endswith("\n") or i == len(placed) - 1 else b + "\n"
+                   for i, b in enumerate(placed))
+    sections = parse_sections(body_after_frontmatter(shell_text))
     new_text, _ = upsert_section({"text": shell_text, "sections": sections}, "Tasks",
-                                 f"## Tasks\n\n{body}\n")
+                                 lines[start - 1] + body)
     return new_text
 
 
@@ -2141,7 +2275,24 @@ class GitHubBackend(SpecBackend):
 
         `--input -` and not `-f body=…`: a spec document is kilobytes of markdown with
         newlines, quotes and backticks in it, and every one of those is a way for argv
-        quoting to corrupt what lands in the issue."""
+        quoting to corrupt what lands in the issue.
+
+        THE BODY CEILING IS CHECKED HERE, at the one point every write passes through,
+        rather than at each caller — a check per caller is the shape that leaves one out.
+        Refusing beats letting GitHub answer 422: in the middle of a migration of dozens of
+        specs a 422 is a validation error with no spec's name on it, while this names the
+        measured size and the ceiling and emits no call at all. The margin is real and not
+        theoretical — this repository's largest shell measured 63,686 characters on
+        2026-08-02, 1.8 KB under."""
+        body = payload.get("body")
+        if isinstance(body, str) and len(body) > GH_BODY_MAX:
+            raise BackendRefusal({
+                "code": "sp-gh-body-too-large", "exit": 2, "action": action,
+                "size": len(body), "max": GH_BODY_MAX,
+                "message": f"the document is {len(body)} characters and a GitHub issue body "
+                           f"holds {GH_BODY_MAX} — shorten a section while {action}; nothing "
+                           f"was written",
+            })
         return self._api(action, "-X", method, path, "--input", "-",
                          stdin=json.dumps(payload))
 
@@ -2260,11 +2411,11 @@ class GitHubBackend(SpecBackend):
                          f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []
         marked = []
         for sub in subs:
-            key, index, block = hybrid_unwrap_task(sub.get("body") or "")
+            key, index, block, anchor = hybrid_unwrap_task(sub.get("body") or "")
             if key:      # an ordinary sub-issue a human added is not a task line
-                marked.append((index, block))
-        marked.sort(key=lambda pair: pair[0])
-        return [block for _, block in marked]
+                marked.append((index, anchor, block))
+        marked.sort(key=lambda row: row[0])
+        return [(anchor, block) for _, anchor, block in marked]
 
     def _sync_tasks(self, parent_number: int, text: str) -> None:
         """Make the parent's sub-issues match `text`'s `## Tasks` exactly: one sub-issue per
@@ -2281,15 +2432,18 @@ class GitHubBackend(SpecBackend):
         existing: dict[str, dict] = {}
         for sub in self._api(f"listing sub-issues of #{parent_number}",
                              f"repos/{self.repo}/issues/{parent_number}/sub_issues") or []:
-            key, _, _ = hybrid_unwrap_task(sub.get("body") or "")
+            key, _, _, _ = hybrid_unwrap_task(sub.get("body") or "")
             if key:
                 existing[key] = sub
+        anchors = hybrid_task_anchors(text)
         seen: set[str] = set()
         for t in tasks:
             key = hybrid_task_key(t)
             seen.add(key)
             block = hybrid_task_block(text, t)
-            payload = {"title": t["text"], "body": hybrid_wrap_task(key, t["index"], block),
+            payload = {"title": hybrid_short_title(t["text"]),
+                       "body": hybrid_wrap_task(key, t["index"], block,
+                                                anchors.get(t["index"], 0)),
                        "state": "closed" if t["checked"] else "open"}
             if key in existing:
                 num = existing[key]["number"]
@@ -2307,7 +2461,7 @@ class GitHubBackend(SpecBackend):
         for key, sub in existing.items():
             if key in seen:
                 continue
-            _, index, block = hybrid_unwrap_task(sub.get("body") or "")
+            _, index, block, _ = hybrid_unwrap_task(sub.get("body") or "")
             self._write_api(f"retiring orphaned sub-issue #{sub['number']}", "PATCH",
                             f"repos/{self.repo}/issues/{sub['number']}",
                             {"state": "closed",
@@ -2321,7 +2475,7 @@ def hybrid_title(slug: str, text: str) -> str:
     from the frontmatter on every write, so renaming a spec in its `title:` field renames
     the issue, and editing the issue title in the web UI is undone by the next write rather
     than silently becoming a competing name."""
-    return str(parse_frontmatter(text).get("title") or titleize(slug))
+    return hybrid_short_title(str(parse_frontmatter(text).get("title") or titleize(slug)))
 
 
 def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -2398,12 +2552,47 @@ def gh_refusal_failures() -> list[str]:
     return failures
 
 
-# The fields `parse_tasks` derives, minus the ones a rebuild is not expected to reproduce:
-# `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/`commitLineno` are
-# POSITIONS in a specific document, and the rebuilt document is flat (no `### N.` grouping —
-# see `hybrid_serialization_failures`'s docstring), so they are never asked to match.
+# The fields `parse_tasks` derives, minus the ones a rebuild reproduces only because the
+# document does: `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/
+# `commitLineno` are POSITIONS. They are covered by the byte-for-byte equality below —
+# a document that comes back identical necessarily reparses to the same line numbers — so
+# this tuple stays what it is: the semantic comparison for the field-by-field message that
+# names WHICH task drifted when the stricter check has already said the document did.
 HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
                          "files", "pattern", "verify", "subject", "commit")
+
+
+def gh_body_ceiling_failures() -> list[str]:
+    """A body over the ceiling refuses BEFORE any call is made — proved with a transport that
+    records every call it is asked to make and fails the check if it was asked at all.
+
+    No network and no `gh`: the point is not that GitHub says no, it is that this backend
+    never gives it the chance."""
+    failures: list[str] = []
+    backend = GitHubBackend("owner/repo", os.getcwd())
+    calls: list[str] = []
+    backend._api = lambda action, *argv, stdin=None: calls.append(action)   # type: ignore
+    try:
+        backend._write_api("creating an issue", "POST", "repos/owner/repo/issues",
+                           {"title": "x", "body": "a" * (GH_BODY_MAX + 1)})
+    except BackendRefusal as e:
+        if e.err.get("code") != "sp-gh-body-too-large":
+            failures.append(f"an oversized body refused with {e.err.get('code')!r}, "
+                            f"not sp-gh-body-too-large")
+        if e.err.get("exit") != 2:
+            failures.append("an oversized body refused with an exit other than 2")
+    else:
+        failures.append("an oversized body was sent to GitHub instead of refusing")
+    if calls:
+        failures.append(f"the refusal still made {len(calls)} call(s) — it must emit none")
+    try:
+        backend._write_api("creating an issue", "POST", "repos/owner/repo/issues",
+                           {"title": "x", "body": "a" * GH_BODY_MAX})
+    except BackendRefusal:
+        failures.append("a body exactly at the ceiling was refused — the ceiling is inclusive")
+    if len(calls) != 1:
+        failures.append("a body within the ceiling did not reach the transport")
+    return failures
 
 
 def hybrid_serialization_failures() -> list[str]:
@@ -2411,10 +2600,14 @@ def hybrid_serialization_failures() -> list[str]:
     text and its metadata survive shell → sub-issue → shell exactly, with `parse_tasks` —
     the one shared derivation — doing the reading on both ends.
 
-    NOT ROUND-TRIPPED: `### N.` group headings. Grouping lives in the ORIGINAL document's
-    `## Tasks` body, which this backend empties into a flat list of sub-issues with no
-    heading of their own to remember — a known, declared gap versus `files`, not a silent
-    one; a spec with grouped tasks reads back flat on `github`. Nothing here hides that.
+    AND THE DOCUMENT COMES BACK BYTE FOR BYTE. That is the stronger claim, and it is the one
+    `spec-backend.md` actually makes of an external backend ("reassembles the canonical
+    document on read"). The fixture below is grouped under `### N.` headings and carries a
+    line of prose inside `## Tasks`, because a fixture without them proves nothing about the
+    case that was broken: the shell used to empty the whole section, the rebuild used to
+    concatenate, and 47 of this repository's 66 specs came back a structure short with no
+    error anywhere. A check for "the headings are still there" would pass with them
+    reordered and the prose gone; equality is the only assertion that cannot.
 
     Self-contained: no network, no `gh`. Simulates CRLF storage the same way the marker
     round trip above does, because a check that used clean LF would not catch a backend
@@ -2422,21 +2615,28 @@ def hybrid_serialization_failures() -> list[str]:
     doc = ("---\ntitle: Alpha\nverification: per-task\n---\n\n"
           "## Problem\n\nAlgo.\n\n"
           "## Tasks\n\n"
-          "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n\n"
+          "### 1. Primeiro grupo\n\n"
+          "Uma linha de prosa dentro de `## Tasks`, que tambem tem de voltar.\n\n"
+          "- [ ] 1.1 primeira\n      files: a.py, b.py\n      verify: pytest\n"
           "- [x] 1.2 segunda\n\n"
-          "- [!] 1.3 terceira — blocked: esperando review\n\n"
+          "### 2. Segundo grupo\n\n"
+          "- [!] 2.1 terceira — blocked: esperando review\n\n"
           "- [ ] [P] quarta sem id\n\n"
           "## Outcome\n\n")
     tasks = parse_tasks(doc)
+    anchors = hybrid_task_anchors(doc)
     shell = hybrid_tasks_shell(doc)
     failures: list[str] = []
+    if "### 1. Primeiro grupo" not in shell or "### 2. Segundo grupo" not in shell:
+        failures.append("hybrid_tasks_shell dropped a `### N.` group heading — the rebuild "
+                        "has nothing to put it back from")
     if "1.1 primeira" in shell or "1.2 segunda" in shell:
         failures.append("hybrid_tasks_shell left a checkbox behind — sub-issues would duplicate it")
     if "## Outcome" not in shell or "## Problem" not in shell:
         failures.append("hybrid_tasks_shell dropped a section other than Tasks")
 
     keys = [hybrid_task_key(t) for t in tasks]
-    if keys != ["1.1", "1.2", "1.3", "#4"]:
+    if keys != ["1.1", "1.2", "2.1", "#4"]:
         failures.append(f"hybrid_task_key: got {keys!r}, expected explicit ids and one "
                         f"positional fallback for the task with none")
     if len(set(keys)) != len(keys):
@@ -2445,15 +2645,22 @@ def hybrid_serialization_failures() -> list[str]:
     # Wrap each task's raw block as `_sync_tasks` would, store it through a CRLF round
     # trip as GitHub would, and unwrap it back — exactly what `_task_bodies` does against
     # a real sub-issue list.
-    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t)).replace("\n", "\r\n")
+    stored = [hybrid_wrap_task(k, t["index"], hybrid_task_block(doc, t),
+                               anchors.get(t["index"], 0)).replace("\n", "\r\n")
              for k, t in zip(keys, tasks)]
     unwrapped = sorted((hybrid_unwrap_task(s) for s in stored), key=lambda tup: tup[1])
-    for key, want_index, (got_key, got_index, _) in zip(keys, range(1, 5), unwrapped):
+    for key, want_index, (got_key, got_index, _, _) in zip(keys, range(1, 5), unwrapped):
         if (got_key, got_index) != (key, want_index):
             failures.append(f"task marker round trip: got key={got_key!r} "
                             f"index={got_index!r}, wanted key={key!r} index={want_index!r}")
 
-    rebuilt = hybrid_rebuild_tasks_section(shell, [block for _, _, block in unwrapped])
+    rebuilt = hybrid_rebuild_tasks_section(shell,
+                                           [(anchor, block)
+                                            for _, _, block, anchor in unwrapped])
+    if rebuilt != doc:
+        failures.append("shell -> sub-issue -> shell did not return the document byte for "
+                        "byte — the one obligation spec-backend.md puts on an external "
+                        "backend")
     tasks2 = parse_tasks(rebuilt)
     if len(tasks2) != len(tasks):
         failures.append(f"rebuild produced {len(tasks2)} tasks from {len(tasks)}")
@@ -2464,6 +2671,19 @@ def hybrid_serialization_failures() -> list[str]:
             if b != a:
                 failures.append(f"task '{b['id'] or before['index']}' drifted: "
                                 f"before={b!r} after={a!r}")
+
+    # THE TITLE IS CUT, THE BLOCK IS NOT. The tracker caps a title; nothing caps the body,
+    # and the body is the only half `parse_tasks` ever reads. This repository's own longest
+    # task line is 946 characters, so the cut is exercised on a length it really carries.
+    long_text = "9.9 " + " ".join(f"palavra{i:03d}" for i in range(120))
+    short = hybrid_short_title(long_text)
+    if len(short) > HYBRID_TITLE_MAX:
+        failures.append(f"hybrid_short_title returned {len(short)} characters, over the "
+                        f"{HYBRID_TITLE_MAX} a tracker accepts")
+    if not short.endswith("…") or not long_text.startswith(short[:-1].rstrip()):
+        failures.append("a cut title is not a prefix of the line it came from, marked as cut")
+    if hybrid_short_title("9.9 curta") != "9.9 curta":
+        failures.append("hybrid_short_title touched a title that already fitted")
 
     # A retired (removed-from-document) task must NEVER come back on the next rebuild —
     # this is the exact shape of a bug caught while writing this backend: closing a
@@ -2916,17 +3136,17 @@ class AzureBoardsBackend(SpecBackend):
                     ids.append(int(tail))
         return self._show_many(ids)
 
-    def _task_bodies(self, parent_id: int) -> list[str]:
-        """Every task child's raw block, in DOCUMENT order — ready for
-        `hybrid_rebuild_tasks_section`, which only concatenates."""
+    def _task_bodies(self, parent_id: int) -> list[tuple[int, str]]:
+        """Every task child's `(anchor, raw block)`, in DOCUMENT order — ready for
+        `hybrid_rebuild_tasks_section`, which places each block by its anchor."""
         marked = []
         for child in self._children(parent_id):
-            key, index, block = hybrid_unwrap_task(
+            key, index, block, anchor = hybrid_unwrap_task(
                 self._field(child, "System.Description"))
             if key:      # an ordinary child a human added is not a task line
-                marked.append((index, block))
-        marked.sort(key=lambda pair: pair[0])
-        return [block for _, block in marked]
+                marked.append((index, anchor, block))
+        marked.sort(key=lambda row: row[0])
+        return [(anchor, block) for _, anchor, block in marked]
 
     def _sync_tasks(self, parent_id: int, text: str) -> None:
         """Make the parent's children match `text`'s `## Tasks` exactly — the same contract
@@ -2936,9 +3156,10 @@ class AzureBoardsBackend(SpecBackend):
         the document, and one signal cannot mean both without a done-then-removed task
         resurrecting itself on the next read."""
         tasks = parse_tasks(text)
+        anchors = hybrid_task_anchors(text)
         existing: dict[str, dict] = {}
         for child in self._children(parent_id):
-            key, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
+            key, _, _, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
             if key:
                 existing[key] = child
         seen: set[str] = set()
@@ -2947,14 +3168,16 @@ class AzureBoardsBackend(SpecBackend):
             seen.add(key)
             block = hybrid_task_block(text, t)
             state = self.states["archive" if t["checked"] else "plans"]
-            description = hybrid_wrap_task(key, t["index"], block)
+            description = hybrid_wrap_task(key, t["index"], block,
+                                           anchors.get(t["index"], 0))
+            title = hybrid_short_title(t["text"])
             if key in existing:
-                self._update(int(existing[key]["id"]), title=t["text"],
+                self._update(int(existing[key]["id"]), title=title,
                              description=description, state=state)
             else:
                 child = self._az("creating a child work item", "work-item", "create",
                                  "--project", self.project, "--type", AZ_TASK_TYPE,
-                                 "--title", t["text"], "--description", description,
+                                 "--title", title, "--description", description,
                                  "--state", state)
                 self._az(f"linking child work item {child.get('id')}", "work-item",
                          "relation", "add", "--id", str(child.get("id")),
@@ -2962,7 +3185,7 @@ class AzureBoardsBackend(SpecBackend):
         for key, child in existing.items():
             if key in seen:
                 continue
-            _, index, block = hybrid_unwrap_task(self._field(child, "System.Description"))
+            _, index, block, _ = hybrid_unwrap_task(self._field(child, "System.Description"))
             self._update(int(child["id"]), state=self.states["archive"],
                          description=hybrid_wrap_task_removed(key, index, block))
 
@@ -5818,6 +6041,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "same `parse_tasks` that reads a file — nothing "
                                         "about checked/blocked/metadata is derived twice"))
 
+    # A document too large for an issue body refuses without making the call, so a migration
+    # fails on a named spec instead of on GitHub's anonymous 422.
+    for failure in gh_body_ceiling_failures():
+        findings.append(_finding("sp-gh-body-ceiling-broken", "error",
+                                 f"the issue body ceiling does not hold — {failure}",
+                                 remedy="`_write_api` is the one point every write passes "
+                                        "through; the check belongs there and must emit no "
+                                        "call when it refuses"))
+
     # The config defaults, asserted where nothing is declared. A repo that declares nothing
     # is the overwhelmingly common case, so a loader that started returning `None` for the
     # backend would break every such repo while every configured one kept working — the
@@ -5993,9 +6225,10 @@ def cmd_selftest(args, root: str) -> int:
               f"each refuse with their own remedy, the unproved-backend warning says its "
               f"piece once per process on stderr and only for "
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
-              f"written, a task's shell -> sub-issue -> shell round trip reconstructs its "
-              f"checked/blocked state and metadata exactly, and the embedded schema and "
-              f"template match their asset files.")
+              f"written, a grouped document survives shell -> sub-issue -> shell byte for "
+              f"byte with its checked/blocked state and metadata intact, an oversized body "
+              f"refuses without making the call, and the embedded "
+              f"schema and template match their asset files.")
     return 1 if errors else 0
 
 

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec backend interface
-description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation, and the in-memory fake that turns "identical" into a checked property
+description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-07-31
+timestamp: 2026-08-02
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5)
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored
 maintainer: quenching
 ---
 
@@ -72,6 +72,31 @@ That obligation is not a restriction on native storage; it is what makes native 
 mapping is confined to the one implementation that owns it, and it can never leak into the JSON the
 CLI prints, because the CLI never sees the storage.
 
+### What "the canonical document" covers, and how the obligation is checked
+
+**The whole document, byte for byte** — not the fields a backend happens to model. The obligation
+reads as obvious and was not: the `github` backend shipped mapping `## Tasks` to sub-issues by
+emptying that section and concatenating the blocks back, which loses every `### N. <Section>` group
+heading and every line of prose the section carried. Nothing failed. The write succeeded, the read
+returned a well-formed document, and the loss was visible only by comparing it to what went in.
+Measured across this repository's own specs, 49 of 68 carry groups.
+
+So the obligation is stated as a checked property rather than as a principle:
+
+- **Structure a backend does not model is structure it must carry, not structure it may drop.** A
+  section's grouping, its prose and the blank lines between its items are content. A mapping that
+  keeps only the parts with a native counterpart is a lossy projection wearing a serialisation's
+  name.
+- **The check is equality on the document, never an assertion about the pieces.** "The headings are
+  still there" passes with them reordered and the prose gone. `specs.py selftest` runs a grouped
+  fixture through store-and-reload — including the CRLF round trip a tracker really performs — and
+  compares the result to the original with `==`.
+- **A store's own ceilings are the backend's problem, not the caller's.** A title that a tracker
+  will not accept is cut by the backend, because a title is a projection of the document and cutting
+  it loses nothing; a body over the ceiling is a **refusal (exit 2) naming the measured size**, made
+  before the call, so the failure carries the spec's name instead of the tracker's anonymous
+  validation error.
+
 ## Granular reading is about context, not I/O
 
 `show` returns an **index** by default — the fourteen headings with their state, and the task ids.
@@ -106,8 +131,17 @@ never be somewhere real work can land.
 
 ## What this standard does not yet cover
 
-The interface and the equality are proved for `files` and `memory`. **No external backend has been
-exercised end to end at the time of writing** — what a GitHub or Azure Boards implementation must
-satisfy is stated here, but the statement is a contract to meet, not a report of one met. A finding
-that an external implementation cannot satisfy some rule above is a reason to revisit this document,
-not to work around it quietly.
+The interface and the equality are proved for `files` and `memory`, and the reassembly obligation is
+proved offline for the hybrid serialisation both external backends share.
+
+**`azure-boards` has never been exercised end to end.** What it must satisfy is stated here, and for
+that backend the statement is a contract to meet rather than a report of one met.
+
+`github` has been exercised end to end once, against a throwaway test spec. That is worth less than
+it sounds, and the gap is the reason this section stays: the test spec had no `### N.` groups and no
+over-long task line, so the run proved the transport and not the shape of real documents — which is
+exactly where the loss described above was hiding. **A backend is proved by the documents it will
+actually be given, not by the ones written to exercise it.**
+
+A finding that an external implementation cannot satisfy some rule above is a reason to revisit this
+document, not to work around it quietly.

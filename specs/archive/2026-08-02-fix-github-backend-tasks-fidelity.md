@@ -2,6 +2,13 @@
 slug: fix-github-backend-tasks-fidelity
 title: "Fidelidade do documento no backend github — grupos de task, títulos e o cap de corpo"
 verification: per-section
+branch: {base: main, work: plan/fix-github-backend-tasks-fidelity}
+approved: {date: 2026-08-02}
+reviewed: {date: 2026-08-02}
+merge:
+  strategy: merge-commit
+  subject: plan/fix-github-backend-tasks-fidelity: merge (merge-commit)
+outcome: done
 ---
 
 # Fidelidade do documento no backend github — grupos de task, títulos e o cap de corpo
@@ -179,6 +186,14 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
   contra ordem de listagem do GitHub); `section` é o segundo fato da mesma família. Uma sub-issue
   escrita pelo formato antigo não carrega a chave, e a ausência é lida como `section` 0 — o
   comportamento de hoje, que é o pior caso e não uma quebra.
+- **Refinado (tasks 1.2/1.3): o campo é `anchor`, não `section`.** `section` diz a que grupo um
+  bloco pertence e nada sobre onde dentro dele, e nada mesmo sobre as linhas em branco que o
+  documento usa entre duas tasks — bastaria para não perder os headings, e não para devolver o
+  documento **igual**. `anchor` é a contagem de linhas mantidas do `## Tasks` que precedem o bloco,
+  e o rebuild é a inversa exata do split: antes de emitir a linha mantida *k*, emite todo bloco
+  ancorado em *k*. A diferença é a diferença entre não perder estrutura e ser uma identidade, e é
+  a segunda que `spec-backend.md` cobra e que `backend_equivalence_failures` já mede byte a byte.
+  Medido: com `anchor`, **68 de 68** documentos reais deste repositório voltam byte a byte.
 - **Decisão: o título da sub-issue é recortado em 256 caracteres, e isso não é perda.** O docstring
   de `hybrid_title` já declara o título da issue-mãe como **projeção** do documento, reescrita a
   cada escrita e nunca fonte: editá-la na web é desfeito pela próxima escrita. O mesmo vale para a
@@ -252,22 +267,22 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 
 ### 1. Os grupos sobrevivem ao round trip
 
-- [ ] 1.1 `hybrid_tasks_shell` passa a preservar dentro de `## Tasks` tudo que não é bloco de task —
+- [x] 1.1 `hybrid_tasks_shell` passa a preservar dentro de `## Tasks` tudo que não é bloco de task —
       os `### N.` e a prosa — em posição, removendo apenas os blocos
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 1.1 o shell preserva os grupos de ## Tasks
-- [ ] 1.2 `section` viaja no marcador da sub-issue ao lado de `index`, e a ausência da chave é lida
+- [x] 1.2 `section` viaja no marcador da sub-issue ao lado de `index`, e a ausência da chave é lida
       como 0 em vez de recusar
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
-      subject: plan/fix-github-backend-tasks-fidelity: 1.2 o marcador da sub-issue carrega section
-- [ ] 1.3 `hybrid_rebuild_tasks_section` interleava os blocos por `section` sob o heading
+      subject: plan/fix-github-backend-tasks-fidelity: 1.2+1.3 o marcador carrega o ancora e o rebuild restaura por ele
+- [x] 1.3 `hybrid_rebuild_tasks_section` interleava os blocos por `section` sob o heading
       correspondente, em vez de concatenar
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
-      subject: plan/fix-github-backend-tasks-fidelity: 1.3 o rebuild interleava por section
-- [ ] 1.4 A lista canônica de casos do selftest ganha um documento com `### N.` e prosa em
+      subject: plan/fix-github-backend-tasks-fidelity: 1.2+1.3 o marcador carrega o ancora e o rebuild restaura por ele
+- [x] 1.4 A lista canônica de casos do selftest ganha um documento com `### N.` e prosa em
       `## Tasks`, asserido por igualdade estrita no round trip híbrido
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
@@ -275,12 +290,12 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 
 ### 2. Os dois tetos do GitHub
 
-- [ ] 2.1 O título da sub-issue é recortado na última fronteira de palavra antes de 256 caracteres,
+- [x] 2.1 O título da sub-issue é recortado na última fronteira de palavra antes de 256 caracteres,
       com o corpo mantendo o bloco íntegro
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 2.1 titulo de sub-issue recortado em 256
-- [ ] 2.2 `_write_api` recusa (exit 2, `sp-gh-body-too-large`) um corpo acima de 65.536 caracteres,
+- [x] 2.2 `_write_api` recusa (exit 2, `sp-gh-body-too-large`) um corpo acima de 65.536 caracteres,
       nomeando o tamanho medido e o teto, sem emitir a chamada
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest
@@ -288,16 +303,75 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 
 ### 3. Prova sobre os documentos reais
 
-- [ ] 3.1 Provar split e rebuild sobre todo spec em `specs/plans/` e `specs/archive/`, exigindo
+- [x] 3.1 Provar split e rebuild sobre todo spec em `specs/plans/` e `specs/archive/`, exigindo
       identidade byte a byte em todos
       verify: python3 assets/bin/specs.py selftest
       subject: plan/fix-github-backend-tasks-fidelity: 3.1 os specs reais sobrevivem ao round trip
-- [ ] 3.2 Reescrever `docs/standards/architecture/spec-backend.md` §Hybrid serialisation para nomear
+- [x] 3.2 Reescrever `docs/standards/architecture/spec-backend.md` §Hybrid serialisation para nomear
       o que a remontagem abrange e a igualdade estrita como prova declarada
       files: docs/standards/architecture/spec-backend.md
       verify: python3 assets/hooks/okf-validate.py docs
       subject: plan/fix-github-backend-tasks-fidelity: 3.2 o standard nomeia o que a remontagem abrange
-- [ ] 3.3 Fechar a superfície: doctor com 26 comandos e 0 findings, okf-validate limpo e o lockstep
+- [x] 3.3 Fechar a superfície: doctor com 26 comandos e 0 findings, okf-validate limpo e o lockstep
       de versão concordando
       verify: python3 assets/bin/skills.py --root . doctor --json
       subject: plan/fix-github-backend-tasks-fidelity: 3.3 fecha a superficie e o lockstep
+
+## Discoveries
+
+- As tasks 1.2 e 1.3 sairam numa commit so: o campo anchor no marcador nao tem leitor sem o rebuild que o consome, e o rebuild nao tem o dado sem o marcador. Separa-las produziria uma commit que nao roda. As duas gravam o mesmo subject, entao os dois registros resolvem.
+- Refinado na 1.2: o marcador carrega anchor (quantas linhas mantidas do ## Tasks precedem o bloco) e nao section, como o ## Design dizia. section diz a que grupo o bloco pertence mas nao onde dentro dele, e nao diz nada sobre as linhas em branco que o documento usa entre tasks — o round trip seria uma re-diagramacao, nao uma identidade. Medido: com anchor, 68 de 68 documentos reais voltam byte a byte.
+- Refinado na 2.1: o teto compartilhado e 255 e nao 256 — o menor entre o titulo de issue do GitHub (256) e o System.Title do Azure Boards (255). Os helpers hybrid_* sao dos dois backends desde a task 6.2 de configurable-spec-backend, entao um teto por backend seria threading de estado por codigo deliberadamente agnostico para comprar um caractere. O numero do Azure vem da documentacao de campo e nao foi medido aqui.
+- Medido na 3.1 sobre os 68 specs em disco: 68/68 voltam byte a byte pelo caminho completo (wrap do marcador, round trip CRLF como o GitHub armazena, unwrap, rebuild). 49 deles carregam grupos ### N. — o ## Problem dizia 47 sobre 66, e as duas specs desta leva sao as duas a mais.
+- Medido na 3.3: doctor 26 comandos e 0 findings; lint 36 findings, o mesmo baseline que o Handoff de configurable-spec-backend declarou pos-merge; okf-validate 0 errors sobre docs/ e sobre assets/docs; budget 12.756 de 12.875, exit 0. O lockstep esta em 4.7.0 nos quatro artefatos — o bump para 4.8.0 e obrigacao de release do conclude, nao desta execucao.
+
+## Outcome
+
+**Entregue e mergeado em `main` por merge commit** (`--no-ff`), 9/9 tasks. As commits por task
+ficam na `main`, então todo `subject:` gravado resolve por
+`git log --grep="<subject>" --fixed-strings` a partir dela.
+
+### O que entrou
+
+- **O shell preserva a estrutura de `## Tasks`.** `hybrid_tasks_shell` levanta apenas os spans que
+  `parse_tasks` reporta por task; `### N.`, prosa e as linhas em branco ficam verbatim e em posição.
+- **`hybrid_task_anchors` e o campo `anchor=` no marcador da sub-issue.** O rebuild deixou de
+  concatenar: caminha as linhas mantidas do shell e emite cada bloco antes da linha que ele
+  precedia. É a inversa exata do split, e é o que torna o round trip uma **identidade** em vez de uma
+  re-diagramação.
+- **`hybrid_short_title`** — teto 255, o menor entre o título de issue do GitHub (256) e o
+  `System.Title` do Azure Boards (255), aplicado nos três sítios que escrevem título. Cortar não
+  perde nada: `parse_tasks` lê o corpo da sub-issue, nunca o título.
+- **`sp-gh-body-too-large`** em `_write_api` — o único ponto por onde toda escrita passa. Recusa
+  exit 2 nomeando o tamanho medido e o teto, sem emitir a chamada.
+- **A prova**: a fixture do selftest ganhou dois grupos e uma linha de prosa, e a asserção é
+  igualdade estrita do documento. O standard `spec-backend.md` ganhou
+  §"What 'the canonical document' covers", que nomeia o que a remontagem abrange e por que a prova é
+  igualdade e não asserção sobre as peças.
+
+### O que o próximo leitor precisa saber
+
+- **A mudança de marcador é compatível num sentido só, e foi isso que decidiu o bump.** Um marcador
+  antigo (sem `anchor=`) é lido pelo `specs.py` novo como `anchor` 0; um marcador **novo** não casa
+  com o regex **antigo**, então um repo alvo rodando uma cópia 4.7.0 contra sub-issues escritas pela
+  4.8.0 deixaria de reconhecê-las como tasks — elas sumiriam da leitura. Por isso 4.8.0 (minor) e
+  não 4.7.1: é mudança de formato armazenado, ainda que aditiva na escrita.
+- **Nenhuma sub-issue no mundo está no formato antigo** — a issue do E2E da task 4.6 de
+  `configurable-spec-backend` foi removida ao fim daquele exercício. O caminho de compatibilidade é
+  disciplina, não migração de dado.
+- **`azure-boards` herdou as três correções sem uma linha específica**, porque os helpers `hybrid_*`
+  já eram compartilhados desde a task 6.2 daquela spec. Continua sem prova end-to-end.
+- Medido no fechamento: **68/68** documentos reais voltam byte a byte; `doctor` 26 comandos e 0
+  findings; `lint` 36 findings, o mesmo baseline pós-merge que aquela spec declarou; `okf-validate`
+  0 errors nos dois bundles; `budget` 12.756 de 12.875.
+
+### Destilado no fechamento
+
+- `docs/standards/architecture/spec-backend.md` — a seção nova é a destilação, e ela mora ali porque
+  é regra de arquitetura e não história desta branch: **a obrigação de remontagem é o documento
+  inteiro byte a byte, e a prova é igualdade**. Junto foi a correção honesta de
+  §"What this standard does not yet cover": o `github` FOI exercitado end-to-end uma vez, e aquele
+  exercício valeu menos do que parecia porque a spec de teste não tinha grupos nem título longo.
+
+Nada mais cruzou. O resto — o `anchor`, o teto compartilhado, o controle negativo do selftest — é
+história do arquivo e de `## Discoveries`.
