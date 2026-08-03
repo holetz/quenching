@@ -254,7 +254,7 @@ títulos longos: o teste provou o caminho, não a forma dos documentos reais.
 
 ### 1. Os grupos sobrevivem ao round trip
 
-- [ ] 1.1 `hybrid_tasks_shell` passa a preservar dentro de `## Tasks` tudo que não é bloco de task —
+- [x] 1.1 `hybrid_tasks_shell` passa a preservar dentro de `## Tasks` tudo que não é bloco de task —
       os `### N.` e a prosa — em posição, removendo apenas os blocos
       files: plugins/quenching/assets/bin/specs.py
       verify: python3 assets/bin/specs.py selftest

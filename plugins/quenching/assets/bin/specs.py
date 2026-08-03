@@ -1973,18 +1973,85 @@ def hybrid_unwrap(body: str) -> tuple[str, str]:
     return (m.group(1), body[m.end():]) if m else ("", "")
 
 
-def hybrid_tasks_shell(text: str) -> str:
-    """The canonical document with `## Tasks`'s own body emptied down to the bare heading.
+def hybrid_tasks_span(text: str) -> tuple[int, int] | None:
+    """`(start, end)` line indices of `## Tasks`'s BODY in the whole document, or `None`.
 
-    Built with `upsert_section` — the SAME splice every command already writes a section
-    through — rather than a bespoke one for this backend. The tasks themselves move to
-    sub-issues; nothing about a `## Tasks` heading with no body under it is backend-specific
-    enough to earn its own splicing code."""
+    Whole-document coordinates, because that is what `parse_tasks` already hands back in
+    `lineno`/`blockEndLineno` and the shell has to line the two up. `parse_sections` is run
+    over the body, so the frontmatter's own lines are added back the same way
+    `upsert_section` adds them."""
     sections = parse_sections(body_after_frontmatter(text))
     if "Tasks" not in sections:
+        return None
+    lines = text.splitlines(keepends=True)
+    fm_offset = len(lines) - len(body_after_frontmatter(text).splitlines(keepends=True))
+    start = sections["Tasks"]["lineno"] + fm_offset + 1
+    return start, start + len(sections["Tasks"]["lines"])
+
+
+def hybrid_tasks_shell(text: str) -> str:
+    """The canonical document with the task BLOCKS lifted out of `## Tasks` and everything
+    else in that section left exactly where it was.
+
+    IT USED TO EMPTY THE WHOLE SECTION, and that was a silent loss. `### N. <Section>` group
+    headings are documented grammar (the template's `## Tasks` guidance), they are counted by
+    `parse_tasks` into every task's `section`, and `verification: per-section` and `[P]` both
+    reason over them. Emptying the body threw them away, `hybrid_rebuild_tasks_section` had
+    nothing to put back, and the write neither failed nor warned: the document came back
+    well-formed with one level of structure gone. Measured on 2026-08-02, 47 of this
+    repository's 66 specs used groups and ~35 documents did not survive the round trip.
+
+    What is lifted is exactly the span `parse_tasks` reports for each task — the checkbox line
+    plus its indented metadata. Group headings, prose and the blank lines around them stay,
+    verbatim and in position, which is what lets the rebuild put the blocks back where they
+    came from rather than in a layout of its own invention.
+
+    Built with `upsert_section` — the SAME splice every command already writes a section
+    through — rather than a bespoke one for this backend."""
+    span = hybrid_tasks_span(text)
+    if span is None:
         return text
-    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks", "## Tasks\n\n")
+    start, end = span
+    lines = text.splitlines(keepends=True)
+    drop: set[int] = set()
+    for task in parse_tasks(text):
+        drop.update(range(task["lineno"], task["blockEndLineno"]))
+    kept = [ln for i, ln in enumerate(lines[start:end], start=start) if i not in drop]
+    sections = parse_sections(body_after_frontmatter(text))
+    new_text, _ = upsert_section({"text": text, "sections": sections}, "Tasks",
+                                 lines[start - 1] + "".join(kept))
     return new_text
+
+
+def hybrid_task_anchors(text: str) -> dict[int, int]:
+    """`{task index: how many non-task lines of `## Tasks` precede its block}`.
+
+    THE ANCHOR IS WHAT MAKES THE ROUND TRIP AN IDENTITY rather than a re-layout. The rebuild
+    is handed a shell and a pile of blocks; `section` alone would say which group a block
+    belongs to but not where inside it, and it cannot say anything at all about the blank
+    lines a document happens to use between its tasks. Every spec in this repository writes
+    its tasks adjacent inside a group and separated by a blank line between groups — a rebuild
+    that normalised instead of restoring would change every one of them, and the equality
+    `spec-backend.md` rests on is byte-for-byte.
+
+    Counted against the SHELL's kept lines, which is the coordinate system the rebuild
+    actually walks. `hybrid_tasks_shell` and this function drop the same spans by
+    construction: both ask `parse_tasks` and nothing else."""
+    span = hybrid_tasks_span(text)
+    if span is None:
+        return {}
+    start, end = span
+    tasks = parse_tasks(text)
+    drop: set[int] = set()
+    for task in tasks:
+        drop.update(range(task["lineno"], task["blockEndLineno"]))
+    kept_before = {}
+    seen = 0
+    for i in range(start, end):
+        kept_before[i] = seen
+        if i not in drop:
+            seen += 1
+    return {t["index"]: kept_before.get(t["lineno"], seen) for t in tasks}
 
 
 def hybrid_task_key(task: dict) -> str:
