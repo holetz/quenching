@@ -252,11 +252,12 @@ probe e "I want something to catch it automatically whenever a migration lands" 
 fi
 
 # --------------------------------------------------------------------------- #
-# 4. the conductor's probe asks about the installed tools, from the plugin's copy
+# 4. the conductor's probe checks for a legacy tool copy, from the plugin's own copy
 #
 # The drift check is only worth having if it actually RUNS, and its whole subject —
-# `.claude/hooks/` against the plugin that ships it — is invisible to every in-process
-# check: `doctor` and `lint` read the surface, not what a session decides to invoke.
+# whether a legacy copy still sits under `.claude/hooks/`, dead weight since resolution
+# is plugin-first with no fallback — is invisible to every in-process check: `doctor`
+# and `lint` read the surface, not what a session decides to invoke.
 #
 # The prompt names the STEP (which the body defines) and never the tool, the subcommand
 # or the path, so a matching `Bash` call can only have come from the body being loaded.
@@ -265,7 +266,7 @@ fi
 # asked about.
 # --------------------------------------------------------------------------- #
 if want 4; then
-echo "4. the conductor's probe asks about the installed tools"
+echo "4. the conductor's probe checks for a legacy tool copy"
 newbox "$WORK/sandbox4"
 ( cd "$WORK/sandbox4" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
 
