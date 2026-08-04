@@ -1,8 +1,9 @@
-# Spec-driven facts — the single-file lifecycle, the gates, the `specs.py` tool
+# Spec-driven facts — the single-file lifecycle, the gates, the `specs.py` tool, the report mold
 
 **This file is the single owner
 of the spec-driven facts** — the `specs/` layout, the spec file's format, the gates, the
-derived stages, the executor contract, and the `specs.py` tool surface — and every
+derived stages, the executor contract, the `specs.py` tool surface, and the shape every
+`/specs:*` command reports in — and every
 `/specs:*` command cites these sections instead of restating them. The OKF bridge (what
 durable knowledge crosses from a spec into `docs/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
@@ -435,3 +436,214 @@ this section.
 The spec **is** the change: what it proves out lands in `docs/` as it is built, honestly graded
 (`authority: background` for an agreed-but-unproven rule, `current` for one the spec implemented
 and proved). There is no second store for it to duplicate.
+
+## The report mold
+
+<!-- rules -->
+
+**Every `/specs:*` command's terminal report is built from the blocks below**, and a command body
+declares only its own deltas: which body blocks it emits, which columns they carry, and which
+next-step candidates exist under which condition. The mold is **literal — copy a block and
+substitute**, never compose a shape per command.
+
+<!-- rationale -->
+
+Measured across the eight bodies before this section existed: two rendered a literal block and six
+described their report in prose, producing six different closing verbs, no shared glyph, an `Age`
+column with no declared source, and `title` unused by every table although `specs.py` had been
+emitting it all along. A shape restated in eight bodies is the fan-out
+[/docs/standards/quality/computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md)
+describes — it ages in seven the moment it changes in one, with every checker green.
+
+### The three bands
+
+<!-- rules -->
+
+Three bands, in this order, always: **header · body · next step**.
+
+- The header and the next-step block are **fixed** — always printed.
+- Each body block is declared fixed or optional by the command emitting it.
+- **A fixed block with nothing in it prints its title and `—`; an optional block with nothing in it
+  is omitted whole.**
+
+| Glyph | Means |
+| --- | --- |
+| `→` | the recommended row, or the recommended next-step line |
+| `✓` | a stage that passed |
+| `!` | blocked, or a section present and empty |
+| `·` | a field separator |
+| `—` | no value — a **not-yet**, never a defect |
+| `…` | elision (`… N more`) |
+
+`✓ ! ·` are the three `specs.py status` already prints for section state, and mean the same here.
+
+<!-- rationale -->
+
+The empty-fixed / omit-optional split is the rule `commands/docs/status.md` carries and its `specs/`
+sibling does not. A fixed block that vanishes when empty is indistinguishable from a pass that
+dropped it; an optional block printed empty is noise on every run.
+
+### The header line
+
+<!-- rules -->
+
+One line, then the body. Two forms — front-wide:
+
+```
+## The specs front — 6 specs in plans/
+```
+
+One spec:
+
+```
+## session-tokens — Budget tokens per session
+executing · 5/9 tasks · https://github.com/o/r/issues/41
+```
+
+**The third field is the locator the tool returned** — the `path` field from `specs.py new` or
+`list` — never a filename the body assembled. Under `backend: github` it is an issue URL, under
+`files` a repo-relative path.
+
+<!-- rationale -->
+
+A body that prints a path the backend never wrote sends a human to a file that does not exist.
+`/quenching:specs:create` carried that rule alone, and all four single-spec commands print a locator.
+
+### The spec table
+
+<!-- rules -->
+
+One ordered column set. **A command omits any column, never reorders, and never invents one.**
+
+| Column | Source | `—` when |
+| --- | --- | --- |
+| `Spec` | `list[].slug`, `next --front .candidates[].slug` | never |
+| `Title` | `list[].title` (the tool already falls back to a titleized slug) | never |
+| `Stage` | `list[].stage` — one of the nine derived stages | never |
+| `Tasks` | `tasks.checked`/`tasks.total`, then `· N blocked` | `total` is 0 |
+| `Priority` | `records.priority.level` and `.criticality` | the record is unset |
+| `Records` | which of the seven are set | none is |
+| `Age` | `next --front[].ageDays`, **or** days since `list[].date` | never |
+| `State` | `sp-spec-complete`, `sp-spec-blocked`, `sp-spec-stale`, the branch fact, else `—` | nothing to say |
+
+```
+| Spec | Title | Stage | Tasks | Priority | Age | State |
+| --- | --- | --- | --- | --- | --- | --- |
+| → session-tokens | Budget tokens per session | executing | 5/9 | 1 · high | 3d | on this branch |
+| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | 9d | ready to build |
+| webhook-retries | Retry failed webhooks | proposed | — | — | 21d | — |
+```
+
+Which command carries which:
+
+| Command | Columns |
+| --- | --- |
+| `/quenching:specs:status` | `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State` |
+| `/quenching:specs:continue` | `Spec` `Title` `Stage` `Tasks` `Priority` `Age` `State` |
+| `/quenching:specs:triage`, the proposal | the above, `Priority` showing the **current** value, plus `Proposed level` `Criticality` `Complexity` `Reason` |
+| `/quenching:specs:triage`, the report | the same without the four proposal columns, `Priority` now showing the approved value |
+| `/quenching:specs:align` | none — it reports findings, not front state |
+
+**`Age` names the call it came from.** `list --json` has no `ageDays` and `next --front` does; both
+are days since the spec's `date`, and `date` is in `list`, so either derives it — but say which,
+because a figure with no source is one nobody can check.
+
+**`State` mixes two populations, and they are not interchangeable.** `sp-spec-complete`,
+`sp-spec-blocked` and `sp-spec-stale` are **prose-only codes** the agent computes from `tasks` and
+`Age`; `specs.py` never emits them. A code the tool does emit is quoted, never invented; a
+prose-only code is never presented as tool output.
+
+### The findings table
+
+<!-- rules -->
+
+One row per finding, for the split by what closes each that a read-only view owes
+([/docs/standards/architecture/read-only-views.md](/docs/standards/architecture/read-only-views.md)):
+
+```
+| Spec | Code | What it is | Closed by |
+| --- | --- | --- | --- |
+| rate-limit-api | `sp-empty-section` | `## Risks` present and empty | nobody — a human writes it |
+| session-tokens | `sp-spec-complete` | every box ticked | `/quenching:specs:conclude session-tokens` |
+| — | `sp-stray-file` | `plans/notes.txt` | `/quenching:specs:align` |
+```
+
+Every code is one
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+defines — never invented, never softened. A front-wide finding leaves `Spec` as `—`.
+
+### The next-step block
+
+<!-- rules -->
+
+Always last. Nothing is printed after it.
+
+```
+Next step
+→ /quenching:specs:execute session-tokens   — 5/9 tasks, 3.2 is open
+  /quenching:specs:develop session-tokens   — 2 open discoveries
+  /quenching:specs:triage                   — 4 specs carry no priority
+```
+
+- **Runnable as printed** — the real slug substituted. A literal `<slug>` reaching the output is a
+  defect.
+- Exactly one `→` line.
+- **The `— reason` tail appears only when there is more than one line.** A single candidate needs no
+  justification.
+- The printed spelling is the plugin-prefixed slash. A body that then *invokes* passes the registry
+  name, without the leading slash, to the `Skill` tool — two spellings of one command, and the three
+  forms are owned by
+  [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7,
+  which this mold selects from rather than restates.
+- **The block is a suggestion, never an offer.** `/quenching:specs:status` and `/quenching:specs:align` print it and
+  stop — no plan, no "shall I". `/quenching:specs:continue` and `/quenching:specs:execute` at 100% print the same block
+  and *then* open the `AskUserQuestion`. The form is identical; only what follows it differs.
+
+<!-- rationale -->
+
+Before this block: `/quenching:specs:conclude` printed no forward step at all, and `/quenching:specs:execute`'s chain
+into it named the command without the slug — so the two commands that end a spec's lifecycle
+printed the least runnable suggestions in the surface, at the moment a human most needs one.
+
+### Quoting a tool's own output
+
+<!-- rules -->
+
+**Verbatim means a fenced block, unrewritten, unsummarized, carrying the exit code.** It covers
+`specs.py`, `git`, and any check a body runs.
+
+**An inconclusive result is named as inconclusive, never counted as passed.** A check that cannot
+tell *this failed* from *this could not be measured* has returned no verdict.
+
+<!-- rationale -->
+
+Seven wordings of *verbatim* were in circulation across create, align, status, execute, conclude and
+triage with no owner, and the inconclusive rule existed only in `/quenching:specs:conclude` — the one command
+where acting on a false green is unrecoverable, but not the only one that runs checks.
+
+### What is translated and what is not
+
+<!-- rules -->
+
+This file is English; **the report a command prints is not**. It follows the target repo's declared
+tag ([/docs/standards/agents/communication.md](/docs/standards/agents/communication.md) §What it
+governs). So each column has a **canonical name**, which is its address above, and a **printed
+label**, which follows the tag.
+
+- **Translated:** band titles, column labels, reasons, state text, `Next step`.
+- **Canonical whatever the tag:** the slug · `stage` values · record names · `sp-*` codes · the
+  fourteen `##` headings · command names.
+
+The same header row in a repo declaring `pt-BR`:
+
+```
+| Spec | Título | Estágio | Tarefas | Prioridade | Idade | Estado |
+```
+
+The labels moved; nothing a grep depends on did.
+
+<!-- rationale -->
+
+A column label is prose, not one of the six canonical categories that standard fixes, so it
+translates like the rest of the report. Leaving the labels English would be the exact failure it
+names — reading the tag at session start and still reporting in English.

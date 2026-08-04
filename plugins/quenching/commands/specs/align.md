@@ -25,7 +25,8 @@ only when something is already broken.
 
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
 fourteen canonical sections, the derived stages and the `specs.py` surface in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
+whose §The report mold owns the shape step 7 prints in;
 the front's on-write check in
 [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
@@ -175,16 +176,24 @@ missing frontmatter keys (MERGE); install the GENERATED markers without touching
 delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migration.
 **Done when:** every confirmed row is applied and nothing outside the plan changed.
 
-### 7. Verify, log, report
-Re-run the probe's two commands — clean, or the residual message reported verbatim (a REPORTS-table
-code is a clean result, not a failure). Those two are the whole verification: `specs.py doctor` for
+### 7. Verify and report
+Re-run the probe's two commands — clean, or the residual message quoted per §Quoting a tool's own output (a REPORTS-table code is a clean result, not a failure). Those two are
+the whole verification: `specs.py doctor` for
 the workspace's shape and `specs.py validate` for the spec files, both deciding on an exit code.
 There is no listing to regenerate and no second checker to point at `specs/` — the OKF validator
 owns the `docs/` bundle alone, and a spec carries no OKF `type:` for it to judge.
 
 This sweep writes nothing into the `docs/` bundle — the `specs/` front records itself, and the
-bundle log it used to append to is retired. Report the counts **and** the reported-not-applied
-residue, each with the command that closes it.
+bundle log it used to append to is retired.
+
+Then §The report mold, with two body blocks:
+
+1. **Applied** — fixed. What the sweep changed, with counts, and the probe's re-run state.
+2. **Reported, not applied** — fixed, because an empty one is the good news this sweep exists to
+   deliver. §The findings table, every row's `Closed by` naming the command that closes it.
+
+Close on §The next-step block. On a clean probe at step 1, that block plus the one-line conformant
+verdict **is** the whole report.
 **Done when:** the probe's re-run state, the counts, and the residue are all reported.
 
 ## Invariants to never violate

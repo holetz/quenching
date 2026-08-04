@@ -27,7 +27,8 @@ read it before running a bank; it is the owner of the technique, and this body n
 
 The spec-driven facts — the layout, the fourteen canonical sections, the gates, the derived stages,
 the `specs.py` surface, the `specs/`↔`docs/` boundary — live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
+whose §The report mold owns the shape step 8 prints in.
 The per-section authoring doctrine — what belongs under each heading, how to write an honest
 explicit none — lives in
 [specs-develop/artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md).
@@ -162,12 +163,16 @@ or the same bank selected again with nothing left to ask → go to step 8.
 **Done when:** the human has taken or declined the next bank.
 
 ### 8. Report
-The spec and the bank(s) that ran; how many questions were asked and answered; the sections edited;
-the records stamped; the routed offers and whether each was taken; **every follow-up parked into
-`## Discoveries`, quoted** — a parked line was never offered, so nothing else in this list reports
-it, and an unreported one is indistinguishable from a finding the pass dropped; the stage before
-and after; and
-the next step — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
+Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body blocks:
+
+1. **The pass** — fixed. The bank(s) that ran; how many questions were asked and answered; the
+   sections edited; the records stamped; the routed offers and whether each was taken; the stage
+   before and after.
+2. **Parked into `## Discoveries`** — optional, and every line **quoted**. A parked line was never
+   offered, so nothing else in this report names it, and an unreported one is indistinguishable from
+   a finding the pass dropped.
+
+Close on §The next-step block — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
 for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
 
 **Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
