@@ -26,7 +26,7 @@ only when something is already broken.
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
 fourteen canonical sections, the derived stages and the `specs.py` surface in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the tool fallback and the front's on-write check in
+the front's on-write check in
 [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
 findings it fixes versus only reports, and the migrations — is
@@ -76,8 +76,8 @@ Read it as this command's doctrine. What follows is only what is **specific to `
 ## Workflow (probe → force-with-1-confirmation)
 
 ### 1. Probe — the two calls that decide whether anything else runs
-Resolve `specs.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
+Resolve `specs.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool, invoked via `python3` or `py`. Resolve the `specs/` root at the repo root,
 then:
 ```bash
@@ -97,12 +97,13 @@ what step 4 offers to scaffold.
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
 ```
-Read this front's row (`specs.py`) and carry it into step 5's scaffold section: `behind` → offer
-the overwrite; `absent` → offer the install; `ahead` → **left alone and reported**, because the
-target being ahead of this plugin is a fact to state, not a regression to force. Run it from the
-**plugin path** — an installed copy answers from the same stale `VERSION` it is being asked about,
-and refuses (exit 2) rather than lie. A drift row does **not** by itself make an otherwise-clean
-workspace non-conformant: report it with the install offer and stop as prescribed above.
+Read this front's row (`specs.py`) and carry it into step 5's scaffold section: a **legacy copy**
+present under the target's `.claude/hooks/` → offer **removal**, never a refresh, since `specs.py`
+always resolves via the plugin path now and an installed copy does nothing but drift. Run the
+probe from the **plugin path** — an installed copy would answer from the same stale `VERSION` it
+is being asked about, and refuses (exit 2) rather than lie. A drift row does **not** by itself make
+an otherwise-clean workspace non-conformant: report it with the removal offer and stop as
+prescribed above.
 **Done when:** the two payloads are in hand and the run has either stopped or been committed to a
 full sweep.
 
@@ -148,8 +149,9 @@ worth the scan even when the file looks internal.
 
 ### 5. Present ONE plan → gate
 One plan, in sections: scaffold (copy `${CLAUDE_PLUGIN_ROOT}/assets/specs/` into `specs/` when
-`sp-no-workspace`, plus install `specs.py` into `.claude/hooks/` and the operator manual
-`specs/QUENCHING.md` — install / refresh / leave); **migrations** (the legacy `openspec/` fold with
+`sp-no-workspace`, plus the operator manual `specs/QUENCHING.md` — install / refresh / leave; a
+legacy `.claude/hooks/specs.py` copy offered for **removal**, never refreshed); **migrations** (the
+legacy `openspec/` fold with
 each main-spec→`docs/standards/` cut shown and interop-lost stated; then the fold, shown as
 `specs.py migrate --dry-run`'s own output — every spec's destination, the source of each date, and
 every folder that will be **kept** because it still holds a file); tool repairs (each quoting the
@@ -161,10 +163,11 @@ single confirmation; each code-coupled rename awaits its own.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
 ### 6. Apply exactly what was approved
-Copy `assets/specs/` and install `specs.py` if approved; run the legacy fold, then
-`specs.py migrate`, if approved — **never hand-fold**, and report every folder the tool kept; apply
-each tool-stated repair; rename the confirmed files and update every reference site alongside its
-individually confirmed rename; install the operator manual from
+Copy `assets/specs/` if approved; run the legacy fold, then `specs.py migrate`, if approved —
+**never hand-fold**, and report every folder the tool kept; remove a confirmed legacy
+`.claude/hooks/specs.py` copy; apply each tool-stated repair; rename the confirmed files and
+update every reference site alongside its individually confirmed rename; install the operator
+manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/specs/QUENCHING.md` to `specs/QUENCHING.md` under the four-branch
 manual-install rule in [/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never
 restated — same banner, same version fill, same never-clobber-a-de-bannered-copy branch); stamp the

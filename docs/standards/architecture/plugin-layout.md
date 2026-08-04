@@ -2,12 +2,12 @@
 type: standard
 title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: plugins/quenching/commands/**, plugins/quenching/assets/**
+resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-07-31
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the QUENCHING.md bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed
 maintainer: quenching
 ---
 
@@ -28,6 +28,24 @@ This is not a style preference. Before the collapse the question could not arise
 `references/` folder sat beside a `SKILL.md`, inside `skills/`, which Claude Code registered by
 folder rather than by file. Moving bodies into `commands/` made the adjacency illegal, and
 nothing in the repo said so.
+
+### `hooks/hooks.json` is the second tree Claude Code reads by convention
+
+`commands/**` is the only tree that becomes an **entry point**, which is what the heading above is
+about — but it is not the only path Claude Code loads from a plugin by name.
+`plugins/quenching/hooks/hooks.json` is read at plugin-load time and its `hooks` block is wired for
+every repo that has the plugin installed, with `${CLAUDE_PLUGIN_ROOT}` substituted at load. That is
+why the OKF checker needs no copy in a target's `.claude/hooks/` and no merge into a target's
+`.claude/settings.json`; the contract is
+[../automation/hooks.md](../automation/hooks.md) §What this repo's own surface does under it.
+
+**Two consequences for this standard.** A convention-named file at the plugin's top level is
+neither an entry point nor an asset, so it sits *outside* both trees rather than being filed under
+`assets/` — the `assets/` definition ("everything Claude Code must not surface as an entry point")
+would otherwise swallow a file Claude Code is specifically meant to find. And the reason it may sit
+there is the same one that governs `commands/`: **the path is the identity**, fixed by the host,
+not chosen by us. A third such path added by Claude Code later inherits this paragraph without
+amending the `assets/` inventory below.
 
 ## Where it goes instead: `assets/`
 
@@ -63,17 +81,25 @@ folder needed was the fourth reason **named and given its own subtree**, which i
 `evals/` had already done for the third: the two harnesses moved to `checks/`.
 
 The rule that decides where an executable sits, made explicit by the same move: **by how it is
-invoked, not by whether it ships.** `okf-validate.py` stays in `hooks/` beside the
-`hooks-config.json` it loads from its own directory, even though it is the CLI sibling of the two
-tools in `bin/` and the third member of the release lockstep — separating the pair breaks config
-loading in every installed copy. Symmetry of *kind* is not a reason to move a file; adjacency it
-depends on is a reason not to.
+invoked, not by whether it ships.** `okf-validate.py` stays in `hooks/` because it is the one tool
+a **hook event** fires rather than a command body — `plugins/quenching/hooks/hooks.json` names it
+at `PostToolUse` and `Stop` — even though it is the CLI sibling of the two tools in `bin/` and the
+third member of the release lockstep. Symmetry of *kind* is not a reason to move a file; the way
+it is reached is a reason not to.
+
+**The adjacency that used to justify this is gone, and the rule outlived it.** The original
+reasoning was that `okf-validate.py` had to sit beside the `hooks-config.json` it loaded *from its
+own directory*, so separating the pair would break config loading in every installed copy. Both
+halves are now false: `_load_config` reads the **target's** `.claude/hooks/hooks-config.json`
+(plus `docsDir` from `.claude/quenching.json`), and there are no installed copies left to break.
+The file stays in `hooks/` on the invocation rule alone — which is the rule that was doing the
+work all along.
 
 Current subtrees, by the reason each is here:
 
 | Reason | Subtrees |
 | --- | --- |
-| payload copied whole by an align | `docs/` `specs/` `claude/` `mkdocs/` · `hooks/*.json` |
+| payload copied whole by an align | `docs/` `specs/` `claude/` `mkdocs/` |
 | payload applied per insert (molds) | `templates/` |
 | tool the plugin executes | `bin/` · `hooks/okf-validate.py` |
 | artifact of developing this repository | `references/` `evals/` `checks/` |
@@ -124,19 +150,28 @@ listing from being flattened. Same input, two encodings, two jobs — do not rec
 
 ### A mold cites nothing it does not also install
 
-The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves.
-Anything an align **copies into a target repo** is the opposite case: the copy lands in a repo that
-has none of this repository's `docs/`, and may have none of this plugin either. A cross-reference to
-`quality/surface-verification.md` is correct in the plugin's own bundle and dangles in every repo
-cut from the mold.
+The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves. The
+reason is mechanical, not a claim about what a target repo happens to have: Claude Code substitutes
+`${CLAUDE_PLUGIN_ROOT}` only while it **loads a file that is part of the plugin itself** — the
+variable is never exported to a shell, and never substituted for a copy sitting in a target repo, a
+`bash` block pasted into a terminal, or any other reader outside that load path. A cross-reference to
+`quality/surface-verification.md` is correct in the plugin's own bundle and dangles wherever that
+load path does not hold — **even in a repo that has this very plugin installed**, because
+installed-elsewhere is not the same fact as loaded-from-here.
 
-**The test is "does a copy of this leave the plugin?", not which folder it sits in.** Three trees
-answer yes today — `assets/templates/**` (the harness and front-matter molds),
+**The test is "is whoever reads this inside the plugin's own file-load path?", not "does a copy
+leave the plugin?"** The narrower test missed a case the wider one catches: the three
+`QUENCHING.md` operator manuals are meant to be pasted by a human into a raw terminal, so a
+`${CLAUDE_PLUGIN_ROOT}` citation inside one of *their* `bash` blocks dangles the moment a human
+reads that block verbatim — before the file is copied anywhere, and regardless of whether the
+plugin is loaded in the session doing the reading. Three trees still answer the wider test today —
+`assets/templates/**` (the harness and front-matter molds),
 `assets/docs/**` (the OKF skeleton and the operator manual, both copied by `/docs:align`) and
-`assets/specs/templates/**` — and a fourth added later inherits the rule without amending this
-list. Naming one folder was how a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed:
-the reasoning covered it, the wording did not, and nothing else checks. **No validator catches
-this** — a path that fails to resolve reads as ordinary prose, so the rule is the only guard.
+`assets/specs/templates/**` — plus every `QUENCHING.md`'s own `bash` blocks, copied or not; a
+fourth surface added later inherits the rule without amending this list. Naming one folder was how
+a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
+wording did not, and nothing else checks. **No validator catches this** — a path that fails to
+resolve reads as ordinary prose, so the rule is the only guard.
 
 So **a template states its caveat self-contained**, citing only what the same align installs
 alongside it. This is why a mold and the plugin's own copy of the same standard legitimately differ

@@ -4,10 +4,10 @@ title: Reading a canonical set
 description: How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
 tags: [code, parsing, contracts, schema, lockstep, selftest]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: add-eli5-section-to-specs spec — the branch review found `specs.py new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `specs.py`'s own selftest while `_match_heading` refused it
+source: add-eli5-section-to-specs spec — the branch review found `specs.py new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `specs.py`'s own selftest while `_match_heading` refused it; the duplication's justification rewritten from installed-copy to self-containment (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
 maintainer: quenching
 ---
 
@@ -57,8 +57,8 @@ answer a question about *membership*.
 ## A lockstep check does not cover the code over it
 
 Several artifacts here are duplicated on purpose: `specs.py` embeds `schema.json` and
-`templates/spec.md` as constants, because an installed copy under a target's `.claude/hooks/`
-has no adjacent assets. `selftest` compares each pair byte-for-byte.
+`templates/spec.md` as constants, so the tool stays one self-contained file that can be read and
+asserted without its asset directory. `selftest` compares each pair byte-for-byte.
 
 **That check proves the copies agree. It cannot prove the code reading them still means the same
 thing** — and the two failures look identical from outside, which is what makes this worth
@@ -75,8 +75,9 @@ assert the derived behaviour against the declaration, not just the declaration a
   *whether the template matches*;
 - state it against the declaration so it survives the next member added, rather than pinning the
   current answer;
-- put it where the frontmatter cases already sit — **before** the early return for an installed
-  copy — since a copy with no adjacent assets is exactly where drift goes unnoticed.
+- put it where the frontmatter cases already sit — **before** the early return that skips the
+  byte-for-byte comparison — so it is asserted against the embedded constants themselves rather
+  than against whatever the asset directory happens to hold.
 
 `specs.py selftest` now carries that assertion as `sp-capture-gate-missing` and
 `sp-capture-extra-heading`: the capture form must contain every entry-gate heading and no other.

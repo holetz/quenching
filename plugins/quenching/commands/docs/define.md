@@ -2,13 +2,6 @@
 description: Add or refine ONE entry in the fixed glossary (knowledge/glossary.md). Triggers on "add a term to the glossary", "define this term", "add this acronym/jargon to the glossary". Not for: a full concept doc → /docs:add; sweeping the whole bundle for missing terms → /docs:glossary-backfill.
 argument-hint: [term]
 allowed-tools: Read, Grep, Glob, Write, Edit
-hooks:
-  PostToolUse:
-    - matcher: "Write|Edit"
-      hooks:
-        - type: command
-          command: 'test -f "${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py" || exit 0; python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"'
-          timeout: 10
 ---
 
 # /quenching:docs:define — add/refine one glossary term
