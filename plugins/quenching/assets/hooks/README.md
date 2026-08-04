@@ -1,13 +1,16 @@
 # assets/hooks/ — the OKF enforcement hook
 
 Self-contained enforcement payload of the `quenching` plugin. Keeps a target
-repo's `docs/` bundle aligned to OKF **after** `/docs:align` installs it.
+repo's `docs/` bundle aligned to OKF. **Nothing here is installed into a target** —
+the plugin's own `hooks/hooks.json` wires the checker at
+`${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`, so it works in every repo that
+has the plugin.
 
 | File | Role |
 | --- | --- |
 | `okf-validate.py` | The OKF v0.1 conformance checker. Zero dependencies. Runs as a **CLI** (`okf-validate.py <docs-dir>` — used by the skills and the verification step) or as a **hook** (reads the hook JSON on stdin). `--version` prints its version (kept in lockstep with the plugin `VERSION`). |
-| `hooks-config.json` | Shared config (block `okfValidate`): `enabled`, `docsDir`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`. Commit it into the target. Per-dev overrides go in `hooks-config.local.json` (gitignored). |
-| `settings.snippet.json` | Wiring to **merge** into the target's `.claude/settings.json` — `PostToolUse` + `Stop` by default; an opt-in `PreToolUse` hard-deny block. |
+| `hooks-config.json` | The **defaults reference** for the `okfValidate` block: `enabled`, `docsDir`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`. A target that wants to override them maintains its own `.claude/hooks/hooks-config.json`; `docsDir`'s preferred home is `.claude/quenching.json`. |
+| `settings.snippet.json` | The wiring, kept as a **reference copy** of what `hooks/hooks.json` declares. Nothing merges it into a target any more. |
 
 ## What it checks (the OKF core)
 
@@ -49,21 +52,23 @@ repo's `docs/` bundle aligned to OKF **after** `/docs:align` installs it.
   every file anyway) and the script stays stdlib-only — revisit only if the single-pass
   scan is ever too slow on giant catalogs.
 
-## Install into a target
+## Configuring a target
 
-1. Copy **exactly these three files** — `okf-validate.py`, `hooks-config.json`,
-   `settings.snippet.json` — into the target's `.claude/hooks/`. Never copy the
-   directory recursively (a stray `__pycache__/` would ride along).
-2. Merge `settings.snippet.json` into the target's `.claude/settings.json`.
-3. Set `docsDir` if the bundle root is not `docs/`.
+Nothing is copied and nothing is merged. The only thing a target may want to declare is
+where its bundle lives, when it is not `docs/`:
 
-`/docs:align` offers to do all three (Step 6, wiring the enforcement hook).
+- `docsDir` in the target's `.claude/quenching.json` — the preferred home, read relative
+  to the project root.
+- The remaining knobs (`enabled`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`,
+  `stopScan`, `ignoreGlobs`) are read from the target's own
+  `.claude/hooks/hooks-config.json` when it maintains one by hand. The copy in this
+  directory is the **defaults reference**, not something an align installs.
 
-## Upgrade a target
+## Legacy copies
 
-The installed copy is a snapshot. `okf-validate.py --version` prints its version;
-compare it with this plugin's `VERSION` file and, when the plugin is newer, overwrite
-**only** `okf-validate.py` in the target's `.claude/hooks/` — the target's
-`hooks-config.json` holds local knobs and is **preserved** (new knobs fall back to
-built-in defaults). `/docs:align` Step 6 performs this comparison and offers the
-upgrade when it finds an older installed copy.
+A repo that accepted the old install offer still has `okf-validate.py` under
+`.claude/hooks/`, plus wiring in its `.claude/settings.json` pointing at it. Nothing
+resolves to that copy any more, so it fires only because the old `settings.json` entry
+still names it — the same checker running twice, one of them frozen at whatever version
+it was installed at. `skills.py drift` reports it and `/docs:align` §5 offers to remove
+it.
