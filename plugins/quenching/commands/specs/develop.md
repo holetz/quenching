@@ -39,9 +39,10 @@ marker, and returns the whole section, saying so, where it does not.
 
 The selected bank's own section, the per-section authoring doctrine in
 [specs-develop/artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md),
-and the records' shapes are loaded **inside the step that uses them** — steps 3b, 5 and 6. A
-reference read in one branch is never hoisted into a preamble every turn pays for regardless of
-which branch runs.
+and the records' shapes are loaded **inside the step that uses them** — steps 3b, 5 and 6; step 8
+loads spec-driven.md's §The report mold, whose shape that step's report is built from, the same
+way. A reference read in one branch is never hoisted into a preamble every turn pays for regardless
+of which branch runs.
 
 ## Resolving the tool
 
@@ -229,13 +230,17 @@ or the same bank selected again with nothing left to ask → go to step 8.
 **Done when:** the human has taken or declined the next bank.
 
 ### 8. Report
-The spec and the bank(s) that ran; how many questions were asked and answered; the sections edited;
-the records stamped; the routed offers and whether each was taken; **every follow-up parked into
-`## Discoveries`, quoted** — a parked line was never offered, so nothing else in this list reports
-it, and an unreported one is indistinguishable from a finding the pass dropped; the stage before
-and after; and the next step — `/quenching:specs:execute <slug>` once `approved` is stamped,
-`/quenching:specs:develop <slug>` again for the next bank, or `/quenching:specs:continue` to be told
-what the whole front wants next.
+Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body blocks:
+
+1. **The pass** — fixed. The bank(s) that ran; how many questions were asked and answered; the
+   sections edited; the records stamped; the routed offers and whether each was taken; the stage
+   before and after.
+2. **Parked into `## Discoveries`** — optional, and every line **quoted**. A parked line was never
+   offered, so nothing else in this report names it, and an unreported one is indistinguishable from
+   a finding the pass dropped.
+
+Close on §The next-step block — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
+for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
 
 **Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
 tree, so the human may want it on a branch — when they ask, name `/quenching:specs:execute <slug>` as the

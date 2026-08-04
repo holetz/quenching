@@ -19,7 +19,8 @@ status view that disagreed with the sweep would be worse than none.
 
 The workspace facts (layout, the fourteen sections, the derived stages, the `specs.py` surface)
 live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
+whose §The report mold owns the shape step 4 prints in;
 every `sp-*` code and what the sweep would do about it, plus where the front is configured and what
 the declared backend decides, in
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
@@ -89,34 +90,37 @@ sweep's; this command contributes none of its own. Without an OKF bundle, note o
 **Done when:** every observation carries a code and lands in exactly one table.
 
 ### 4. Report
-One report, in this order:
+Emit §The report mold. Five body blocks, **all fixed** — an empty one prints its title and `—`, never
+disappears — in this order:
 
-1. **Header** — the resolved root, whether an OKF bundle is present, and the verifier states
-   verbatim: `doctor`, `validate`, the listing check. If the probe would have stopped
+1. **Header** — the front-wide header line, then the resolved root, whether an OKF bundle is
+   present, and the verifier states quoted per §Quoting a tool's own output: `doctor`, `validate`,
+   the listing check. If the probe would have stopped
    (`/quenching:specs:align` §The probe), say so in one line: that is the single most useful fact here.
-2. **Specs** — a table `Spec | Stage | Tasks | Records | Age | State`, where `Stage` is the derived
-   stage the tool reports, `Records` lists which of the seven are set (`—` when none), and `State`
-   is one of *ready to conclude* (`sp-spec-complete`), *executing*, *blocked* (`sp-spec-blocked`),
-   *stale* (`sp-spec-stale`, with the age), or the stage's own name. Archived specs are a count,
-   not a list, unless one carries a non-canonical name or no `outcome:`.
-3. **Would be fixed by `/quenching:specs:align`** — the fixable codes with counts, and which of them would be
-   **code-coupled** (a rename whose blast radius reaches product code) and so would confirm on its
+2. **Specs** — §The spec table with `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State`. `Age` is
+   days since `list --json`'s `date`; this command never calls `next --front`, and says so rather
+   than leaving the figure sourceless. `Records` lists which of the seven are set; `State` is *ready
+   to conclude* (`sp-spec-complete`), *executing*, *blocked* (`sp-spec-blocked`), *stale*
+   (`sp-spec-stale`, with the age), or the stage's own name. Archived specs are a count, not a list,
+   unless one carries a non-canonical name or no `outcome:`.
+3. **Would be fixed by `/quenching:specs:align`** — §The findings table, marking which rows are
+   **code-coupled** (a rename whose blast radius reaches product code) and so would confirm on their
    own. State plainly that this list is what a single OK would authorize.
-4. **Closed by a cycle command** — each with the command that owns it: a spec at 100% →
+4. **Closed by a cycle command** — §The findings table, each row's `Closed by` carrying the owning
+   command **with its slug**: a spec at 100% →
    `/quenching:specs:conclude`; an unmet gate → `/quenching:specs:develop`; open tasks → `/quenching:specs:execute`; unresolved
    `## Discoveries` → `/quenching:specs:develop`'s discoveries bank; nothing ranked and nothing in flight →
    `/quenching:specs:triage`.
-5. **Closed by neither** — everything needing a human decision, each named with its spec:
+5. **Closed by neither** — §The findings table, `Closed by` reading *a human*:
    `sp-empty-section` and `sp-stray-heading` (authoring nobody can supply), `sp-no-outcome` (`done`
    and `abandoned` are opposite facts), `sp-impact-uncovered` (add the task or drop the
    declaration — a judgment), `sp-unrefined` (nobody has argued with this spec), a diverged shadow
    copy, and any stale spec. State plainly that **none of these gates anything**, so a reader never
    mistakes a warning for a blocker.
 
-Close with the single most useful next command for this repo's actual state — usually
-`/quenching:specs:continue` — and nothing else. No plan, no offer to fix, no "shall I". A status read ends by
-handing control back.
-**Done when:** all five sections are reported and no file has changed.
+Then §The next-step block — usually the single line `/quenching:specs:continue`. Here it is a
+suggestion and never an offer, which is the mold's rule for this command.
+**Done when:** all five blocks are reported and no file has changed.
 
 ## Invariants to never violate
 
