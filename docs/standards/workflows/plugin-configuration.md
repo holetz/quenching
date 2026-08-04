@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the five recognised keys and their defaults, the one key that deliberately has none and refuses instead, the one key a second tool reads and why it had nowhere else to live, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
+description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the seven recognised keys and their defaults, the one key that deliberately has none and refuses instead, the one key a second tool reads and why it had nowhere else to live, the two keys with two consumers each — the release verb and the base-inference chain — why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
 tags: [workflows, specs, configuration, backend, plugin]
-timestamp: 2026-08-03
+timestamp: 2026-08-04
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; `docsDir` added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude
+source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; `docsDir` added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude; `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md)
 maintainer: quenching
 ---
 
@@ -30,7 +30,9 @@ not inside `docs/`.
 {
   "backend": "files",
   "specsBranch": "specs",
-  "worktreeSetup": "./scripts/wt-setup.sh"
+  "worktreeSetup": "./scripts/wt-setup.sh",
+  "integrationBranch": "develop",
+  "releaseBranch": "main"
 }
 ```
 
@@ -48,6 +50,8 @@ to one front).
 | `worktreeSetup` | a shell command, run as written | none | `/specs:execute`'s isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
 | `docsDir` | a path relative to the repo root | `docs` | `okf-validate.py`, as CLI **and** hook |
+| `integrationBranch` | any branch name | **none** — `specs.py release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
+| `releaseBranch` | any branch name | **none** — `specs.py release` applies `main` at the point of use | the release verb only |
 
 **`docsDir` is the one key `specs.py` does not read, and it is here because it had nowhere else to
 live.** The checker's other settings (`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`,
@@ -71,6 +75,15 @@ branch fails on its first operation with no recourse. Namespacing it (`quenching
 the collision and charge the longer name to every repository that never had the problem. Configurable
 pays the cost only where it exists — and if no real target ever sets it, the key is a candidate for
 removal rather than a permanent fixture.
+
+**`integrationBranch`/`releaseBranch` default to `None` here, deliberately, unlike every other
+key in this table.** `specs.py release` applies `develop`/`main` itself once a value is missing —
+those two strings are its constants, not `load_config`'s. The reason is the base-inference chain:
+resolving an unstamped spec's `base` must be able to tell "this repo declared an integration
+branch" from "this repo declared nothing", because only the first should ever win over
+`git symbolic-ref refs/remotes/origin/HEAD`. Folding the default into `load_config`'s own return
+would erase that distinction for every repository that never opted into the develop/main flow —
+[branching.md](../git/branching.md) — and infer `develop` for one that has no such branch at all.
 
 **`azureStates` is the one key with no default, and the absence is the decision.** A phase maps onto
 a state, and what the states *are* is defined by the Azure DevOps project's **process**: Basic says

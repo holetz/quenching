@@ -11,18 +11,14 @@ This repository is a **plugin marketplace**. The plugin itself lives in
 
 ## What it does
 
-Eight skills, plus one enforcement hook:
-
-| Skill | Role |
-| --- | --- |
-| **`quenching-docs-align`** | Installs the canonical OKF bundle (incl. the fixed `knowledge/glossary.md` seed), **force-aligns** an existing `docs/` to it (migrates variant names, relocates misfiled docs, stamps required frontmatter, reserves `index.md` as a listing, writes `okf_version` at the root), then validates. Invasive: presents a full plan, executes on **one** confirmation (code-coupled renames confirm on their own). |
-| **`quenching-docs-add`** | Adds a **new** piece of knowledge (a standard, catalog table, announcement, …) into the correct home with a complete OKF stamp, updates the folder's `index.md`, enriches the glossary on a new term, and validates. |
-| **`quenching-docs-learn`** | Captures one piece of **generic knowledge** the human states (a concept, glossary term, explanation, learning) into the `knowledge/` home with a `type: knowledge` stamp, an updated `index.md`, and a glossary entry for any new term. |
-| **`quenching-docs-glossary-backfill`** | Sweeps the **entire** `docs/` bundle for repo-specific terms that already exist in the docs but were never fed into the glossary, fanning out sub-agents per home and backfilling them in one consolidated pass. |
-| **`quenching-docs-define`** | Adds or refines **one** entry in the fixed glossary `knowledge/glossary.md` — the repo's A–Z term lookup — placing the entry alphabetically, deriving the link to the concept doc, MERGE never clobber. The on-demand counterpart of the glossary tail step the other knowledge skills run. |
-| **`quenching-docs-import-memory`** | Drains the project's Claude Code memory (`~/.claude/projects/<cwd>/memory/`) into the bundle — promoting each memory into its home — then **clears each memory** once its doc lands and passes the conformance check. |
-| **`quenching-docs-harness`** | Refactors the repo's `CLAUDE.md`/`AGENTS.md` into **thin, honest pointers** over the bundle: keeps the operational (commands, env, etiquette), **moves** inlined knowledge into its `docs/` home, points at the glossary for term resolution, and self-verifies every pointer resolves (the validator exempts harness files). |
-| **`quenching-docs-align-and-update`** | The **conductor**. Runs the sweep/structural skills as a dependency pipeline (`align` → `memory-to-docs` → `harness` → `knowledge-scan`) **pass after pass** — **one** OK at cycle start authorizes the whole run (code-coupled items still gate individually) — until a full pass changes nothing and the validator is clean, **exhausting** a repo's OKF improvement opportunities. Conducts, never reimplements: every change is the sub-skill's; per-item content gaps are surfaced, never fabricated. Bounded by a pass cap so it converges or reports residue, never spins. |
+Twenty-five commands acting on three fronts of a target repository — the `docs/` OKF bundle
+(`/docs:*`), the native `specs/` spec-driven workspace (`/specs:*`), and the target's own
+`.claude/` automation surface (`/skill:*`) — plus root `/align`, which spans all three on one
+confirmation. Every front has exactly one **align**: probe-first, so a
+conformant front costs a couple of tool calls and stops. The full command-by-command manual, the
+three fronts, and the cost model live in the
+[plugin README](plugins/quenching/README.md) — this file stays a thin pointer over it rather
+than a second, driftable copy.
 
 The **`okf-validate.py`** hook (self-contained, no dependencies) keeps future edits
 conformant: it validates touched `docs/**` files against the OKF core on
@@ -30,24 +26,27 @@ conformant: it validates touched `docs/**` files against the OKF core on
 
 ## Install
 
+This repository publishes under a **`develop` → `main`** flow
+([`docs/standards/git/branching.md`](docs/standards/git/branching.md)): `develop` is where specs
+accumulate, and `main` — the GitHub repository's default branch — only ever receives a
+deliberate, tagged release. Installing normally therefore always gets you a release someone
+chose to publish, never an arbitrary in-progress merge.
+
 Local (no marketplace publish needed):
 
 ```bash
 claude --plugin-dir ./plugins/quenching
 ```
 
-Then, inside a target repository:
+Run from a checkout of `main` for the latest release; a checkout of `develop` carries whatever
+has been merged since, unreleased.
 
-```
-/quenching:quenching-docs-align            # install + force the knowledge base into OKF shape
-/quenching:quenching-docs-add           # add a new standard / table / announcement
-/quenching:quenching-docs-learn        # capture a piece of generic knowledge
-/quenching:quenching-docs-glossary-backfill   # backfill the glossary from the whole bundle
-/quenching:quenching-docs-define         # add / refine one glossary term
-/quenching:quenching-docs-import-memory   # drain project memory into the bundle
-/quenching:quenching-docs-harness          # refactor CLAUDE.md/AGENTS.md into thin pointers
-/quenching:quenching-docs-align-and-update            # loop the sweep skills to OKF convergence
-```
+Then, inside a target repository, use the `/` menu — every command is
+`/quenching:<front>:<verb>` when installed as a plugin (`/quenching:docs:align`,
+`/quenching:specs:execute`, `/quenching:skill:new`, …); the bare `/<front>:<verb>` form only
+resolves in a repo that vendored the file into its own `.claude/commands/`. The full, current
+list — twenty-five commands, one file per entry point — is the
+[plugin README](plugins/quenching/README.md), never duplicated here.
 
 Or add this marketplace and enable the plugin the usual way (see the
 [plugin README](plugins/quenching/README.md)).

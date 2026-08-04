@@ -1061,10 +1061,20 @@ def find_specs_root(root_arg: str | None) -> str:
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates")
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
+               "integrationBranch", "releaseBranch")
 BACKENDS = ("files", "github", "azure-boards")
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
+# Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
+# to the literal "develop"/"main" below. The base-inference chain
+# (`infer_base_branch`) must tell "declared" from "not declared" to know whether it may
+# skip `origin/HEAD`; baking the default into `load_config` would erase that distinction
+# for every repo that never opted into the develop/main flow. Callers that need an actual
+# branch name once a value IS missing — `specs.py release` among them — apply these two
+# constants themselves, at the point of use.
+DEFAULT_INTEGRATION_BRANCH = "develop"
+DEFAULT_RELEASE_BRANCH = "main"
 # `azureStates` has NO default, and that is the decision rather than an omission. GitHub's
 # open/closed is universal, so `github` needs no such key; an Azure Boards state is defined
 # by the project's PROCESS — Basic says To Do/Doing/Done, Agile says New/Active/Resolved/
@@ -1112,8 +1122,14 @@ def find_repo_root(specs_root: str) -> str:
 
     Git's own top level first, because it is the answer that survives being invoked from a
     subdirectory. Falling back to the specs workspace's parent, which is the repo root by
-    construction: `specs/` sits beside `.claude/`, never below it."""
-    top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
+    construction: `specs/` sits beside `.claude/`, never below it.
+
+    The git call is skipped outright when `specs_root` does not exist. `_git` falls back to
+    running from `.` when its `cwd` is missing, so calling it on a path built to be absent —
+    `load_config`'s own selftest fixture — would silently answer with whatever repo this
+    process happens to be running from instead of "no git facts here", handing back a real
+    `.claude/quenching.json` the fixture exists specifically to avoid."""
+    top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
     return top or os.path.dirname(os.path.abspath(specs_root))
 
 
@@ -1146,7 +1162,7 @@ def load_config(root: str) -> dict:
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
-           "azureStates": None,
+           "azureStates": None, "integrationBranch": None, "releaseBranch": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1178,6 +1194,14 @@ def load_config(root: str) -> dict:
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
 
+    integration = obj.get("integrationBranch")
+    if isinstance(integration, str) and integration.strip():
+        out["integrationBranch"] = integration.strip()
+
+    release = obj.get("releaseBranch")
+    if isinstance(release, str) and release.strip():
+        out["releaseBranch"] = release.strip()
+
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
     # spec into a state the project has and then fail to recognise it on the way back.
     states = obj.get("azureStates")
@@ -1185,6 +1209,166 @@ def load_config(root: str) -> dict:
         named = {p: str(states.get(p, "")).strip() for p in PHASES}
         if all(named.values()):
             out["azureStates"] = named
+    return out
+
+
+def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
+    """An unstamped spec's `base`, stopping at the first that answers — the chain
+    docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
+    record is absent, and the caller's own git facts (`origin_head`, `init_default`)
+    already resolved: this function decides only the ORDER, never runs git itself.
+
+    A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
+    flow (docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
+    PUBLICATION branch — so falling through to it by default would merge an unstamped
+    spec into the one branch that must only ever receive a deliberate release. Left
+    undeclared, this function changes nothing: most repositories have no `develop`
+    branch at all, and defaulting to one that does not exist would break them the
+    moment a spec started with no `branch` record."""
+    declared = cfg.get("integrationBranch")
+    if declared:
+        return declared
+    if origin_head:
+        return origin_head
+    if init_default:
+        return init_default
+    return "main"
+
+
+def base_inference_failures() -> list[str]:
+    """`infer_base_branch` against the cases plan-git-record.md's chain must resolve: a
+    declared integration branch wins even where `origin_head` already answers `main` —
+    the realistic collision this function exists to break — and an undeclared one leaves
+    the OLD chain (`origin_head`, then `init_default`, then the literal `main`)
+    untouched."""
+    out: list[str] = []
+    cases = (
+        ({"integrationBranch": "develop"}, "main", "main", "develop"),
+        ({"integrationBranch": None}, "origin-main", "init-main", "origin-main"),
+        ({}, None, "init-main", "init-main"),
+        ({}, None, None, "main"),
+    )
+    for cfg, origin_head, init_default, want in cases:
+        got = infer_base_branch(cfg, origin_head, init_default)
+        if got != want:
+            out.append(f"infer_base_branch({cfg!r}, {origin_head!r}, {init_default!r}) "
+                       f"returned {got!r}, not {want!r}")
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# release — the mechanical half of docs/standards/ci-cd/versioning-release.md
+# --------------------------------------------------------------------------- #
+# Seven artifacts, not six: `session.py` sits outside the SIX-artifact lockstep that
+# standard names (nothing installs a copy of it, so `drift` never compares it against
+# one) but still carries a `VERSION` constant and is bumped WITH the six, at the same
+# release, per that standard's own rule. All seven are relative to the REPO root, and
+# this verb only makes sense run from the plugin's own checkout — a target repository
+# that merely has this plugin installed carries none of them.
+RELEASE_ARTIFACTS = (
+    ("plugins/quenching/VERSION", "plain"),
+    ("plugins/quenching/.claude-plugin/plugin.json", "json"),
+    (".claude-plugin/marketplace.json", "json"),
+    ("plugins/quenching/assets/hooks/okf-validate.py", "py"),
+    ("plugins/quenching/assets/bin/specs.py", "py"),
+    ("plugins/quenching/assets/bin/skills.py", "py"),
+    ("plugins/quenching/assets/bin/session.py", "py"),
+)
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+# The same shape `skills.py`'s own `VERSION_CONSTANT_RE` reads for `drift` — duplicated
+# rather than imported, like every other cross-tool agreement in this codebase.
+_RELEASE_JSON_VERSION_RE = re.compile(r'("version"\s*:\s*")([^"]+)(")')
+_RELEASE_PY_VERSION_RE = re.compile(r'^(VERSION\s*=\s*["\'])([^"\']+)(["\'])', re.M)
+
+
+def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
+    """Move all seven version-carrying artifacts to `new_version`, or change NOTHING.
+
+    Two passes on purpose. The first only READS: every artifact's current version is
+    collected before anything is written, so a lockstep that is ALREADY drifted — one
+    artifact disagreeing with the rest — is refused outright rather than compounded with
+    an eighth value. The second pass writes only once every artifact was read
+    successfully and every one of them agreed."""
+    reads: list[dict] = []
+    for rel, kind in RELEASE_ARTIFACTS:
+        path = os.path.join(repo_root, rel)
+        text = read_text(path)
+        if text is None:
+            return {"ok": False, "error": f"missing or unreadable: {rel}", "artifacts": []}
+        if kind == "plain":
+            old = text.strip()
+        else:
+            pat = _RELEASE_JSON_VERSION_RE if kind == "json" else _RELEASE_PY_VERSION_RE
+            m = pat.search(text)
+            if not m:
+                return {"ok": False, "error": f"no version found in: {rel}", "artifacts": []}
+            old = m.group(2)
+        reads.append({"rel": rel, "kind": kind, "path": path, "text": text, "old": old})
+
+    disagreeing = sorted({r["old"] for r in reads})
+    if len(disagreeing) > 1:
+        detail = ", ".join(f"{r['rel']}={r['old']}" for r in reads)
+        return {"ok": False,
+                "error": f"the lockstep already disagrees before this release: {detail}",
+                "artifacts": []}
+    old_version = disagreeing[0]
+    if old_version == new_version:
+        return {"ok": False, "error": f"already at {new_version}", "artifacts": []}
+
+    artifacts = []
+    for r in reads:
+        if r["kind"] == "plain":
+            new_text = new_version + ("\n" if r["text"].endswith("\n") else "")
+        else:
+            pat = _RELEASE_JSON_VERSION_RE if r["kind"] == "json" else _RELEASE_PY_VERSION_RE
+            new_text = pat.sub(rf"\g<1>{new_version}\g<3>", r["text"], count=1)
+        write_text(r["path"], new_text)
+        artifacts.append({"path": r["rel"], "old": r["old"], "new": new_version})
+    return {"ok": True, "oldVersion": old_version, "newVersion": new_version,
+            "artifacts": artifacts, "error": None}
+
+
+def release_lockstep_failures() -> list[str]:
+    """`bump_release_artifacts` against a disposable tree standing in for the seven real
+    artifacts — never the plugin's own, so this runs safely on every `selftest` call
+    without ever bumping a real version. Both directions matter: seven agreeing values
+    all move, and one already-drifted value refuses before any of the seven is touched."""
+    import tempfile
+    out: list[str] = []
+    kinds = {"plain": "9.9.9\n",
+             "json": '{\n  "name": "x",\n  "version": "9.9.9"\n}\n',
+             "py": 'VERSION = "9.9.9"  # a comment that must survive the bump\n'}
+    with tempfile.TemporaryDirectory() as tmp:
+        for rel, kind in RELEASE_ARTIFACTS:
+            path = os.path.join(tmp, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            write_text(path, kinds[kind])
+
+        result = bump_release_artifacts(tmp, "9.10.0")
+        if not result["ok"]:
+            out.append(f"seven agreeing artifacts were refused: {result['error']}")
+        elif result["oldVersion"] != "9.9.9" or result["newVersion"] != "9.10.0":
+            out.append(f"reported {result['oldVersion']} -> {result['newVersion']}, "
+                       f"not 9.9.9 -> 9.10.0")
+        else:
+            for rel, kind in RELEASE_ARTIFACTS:
+                text = read_text(os.path.join(tmp, rel))
+                pat = ({"plain": None, "json": _RELEASE_JSON_VERSION_RE,
+                        "py": _RELEASE_PY_VERSION_RE})[kind]
+                got = text.strip() if pat is None else pat.search(text).group(2)
+                if got != "9.10.0":
+                    out.append(f"{rel} reads back {got!r} after the bump, not '9.10.0'")
+            if "# a comment that must survive the bump" not in \
+                    read_text(os.path.join(tmp, "plugins/quenching/assets/bin/specs.py")):
+                out.append("bumping a `.py` artifact's VERSION line dropped its trailing "
+                           "comment — the substitution must touch only the quoted value")
+
+        # Drift precondition: one artifact already disagreeing must refuse, not compound.
+        write_text(os.path.join(tmp, "plugins/quenching/VERSION"), "9.9.8\n")
+        drifted = bump_release_artifacts(tmp, "9.10.0")
+        if drifted["ok"]:
+            out.append("a lockstep already disagreeing (9.9.8 vs 9.10.0 vs the rest) was "
+                       "bumped anyway instead of refused")
     return out
 
 
@@ -5372,7 +5556,8 @@ def command_writes(args) -> bool:
 
     `migrate` is deliberately absent. It rewrites the DECLARED workspace's own folder layout —
     the pre-migration `specs/` in the code tree — and never touches the specs worktree, so the
-    worktree's lock would guard nothing it writes."""
+    worktree's lock would guard nothing it writes. `release` is absent for the same reason: it
+    writes the plugin's own version-carrying artifacts, never a spec."""
     cmd = getattr(args, "cmd", "")
     if cmd in ("new", "task", "discover"):
         return True
@@ -6708,7 +6893,8 @@ def cmd_selftest(args, root: str) -> int:
     # it stays self-contained and never depends on this checkout's own config.
     blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
-                      ("worktreeSetup", None), ("present", False)):
+                      ("worktreeSetup", None), ("integrationBranch", None),
+                      ("releaseBranch", None), ("present", False)):
         if blank[key] != want:
             findings.append(_finding("sp-config-default-drift", "error",
                                      f"with nothing declared, config `{key}` is "
@@ -6716,6 +6902,31 @@ def cmd_selftest(args, root: str) -> int:
                                      key=key,
                                      remedy="an absent .claude/quenching.json must yield the "
                                             "documented defaults, never a null backend"))
+
+    # `specs.py release`'s file-editing half, against a disposable tree standing in for
+    # the seven real artifacts — never against the plugin's own, so this never bumps a
+    # real version. Self-contained, and runs before the early return for the same reason
+    # the rest do: an installed copy is exactly where a broken substitution regex would
+    # otherwise wait for the first real release to surface it.
+    for failure in release_lockstep_failures():
+        findings.append(_finding("sp-release-lockstep-broken", "error",
+                                 f"the release lockstep — {failure}",
+                                 remedy="bump_release_artifacts reads all seven before "
+                                        "writing any of them, refuses on disagreement, "
+                                        "and substitutes only the quoted version — never "
+                                        "the surrounding JSON or the trailing comment"))
+
+    # The base-inference chain an unstamped spec falls through to. Self-contained — no git,
+    # no config file — and runs before the early return: an installed copy is exactly where
+    # a declared integration branch quietly stopped outranking `origin/HEAD` would go
+    # unnoticed until a spec merged into the publication branch by default.
+    for failure in base_inference_failures():
+        findings.append(_finding("sp-base-inference-broken", "error",
+                                 f"the base-inference chain — {failure}",
+                                 remedy="infer_base_branch must return a declared "
+                                        "integrationBranch before origin_head, and leave "
+                                        "origin_head/init_default/'main' untouched when "
+                                        "none is declared"))
 
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
@@ -6869,7 +7080,10 @@ def cmd_selftest(args, root: str) -> int:
               f"on both the key list and the indent, `--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
               f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
-              f"`memory`, the config defaults hold with nothing declared, the files root "
+              f"`memory`, the config defaults hold with nothing declared, the release "
+              f"lockstep moves all seven artifacts together and refuses a drifted one, a "
+              f"declared integration branch outranks origin/HEAD in the base-inference "
+              f"chain and an undeclared one leaves it untouched, the files root "
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
@@ -6883,6 +7097,61 @@ def cmd_selftest(args, root: str) -> int:
     return 1 if errors else 0
 
 
+def cmd_release(args, root: str) -> int:
+    """Move the plugin's seven version-carrying artifacts to ONE new version, commit them,
+    and tag that commit — the MECHANICAL half of a release. Judging what the number should
+    be, whether a lone merge on `develop` is a release or a habit, and the `develop -> main`
+    merge itself all belong to the command that calls this; see
+    docs/standards/git/branching.md.
+
+    Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
+    not this plugin's own checkout, a lockstep already disagreeing with itself, or a
+    version that changes nothing."""
+    new_version = args.version
+    if not SEMVER_RE.match(new_version):
+        return emit_err(args.json, {"code": "sp-release-bad-version", "exit": 2,
+                                    "version": new_version,
+                                    "message": f"'{new_version}' is not shaped X.Y.Z"})
+
+    repo = _git(os.getcwd(), "rev-parse", "--show-toplevel").strip()
+    if not repo:
+        return emit_err(args.json, {"code": "sp-release-no-repo", "exit": 2,
+                                    "message": "not inside a git repository"})
+
+    missing = [rel for rel, _ in RELEASE_ARTIFACTS
+              if not os.path.isfile(os.path.join(repo, rel))]
+    if missing:
+        return emit_err(args.json, {"code": "sp-release-not-plugin-repo", "exit": 2,
+                                    "missing": missing,
+                                    "message": "this is not the plugin's own repository — "
+                                               "missing: " + ", ".join(missing)})
+
+    result = bump_release_artifacts(repo, new_version)
+    if not result["ok"]:
+        return emit_err(args.json, {"code": "sp-release-drift", "exit": 2,
+                                    "message": result["error"]})
+
+    rels = [a["path"] for a in result["artifacts"]]
+    code, _, err = _git_run(repo, "add", *rels)
+    if code != 0:
+        return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
+                                    "step": "add", "message": f"git add failed: {err}"})
+    subject = f"release: {result['oldVersion']} -> {new_version}"
+    code, _, err = _git_run(repo, "commit", "-m", subject)
+    if code != 0:
+        return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
+                                    "step": "commit", "message": f"git commit failed: {err}"})
+    code, _, err = _git_run(repo, "tag", "-a", new_version, "-m", subject)
+    if code != 0:
+        return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
+                                    "step": "tag", "message": f"git tag failed: {err}"})
+
+    emit(args.json, {"ok": True, "oldVersion": result["oldVersion"], "newVersion": new_version,
+                     "artifacts": result["artifacts"], "tag": new_version, "subject": subject},
+         f"release: {result['oldVersion']} -> {new_version}, tagged {new_version}")
+    return 0
+
+
 def cmd_config(args, root: str) -> int:
     """The workspace's declared parameters, as data. Exit 0 even with nothing declared —
     a missing config is the normal case, and `doctor` is where a malformed one is judged."""
@@ -6893,7 +7162,11 @@ def cmd_config(args, root: str) -> int:
              f"  specsBranch: {cfg['specsBranch']}",
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
-                                  if cfg["azureStates"] else "(none declared)")]
+                                  if cfg["azureStates"] else "(none declared)"),
+             "  integrationBranch: " + (cfg["integrationBranch"]
+                                        or f"(none declared, defaults to {DEFAULT_INTEGRATION_BRANCH})"),
+             "  releaseBranch: " + (cfg["releaseBranch"]
+                                    or f"(none declared, defaults to {DEFAULT_RELEASE_BRANCH})")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
     emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
@@ -7148,6 +7421,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
+    sp = add_json(sub.add_parser("release", help="bump the plugin's seven version-carrying "
+                                                  "artifacts and tag the commit — the plugin's "
+                                                  "own repository only"))
+    sp.add_argument("version", help="the new version, X.Y.Z")
+
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
     add_json(sub.add_parser("selftest", help="prove the embedded schema and template "
@@ -7183,6 +7461,7 @@ DISPATCH: dict = {
     "discover": cmd_discover,
     "validate": cmd_validate,
     "config": cmd_config,
+    "release": cmd_release,
     "doctor": cmd_doctor,
     "selftest": cmd_selftest,
     "migrate": cmd_migrate,

@@ -23,6 +23,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 * [architecture/](architecture/index.md) — system structure + architectural patterns (patterns live here)
 * [automation/](automation/index.md) — the Claude Code skill + command surface (classification, authoring, alignment)
 * [code/](code/index.md) — code conventions, imports, lint, pins, SYMBOL naming
+* [git/](git/index.md) — branches de longa duração, o gatilho de publicação, as convenções lidas como read-if-present
 * [naming/](naming/index.md) — naming conventions (here: the command surface)
 * [data-modeling/](data-modeling/index.md) — grain, key, joins, catalog/schema choice
 * [ci-cd/](ci-cd/index.md) — build/deploy, "code defines YAML", manifest generation
@@ -75,7 +76,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [versioning-release.md](ci-cd/versioning-release.md) | Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the three tool constants are the lockstep unit each tool's own selftest holds to — bumped once per spec at conclude, immediately before the merge, never as a task, plus the half a bump cannot do, which is noticing the legacy copies a target still carries under .claude/hooks/ from before resolution went plugin-first, and the seventh version-carrying file that stays outside the six because no consumer reads it |
+| [versioning-release.md](ci-cd/versioning-release.md) | Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the three tool constants are the lockstep unit each tool's own selftest holds to — bumped once per release, at the develop → main merge, never at conclude and never as a task, plus the half a bump cannot do, which is noticing the legacy copies a target still carries under .claude/hooks/ from before resolution went plugin-first, and the seventh version-carrying file that stays outside the six because no consumer reads it |
 
 ### code/
 
@@ -84,6 +85,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [canonical-set-parsing.md](code/canonical-set-parsing.md) | How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest |
 | [frontmatter-parsing.md](code/frontmatter-parsing.md) | The YAML subset the three shipped tools read — the comment rule (a `#` opens a comment only at the start of a value or after whitespace, and never inside a quoted scalar), the canonical case list all three must decide identically, the anomaly set each must be able to name, and the three-copy lockstep obligation that replaces the shared module they cannot have |
 | [superseded-format-recognition.md](code/superseded-format-recognition.md) | How a recogniser is changed when the format it reads is superseded — the new pattern must be asserted against the OLD form, because a pattern that describes the new one correctly often matches the old one whole and yields a confident wrong answer with no finding; and a store's recogniser must separate "not mine" from "mine, but stale", because sending both to the same discard makes a half-migrated front vanish in silence |
+
+### git/
+
+| Doc | Covers |
+| --- | --- |
+| [branching.md](git/branching.md) | A main acumulava duas funções que este standard separa — develop como branch de integração onde as specs mergeiam, main como canal de publicação que só recebe o merge deliberado develop → main — o gatilho por demanda e sem cadência, a pergunta que empurra para o agrupamento quando develop carrega um só merge desde a última tag, a publicação sempre local, e os dois consumidores que leem os nomes das branches declarados em .claude/quenching.json |
 
 ### naming/
 
@@ -109,9 +116,9 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | Doc | Covers |
 | --- | --- |
 | [plan-artifacts.md](workflows/plan-artifacts.md) | The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in specs/archive/ |
-| [plan-git-record.md](workflows/plan-git-record.md) | How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/ |
+| [plan-git-record.md](workflows/plan-git-record.md) | How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own docs/standards/git/ |
 | [plan-lifecycle.md](workflows/plan-lifecycle.md) | The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, the append-only archive rule for facts that did not exist at the move, and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it |
-| [plugin-configuration.md](workflows/plugin-configuration.md) | `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the five recognised keys and their defaults, the one key that deliberately has none and refuses instead, the one key a second tool reads and why it had nowhere else to live, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged |
+| [plugin-configuration.md](workflows/plugin-configuration.md) | `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the seven recognised keys and their defaults, the one key that deliberately has none and refuses instead, the one key a second tool reads and why it had nowhere else to live, the two keys with two consumers each — the release verb and the base-inference chain — why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged |
 | [task-execution.md](workflows/task-execution.md) | How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules |
 | [worktree-setup.md](workflows/worktree-setup.md) | The `worktreeSetup` hook — what it is for, where it is declared now that the plugin's config moved to `.claude/quenching.json`, what its absence means, who runs the declared command and with which cwd, why the consent is the isolation offer rather than a prompt of its own, and the record of why the specs front took a config file at all |
 <!-- END GENERATED -->
