@@ -331,6 +331,14 @@ sentence, and **link out** rather than explaining in full here.
   level or shallower, a fenced block is never read as a heading, and a name that resolves to
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
   same **Canonical set**, `SECTION_CASES`.
+- [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
+  que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
+  só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos
+  ou opcionais, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e um bloco
+  de próximo passo executável como impresso. É **literal** — carrega o bloco renderizado, não uma
+  descrição dele. Mora dentro de um arquivo que os corpos já carregam, para não custar uma chamada
+  de ferramenta a mais; o custo em caracteres é medido e declarado, nunca estimado. Distinto de
+  **Shared mold**, que governa chaves de frontmatter e não saída.
 - [**Shared mold**](../standards/architecture/shared-mold-keys.md) — a frontmatter key block owned
   once and cited by several commands, so each mints a doc from the same stamp instead of restating
   it (`docs-add/homes.md` §The frontmatter stamp, cited by four). Because a mold is a *fill-in
