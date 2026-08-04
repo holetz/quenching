@@ -7,7 +7,7 @@ tags: [git, branching, release, workflow, develop, main]
 timestamp: 2026-08-04
 audience: both
 authority: current
-source: spec plan/configurable-branch-strategy (task 1.1) — a main acumulava integração e publicação na mesma branch, sem que nada marcasse a segunda como um ato deliberado; hoje o gatilho é "todo merge" e não existe momento em que alguém decide publicar
+source: spec plan/configurable-branch-strategy (task 1.1) — a main acumulava integração e publicação na mesma branch, sem que nada marcasse a segunda como um ato deliberado; hoje o gatilho é "todo merge" e não existe momento em que alguém decide publicar; §Adotando o fluxo num repositório já em andamento acrescentado pela revisão da própria branch ao concluir (2026-08-04), que notou que esta spec é o próprio caso de bootstrap que ela descreve
 maintainer: quenching
 ---
 
@@ -50,6 +50,23 @@ A cadeia de inferência de `base` — usada quando uma spec começa numa branch 
 consulta a branch de integração declarada antes de cair em `origin/HEAD` e em `main`, porque sem
 isso uma spec não carimbada mergearia por padrão na branch de **publicação**. Ver
 [plan-git-record.md](../workflows/plan-git-record.md).
+
+## Adotando o fluxo num repositório já em andamento
+
+O `branch.base` de uma spec é carimbado uma vez, no início do trabalho, e nunca re-inferido depois
+— ver [plan-git-record.md](../workflows/plan-git-record.md). Uma spec cortada **antes** de
+`integrationBranch` estar declarado carrega `base: main`, como toda spec anterior a este standard;
+o `/quenching:specs:conclude` dela mergeia direto em `main`, exatamente como sempre mergeou. Só uma
+spec cortada **depois** da declaração ganha `base: develop` automaticamente, pela cadeia de
+inferência.
+
+A própria spec que introduziu este standard, `plan/configurable-branch-strategy`, é o caso: sua
+branch foi cortada com `base: main` porque `integrationBranch` ainda não existia quando o trabalho
+começou. Recarimbar esse valor para `develop` depois do fato reescreveria um registro write-once
+para caber numa regra que ainda não existia quando ele foi feito — por isso ele fica como está, e o
+merge dela em `main` segue o registro, não o fluxo que ela mesma declara. Isso deixa `develop`
+temporariamente atrás de `main`; trazer as duas de volta à paridade, e decidir quando rodar a
+primeira release de verdade, é uma decisão humana — nenhum comando deste front a toma sozinho.
 
 ## A publicação, em duas metades
 
