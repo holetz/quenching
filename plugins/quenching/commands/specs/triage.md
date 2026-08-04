@@ -23,7 +23,8 @@ that anything is finished — those are `/quenching:specs:conclude` and `/quench
 A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
+whose §The report mold owns the shape of both the step 2 table and the step 6 report;
 the tool fallback and the front's on-write check in
 [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md);
 the shared log procedure in
@@ -102,7 +103,10 @@ command owns.
 **Done when:** every spec in scope has been read and the anomalies are listed.
 
 ### 2. Build ONE ranking table
-| Spec | Stage | Progress | Current | Proposed `level` | `criticality` | `complexity` | Reason |
+§The spec table, in its proposal form — the shared columns carrying each spec's **current** state,
+then the four this command adds:
+
+| Spec | Title | Stage | Tasks | Priority | Proposed `level` | `criticality` | `complexity` | Reason |
 
 Rules for the table:
 - **Every spec in scope gets a row** — including "stays unranked, because …".
@@ -144,10 +148,18 @@ bundle — the log this used to append to is retired.
 **Done when:** the validator is clean, or its residue is reported verbatim.
 
 ### 6. Report
-The ordered list as it now stands, what changed and why, which specs stayed unranked, and the
-observations from step 2 with the command each routes to. Close by naming `/quenching:specs:continue` — the
-consumer of what this just wrote.
-**Done when:** the summary is shown.
+Emit §The report mold. Two body blocks:
+
+1. **The ranking as it now stands** — fixed. §The spec table, the same rows the human just approved
+   with the four proposal columns dropped and `Priority` showing the value now on disk, so the
+   report is the approved table rather than a prose retelling of it. Specs that stayed unranked keep
+   their row, `Priority` reading `—`.
+2. **Observations** — optional, omitted whole when there are none. §The findings table, each row's
+   `Closed by` naming the command that would act on it.
+
+Then §The next-step block, whose recommended line is `/quenching:specs:continue` — the consumer of
+what this just wrote.
+**Done when:** both blocks and the next-step block are shown.
 
 ## Invariants to never violate
 

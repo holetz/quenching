@@ -15,7 +15,8 @@ built: this command creates it, `/quenching:specs:develop` fills its sections, `
 reconcile — and no ledger.
 
 The layout, the fourteen canonical sections, the gates and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
+whose §The report mold owns the shape step 7 prints in;
 the front's on-write check in
 [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
 
@@ -117,14 +118,17 @@ Run `specs.py validate --spec <slug>` — the spec's own conformance, and the wh
 
 ### 7. Report
 
-**Report the locator `specs.py new` returned** — its `path` field — and the slug. It is
-`plans/<slug>.md` under `files` and an issue URL under `github`, and it is the tool's answer
-rather than a filename this command assembled: a body that prints a path the backend never wrote
-sends a human to a file that does not exist. On the plan-file path, add which
-sections were filled from which part of the source, the task count derived, which sections carry an
-explicit none — and say plainly that the source file was **read, never moved or deleted**. Name the
-next step: `/quenching:specs:develop <slug>` to take it further, or `/quenching:specs:continue` to be told what to do
-next across the whole front.
+Emit §The report mold. Its single-spec header line carries the locator `specs.py new` returned — the
+`path` field, `plans/<slug>.md` under `files` and an issue URL under `github` — which the mold
+already requires be the tool's own answer rather than a filename this command assembled.
+
+One body block, **optional**: on the plan-file path, which sections were filled from which part of
+the source, the task count derived, which sections carry an explicit none — and plainly that the
+source file was **read, never moved or deleted**. A one-line capture has none of this, and the block
+is omitted whole rather than printed empty.
+
+Close on §The next-step block: `/quenching:specs:develop <slug>` to take it further, or
+`/quenching:specs:continue` to be told what to do next across the whole front.
 
 **Done when:** the summary is shown.
 

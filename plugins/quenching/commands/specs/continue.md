@@ -18,7 +18,7 @@ most often, on the least context, by someone who has just come back to a repo.
 
 The layout, the derived stages and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-cited and never restated.
+whose §The report mold owns the shape below — both cited and never restated.
 
 ## Resolving the tool
 
@@ -97,14 +97,18 @@ Two things the payload does not decide, and which are named rather than routed a
 `/quenching:specs:develop`'s discoveries bank.
 **Done when:** exactly one next command is identified, with the spec it applies to.
 
-### 3. Show the ordering, and offer the hand-off
-Show the top candidate with its `reason`, then the rest as a short list — slug, stage, task
-progress, and reason — so an overrule costs one word. With more than a handful, show the top three
-and say how many are behind them.
+### 3. Report the ordering, and offer the hand-off
+Emit §The report mold. One body block, fixed: §The spec table with `Spec` `Title` `Stage` `Tasks`
+`Priority` `Age` `State`, the top candidate carrying `→` and every row its `reason` as `State`.
+`Age` is each candidate's `ageDays`, which `next --front` already returned. With more than a handful
+of rows, show the top three and elide the rest with `…`.
 
-Then offer the hand-off with **AskUserQuestion**: the recommended command (marked
+Then §The next-step block, whose recommended line is the routed command with this spec's slug.
+
+Only then offer the hand-off with **AskUserQuestion**: the recommended command (marked
 "(Recommended)"), a different spec from the list, or stop here. Taken → invoke it with the `Skill`
-tool. Declined → name the command and its argument in one line and stop.
+tool, which takes the registry name and not the printed slash form. Declined → the block already
+names the command, so stop without repeating it.
 **Done when:** the hand-off was taken or declined, and the command name was stated either way.
 
 ## Output
@@ -112,13 +116,17 @@ tool. Declined → name the command and its argument in one line and stop.
 ```
 ## The specs front — 6 specs in plans/
 
-→ session-tokens · executing · 5/9 tasks · you are on this branch (plan/session-tokens)
-    next: /quenching:specs:execute session-tokens  (task 3.2, verify: pnpm test auth/)
+| Spec | Title | Stage | Tasks | Priority | Age | State |
+| --- | --- | --- | --- | --- | --- | --- |
+| → session-tokens | Budget tokens per session | executing | 5/9 | 1 · high | 3d | on this branch (`plan/session-tokens`) |
+| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | 9d | ready to build, untouched |
+| webhook-retries | Retry failed webhooks | proposed | — | — | 21d | proposed |
+| … 2 more | | | | | | |
+| export-csv-timeout | Fix the CSV export timeout | ready | 2/8 | — | 4d | in flight on `plan/export-csv-timeout` — check it out to continue |
 
-  rate-limit-api      · ready     · 0/12  · ready to build, untouched for 9d
-  webhook-retries     · proposed  · —     · proposed, 21d old
-  … 2 more
-  export-csv-timeout  · ready     · 2/8   · in flight on `plan/export-csv-timeout` — check it out to continue
+Next step
+→ /quenching:specs:execute session-tokens   — task 3.2, verify: pnpm test auth/
+  /quenching:specs:triage                   — 3 specs carry no priority
 ```
 
 ## Invariants to never violate

@@ -43,7 +43,8 @@ The git conventions live in
 
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §Boundary.
+§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §Boundary
+§The report mold.
 
 ## Resolving the tool
 
@@ -377,16 +378,29 @@ cost rather than cutting it.
 **Done when:** `## Handoff` describes the tree as it stands after the run's last commit.
 
 ### 7. Report, and hand off
-Show the spec, the isolation and its `branch` record, tasks completed this session, overall
-progress, each task's commit and the subject recorded for it, any subject that drifted, the blocked
-tasks with their reasons, the standards written, and the discoveries recorded.
+Emit §The report mold. The single-spec header line carries overall progress; three body blocks:
 
-**At 100%**, offer to chain straight into `/quenching:specs:conclude` (the `Skill` tool): the branch review,
-the emergent `docs/`, the merge, and the archive-time distillation. Offer it once; declined → name
-the command and stop. Paused → say why and wait.
+1. **This session** — fixed. The isolation and its `branch` record, tasks completed, each task's
+   commit and the subject recorded for it, and any subject that drifted.
+2. **Blocked** — optional. Each blocked task with its reason.
+3. **Written along the way** — optional. The standards written, and the discoveries recorded,
+   **quoted** as `/quenching:specs:develop` quotes them: the same artifact is owed the same fidelity
+   whichever command wrote it.
+
+Close on §The next-step block, its recommended line carrying **this spec's slug**:
+`/quenching:specs:conclude <slug>` at 100%, `/quenching:specs:execute <slug>` when the run paused
+mid-plan.
+
+**At 100%**, after the block, offer once to chain straight into `/quenching:specs:conclude` (the `Skill` tool, which takes
+the registry name): the branch review,
+the emergent `docs/`, the merge, and the archive-time distillation. Declined → the block already
+named the command, so stop. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
 ## Output during the loop
+
+Progress as it happens, not a report — the mold governs step 7, this governs the loop. Its glyphs
+are §The report mold's, and mean the same.
 
 ```
 ## Building: <slug>

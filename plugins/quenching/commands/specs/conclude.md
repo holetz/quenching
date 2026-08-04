@@ -36,7 +36,8 @@ The merge strategies, the squash caveat and the **read-if-present** rule for a t
 `docs/standards/git/**` live in
 [specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
 The layout, the gates and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
+whose §The report mold owns the shape step 7 prints in.
 All three are cited, never restated.
 
 ## Resolving the tool
@@ -397,20 +398,27 @@ worktree was removed or its refusal reported, or the run recorded why nothing wa
 gate among them.
 
 ### 7. Report
-The archived path, the outcome, task progress at close, `reviewed` / `merge` / `branch` as they now
-stand, what the review found and what was done about it, the docs written in step 3 and step 5, the
-release obligations settled or found already satisfied, what the pre-merge gate returned — naming
-any check that came back inconclusive rather than counting it as passed — and —
-for an abandonment — that nothing was adopted and what became of the branch.
+Emit §The report mold. The single-spec header line carries the archived locator and the outcome; four
+body blocks:
 
-**Say what became of the worktree**, when there was one: removed, or kept with git's refusal
-quoted. It left a directory on disk, and this report is the only place the human learns it is gone
-— an unreported removal is indistinguishable from one that never ran.
+1. **At close** — fixed. Task progress, `reviewed` / `merge` / `branch` as they now stand, and — for
+   an abandonment — that nothing was adopted.
+2. **The review** — fixed. What it found and what was done about it, the docs written in step 3 and
+   step 5, and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
+   result, which means **a check that came back inconclusive is named as such, never counted as
+   passed**.
+3. **The worktree** — fixed when there was one. Removed, or kept with git's refusal quoted. It left
+   a directory on disk, and this report is the only place the human learns it is gone — an
+   unreported removal is indistinguishable from one that never ran.
+4. **Unresolved `## Discoveries`** — optional, each line named. They are
+   `/quenching:specs:develop`'s discoveries bank to close, and they are easiest to lose at exactly
+   this moment.
 
-Name any `## Discoveries` line still unresolved: those are `/quenching:specs:develop`'s discoveries bank to
-close, and they are easiest to lose at exactly this moment.
-**Done when:** path, outcome, records, the worktree's fate, and both `docs/` passes are all
-reported.
+Close on §The next-step block. `/quenching:specs:develop <slug>` when block 4 has rows,
+`/quenching:specs:continue` to be handed the next spec — the front has moved on, and this is the
+moment a human most needs telling where.
+**Done when:** path, outcome, records, the worktree's fate, both `docs/` passes and the next-step
+block are all reported.
 
 ## Invariants to never violate
 
