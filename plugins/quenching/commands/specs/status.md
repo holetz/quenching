@@ -20,11 +20,10 @@ status view that disagreed with the sweep would be worse than none.
 The workspace facts (layout, the fourteen sections, the derived stages, the `specs.py` surface)
 live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-every `sp-*` code and what the sweep would do about it in
-[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md);
-the listing check in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
-All three are **cited, never restated** — this command owns no contract of its own, which is the
+every `sp-*` code and what the sweep would do about it, plus where the front is configured and what
+the declared backend decides, in
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
+Both are **cited, never restated** — this command owns no contract of its own, which is the
 point.
 
 ## Doctrine
