@@ -73,6 +73,7 @@ git branch --show-current
 git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
 specs.py status --spec "<slug>" --json
+specs.py config --json
 # and the hook probe of 2b, in this same call
 ```
 
@@ -100,8 +101,13 @@ commit onto the base itself — the exact outcome the offer exists to prevent, r
 it. Anything short of being **on** the ref falls through to the branches below.
 
 **Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
-record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
-above); else `git config init.defaultBranch`, and then `main`.
+record, when one already exists; else the repo's own declared `integrationBranch` (already read
+above, from `specs.py config --json`); else `git symbolic-ref refs/remotes/origin/HEAD` (already
+read above); else `git config init.defaultBranch`, and then `main`. **The declared integration
+branch is consulted before `origin/HEAD`, never after** — under the develop/main flow
+([branching.md](/docs/standards/git/branching.md)) `origin/HEAD` resolves to `main`, the
+publication branch, and falling through to it first would merge an unstamped spec there by
+default. Left undeclared, this step answers nothing and the chain is exactly as it was.
 
 **Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
 disagreeing with the resolved base means the human already answered the isolation question at

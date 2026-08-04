@@ -36,29 +36,7 @@ them is overwritten by the next run, not merged.
 <!-- GENERATED:BEGIN -->
 | Command | Serves | Typical trigger |
 | --- | --- | --- |
-| /align | generic | "align the repo" |
-| /docs:add | docs/ | "insert new information into the base" |
-| /docs:align | docs/ | "align the docs" |
-| /docs:define | docs/ | "add a term to the glossary" |
-| /docs:documentation:build | docs/documentation/ | "build the docs site" |
-| /docs:glossary-backfill | docs/ | "scan the docs for glossary terms" |
-| /docs:harness | docs/ | "refactor CLAUDE.md" |
-| /docs:import | docs/ | "import/ingest a source into the base" |
-| /docs:import-memory | docs/ | "convert the memory into docs" |
-| /docs:learn | docs/ | "add this knowledge" |
-| /docs:status | docs/ | "what's the status of the docs" |
-| /skill:agent:new | skill/agent/ | "create an agent" |
-| /skill:align | skill/ | "align the skills" |
-| /skill:eval | skill/ | "measure whether this command teaches anything" |
-| /skill:hook:new | skill/hook/ | "create a hook" |
-| /skill:new | skill/ | "create a command" |
-| /skill:retro | skill/ | "what did this command cost" |
-| /specs:align | specs/ | "align specs" |
-| /specs:conclude | specs/ | "conclude this spec" |
-| /specs:continue | specs/ | "which spec now, and which command?" |
-| /specs:create | specs/ | "capture this" |
-| /specs:develop | specs/ | "develop this spec" |
-| /specs:execute | specs/ | "execute this spec" |
-| /specs:status | specs/ | "specs status" |
-| /specs:triage | specs/ | "triage the specs" |
+| /docs:storyteller | docs/ | "transformar/gerar os md em mkdocs" |
+| /release | generic | "publish a release" |
+| /skill-map | generic | "kit map" |
 <!-- GENERATED:END -->
