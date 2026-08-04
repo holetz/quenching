@@ -357,6 +357,17 @@ sentence, and **link out** rather than explaining in full here.
   case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`
   — exist only so a mistyped key cannot fail silently. Its consent is the isolation offer itself:
   the command is shown verbatim in the plan block, and choosing Worktree is the OK for it.
+- [**Withdrawn contract residue**](../standards/quality/withdrawn-contract-residue.md) — the prose
+  still asserting a contract a change **removed**, and the sibling of **Prose fan-out**
+  ([computed-fact-prose-fanout.md](../standards/quality/computed-fact-prose-fanout.md)) for the case
+  where nothing computes the fact: with no value to spell out, each site wrote the rule in its own
+  words, so no grep finds the set. The mitigation is upstream — a spec's `## Impact` names the
+  **class** of documents asserting the contract and derives the file list mechanically, because
+  enumerating instances under-counts a class that quietly gained a member. Measured five times on
+  one branch withdrawing the installed-tool contract: three caught in execution, two only at the
+  branch review, and one of those in a file `## Impact` **had** named and half-covered — which is
+  why naming the file is not enough, and the reviewer's question is *what did this make false?*
+  rather than *which files changed?*
 
 ## How to enrich
 
