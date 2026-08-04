@@ -83,6 +83,11 @@ sentence, and **link out** rather than explaining in full here.
   by the **ownership test** and stays legitimate only under the **verifiable guardrail** — one
   clause, no fact the owner states, and never a narrowing; the third is what caught
   `assets/README.md` scoping the language rule to `audience: human` docs for weeks.
+- [**Branch de publicação**](../standards/git/branching.md) — sob o fluxo develop/main, a `main`:
+  a única branch que recebe o merge deliberado `develop → main`, o único momento em que o lockstep
+  de versão se move e uma tag é criada. Nunca acumula specs em integração — isso é a **branch de
+  integração** (`develop`), de onde `plan/<slug>` é cortada e para onde mergeia. O gatilho da
+  publicação é a demanda do mantenedor, nunca uma cadência, e a rota é sempre um merge local.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
   frontmatter entry stamped by `/specs:execute` for **any** branch that is not the repo's base —
   the one it cut and the one a human already had open alike — write-once. `work` is derivable

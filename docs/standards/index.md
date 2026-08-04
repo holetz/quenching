@@ -23,6 +23,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 * [architecture/](architecture/index.md) — system structure + architectural patterns (patterns live here)
 * [automation/](automation/index.md) — the Claude Code skill + command surface (classification, authoring, alignment)
 * [code/](code/index.md) — code conventions, imports, lint, pins, SYMBOL naming
+* [git/](git/index.md) — branches de longa duração, o gatilho de publicação, as convenções lidas como read-if-present
 * [naming/](naming/index.md) — naming conventions (here: the command surface)
 * [data-modeling/](data-modeling/index.md) — grain, key, joins, catalog/schema choice
 * [ci-cd/](ci-cd/index.md) — build/deploy, "code defines YAML", manifest generation
@@ -84,6 +85,12 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 | [canonical-set-parsing.md](code/canonical-set-parsing.md) | How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest |
 | [frontmatter-parsing.md](code/frontmatter-parsing.md) | The YAML subset the three shipped tools read — the comment rule (a `#` opens a comment only at the start of a value or after whitespace, and never inside a quoted scalar), the canonical case list all three must decide identically, the anomaly set each must be able to name, and the three-copy lockstep obligation that replaces the shared module they cannot have |
 | [superseded-format-recognition.md](code/superseded-format-recognition.md) | How a recogniser is changed when the format it reads is superseded — the new pattern must be asserted against the OLD form, because a pattern that describes the new one correctly often matches the old one whole and yields a confident wrong answer with no finding; and a store's recogniser must separate "not mine" from "mine, but stale", because sending both to the same discard makes a half-migrated front vanish in silence |
+
+### git/
+
+| Doc | Covers |
+| --- | --- |
+| [branching.md](git/branching.md) | A main acumulava duas funções que este standard separa — develop como branch de integração onde as specs mergeiam, main como canal de publicação que só recebe o merge deliberado develop → main — o gatilho por demanda e sem cadência, a pergunta que empurra para o agrupamento quando develop carrega um só merge desde a última tag, a publicação sempre local, e os dois consumidores que leem os nomes das branches declarados em .claude/quenching.json |
 
 ### naming/
 
