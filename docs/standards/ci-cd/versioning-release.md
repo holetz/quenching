@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the six-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the three tool constants are the lockstep unit each tool's own selftest holds to — bumped once per spec at conclude, immediately before the merge, never as a task, plus the half a bump cannot do, which is noticing the legacy copies a target still carries under .claude/hooks/ from before resolution went plugin-first, and the seventh version-carrying file that stays outside the six because no consumer reads it
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the three tool constants are the lockstep unit each tool's own selftest holds to — bumped once per release, at the develop → main merge, never at conclude and never as a task, plus the half a bump cannot do, which is noticing the legacy copies a target still carries under .claude/hooks/ from before resolution went plugin-first, and the seventh version-carrying file that stays outside the six because no consumer reads it
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/bin/session.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-08-03
+timestamp: 2026-08-04
 audience: both
 authority: current
-source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the conclude-time rule added after `/specs:develop` inferred a bump task from this doc's `resource:` alone; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin; rewritten for plugin-first resolution with no install (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — drift's subject became the legacy copy, not the stale dependency
+source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin; rewritten for plugin-first resolution with no install (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — drift's subject became the legacy copy, not the stale dependency; the bump moved from conclude to the develop → main release by the configurable-branch-strategy spec (task 1.2, 2026-08-04) once [branching.md](../git/branching.md) gave the publication a moment of its own to move on
 maintainer: quenching
 ---
 
@@ -48,33 +48,40 @@ The constant is duplicated in three places rather than imported from one because
 not import each other** — see [frontmatter-parsing.md](../code/frontmatter-parsing.md), which owns
 that rule and the reason it survived the removal of install.
 
-## When the bump happens — once, at conclude, before the merge
+## When the bump happens — once, at the release, before the develop → main merge
 
-The six move **once per spec, on the work branch, in `/specs:conclude` step 5 — the last writing
-stage before the merge**. A version bump is never a task in a spec's `## Tasks`, and
-`/specs:execute` never makes one.
+The six move **once per release, on `develop`, immediately before the `develop → main` merge that
+publishes it** — see [branching.md](../git/branching.md). A version bump is never a task in a
+spec's `## Tasks`, `/specs:execute` never makes one, and `/specs:conclude` no longer makes one
+either: a spec's own conclude merges into `develop` with the lockstep untouched, and the six move
+only when the release command runs `specs.py release`.
 
-**Why not a task.** Three things break when the bump is scheduled as work rather than as the merge's
-own act:
+**Why not a task, and why not conclude either.** Three things break when the bump is scheduled as
+anything other than the release's own act:
 
-- **What the release *is* is not knowable at task 1.** Whether the change is patch, minor or major
-  depends on what task 7 turned out to be — a new command makes it minor, and the task list is
-  routinely revised mid-build. A number chosen at the top of the branch is a guess that nobody
-  re-checks at the bottom.
-- **Two specs in flight collide on all six files.** Both bump from the same base to the same number,
-  and the second to merge resolves a conflict in `plugin.json`, `marketplace.json` and three Python
-  constants by hand. Deferring to just-before-merge means the second spec bumps from the base it is
-  actually merging into.
-- **A branch that is abandoned or descoped carries a version claim it never earned.** Nothing shipped
-  it, but the branch's history says a release happened.
+- **What the release *is* is not knowable at task 1, or even at one spec's conclude.** Whether the
+  change is patch, minor or major depends on everything `develop` has accumulated since the last
+  tag — which may be several specs, not just the one concluding — and the task list inside any one
+  of them is routinely revised mid-build. A number chosen at the top of a branch, or at that
+  branch's own conclude, is a guess nothing downstream re-checks.
+- **Two specs concluding into `develop` no longer collide.** Under the old rule both bumped from the
+  same base to the same number, and the second to merge resolved a conflict in `plugin.json`,
+  `marketplace.json` and three Python constants by hand. With the bump moved to the release, no
+  conclude touches the six at all — `develop` accumulates any number of specs with nothing to
+  conflict on, and the collision this section used to warn about does not arise.
+- **A spec that is abandoned or descoped carries no version claim to unwind.** Nothing in its own
+  conclude touched the lockstep, so there is nothing to revert beyond the merge itself.
 
-**Why conclude step 5 specifically.** That stage is where everything still lands on the work branch,
-so the single merge carries the code, the emergent docs, the archived spec and the version together
-— and reverting that merge reverts the version claim with them. A bump committed to the base after
-the merge would be the one thing this command forbids outright.
+**Why the release, specifically.** That is the one moment everything accumulated on `develop` is
+about to become the published state of `main`, so the single `develop → main` merge carries the
+version together with whatever the release actually ships — and reverting that merge reverts the
+version claim with it. A bump committed to `main` after that merge would be the one thing the
+release forbids outright, the same way a post-merge commit to the base is forbidden everywhere else
+in this front.
 
 The [operator-manual rider](#the-operator-manual-rider) below is settled at the same moment and for
-the same reason: a command rename or a new command is only fully known once the branch is written.
+the same reason: a command rename or a new command is only fully known once everything `develop`
+is publishing has landed.
 
 ## The seventh file — a version nothing reads
 
@@ -93,10 +100,13 @@ rather than the plugin's `VERSION`, no selftest reads the pair, and `--version` 
 with the wrong number. The whole lockstep is now the discipline this one file always was.
 
 That is not theoretical. `session.py` was authored at `4.2.0` on a branch that stayed open while
-main released `4.3.0`; it reached the branch review still reporting `4.2.0`, under a comment that
-read *"tracks the plugin"*. The only thing that caught it was a human reading the whole branch diff
-at [`/specs:conclude`](../workflows/plan-lifecycle.md) — which is exactly the class of miss a
-long-lived branch produces and no checker covers.
+main released `4.3.0`, back when the bump still happened at that branch's own conclude; it reached
+the branch review still reporting `4.2.0`, under a comment that read *"tracks the plugin"*. The
+only thing that caught it was a human reading the whole branch diff at
+[`/specs:conclude`](../workflows/plan-lifecycle.md) — which is exactly the class of miss a
+long-lived branch produces and no checker covers, and which the bump moving to the release does not
+retire: a stale constant on `develop` is still only caught by a human reading the diff, now at the
+release rather than at any one spec's conclude.
 
 The rule, stated so a future plugin-side-only tool inherits it:
 
@@ -104,10 +114,9 @@ The rule, stated so a future plugin-side-only tool inherits it:
   would give `drift` a row that is `absent` in every repo, forever.
 - It **carries a `VERSION` anyway**, because `--version` is part of the uniform tool contract
   (`0` ok · `1` findings · `2` refusal, `--json` everywhere) that every tool here answers to.
-- It is bumped **with the six, at the same moment** — `/specs:conclude` step 5, per §*When the bump
-  happens* above — and §*Verifying* reads it back like the others. Since nothing enforces it, the
-  bump is a discipline, and a stale value survives until somebody reads the file. That is precisely
-  how `4.2.0` survived: the conclude that should have carried it was still open.
+- It is bumped **with the six, at the same moment** — the `develop → main` release, per §*When the
+  bump happens* above — and §*Verifying* reads it back like the others. Since nothing enforces it,
+  the bump is a discipline, and a stale value survives until somebody reads the file at the release.
 
 ## Noticing drift — the half a bump cannot do
 
