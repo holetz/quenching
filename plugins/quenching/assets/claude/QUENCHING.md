@@ -132,8 +132,8 @@ tail on one OK. *Not for:* a command (`/skill:new`) or a hook (`/skill:hook:new`
 
 Walks the scope ladder to the narrowest event + matcher and the cheapest handler that still
 catch what it must, states the hook's cost claim, and applies on one OK — **warn by default;
-block only on your word**. *Not for:* the OKF conformance hook, which `/docs:align` installs and
-upgrades.
+block only on your word**. *Not for:* the OKF conformance hook — the plugin wires it automatically,
+and `/docs:align` only offers to remove a legacy copy.
 
 ### `/skill:eval` — measure whether a command teaches anything
 
@@ -228,22 +228,22 @@ Handlers ladder the same way — a deterministic `command` script costs zero tok
 event is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Warn by default; block
 only on your word.
 
-`hooks/okf-validate.py` keeps `docs/` conformant after every edit. Full behavior, every config
+The plugin's own `okf-validate.py` keeps `docs/` conformant after every edit — wired automatically
+via the plugin's `hooks/hooks.json`, never installed into this repo. Full behavior, every config
 knob, and the finding codes are in `../docs/QUENCHING.md` §5 and §7.
 
-- `settings.json` — hook wiring and permissions. **Commit it**; it is shared configuration.
+- `settings.json` — this repo's own hook wiring and permissions, if any. **Commit it**; it is
+  shared configuration.
 - `settings.local.json` — personal overrides. **Gitignore it.**
-- `hooks/hooks-config.json` — checker config. **Commit it**; per-developer overrides go in
-  `hooks-config.local.json` (gitignored).
+- `hooks/hooks-config.json` — optional, hand-maintained checker config (nothing installs one).
+  **Commit it** if you keep one; per-developer overrides go in `hooks-config.local.json`
+  (gitignored). `docsDir` lives in `.claude/quenching.json` instead.
 
 Hook config is executable configuration with shell privileges. Review it like infrastructure.
 
-```bash
-python3 .claude/hooks/okf-validate.py --version   # must match the plugin's version
-```
-
-If it does not match, `/docs:align` offers the upgrade — overwriting only the script and
-preserving your `hooks-config.json`.
+Run `/docs:status` any time to check the checker's own version against the plugin's. A legacy
+`.claude/hooks/okf-validate.py` copy is never executed — resolution is plugin-first with no
+fallback — so `/docs:align` offers to remove one rather than upgrade it.
 
 ---
 
