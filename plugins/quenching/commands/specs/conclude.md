@@ -344,11 +344,20 @@ choosing the PR route in step 4 was not this consent:
 
 ```bash
 git push -u origin plan/<slug>
-gh pr create --title "<title>" --body "<body>"
+gh pr create --base <base> --title "<title>" --body "<body>"
 specs.py record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)" --set pr=<the PR's URL>
 gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<strategy>)"
 ```
+
+**`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
+default branch — which stays `main`
+([branching.md](/docs/standards/git/branching.md)'s own §O consumidor não precisa mudar nada
+depends on it never moving — see `## Out of Scope` in the spec that introduced the develop/main
+flow). `<base>` here is this spec's own resolved base — the same one the local route's merge
+targets — so a spec whose base is the declared integration branch opens its PR against that
+branch, never against the publication one, without any GitHub repository setting having to
+change.
 
 `fast-forward` never reaches this block — step 4 already ruled the PR route out under it, so
 `gh pr merge`'s missing fast-forward mode is never a live gap. `specs.py record` refuses `pr:` set
