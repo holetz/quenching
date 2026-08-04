@@ -1,7 +1,7 @@
 ---
 description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the docs/ or specs/ front → /docs:align, /specs:align.
 argument-hint: [optional-scope]
-allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Read, Grep, Glob, Write, Edit, Task
+allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
 
 # /quenching:skill:align — force the automation surface onto the taxonomy
@@ -80,14 +80,15 @@ Resolve `skills.py` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**This sweep also installs it** (§5), so the repo keeps its verifier after the run ends —
-one align per front, each installing its own front's tool.
+**This sweep also offers to remove a legacy copy** (§5) — never install or refresh one, since the
+tool always resolves via the plugin path.
 
 **Every shell grant is scoped**, per
 [`docs/standards/automation/skills.md`](../../../../docs/standards/automation/skills.md)
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
-blast-radius sweep (§3), `mkdir`/`mv`/`cp` for the renames and the two installs. This skill
-touches no repo toolchain, so it has no claim to an unscoped `Bash`.
+blast-radius sweep (§3), `mkdir`/`mv`/`cp` for the renames and the manual install, `rm` for a
+confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
+unscoped `Bash`.
 
 **What the tool decides, and what it does not.** `doctor` and `lint` decide everything mechanical
 — a non-empty description on every command, no two resolving to the same `/` path, kebab-case
@@ -171,9 +172,9 @@ command is code-coupled.
 One table: **pairs to collapse** (skill + wrapper → the one command file that survives, with
 the skill name being retired), renames (old → canonical new, coupled ones marked), commands to
 create or rewrite (and wrongly nested generic commands to flatten), rule + registry creations
-from the molds when missing (rule born `authority: background`), **the tool**
+from the molds when missing (rule born `authority: background`), a **legacy copy of the tool**
 `.claude/hooks/skills.py`
-(install / upgrade / leave — §5), the operator manual
+(removal offered — §5, never installed or refreshed), the operator manual
 `.claude/QUENCHING.md` (install / refresh / leave), unroutables kept-and-reported
 with reasons, obsolete-suspect flags (no deletion proposed without the human's word), and —
 labelled **"reported, not applied"** — the wider-surface findings (`sk-agent-*`, `sk-hook-*`),
@@ -188,28 +189,27 @@ the cap, triggers second sentence — bodies untouched), write rule and registry
 when planned, update each code-coupled reference site alongside its individually confirmed
 rename.
 
-**Install the front's tool**, so the repo keeps its verifier after this run ends: copy
-**exactly** `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` into the target's `.claude/hooks/`
-(never the directory recursively). **Ask the tool rather than comparing by hand** — one call
-covers all three fronts' copies:
+**Offer to remove a legacy copy of the front's tool.** `skills.py` always resolves via the plugin
+path now, so a copy under the target's `.claude/hooks/` does nothing but drift — never install or
+refresh one. **Ask the tool rather than comparing by hand** — one call covers all three fronts'
+copies:
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
 ```
 
 Run it from the **plugin path**: an installed copy would answer from the same stale `VERSION` it
-is being asked about, and refuses (exit 2) instead. Act on this front's row (`skills.py`):
-`behind` → overwrite; `absent` → the copy above; `ahead` → left alone and **reported**, because it
-means the target is ahead of this plugin, which is a fact to state, not a regression to force. The
-same one call is what `/quenching:specs:align` reads for `specs.py` and `/quenching:docs:align` for `okf-validate.py`,
-so a run of any one of them can report the other two fronts' drift without a second probe.
+is being asked about, and refuses (exit 2) instead. Act on this front's row (`skills.py`): a
+legacy copy present → offer **removal**; absent → nothing to do. The same one call is what
+`/quenching:specs:align` reads for `specs.py` and `/quenching:docs:align` for `okf-validate.py`, so a run of any one of
+them can report the other two fronts' drift without a second probe.
 
 Then install the operator manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/claude/QUENCHING.md` to `.claude/QUENCHING.md` under the
 four-branch manual-install rule in
 [/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never restated).
-**Done when:** every confirmed row is applied, and `.claude/hooks/skills.py` is present at a
-version at least the plugin's (or its being newer is reported).
+**Done when:** every confirmed row is applied, and no stale `.claude/hooks/skills.py` copy
+remains (or its being ahead of the plugin is reported and left alone).
 
 ### 6. Collapse each confirmed pair — the merge, key by key
 For every `skills/<name>/SKILL.md` paired with a wrapper in §2, the surviving file is the
