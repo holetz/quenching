@@ -1212,6 +1212,50 @@ def load_config(root: str) -> dict:
     return out
 
 
+def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
+    """An unstamped spec's `base`, stopping at the first that answers — the chain
+    docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
+    record is absent, and the caller's own git facts (`origin_head`, `init_default`)
+    already resolved: this function decides only the ORDER, never runs git itself.
+
+    A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
+    flow (docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
+    PUBLICATION branch — so falling through to it by default would merge an unstamped
+    spec into the one branch that must only ever receive a deliberate release. Left
+    undeclared, this function changes nothing: most repositories have no `develop`
+    branch at all, and defaulting to one that does not exist would break them the
+    moment a spec started with no `branch` record."""
+    declared = cfg.get("integrationBranch")
+    if declared:
+        return declared
+    if origin_head:
+        return origin_head
+    if init_default:
+        return init_default
+    return "main"
+
+
+def base_inference_failures() -> list[str]:
+    """`infer_base_branch` against the cases plan-git-record.md's chain must resolve: a
+    declared integration branch wins even where `origin_head` already answers `main` —
+    the realistic collision this function exists to break — and an undeclared one leaves
+    the OLD chain (`origin_head`, then `init_default`, then the literal `main`)
+    untouched."""
+    out: list[str] = []
+    cases = (
+        ({"integrationBranch": "develop"}, "main", "main", "develop"),
+        ({"integrationBranch": None}, "origin-main", "init-main", "origin-main"),
+        ({}, None, "init-main", "init-main"),
+        ({}, None, None, "main"),
+    )
+    for cfg, origin_head, init_default, want in cases:
+        got = infer_base_branch(cfg, origin_head, init_default)
+        if got != want:
+            out.append(f"infer_base_branch({cfg!r}, {origin_head!r}, {init_default!r}) "
+                       f"returned {got!r}, not {want!r}")
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
@@ -6872,6 +6916,18 @@ def cmd_selftest(args, root: str) -> int:
                                         "and substitutes only the quoted version — never "
                                         "the surrounding JSON or the trailing comment"))
 
+    # The base-inference chain an unstamped spec falls through to. Self-contained — no git,
+    # no config file — and runs before the early return: an installed copy is exactly where
+    # a declared integration branch quietly stopped outranking `origin/HEAD` would go
+    # unnoticed until a spec merged into the publication branch by default.
+    for failure in base_inference_failures():
+        findings.append(_finding("sp-base-inference-broken", "error",
+                                 f"the base-inference chain — {failure}",
+                                 remedy="infer_base_branch must return a declared "
+                                        "integrationBranch before origin_head, and leave "
+                                        "origin_head/init_default/'main' untouched when "
+                                        "none is declared"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -7025,8 +7081,9 @@ def cmd_selftest(args, root: str) -> int:
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
               f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
               f"`memory`, the config defaults hold with nothing declared, the release "
-              f"lockstep moves all seven artifacts together and refuses a drifted one, "
-              f"the files root "
+              f"lockstep moves all seven artifacts together and refuses a drifted one, a "
+              f"declared integration branch outranks origin/HEAD in the base-inference "
+              f"chain and an undeclared one leaves it untouched, the files root "
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
