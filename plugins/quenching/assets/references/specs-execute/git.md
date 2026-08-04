@@ -2,8 +2,7 @@
 
 The owner of **how** a spec's work is isolated, how its commits are worded, and how the branch
 comes home. `/quenching:specs:execute` performs the isolation, inline on its way into a build;
-`/quenching:specs:conclude` cites this file for the conventions its own steps depend on. Neither
-restates it.
+`/quenching:specs:conclude` cites this file for the conventions its own steps depend on.
 
 Everything here is a **default**, not a rule. A target repo that has written down its own git
 conventions has already decided, and a plugin that ignored that would be imposing house style on
@@ -11,18 +10,7 @@ somebody else's history.
 
 ## Contents
 
-- [The read-if-present rule](#the-read-if-present-rule)
-- [Isolation happens on the way into a build](#isolation-happens-on-the-way-into-a-build)
-- [Branch and worktree names](#branch-and-worktree-names)
-  - [The worktree is the preferred form](#the-worktree-is-the-preferred-form)
-  - [A target may declare a setup command](#a-target-may-declare-a-setup-command)
-- [Recording the isolation](#recording-the-isolation)
-- [Commit messages](#commit-messages)
-- [The subject is the anchor](#the-subject-is-the-anchor)
-- [Merge strategies](#merge-strategies)
-  - [The worktree is removed after a successful merge](#the-worktree-is-removed-after-a-successful-merge)
-- [The pull-request route](#the-pull-request-route)
-- [What is never done, on any repo](#what-is-never-done-on-any-repo)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The read-if-present rule
 
@@ -40,15 +28,10 @@ ls docs/standards/git/ 2>/dev/null
 | nothing | the defaults below |
 | a doc that covers only part (e.g. commit subjects but not merges) | the target's for what it covers, the defaults for the rest |
 
-State in the report which one governed. "Read the repo's `docs/standards/git/commit-messages.md`"
-and "used the plugin default" are different facts about the same commit, and only one of them means
-the human's convention was honoured.
+State in the report which one governed.
 
 **Never install a git standard into a target.** Not as a fixup, not as a suggestion applied, not
-"so the next run has something to read". Writing `docs/standards/git/**` into a repository that
-never asked for it is `/specs:*` reaching into `/quenching:docs:align`'s territory, and it converts a default
-this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
-without anyone having agreed to it. If a human wants their conventions written down, that is
+"so the next run has something to read". If a human wants their conventions written down, that is
 `/quenching:docs:add`, on their word.
 
 An `authority: background` git standard in the target still wins over these defaults. It is an
@@ -93,6 +76,36 @@ reads the live ref and reports it, and demotes a spec whose branch is checked ou
 archive gates — a merge invocable on its own could run against a spec nobody reviewed and nothing
 archived, and would have to duplicate every refusal `conclude` already owns.
 
+<!-- rationale -->
+
+**On `plan/<slug>` as the default name.** A branch named to it is greppable against `specs.py list`,
+and `git branch --list 'plan/*'` is the list of work cut by the default. A human who already checked
+out `fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
+second one cut beside it.
+
+**On putting the worktree beside the repo.** Inside the repo it lands in the tree the spec is about
+to change, and shows up in every `git status`, every glob, and every checker this plugin runs. A
+worktree leaves the main checkout untouched, which is what lets several specs be built at once and
+what keeps satisfying the clean tree the loop demands of itself. A recommendation that changes from
+repo to repo cannot be documented in one sentence, and guessing somebody else's build is how a
+recommended path becomes a silent trap. So choosing Branch is a decision the human read rather than
+a discovery at the first `verify:` that fails.
+
+**The home moved, and the move is the point.** This used to be `specs/config.json`, at the root of
+the specs workspace — which only had a place to live while every repo was guaranteed a `specs/`
+folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
+configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
+with the rest of it. Whether the command resolves can only be judged against the new worktree's
+path, which `specs.py` is never told.
+
+**On stamping `branch:` for a branch this plugin never cut.** A human may have checked one out by
+hand before running `execute`, and a spec built there with nothing stamped leaves
+`/quenching:specs:conclude` unable to say what it merges into.
+
+**On removing the worktree after a merge.** Isolation nobody cleans up accumulates: directories
+beside the repo, each pointing at an already integrated branch, none of them obviously safe to
+delete.
+
 ## Branch and worktree names
 
 <!-- rules -->
@@ -102,17 +115,13 @@ plan/<slug>
 ```
 
 The **suggested default** when the inline offer cuts a new branch or worktree — kebab-case, no
-date prefix, no id. A branch named to it is greppable against `specs.py list`, and `git branch
---list 'plan/*'` is the list of work cut by the default. `specs.py next --front` ranks on whether
+date prefix, no id. `specs.py next --front` ranks on whether
 `plan/<slug>` is **alive**, so a branch named to the default is what tells `/quenching:specs:continue` this
 spec is already under way without a stamped `branch` record.
 
 **The name is a suggestion, never a contract.** When `/quenching:specs:execute` starts on a branch that is not
 the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
-rename, no refusal, and no requirement that it match `plan/<slug>`. A human who already checked out
-`fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
-second one cut beside it. §Recording the isolation below covers how `base` is captured for an
-adopted branch, which is not the same fact as for one this plugin cut itself.
+rename, no refusal, and no requirement that it match `plan/<slug>`.
 
 A worktree goes beside the repo, never inside it:
 
@@ -120,24 +129,20 @@ A worktree goes beside the repo, never inside it:
 git worktree add ../<repo>-<slug> -b plan/<slug>
 ```
 
-Inside the repo it lands in the tree the spec is about to change, and shows up in every `git
-status`, every glob, and every checker this plugin runs.
-
 ### The worktree is the preferred form
 
-`/quenching:specs:execute`'s inline isolation offer leads with **Worktree and recommends it**, unconditionally — a
-plain branch and working in place stay available, in that order after it. A worktree leaves the
-main checkout untouched, which is what lets several specs be built at once and what keeps
-satisfying the clean tree the loop demands of itself.
+<!-- rules -->
 
-**Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. A
-recommendation that changes from repo to repo cannot be documented in one sentence, and guessing
-somebody else's build is how a recommended path becomes a silent trap. What is offered instead is
-the **cost, stated in the offer itself**: a fresh checkout carries only what git tracks — no
-installed dependencies, no `.env`, no venv, no build output — so choosing Branch is a decision the
-human read rather than a discovery at the first `verify:` that fails.
+`/quenching:specs:execute`'s inline isolation offer leads with **Worktree and recommends it**, unconditionally — a
+plain branch and working in place stay available, in that order after it.
+
+**Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. What is
+offered instead is the **cost, stated in the offer itself**: a fresh checkout carries only what git
+tracks — no installed dependencies, no `.env`, no venv, no build output.
 
 ### A target may declare a setup command
+
+<!-- rules -->
 
 `.claude/quenching.json`, at the repo root, under the `worktreeSetup` key:
 
@@ -145,18 +150,13 @@ human read rather than a discovery at the first `verify:` that fails.
 {"backend": "files", "worktreeSetup": "./scripts/wt-setup.sh"}
 ```
 
-**The home moved, and the move is the point.** This used to be `specs/config.json`, at the root of
-the specs workspace — which only had a place to live while every repo was guaranteed a `specs/`
-folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
-configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
-with the rest of it. See
+See
 [plugin-configuration.md](../../../../../docs/standards/workflows/plugin-configuration.md).
 
 Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
 the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
 tree lacking the dependencies is the tree that must install them. `specs.py` reads the value and
-never executes it: whether the command resolves can only be judged against the new worktree's path,
-which `specs.py` is never told.
+never executes it.
 
 No file, no key, or a command that does not resolve all mean **no setup**, and none of them is a
 finding — most repos declare nothing, and declaring nothing must cost nothing. `specs.py doctor`
@@ -182,8 +182,7 @@ not — **after the merge, git cannot say what the branch was cut from**, which 
 the record exists and why it is captured while still true.
 
 **Every branch that is not the repository's base gets `branch:` stamped**, including one this
-plugin never cut — a human may have checked one out by hand before running `execute`, and a spec
-built there with nothing stamped leaves `/quenching:specs:conclude` unable to say what it merges into.
+plugin never cut.
 Stamp nothing only in the true in-place case: the human declined isolation and stayed on the base
 branch, where a record whose `base` equals its `work` would state no fact.
 
@@ -224,9 +223,7 @@ plan/<slug>: <task-id> <task title>
 plan/session-tokens: 3.2 Add rate limiting to the auth middleware
 ```
 
-Three properties earn it: `git log --oneline` reads back as the spec's `## Tasks`; a subject
-grepped by slug returns exactly that spec's commits; and the task id makes a `git revert` of one
-task unambiguous. Wrap the title rather than truncating it, and keep the subject under 72
+Wrap the title rather than truncating it, and keep the subject under 72
 characters where the title allows.
 
 The other subjects this front writes follow the same grammar:
@@ -269,14 +266,36 @@ nothing is left to write afterwards.
 resolves by sha. Neither form is backfilled: a recorded sha describes a commit that exists, and
 rewriting an archived spec to "modernise" it would falsify when the record was made.
 
+**Still no trailer and no machine-readable anchor inside the message.**
+
 <!-- rationale -->
 
-**Still no trailer and no machine-readable anchor inside the message.** The link is the subject the
+The link is the subject the
 target's own convention produced — if the repo's standard prefixes a ticket or appends a sign-off,
 the recorded subject is whatever that convention actually wrote. The record follows; it never
 imposes.
 
+**On the default subject `plan/<slug>: <task-id> <task title>`.** Three properties earn it: `git log
+--oneline` reads back as the spec's `## Tasks`; a subject grepped by slug returns exactly that
+spec's commits; and the task id makes a `git revert` of one task unambiguous.
+
+Under the sha anchor, rebase rewrote every recorded commit and left the archived spec's `commit:`
+fields pointing at commits that no longer existed — it was the one strategy that made the record
+strictly worse rather than merely narrower.
+
+**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-task commits land
+on the base directly and their subjects resolve there, so a merge pointer would add nothing.
+
+Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
+[plan-git-record.md](../../../../../docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+written before the merge and says what the run **delivered** — an open, unmerged PR archived as
+`done` would assert something that has not happened yet. And `merge:` is stamped before the merge
+so that it is the run's last action; a run that ends before the merge leaves the record stamped and
+nothing merged, which is recoverable but is not what "the merge is last" promises.
+
 ### Where the subject can fail, and what is done about it
+
+<!-- rules -->
 
 A `commit-msg` hook that **replaces** the subject outright breaks the link. Substring matching
 survives every hook that merely *adds* — a ticket prefix, a `Change-Id` trailer, a sign-off — which
@@ -316,6 +335,8 @@ a future reader resolving a task's subject needs to know which of these happened
 
 ### When there is no merge commit to name
 
+<!-- rules -->
+
 `fast-forward` and `rebase` create none, so the record carries an explicit none rather than a
 fabricated pointer:
 
@@ -326,31 +347,32 @@ merge:
     base branch's history
 ```
 
-Under both, the per-task commits land on the base directly and their subjects resolve there, so a
-merge pointer would add nothing. `specs.py validate` reports the mismatched cases both ways — an
+`specs.py validate` reports the mismatched cases both ways — an
 anchorless strategy carrying a real subject, and a merge-producing strategy carrying an explicit
 none (`sp-bad-merge`).
 
 ### The squash caveat
 
-A squash is the common house style and this file does not argue against it. It has one consequence
-that must be said out loud rather than discovered later: **the per-task commits survive only on the
+<!-- rules -->
+
+**The per-task commits survive only on the
 branch.** So when squash is chosen, `/quenching:specs:conclude` offers **not** to delete the branch, and says
 why. Keeping it costs a ref; deleting it silently turns every `subject:` field in the archived spec
 into a reference that resolves to nothing.
 
 ### Rebase is no longer the strategy that destroys the record
 
-Under the sha anchor, rebase rewrote every recorded commit and left the archived spec's `commit:`
-fields pointing at commits that no longer existed — it was the one strategy that made the record
-strictly worse rather than merely narrower. A subject survives the rewrite, so a rebased branch's
+<!-- rules -->
+
+A subject survives a rebase's rewrite, so a rebased branch's
 records still resolve. Rebase now sits on the same footing as the others, and the old warning
 applies only to specs still carrying the sha form.
 
 ### The worktree is removed after a successful merge
 
-Isolation nobody cleans up accumulates: directories beside the repo, each pointing at an already
-integrated branch, none of them obviously safe to delete. So once the merge exits 0,
+<!-- rules -->
+
+Once the merge exits 0,
 `/quenching:specs:conclude` removes the worktree — from the base's checkout, because nothing removes the tree
 it is standing in:
 
@@ -410,13 +432,6 @@ in the same block, before the run reports done:
 gh pr merge <number> --merge|--squash|--rebase
 ```
 
-Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
-[plan-git-record.md](../../../../../docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
-written before the merge and says what the run **delivered** — an open, unmerged PR archived as
-`done` would assert something that has not happened yet. And `merge:` is stamped before the merge
-so that it is the run's last action; a run that ends before the merge leaves the record stamped and
-nothing merged, which is recoverable but is not what "the merge is last" promises.
-
 **The merge is asserted, not assumed.** After `gh pr merge` returns, the run confirms the base
 actually advanced before reporting success:
 
@@ -448,3 +463,14 @@ all forbidden by
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The commit and
 §The precondition, which own them. They bind every command that touches git here, including the
 ones in this file.
+
+<!-- rationale -->
+
+Writing `docs/standards/git/**` into a repository that
+never asked for it is `/specs:*` reaching into `/quenching:docs:align`'s territory, and it converts a default
+this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
+without anyone having agreed to it.
+
+**On reporting which governed.** "Read the repo's `docs/standards/git/commit-messages.md`"
+and "used the plugin default" are different facts about the same commit, and only one of them means
+the human's convention was honoured.

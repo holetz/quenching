@@ -1,18 +1,12 @@
 # Migration — variant → canonical, with blast-radius safety
 
 In an existing repo with variant names, `/quenching:docs:align` **proposes convergence to the canonical
-name** — deterministic and prescriptive, but **safe**. Deterministic ≠ automatic: the mapping
-is repeatable, but each migration passes its **own** confirmation, and a code-coupled rename is
-a distinct item.
+name**.
 
 ## Contents
 
-- [1. Map variant → canonical](#1-map-variant--canonical)
-- [2. Flag the variant as DEPRECATABLE](#2-flag-the-variant-as-deprecatable)
-- [3. Measure and SURFACE the blast radius BEFORE executing](#3-measure-and-surface-the-blast-radius-before-executing)
-- [4. Propose the migration; NEVER rename/delete without OK — code-coupled ⇒ its OWN confirmation](#4-propose-the-migration-never-renamedelete-without-ok--code-coupled--its-own-confirmation)
-- [5. Frontmatter migration (field renames)](#5-frontmatter-migration-field-renames)
-- [6. Install only the missing canonical homes that apply](#6-install-only-the-missing-canonical-homes-that-apply)
+`skills.py read assets/references/docs-align/migration.md` returns the heading index;
+`--sections` addresses one.
 
 ## 1. Map variant → canonical
 
@@ -64,11 +58,10 @@ are both smells `/quenching:docs:align` resolves as renames (each swept for its 
   `<table>` mirrors the real object (`dim_associado.md` stays `dim_associado.md`);
   `reference/repositories/<repo>` mirrors the real repo. The
   slug is the greppable key to the asset — anglicizing it is data loss.
-- **Content is content — only the surface converges.** Body prose may be Portuguese; the slug,
-  folder, and frontmatter are English.
 
 ### 1c. Retired canonical home — `guides/` → `documentation/`
 
+<!-- rules -->
 OKF v0.9 retired the `guides/` home; its content now lives in the `documentation/` home. A repo
 already conformant on the **old** canonical (`docs/guides/`) is therefore a migration candidate
 too — not a variant name, but a retired home. Scaffold the `documentation/` skeleton (its
@@ -77,21 +70,26 @@ and relocate each `docs/guides/**` doc **by shape** — per item, like Content r
 because a legacy `guides/` folder mixes both quadrants: a **task recipe / how-to** ("how do I do
 X") → `docs/documentation/how-to/`; a **learning-oriented tutorial** → `docs/documentation/getting-started/`.
 Sweep the blast radius like any rename (its **own** confirmation when links reach product code).
+
+<!-- rationale -->
 Without this rule `align` would read a conformant `guides/` and never migrate it.
 
 ### 1d. Renamed backlog item — `idea` → `task`
 
+<!-- rules -->
 OKF v0.11 renamed the backlog item concept: a `backlog/*.md` carrying the legacy
 `type: idea` restamps to `type: task` (same minimal stamp; the optional
 `priority`/`tags` keys are NOT backfilled — an untriaged legacy item simply stays
 untriaged). The backlog `index.md` heading **"Developed ledger" renames to "Completed
 ledger"** with columns `Task | Outcome | Date` — **existing rows preserved** (map
 `Idea` → `Task`, `Developed into` → `Outcome`). **No GENERATED zone is installed or regenerated
-in it:** §1e moves this folder into the `specs/` front, which carries no listing file at all
+in it.** A legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. This restamp applies
+**before** the hand-off in §1e, while the files are still OKF-stamped task docs.
+
+<!-- rationale -->
+§1e moves this folder into the `specs/` front, which carries no listing file at all
 (`specs.py list` derives what `plans/` holds from disk), so a zone written here would be a
-listing nobody produces and nobody reads. A legacy mold reference `backlog/idea.md` maps to
-`backlog/task.md`. This restamp applies **before** the hand-off in §1e, while the files are still
-OKF-stamped task docs.
+listing nobody produces and nobody reads.
 
 ### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → the `specs/` front
 
@@ -104,7 +102,7 @@ The move is two hops, and this sweep performs only the first:
 1. **`/quenching:docs:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
    then every `docs/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
-   not a destination — nothing is meant to stay there. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
+   not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
    every cross-link into `docs/backlog/`.
 2. **`specs.py migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
@@ -116,13 +114,16 @@ After both hops, `/quenching:specs:create` and `/quenching:specs:triage` own tha
 
 ### 1f. Retired home — `decisions/` → `standards/`
 
+<!-- rules -->
 OKF v0.13 removed the standalone ADR home. A target's existing `docs/decisions/*.md`
 (`type: decision`, usually `NNNN-slug.md` ADRs) migrates by restamping `type: decision` →
 `type: standard` with `authority: background` (or `current` if the decision is clearly
 implemented in the code), and relocating to the fitting `standards/<subject>/` — naming the
 concept in an English slug, dropping the `NNNN-` prefix. This is a **per-item
-semantic-placement call with its own OK**, blast-radius swept (§3–4) — never a bulk move. A
-decision's rationale and still-open alternatives belong in an OpenSpec change's `design.md`,
+semantic-placement call with its own OK**, blast-radius swept (§3–4) — never a bulk move.
+
+<!-- rationale -->
+A decision's rationale and still-open alternatives belong in an OpenSpec change's `design.md`,
 not a docs home.
 
 ### Content relocation (distinct from rename)
@@ -138,9 +139,7 @@ A variant name enters the plan's migration list with its proposed canonical dest
 
 ## 3. Measure and SURFACE the blast radius BEFORE executing
 
-The procedure — **two repo scans for the whole rename set**, one `git grep -n -E "(a|b|c)"` for
-tracked files and one `grep -rn --no-ignore -E "(a|b|c)"` so gitignored-but-live maps are never
-skipped, then classify each hit yourself — is the shared one in
+The procedure is the shared one in
 [`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
 §The blast-radius sweep. Never run a scan per rename.
 
@@ -156,11 +155,10 @@ wrap-up.
 
 ## 4. Propose the migration; NEVER rename/delete without OK — code-coupled ⇒ its OWN confirmation
 
-Human confirmation and "do not delete without OK" remain in effect. A migration whose blast
-radius reaches **product code**, or is otherwise irreversible, is a **distinct confirmation
-item** with its scope shown — never folded into a bulk "align all" opt-in. A rename that
-resolves to a code constant is a **refactor of the target's product**, not a docs move: alert
-the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
+A migration whose blast radius reaches **product code**, or is otherwise irreversible, is a
+**distinct confirmation item** with its scope shown — never folded into a bulk "align all"
+opt-in. A rename that resolves to a code constant is a **refactor of the target's product**, not
+a docs move: alert the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
 `/quenching:docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
 ([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
@@ -172,9 +170,9 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 - `summary:` → `description:`
 - `updated:` → `timestamp:`
 - add non-empty `type:` (from the home's vocabulary in [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md))
-- rename the retired type `type: guide` → `type: documentation` (its home moved to `documentation/`)
-- rename the retired type `type: idea` → `type: task` (the backlog item concept was renamed in v0.11 — see §1d; those files then leave the bundle for the `specs/` front per §1e)
-- rename the retired type `type: decision` → `type: standard` (the ADR home was retired in v0.13 — see §1f; stamp `authority: background`, or `current` if implemented)
+- rename the retired type `type: guide` → `type: documentation` (§1c)
+- rename the retired type `type: idea` → `type: task` (§1d; the files then leave the bundle per §1e)
+- rename the retired type `type: decision` → `type: standard` (§1f; stamp `authority: background`, or `current` if implemented)
 - normalize enums to canonical English (`authority: vigente` → `current`; `audience: ambos` → `both`)
 - preserve third-party keys (a legacy `status:`, OKF-consumer keys, site-generator keys)
 - convert each front-door `README.md` → `index.md` (strip its frontmatter; keep boundary +

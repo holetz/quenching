@@ -41,7 +41,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   native `specs/` repo has none. When present they belong to `/quenching:specs:align`, which
   removes them when migrating a legacy `openspec/` workspace
   ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
-  §Shadow copies). Inventory them only to **note** them; never classify them onto the axis,
+  §Findings the sweep FIXES). Inventory them only to **note** them; never classify them onto the axis,
   rename them, or remove them here.
 - **A body is audited, never rewritten.** The shared MERGE rule says bodies are preserved; on this
   front that is the whole point — the migration changes only names, placement, and
@@ -49,7 +49,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   the `/quenching:skill:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
   needs the human whose intent the command encodes — the same anti-fabrication boundary every
   align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-  §Align conformance; report the cycle).
+  §6. Align conformance; report the cycle).
 - **A description is the one text this sweep rewrites, and §8 is where.** The asymmetry is not an
   exception to the rule above; it is what the rule is for. A body is intent — long, authored, and
   only its author knows what it meant. A description is **routing**, it is short enough to review
@@ -112,8 +112,7 @@ skills.py budget --json   # what the surface costs before anything fires: the to
                           # ceiling, and every description's own character count
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
-[sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §Probe before
-the inventory prescribes:
+[sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
@@ -149,7 +148,7 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 `/quenching:specs:align`* and drop them from the working set, including from the tool's findings.
 
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
-test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §axis — several unrelated folders
+test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `docs/standards/automation/skills.md` if present — it governs; note whether
 the rule and the registry (`docs/documentation/reference/automation.md`) exist, and whether
 the rule and the registry (`docs/documentation/reference/automation.md`) exist.
@@ -159,7 +158,7 @@ working set, and no file changed.
 ### 3. Sweep the blast radius
 Run the shared procedure in
 [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-§The blast-radius sweep — two repo scans for the whole set, never two per rename — over every name slated for
+§4. The blast-radius sweep — two repo scans for the whole set, never two per rename — over every name slated for
 rename or removal: skill names **and** command paths. **A collapse retires a skill name**, so
 every site naming it (a conductor invoking it via the Skill tool, a runbook, a registry row) is a
 hit the same way a rename is. **This front's delta:** a command path appears in

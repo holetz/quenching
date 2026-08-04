@@ -1,33 +1,28 @@
 # Sources — scoping, bounded ingestion, unit extraction, attribution, dedup
 
-The ingestion-specific detail `/quenching:docs:import` owns. The **per-doc** procedure (classify →
-stamp → index → log → glossary → self-check) is **not** here — it lives once in
-[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), which
-this skill cites. This file covers only how a *source* becomes the list of units that
-procedure then mints.
+The **per-doc** procedure (classify → stamp → index → log → glossary → self-check) is **not**
+here — it lives once in
+[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), which this
+skill cites.
 
 ## What a source can be
 
-- **Local files/folders** — read with `Read`/`Glob`/`Grep`. A markdown/notes tree, a README,
-  a design doc, an exported wiki, a spec, a schema dump. Anchor each unit to `path:line`.
-- **URLs** — fetched with `WebFetch`. A doc page, an API reference, a spec, an article.
-  Anchor each unit to the URL (+ heading/anchor when addressable).
-
-Out of scope (route elsewhere): ONE fact the human states → `/quenching:docs:add`; the project's
-`~/.claude` memory → `/quenching:docs:import-memory`; installing/aligning the tree →
-`/quenching:docs:align`.
+- **Local files/folders** — read with `Read`/`Glob`/`Grep`. Anchor each unit to `path:line`.
+- **URLs** — fetched with `WebFetch`. Anchor each unit to the URL (+ heading/anchor when
+  addressable).
 
 ## Bounded ingestion (discipline, not code)
 
-A source — especially a web source — is bounded **before** the first fetch. This echoes the
-caps the upstream `enrich` enforced in code; here it is operator discipline:
+<!-- rules -->
 
-- **Seed list.** The explicit set of files/URLs the user named. Nothing is ingested that is
-  not on the seed list or reached from it under the rules below.
+A source — especially a web source — is bounded **before** the first fetch:
+
+- **Seed list.** The explicit set of files/URLs the user named. Ingest only what is on the seed
+  list or reached from it under the rules below.
 - **Host allowlist.** For web sources, the set of hosts a link may be followed to. Default:
   the hosts of the seed URLs only. A link to any other host is recorded, never fetched.
 - **Page cap.** A hard maximum number of pages/files to fetch this run (state it in the plan).
-  When the cap is hit, stop and **report what was left unfetched** — never silently truncate.
+  When the cap is hit, stop and **report what was left unfetched**.
 - **One hop by default.** Follow links only one level from a seed, and only within the
   allowlist, up to the cap. Deeper crawls are a fresh, re-scoped run.
 - **No auth walls, no downloads of binaries.** A binary (PDF/slide deck) becomes a `sidecar`
@@ -35,6 +30,10 @@ caps the upstream `enrich` enforced in code; here it is operator discipline:
 
 State the seed list, allowlist, cap, and hop depth in the Step-3 plan so the user sees the
 blast radius before the one OK.
+
+<!-- rationale -->
+
+This echoes the caps the upstream `enrich` enforced in code; here it is operator discipline.
 
 ## Extracting knowledge units
 
@@ -55,64 +54,89 @@ well-scoped** units over shredding prose into fragments.
 
 ## Attribution
 
+<!-- rules -->
+
 Every minted doc records where it came from, in **two frontmatter fields that answer different
 questions** — one written to be searched, one written to be read:
 
 - **`source_uri:`** — the exact URI or path of the *source unit*. One value on one line: an
   absolute URL (`https://host/page#heading` when the heading is addressable) or the path as the
   user named the source, anchored where the unit starts (`docs/api/auth.md:120`). No prose, no
-  parenthetical, no list. This is the key a later run greps for an exact match on, so an
-  approximate value is worse than no value at all.
+  parenthetical, no list.
 - **`source:`** — unchanged, and still prose: which spec, person, or body of work originated the
-  rule. A bundle's own authored docs already use it that way, and importing must not overload one
-  key with two meanings.
+  rule.
 
 **Only `/quenching:docs:import` writes `source_uri:`.** No other command mints it, infers it, or backfills
-it, and a doc with no external origin simply has no such key — inventing one fabricates a
-provenance that never existed. The shared frontmatter mold in
-[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) deliberately
-does not carry it, so the commands citing that mold are never invited to fill it in.
+it, and a doc with no external origin simply has no such key.
 
 The body keeps its attribution line when the source is a stable URL, and that line carries **the
 date the source was read**. `source_uri:` records *where*, and `timestamp:` already means
-something else entirely — the doc's own last change. A URI with no age ages badly: a reader
-deciding whether a dead link matters needs to know how old the reading was, and that costs a
-sentence in the body rather than a second key to parse.
+something else entirely — the doc's own last change.
 
-This keeps the bundle honest about what is imported vs authored, and lets a later run re-sync the
-source. Never present imported material as proven local practice: that is the
-`authority: background` rule.
+Never present imported material as proven local practice: that is the `authority: background`
+rule.
+
+<!-- rationale -->
+
+`source_uri:` is the key a later run greps for an exact match on, so an approximate value is worse
+than no value at all.
+
+`source:` stays prose because a bundle's own authored docs already use it that way, and importing
+must not overload one key with two meanings.
+
+Inventing a `source_uri:` where there is no external origin fabricates a provenance that never
+existed. The shared frontmatter mold in
+[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) deliberately
+does not carry it, so the commands citing that mold are never invited to fill it in.
+
+A URI with no age ages badly: a reader deciding whether a dead link matters needs to know how old
+the reading was, and that costs a sentence in the body rather than a second key to parse.
 
 ## Dedup — within the source and against the bundle
 
-1. **Within the source.** Two sections describing the same concept collapse into one unit
-   (merge their detail); do not mint duplicates.
+<!-- rules -->
+
+1. **Within the source.** Collapse two sections describing the same concept into one unit
+   (merge their detail).
 2. **Against the existing bundle.** Before minting, look for the doc that already covers this
-   unit — in this order, because the two lookups do not carry the same confidence:
+   unit — in this order:
 
    1. **Exact, by origin.** `grep -rn 'source_uri: <the unit's URI>' docs/`. A hit is a doc
       minted from *this very unit* — on an earlier run, or earlier in this one when a previous
-      slice already minted it. Nothing was recognised and nothing was judged: the URIs are equal
-      or they are not. This is the lookup `source_uri:` exists for. Two **overlapping seeds** are
-      not this case: they carry different URIs, so this lookup can never match them, and item 1
-      above has already collapsed them by prose before it runs.
+      slice already minted it. Two **overlapping seeds** are not this case: they carry different
+      URIs, so this lookup can never match them.
    2. **Approximate, by concept.** No hit → `Grep` the bundle by title, slug, and any
       repo-specific term. A doc found this way covers the same concept from a *different* origin,
       or from none at all, so calling it the same concept is a judgement — present it as one.
 
    Either way the unit is a **MERGE** target — enrich that doc (fill missing keys, add detail,
    add the source link), never a second doc for the same concept. Record every MERGE-vs-mint
-   decision in the plan, **and which of the two lookups produced it**, so the human reads an
-   exact match and a resemblance as the different claims they are.
+   decision in the plan, **and which of the two lookups produced it**.
 3. **Glossary.** A term the source defines that the glossary already lists is a MERGE into the
    existing entry (sharpen/keep the link), per homes.md §Enriching the glossary.
 
+<!-- rationale -->
+
+The two lookups run in that order because they do not carry the same confidence. On the exact
+one, nothing was recognised and nothing was judged: the URIs are equal or they are not. Two
+overlapping seeds carry different URIs, and item 1 above has already collapsed them by prose
+before it runs.
+
+Recording which of the two lookups produced each MERGE-vs-mint decision is what lets the human
+read an exact match and a resemblance as the different claims they are.
+
 ## Fan-out for scale
+
+<!-- rules -->
 
 For a large source, one `Task` sub-agent per **source slice** (a folder, a URL group)
 returns **compact unit candidates** — `{home, type, path, one-line, source-anchor}`, never
 full bodies. The orchestrator merges the candidate lists, runs the cross-slice dedup above,
-and builds the single plan. Extraction/executor sub-agents may run on a **cheap
-model/effort**: enrich deletes nothing, so a misclassification only misfiles a doc (a
-correctable move), unlike `/quenching:docs:import-memory` where a misclassification deletes a
-memory. See the model policy in [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model).
+and builds the single plan. Extraction/executor sub-agents may run on a **cheap model/effort**.
+See the model policy in [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md#cost-model).
+
+<!-- rationale -->
+
+A cheap model is safe here because enrich deletes nothing, so a misclassification only misfiles a
+doc (a correctable move), unlike `/quenching:docs:import-memory` where a misclassification deletes
+a memory.

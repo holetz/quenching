@@ -54,8 +54,7 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 - **The explicit-none rule is the spec's, not this command's.** A section with nothing in it is
   `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
   own gate is legal — stated once in
-  [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The phase
-  gates, applied here on every write.
+  [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The gates, applied here on every write.
 - **Read `docs/` before writing.** The relevant `docs/standards/` and `knowledge/glossary.md` are
   binding on wording, so a spec does not contradict a rule the repo already agreed on or invent a
   second name for a thing that already has one.
@@ -113,8 +112,10 @@ Nothing is written to the spec during this step. Keep a running list of
 Show every accumulated answer as a single plan: per section, what changes and the answer it came
 from. Draft each section per
 [artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md). Anything that
-turned out to belong outside the spec — a durable rule, a term, a follow-up — is listed as a
-**routed offer**, not an edit (§Invariants).
+turned out to belong outside the spec is shown here as well: a durable rule or a term as a
+**routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
+this edit will park** — a line, not an offer, because parking creates nothing to consent to
+(§Invariants).
 
 Wait. Declined → nothing is written, and the questions and answers are still reported so the
 thinking is not lost.
@@ -124,6 +125,12 @@ thinking is not lost.
 Write each confirmed section with `specs.py section <slug> "<Heading>" --write` (body on stdin) —
 it creates the heading in canonical position on first write, so creating and revising are the same
 call. An emptied section becomes an explicit `- none — <reason>`, never a deleted heading.
+
+Every follow-up the plan parked is written in this same edit — `specs.py discover <slug>
+"<finding>"`, one call per line — and never mid-bank, which
+[questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
+mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
+`## Discoveries` moves no derived stage, so the line costs the pass nothing but itself.
 
 Then the frontmatter records this command owns, each through `specs.py record` — **never by
 editing the frontmatter**, which merges nothing and works only while the backend is `files`:
@@ -156,7 +163,10 @@ or the same bank selected again with nothing left to ask → go to step 8.
 
 ### 8. Report
 The spec and the bank(s) that ran; how many questions were asked and answered; the sections edited;
-the records stamped; the routed offers and whether each was taken; the stage before and after; and
+the records stamped; the routed offers and whether each was taken; **every follow-up parked into
+`## Discoveries`, quoted** — a parked line was never offered, so nothing else in this list reports
+it, and an unreported one is indistinguishable from a finding the pass dropped; the stage before
+and after; and
 the next step — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
 for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
 
@@ -172,9 +182,16 @@ is friction for everyone.
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
   `/quenching:specs:execute`.
 - **Never write into `docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
-  understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define`, an out-of-scope follow-up to
-  `/quenching:specs:create` — **offered, never auto-written**. The rules a spec *proves* are written during
-  execution, not during definition.
+  understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define` — **offered, never
+  auto-written**. The rules a spec *proves* are written during execution, not during definition.
+- **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
+  not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
+  `specs.py discover <slug> "<finding>"` — landed inside the step 6 edit the human already
+  confirmed, never as a loose call mid-bank. Turning a follow-up into its own spec stays
+  `/quenching:specs:conclude`'s, which harvests it once the parent's fate is known. This route is
+  not an offer: nothing is created, so there is nothing to ask for.
+- **Inside a develop pass, `specs.py new` runs only as the discoveries bank's `promoted:`
+  resolution.** Nothing else here mints a spec.
 - Never write a section without showing it and getting the human's word first.
 - Never write anything mid-bank — accumulate, then apply once.
 - Never batch questions. One at a time, each with a recommendation.

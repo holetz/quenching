@@ -11,14 +11,7 @@ answers better than the human can. The bank is now **derived**, from the same st
 
 ## Contents
 
-- [Choosing the bank](#choosing-the-bank)
-- [The four shared mechanics](#the-four-shared-mechanics)
-- [Bank: shape](#bank-shape)
-- [Bank: adversarial](#bank-adversarial)
-- [Bank: gate](#bank-gate)
-- [Bank: discoveries](#bank-discoveries)
-- [Bank: approval](#bank-approval)
-- [Recording the pass](#recording-the-pass)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## Choosing the bank
 
@@ -44,15 +37,13 @@ human who came to sharpen a proposal did not sign up for the whole gate walk.
 
 ## The four shared mechanics
 
-Every bank obeys all four. They are what make a pass finish.
+Every bank obeys all four.
 
 ### 1. One question at a time, with a recommendation
 
+<!-- rules -->
 Ask **one** question. Wait for the answer. Then ask the next — chosen in light of what was just
 said, not from a list written in advance.
-
-A batch of five questions gets one shallow answer covering the easiest of them. A single question
-gets a real one, and lets the next question be sharper for having heard it.
 
 Every question carries **an inline recommendation and the reasoning behind it**, so the human can
 answer in one word:
@@ -62,27 +53,23 @@ answer in one word:
 > absorb a flaky test or a missing import, short enough that a genuinely wrong approach stops
 > burning tokens. Agree, or is this suite slow enough that five is too many?"
 
-The recommendation is not a formality. A pass that hands the human a bare question list has moved
-the work rather than done it — the command is supposed to arrive with an opinion.
-
 Use **AskUserQuestion** when the answer space is genuinely a small set of options (it renders as
 choices and takes one click); ask in prose when the answer is open-ended. Either way: one at a
 time.
 
+<!-- rationale -->
+A batch of five questions gets one shallow answer covering the easiest of them. A single question
+gets a real one, and lets the next question be sharper for having heard it.
+
+The recommendation is not a formality. A pass that hands the human a bare question list has moved
+the work rather than done it — the command is supposed to arrive with an opinion.
+
 ### 2. Accumulate; apply in ONE edit per bank
 
+<!-- rules -->
 **Nothing is written while a bank is running.** Keep a running list of
 `(question, answer, target section)` and write it all at once, as a single edit the human confirms
 once.
-
-Three reasons this is not merely tidier:
-
-- A pass abandoned halfway leaves the spec **exactly** as it was — no half-filled `## Design` whose
-  decisions contradict a `## Proposal` that was never updated.
-- Later answers routinely revise earlier ones. Writing answer 2 before hearing answer 6 means
-  editing the same paragraph twice, and the intermediate state is never reviewed by anyone.
-- One diff is reviewable. Six scattered edits are not, and the human's single OK is what authorizes
-  the whole bank.
 
 The edit lands per **bank**, not per pass. A pass that crosses two boundaries produces two
 confirmed edits, and the stage between them is real.
@@ -91,9 +78,16 @@ Every bank's consolidated edit also refreshes `## Overview` to match whatever th
 changed — it is authored **last** within that one edit, after every other section has settled,
 because it can only be correct once they have. It still sits first in the file; only its authoring
 order within the pass is last. Present the refreshed Overview to the human as its own labelled
-before → after block, separate from the list of other section diffs — never folded in alongside
-them — and this rides inside the same one-OK edit the bank already produces, not a second
-confirmation.
+before → after block, separate from the list of other section diffs, and this rides inside the same
+one-OK edit the bank already produces, not a second confirmation.
+
+<!-- rationale -->
+- A pass abandoned halfway leaves the spec **exactly** as it was — no half-filled `## Design` whose
+  decisions contradict a `## Proposal` that was never updated.
+- Later answers routinely revise earlier ones. Writing answer 2 before hearing answer 6 means
+  editing the same paragraph twice, and the intermediate state is never reviewed by anyone.
+- One diff is reviewable. Six scattered edits are not, and the human's single OK is what authorizes
+  the whole bank.
 
 ### 3. A declared stop condition
 
@@ -144,7 +138,7 @@ questions and often replaces one.
 
 **Lands in** `## Proposal` (the shape), `## Out of Scope` (the boundary), `## Design` /
 `## Alternatives Considered` when the shapes table produced a real comparison, and `## Overview` —
-this is the bank that first writes it, the same way it first writes `## Proposal`.
+this is the bank that first writes it.
 
 **Stop when** `## Proposal` states what will be true afterwards that is not true now, and the human
 would recognise the spec as describing their idea. Not when the gate is met — that is two banks
@@ -171,16 +165,15 @@ not built?), **the smallest thing that could work**, and **buy or borrow instead
 Table them — approach, cost, benefit, what it forecloses — state a recommendation with the
 reasoning, and ask the one question: does the spec keep its approach, or switch?
 
-**Do not strawman.** Each alternative is stated as its strongest advocate would state it; one that
-cannot be written down convincingly was not a real alternative and does not belong in the table.
+Each alternative is stated as its strongest advocate would state it; one that cannot be written
+down convincingly was not a real alternative and does not belong in the table.
 
 Lands in `## Alternatives Considered` — **including the rejected ones and why they lost**, which is
 the entire point: the next person to have the same idea reads why it was already turned down.
 
 ### Lens: critique — when the spec is large, reaches into product code, or declares an uncovered standard
 
-Assume the spec is wrong and find where. Be specific — a critique that could be levelled at any
-spec is worthless. Aim at:
+Assume the spec is wrong and find where. Be specific. Aim at:
 
 - **The premise.** Does `## Problem` describe a problem anyone actually has? What is the evidence?
 - **Scope inflation.** Which part of `## Proposal` does not follow from `## Problem`? What survives
@@ -194,7 +187,7 @@ spec is worthless. Aim at:
 - **The load-bearing assumption.** Which single unstated assumption, if false, invalidates the spec?
 
 **Every criticism carries a proposed remedy**: cut it, defer it, shrink it, or accept it with a
-stated reason. A criticism with no remedy is a complaint.
+stated reason.
 
 Lands in `## Out of Scope` (a scope cut taken), `## Open Decisions` (one that needs evidence), or
 the spec's own sections where the remedy rewrites them.
@@ -228,7 +221,7 @@ into filling headings to make a check pass, and the explicit-none rule is the wh
 
 **Drive it off the tool, never off a reading of the file.** `specs.py next --spec <slug> --json`
 returns the first `missing` or `malformed` heading and the full list behind it. Ask about that
-heading; do not choose one by eye.
+heading.
 
 **Where the questions come from.** The gap itself, in the spec's own terms:
 
@@ -270,14 +263,21 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <slug>` | it is work someone will do | one `specs.py new` — offer it, and write the slug back |
+| `promoted: <slug>` | it is work someone will do, and the front does not already hold it | one `specs.py list --json` to check, then one `specs.py new` — offer it, and write the slug back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
-| `dismissed: <reason>` | it is real but not worth acting on | one line, and the reason is the whole value |
+| `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
+
+**Check the front before minting.** `promoted:` reads the open specs first; where one already
+covers the line, resolve it `dismissed: already covered by {slug}`.
 
 A line is never deleted, and never left unresolved with a shrug. `dismissed: acceptable` with no
 reason is the failure mode to hunt for.
 
 **Stop when** every line carries a resolution.
+
+<!-- rationale -->
+A queue filled by executors that could not see each other produces the same finding several times,
+so the duplicate arrives through the front door and has to be turned away there.
 
 ## Bank: approval
 
@@ -312,8 +312,9 @@ and stamps rather than refusing, so declining here costs nothing but a question 
 | approval | no | it authorizes; `approved` is its own record |
 
 A pass that ran both stamping banks records the **deepest** one reached, in the bank order above —
-that is the strongest claim the pass supports. The record is `writeOnce: false`: a later pass
-restamps it, because a second interrogation is a new fact, not a correction of the old one.
+that is the strongest claim the pass supports. The record is `writeOnce: false`
+([spec-driven.md](spec-driven.md) §Frontmatter): a later pass restamps it, because a second
+interrogation is a new fact, not a correction of the old one.
 
 **Never fabricate it.** `refined` is written only after real questions got real answers. It is the
 one field whose entire value is that it cannot be inferred from the sections, so a stamp on a pass
