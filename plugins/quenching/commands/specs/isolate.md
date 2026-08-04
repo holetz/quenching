@@ -34,8 +34,8 @@ records that it did; building is `/quenching:specs:execute`.
 
 ## Resolving the tool
 
-Resolve `specs.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
+Resolve `specs.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Invoke with `python3`/`py`; branch on the **exit code** (0 ok · 1 findings ·
 2 refusal) and the `--json`, never on prose.
 
