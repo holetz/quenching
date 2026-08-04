@@ -4,10 +4,10 @@ title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the skill front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
 resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/skill/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
-timestamp: 2026-07-29
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the skill front on that evidence
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the skill front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
 maintainer: quenching
 ---
 
@@ -168,8 +168,9 @@ fixed.
 **Rules 2 and 3 pull against each other, and the tension is real.** A routing probe needs a
 populated repo to satisfy rule 3; a command that *writes* then writes there for real. Check 3's
 capture probes ran against the live repo and left two captured specs behind, committed in
-`5f31d19` — and in the v1 shape, because a stale `.claude/hooks/specs.py` resolved ahead of the
-plugin's copy. **A probe that reaches a writing command produces real artifacts. Either sandbox it
+`5f31d19` — and in the v1 shape, because at the time a stale `.claude/hooks/specs.py` resolved
+ahead of the plugin's copy. That second half can no longer happen: resolution is plugin-first with
+no fallback and no manual rung. The residue half is untouched by that, and is the rule here. **A probe that reaches a writing command produces real artifacts. Either sandbox it
 with the preconditions reproduced, or expect residue and clean it up in the same commit.**
 
 ## An ordering property is verified by running the cycle, not by reading the commands

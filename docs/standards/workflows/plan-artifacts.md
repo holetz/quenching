@@ -7,7 +7,7 @@ tags: [workflows, specs, sections, gates, validation]
 timestamp: 2026-08-03
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5)
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
 maintainer: quenching
 ---
 
@@ -232,16 +232,17 @@ sweep never blocks on a judgment call. **A spec may always be built unrefined.**
 ## The template is duplicated on purpose
 
 `assets/specs/templates/spec.md` is the source, and the identical content is embedded in `specs.py`
-as a fallback constant — because an installed copy under a target's `.claude/hooks/` has no adjacent
-assets and must still stamp the same file. **Edit both or neither.**
+as a constant, so the tool stays one self-contained file. **Edit both or neither.**
 
 ### There is a THIRD copy, and it shadows rather than falls back
 
 `assets/specs/schema.json` holds the same record vocabulary as `specs.py`'s `DEFAULT_SCHEMA`, and
 `load_schema()` prefers the file when it is adjacent. So the constant is **not** the authority when
 the assets are present — the JSON silently wins, and a change made only to the constant is invisible
-in exactly the layout the plugin ships. That is the opposite failure from the template's, where the
-constant is a fallback that only ever applies once installed.
+in exactly the layout the plugin ships. `load_template()` resolves the same way, and since the tool
+now only ever runs from the plugin, where both assets *are* adjacent, **neither constant is what
+executes**. They survive as what `selftest` compares against and what keeps the file readable on its
+own — which is precisely why a change made to one and not the other passes unnoticed at runtime.
 
 Any change to the record vocabulary is therefore a **three-file lockstep edit**: `DEFAULT_SCHEMA` in
 `specs.py`, `assets/specs/schema.json`, and the guidance in `assets/specs/templates/spec.md`. This

@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-01
+timestamp: 2026-08-03
 audience: both
 authority: current
 source: quenching skeleton
@@ -105,8 +105,8 @@ sentence, and **link out** rather than explaining in full here.
 - [**Canonical case list**](../standards/code/frontmatter-parsing.md) — the twelve frontmatter rows
   that `skills.py`, `specs.py` and `okf-validate.py` must all decide **identically**, duplicated
   byte-identically as each tool's `CANONICAL_CASES` and run by each tool's own `selftest`. It is the
-  **lockstep unit** standing in for the shared module the three cannot have — each installs
-  standalone into a target's `.claude/hooks/`, so none may import the others — and it works by
+  **lockstep unit** standing in for the shared module the three cannot have — each is a
+  self-contained single file and none may import the others — and it works by
   localising a break: a parser that drifts fails its OWN selftest on a row the other two still pass.
   A tool may read *more* than the list requires and must then not report the form it genuinely read,
   so a form a tool does **not** read can never become a row; that asymmetry is named per-tool
@@ -327,10 +327,11 @@ sentence, and **link out** rather than explaining in full here.
 - [**Version lockstep**](../standards/ci-cd/versioning-release.md) — the six version strings a
   release must bump together, split into two halves read by two independent consumers: the
   `plugin.json` `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the
-  `VERSION` constant in each of the three shipped tools, which its installing align compares against
-  the copy **already installed in a target repo**. Missing the second half is the silent failure —
-  the tool is never upgraded in any repo that already has it, which cannot be observed from this
-  repository at all. Distinct from the **Canonical case list**, which is the lockstep unit for the
+  `VERSION` constant in each of the three shipped tools, which answers `--version` and identifies
+  any **legacy copy** a target still carries under `.claude/hooks/` from before resolution went
+  plugin-first. Since nothing installs a tool any more, **no automated check asserts the six
+  agree** — the whole lockstep is discipline, read back by hand at conclude. Distinct from the
+  **Canonical case list**, which is the lockstep unit for the
   three tools' *parser behaviour* rather than their version strings.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
   in `specs/config.json`, holding a command `/specs:isolate` runs once inside a newly created
