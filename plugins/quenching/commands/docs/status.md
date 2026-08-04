@@ -54,12 +54,11 @@ point: a status view that disagreed with the sweep would be worse than none.
 ## Workflow (one read, one report)
 
 ### 1. Resolve the bundle
-Resolve the `docs/` root at the repo root (or `docsDir` from `.claude/hooks/hooks-config.json`
-when a target has customized it). Resolve `okf-validate.py`: the plugin's own
-`${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` first, then the target's
-`.claude/hooks/okf-validate.py`, else report that neither is present and fall back to reading
-frontmatter directly — **saying so in the report**, because an unverified read is a weaker claim.
-Invoke via `python3`/`py`; branch on the **exit code** and the `--json`, never on prose.
+Resolve the `docs/` root at the repo root (or `docsDir` from `.claude/quenching.json` when a
+target has customized it). Resolve `okf-validate.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool. Invoke via `python3`/`py`; branch on the **exit code** and the `--json`,
+never on prose.
 
 **No bundle at all** is a complete, valid answer: report that `docs/` is absent and that
 `/quenching:docs:align` would install it, then stop. A `docs/` that exists without an `okf_version` root

@@ -75,19 +75,10 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 
 ## Resolving the tool
 
-Resolve `skills.py` the way the `specs/` front resolves `specs.py`:
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then a copy installed into the target's
-`.claude/hooks/skills.py`, else the declared **manual** fallback — apply the same checks by hand
-and **say in the report that the check was manual**, never silently skip it. Invoke with
-`python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
-never on prose.
-
-**Invoke it by its literal resolved path**, never through a shell variable holding the interpreter
-plus the path — that idiom word-splits on bash and silently fails on zsh, so it passes where it is
-written and breaks in the target repo. The rule, the measured evidence and the one correct
-abbreviation are
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
-§Write the resolved path literally on every invocation.
+Resolve `skills.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool §Write the resolved path literally on every invocation; branch on the
+**exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
 **This sweep also installs it** (§5), so the repo keeps its verifier after the run ends —
 one align per front, each installing its own front's tool.
