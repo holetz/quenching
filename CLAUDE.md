@@ -23,10 +23,10 @@ cat VERSION
 python3 assets/bin/specs.py --version
 python3 assets/bin/skills.py --version
 python3 assets/hooks/okf-validate.py --version
-# the shipped skeleton is conformant by construction
-python3 assets/hooks/okf-validate.py assets/docs                          # 0 error(s), 0 warning(s)
+# the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
+python3 assets/hooks/okf-validate.py assets/docs                          # 0 error(s); stale-doc warns are advisory
 # the command surface
-python3 assets/bin/skills.py --root . doctor --json                       # 26 commands, no findings
+python3 assets/bin/skills.py --root . doctor --json                       # 25 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings reported, not fatal)
 python3 assets/bin/skills.py --root . budget --json                       # exit 1 = over the ceiling; re-measure, never estimate
 # each tool proves the shared frontmatter rule against the SAME canonical case list
@@ -34,6 +34,13 @@ python3 assets/bin/skills.py selftest                                     # + th
 python3 assets/bin/specs.py selftest
 python3 assets/hooks/okf-validate.py selftest
 ```
+
+**`stale-doc` is never counted as a failure**, here or anywhere. The skeleton's
+`standards/agents/communication.md` declares `resource: docs/**, specs/**` — a legitimate
+bundle-aggregate scope, per
+[bundle-verification.md](docs/standards/quality/bundle-verification.md) §The `resource` glob-set
+format — so **any** commit under either tree ages it, and a branch that touches `docs/` cannot help
+raising the count. The resource moved; the rule did not. Read the gate as zero errors.
 
 `budget` is in that list because a surface can cross its ceiling with **no command minted** — three
 description edits put it 149 characters over, and nothing in this block ran the only instrument that
@@ -105,7 +112,7 @@ migrate/normalize, `/docs:harness` to keep this file thin.
 
 ## The plugin itself
 
-What the twenty-six commands are, what each front gets, the cost model and the install/upgrade
+What the twenty-five commands are, what each front gets, the cost model and the install/upgrade
 path are the **product's own documentation**, not repo standards — do not restate them here:
 
 - [plugins/quenching/README.md](plugins/quenching/README.md) — the command-by-command manual, the

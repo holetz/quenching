@@ -19,7 +19,7 @@ described in §6.
 no delta format, and no second spec store shadowing the one you declared**. The one tool is
 `specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), resolved
 through the plugin and never installed into this repo. The one optional file is
-`.claude/quenching.json` (§4, `/specs:isolate`) — absent in most repos, and its absence costs
+`.claude/quenching.json` (§4, `/specs:execute`) — absent in most repos, and its absence costs
 nothing. All you need is Python:
 
 ```bash
@@ -36,8 +36,7 @@ python3 --version           # or `py --version` on Windows
 | See where everything stands, changing nothing | `/specs:status` |
 | Park an idea — or bring in a Claude Code plan file | `/specs:create` |
 | Think it through, fill it out, argue with it, or approve it | `/specs:develop` |
-| Take a branch or worktree for it — at any stage | `/specs:isolate` |
-| Build it, one verified commit per task | `/specs:execute` |
+| Build it, one verified commit per task — taking a branch or worktree on the way in | `/specs:execute` |
 | Close it out — review, archive, distil, then merge | `/specs:conclude` |
 | Rank everything that is parked | `/specs:triage` |
 | Fix the workspace itself — scaffold, filenames, the v2/v1 fold | `/specs:align` |
@@ -152,7 +151,10 @@ The router. One `specs.py next --front` call ranks every candidate — executing
 closest to done, then priority, then age — with a one-line reason per row, and hands off to the
 one command that fits: `develop` for a spec with gate gaps, `execute` for an approved one with
 open tasks, `conclude` for one whose boxes are all ticked, `triage` when nothing carries a
-ranking to stand on. It never builds, edits, or closes anything itself.
+ranking to stand on. It is **branch-aware**, so it also answers "am I isolated?" without writing
+anything: the spec whose branch you are standing on comes back first, and one alive but checked
+out elsewhere is demoted rather than offered twice. It never builds, edits, or closes anything
+itself.
 
 ### `/specs:status` — look, change nothing
 
@@ -191,19 +193,24 @@ rule you already agreed on. A real interrogation records `refined: {mode, date}`
 the `sp-unrefined` warning — a warning, never a gate: **a spec may always be built unrefined.**
 It never edits code, and it never invents an explicit none on your behalf.
 
-### `/specs:isolate` — take a branch, at any stage
+### `/specs:execute` — build it, prove it, commit it
 
-Isolation is not a privilege of building. Creating and developing a spec also write into
-`plans/` and dirty your tree, and sometimes a spec should be born on the branch that will carry
-its work — so this command takes **or reports** isolation for one spec whenever you want it.
+**It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
+your task's diff from an unrelated edit already sitting there.
 
-It offers a **worktree** beside the repo first, and recommends it, unconditionally — a plain
-**branch** (`plan/<slug>`) and working in place stay available after it. No heuristic sniffs the
-target for `node_modules/` or `.venv/`; the offer states the cost instead, inline: a fresh
-worktree carries only what git tracks, so choosing Branch is a decision you read rather than a
-discovery at the first failing `verify:`. Either way it commits an uncommitted spec file onto the
-new branch so the base keeps no trace of it, and stamps `branch: {base, work}`. `base` is
-captured while it is still true: after a merge, git cannot say what the branch was cut from.
+**It offers isolation only from the base branch.** Standing anywhere else, you answered that
+question at checkout, so it adopts the branch you are on and goes straight to building. The offer
+itself leads with a **worktree** beside the repo, unconditionally — a plain branch and working in
+place stay available after it. No heuristic sniffs the target for `node_modules/` or `.venv/`; the
+offer states the cost instead, inline: a fresh worktree carries only what git tracks, so choosing
+Branch is a decision you read rather than a discovery at the first failing `verify:`.
+`plan/<slug>` is the **suggested** name, never a contract.
+
+Either way, work outside the base stamps `branch: {base, work}` — including on a branch you opened
+yourself, which is the only record of where the work happened. `base` is captured while it is
+still true: after a merge, git cannot say what the branch was cut from. On an adopted branch
+`base` is an *inference* (the remote's declared default), so it is shown on the same line as the
+confirmation, before the stamp, which is the one moment disagreeing is cheap.
 
 **A target may declare a setup command.** `.claude/quenching.json` at the repo root, under the
 `worktreeSetup` key:
@@ -213,26 +220,11 @@ captured while it is still true: after a merge, git cannot say what the branch w
 ```
 
 No file, no key, or a command that does not resolve all mean no setup, and none of it is a
-finding. When Worktree is chosen and the key is declared, `/specs:isolate` shows the command
+finding. When Worktree is chosen and the key is declared, `/specs:execute` shows the command
 **verbatim** in the same plan block that already shows the branch name and the worktree path,
 then runs it once, with cwd inside the new worktree, right after `git worktree add`. **Choosing
 Worktree is the OK for it** — no second prompt. A failing setup is reported and never undoes the
 worktree.
-
-**Asking is a complete use of it.** "Am I isolated?" costs a few `git` reads and writes nothing.
-A spec whose branch is already alive is never given a second one — you are offered a checkout or
-a worktree over the existing branch instead.
-
-`/specs:execute` delegates here rather than reimplementing it; `/specs:create` and
-`/specs:develop` name it when you ask, and never volunteer it. **It never merges** — the merge
-stays inside `/specs:conclude`, behind that command's review and archive gates.
-
-### `/specs:execute` — build it, prove it, commit it
-
-**It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
-your task's diff from an unrelated edit already sitting there. It offers isolation — a branch or
-a worktree — and records the choice as `branch: {base, work}`, because after the merge git cannot
-say what the base was.
 
 Per task it writes the code, runs that task's `verify:` under the spec's declared policy,
 self-reviews the diff (reuse · useless defense · obvious comment · dead code), **ticks the box
@@ -281,11 +273,17 @@ ran, so a second call picks up where the first stopped:
    only knowable once the last task is written, and a bump made here starts from the base you are
    actually merging into. An abandoned spec settles none of it. The archive move, the distillation
    and these all land on the **work branch**.
-4. **Merge — the last action, without exception.** Strategy offered, never chosen for you: merge
-   commit (default), squash, rebase, or fast-forward. `merge: {strategy, subject}` is stamped on
-   the branch *before* the merge, so **nothing is ever committed to the base after it** and one
-   merge carries the code, the emergent docs, the archived spec and the distillation together.
-   **On a squash it offers to keep the branch**, because the per-task commits survive only there.
+4. **Merge — the last action, without exception.** Two choices, offered separately and never made
+   for you. **Strategy:** merge commit (default), squash, rebase, or fast-forward. **Route:** a
+   pull request, or local — offered only where `gh` resolves your repository, silently local
+   everywhere else, and not asked at all under `fast-forward`, which `gh pr merge` cannot perform.
+   `merge: {strategy, subject, pr}` is stamped on the branch *before* the merge, so **nothing is
+   ever committed to the base after it** and one merge carries the code, the emergent docs, the
+   archived spec and the distillation together. On the PR route the push, the `gh pr create` and
+   the `gh pr merge` are **one block you consent to** — choosing the route earlier was not that
+   consent — and `pr:` records the pull request, which is where the review and the checks still
+   live once the branch is gone. **On a squash it offers to keep the branch**, because the
+   per-task commits survive only there.
 
 ### `/specs:triage` — rank the whole front
 
@@ -362,7 +360,7 @@ refined: {mode: premortem, date: 2026-07-25}   # once a real interrogation has r
 approved: {date: 2026-07-26}                   # a human said go — develop offers it, execute asks inline
 branch: {base: main, work: plan/session-tokens} # stamped when isolation is taken; write-once
 reviewed: {date: 2026-07-28}                   # a human read the whole branch diff
-merge: {strategy: merge-commit, commit: abc1234} # the chosen strategy and its resulting sha
+merge: {strategy: merge-commit, subject: "plan/session-tokens: merge (merge-commit)"}  # + pr: on the PR route
 outcome: done                                  # stamped at archive — done | abandoned
 ---
 ```
