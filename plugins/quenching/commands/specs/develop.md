@@ -54,8 +54,7 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 - **The explicit-none rule is the spec's, not this command's.** A section with nothing in it is
   `- none — <reason>`, a present-but-empty heading is malformed, and an absent heading before its
   own gate is legal — stated once in
-  [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The phase
-  gates, applied here on every write.
+  [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The gates, applied here on every write.
 - **Read `docs/` before writing.** The relevant `docs/standards/` and `knowledge/glossary.md` are
   binding on wording, so a spec does not contradict a rule the repo already agreed on or invent a
   second name for a thing that already has one.

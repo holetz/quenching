@@ -1,10 +1,8 @@
 # The command-writing doctrine
 
-How a command file earns its place in a target repo's context. `/quenching:skill:new` applies this
-doctrine to every command it mints or edits; `/quenching:skill:align` cites it when judging
-conformance gaps. Adapted from mattpocock/skills' `writing-great-skills`, folded into this
-plugin's own constraints (the description caps, the bundled-reference pattern, the plan → OK
-gate).
+How a command file earns its place in a target repo's context.
+
+<!-- rules -->
 
 **One file, one description, and it is the only always-on text there is.** The collapse to one
 file per entry point deleted the second description, not the second file only — so the triggers
@@ -33,38 +31,41 @@ restates the number, so the rule and its checker cannot drift apart.
 | **The no-op test, sediment, sprawl, positive prescription** | **a reader** | — |
 | **Every non-default lever carries a stated buy** | **a reader** | — |
 
-The last row is the boundary. Each of those needs a claim about how an agent would *behave*, and
-no parser makes one. They are why this file exists, and why a clean `lint` is a floor rather than
-a verdict.
+Each of those needs a claim about how an agent would *behave*, and no parser makes one. They are
+why this file exists, and why a clean `lint` is a floor rather than a verdict.
 
 **Two of those rows are scoped to a *routed* command**, and the reason is the one lever on this
 list that changes which rules apply at all. `disable-model-invocation: true` makes a command
 **typed-only**: its description leaves every session's context, so no prose routes to it and
-`lint` reports neither routing code against it. What does *not* change is the text — a typed-only
-description keeps all three parts at full length, because the human picking it out of the `/` menu
-is now the only reader it has, and they have no routing to fall back on.
+`lint` reports neither routing code against it.
 
-The lever is not free, and what it costs was measured rather than assumed: it also makes the
-command unreachable **by name** through the Skill tool. Put it on a stage another command's body
-invokes and that stage goes silently inert — the conductor is refused, does not fail, and does
-nothing. That is `sk-inert-stage`, an error, with the reachable set derived from the command
-bodies rather than a hand-kept list. Which class a command belongs to is decided by the admission
-criterion in `docs/standards/automation/skills.md`, and the tier its description then owes is in
+The lever is not free: it also makes the command unreachable **by name** through the Skill tool.
+Put it on a stage another command's body invokes and that stage goes silently inert — the
+conductor is refused, does not fail, and does nothing. That is `sk-inert-stage`, an error, with
+the reachable set derived from the command bodies rather than a hand-kept list. Which class a
+command belongs to is decided by the admission criterion in
+`docs/standards/automation/skills.md`, and the tier its description then owes is in
 `docs/standards/automation/context-budget.md`.
 
 **Within the routed class, `sk-no-boundary` stays wider than the rule.** It fires on absence alone,
 because the tool reads one command and cannot see whether anything competes with it. Where a
 boundary is waived against the whole surface (§The three slots below), the warning is reported as
 **accepted, with the competitor set that was checked** — named in the report every run, never
-silently swallowed. The two scopings are independent and both apply: residency decides whether the
-code may fire at all, and the competitor test decides whether a firing is a defect.
+silently swallowed.
+
+<!-- rationale -->
+
+`/quenching:skill:new` applies this doctrine to every command it mints or edits;
+`/quenching:skill:align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
+`writing-great-skills`, folded into this plugin's own constraints (the description caps, the
+bundled-reference pattern, the plan → OK gate).
 
 ## Predictability is the root virtue
 
-A skill is a promise: the `name` + `description` are always in context, the body only loads
-when the skill fires. The reader — human or agent — must be able to predict from the
-description alone **when the skill fires and what will exist when it finishes**. Every other
-rule below serves that one property:
+<!-- rules -->
+
+The reader — human or agent — must be able to predict from the description alone **when the
+skill fires and what will exist when it finishes**.
 
 - The description **front-loads the leading concept** — the first sentence says what the
   skill does and to what, in the skill's own vocabulary, before any qualifier.
@@ -73,9 +74,12 @@ rule below serves that one property:
   without a trigger is a branch that never fires, and two triggers for the same branch are
   sediment. Triggers sit in the **second** sentence so a truncated description keeps them.
 - The description ends with the boundary — `Not for: <adjacent job> → <owning skill>` — **where an
-  adjacent command actually exists**. The routing story lives in the description, not in a shared
-  router doc; but a boundary naming nobody routes nothing and pays always-on rent forever. See
-  below for what makes a competitor real.
+  adjacent command actually exists**.
+
+<!-- rationale -->
+
+The routing story lives in the description, not in a shared router doc; but a boundary naming
+nobody routes nothing and pays always-on rent forever.
 
 ### The three slots, and the boundary that must be earned
 
@@ -135,12 +139,17 @@ level that still reaches it in time:
 
 ## Steps carry checkable completion criteria
 
+<!-- rules -->
+
 A step is done when a stated condition is observable — a file exists, a diff is empty, a
 command exits 0, a table matches disk. "Handle the edge cases" is not a step;
 "`skills.py registry reindex` reports `changed: false`" is. Write the criterion as
-`**Done when:** …` — that literal marker is what `lint` counts (`sk-step-criterion`). A skill
-whose last step has a checkable criterion cannot end early and call itself done — that is the
-guard against premature conclusion.
+`**Done when:** …` — that literal marker is what `lint` counts (`sk-step-criterion`).
+
+<!-- rationale -->
+
+A skill whose last step has a checkable criterion cannot end early and call itself done — that is
+the guard against premature conclusion.
 
 ## The no-op test
 
@@ -164,8 +173,7 @@ The writing rules above govern what a command **says**; which capabilities it **
 `context: fork`, a model or effort pin, a subagent, a hook, the invocation-surface controls,
 dynamic context — is a second authored decision set with its own doctrine, owned by
 [skill-new/capabilities.md](capabilities.md). The default profile is empty; every departure
-is priced there and enters the mint's plan with its stated reason. A lever whose buy nobody
-can state is the **sediment** failure mode wearing frontmatter.
+is priced there and enters the mint's plan with its stated reason.
 
 ## Named failure modes
 

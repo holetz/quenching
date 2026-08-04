@@ -6,8 +6,7 @@ carries a plan file to map.
 ## The mapping
 
 A Claude Code plan is prose with loose headings, and they may be in any language
-(`## Context` / `## Contexto`, `## Decisions` / `## Decisões`) — **match on meaning, never on the
-literal string.**
+(`## Context` / `## Contexto`) — **match on meaning, never on the literal string.**
 
 | Native plan part | Canonical section |
 | --- | --- |
@@ -24,5 +23,5 @@ literal string.**
 | a verification / testing section | `## Tasks` (trailing verification items) |
 
 A plan that carries none of the middle rows produces a spec with `## Problem` and `## Proposal`
-and stops — which is the correct outcome, not a failure. **There is no rule that a converted plan
-must reach the ready gate**; `/quenching:specs:develop` takes it the rest of the way.
+and stops. **There is no rule that a converted plan must reach the ready gate**;
+`/quenching:specs:develop` takes it the rest of the way.

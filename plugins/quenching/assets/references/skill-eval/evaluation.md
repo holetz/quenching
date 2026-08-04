@@ -1,23 +1,19 @@
 # The evaluation contract — cases, grading, and the benchmark
 
-The owner of **what an evaluation produces**. `/quenching:skill:eval`'s body owns the workflow
-(select → read → derive → gate → run → grade → tune → report); this file owns the three artifact
-shapes, what makes an assertion worth grading, and the description-tuning loop.
+<!-- rules -->
+The owner of **what an evaluation produces**. `/quenching:skill:eval`'s body owns the workflow;
+this file owns the three artifact shapes, what makes an assertion worth grading, and the
+description-tuning loop.
 
+<!-- rationale -->
 The formats are adopted from Anthropic's `skill-creator` **verbatim**. Divergence would buy
 nothing and would make this plugin's evals unreadable by the tool most adopting repos already
 have installed.
 
 ## Contents
 
-- [Where the artifacts live](#where-the-artifacts-live)
-- [`evals.json` — the cases](#evalsjson--the-cases)
-- [Writing cases](#writing-cases)
-- [Running the two arms](#running-the-two-arms)
-- [`grading.json` — one per case](#gradingjson--one-per-case)
-- [`benchmark.json` — the delta](#benchmarkjson--the-delta)
-- [Reading a delta honestly](#reading-a-delta-honestly)
-- [Description tuning](#description-tuning)
+`skills.py read assets/references/skill-eval/evaluation.md` returns the heading index;
+`--sections` addresses one.
 
 ## Where the artifacts live
 
@@ -31,23 +27,15 @@ have installed.
 ```
 
 `<path>` **mirrors the command path**: `/quenching:docs:add` is measured by
-`.claude/evals/docs/add/evals.json`. In this plugin, which registers only `commands/**` and keeps
-everything else under `assets/`, the same tree lives at
+`.claude/evals/docs/add/evals.json`. In this plugin the same tree lives at
 `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`.
-
-**Why a mirrored tree rather than a sibling folder.** A case set used to sit *beside* the skill it
-measured, so that it survived a rename and was reviewed in the same diff as the body it tests. A
-command is a single file — there is no folder to sit beside. Mirroring the path keeps both
-properties by a different mechanism: renaming a command renames its eval folder in the same
-mechanical step, and the two paths differ by one prefix, so a reviewer looking at
-`commands/docs/add.md` can find `evals/docs/add/` without searching. What it does **not** preserve
-is co-location in a single directory listing; that is the honest cost of a one-file surface.
 
 Run outputs are timestamped so two runs can be compared rather than overwriting each other — pass
 the timestamp in; never read the clock inside a case.
 
 ## `evals.json` — the cases
 
+<!-- rules -->
 ```json
 {
   "skill": "communications-teams-create",
@@ -85,9 +73,23 @@ the timestamp in; never read the clock inside a case.
 }
 ```
 
-Every field is required. `branch` names which path through the workflow the case exercises — it is
-what makes untested surface visible, and a case set where two cases carry the same `branch` is
-testing one thing twice.
+Every field is required. `branch` names which path through the workflow the case exercises.
+
+<!-- rationale -->
+**Why a mirrored tree rather than a sibling folder** (§Where the artifacts live). A case set used
+to sit *beside* the skill it measured, so that it survived a rename and was reviewed in the same
+diff as the body it tests. A command is a single file — there is no folder to sit beside.
+Mirroring the path keeps both properties by a different mechanism: renaming a command renames its
+eval folder in the same mechanical step, and the two paths differ by one prefix, so a reviewer
+looking at `commands/docs/add.md` can find `evals/docs/add/` without searching. What it does
+**not** preserve is co-location in a single directory listing; that is the honest cost of a
+one-file surface.
+
+**Why the case rules take the shape they do** (§Writing cases). An assertion about how the reply
+is phrased grades the model's prose style and will flap between runs on a skill that never
+changed. The `Not for:` boundary is a promise the description makes, and a skill that fires on its
+neighbours' work is worse than one that never fires. A prompt engineered to hit the skill's
+vocabulary measures the prompt, not the skill.
 
 ## Writing cases
 
@@ -96,8 +98,7 @@ conditional, each documented special case, and the `Not for:` boundary. A branch
 untested surface, and the report says so rather than implying coverage.
 
 **Assert on the observable outcome, never on wording.** A file that exists, a zone regenerated, a
-command reported as run, a path *not* written. An assertion about how the reply is phrased grades
-the model's prose style and will flap between runs on a skill that never changed.
+command reported as run, a path *not* written.
 
 | Weak assertion | Why it fails | Stronger |
 | --- | --- | --- |
@@ -105,15 +106,14 @@ the model's prose style and will flap between runs on a skill that never changed
 | "it mentions the glossary" | wording, not outcome | "knowledge/glossary.md gained an entry for the coined term" |
 | "it does the right thing" | untestable | "no file is written outside communications/teams/" |
 
-**At least one declining case.** The `Not for:` boundary is a promise the description makes, and a
-skill that fires on its neighbours' work is worse than one that never fires. Assert on the
-absence — no write outside its scope — and on the routing being named.
+**At least one declining case.** Assert on the absence — no write outside its scope — and on the
+routing being named.
 
-**Realistic prompts.** Write what a user would actually type, including the vague version. A
-prompt engineered to hit the skill's vocabulary measures the prompt, not the skill.
+**Realistic prompts.** Write what a user would actually type, including the vague version.
 
 ## Running the two arms
 
+<!-- rules -->
 Each case runs **twice**, in isolated `Task` subagents:
 
 | Arm | Setup |
@@ -127,6 +127,7 @@ different models measures the models. The arms are independent, so dispatch them
 Record per arm: the output, `tokens`, `durationMs`, and `error` when the subagent died. A dead arm
 is recorded, never dropped — a case silently missing one arm turns into a fabricated delta.
 
+<!-- rationale -->
 **Why the without-arm cannot be this conversation.** The orchestrator has read the skill in order
 to derive the cases. Any arm it runs itself is contaminated by exactly the text the without-arm is
 defined by lacking.
@@ -218,8 +219,8 @@ record whether it routes to this skill:
 | a trigger no `shouldTrigger` prompt reaches | **sediment** — it costs context and fires for nobody | propose removing it |
 | a `shouldNotTrigger` prompt fires | the boundary is stated too weakly | sharpen `Not for:`, not the triggers |
 
-Two rules bound the loop. **A trigger is only removed on a measured miss**, never because a
+**A trigger is only removed on a measured miss**, never because a
 description needs to be shorter — that is how a skill quietly stops firing for the user who
 worded it differently. And after any edit, re-run `skills.py lint`: the caps
 (`sk-metadata-cap`, `sk-description-portable`) and the trigger position
-(`sk-trigger-position`) still hold, and tuning must not trade one finding for another.
+(`sk-trigger-position`) still hold.

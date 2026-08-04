@@ -1,20 +1,14 @@
 # The canonical `specs/` workspace + the exact checks `/quenching:specs:align` applies
 
-The single owner of the **specs-workspace conformance contract**: what a canonical `specs/`
-surface looks like, the probe that decides whether the sweep runs at all, the finding codes it
-produces, which findings it **fixes** versus which it only **reports**, and the two one-way
-**migrations** (an older quenching workspace, and a legacy `openspec/` one). The spec-driven facts
+The single owner of the **specs-workspace conformance contract**. The spec-driven facts
 themselves — the phase folders, the fourteen canonical sections, the gates, the derived stages, the
 `specs.py` surface — live once in
 [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 and are cited here, never restated.
 
-This is the `specs/` analogue of
-[`docs-align/conformance.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
 **Two checkers cover it, both programs, and there is no third:** `specs.py doctor` and
 `specs.py validate` cover the workspace and every spec file (both `--json`, strict exit codes).
-Nothing is left for the sweep to verify by reading — see §The convergence condition for why that
-matters more than it sounds.
+Nothing is left for the sweep to verify by reading.
 
 The whole `specs/` front is **plugin-owned**: unlike the old `openspec/` surface (half of which
 belonged to an external CLI), there is no CLI-owned/quenching-managed ownership line here. The
@@ -24,22 +18,15 @@ the never-delete-on-a-guess and code-coupled-renames-gate-individually rules the
 
 ## Contents
 
-- [The probe — this front's two commands](#the-probe--this-fronts-two-commands)
-- [The canonical workspace](#the-canonical-workspace)
-- [Findings the sweep FIXES (inside the one plan → one OK)](#findings-the-sweep-fixes-inside-the-one-plan--one-ok)
-- [Migrating an older workspace](#migrating-an-older-workspace)
-- [Migrating a legacy `openspec/` workspace (`sp-legacy-workspace`)](#migrating-a-legacy-openspec-workspace-sp-legacy-workspace)
-- [Findings the sweep REPORTS (never auto-closes)](#findings-the-sweep-reports-never-auto-closes)
-- [The OKF validator is never pointed at `specs/`](#the-okf-validator-is-never-pointed-at-specs)
-- [The convergence condition](#the-convergence-condition)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The probe — this front's two commands
 
+<!-- rules -->
 The rule is the shared one — nothing is inventoried until the front's own verifier has said there
 is work, and the same program closes the run
 ([`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-§Probe before the inventory, which also states why it is load-bearing rather than an
-optimization). What follows is only its `specs/` instantiation.
+§Probe before the inventory).
 
 **Two commands, before any inventory:**
 
@@ -58,12 +45,17 @@ code. So the branch reads off the exit codes first, and off the severities only 
 | either exits 1 or 2 | Run the full inventory and continue at §Findings the sweep FIXES. |
 
 An error-severity REPORTS-table code — `sp-empty-section` is the one — therefore forces a full run
-that can only report it. That is correct rather than wasteful: a malformed heading is neither an
-answer nor a not-yet, and it is worth the human seeing it inside a plan rather than in a footnote.
+that can only report it.
 
-`doctor` is also the only call that tells an **unmigrated** workspace apart from an empty one, so
-it runs first on this front either way — offering to scaffold a repo that already holds unmigrated
-work would be the worst outcome the probe can produce.
+`doctor` runs first on this front either way — it is the only call that tells an **unmigrated**
+workspace apart from an empty one.
+
+<!-- rationale -->
+That is correct rather than wasteful: a malformed heading is neither an answer nor a not-yet, and
+it is worth the human seeing it inside a plan rather than in a footnote.
+
+Offering to scaffold a repo that already holds unmigrated work would be the worst outcome the probe
+can produce.
 
 ## The canonical workspace
 
@@ -89,7 +81,7 @@ Three invariants define conformance, and every code below traces to one of them:
 
 ## Findings the sweep FIXES (inside the one plan → one OK)
 
-Each is mechanical: a rename, a stamp, a regeneration, a copy, or a tool-declared remedy. Codes
+Each is mechanical: a rename, a stamp, a copy, or a tool-declared remedy. Codes
 marked **(tool)** are emitted by `specs.py doctor` or `validate` with their own declared remedy —
 apply *that*, never an invented one, because an invented fix can silently corrupt a spec.
 
@@ -158,12 +150,11 @@ Both folds share two guarantees:
 - **`specs/archive/**` is never touched.** Its v1 plan folders stay as history, and
   `sp-bad-filename` / `sp-stray-dir` never fire inside it.
 - **Say this before applying:** the fold is one-way. A repo that upgraded the plugin while holding
-  a v1 workspace reads as *empty* to `list` until it runs — which is why the probe runs `doctor`,
-  the one command that tells an unmigrated workspace apart from an empty one.
+  a v1 workspace reads as *empty* to `list` until it runs (§The probe).
 
 ## Migrating a legacy `openspec/` workspace (`sp-legacy-workspace`)
 
-Retained unchanged, and still the only place `openspec/` is touched: `openspec/` → `specs/`; each
+The only place `openspec/` is touched: `openspec/` → `specs/`; each
 `openspec/specs/<capability>/spec.md` folded into `docs/standards/` by a **human-chosen** cut (no
 OKF bundle → the fold stops and `/quenching:docs:align` is suggested first); `config.yaml` removed; the delta
 folders discarded once folded or confirmed obsolete; non-diverged shadow copies and `/opsx:*`
@@ -172,9 +163,9 @@ legacy workspace runs this fold first, then `specs.py migrate`.
 
 ## Findings the sweep REPORTS (never auto-closes)
 
+<!-- rules -->
 Each names either **authoring** (which needs a human's intent) or a **cycle action** (which belongs
-to another command). A sweep that filled these would be inventing content and calling it
-conformance.
+to another command).
 
 | Code | Fires when | Owner |
 | --- | --- | --- |
@@ -190,6 +181,9 @@ conformance.
 | `sp-spec-blocked` | A spec carries `- [!]` tasks | The human — the reason is already written in the line. |
 | `sp-spec-stale` | A spec untouched for **90 days** with open tasks | Report with the age; the human decides. Staleness is evidence, never a verdict — a spec untouched for a year may be waiting on a vendor. |
 
+<!-- rationale -->
+A sweep that filled these would be inventing content and calling it conformance.
+
 **There is no ledger code, and no `ready/`-folder code.** A captured spec and the spec it becomes
 are one file, so v1's `sp-ledger-orphan` / `sp-ledger-in-flight` describe nothing. And with one
 active folder there is no promote to police between stages: reaching the ready set is derived, and
@@ -197,32 +191,40 @@ the only promote left is the gated one into `archive/`.
 
 ## The OKF validator is never pointed at `specs/`
 
-There is no listing here for it to check, and there never was a spec file it could judge. A spec
-carries `slug`/`title`/`verification` and deliberately **no OKF `type:`** — it is not a concept
-doc, it lives outside the bundle, and `specs.py validate` (the canonical heading set, the gates,
-filename conformance, slug identity) is a far stronger contract than type-presence. Stamping an OKF
-type on a spec purely to satisfy a validator that does not model it would be the second source of
-truth this front exists to avoid.
+<!-- rules -->
+A spec carries `slug`/`title`/`verification` and deliberately **no OKF `type:`**.
 
-`plans/index.md` is a **retired artifact**. It once carried a GENERATED zone, and four codes
-(`sp-no-plans-index`, `sp-index-frontmatter`, `sp-no-generated-zone`, `sp-zone-stale`) policed it.
-All four are gone, along with the `--listing-root` mode that read them. The sweep neither creates
-nor deletes a surviving copy in a target repo
+`plans/index.md` is a **retired artifact**. The sweep neither creates nor deletes a surviving copy
+in a target repo
 ([`retiring-a-reserved-artifact.md`](/docs/standards/architecture/retiring-a-reserved-artifact.md)
 §The consequence for disposition).
 
+<!-- rationale -->
+There is no listing here for it to check, and there never was a spec file it could judge. A spec is
+not a concept doc, it lives outside the bundle, and `specs.py validate` (the canonical heading set,
+the gates, filename conformance, slug identity) is a far stronger contract than type-presence.
+Stamping an OKF type on a spec purely to satisfy a validator that does not model it would be the
+second source of truth this front exists to avoid.
+
+`plans/index.md` once carried a GENERATED zone, and four codes
+(`sp-no-plans-index`, `sp-index-frontmatter`, `sp-no-generated-zone`, `sp-zone-stale`) policed it.
+All four are gone, along with the `--listing-root` mode that read them.
+
 ## The convergence condition
 
+<!-- rules -->
 The workspace is conformant when `specs.py doctor` and `specs.py validate` both exit 0 or report
 only codes from the REPORTS table. That is the whole condition — two programs, two exit codes.
+**A convergence condition may only name what a checker decides.**
 
+That is the same condition the probe checks at the start — which is exactly why a second align over
+an already-aligned workspace stops on two tool calls.
+
+<!-- rationale -->
 **It is stated that way on purpose.** It used to carry a clause no program could evaluate: "the
 GENERATED zone matches disk". Nothing computed it — `specs.py` never emitted a `changed` field for
 a command to read — so the one clause that could actually rot was the one left to a human's eye,
 and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
 [`generated-listings.md`](/docs/standards/architecture/generated-listings.md); the narrower lesson
-belongs here: **a convergence condition may only name what a checker decides.** A clause a program
-cannot evaluate is not a stricter standard, it is an unverified one.
-
-That is the same condition the probe checks at the start — which is exactly why a second align over
-an already-aligned workspace stops on two tool calls.
+belongs here. A clause a program cannot evaluate is not a stricter standard, it is an unverified
+one.

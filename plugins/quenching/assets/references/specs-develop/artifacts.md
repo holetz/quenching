@@ -4,8 +4,7 @@ The per-section authoring doctrine every `/specs:*` command applies when it writ
 **layout, the fourteen sections, the gates, the derived stages and the `specs.py` surface** live
 once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
-cited, never restated here — this file is only the *writing* guidance: what belongs under each
-heading, how to write an honest explicit none, and how to shape `## Tasks`.
+cited, never restated here.
 
 There is **no delta and no sync**. A spec proves its durable rules straight into `docs/standards/`
 while it is built (`/quenching:specs:execute`), and `## Impact` is where it *declares* that scope. Two things
@@ -14,26 +13,13 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 
 ## Contents
 
-- [The explicit-none rule](#the-explicit-none-rule)
-- [`## Overview` — connective tissue, not a summary](#-overview--connective-tissue-not-a-summary)
-- [The nine definition sections](#the-nine-definition-sections)
-- [`## Impact` — the parsed sub-heading](#-impact--the-parsed-sub-heading)
-- [`## Handoff` — small, and refreshed on events](#-handoff--small-and-refreshed-on-events)
-- [`## Tasks`](#-tasks)
-- [Execution metadata — optional, indented, additive](#execution-metadata--optional-indented-additive)
-- [`## Discoveries` and `## Outcome`](#-discoveries-and--outcome)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The explicit-none rule
 
+<!-- rules -->
 A section with nothing in it is answered `- none — <reason>`. Never delete the heading, and never
 pad it with restated text from another section.
-
-An omission and a null are different facts. "We drew the boundary and nothing fell outside it" and
-"nobody ever drew the boundary" read identically when the section is missing, and only one of them
-is safe to build on. An explicit null is strictly more information than an absent heading, and it
-costs one line.
-
-Three rules follow, and the scoping is what keeps them from contradicting the derived stage:
 
 1. **`- none — <reason>` counts as filled.**
 2. **A present-but-empty heading is malformed.** It is neither an answer nor a not-yet.
@@ -50,6 +36,12 @@ without anyone having thought anything.
 headings — one outside the canonical fourteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
 
+<!-- rationale -->
+An omission and a null are different facts. "We drew the boundary and nothing fell outside it" and
+"nobody ever drew the boundary" read identically when the section is missing, and only one of them
+is safe to build on. An explicit null is strictly more information than an absent heading, and it
+costs one line.
+
 ## `## Overview` — connective tissue, not a summary
 
 Position 1, ahead of `## Problem`. Warn-only, like `## Handoff` — never part of the `ready` gate
@@ -58,21 +50,19 @@ Position 1, ahead of `## Problem`. Warn-only, like `## Handoff` — never part o
 **Register.** Plain language, assuming no prior context. No jargon the spec itself introduces — a
 reader who has not yet read `## Design` should not need a term `## Design` coins. Connective, not
 compressive: link the sections to each other so the dense material that follows has somewhere to
-attach, rather than restating what each one already says. A summary compresses each section; an
-Overview orients the reader among them.
+attach, rather than restating what each one already says.
 
-**Written last.** The shape bank is where it is first written, the same way that bank first writes
-`## Proposal`; every later bank's consolidated edit refreshes it — always authored last within that
-edit, because it can only be correct once the sections it connects have settled. It still sits
-first in the file: only the authoring order within a pass is last, never its position.
+**Written last.** The shape bank is where it is first written; every later bank's consolidated edit
+refreshes it — always authored last within that edit, because it can only be correct once the
+sections it connects have settled. It still sits first in the file: only the authoring order within
+a pass is last, never its position.
 
 ## The nine definition sections
 
 `## Problem` … `## Risks`, all gated on `ready`. Keep the set tight enough to read in one sitting.
 
 - **`## Problem`** — the problem or opportunity and **why now**, in the repo's own terms (use
-  `docs/knowledge/glossary.md` vocabulary). One or two paragraphs. This is the only section a
-  freshly created spec carries.
+  `docs/knowledge/glossary.md` vocabulary). One or two paragraphs.
 - **`## Proposal`** — the change as a short bulleted list of outcomes: WHAT will be true afterwards
   that is not true now, never HOW. Each bullet is something a reviewer could later check was
   delivered.
@@ -90,8 +80,8 @@ first in the file: only the authoring order within a pass is last, never its pos
   material `/quenching:specs:conclude` later distils.
 - **`## Alternatives Considered`** — whole-shape alternatives rejected at the spec level, each with
   the reason it lost. Per-decision alternatives stay inside `## Design`; this section is for the
-  ones that would have changed the spec's shape. **The rejected ones and why they lost are the
-  point** — the next person with the same idea reads why it was already turned down.
+  ones that would have changed the spec's shape. The next person with the same idea reads why it
+  was already turned down.
 - **`## Open Decisions`** — what is deliberately still undecided, and **how each gets decided** —
   the evidence or the moment that settles it, never a bare "TBD". A task may be written to close
   one (`- [ ] 6.5 Decide per ## Open Decisions whether …`).
@@ -100,6 +90,7 @@ first in the file: only the authoring order within a pass is last, never its pos
 
 ## `## Impact` — the parsed sub-heading
 
+<!-- rules -->
 Three sub-headings, and exactly one is machine-checked:
 
 ```markdown
@@ -120,10 +111,8 @@ Three sub-headings, and exactly one is machine-checked:
 `sp-impact-uncovered` (warn) for any `docs/standards/**.md` path bulleted there that no `## Tasks`
 item names. Keep the heading text verbatim — it is the anchor.
 
-The other two are deliberately **not** parsed: they name paths the spec does not promise to write,
-and checking them would flag a spec for not delivering a doc it never claimed. A spec with no such
-sub-heading declares nothing and is never flagged — **the check is opt-in by writing the heading**.
-An unfilled `<placeholder>` declares nothing either.
+A spec with no such sub-heading declares nothing and is never flagged — **the check is opt-in by
+writing the heading**. An unfilled `<placeholder>` declares nothing either.
 
 This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
 by a task is written during execution; anything the work merely reveals is one `specs.py discover`
@@ -131,25 +120,33 @@ line and is written at conclude
 ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
 versus emergent `docs/`).
 
+<!-- rationale -->
+The other two are deliberately **not** parsed: they name paths the spec does not promise to write,
+and checking them would flag a spec for not delivering a doc it never claimed.
+
 ## `## Handoff` — small, and refreshed on events
 
+<!-- rules -->
 The context an executor needs and cannot derive: the state of play, the conventions in force, what
 was already tried. **Small by construction** — it is sent with every task, and it does not carry
 the human sections.
 
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
-— rather than when someone judges it stale. Staleness is this section's only failure mode, and an
-event-bound rule is the one cure that survives an unattended run.
+— rather than when someone judges it stale.
 
 Each of those four is a moment the executor *just finished doing something*, never one where it
 appraises something: that is the property that makes the rule survivable unattended, and it is what
-any future edit has to preserve. The cadence they replaced was one rewrite per committed task,
+any future edit has to preserve. What a resumed run can derive on its own — which tasks are done,
+which commit carried each — lives in `git log` and in the `subjects` `specs.py status` returns;
+this section carries only what nothing derives.
+
+<!-- rationale -->
+Staleness is this section's only failure mode, and an event-bound rule is the one cure that
+survives an unattended run. The cadence they replaced was one rewrite per committed task,
 which on a measured 13-task run produced rewrites ~90% identical to one another — the section is
 sent with every task, so a near-identical rewrite is paid for on both sides and buys nothing on
-either. What a resumed run can derive on its own — which tasks are done, which commit carried each
-— lives in `git log` and in the `subjects` `specs.py status` returns; this section carries only
-what nothing derives.
+either.
 
 ## `## Tasks`
 
@@ -179,6 +176,7 @@ OKF home, never in the checklist.
 
 ## Execution metadata — optional, indented, additive
 
+<!-- rules -->
 A checkbox MAY carry indented metadata lines directly beneath it:
 
 ```markdown
@@ -199,24 +197,16 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 
 Write the first four where they earn their place — a task touching three known files with an
 obvious test command deserves them; a one-line doc edit deserves none. Metadata that restates
-the task text is noise. `subject:` is not written by an author at all; it appears when the task is
-ticked.
+the task text is noise.
 
-**Scope each `verify:` to what its own task could break** — not to what the repo can check. The
-policy decides *when* a gate fires; the `verify:` lines decide *what* runs there, so a gate that
-re-runs a check whose inputs the section could not have touched is a `verify:` written too wide,
-not a policy to be filtered at build time. Measured: on a 13-task run the same three selftests ran
-at the close of section 1 and again at task 5.1, because tasks in two sections each declared all
-three, while the spec itself stated no script changed in between. The body obeyed exactly what was
-written. Fixing it at authoring needs no judgment while building and holds for every spec; the
-alternative — a gate that skips a declared check because it judges the inputs unchanged — is a
-correctness judgment made mid-build, which this front refuses everywhere else.
+**Scope each `verify:` to what its own task could break** — not to what the repo can check. A gate
+that re-runs a check whose inputs the section could not have touched is a `verify:` written too
+wide, not a policy to be filtered at build time.
 
 And **a `verify:` that cannot fail proves nothing when it passes.** Run each one against the tree
 *before* the fix and require it to exit non-zero; only then does its later exit 0 mean the task did
-something. Over prose this is not hypothetical: a check has passed while its target was untouched
-because the phrase wrapped across a line, and again because inline `**` sat between two words. A
-check over prose reads the whole file and normalizes markup and whitespace before matching.
+something. A check over prose reads the whole file and normalizes markup and whitespace before
+matching.
 
 **`[P]` marks a task parallel-eligible**, written right after the id:
 
@@ -233,8 +223,20 @@ disjunction, parallel execution trades wall-clock for merge conflicts and loses 
 **A blocked task is a visible marker, not a hidden counter** —
 `- [!] 2.3 <title> — blocked: <reason>`, written by `task --block --reason`, skipped by `next`.
 
+<!-- rationale -->
+Measured: on a 13-task run the same three selftests ran
+at the close of section 1 and again at task 5.1, because tasks in two sections each declared all
+three, while the spec itself stated no script changed in between. The body obeyed exactly what was
+written. Fixing it at authoring needs no judgment while building and holds for every spec; the
+alternative — a gate that skips a declared check because it judges the inputs unchanged — is a
+correctness judgment made mid-build, which this front refuses everywhere else.
+
+Over prose this is not hypothetical: a check has passed while its target was untouched
+because the phrase wrapped across a line, and again because inline `**` sat between two words.
+
 ### The verification policy is the spec's, not the task's
 
+<!-- rules -->
 `per-task` / `per-section` (default) / `end-of-plan`, recorded in frontmatter. It answers *when* the
 checks run; `verify:` answers *what* runs. Declaring it during definition is what keeps
 `/quenching:specs:execute` from having to guess, or from stopping mid-build to ask.
