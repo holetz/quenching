@@ -153,7 +153,7 @@ enumerated docs-only set. Each **code-coupled** rename is its **own** confirmati
 
 This gate runs **once per run**, before pass 1 — later passes narrate their plan and do not re-ask
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-§cycle-authorization).
+§The cycle-authorization contract).
 **Done when:** one OK covers the batch, or each code-coupled item was answered on its own, or the
 plan was rejected and nothing was written.
 
@@ -248,10 +248,9 @@ was skipped.
 ### 6. Run the content stages that have work, in order
 Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,
 `quenching:docs:harness`. Which of the three citation forms is correct, and the condition on each,
-is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §Citing a
-command's. Declare the cycle-authorization mode to each
+is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7. Citing a command. Declare the cycle-authorization mode to each
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-§cycle-authorization), and **skip any stage the probe found empty**:
+§The cycle-authorization contract), and **skip any stage the probe found empty**:
 
 1. `quenching:docs:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.

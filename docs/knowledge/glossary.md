@@ -212,6 +212,12 @@ sentence, and **link out** rather than explaining in full here.
   itself. Distinct from `source:`, which stays prose about who originated a rule. Nothing checks the
   value: truthfulness is decidable only against the source at the instant it was read, and a unit
   collapsed from several seeds carries only one origin — both recorded as **accepted gaps**.
+- [**Parked follow-up**](../standards/workflows/plan-lifecycle.md) — an out-of-scope finding a
+  definition pass records as ONE line of `## Discoveries` on the spec it is developing, instead of
+  minting a spec for it. Parking is free by construction: `## Discoveries` appears in no stage rule,
+  so filling it moves no derived state. Turning one into a file belongs to `/specs:conclude`'s
+  harvest, which runs once the parent's fate is known — and a line another open spec already covers
+  never becomes a file at all, resolving as `dismissed: already covered by {slug}`.
 - [**Parse honesty**](../standards/quality/parse-honesty.md) — the obligation that a verifier names
   its own parse failure rather than reporting it as a content gap. The episode that earned it: a
   command `description` truncated at a `#` surfaced as `sk-no-description` — a statement true of the

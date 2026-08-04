@@ -1,25 +1,22 @@
 # Where the `specs/` front is configured, and where the front records itself
 
 `specs/plans/` is a spec's whole active life — a quenching-managed sibling of `archive/`,
-**outside** the OKF `docs/` bundle. Because it is outside the bundle, the OKF hook (configured with
-`docsDir: docs`) never fires on it, and the OKF insert procedure in
+**outside** the OKF `docs/` bundle. The OKF hook (configured with `docsDir: docs`) never fires on
+it, and the OKF insert procedure in
 [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) owns nothing here.
-A `/specs:*` command writes nothing into the bundle at all — see §The `specs/` front records
-itself.
+A `/specs:*` command writes nothing into the bundle at all.
 
 ## Where the front is configured
 
 The plugin's configuration lives in **`.claude/quenching.json`**, at the repo root — the `backend`
-key naming which store holds the specs, the specs branch, and `worktreeSetup`. It is read by
-`specs.py config --json`, which exits 0 whether or not anything is declared, and the standard that
-owns it is
-[plugin-configuration.md](../../../../docs/standards/workflows/plugin-configuration.md).
+key naming which store holds the specs. It is read by `specs.py config --json`, which exits 0
+whether or not anything is declared, and the keys are owned by
+[plugin-configuration.md](/docs/standards/workflows/plugin-configuration.md) §The recognised keys.
 
-It is **not** `specs/config.json` any more, and the reason is this section's whole point: a repo
-that declares an external backend may carry no `specs/` folder, so configuration cannot live inside
-one. Everything below describes the `files` backend, which is the reference implementation and the
-default — under `github` or `azure-boards` there is no folder, no listing and no filename, and the
-only thing that stays constant is what `specs.py` answers.
+It is **not** `specs/config.json` any more, per that standard's §Why it left the specs workspace.
+Everything below describes the `files` backend, which is the default — under `github` or
+`azure-boards` there is no folder, no listing and no filename, and the only thing that stays
+constant is what `specs.py` answers.
 
 ## The folder is the listing
 
@@ -29,13 +26,11 @@ regenerate after a write and nothing that can fall out of date.
 
 `plans/index.md` is a **retired artifact**: it once carried a GENERATED zone rebuilt by a
 `specs.py plans reindex` subcommand, and both are gone. No command creates, seeds, refreshes or
-validates one, and a copy surviving in a target repo is left exactly as found — neither refreshed
-nor deleted, per
+validates one, and a copy surviving in a target repo is left exactly as found, per
 [`retiring-a-reserved-artifact.md`](/docs/standards/architecture/retiring-a-reserved-artifact.md)
 §The consequence for disposition. The rule that decided it is
-[`generated-listings.md`](/docs/standards/architecture/generated-listings.md): a generated listing
-only pays for itself when a program can prove it is fresh, and this one duplicated a fact
-`specs.py list` already derived.
+[`generated-listings.md`](/docs/standards/architecture/generated-listings.md) §The rule; this one
+duplicated a fact `specs.py list` already derived.
 
 **The on-write check is `specs.py validate`** — the spec's own contract, and the whole of it. The
 OKF validator is never pointed at `specs/`: a spec carries `slug`/`title`/`date` — plus an
@@ -45,9 +40,9 @@ source of truth this front exists to avoid.
 
 ## Resolving the tool
 
-Front-neutral now — moved to
+Owned by
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool §Write the resolved path literally on every invocation.
+§Resolving the tool, §Write the resolved path literally on every invocation.
 
 ## The `specs/` front records itself
 
@@ -55,8 +50,7 @@ A new spec and a sweep over `plans/` write **nothing** into the `docs/` bundle. 
 append to `docs/log.md`; that log is retired, and the `specs/` front never needed it — a spec's
 own frontmatter records (`priority`, `refined`, `approved`, `branch`, `reviewed`, `merge`,
 `outcome`) narrate its history in the file a reader already has open, and what the folder holds is
-derived from disk on demand (§The folder is the listing). Nothing here is a cross-front event, so
-nothing here is the bundle's business.
+derived from disk on demand.
 
 **A spec's basename is its slug and nothing else** — `<slug>.md`, with the capture date declared
 as `date:` inside the document rather than encoded in the name. That is what lets the same

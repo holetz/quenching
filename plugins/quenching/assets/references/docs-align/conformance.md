@@ -1,11 +1,9 @@
 # Conformance — the exact checks
 
-The single source for what "OKF-conformant" means in this plugin. The executable
-`${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` implements **exactly** these checks; the
-skills apply the same rules by hand when they cannot shell out, and their self-check steps
-**cite this file** rather than restating the rules. Severities: **ERROR** fails
-conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
-`warnAsError`).
+The executable `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` implements **exactly** these
+checks; the skills apply the same rules by hand when they cannot shell out, and their self-check
+steps **cite this file** rather than restating the rules. Severities: **ERROR** fails conformance
+(validator exit 1); **WARN** is a recommendation (exit 0 unless `warnAsError`).
 
 ## File classification (by basename)
 
@@ -47,11 +45,14 @@ conformance (validator exit 1); **WARN** is a recommendation (exit 0 unless
 <!-- rules -->
 
 No codes. The validator recognizes the name, emits nothing about the file, and never blocks a
-write to it under `hardBlock`. **The reservation is what makes that true**, and it is load-bearing
-in a way the silence hides: drop `log.md` from the validator's `RESERVED` tuple and every log
-surviving in an already-aligned bundle falls through to `check_concept` — `missing-type` at ERROR,
-and denied writes under the hard gate. Retired is not unreserved. `okf-validate.py selftest` holds
-the line with a fixture bundle carrying two surviving logs.
+write to it under `hardBlock`. Retired is not unreserved.
+
+<!-- rationale -->
+
+**The reservation is what makes that true**, and it is load-bearing in a way the silence hides:
+drop `log.md` from the validator's `RESERVED` tuple and every log surviving in an already-aligned
+bundle falls through to `check_concept` — `missing-type` at ERROR, and denied writes under the hard
+gate. `okf-validate.py selftest` holds the line with a fixture bundle carrying two surviving logs.
 
 ## Bundle level
 
@@ -63,12 +64,10 @@ the line with a fixture bundle carrying two surviving logs.
 
 <!-- rules -->
 
-Deterministic directory/index checks the validator runs over the **whole tree** (not on a
-single-file `PostToolUse`). All **WARN** — OKF says a consumer MUST tolerate broken links and
-MAY synthesize a missing `index.md`, so these never fail conformance; the **skills treat them
-as must-fix** in their own verify gate (a bundle `/quenching:docs:align` leaves behind has none). Dirs whose
-name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node_modules/`,
-`__pycache__/`, …), are pruned from this walk.
+Deterministic directory/index checks the validator runs over the **whole tree**. All **WARN**; the
+**skills treat them as must-fix** in their own verify gate. Dirs whose name starts with `_` or `.`,
+and asset dirs (`img/`, `assets/`, `static/`, `node_modules/`, `__pycache__/`, …), are pruned from
+this walk.
 
 - **WARN `dir-no-index`** — a directory directly holds ≥1 concept doc but has no `index.md`
   listing (the concrete "índice faltando": a subject folder like `standards/code/` with docs and
@@ -76,7 +75,7 @@ name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node
 - **WARN `index-broken-link`** — an `index.md` links to a `.md` file or subfolder that does not
   exist on disk (a "lying index"). Only **within-bundle** links written in the bundle's own form
   are judged; external URLs, anchors, non-`.md` assets, `../`-climbs that leave the bundle, and
-  repo-absolute `/…` links (e.g. `/.claude/…`) are ignored, never false-flagged.
+  repo-absolute `/…` links (e.g. `/.claude/…`) are ignored.
 - **WARN `index-orphan`** — a concept doc that **no** `.md` in the bundle links to (unlisted / not
   reachable by browsing). The fix is to add it to its folder's `index.md` (or the derived
   standards zone). Link language/wording is **not** machine-checked — the English-slug rule is a
@@ -91,8 +90,7 @@ name starts with `_` or `.`, and asset dirs (`img/`, `assets/`, `static/`, `node
 <!-- rules -->
 
 A doc that is provably **lying about itself**. These join the structural set the skills treat as
-**must-fix** in their verify gate, for the same reason: `WARN` because OKF does not govern
-`resource` at all, blocking because the plugin does.
+**must-fix** in their verify gate.
 
 - **WARN `resource-unresolved`** — a path- or glob-shaped `resource` entry matching nothing on
   disk, reported **per entry** so a comma-separated list names which one is broken. A `uri` entry
@@ -116,14 +114,15 @@ A doc that is provably **lying about itself**. These join the structural set the
   `resource` globs name (`git log -1 --format=%cI` with explicit **`:(glob)`** pathspec magic, so
   a single `*` does not cross a `/` here either).
 
-**It is advisory and is NOT part of any verify gate.** The integrity codes describe a doc that is
-provably wrong; a stale-looking doc may be perfectly correct, because code moves under a rule that
-did not change. Every mature bundle carries some, so treating it as must-fix would make the
-must-fix set unusable.
+**It is advisory and is NOT part of any verify gate** (why → §Verify gate).
 
-It runs in **CLI mode only** — never `PostToolUse`, never `Stop`: it shells out to `git` once per
-doc, which is fine on demand and unacceptable under the `Stop` deadline. A tree that is not a git
+It runs in **CLI mode only** — never `PostToolUse`, never `Stop`. A tree that is not a git
 checkout **skips it silently** rather than reporting a finding it cannot compute.
+
+<!-- rationale -->
+
+It shells out to `git` once per doc, which is fine on demand and unacceptable under the `Stop`
+deadline.
 
 ## Running it
 
@@ -147,10 +146,19 @@ A bundle is **aligned** when `okf-validate.py <docs>` exits 0 **and** the struct
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `resource-unresolved`, `resource-self`. (These are WARN,
 so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
-**`stale-doc` is excluded from this gate** — it is advisory, reported and never blocking, and a
-bundle carrying one is still aligned.
-Beyond that, the skill also confirms the method-level completeness the validator can't see:
+**`stale-doc` is excluded from this gate.**
+The skill also confirms the method-level completeness the validator can't see:
 applicable homes present, each standards subject's **coverage/deferral ledger** filled (every
 candidate present or listed), and the GENERATED zones matching disk — `standards/index.md`'s
 "Current docs" tables and `backlog/index.md`'s task listing (each rebuilt exclusively from
 the frontmatter on disk).
+
+<!-- rationale -->
+
+The structural set is **WARN** because OKF says a consumer MUST tolerate broken links and MAY
+synthesize a missing `index.md`, so these never fail conformance. The resource set is `WARN`
+because OKF does not govern `resource` at all, blocking because the plugin does.
+
+`stale-doc` is excluded because the integrity codes describe a doc that is provably wrong; a
+stale-looking doc may be perfectly correct, because code moves under a rule that did not change.
+Every mature bundle carries some, so treating it as must-fix would make the must-fix set unusable.

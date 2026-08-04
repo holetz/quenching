@@ -1,47 +1,52 @@
 # The sweep contract — shared by every align
 
+<!-- rules -->
+
 The plugin has **three** aligns, one per front: `/quenching:docs:align` (`docs/`), `/quenching:specs:align`
-(`specs/`), and `/quenching:skill:align` (`.claude/`) — plus `/align`, which conducts all three. They
-converge different artifacts, but they are the *same kind of operation* — a probe, a read-only
-inventory, ONE plan, one OK, apply, verify — and everything about **how** that operation behaves is
-identical across them. So it lives here, once, and each align cites this file instead of restating
-it. Only a front's own deltas (what it inventories, which findings it produces, what its verifier
-is) stay in its command body and its own `references/`.
+(`specs/`), and `/quenching:skill:align` (`.claude/`) — plus `/align`, which conducts all three.
+Everything about **how** the operation behaves is identical across them and lives here; only a
+front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
+its command body and its own `references/`.
 
 This file is **self-contained**: an align reads it and needs nothing else. Its conductor-side
 peer — authorization across a whole run, convergence to a fixpoint, the anti-spin guards — is its
 sibling
 [`convergence.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md), and the one
-place the two touch (a cycle-authorized run) is stated here in full at §3 rather than deferred. A
-reference that sends a reader to another reference makes the second one mandatory, which is the
+place the two touch (a cycle-authorized run) is stated here in full at §3 rather than deferred.
+
+<!-- rationale -->
+
+A reference that sends a reader to another reference makes the second one mandatory, which is the
 opposite of what the loading hierarchy is for.
 
 ## Contents
 
-- [1. Probe before the inventory](#1-probe-before-the-inventory)
-- [2. Convergence, not accommodation](#2-convergence-not-accommodation)
-- [3. Force with ONE confirmation](#3-force-with-one-confirmation)
-- [4. The blast-radius sweep](#4-the-blast-radius-sweep)
-- [5. MERGE, never clobber; never delete on a guess](#5-merge-never-clobber-never-delete-on-a-guess)
-- [6. Align conformance; report the cycle](#6-align-conformance-report-the-cycle)
-- [7. Citing a command — three forms, one condition each](#7-citing-a-command--three-forms-one-condition-each)
-- [8. End honest](#8-end-honest)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. Probe before the inventory
 
+<!-- rules -->
+
 **Nothing is inventoried until the front's own verifier has said there is work.** Every align opens
-by running the programs in §7's table — the same ones it will close with — and branches on their
+by running the programs in §8's table — the same ones it will close with — and branches on their
 exit codes before reading anything else:
 
 | Probe result | What the align does |
 | --- | --- |
-| exit 0, no findings at all | **STOP.** Report "`<front>` conformant, N items, nothing to align" and end. No inventory, no plan, no confirmation. |
+| exit 0, no findings at all | **STOP.** Report "`<front>` conformant, N items, nothing to align" and end. |
 | exit 0, findings are all ones the front only **reports** (§6) | STOP the same way, then list them with the command that closes each. Structure is conformant; the residue is the cycle's. |
 | exit 1 or 2 | Run the full inventory and continue. |
 
 The probe and the final verification are the **same programs run twice** — which is why this costs
 a couple of tool calls rather than a second contract to maintain. An align that applied anything
-re-runs them afterwards and reports what they say (§7); the probe never substitutes for that.
+re-runs them afterwards and reports what they say (§8); the probe never substitutes for that.
+
+**A stage the probe cannot price is offered, never run to find out.** Some content work has no
+cheap signal — a whole-bundle glossary sweep is the standing example. Such a stage is gated on a
+proxy the align can read for free (a count against a count) and **offered** with what it would
+cost, never entered automatically.
+
+<!-- rationale -->
 
 **This is load-bearing, not an optimization.** An align that is expensive on a clean repo is an
 align nobody runs as the repo grows — which is exactly when drift accumulates. Making the no-op
@@ -52,11 +57,7 @@ It also inverts the order these sweeps used to run in, where a full read-only in
 for before anything knew whether there was work — even though the verifier reads the same files and
 already answers the question with an exit code.
 
-**A stage the probe cannot price is offered, never run to find out.** Some content work has no
-cheap signal — a whole-bundle glossary sweep is the standing example. Such a stage is gated on a
-proxy the align can read for free (a count against a count) and **offered** with what it would
-cost, never entered automatically. Guessing costs the user the very expense this section exists to
-avoid.
+Guessing costs the user the very expense this section exists to avoid.
 
 ## 2. Convergence, not accommodation
 
@@ -99,14 +100,13 @@ run-start OK they are the only possible stops:
 
 ## 4. The blast-radius sweep
 
-Before any rename enters the plan, its blast radius is known. The procedure is the same on all
-three fronts:
+Before any rename enters the plan, its blast radius is known.
 
 **Two repo scans total, never two per rename.** Build ONE alternation of every planned old name
 and run it twice — `git grep -n -E "(name-a|name-b|name-c)"` for tracked files, and
 `grep -rn --no-ignore -E "(name-a|name-b|name-c)"` so gitignored surfaces are never skipped. The
-matched text attributes each hit back to its rename, so a set of k renames costs **2** scans, not
-2k. Quote for the shell; escape regex metacharacters in a slug.
+matched text attributes each hit back to its rename. Quote for the shell; escape regex
+metacharacters in a slug.
 
 **Classify each hit yourself.** A hit **inside** the front being aligned is workspace-internal
 and rides the batch OK; a hit **outside** it makes that rename code-coupled per §3. This
@@ -115,8 +115,7 @@ read-only `Task` sub-agent (`model: haiku`, `effort: low`) returning `rename →
 and only **after** the two scans have already run. A sub-agent that re-runs the scanning has
 saved nothing.
 
-**A name with no hits is still renamed** — the sweep converges names, and an unreferenced
-variant is the easiest case, not an exemption.
+**A name with no hits is still renamed** — the sweep converges names.
 
 ## 5. MERGE, never clobber; never delete on a guess
 
@@ -147,10 +146,12 @@ repo already contains. Everything requiring a human to state something new is **
 
 ## 7. Citing a command — three forms, one condition each
 
+<!-- rules -->
+
 An align names other commands constantly: it invokes its content stages through the `Skill` tool,
 and it reports residue with the command that closes each. Those two jobs need **different
 spellings of the same command**, and picking the wrong one produces text that reads correctly and
-resolves nowhere — which is why the rule lives here rather than being restated by each align.
+resolves nowhere.
 
 **The axis is where the command comes from, never who is reading.**
 
@@ -161,22 +162,25 @@ resolves nowhere — which is why the rule lives here rather than being restated
 | Bare slash | `/<front>:<verb>` | **only** where that command's file lives in the target repo's own `.claude/commands/` |
 
 So an align invokes its stage as `quenching:docs:import-memory` and tells a human to run
-`/quenching:docs:import-memory`. The bare form is not a shorthand for either — it is a fourth
-thing, correct only for a repo that vendored the command file into its own `.claude/commands/`,
-and wrong everywhere else. An align that cannot see the target's `.claude/commands/` has no
-grounds to emit it.
+`/quenching:docs:import-memory`. An align that cannot see the target's `.claude/commands/` has no
+grounds to emit the bare form.
 
-**Write the shapes, not instances, whenever the sentence is *about* the forms.** The rows above
-carry `<front>` and `<verb>` deliberately: a sentence that explains a form and then shows a real
-command is the one sentence a later mechanical sweep corrupts, because the sweep cannot tell a use
-from a mention. Two sites in this plugin were corrupted exactly that way before the rule was
-written down. A placeholder matches no sweep's pattern, so it survives every one of them.
+**Write the shapes, not instances, whenever the sentence is *about* the forms.**
+
+<!-- rationale -->
+
+The rows above carry `<front>` and `<verb>` deliberately: a sentence that explains a form and then
+shows a real command is the one sentence a later mechanical sweep corrupts, because the sweep
+cannot tell a use from a mention. Two sites in this plugin were corrupted exactly that way before
+the rule was written down. A placeholder matches no sweep's pattern, so it survives every one of
+them.
 
 ## 8. End honest
 
+<!-- rules -->
+
 Every align ends with its front's own verifier, then a report that names what it did **and** what
-it deliberately did not close, each with the command that closes it. Residue reported plainly
-beats a clean-looking run that quietly dropped something.
+it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
@@ -184,9 +188,14 @@ beats a clean-looking run that quietly dropped something.
 | `specs/` | `/quenching:specs:align` | `specs.py doctor` + `specs.py validate` — the whole condition; the OKF validator is never pointed at `specs/` |
 | `.claude/` | `/quenching:skill:align` | `skills.py lint` + `skills.py doctor`, plus `skills.py registry reindex` reporting `changed: false` for the zone |
 
+All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**
+findings · **2** refusal — so an align branches on data it did not have to interpret. Warnings are
+reported and never set the exit code; an align that ends on exit 0 with warnings names each one by
+its code rather than implying the front is clean.
+
+<!-- rationale -->
+
+Residue reported plainly beats a clean-looking run that quietly dropped something.
+
 Each front's verifier is now a **program**, and that is the point: a rule whose only check is a
-sentence decays, because nothing fails when it is broken. All three read the same contract —
-`--json` on every subcommand and exit **0** ok · **1** findings · **2** refusal — so an align
-branches on data it did not have to interpret. Warnings are reported and never set the exit code;
-an align that ends on exit 0 with warnings names each one by its code rather than implying the
-front is clean.
+sentence decays, because nothing fails when it is broken.

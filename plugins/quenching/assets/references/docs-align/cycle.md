@@ -1,9 +1,5 @@
 # The `docs/` front's cycle — pipeline and routing
 
-The reference `/quenching:docs:align` reads for the two things specific to the **`docs/` front's loop**: the
-**stage pipeline** (which stages run, in what order, and why) and the **finding → owning-command
-routing table** (which findings the align closes itself, and which it can only surface).
-
 Everything that is **not** front-specific lives elsewhere and is cited, never restated here: the
 probe-before-inventory rule, the one-plan-one-OK model and the blast-radius procedure in
 [`align/sweep-doctrine.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md);
@@ -12,7 +8,8 @@ the cycle-authorization contract, the convergence condition and the anti-spin gu
 
 ## The stage pipeline
 
-A **pass** is a dependency chain, and the order is not cosmetic — each stage's output is the next
+<!-- rules -->
+A **pass** is a dependency chain — each stage's output is the next
 stage's input. Stage 1 is `/quenching:docs:align`'s own work; stages 2–4 are commands it invokes.
 
 | # | Stage | Concern | Why here in the order |
@@ -22,19 +19,22 @@ stage's input. Stage 1 is `/quenching:docs:align`'s own work; stages 2–4 are c
 | 3 | `/quenching:docs:harness` | **content in from the harness** | `CLAUDE.md`/`AGENTS.md` are the other out-of-band store. Harness MOVEs inlined durable knowledge into homes (delegating each MOVE to `/quenching:docs:add`), leaving thin pointers. Runs after memory so both content feeders finish before the glossary sweep. |
 | 4 | `/quenching:docs:glossary-backfill` | **glossary from the whole bundle** | Now the bundle is structurally sound and both feeders have landed, sweep the **complete** bundle for repo-specific terms and backfill `knowledge/glossary.md`. Swept earlier, it would miss terms stages 2–3 were still importing. |
 
-**Stages 1–3 are probed; stage 4 is offered.** The align knows before it starts whether stages 1–3
-have work — a validator exit code, a directory listing, one file read. Stage 4 has no such signal:
-proving the glossary is complete costs the same whole-bundle sweep as backfilling it. So it is
-gated on a free proxy (concept-doc count against glossary size, plus whether this pass created any
-docs) and **offered** with its cost, once per run. Running it to find out would spend the exact
-budget the probe rule exists to protect.
+**Stages 1–3 are probed; stage 4 is offered.** Gate stage 4 on a free proxy (concept-doc count
+against glossary size, plus whether this pass created any docs) and **offer** it with its cost,
+once per run.
 
-A stage the probe found empty is **skipped** this pass — the chain is "each applicable stage in
-order", never "all four every pass". Re-validation is implicit: stage 1 ends by running
-`okf-validate.py`, and the align re-probes in its loop decision.
+A stage the probe found empty is **skipped** this pass. Re-validation is implicit: stage 1 ends by
+running `okf-validate.py`, and the align re-probes in its loop decision.
+
+<!-- rationale -->
+The align knows before it starts whether stages 1–3 have work — a validator exit code, a directory
+listing, one file read. Stage 4 has no such signal: proving the glossary is complete costs the same
+whole-bundle sweep as backfilling it. Running it to find out would spend the exact budget the probe
+rule exists to protect.
 
 ### Parallel prep: overlap harness discovery with the memory drain
 
+<!-- rules -->
 When both content feeders have work in the same pass (stages 2 AND 3 non-empty), overlap stage 3's
 read-only prefix with stage 2's execution — plan in parallel, write in series:
 
@@ -42,8 +42,7 @@ read-only prefix with stage 2's execution — plan in parallel, write in series:
 2. Dispatch **one read-only `Task` sub-agent in the background** (`model: sonnet` — MOVE/KEEP
    classification is real judgment) instructed to execute steps 1–4 of `/quenching:docs:harness`
    **as written there** (inventory, unit parse, classification, blast-radius sweep) and return the
-   draft `file → unit → verdict → destination` table. The logic stays in its owner; only its
-   read-only prefix runs ahead of schedule.
+   draft `file → unit → verdict → destination` table.
 3. In parallel, run `/quenching:docs:import-memory` to completion, inline.
 4. Then invoke `/quenching:docs:harness`, handing it the pre-collected table **plus the list of docs stage 2
    just created**. Harness runs its **staleness delta-recheck** before writing: a doc stage 2
@@ -51,13 +50,15 @@ read-only prefix with stage 2's execution — plan in parallel, write in series:
    (a cheap `Grep` for coverage) only the units whose home/subject intersects the new docs; the
    rest of the table stands.
 5. **Writes to `docs/` are one stage at a time, always** — harness's writes start only after the
-   memory drain's writes have finished. Two stages read-modify-writing the same shared files (a
-   home's `index.md`, `knowledge/glossary.md`) is a race with no lock; the serial-write rule is
-   an invariant, not an optimization choice.
+   memory drain's writes have finished.
 
-When only ONE feeder has work, run it in the normal serial flow — dispatching a discovery agent
-with nothing to overlap only costs tokens. The stages' own internal fan-outs (memory slice
-classification, knowledge-scan home slices) are unchanged.
+When only ONE feeder has work, run it in the normal serial flow. The stages' own internal fan-outs
+(memory slice classification, knowledge-scan home slices) are unchanged.
+
+<!-- rationale -->
+The logic stays in its owner; only its read-only prefix runs ahead of schedule. Two stages
+read-modify-writing the same shared files (a home's `index.md`, `knowledge/glossary.md`) is a race
+with no lock. Dispatching a discovery agent with nothing to overlap only costs tokens.
 
 ## Finding → owning-command routing table
 
