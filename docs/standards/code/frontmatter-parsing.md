@@ -4,19 +4,22 @@ title: Frontmatter parsing
 description: The YAML subset the three shipped tools read — the comment rule (a `#` opens a comment only at the start of a value or after whitespace, and never inside a quoted scalar), the canonical case list all three must decide identically, the anomaly set each must be able to name, and the three-copy lockstep obligation that replaces the shared module they cannot have
 resource: plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
 tags: [code, parsing, yaml, frontmatter, tools, lockstep]
-timestamp: 2026-07-28
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: fix-skills-py-description-truncation spec — written at task 1.1 before anything implemented it, promoted at task 3.2 once all three tools passed the canonical case list in their own selftests
+source: fix-skills-py-description-truncation spec — written at task 1.1 before anything implemented it, promoted at task 3.2 once all three tools passed the canonical case list in their own selftests; the non-import rule re-justified on self-containment rather than standalone install (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec), per ## Open Decisions — the rule survives the removal of tool install
 maintainer: quenching
 ---
 
 # Frontmatter parsing
 
 Three shipped tools read YAML frontmatter with three hand-written mini-parsers:
-`assets/bin/skills.py`, `assets/bin/specs.py` and `assets/hooks/okf-validate.py`. Each installs
-**standalone** into a target's `.claude/hooks/`, so none may import the others and there is no
-shared module to hold the rule. This standard is what holds it instead.
+`assets/bin/skills.py`, `assets/bin/specs.py` and `assets/hooks/okf-validate.py`. Each is a
+**self-contained, zero-dependency single file** — readable and auditable top to bottom without
+chasing an import graph, and none is installed into a target repo any more
+([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
+§Resolving the tool) — so none may import the others and there is no shared module to hold the
+rule. This standard is what holds it instead.
 
 It governs the **subset of YAML** those parsers claim to read, and — just as importantly — what
 they must be able to say when they have read something they could not represent. That second half
@@ -25,10 +28,13 @@ mechanics it applies to.
 
 ## Why there are three copies and not one module
 
-Zero-dependency and self-contained is the tools' contract: each is copied into a target repo by
-its own align and runs there with nothing beside it. An extracted `frontmatter.py` would have to be
-installed as a fourth file, found on `sys.path`, and version-matched against three callers — which
-trades a duplication problem for a distribution problem.
+Zero-dependency and self-contained is the tools' contract: each is invoked by absolute path out of
+the plugin and must run with nothing beside it. An extracted `frontmatter.py` would not even sit in
+one place the three can reach alike — `skills.py` and `specs.py` run from `assets/bin/`,
+`okf-validate.py` from `assets/hooks/`, and Python puts only the *running script's own* directory
+on `sys.path`, so the third would need a `__file__`-relative insert to import what the other two
+import by name. That trades a duplication problem for an import-path problem, and spends the
+property that makes each tool auditable: readable top to bottom in one file.
 
 Duplication is the existing mold, not a new concession: `specs.py` already embeds `schema.json` and
 `templates/spec.md` as constants for exactly this reason, and `specs.py selftest` is what keeps
@@ -146,7 +152,7 @@ same change. A case list one tool does not run proves nothing about that tool.
 ## What this does not cover
 
 - **A real YAML parser.** Out of contract permanently — zero-dependency is what lets these tools
-  install standalone.
+  run wherever `python3` does, with nothing beside them.
 - **Teaching the parsers nested keys or flow values.** The diagnostic *names* what a tool cannot
   read; it does not learn to read it.
 - **What Claude Code's own loader does.** These tools read the same files, but nothing here is a
