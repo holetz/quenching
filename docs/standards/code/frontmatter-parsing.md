@@ -7,7 +7,7 @@ tags: [code, parsing, yaml, frontmatter, tools, lockstep]
 timestamp: 2026-08-03
 audience: both
 authority: current
-source: fix-skills-py-description-truncation spec — written at task 1.1 before anything implemented it, promoted at task 3.2 once all three tools passed the canonical case list in their own selftests; the non-import rule re-justified on self-containment rather than standalone install (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec), per ## Open Decisions — the rule survives the removal of tool install
+source: fix-skills-py-description-truncation spec — written at task 1.1 before anything implemented it, promoted at task 3.2 once all three tools passed the canonical case list in their own selftests; the non-import rule re-justified on self-containment rather than standalone install (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec), decided in that spec's Open Decisions — the rule survives the removal of tool install
 maintainer: quenching
 ---
 

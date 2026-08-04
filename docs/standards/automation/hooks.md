@@ -2,12 +2,12 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, .claude/hooks/**, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
+resource: .claude/settings.json, .claude/hooks/**, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-07-28
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface: /docs:add, /docs:learn and /docs:define carry rung-1 frontmatter `hooks:` blocks on the rung-1 `command` handler, and skills.py enforces both rungs from one implementation (8 selftest cases)
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface, and skills.py enforces both rungs from one implementation (8 selftest cases). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed
 maintainer: quenching
 ---
 
@@ -64,24 +64,28 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 
 ## What this repo's own surface does under it
 
-Three commands that write into the bundle — `/docs:add`, `/docs:learn`, `/docs:define` — carry
-a rung-1 frontmatter `hooks:` block running `okf-validate.py` on their own `Write`/`Edit`, on the
-rung-1 `command` handler with a `timeout` sized to the event. Each **guards the checker's absence**
-per the rule above: `/docs:align` step 6's install is an *offer*, so the three commands most likely
-to be run before any align are also the three that would otherwise report a hook error on every
-write. `skills.py` reads both rungs from one implementation, so a `settings.json` hook and a
-frontmatter one are held to the same ladder.
+**The plugin wires the checker itself, at rungs 2 and 3, for every repo that has it.**
+`plugins/quenching/hooks/hooks.json` — loaded from the plugin's own tree, never merged into a
+target's `.claude/settings.json` — carries a `PostToolUse` hook matched to `Write|Edit` (rung 2,
+operation-scoped, `timeout` 10) and an unmatched `Stop` hook (rung 3, `timeout` 15), both invoking
+`python3 "${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py"`. Nothing is installed and nothing is
+offered: the wiring travels with the plugin, which is why no command needs a rung-1 frontmatter
+`hooks:` block of its own any more — the three that carried one (`/docs:add`, `/docs:learn`,
+`/docs:define`) had it removed as redundant.
 
-**This repository now also wires the checker at rungs 2 and 3**, having accepted that offer: its
-`.claude/settings.json` carries a `PostToolUse` hook matched to `Write|Edit` (rung 2,
-operation-scoped) and an unmatched `Stop` hook (rung 3), both running the `okf-validate.py` copy
-installed under `.claude/hooks/`. The `Stop` hook is the rung-3 example in the flesh rather than in
-the abstract — it is only affordable because the shipped `stopScan: "dirty"` gate makes a turn that
-touched no `docs/**` file cost one stat. The opt-in `PreToolUse` deny gate is deliberately **not**
-wired: `hardBlock` stays `false`, so the checker proposes and never blocks. Note the second-order
-cost this repo pays and a target repo does not — `plugins/quenching/assets/docs/` is a bundle
-skeleton, so an edit there fires the same `Write|Edit` hook against payload that is deliberately a
-template rather than a live bundle.
+The `Stop` hook is the rung-3 example in the flesh rather than in the abstract — it is only
+affordable because the shipped `stopScan: "dirty"` gate makes a turn that touched no `docs/**` file
+cost one stat. The opt-in `PreToolUse` deny gate is deliberately **not** wired: `hardBlock` stays
+`false`, so the checker proposes and never blocks. Note the second-order cost this repo pays and a
+target repo does not — `plugins/quenching/assets/docs/` is a bundle skeleton, so an edit there fires
+the same `Write|Edit` hook against payload that is deliberately a template rather than a live
+bundle.
+
+**A target that once accepted the old install offer carries a second, dead rung.** Its
+`.claude/settings.json` still names `${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py`, so the
+same checker fires twice — once from the plugin at the current version, once from a copy frozen at
+whatever it was installed at. That is legacy debris, reported by `skills.py drift` and removed by
+`/docs:align`, not a second opinion worth keeping.
 
 The full pricing doctrine lives once, in
 [capabilities.md](/plugins/quenching/assets/references/skill-new/capabilities.md) §Hooks;
