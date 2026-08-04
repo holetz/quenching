@@ -1970,22 +1970,21 @@ register("budget",
 # --------------------------------------------------------------------------- #
 PLUGIN_VERSION_FILE = "VERSION"
 
-# The three tools an align installs, each with the path it ships at and the align that
-# owns its copy. Nothing else under `.claude/hooks/` is this subcommand's business —
-# a target's own scripts live there too, and auditing them would be a different claim.
+# The three tools a target repo may still carry a LEGACY copy of, each with the path it
+# ships at and the align that offers to remove one. Nothing else under `.claude/hooks/`
+# is this subcommand's business — a target's own scripts live there too, and auditing
+# them would be a different claim.
 #
-# `wired` marks the ONE tool that is a hook. `okf-validate.py` does nothing unless a
-# `hooks` block invokes it, so installed-and-uninvoked is a state it can sit in for
-# months — this repo did. `specs.py` and `skills.py` are CLIs a command body calls, so
-# their absence from settings.json is normal and asking about it would manufacture two
-# false findings on every conformant repo.
+# All three resolve plugin-first with no fallback and no manual rung
+# (align/tool-resolution.md §Resolving the tool) — the plugin's own `hooks/hooks.json`
+# wires `okf-validate.py`, and `specs.py`/`skills.py` are invoked by their literal plugin
+# path. A copy under `.claude/hooks/` is therefore never executed by anything this plugin
+# runs, regardless of version: it is dead weight to offer for removal, not a stale
+# dependency to offer for overwrite.
 INSTALLED_TOOLS = (
-    {"tool": "okf-validate.py", "ships": "assets/hooks/okf-validate.py",
-     "align": "/docs:align", "wired": True},
-    {"tool": "specs.py", "ships": "assets/bin/specs.py",
-     "align": "/specs:align", "wired": False},
-    {"tool": "skills.py", "ships": "assets/bin/skills.py",
-     "align": "/skill:align", "wired": False},
+    {"tool": "okf-validate.py", "ships": "assets/hooks/okf-validate.py", "align": "/docs:align"},
+    {"tool": "specs.py", "ships": "assets/bin/specs.py", "align": "/specs:align"},
+    {"tool": "skills.py", "ships": "assets/bin/skills.py", "align": "/skill:align"},
 )
 
 # Each tool declares `VERSION = "x.y.z"` at module level, in lockstep with the plugin's
@@ -2031,47 +2030,19 @@ def compare_versions(installed: str | None, shipped: str) -> str:
     return "current" if a == b else ("behind" if a < b else "ahead")
 
 
-def settings_hook_commands(root: str) -> list[str]:
-    """Every `command` string wired under a `hooks` event, across both settings files.
-
-    Reuses the pair `doctor` already reads (`settings.json` + `settings.local.json`) so
-    a per-developer override counts as wiring. Unparseable JSON yields nothing here and
-    is `doctor`'s finding to report — two tools naming the same broken file twice is
-    noise, and `drift` would only be guessing at what the file meant."""
-    out: list[str] = []
-    for settings_name in ("settings.json", "settings.local.json"):
-        text = read_text(os.path.join(root, settings_name))
-        if text is None:
-            continue
-        try:
-            hooks = json.loads(text).get("hooks", {})
-        except (json.JSONDecodeError, AttributeError):
-            continue
-        if not isinstance(hooks, dict):
-            continue
-        for entries in hooks.values():
-            for entry in entries if isinstance(entries, list) else []:
-                if not isinstance(entry, dict):
-                    continue
-                for h in entry.get("hooks") or []:
-                    if isinstance(h, dict) and isinstance(h.get("command"), str):
-                        out.append(h["command"])
-    return out
-
-
 def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
-    """One row per tool. `executes` is the copy a command actually runs: the documented
-    fallback tries the plugin path first, so it is the plugin's whenever this ran at all
-    — which is exactly what makes an `ahead` row worth printing."""
+    """One row per tool. `executes` is the copy a command actually runs: resolution is
+    plugin-first with no fallback and no manual rung, so it is always the plugin's —
+    which is exactly what makes ANY row that is not `absent` a legacy copy worth
+    reporting, regardless of its version."""
     rows = []
-    wired_commands = settings_hook_commands(root)
     for spec in INSTALLED_TOOLS:
         installed_path = os.path.join(root, HOOKS_DIR, spec["tool"])
         present = os.path.isfile(installed_path)
         installed = read_tool_version(installed_path) if present else None
-        # the SHIPPED tool's own constant, not the plugin's VERSION file: it is what an
-        # install would put on disk, so it is what an installed copy must be compared
-        # against. The two agreeing is the lockstep's business, checked elsewhere.
+        # the SHIPPED tool's own constant, not the plugin's VERSION file: it is what a
+        # legacy copy was installed from, so it is what one is compared against for the
+        # report. The two agreeing is the lockstep's business, checked elsewhere.
         tool_shipped = read_tool_version(os.path.join(plugin_root, spec["ships"])) or shipped
         rows.append({
             "tool": spec["tool"],
@@ -2081,65 +2052,43 @@ def drift_rows(root: str, plugin_root: str, shipped: str) -> list[dict]:
             "shipped": tool_shipped,
             "status": "absent" if not present else compare_versions(installed, tool_shipped),
             "executes": "plugin",
-            # None for the two CLIs: "we did not ask" is not "we found nothing"
-            "wired": (any(spec["tool"] in c for c in wired_commands)
-                      if spec["wired"] else None),
         })
     return rows
 
 
 def drift_findings(rows: list[dict]) -> list[dict]:
-    """One finding per row that is not `current`, each naming the align that fixes it.
-
-    Severity follows what the state COSTS. `behind` is an error: a stale copy answers a
-    different CLI contract, so anything running it by hand branches on a payload shape
-    that no longer exists. `unwired` is an error: the script is inert, and the repo
-    believes it is protected. `ahead` and `unreadable` are warnings — the plugin copy
-    still runs, so nothing is currently wrong, only unmaintainable. `absent` is a
-    warning for the HOOK alone, and no finding at all for the two CLIs (see below)."""
+    """One finding per row carrying a legacy copy, each naming the align that offers to
+    remove it. `absent` is the expected, unreported state for all three tools now:
+    resolution is plugin-first with no fallback and no manual rung
+    (align/tool-resolution.md §Resolving the tool), so a copy under `.claude/hooks/` is
+    never executed by anything this plugin runs — a stale one is dead weight to remove,
+    not a dependency to overwrite, and its version only explains what kind of debris it
+    is."""
     out: list[dict] = []
     for r in rows:
         tool, align = r["tool"], r["align"]
         if r["status"] == "behind":
             out.append(finding(
-                "sk-tool-behind", "error",
-                f"{HOOKS_DIR}/{tool} is {r['installed']}, the plugin ships {r['shipped']} — "
-                "commands resolve the plugin copy first, but a session without the plugin, "
-                "a hook, or a human at a shell runs this one and gets its older CLI contract",
+                "sk-tool-behind", "warn",
+                f"{HOOKS_DIR}/{tool} is a legacy copy ({r['installed']}, the plugin ships "
+                f"{r['shipped']}) — nothing executes it, since resolution is plugin-first "
+                "with no fallback",
                 tool=tool, installed=r["installed"], shipped=r["shipped"],
-                remedy=f"{align} offers the overwrite"))
+                remedy=f"{align} offers to remove it"))
         elif r["status"] == "ahead":
             out.append(finding(
                 "sk-tool-ahead", "warn",
-                f"{HOOKS_DIR}/{tool} is {r['installed']}, ahead of the plugin's {r['shipped']} — "
-                "resolution is plugin-first and every align leaves a newer copy alone, so this "
-                "code is neither executed nor repaired",
+                f"{HOOKS_DIR}/{tool} is a legacy copy ({r['installed']}, ahead of the plugin's "
+                f"{r['shipped']}) — nothing executes it, since resolution is plugin-first "
+                "with no fallback",
                 tool=tool, installed=r["installed"], shipped=r["shipped"],
-                remedy="upgrade the plugin, then re-run " + align))
+                remedy=f"{align} offers to remove it"))
         elif r["status"] == "unreadable":
             out.append(finding(
                 "sk-tool-unreadable", "warn",
-                f"{HOOKS_DIR}/{tool} declares no `VERSION = \"…\"` — too old to carry one, or "
-                "edited in place; either way no comparison can be made",
-                tool=tool, remedy=f"{align} reinstalls it"))
-        elif r["status"] == "absent" and r["wired"] is not None:
-            # Only for the hook. A missing CLI costs nothing while the plugin is loaded —
-            # resolution is plugin-first — and warning about it fires on every plugin-only
-            # repo, including this one, which is how a probe's output gets ignored. A
-            # missing HOOK is the same practical state as an unwired one: the bundle has
-            # no enforcement at all. The row still reports `absent` either way.
-            out.append(finding(
-                "sk-tool-absent", "warn",
-                f"no {HOOKS_DIR}/{tool} installed — nothing enforces the bundle between "
-                "aligns, the same practical state as an installed copy nothing invokes",
-                tool=tool, remedy=f"{align} installs and wires it"))
-        if r["wired"] is False and r["status"] != "absent":
-            out.append(finding(
-                "sk-tool-unwired", "error",
-                f"{HOOKS_DIR}/{tool} is installed but no `hooks` block in settings.json or "
-                "settings.local.json invokes it — the script sits on disk and nothing fires it, "
-                "so deleting it would change no behaviour",
-                tool=tool, remedy=f"{align} merges the wiring into .claude/settings.json"))
+                f"{HOOKS_DIR}/{tool} declares no `VERSION = \"…\"` — a legacy copy too old or "
+                "edited in place to identify, and unexecuted either way",
+                tool=tool, remedy=f"{align} offers to remove it"))
     return out
 
 
@@ -2204,16 +2153,14 @@ def cmd_drift(args, root: str) -> int:
         return exit_for(findings)
     print(f"skills drift — {root} against plugin {shipped} ({plugin_root})")
     for r in rows:
-        wiring = "" if r["wired"] is None or r["status"] == "absent" else (
-            "  wired" if r["wired"] else "  NOT wired — nothing invokes it")
         print(f"  {r['status']:<10} {r['tool']:<18} installed "
               f"{r['installed'] or '-':<8} shipped {r['shipped']:<8} "
-              f"executes: {r['executes']}{wiring}")
+              f"executes: {r['executes']}")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
         print(f"          remedy: {f['remedy']}")
     if not findings:
-        print("  OK — every installed copy matches the plugin that ships it.")
+        print("  OK — no legacy copy found.")
     return exit_for(findings)
 
 
