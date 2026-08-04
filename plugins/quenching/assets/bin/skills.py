@@ -1388,35 +1388,32 @@ EXPECTED_HOOKS = {
     "/docs:hooked-wide": {"sk-hook-unmatched", "sk-hook-llm-frequent"},
 }
 
-# A whole plugin and two targets, small enough to write in a temp dir: one drifted in
-# every direction at once, and one CONTROL that must fire nothing. The control is the
-# half that matters — a drift check which flags a conformant repo gets ignored in a
-# probe, and then it is worth less than no check at all.
+# A whole plugin and three targets, small enough to write in a temp dir: one carrying a
+# legacy copy of every tool at once (one behind, one ahead, one unreadable), one with a
+# copy at the current version (still legacy — nothing ever executes it), and one
+# CONTROL with nothing installed at all. Both non-drifted targets must fire nothing:
+# resolution is plugin-first with no fallback, so `absent` and `current` are equally
+# clean, and a drift check flagging either gets ignored in a probe.
 DRIFT_FIXTURE = {
     "plugin/VERSION": "4.2.0\n",
     "plugin/assets/bin/skills.py": 'VERSION = "4.2.0"\n',
     "plugin/assets/bin/specs.py": 'VERSION = "4.2.0"\n',
     "plugin/assets/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
-    # behind AND inert — the state this repo sat in undetected
-    "drifted/.claude/hooks/okf-validate.py": 'VERSION = "1.0.0"\n',
-    "drifted/.claude/hooks/specs.py": 'VERSION = "9.9.9"\n',        # ahead
-    "drifted/.claude/hooks/skills.py": "# a copy too old to declare one\n",  # unreadable
-    "drifted/.claude/settings.json": '{"hooks": {}}\n',
-    "clean/.claude/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
-    "clean/.claude/hooks/specs.py": 'VERSION = "4.2.0"\n',
-    "clean/.claude/hooks/skills.py": 'VERSION = "4.2.0"\n',
-    "clean/.claude/settings.json":
-        '{"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", '
-        '"command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"}]}]}}\n',
-    # a legitimate plugin-only repo: nothing installed, and nothing wrong with that
-    # except the one tool that does nothing unless it is on disk and invoked
+    # legacy copies, none of them ever executed
+    "drifted/.claude/hooks/okf-validate.py": 'VERSION = "1.0.0"\n',                    # behind
+    "drifted/.claude/hooks/specs.py": 'VERSION = "9.9.9"\n',                           # ahead
+    "drifted/.claude/hooks/skills.py": "# a copy too old to declare one\n",            # unreadable
+    "current/.claude/hooks/okf-validate.py": 'VERSION = "4.2.0"\n',
+    "current/.claude/hooks/specs.py": 'VERSION = "4.2.0"\n',
+    "current/.claude/hooks/skills.py": 'VERSION = "4.2.0"\n',
+    # the control: a legitimate plugin-only repo, nothing installed
     "pluginonly/.claude/settings.json": "{}\n",
 }
 
 EXPECTED_DRIFT = {
-    "drifted": {"sk-tool-behind", "sk-tool-unwired", "sk-tool-ahead", "sk-tool-unreadable"},
-    "clean": set(),
-    "pluginonly": {"sk-tool-absent"},   # the hook only — never the two CLIs
+    "drifted": {"sk-tool-behind", "sk-tool-ahead", "sk-tool-unreadable"},
+    "current": set(),
+    "pluginonly": set(),
 }
 
 # The citation check and the boundary that makes it safe to run. `cites-bare` carries a
@@ -1615,7 +1612,7 @@ def cmd_selftest(args, root: str) -> int:
         fired = lint_citations(prefix, cites_bare["body"], invocations,
                                {"command": cites_bare["command"]}) if prefix else []
         # a target repo's own surface carries no manifest, so the same body must stay silent
-        target_silent = plugin_prefix(os.path.join(tmp, "clean", CLAUDE_DIR)) is None
+        target_silent = plugin_prefix(os.path.join(tmp, "current", CLAUDE_DIR)) is None
 
     failures = canonical_case_failures()
     for command, codes in EXPECTED.items():
