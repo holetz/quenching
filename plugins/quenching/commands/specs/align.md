@@ -1,5 +1,5 @@
 ---
-description: Force a repo's specs/ workspace into the canonical shape — probe first, so a clean one costs two tool calls. Triggers on "align specs", "set up the specs workspace", "install the spec front", "migrate openspec", "fix the specs folder", "is my specs workspace conformant", "scaffold specs". Scaffolds when absent, installs specs.py and the operator manual, folds an older backlog/ plus ready/ layout or a v1 three-file one into plans/, normalizes filenames and slugs, stamps missing frontmatter, and regenerates the listing zone. One plan, one OK, with code-coupled renames gating individually. Authoring and cycle actions are reported with the command that closes each, never performed. Not for: creating a spec → /specs:create; building one → /specs:execute; ranking the front → /specs:triage; the read-only view of what is here → /specs:status.
+description: Force a repo's specs/ workspace into the canonical shape — probe first, so a clean one costs two tool calls. Triggers on "align specs", "set up the specs workspace", "install the spec front", "migrate openspec", "fix the specs folder", "is my specs workspace conformant", "scaffold specs". Scaffolds when absent, installs the operator manual, folds an older backlog/ plus ready/ layout or a v1 three-file one into plans/, normalizes filenames and slugs, and stamps missing frontmatter. One plan, one OK, with code-coupled renames gating individually. Authoring and cycle actions are reported with the command that closes each, never performed. Not for: creating a spec → /specs:create; building one → /specs:execute; ranking the front → /specs:triage; the read-only view of what is here → /specs:status.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(git mv:*), Bash(rm:*), Write, Edit, Task
 ---
@@ -24,10 +24,9 @@ conformant workspace ends the run there. That is what makes this safe to run hab
 only when something is already broken.
 
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
-fourteen canonical sections, the derived stages and the `specs.py` surface in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the front's on-write check in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
+fourteen canonical sections, the derived stages, the front's on-write check and the `specs.py`
+surface in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
 findings it fixes versus only reports, and the migrations — is
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
@@ -127,7 +126,7 @@ same bytes at full cost.
 Map the inventory onto the codes in
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md),
 splitting the two tables: what the sweep **fixes** (structure, the migrations, filenames and slugs,
-frontmatter stamps, the `plans/` listing, shadow copies) and what it only **reports**.
+frontmatter stamps, shadow copies) and what it only **reports**.
 **`sp-v2-layout` and `sp-v1-leftover` are classified before anything else** — until the fold runs,
 every other reading of the workspace is about files that are not where they will be. A legacy
 `openspec/` fold requires an OKF bundle for its main-spec cut: if `docs/index.md` with
@@ -156,9 +155,9 @@ each main-spec→`docs/standards/` cut shown and interop-lost stated; then the f
 `specs.py migrate --dry-run`'s own output — every spec's destination, the source of each date, and
 every folder that will be **kept** because it still holds a file); tool repairs (each quoting the
 tool's own message and remedy); renames (old → canonical, coupled ones marked); frontmatter stamps;
-listing work (seed / zone install / zone regeneration / frontmatter stripped); shadow copies to
-remove and diverged ones kept-and-reported. Then, separately and explicitly labelled **"reported,
-not applied"**, every authoring and cycle finding with the command that closes it. Wait for the
+shadow copies to remove and diverged ones kept-and-reported. Then, separately and explicitly
+labelled **"reported, not applied"**, every authoring and cycle finding with the command that
+closes it. Wait for the
 single confirmation; each code-coupled rename awaits its own.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
@@ -192,9 +191,9 @@ residue, each with the command that closes it.
 - Never inventory before the probe, and never continue past a clean probe. A conformant workspace
   ends the run at step 1 — that is the whole reason this command is cheap enough to run habitually.
 - Never author a spec's sections — not a `## Problem`, not a missing gate heading, and **not an
-  explicit `- none — <reason>`**. A section is content; only filenames, frontmatter keys and the
-  `plans/` listing are this sweep's to write. (A legacy fold's main-spec→`docs/standards/` mapping
-  is the one authored crossing, and it is human-chosen.)
+  explicit `- none — <reason>`**. A section is content; only filenames and frontmatter keys are
+  this sweep's to write. (A legacy fold's main-spec→`docs/standards/` mapping is the one authored
+  crossing, and it is human-chosen.)
 - Never `promote` a spec, and never propose one — that is `/quenching:specs:develop` and `/quenching:specs:conclude`.
 - Never write a frontmatter record this command does not own. `priority`, `refined`, `approved`,
   `branch`, `reviewed`, `merge` and `outcome` each have exactly one writer, and none of them is a

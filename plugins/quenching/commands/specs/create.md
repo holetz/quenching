@@ -1,5 +1,5 @@
 ---
-description: Capture ONE spec — effort proportional to what you gave it, never an interrogation. Triggers on "capture this", "park a spec", "add it to the backlog", "note this for later", "file a spec", "turn my plan into a spec", "convert this Claude Code plan", "make a spec from my plans folder". Not for: filling a spec's remaining sections, or interrogating one → /specs:develop; building one → /specs:execute; closing one out → /specs:conclude; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
+description: Capture or create a spec. Triggers on "convert to a spec", "add to the backlog", "create a spec". Not for: filling a spec's remaining sections or building one.
 argument-hint: [what to capture, or a path to a plan file]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: sonnet
@@ -14,10 +14,9 @@ built: this command creates it, `/quenching:specs:develop` fills its sections, `
 `/quenching:specs:conclude` closes it out under the same identity. Nothing here to retire, hand off, or
 reconcile — and no ledger.
 
-The layout, the fourteen canonical sections, the gates and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the front's on-write check in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).
+The layout, the fourteen canonical sections, the gates, the front's on-write check and the
+`specs.py` surface live in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md).
 
 ## The one rule: effort proportional to input
 
@@ -34,7 +33,8 @@ what you were given, and nothing more.**
 ## Doctrine
 
 - **A sentence becomes `## Problem` and stops.** `specs.py new` stamps the frontmatter (`slug`,
-`title`, `verification`) and that one heading. Every other canonical heading is left ABSENT,
+`title`, `date`, `verification`) and that one heading. `date` is the capture date, written here and
+never again. Every other canonical heading is left ABSENT,
 which the stage-scoped explicit-none rule
 ([spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §The gates)
 makes legal. Writing fourteen `- none` headings here would make a fresh capture derive as
