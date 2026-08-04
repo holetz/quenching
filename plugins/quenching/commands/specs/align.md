@@ -139,7 +139,7 @@ removal candidate, divergent → `sp-shadow-diverged`, keep-and-report.
 ### 4. Sweep the blast radius of every rename
 Run the shared procedure in
 [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-§The blast-radius sweep — two repo scans total for the whole set, never two per rename — over every planned
+§4. The blast-radius sweep — two repo scans total for the whole set, never two per rename — over every planned
 filename change and every `sp-duplicate-slug` rename. **This front's delta:** a **slug** leaks
 further than any other name the plugin renames, because identity here *is* the slug — every
 command, cross-reference, branch name, PR title, CI job and script argument names it, and no phase

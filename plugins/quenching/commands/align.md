@@ -20,8 +20,7 @@ one that spans all three.
 
 The surface is **one column, not a matrix**: there is no separate "align-and-update" anywhere. An
 align probes first, so a conformant front costs a couple of tool calls and says so
-([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §Probe before
-the inventory) — which is what made it safe for each align to carry its own content stages instead
+([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory) — which is what made it safe for each align to carry its own content stages instead
 of needing a second command nobody remembered to run.
 
 This command is the **conductor** over the three. It runs one read-only probe, asks for **one**
@@ -69,7 +68,7 @@ here, not three edits that must stay in agreement.
 - **One OK for the whole repo; authorization nests one level.** The gate fires **once**, before
   pass 1. Each front align **inherits** it and passes it down verbatim to its own stages — it does
   not ask again
-  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §Nesting).
+  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The cycle-authorization contract).
   After that OK, the only possible interruptions are the two the contract never covers: a
   **code-coupled** rename, and an **irreversible close** (concluding a spec).
 - **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
@@ -135,10 +134,10 @@ close-out still confirm on their own."* Wait for **one** OK.
 Invoke via the **Skill** tool under its registry name **`quenching:docs:align`** — the command path
 prefixed by the plugin. Every front below is named the same way; the three forms and the condition
 on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-§Citing a command's.
+§7. Citing a command.
 Declare the authorization mode verbatim per
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-§cycle-authorization, naming *this* command as the grantor: *"Running under /align authorization
+§The cycle-authorization contract, naming *this* command as the grantor: *"Running under /align authorization
 granted at run start — skip your plan-confirmation pause; present your plan as narration and
 execute; code-coupled and irreversible items still gate individually."*
 
@@ -199,7 +198,7 @@ to the front align that made it, and the report is where this run is accounted f
   bundle the other two write into.
 - Never ask for a second authorization, and never let a front align re-gate — authorization nests
   one level ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
-  §Nesting). Equally, never suppress the two interruptions the contract never covers: code-coupled
+  §The cycle-authorization contract). Equally, never suppress the two interruptions the contract never covers: code-coupled
   renames and irreversible closes.
 - Never reimplement a front's or a stage's logic here — **invoke** the front align via the Skill
   tool, always.

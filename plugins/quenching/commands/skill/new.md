@@ -59,7 +59,7 @@ bundle → note the tail as skipped and plan the `/quenching:docs:align` suggest
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
 ### 2. Classify on the axis
-Apply the classification test ([skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §axis):
+Apply the classification test ([skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §The single axis):
 name the one folder the skill acts on — one folder → domain-bound; "the repo" → generic;
 several unrelated folders → stop and ask the user which folder it serves (or whether it is
 generic) instead of forcing a value. For an **edit**, re-derive the classification and diff

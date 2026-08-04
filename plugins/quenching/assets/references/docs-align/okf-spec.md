@@ -7,13 +7,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
 
 ## Contents
 
-- [Reserved filenames](#reserved-filenames)
-- [Frontmatter](#frontmatter)
-- [Concept `type`](#concept-type)
-- [Normative rules](#normative-rules)
-- [Links](#links)
-- [Bundle & conformance](#bundle--conformance)
-- [What this plugin adds on top (OKF-strict profile)](#what-this-plugin-adds-on-top-okf-strict-profile)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## Reserved filenames
 
@@ -32,7 +26,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
   · `timestamp` (ISO 8601 of last change).
 - Producers **MAY** add any additional keys (this plugin's `audience`/`authority`/`source`/
   `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/quenching:docs:import`
-  alone and by no other command; its contract — the exact-URI value, and why it is separate from
+  alone; its contract — the exact-URI value, and why it is separate from
   the authorial prose in `source` — is owned by
   [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) §Attribution.
 
@@ -42,8 +36,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
   self-explanatory values; consumers **MUST** tolerate unknown types gracefully.
 - This plugin fixes a **descriptive vocabulary** per home (`standard`, `system`, `schema`,
   `table`, `vision`, `documentation`, `knowledge`, `reference`,
-  `sidecar`) so the surface is uniform and greppable — still valid
-  OKF (self-explanatory, tolerated by any consumer).
+  `sidecar`) so the surface is uniform and greppable.
 
 ## Normative rules
 
@@ -92,8 +85,7 @@ OKF is permissive; this plugin narrows it into a portable **signature** (all sti
 OKF-valid — additive keys, descriptive types, reserved-file structures):
 
 1. **`index.md` carries no frontmatter** — except the **root** `docs/index.md`, which carries
-   **only** `okf_version: "0.1"`. (OKF allows synthesizing/omitting index; the plugin makes it
-   a hand-maintained, frontmatter-free listing.)
+   **only** `okf_version: "0.1"`.
 2. **`type` is mandatory and drawn from the fixed vocabulary** per home (see
    [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md)).
 3. **`resource` is derived, never invented** — for standards a comma-separated **glob set** of
@@ -122,10 +114,8 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    self-describing.)*
 7. **Harness files** `CLAUDE.md`/`AGENTS.md` are navigation pointers, **not** OKF concepts —
    exempt from the `type` requirement. The validator skips them entirely; the `/quenching:docs:harness`
-   skill keeps them thin and honest (moving inlined knowledge into its home and verifying every
-   pointer resolves — pointer honesty is checked by the skill, not the validator).
-8. **Every knowledge-holding folder has an `index.md`, and listings do not lie.** OKF leaves
-   `index.md` optional and tells consumers to tolerate broken links; the strict profile makes it
-   a maintained, honest listing — the validator flags (WARN) a folder of concept docs with no
-   `index.md`, a listing link to a nonexistent file, and a concept doc nothing links to. Still
-   OKF-valid (these are SHOULDs the plugin surfaces; a consumer may ignore them).
+   skill keeps them thin and honest.
+8. **Every knowledge-holding folder has an `index.md`, and listings do not lie.** The validator
+   flags (WARN) a folder of concept docs with no `index.md`, a listing link to a nonexistent
+   file, and a concept doc nothing links to. Still OKF-valid (these are SHOULDs the plugin
+   surfaces; a consumer may ignore them).
