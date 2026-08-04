@@ -110,7 +110,7 @@ onto it.
 
 ### 4. Sweep the blast radius
 Per `/quenching:docs:align`'s migration doctrine
-([docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md) §3–4):
+([docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md) §3 §4):
 `git grep` + `grep -rn --no-ignore` for anything that reads or links the harness files or their
 anchors. As in step 1, a large sweep goes to one read-only `Task` collector (`model: haiku`,
 `effort: low`) returning `anchor → [file:line, …]`; the orchestrator judges each hit. Any hit in

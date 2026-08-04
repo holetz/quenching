@@ -1,8 +1,7 @@
 # Memory routing — from a memory file to an OKF home
 
-How `/quenching:docs:import-memory` turns each project-memory file into a concept doc in the right
-OKF home. **Content decides the home**; the memory's `metadata.type` is only a hint. Once the
-home is chosen, the concept is filed exactly as `/quenching:docs:add` would — see
+**Content decides the home**; the memory's `metadata.type` is only a hint. Once the home is
+chosen, the concept is filed exactly as `/quenching:docs:add` would — see
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
 [docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md) for the
@@ -10,11 +9,11 @@ boundaries.
 
 This skill writes to **only three destinations** — two `docs/` homes, `standards/` and
 `knowledge/`, plus `specs/plans/` for a **unit of work** (a quenching-managed folder outside the OKF
-bundle). `vision/`, `documentation/`, `reference/` (and `catalog/`) are out of
-scope; collapse to the nearest of the three (below) or flag-and-keep.
+bundle). `vision/`, `documentation/`, `reference/` (and `catalog/`) are out of scope.
 
 ## The memory file
 
+<!-- rules -->
 A Claude Code project memory lives under
 `~/.claude/projects/<encoded-cwd>/memory/` as one fact per `.md` file with frontmatter:
 
@@ -27,10 +26,7 @@ shell's mount view — with every `\`, `/`, `:` and `.` replaced by `-`:
 | `/Users/me/src/app.v2` | `-Users-me-src-app-v2` |
 | `c:\Users\me\repos\app` | `c--Users-me-repos-app` |
 
-The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable, so
-match case-insensitively. This is why the path is resolved in Python rather than from `pwd`, which
-under Windows Git Bash reports `/c/Users/…` and encodes to a directory that does not exist —
-`/quenching:docs:import-memory` §1 owns the resolver.
+Match the encoded directory case-insensitively.
 
 ```yaml
 ---
@@ -43,6 +39,12 @@ metadata:
 ```
 
 `MEMORY.md` (same folder) is the index — one `- [Title](file.md) — hook` line per memory.
+
+<!-- rationale -->
+The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable. This
+is why the path is resolved in Python rather than from `pwd`, which under Windows Git Bash reports
+`/c/Users/…` and encodes to a directory that does not exist —
+`/quenching:docs:import-memory` §1 owns the resolver.
 
 ## Routing table — memory `type` → likely home (content overrides)
 
@@ -62,13 +64,13 @@ metadata:
 
 ## Salvaging content
 
-A memory is terse. When promoting it to a concept doc:
+When promoting a memory to a concept doc:
 - **Derive `resource` honestly** — from the URL/ticket/tool the memory names, the code glob it
-  concerns, or the domain. Never fabricate; a memory with no locatable asset gets a domain
-  descriptor as `resource`, or `authority: background` if it is background understanding.
+  concerns, or the domain. A memory with no locatable asset gets a domain descriptor as
+  `resource`, or `authority: background` if it is background understanding.
 - **`source`** = the memory's origin if recorded, else "project memory".
 - **`timestamp`** = today (memories store when written; if the body gives a date, keep it in the body).
-- Keep the memory's `**Why:**`/`**How to apply:**` prose in the doc body — that is the salvage.
+- Keep the memory's `**Why:**`/`**How to apply:**` prose in the doc body.
 - Resolve `[[links]]` to the sibling memories' new doc paths when those are migrated in the same
   run; leave the human a note for any that stay in memory.
 

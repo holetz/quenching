@@ -10,26 +10,22 @@ home boundaries.
 
 ## Contents
 
-- [1. What a harness file is](#1-what-a-harness-file-is)
-- [2. Content units](#2-content-units)
-- [3. The one decision rule](#3-the-one-decision-rule)
-- [4. Verdict table — unit kind → verdict → destination home (`type`)](#4-verdict-table--unit-kind--verdict--destination-home-type)
-- [5. Pointer-honesty checklist (the step-8 verify gate)](#5-pointer-honesty-checklist-the-step-8-verify-gate)
-- [6. Nesting rules](#6-nesting-rules)
-- [7. AGENTS.md](#7-agentsmd)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. What a harness file is
 
+<!-- rules -->
 `CLAUDE.md` and `AGENTS.md` are **navigation pointers** the Claude Code / agent harness
 auto-loads — `CLAUDE.md` repo-wide, a subfolder `CLAUDE.md` only when working under its folder.
 OKF-strict point 7 ([docs-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/okf-spec.md))
-says they are **not** OKF concepts: they carry **no frontmatter** and **no `type`**, and the
-validator (`okf-validate.py`) **skips them entirely** — including link checks (`index-broken-link`
-runs only on `index.md`). So a CLAUDE.md that inlines a rule or lies about a link is **machine-
-invisible**: it escapes validation, is invisible to anyone browsing `docs/`, and drifts from the
-real doc. Pointer honesty is therefore this skill's job, not the validator's. The target shape is
-the shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/docs/standards/CLAUDE.md)
+says they are **not** OKF concepts, and the validator (`okf-validate.py`) **skips them entirely**
+— including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
+shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/docs/standards/CLAUDE.md)
 ("thin pointer, never a copy").
+
+<!-- rationale -->
+So a CLAUDE.md that inlines a rule or lies about a link is **machine-invisible**: it escapes
+validation, is invisible to anyone browsing `docs/`, and drifts from the real doc.
 
 ## 2. Content units
 
@@ -42,7 +38,7 @@ Parse each harness file into **units**, one verdict each:
 
 Capture each unit's text, its anchor (heading slug), and any links it carries. **Split a mixed
 unit** — a section that pairs a build command (KEEP) with an architecture note (MOVE) becomes two
-units. One unit, one verdict.
+units.
 
 ## 3. The one decision rule
 
@@ -70,11 +66,7 @@ units. One unit, one verdict.
 | secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `docs/` |
 | no documentary home | **UNROUTABLE** | stays + reported |
 
-**Tie-breakers** are `/quenching:docs:add`'s — "how **WE** do it" (proven) → `standards/`
-(`authority: current`); agreed-but-unproven → `standards/` (`authority: background`); a fact
-about a **named external** asset → `reference/`; generic understanding → `knowledge/`; a
-**parked unit of work** → a spec in `specs/plans/` (via `/quenching:specs:create`); **direction** → `vision/`; a
-**procedure** → `documentation/how-to/`. Don't duplicate them here — see
+**Tie-breakers** are `/quenching:docs:add`'s — see
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
@@ -113,7 +105,7 @@ The validator won't check harness files, so this skill does:
 - **Exclude from discovery** generated-output, asset, and vendored dirs — `.build/`, `dist/`,
   `build/`, `target/`, `node_modules/`, `**/__pycache__/`, `fonts/`, `assets/`, `.venv/`, nested
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
-  with `git check-ignore`, don't assume from the path alone). A folder that only holds data or
+  with `git check-ignore`). A folder that only holds data or
   output earns no harness.
 - `/quenching:docs:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
 

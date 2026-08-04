@@ -1,22 +1,14 @@
 # Homes — routing table + the index procedure
 
-How `/quenching:docs:add` decides **where** a new concept goes, **which** `type` it carries, **which**
-mold fills it, and **how** to keep the `index.md` honest. **This file is the single owner of
-the insert procedure** — stamp (§The frontmatter stamp) → index (§Updating `index.md`) →
-glossary (§Enriching the glossary) → self-check (§Self-check) — and every skill that inserts
-a doc (`/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:harness`,
-`/quenching:docs:import-memory`) cites these sections instead of restating them; only each skill's own
-safety deltas stay inline in its SKILL.md. The full home boundaries and tree live in
-`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`; the checks in
-`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`.
+**This file is the single owner of the insert procedure** — stamp (§The frontmatter stamp) →
+index (§Updating `index.md`) → glossary (§Enriching the glossary) → self-check (§Self-check).
+The full home boundaries and tree live in
+`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`.
 
 ## Contents
 
-- [Classification — one question decides the home](#classification--one-question-decides-the-home)
-- [The frontmatter stamp](#the-frontmatter-stamp)
-- [Updating `index.md` (the listing)](#updating-indexmd-the-listing)
-- [Enriching the glossary (tail step, every capture)](#enriching-the-glossary-tail-step-every-capture)
-- [Self-check before finishing](#self-check-before-finishing)
+`skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md` returns the heading
+index; `--sections <name>` addresses one.
 
 ## Classification — one question decides the home
 
@@ -48,8 +40,7 @@ Ask **"what IS this, relative to us?"**:
   `knowledge/`.
 - **documentation vs knowledge:** a **published-site page** (narrative, for a human reading
   the docs) is `documentation/`; **internal team understanding** (mental model, learning,
-  glossary) is `knowledge/`. Explanation that ships on the site → `documentation/concepts/`;
-  explanation the team holds internally → `knowledge/`.
+  glossary) is `knowledge/`.
 - **standards & agreed rules:** a **proven, current** rule for how we build is a `standard`
   (`authority: current`); an **agreed-but-not-yet-proven** rule is a `standard` with
   `authority: background` until proven. There is **no separate decision home** — a decision's
@@ -58,10 +49,9 @@ Ask **"what IS this, relative to us?"**:
 - **spec vs vision:** a **parked unit of work** is a **spec** and does **not** belong in this
   bundle at all — it lives at `specs/plans/`, outside it, so route the capture to
   `/quenching:specs:create`. A **settled direction** with no deadline is a `vision` and stays here. The
-  full `specs/` ↔ `docs/` boundary — which tree answers which question, and why they never
-  duplicate content — is owned once by
+  full `specs/` ↔ `docs/` boundary is owned once by
   [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-  §Boundary; read it there rather than inferring it from this row.
+  §Boundary.
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
   (`data-modeling/`); the *actual tables* are `catalog/`.
 - **code vs naming (inside standards):** `code/` governs **symbols**; `naming/` governs
@@ -114,11 +104,6 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sou
   (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit
   inside the markers.
 
-(`specs/plans/` has no listing to update and is **not** part of this OKF insert procedure —
-`specs/` lives outside the bundle, and `specs.py list` derives what the folder holds from disk on
-demand. See
-[`specs-create/specs-front.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md).)
-
 ## Enriching the glossary (tail step, every capture)
 
 <!-- rules -->
@@ -138,14 +123,8 @@ term that belongs in the glossary** and, if so, enrich it:
   in the linked bullet form, pointing at the concept doc you just wrote (`/docs/<path>.md`,
   absolute across homes). If an entry for the term already exists, sharpen its definition
   or add the link — never overwrite a filled definition or a filled link.
-- **Only the entry.** The glossary is an index, not the long-form home — the depth stays in
-  the concept doc; the glossary points to it. Do not touch `knowledge/index.md` for this —
-  the glossary is already listed there.
-
-This is the same tail step `/quenching:docs:learn`, `/quenching:docs:add`, and
-`/quenching:docs:import-memory` each run; the on-demand single-term counterpart is the
-`/quenching:docs:define` skill, and the whole-bundle bulk counterpart — sweeping every doc
-already in `docs/` for terms the glossary never caught — is `/quenching:docs:glossary-backfill`.
+- **Only the entry.** The depth stays in the concept doc; the glossary points to it. Do not
+  touch `knowledge/index.md` for this — the glossary is already listed there.
 
 ## Self-check before finishing
 
@@ -154,5 +133,4 @@ already in `docs/` for terms the glossary never caught — is `/quenching:docs:g
 Apply `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`: the new concept has parseable frontmatter +
 a non-empty `type`; every `index.md` you touched is still frontmatter-free; the new doc's folder
 has an `index.md` that **links** it (no `dir-no-index`, no `index-orphan`, no
-`index-broken-link`). If the `okf-validate.py` hook is wired in the target, it will confirm
-on write.
+`index-broken-link`).

@@ -1,13 +1,8 @@
 # Distill — the OKF bridge from a concluded spec to `docs/`
 
-How `/quenching:specs:conclude` offers to carry the **durable** knowledge a spec produced into the repo's
-OKF `docs/` bundle. This is **the single bridge** between the two systems: the archive side keeps
-its own history (the archived spec IS the record of what was proposed, designed and done); the OKF
-side receives **only** what outlives the spec and was not already written into `docs/` while it was
-built. Nothing is bulk-copied. The insert mechanics (stamp → index → glossary → self-check)
-live with `/quenching:docs:add`
-([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) — this file only
-decides **what crosses** and cites that procedure for **how**.
+How `/quenching:specs:conclude` offers to carry the **durable** knowledge a spec produced into the
+repo's OKF `docs/` bundle: this file decides **what crosses**; the insert mechanics live with
+`/quenching:docs:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)).
 
 ## What crosses, what stays
 
@@ -21,46 +16,48 @@ decides **what crosses** and cites that procedure for **how**.
 | `## Proposal` / `## Design` / `## Tasks` as documents | no | they are the archive's history; copying them into `docs/` duplicates a source of truth |
 | task checklists, progress notes, transient debugging chatter | no | transient by nature |
 
-The top row is the load-bearing difference from the old delta model: because a task writes the
-binding rule **straight into `docs/standards/`** while it is built, concluding is not a *sync* — it
-is catching the **by-products** (a decision left in `## Design`, an understanding, a term, a
-follow-up) that were never committed to a home. Most of what a spec proves is already in `docs/` by
-the time it closes; the harvest is usually small.
-
-This table decides **what a concluded spec hands over**. It is not a restatement of the `specs/` ↔
-`docs/` boundary, which is owned once by
+The `specs/` ↔ `docs/` boundary is owned by
 [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§Boundary — that section says which tree answers which question; this one says which of a spec's
-by-products survive it. When the two seem to disagree, the boundary wins and this table is wrong.
+§Boundary — when it and this table seem to disagree, the boundary wins and this table is wrong.
 
 Boundary tie-breakers **within** `docs/` (standards vs knowledge vs reference) are the ones in
 [homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §Classification — apply them verbatim.
 
 ## Two moments, one table
 
-The table above decides **what** crosses. `/quenching:specs:conclude` applies it **twice**, at two moments
-that differ only in when the doc has to exist:
+<!-- rules -->
+`/quenching:specs:conclude` applies the table above **twice**, at two moments that differ only in
+when the doc has to exist:
 
 | Moment | What it catches | Where it lands |
 | --- | --- | --- |
 | **emergent** — right after the branch review | a rule the work *revealed*: a `## Discoveries` line worth a doc, something the branch review surfaced | on the **work branch**, in its own commit, so the rule ships with the code that proved it |
 | **distillation** — right after the archive move | the by-products that outlive the spec: a decision still in `## Design`, an understanding, a term, a follow-up | on the **work branch** too, still before the merge |
 
+**Both moments land on the work branch, so one merge carries everything.**
+
+<!-- rationale -->
+The top row is the load-bearing difference from the old delta model: because a task writes the
+binding rule **straight into `docs/standards/`** while it is built, concluding is not a *sync* — it
+is catching the **by-products** (a decision left in `## Design`, an understanding, a term, a
+follow-up) that were never committed to a home. Most of what a spec proves is already in `docs/` by
+the time it closes; the harvest is usually small.
+
 A rule the code demonstrates belongs beside that code in history; a by-product of the *thinking* has
 no code to ship with, and is cheapest to harvest once the spec is **closed** — which happens at the
-archive move, in step 4, **on the branch**. Both take one plan and one confirmation, and neither
-ever fabricates a candidate to have something to write.
+archive move, in step 4, **on the branch**.
 
-**Both moments land on the work branch, so one merge carries everything.** This file used to put
-the second one "on the base branch, after the merge", reasoning that a by-product is cheapest to
-harvest once the spec is closed. The reasoning was right and the placement did not follow from it:
-**closing and merging were being conflated.** A spec is closed when `## Outcome` is written and the
-file moves to `archive/` — both of which happen on the branch, before anything is merged. Harvesting
-there satisfies the same argument and leaves nothing to write on the base afterwards, so reverting
-the merge reverts the spec's whole footprint, distilled docs included.
+This file used to put the second one "on the base branch, after the merge", reasoning that a
+by-product is cheapest to harvest once the spec is closed. The reasoning was right and the placement
+did not follow from it: **closing and merging were being conflated.** A spec is closed when
+`## Outcome` is written and the file moves to `archive/` — both of which happen on the branch,
+before anything is merged. Harvesting there satisfies the same argument and leaves nothing to write
+on the base afterwards, so reverting the merge reverts the spec's whole footprint, distilled docs
+included.
 
 ## The procedure (one confirmation)
 
+<!-- rules -->
 Runs **after** the archive move succeeds, as the command's distillation step:
 
 1. **Harvest candidates.** Read the archived spec's sections (`## Problem`, `## Proposal`,
@@ -76,24 +73,24 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    ([homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)): fill the home's mold, stamp the
    frontmatter (`resource` may cite the archived spec path — it exists, so the link is derived, not
    invented; `source:` names the spec), update the home's `index.md`, enrich the glossary when a
-   term warrants it. A follow-up instead goes through `/quenching:specs:create` into `specs/plans/` (outside
-   the `docs/` bundle).
+   term warrants it. A follow-up instead goes through `/quenching:specs:create` into `specs/plans/`.
 4. **Narrate the bridge in the archived spec's `## Outcome`.** One line per minted doc —
    `distilled: [<title>](/docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
    already written at the archive gate. An empty harvest writes nothing.
-
-   **Why there, and why this is a second edit to an archived file.** The bundle's `log.md` is
-   retired, and the provenance it used to carry has one honest home left: the record of the
-   spec that produced the doc. `## Outcome` is mandatory at promote and sits in the file a
-   reader of the archived spec already has open, so the bridge costs no new artifact. It has to
-   be written *after* the archive move because that is when the minted paths first exist —
-   `## Outcome` is drafted at the gate, before distillation knows what it minted. That makes
-   this the **second** bounded exception to "never edit anything in `archive/`", alongside the
-   `merge:` stamp, and for the same reason: both are facts that only come into being once the
-   spec has closed. Neither revises what the archived spec claimed; both append what happened
-   to it. Any third exception should be argued for, not assumed from these two.
 5. **Self-check** every touched file against
    [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
+
+<!-- rationale -->
+**Why there, and why this is a second edit to an archived file.** The bundle's `log.md` is
+retired, and the provenance it used to carry has one honest home left: the record of the
+spec that produced the doc. `## Outcome` is mandatory at promote and sits in the file a
+reader of the archived spec already has open, so the bridge costs no new artifact. It has to
+be written *after* the archive move because that is when the minted paths first exist —
+`## Outcome` is drafted at the gate, before distillation knows what it minted. That makes
+this the **second** bounded exception to "never edit anything in `archive/`", alongside the
+`merge:` stamp, and for the same reason: both are facts that only come into being once the
+spec has closed. Neither revises what the archived spec claimed; both append what happened
+to it. Any third exception should be argued for, not assumed from these two.
 
 ## Invariants
 
