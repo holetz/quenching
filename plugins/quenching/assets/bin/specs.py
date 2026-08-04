@@ -1212,6 +1212,122 @@ def load_config(root: str) -> dict:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# release — the mechanical half of docs/standards/ci-cd/versioning-release.md
+# --------------------------------------------------------------------------- #
+# Seven artifacts, not six: `session.py` sits outside the SIX-artifact lockstep that
+# standard names (nothing installs a copy of it, so `drift` never compares it against
+# one) but still carries a `VERSION` constant and is bumped WITH the six, at the same
+# release, per that standard's own rule. All seven are relative to the REPO root, and
+# this verb only makes sense run from the plugin's own checkout — a target repository
+# that merely has this plugin installed carries none of them.
+RELEASE_ARTIFACTS = (
+    ("plugins/quenching/VERSION", "plain"),
+    ("plugins/quenching/.claude-plugin/plugin.json", "json"),
+    (".claude-plugin/marketplace.json", "json"),
+    ("plugins/quenching/assets/hooks/okf-validate.py", "py"),
+    ("plugins/quenching/assets/bin/specs.py", "py"),
+    ("plugins/quenching/assets/bin/skills.py", "py"),
+    ("plugins/quenching/assets/bin/session.py", "py"),
+)
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+# The same shape `skills.py`'s own `VERSION_CONSTANT_RE` reads for `drift` — duplicated
+# rather than imported, like every other cross-tool agreement in this codebase.
+_RELEASE_JSON_VERSION_RE = re.compile(r'("version"\s*:\s*")([^"]+)(")')
+_RELEASE_PY_VERSION_RE = re.compile(r'^(VERSION\s*=\s*["\'])([^"\']+)(["\'])', re.M)
+
+
+def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
+    """Move all seven version-carrying artifacts to `new_version`, or change NOTHING.
+
+    Two passes on purpose. The first only READS: every artifact's current version is
+    collected before anything is written, so a lockstep that is ALREADY drifted — one
+    artifact disagreeing with the rest — is refused outright rather than compounded with
+    an eighth value. The second pass writes only once every artifact was read
+    successfully and every one of them agreed."""
+    reads: list[dict] = []
+    for rel, kind in RELEASE_ARTIFACTS:
+        path = os.path.join(repo_root, rel)
+        text = read_text(path)
+        if text is None:
+            return {"ok": False, "error": f"missing or unreadable: {rel}", "artifacts": []}
+        if kind == "plain":
+            old = text.strip()
+        else:
+            pat = _RELEASE_JSON_VERSION_RE if kind == "json" else _RELEASE_PY_VERSION_RE
+            m = pat.search(text)
+            if not m:
+                return {"ok": False, "error": f"no version found in: {rel}", "artifacts": []}
+            old = m.group(2)
+        reads.append({"rel": rel, "kind": kind, "path": path, "text": text, "old": old})
+
+    disagreeing = sorted({r["old"] for r in reads})
+    if len(disagreeing) > 1:
+        detail = ", ".join(f"{r['rel']}={r['old']}" for r in reads)
+        return {"ok": False,
+                "error": f"the lockstep already disagrees before this release: {detail}",
+                "artifacts": []}
+    old_version = disagreeing[0]
+    if old_version == new_version:
+        return {"ok": False, "error": f"already at {new_version}", "artifacts": []}
+
+    artifacts = []
+    for r in reads:
+        if r["kind"] == "plain":
+            new_text = new_version + ("\n" if r["text"].endswith("\n") else "")
+        else:
+            pat = _RELEASE_JSON_VERSION_RE if r["kind"] == "json" else _RELEASE_PY_VERSION_RE
+            new_text = pat.sub(rf"\g<1>{new_version}\g<3>", r["text"], count=1)
+        write_text(r["path"], new_text)
+        artifacts.append({"path": r["rel"], "old": r["old"], "new": new_version})
+    return {"ok": True, "oldVersion": old_version, "newVersion": new_version,
+            "artifacts": artifacts, "error": None}
+
+
+def release_lockstep_failures() -> list[str]:
+    """`bump_release_artifacts` against a disposable tree standing in for the seven real
+    artifacts — never the plugin's own, so this runs safely on every `selftest` call
+    without ever bumping a real version. Both directions matter: seven agreeing values
+    all move, and one already-drifted value refuses before any of the seven is touched."""
+    import tempfile
+    out: list[str] = []
+    kinds = {"plain": "9.9.9\n",
+             "json": '{\n  "name": "x",\n  "version": "9.9.9"\n}\n',
+             "py": 'VERSION = "9.9.9"  # a comment that must survive the bump\n'}
+    with tempfile.TemporaryDirectory() as tmp:
+        for rel, kind in RELEASE_ARTIFACTS:
+            path = os.path.join(tmp, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            write_text(path, kinds[kind])
+
+        result = bump_release_artifacts(tmp, "9.10.0")
+        if not result["ok"]:
+            out.append(f"seven agreeing artifacts were refused: {result['error']}")
+        elif result["oldVersion"] != "9.9.9" or result["newVersion"] != "9.10.0":
+            out.append(f"reported {result['oldVersion']} -> {result['newVersion']}, "
+                       f"not 9.9.9 -> 9.10.0")
+        else:
+            for rel, kind in RELEASE_ARTIFACTS:
+                text = read_text(os.path.join(tmp, rel))
+                pat = ({"plain": None, "json": _RELEASE_JSON_VERSION_RE,
+                        "py": _RELEASE_PY_VERSION_RE})[kind]
+                got = text.strip() if pat is None else pat.search(text).group(2)
+                if got != "9.10.0":
+                    out.append(f"{rel} reads back {got!r} after the bump, not '9.10.0'")
+            if "# a comment that must survive the bump" not in \
+                    read_text(os.path.join(tmp, "plugins/quenching/assets/bin/specs.py")):
+                out.append("bumping a `.py` artifact's VERSION line dropped its trailing "
+                           "comment — the substitution must touch only the quoted value")
+
+        # Drift precondition: one artifact already disagreeing must refuse, not compound.
+        write_text(os.path.join(tmp, "plugins/quenching/VERSION"), "9.9.8\n")
+        drifted = bump_release_artifacts(tmp, "9.10.0")
+        if drifted["ok"]:
+            out.append("a lockstep already disagreeing (9.9.8 vs 9.10.0 vs the rest) was "
+                       "bumped anyway instead of refused")
+    return out
+
+
 def spec_files(root: str, phase: str | None = None) -> list[dict]:
     """Every conformant spec file across the phase folders, oldest first within each.
 
@@ -5396,7 +5512,8 @@ def command_writes(args) -> bool:
 
     `migrate` is deliberately absent. It rewrites the DECLARED workspace's own folder layout —
     the pre-migration `specs/` in the code tree — and never touches the specs worktree, so the
-    worktree's lock would guard nothing it writes."""
+    worktree's lock would guard nothing it writes. `release` is absent for the same reason: it
+    writes the plugin's own version-carrying artifacts, never a spec."""
     cmd = getattr(args, "cmd", "")
     if cmd in ("new", "task", "discover"):
         return True
@@ -6742,6 +6859,19 @@ def cmd_selftest(args, root: str) -> int:
                                      remedy="an absent .claude/quenching.json must yield the "
                                             "documented defaults, never a null backend"))
 
+    # `specs.py release`'s file-editing half, against a disposable tree standing in for
+    # the seven real artifacts — never against the plugin's own, so this never bumps a
+    # real version. Self-contained, and runs before the early return for the same reason
+    # the rest do: an installed copy is exactly where a broken substitution regex would
+    # otherwise wait for the first real release to surface it.
+    for failure in release_lockstep_failures():
+        findings.append(_finding("sp-release-lockstep-broken", "error",
+                                 f"the release lockstep — {failure}",
+                                 remedy="bump_release_artifacts reads all seven before "
+                                        "writing any of them, refuses on disagreement, "
+                                        "and substitutes only the quoted version — never "
+                                        "the surrounding JSON or the trailing comment"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -6894,7 +7024,9 @@ def cmd_selftest(args, root: str) -> int:
               f"on both the key list and the indent, `--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
               f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
-              f"`memory`, the config defaults hold with nothing declared, the files root "
+              f"`memory`, the config defaults hold with nothing declared, the release "
+              f"lockstep moves all seven artifacts together and refuses a drifted one, "
+              f"the files root "
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
@@ -6906,6 +7038,61 @@ def cmd_selftest(args, root: str) -> int:
               f"refuses without making the call, and the embedded "
               f"schema and template match their asset files.")
     return 1 if errors else 0
+
+
+def cmd_release(args, root: str) -> int:
+    """Move the plugin's seven version-carrying artifacts to ONE new version, commit them,
+    and tag that commit — the MECHANICAL half of a release. Judging what the number should
+    be, whether a lone merge on `develop` is a release or a habit, and the `develop -> main`
+    merge itself all belong to the command that calls this; see
+    docs/standards/git/branching.md.
+
+    Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
+    not this plugin's own checkout, a lockstep already disagreeing with itself, or a
+    version that changes nothing."""
+    new_version = args.version
+    if not SEMVER_RE.match(new_version):
+        return emit_err(args.json, {"code": "sp-release-bad-version", "exit": 2,
+                                    "version": new_version,
+                                    "message": f"'{new_version}' is not shaped X.Y.Z"})
+
+    repo = _git(os.getcwd(), "rev-parse", "--show-toplevel").strip()
+    if not repo:
+        return emit_err(args.json, {"code": "sp-release-no-repo", "exit": 2,
+                                    "message": "not inside a git repository"})
+
+    missing = [rel for rel, _ in RELEASE_ARTIFACTS
+              if not os.path.isfile(os.path.join(repo, rel))]
+    if missing:
+        return emit_err(args.json, {"code": "sp-release-not-plugin-repo", "exit": 2,
+                                    "missing": missing,
+                                    "message": "this is not the plugin's own repository — "
+                                               "missing: " + ", ".join(missing)})
+
+    result = bump_release_artifacts(repo, new_version)
+    if not result["ok"]:
+        return emit_err(args.json, {"code": "sp-release-drift", "exit": 2,
+                                    "message": result["error"]})
+
+    rels = [a["path"] for a in result["artifacts"]]
+    code, _, err = _git_run(repo, "add", *rels)
+    if code != 0:
+        return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
+                                    "step": "add", "message": f"git add failed: {err}"})
+    subject = f"release: {result['oldVersion']} -> {new_version}"
+    code, _, err = _git_run(repo, "commit", "-m", subject)
+    if code != 0:
+        return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
+                                    "step": "commit", "message": f"git commit failed: {err}"})
+    code, _, err = _git_run(repo, "tag", "-a", new_version, "-m", subject)
+    if code != 0:
+        return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
+                                    "step": "tag", "message": f"git tag failed: {err}"})
+
+    emit(args.json, {"ok": True, "oldVersion": result["oldVersion"], "newVersion": new_version,
+                     "artifacts": result["artifacts"], "tag": new_version, "subject": subject},
+         f"release: {result['oldVersion']} -> {new_version}, tagged {new_version}")
+    return 0
 
 
 def cmd_config(args, root: str) -> int:
@@ -7177,6 +7364,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
+    sp = add_json(sub.add_parser("release", help="bump the plugin's seven version-carrying "
+                                                  "artifacts and tag the commit — the plugin's "
+                                                  "own repository only"))
+    sp.add_argument("version", help="the new version, X.Y.Z")
+
     add_json(sub.add_parser("doctor", help="workspace shape; remedies declared"))
 
     add_json(sub.add_parser("selftest", help="prove the embedded schema and template "
@@ -7212,6 +7404,7 @@ DISPATCH: dict = {
     "discover": cmd_discover,
     "validate": cmd_validate,
     "config": cmd_config,
+    "release": cmd_release,
     "doctor": cmd_doctor,
     "selftest": cmd_selftest,
     "migrate": cmd_migrate,
