@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; delegates isolation to /specs:isolate; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /specs:develop; a version bump or other release obligation → /specs:conclude; creating one → /specs:create; taking a branch or worktree → /specs:isolate; reviewing the branch, merging and archiving → /specs:conclude; being told which spec to build next → /specs:continue.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /specs:develop; a version bump or other release obligation → /specs:conclude; creating one → /specs:create; reviewing the branch, merging and archiving → /specs:conclude; being told which spec to build next → /specs:continue.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -37,9 +37,9 @@ whole section, saying so, where it does not.
 opens on why that split holds.
 
 The git conventions live in
-[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §The read-if-present rule §Branch and worktree names §Recording the isolation §Commit messages
-§The subject is the anchor, whose command is `/quenching:specs:isolate`.
+§The subject is the anchor.
 
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -69,6 +69,9 @@ environment probe below, which belongs in this same call:
 ```bash
 git status --porcelain
 git branch --list "plan/<slug>"
+git branch --show-current
+git worktree list
+git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
 specs.py status --spec "<slug>" --json
 # and the hook probe of 2b, in this same call
 ```
@@ -78,22 +81,101 @@ specs.py status --spec "<slug>" --json
 §The precondition. Offer to commit or stash. The human may override; then the first commit carries
 the pre-existing changes and the report says so.
 
-**Then check before dispatching.** `branch --list plan/<slug>` printing a ref, or the `branch`
-record already present in the `status` payload, means the spec **is already isolated** — go
-straight to the loop and dispatch nothing. `/quenching:specs:isolate` would report the existing
-branch and stamp nothing new, so the call buys nothing and costs twice: the turns, and the run's
-own attribution, per
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-§Isolation is somebody else's job.
+**Then resolve the work ref, and check before offering.** The spec's work branch is the `branch`
+record's `work` when the `status` payload carries one, else the default `plan/<slug>` — which is the
+ref already listed above. A record naming something else costs one more `git branch --list "<work>"`
+to know whether it is alive, and only on a spec that has a record. Two outcomes end the question
+here:
 
-**Nothing to check out → hand isolation to `/quenching:specs:isolate`** (the `Skill` tool) rather
-than reimplementing it: it owns the branch and worktree forms, the `plan/<slug>` name, the
-`branch: {base, work}` stamp and its write-once rule. Delegating less is not the point — checking
-first is; when there is something to isolate, that command is still the only thing that takes it.
+- **This checkout is on the work ref** (`git branch --show-current` equals it) → the spec **is**
+  isolated. Go straight to the loop and offer nothing; asking again buys nothing and costs the
+  turns it takes.
+- **The ref is alive but held elsewhere** — a `git worktree list` entry, or a checkout this one is
+  not on — → it is being built somewhere else, and starting here would fork the work. Name where,
+  and stop.
 
-Either way, read the state before the first task: a spec whose branch is **alive but checked out
-elsewhere** (`git worktree list`, or a ref this checkout is not on) is being built somewhere else,
-and starting here would fork the work. Say so and stop.
+**A ref that merely exists is not isolation.** Standing on the base with the work ref sitting
+unclaimed one branch over, a short-circuit on its *existence* would send the loop to build and
+commit onto the base itself — the exact outcome the offer exists to prevent, reached by skipping
+it. Anything short of being **on** the ref falls through to the branches below.
+
+**Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
+record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
+above); else `git config init.defaultBranch`, and then `main`.
+
+**Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
+disagreeing with the resolved base means the human already answered the isolation question at
+checkout — asking again is friction the loop does not need to pay. Show the inference on the same
+line as the confirmation, before stamping — `base: main — inferred; this branch was not cut by
+this command` — and stamp:
+
+```bash
+specs.py record "<slug>" branch --set base=<resolved base> --set work=<current branch>
+```
+
+Then go straight to the loop. Never derive `base` from `git merge-base` or `--fork-point` here:
+both answer a commit, not a branch name, and a commit ancestral to three branches identifies none
+of them.
+
+**On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
+one.** Two forms, worktree first as always: `git worktree add ../<repo>-<slug> <work ref>` beside
+this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
+one exists, is write-once and already true, and a ref cut by hand with no record is the case
+`base` cannot honestly be inferred for from here. Declining leaves the run on the base, which is
+the human's to choose; say plainly that the commits will land there.
+
+**On the base branch, with nothing to check out → offer isolation here, inline.** Read what the
+workspace declares first, so the offer can show it:
+
+```bash
+specs.py config --json        # `worktreeSetup`, or null — exit 0 either way
+```
+
+State in one block: the spec, the base branch, the branch name that will be created, the worktree
+path, what will be stamped, and — when `worktreeSetup` is non-null — **the setup command verbatim**,
+exactly as read, never paraphrased or reformatted. **That block is the consent.** Choosing
+**Worktree** IS the OK for the command shown, and there is no second prompt and no remembered
+"this repo is authorised" state: the human judges the command on the same screen where they choose
+the form, which is the only screen where judging it is possible. Nothing declared → say nothing; an
+absent config is the normal case, not a finding.
+
+Then ask with **AskUserQuestion**:
+
+- **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<slug> -b plan/<slug>`, a
+  separate checkout beside the repo, leaving this one untouched. State its cost **in the offer**:
+  a fresh checkout carries only what git tracks — no `node_modules/`, no `.venv/`, no `.env`, no
+  build output — so a repo with installed dependencies needs them installed again there;
+- **Branch** — `git checkout -b plan/<slug>`, work continues in this checkout;
+- **In place** — declines isolation. Nothing is created and **nothing is stamped**.
+
+Worktree leads **unconditionally** — never on a heuristic that sniffs the target for
+`package.json` or `.venv/`. A recommendation that changes from repo to repo cannot be documented in
+one sentence, and guessing somebody else's build is how the recommended path becomes a silent trap.
+The cost above is stated instead, so choosing **Branch** is a decision the human read rather than a
+discovery at the first `verify:` that fails.
+
+Run the one command for the chosen form. If it fails — a name already taken, a dirty path, a locked
+worktree — report the git error verbatim and stop without stamping. **Then, on a worktree with a
+`worktreeSetup` declared**, run it once with **cwd inside the new worktree**, which is the whole
+point: it is the tree that lacks the dependencies. Report its output and its exit code. **A failing
+setup does not undo the worktree** — say plainly which of the two it is, and report a command whose
+first token does not resolve inside the worktree as not run, for that reason, rather than executing
+it and blaming the shell.
+
+Then stamp what was taken:
+
+```bash
+specs.py record "<slug>" branch --set base=<what was checked out> --set work=plan/<slug>
+```
+
+`base` is captured **now**, while it is still true: after the merge git cannot say what the branch
+was cut from, which is the whole reason the record exists. The record is write-once and the tool
+enforces it — one already present refuses (exit 2) naming the value it holds. **Read it, never
+rewrite it**, and never edit the frontmatter to get past the refusal. Stamp nothing for work done
+in place, because a record whose `base` equals its `work` states no fact.
+
+Recommend isolation before building, and never impose it. A human who declines gets no branch, no
+record, and no second prompt.
 
 Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
@@ -214,7 +296,7 @@ d. **Self-review the task's diff** on the four items — reuse · useless defens
    so what the chain commits is already the reviewed version.
 
 e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
-   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md) §Commit messages, or the
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages, or the
    target's own convention where it declares one — and put it in both places it appears:
 
    ```bash
@@ -335,10 +417,10 @@ front of you before the loop starts:
 
 ## Invariants to never violate
 
-- Require a clean tree before the first code change; **check whether the spec is already isolated
-  before dispatching**, and where it is not, delegate isolation to `/quenching:specs:isolate` —
-  recommend it, never impose it, and never reimplement it here. Checking first is not delegating
-  less.
+- Require a clean tree before the first code change; **isolated means this checkout is ON the work
+  ref**, never that the ref exists somewhere — and where it is not, offer isolation inline (taking
+  a live ref, or cutting one), recommend it, and never impose it. Checking the right thing is what
+  keeps the offer from being asked twice *and* from being skipped onto the base.
 - Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
@@ -349,7 +431,8 @@ front of you before the loop starts:
   corrected.
 - Never refuse over a missing `approved`; ask inline and stamp it with `specs.py record`, never by
   editing the frontmatter.
-- Never stamp or rewrite a `branch` record here — that record belongs to `/quenching:specs:isolate`.
+- Stamp `branch:` only when isolation was actually taken, and never over an existing record —
+  through `specs.py record`, never by editing the frontmatter.
 - Write **only** the `docs/` a task explicitly names. Emergent findings are one `specs.py discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under

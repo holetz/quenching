@@ -2,9 +2,9 @@
 type: standard
 title: Worktree setup contract
 description: The `worktreeSetup` hook — what it is for, where it is declared now that the plugin's config moved to `.claude/quenching.json`, what its absence means, who runs the declared command and with which cwd, why the consent is the isolation offer rather than a prompt of its own, and the record of why the specs front took a config file at all
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/isolate.md, plugins/quenching/assets/references/specs-isolate/git.md
+resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/git.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-07-31
+timestamp: 2026-08-03
 audience: both
 authority: current
 source: prefer-worktree-isolation plan (task 4.2), relocated by configurable-spec-backend plan (task 1.5)
@@ -49,9 +49,9 @@ other command still works. Neither it nor a truncated JSON file is ever raised a
 
 ## Who runs it, and where
 
-`/specs:isolate` runs it — **once**, immediately after `git worktree add`, with **cwd inside the
-newly created worktree**. The cwd is the entire point: the tree that lacks the dependencies is the
-tree that must install them.
+`/specs:execute`'s inline isolation offer runs it — **once**, immediately after `git worktree add`,
+with **cwd inside the newly created worktree**. The cwd is the entire point: the tree that lacks
+the dependencies is the tree that must install them.
 
 `specs.py` reads the value and never executes it. That split is not ceremony — whether the command
 resolves can only be judged relative to the new worktree, whose path `specs.py` is never told. The
@@ -59,11 +59,11 @@ check belongs where the answer exists.
 
 **A failing setup never undoes the worktree.** The worktree exists either way; whether it is usable
 is a fact to report, not a reason to tear down a tree that may already hold the human's chosen
-isolation. `/specs:isolate` reports the output and the exit code, and says plainly which of the two
+isolation. `/specs:execute` reports the output and the exit code, and says plainly which of the two
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 
-Only `/specs:isolate` runs it, and only on creation. Re-running setup over a worktree that already
+Only the inline offer runs it, and only on creation. Re-running setup over a worktree that already
 exists is a second entry point for the same hook and is deliberately not offered.
 
 **This hook is not the specs backend's worktree.** The `files` backend keeps its own persistent
@@ -75,8 +75,8 @@ not a build. `worktreeSetup` runs for the *isolation* worktree a human works in,
 This hook executes **the target repository's code**, which no `/specs:*` command did before it. The
 bound is not a new confirmation:
 
-- the command is displayed **verbatim** in `/specs:isolate`'s plan block — the same block that
-  already shows the spec, the base, the branch name and the worktree path;
+- the command is displayed **verbatim** in `/specs:execute`'s isolation-offer block — the same
+  block that already shows the spec, the base, the branch name and the worktree path;
 - choosing **Worktree** in that offer **is** the OK for the command shown;
 - there is no second prompt, and no remembered "this repository is authorised" state.
 

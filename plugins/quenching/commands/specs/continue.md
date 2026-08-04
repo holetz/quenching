@@ -1,5 +1,5 @@
 ---
-description: Answer "which spec now, and which command?" — read the whole plans/ front, show the ordering, and hand off. Triggers on "what should I work on", "what is next", "continue", "pick up where I left off", "which spec now", "what is in flight", "where were we", "resume the plan". One tool call, no sub-agents, no file reads: the ranking, the reason each spec sits where it does, and the one command to run next. Branch-aware — the spec whose plan/<slug> branch you are standing on comes back first, and one alive but checked out elsewhere is demoted rather than offered twice. Suggests ranking the front first when nothing has been started and nothing carries a priority. Hands off; never builds, edits, or closes anything itself. Not for: building a spec → /specs:execute; sharpening one → /specs:develop; taking a branch or worktree → /specs:isolate; closing one out → /specs:conclude; the full conformance view of the workspace → /specs:status.
+description: Answer "which spec now, and which command?" — read the whole plans/ front, show the ordering, and hand off. Triggers on "what should I work on", "what is next", "continue", "pick up where I left off", "which spec now", "what is in flight", "where were we", "resume the plan". One tool call, no sub-agents, no file reads: the ranking, the reason each spec sits where it does, and the one command to run next. Branch-aware — the spec whose plan/<slug> branch you are standing on comes back first, and one alive but checked out elsewhere is demoted rather than offered twice. Suggests ranking the front first when nothing has been started and nothing carries a priority. Hands off; never builds, edits, or closes anything itself. Not for: building a spec → /specs:execute; sharpening one → /specs:develop; taking a branch or worktree → /specs:execute; closing one out → /specs:conclude; the full conformance view of the workspace → /specs:status.
 argument-hint: [slug]
 allowed-tools: Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 ---
@@ -89,7 +89,7 @@ The top candidate's `branch` changes the hand-off, not the ranking:
 | `branch` on the recommended spec | What to say |
 | --- | --- |
 | `current: true` | you are already on `<work>`; hand off to the `action`'s command as usual |
-| `live: true`, `current: false` | it is in flight on `<work>` — offer to check it out (or `/quenching:specs:isolate` to add a worktree) **before** building, rather than routing straight into `execute` |
+| `live: true`, `current: false` | it is in flight on `<work>` — offer to check it out **before** building, rather than routing straight into `execute` |
 | `live: false` | nothing to say; route on the `action` alone |
 
 Two things the payload does not decide, and which are named rather than routed around: a spec whose

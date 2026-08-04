@@ -1,4 +1,4 @@
-<!-- quenching v4.4.2 · operator manual · generated payload.
+<!-- quenching v4.11.0 · operator manual · generated payload.
      Refreshed by /specs:align (or /align). Edit the plugin asset, not this copy —
      a run with a newer plugin overwrites this file. Remove this banner to keep
      your own version: the align will then leave it alone and report it. -->
@@ -15,11 +15,11 @@ This file is the **operator manual** for that workspace. Its sibling
 `../docs/QUENCHING.md` covers the knowledge base; the two are connected by a deliberate bridge
 described in §6.
 
-**Fully native — nothing external to install.** This front has **no npm package, no Node
-runtime, no external CLI, no delta format, and no separate spec store**. The one tool is
+**Nothing external to install for the default.** This front has **no npm package, no Node runtime,
+no delta format, and no second spec store shadowing the one you declared**. The one tool is
 `specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), installed
-into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `specs/config.json`
-(§4, `/specs:isolate`) — absent in most repos, and its absence costs nothing. All you need is
+into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `.claude/quenching.json`
+(§4, `/specs:execute`) — absent in most repos, and its absence costs nothing. All you need is
 Python:
 
 ```bash
@@ -36,8 +36,7 @@ python3 --version           # or `py --version` on Windows
 | See where everything stands, changing nothing | `/specs:status` |
 | Park an idea — or bring in a Claude Code plan file | `/specs:create` |
 | Think it through, fill it out, argue with it, or approve it | `/specs:develop` |
-| Take a branch or worktree for it — at any stage | `/specs:isolate` |
-| Build it, one verified commit per task | `/specs:execute` |
+| Build it, one verified commit per task — taking a branch or worktree on the way in | `/specs:execute` |
 | Close it out — review, archive, distil, then merge | `/specs:conclude` |
 | Rank everything that is parked | `/specs:triage` |
 | Fix the workspace itself — scaffold, filenames, the v2/v1 fold | `/specs:align` |
@@ -152,7 +151,10 @@ The router. One `specs.py next --front` call ranks every candidate — executing
 closest to done, then priority, then age — with a one-line reason per row, and hands off to the
 one command that fits: `develop` for a spec with gate gaps, `execute` for an approved one with
 open tasks, `conclude` for one whose boxes are all ticked, `triage` when nothing carries a
-ranking to stand on. It never builds, edits, or closes anything itself.
+ranking to stand on. It is **branch-aware**, so it also answers "am I isolated?" without writing
+anything: the spec whose branch you are standing on comes back first, and one alive but checked
+out elsewhere is demoted rather than offered twice. It never builds, edits, or closes anything
+itself.
 
 ### `/specs:status` — look, change nothing
 
@@ -191,48 +193,38 @@ rule you already agreed on. A real interrogation records `refined: {mode, date}`
 the `sp-unrefined` warning — a warning, never a gate: **a spec may always be built unrefined.**
 It never edits code, and it never invents an explicit none on your behalf.
 
-### `/specs:isolate` — take a branch, at any stage
+### `/specs:execute` — build it, prove it, commit it
 
-Isolation is not a privilege of building. Creating and developing a spec also write into
-`plans/` and dirty your tree, and sometimes a spec should be born on the branch that will carry
-its work — so this command takes **or reports** isolation for one spec whenever you want it.
+**It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
+your task's diff from an unrelated edit already sitting there.
 
-It offers a **worktree** beside the repo first, and recommends it, unconditionally — a plain
-**branch** (`plan/<slug>`) and working in place stay available after it. No heuristic sniffs the
-target for `node_modules/` or `.venv/`; the offer states the cost instead, inline: a fresh
-worktree carries only what git tracks, so choosing Branch is a decision you read rather than a
-discovery at the first failing `verify:`. Either way it commits an uncommitted spec file onto the
-new branch so the base keeps no trace of it, and stamps `branch: {base, work}`. `base` is
-captured while it is still true: after a merge, git cannot say what the branch was cut from.
+**It offers isolation only from the base branch.** Standing anywhere else, you answered that
+question at checkout, so it adopts the branch you are on and goes straight to building. The offer
+itself leads with a **worktree** beside the repo, unconditionally — a plain branch and working in
+place stay available after it. No heuristic sniffs the target for `node_modules/` or `.venv/`; the
+offer states the cost instead, inline: a fresh worktree carries only what git tracks, so choosing
+Branch is a decision you read rather than a discovery at the first failing `verify:`.
+`plan/<slug>` is the **suggested** name, never a contract.
 
-**A target may declare a setup command.** `specs/config.json` at the workspace root, with one
-recognised key:
+Either way, work outside the base stamps `branch: {base, work}` — including on a branch you opened
+yourself, which is the only record of where the work happened. `base` is captured while it is
+still true: after a merge, git cannot say what the branch was cut from. On an adopted branch
+`base` is an *inference* (the remote's declared default), so it is shown on the same line as the
+confirmation, before the stamp, which is the one moment disagreeing is cheap.
+
+**A target may declare a setup command.** `.claude/quenching.json` at the repo root, under the
+`worktreeSetup` key:
 
 ```json
 {"worktreeSetup": "./scripts/wt-setup.sh"}
 ```
 
 No file, no key, or a command that does not resolve all mean no setup, and none of it is a
-finding. When Worktree is chosen and the key is declared, `/specs:isolate` shows the command
+finding. When Worktree is chosen and the key is declared, `/specs:execute` shows the command
 **verbatim** in the same plan block that already shows the branch name and the worktree path,
 then runs it once, with cwd inside the new worktree, right after `git worktree add`. **Choosing
 Worktree is the OK for it** — no second prompt. A failing setup is reported and never undoes the
 worktree.
-
-**Asking is a complete use of it.** "Am I isolated?" costs a few `git` reads and writes nothing.
-A spec whose branch is already alive is never given a second one — you are offered a checkout or
-a worktree over the existing branch instead.
-
-`/specs:execute` delegates here rather than reimplementing it; `/specs:create` and
-`/specs:develop` name it when you ask, and never volunteer it. **It never merges** — the merge
-stays inside `/specs:conclude`, behind that command's review and archive gates.
-
-### `/specs:execute` — build it, prove it, commit it
-
-**It refuses to start on a dirty tree** — it commits one task at a time, and a commit cannot tell
-your task's diff from an unrelated edit already sitting there. It offers isolation — a branch or
-a worktree — and records the choice as `branch: {base, work}`, because after the merge git cannot
-say what the base was.
 
 Per task it writes the code, runs that task's `verify:` under the spec's declared policy,
 self-reviews the diff (reuse · useless defense · obvious comment · dead code), **ticks the box
@@ -281,11 +273,17 @@ ran, so a second call picks up where the first stopped:
    only knowable once the last task is written, and a bump made here starts from the base you are
    actually merging into. An abandoned spec settles none of it. The archive move, the distillation
    and these all land on the **work branch**.
-4. **Merge — the last action, without exception.** Strategy offered, never chosen for you: merge
-   commit (default), squash, rebase, or fast-forward. `merge: {strategy, subject}` is stamped on
-   the branch *before* the merge, so **nothing is ever committed to the base after it** and one
-   merge carries the code, the emergent docs, the archived spec and the distillation together.
-   **On a squash it offers to keep the branch**, because the per-task commits survive only there.
+4. **Merge — the last action, without exception.** Two choices, offered separately and never made
+   for you. **Strategy:** merge commit (default), squash, rebase, or fast-forward. **Route:** a
+   pull request, or local — offered only where `gh` resolves your repository, silently local
+   everywhere else, and not asked at all under `fast-forward`, which `gh pr merge` cannot perform.
+   `merge: {strategy, subject, pr}` is stamped on the branch *before* the merge, so **nothing is
+   ever committed to the base after it** and one merge carries the code, the emergent docs, the
+   archived spec and the distillation together. On the PR route the push, the `gh pr create` and
+   the `gh pr merge` are **one block you consent to** — choosing the route earlier was not that
+   consent — and `pr:` records the pull request, which is where the review and the checks still
+   live once the branch is gone. **On a squash it offers to keep the branch**, because the
+   per-task commits survive only there.
 
 ### `/specs:triage` — rank the whole front
 
@@ -361,7 +359,7 @@ refined: {mode: premortem, date: 2026-07-25}   # once a real interrogation has r
 approved: {date: 2026-07-26}                   # a human said go — develop offers it, execute asks inline
 branch: {base: main, work: plan/session-tokens} # stamped when isolation is taken; write-once
 reviewed: {date: 2026-07-28}                   # a human read the whole branch diff
-merge: {strategy: merge-commit, commit: abc1234} # the chosen strategy and its resulting sha
+merge: {strategy: merge-commit, subject: "plan/session-tokens: merge (merge-commit)"}  # + pr: on the PR route
 outcome: done                                  # stamped at archive — done | abandoned
 ---
 ```
@@ -423,7 +421,7 @@ code and the JSON, never on prose.
 | `specs.py new <slug> [--title T] [--verification P]` | create in `plans/` with `## Problem` alone; stamps the date ONCE |
 | `specs.py list [--json]` | every spec, grouped by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections, stage, tasks, the frontmatter records, commits, and the gate's outstanding list |
-| `specs.py section <slug> "<Heading>" [--write]` | read or write ONE section; `--write` creates it in canonical position |
+| `specs.py section <slug> "<Heading>[,<Heading>…]" [--write]` | read N sections in ONE call, returned in the order asked; `--write` takes exactly one and creates it in canonical position |
 | `specs.py next --spec <slug> [--json]` | THE single next action for one spec; skips `[!]` |
 | `specs.py next --front [--json]` | the ranked candidate list with a reason per row — the only place ranking logic lives |
 | `specs.py task --spec <slug> --check ID [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip a checkbox mechanically; `--commit` writes the sha onto the task line |
@@ -433,11 +431,17 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
-| `specs.py config [--json]` | the workspace's declared `specs/config.json`, as data; exit 0 whether or not anything is declared |
+| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`; exit 0 whether or not anything is declared |
+| `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
+| `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. **The post-capture writer**: `new --verification` answers at the one moment nobody has an opinion yet, and an external backend has no file to hand-edit |
+| `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
+| `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing keeps it in sync, so it is a rescue copy for an external backend and never a second store |
 
-There is no `init` (scaffold is an asset copy), no `store`, no `profiles`, no telemetry, and no
-delta parser. `/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself
-any time:
+There is no `init` (scaffold is an asset copy), no `profiles`, no telemetry, and no delta parser.
+There is no `store` subcommand either: which store holds the specs is **declared** in
+`.claude/quenching.json`, never switched by a command mid-flight.
+
+`/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself any time:
 
 ```bash
 python3 .claude/hooks/specs.py doctor --json      # workspace health (and legacy detection)

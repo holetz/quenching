@@ -1,8 +1,9 @@
 # Git for the `specs/` front — taking isolation, wording a commit, merging
 
 The owner of **how** a spec's work is isolated, how its commits are worded, and how the branch
-comes home. `/quenching:specs:isolate` performs the isolation; `/quenching:specs:execute` and `/quenching:specs:conclude` cite
-this file for the conventions their own steps depend on. None of the three restates it.
+comes home. `/quenching:specs:execute` performs the isolation, inline on its way into a build;
+`/quenching:specs:conclude` cites this file for the conventions its own steps depend on. Neither
+restates it.
 
 Everything here is a **default**, not a rule. A target repo that has written down its own git
 conventions has already decided, and a plugin that ignored that would be imposing house style on
@@ -11,7 +12,7 @@ somebody else's history.
 ## Contents
 
 - [The read-if-present rule](#the-read-if-present-rule)
-- [Isolation is available at any stage](#isolation-is-available-at-any-stage)
+- [Isolation happens on the way into a build](#isolation-happens-on-the-way-into-a-build)
 - [Branch and worktree names](#branch-and-worktree-names)
   - [The worktree is the preferred form](#the-worktree-is-the-preferred-form)
   - [A target may declare a setup command](#a-target-may-declare-a-setup-command)
@@ -20,6 +21,7 @@ somebody else's history.
 - [The subject is the anchor](#the-subject-is-the-anchor)
 - [Merge strategies](#merge-strategies)
   - [The worktree is removed after a successful merge](#the-worktree-is-removed-after-a-successful-merge)
+- [The pull-request route](#the-pull-request-route)
 - [What is never done, on any repo](#what-is-never-done-on-any-repo)
 
 ## The read-if-present rule
@@ -52,25 +54,40 @@ without anyone having agreed to it. If a human wants their conventions written d
 An `authority: background` git standard in the target still wins over these defaults. It is an
 agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion either way.
 
-## Isolation is available at any stage
+## Isolation happens on the way into a build
 
 <!-- rules -->
 
-Isolation used to exist only inside `/quenching:specs:execute`, which made it a privilege of building. It is
-not: creating and developing a spec both write into `specs/plans/` and dirty the tree, and a spec
-sometimes ought to be born on the branch that will carry its work.
+Isolation was a command of its own for one release, offered at any stage. It is now a **step inside**
+`/quenching:specs:execute`, taken once, before the first task is written — and offered only when the
+session is standing on the repository's base branch:
 
-`/quenching:specs:isolate` takes or reports isolation for ONE spec at **any** stage:
-
-| Stage | What isolating buys |
+| Where the session stands | What `execute` does |
 | --- | --- |
-| just created | the spec file itself lands on the branch, so the base keeps no trace of work that may be abandoned |
-| being developed | an interrogation that rewrites half the spec does not sit in the base branch's tree |
-| about to be built | the original case: code, docs and the ticked boxes are all on one branch |
+| **on** the spec's work ref | nothing — the spec is isolated, and the loop starts |
+| on any other non-base branch | **adopts it** as `work`, stamps `branch:`, and starts the loop |
+| on the base, work ref alive and unclaimed | offers to **take** it — worktree over it, or checkout — and stamps nothing |
+| on the base, no work ref | offers worktree · branch · in place, and stamps whichever was taken |
 
-`/quenching:specs:execute` **delegates** here rather than reimplementing; `/quenching:specs:create` and
-`/quenching:specs:develop` forward on request and never offer unprompted. Isolation stays optional, is
-recommended before building, and is never imposed.
+Standing anywhere but the base means the human already answered the isolation question at checkout,
+so asking again buys nothing and costs the turns it takes. Isolation stays optional, is recommended
+before building, and is never imposed.
+
+**Isolated means "this checkout is on the work ref", never "the ref exists".** The two come apart in
+one ordinary case — the base checked out, `plan/<slug>` sitting one branch over from an earlier
+session, nobody holding it — and treating existence as the answer sends the loop to build and commit
+onto the base, which is precisely what the offer is for. The work ref itself is the `branch` record's
+`work` when one is stamped, else `plan/<slug>`; a live ref held by another worktree is a **stop**,
+not an offer, because two checkouts building one spec fork it.
+
+`/quenching:specs:create` and `/quenching:specs:develop` take no branch at all — they write into
+`plans/` and stay wherever they were run. That is a narrowing from the retired command, and the
+trade is deliberate: the offer costs a confirmation, and the stage where it reliably pays is the one
+about to write code.
+
+**Asking "am I isolated?" writes nothing and is answered elsewhere.** `/quenching:specs:continue`
+reads the live ref and reports it, and demotes a spec whose branch is checked out somewhere else.
+`/quenching:specs:status` reads the frontmatter records and deliberately never asks git.
 
 **Merging is not here.** It stays inside `/quenching:specs:conclude`, behind that command's review and
 archive gates — a merge invocable on its own could run against a spec nobody reviewed and nothing
@@ -84,11 +101,18 @@ archived, and would have to duplicate every refusal `conclude` already owns.
 plan/<slug>
 ```
 
-The spec's slug, unaltered — kebab-case, no date prefix, no id. The slug is the identity every
-command names, so a branch that carries it verbatim is greppable against `specs.py list`, and
-`git branch --list 'plan/*'` is the list of work in flight. That is not only a convenience:
-`specs.py next --front` ranks on whether `plan/<slug>` is **alive**, so a branch named to the
-default is what tells `/quenching:specs:continue` this spec is already under way.
+The **suggested default** when the inline offer cuts a new branch or worktree — kebab-case, no
+date prefix, no id. A branch named to it is greppable against `specs.py list`, and `git branch
+--list 'plan/*'` is the list of work cut by the default. `specs.py next --front` ranks on whether
+`plan/<slug>` is **alive**, so a branch named to the default is what tells `/quenching:specs:continue` this
+spec is already under way without a stamped `branch` record.
+
+**The name is a suggestion, never a contract.** When `/quenching:specs:execute` starts on a branch that is not
+the repository's base — whatever it is named — that branch is **adopted** as `work` outright: no
+rename, no refusal, and no requirement that it match `plan/<slug>`. A human who already checked out
+`fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
+second one cut beside it. §Recording the isolation below covers how `base` is captured for an
+adopted branch, which is not the same fact as for one this plugin cut itself.
 
 A worktree goes beside the repo, never inside it:
 
@@ -101,10 +125,10 @@ status`, every glob, and every checker this plugin runs.
 
 ### The worktree is the preferred form
 
-`/quenching:specs:isolate` offers **Worktree first and recommends it**, unconditionally — a plain branch and
-working in place stay available, in that order after it. A worktree leaves the main checkout
-untouched, which is what lets several specs be built at once and what keeps satisfying the clean
-tree `/quenching:specs:execute` demands.
+`/quenching:specs:execute`'s inline isolation offer leads with **Worktree and recommends it**, unconditionally — a
+plain branch and working in place stay available, in that order after it. A worktree leaves the
+main checkout untouched, which is what lets several specs be built at once and what keeps
+satisfying the clean tree the loop demands of itself.
 
 **Unconditionally** means no heuristic sniffing the target for `package.json` or `.venv/`. A
 recommendation that changes from repo to repo cannot be documented in one sentence, and guessing
@@ -126,10 +150,10 @@ the specs workspace — which only had a place to live while every repo was guar
 folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
 configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
 with the rest of it. See
-[plugin-configuration.md](../../../../docs/standards/workflows/plugin-configuration.md).
+[plugin-configuration.md](../../../../../docs/standards/workflows/plugin-configuration.md).
 
 Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
-`/quenching:specs:isolate`, immediately after `git worktree add`, with **cwd inside the new worktree** — the
+the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
 tree lacking the dependencies is the tree that must install them. `specs.py` reads the value and
 never executes it: whether the command resolves can only be judged against the new worktree's path,
 which `specs.py` is never told.
@@ -140,9 +164,9 @@ reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key
 `sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
 `worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
 
-**Its consent is the isolation offer.** The command is displayed **verbatim** in `/quenching:specs:isolate`'s
-plan block, and choosing Worktree is the OK for it: no second prompt, no remembered authorisation.
-A failing setup is reported and **never undoes the worktree**.
+**Its consent is the isolation offer.** The command is displayed **verbatim** in `/quenching:specs:execute`'s
+isolation-offer block, and choosing Worktree is the OK for it: no second prompt, no remembered
+authorisation. A failing setup is reported and **never undoes the worktree**.
 
 ## Recording the isolation
 
@@ -157,8 +181,25 @@ specs.py record <slug> branch --set base=main --set work=plan/<slug>
 not — **after the merge, git cannot say what the branch was cut from**, which is the whole reason
 the record exists and why it is captured while still true.
 
-Stamp nothing when the human declines isolation and works in place: a record whose `base` equals
-its `work` states no fact. Say in the report that the spec carries no `branch` record and why.
+**Every branch that is not the repository's base gets `branch:` stamped**, including one this
+plugin never cut — a human may have checked one out by hand before running `execute`, and a spec
+built there with nothing stamped leaves `/quenching:specs:conclude` unable to say what it merges into.
+Stamp nothing only in the true in-place case: the human declined isolation and stayed on the base
+branch, where a record whose `base` equals its `work` would state no fact.
+
+**For a branch this plugin cuts, `base` is an observed fact** — it was what stood checked out the
+moment the branch was created. **For a branch it adopts, `base` is inferred**, in this order,
+stopping at the first that answers:
+
+1. the spec's own `branch.base` record, when one already exists;
+2. `git symbolic-ref refs/remotes/origin/HEAD` — the default the remote declares;
+3. `git config init.defaultBranch`, and then `main`.
+
+**Show the inference on the same line as the confirmation, before stamping** —
+`base: main — inferred; this branch was not cut by this command` — because the record is
+write-once and that is the only moment disagreeing with it is cheap. Never derive `base` from
+`git merge-base` or `--fork-point`: both answer a **commit**, not a branch name, and a commit
+ancestral to three branches identifies none of them.
 
 The record is `writeOnce: true`, and `specs.py record` enforces it: a second stamp refuses (exit 2)
 naming the value already held. A later run **reads** it rather than rewriting it, and a current
@@ -325,6 +366,63 @@ the worktree stays.
 
 Three bounds: only after a merge verified at exit 0, never for an abandoned spec, and it does
 **not** delete the branch — that stays the separate offer it already was.
+
+## The pull-request route
+
+<!-- rules -->
+
+`/quenching:specs:conclude` offers a **route** — pull request, or local — **alongside** the strategy, not instead
+of it. The route decides how the merge reaches the base; the strategy decides what shape it takes
+once it does. Offered only where `gh` resolves the repository — no route, no offer, on any other
+host or with `gh` unauthenticated.
+
+```
+gh pr merge --merge      # strategy: merge commit
+gh pr merge --squash     # strategy: squash
+gh pr merge --rebase     # strategy: rebase
+```
+
+Three of the four strategies map one-to-one onto a `gh pr merge` flag, so the PR route invents no
+vocabulary of its own — `MERGE_STRATEGIES` is unchanged. **`fast-forward` has no `gh` equivalent**,
+so the PR route is never offered under it; choosing that strategy answers the route question by
+itself, in one line, rather than offering a form that would fail.
+
+**Pushing the branch and opening the PR carry their own confirmation.** The route chosen at the
+offer above is not the OK for either — both publish to a remote host, which the local strategies
+never do. The block that runs them shows the remote, the name the branch pushes under, and the
+PR's title and body, and asks there:
+
+```bash
+git push -u origin plan/<slug>
+gh pr create --title "<title>" --body "<body>"
+```
+
+**The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
+in the same block, before the run reports done:
+
+```bash
+gh pr merge <number> --merge|--squash|--rebase
+```
+
+Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
+[plan-git-record.md](../../../../../docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+written before the merge and says what the run **delivered** — an open, unmerged PR archived as
+`done` would assert something that has not happened yet. And `merge:` is stamped before the merge
+so that it is the run's last action; a run that ends before the merge leaves the record stamped and
+nothing merged, which is recoverable but is not what "the merge is last" promises.
+
+**The merge is asserted, not assumed.** After `gh pr merge` returns, the run confirms the base
+actually advanced before reporting success:
+
+```bash
+git -C <the base's checkout> pull --ff-only
+gh pr view <number> --json state,mergeCommit
+```
+
+`git pull --ff-only` first, because the base's local checkout has no reason to know about a merge
+that happened on the remote until it is told; `gh pr view` then reads back `state: MERGED` and the
+resulting `mergeCommit`, which is what `merge: {strategy, subject, pr}` records — `pr` alongside
+the strategy and subject a local conclusion already carries.
 
 ## What is never done, on any repo
 

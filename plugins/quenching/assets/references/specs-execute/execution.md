@@ -17,7 +17,7 @@ reaches past the loop.
 ## Contents
 
 - [The precondition: a clean tree](#the-precondition-a-clean-tree)
-- [Isolation is somebody else's job](#isolation-is-somebody-elses-job)
+- [Isolation is offered inline, and only from the base](#isolation-is-offered-inline-and-only-from-the-base)
 - [The verification policy](#the-verification-policy)
 - [The validation loop](#the-validation-loop)
 - [The diff self-review — four items, before every commit](#the-diff-self-review--four-items-before-every-commit)
@@ -41,51 +41,32 @@ report must say so.
 Not a git repo → no isolation, no commits. Say that once, run the rest of the loop normally, and
 never `git init` a repo on the human's behalf.
 
-## Isolation is somebody else's job
+## Isolation is offered inline, and only from the base
 
 <!-- rules -->
 
-Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all belong to
-**`/quenching:specs:isolate`** and its reference,
-[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
-§Recording the isolation. `/quenching:specs:execute` delegates to that command and never reimplements it, because isolation is not a privilege of
-building: a spec can be isolated at creation or during development just as legitimately.
+Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all happen inline in
+the command body's own step 2 — not a separate command it dispatches to. The convention it applies
+lives in
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
+§Recording the isolation, cited rather than restated.
 
-Two things the loop below still needs from it:
+**The offer fires only when `HEAD` is on the repository's base branch.** Anywhere else, the human
+already answered the question at checkout, and asking again is friction the loop does not need to
+pay.
+
+Two things the loop still needs, regardless of form:
 
 - **A spec whose `plan/<slug>` ref is alive but checked out somewhere else is already being built
   there.** Starting a second run against it forks the work; say where it is and stop.
 - **Work done in place carries no `branch` record**, so there is nothing to merge later and the
   report says so.
 
-Nothing in this file stamps that record, reads it as authoritative, or corrects it.
-
-### Delegating is owed; dispatching unconditionally is not
-
-<!-- rules -->
-
-Delegation and dispatch are not the same act. A spec that is **already isolated** — its
-`plan/<slug>` ref alive, or the `branch` record already stamped — has nothing left to take, and
-`/specs:isolate` invoked against it does exactly what it promises: it reports the existing branch
-and stamps nothing. **Check first, and skip the call in that case.** Checking is `git branch --list
-"plan/<slug>"` plus the `branch` record already inside the `status --json` the loop reads anyway,
-and it decides the question without moving anything.
-
-<!-- rationale -->
-
-The saving is not only turns. Dispatching a stage also costs the run its own **attribution**: the
-transcript's pointer moves to the stage and, measured, almost never comes back, so the conducting
-run's remaining work is filed under the command it dispatched. What that does to a later count is
-owned by `docs/standards/automation/session-evidence.md` §What a command's run cost — the stage
-comes back `closed: false`, its counts become an upper bound, and `mayIncludeTurnsFrom` names the
-misread. Cite that rule; never restate it.
-
-**The residual case is real and is paid, not avoided.** When there genuinely is something to
-isolate, `/specs:isolate` is still the only thing that takes it — the branch form, the
-`plan/<slug>` name and the `branch: {base, work}` stamp stay entirely its own, and the invariant
-"delegate isolation … never reimplement it here" is untouched. That run loses its own attribution
-and is measured as an upper bound. That is the honest cost of a real delegation, written here so it
-is not rediscovered at each retro.
+**Check before offering, every time.** A spec that is **already isolated** — its `plan/<slug>` ref
+alive, or the `branch` record already stamped — has nothing left to take, and offering again buys
+nothing but the turns it costs. Checking is `git branch --list "plan/<slug>"` plus the `branch`
+record already inside the `status --json` the loop reads anyway, and it decides the question
+without moving anything.
 
 ## The verification policy
 
@@ -215,7 +196,7 @@ If the commit **fails** — a rejecting hook, nothing staged — undo the tick
 report the failure. Never route around it with `--no-verify`.
 
 The **subject line format** is the target repo's to declare. Read
-[specs-isolate/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-isolate/git.md)
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §Commit messages: a repo with `docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
