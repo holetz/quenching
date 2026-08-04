@@ -1061,10 +1061,20 @@ def find_specs_root(root_arg: str | None) -> str:
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
-CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates")
+CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
+               "integrationBranch", "releaseBranch")
 BACKENDS = ("files", "github", "azure-boards")
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
+# Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
+# to the literal "develop"/"main" below. The base-inference chain
+# (`infer_base_branch`) must tell "declared" from "not declared" to know whether it may
+# skip `origin/HEAD`; baking the default into `load_config` would erase that distinction
+# for every repo that never opted into the develop/main flow. Callers that need an actual
+# branch name once a value IS missing — `specs.py release` among them — apply these two
+# constants themselves, at the point of use.
+DEFAULT_INTEGRATION_BRANCH = "develop"
+DEFAULT_RELEASE_BRANCH = "main"
 # `azureStates` has NO default, and that is the decision rather than an omission. GitHub's
 # open/closed is universal, so `github` needs no such key; an Azure Boards state is defined
 # by the project's PROCESS — Basic says To Do/Doing/Done, Agile says New/Active/Resolved/
@@ -1112,8 +1122,14 @@ def find_repo_root(specs_root: str) -> str:
 
     Git's own top level first, because it is the answer that survives being invoked from a
     subdirectory. Falling back to the specs workspace's parent, which is the repo root by
-    construction: `specs/` sits beside `.claude/`, never below it."""
-    top = _git(specs_root, "rev-parse", "--show-toplevel").strip()
+    construction: `specs/` sits beside `.claude/`, never below it.
+
+    The git call is skipped outright when `specs_root` does not exist. `_git` falls back to
+    running from `.` when its `cwd` is missing, so calling it on a path built to be absent —
+    `load_config`'s own selftest fixture — would silently answer with whatever repo this
+    process happens to be running from instead of "no git facts here", handing back a real
+    `.claude/quenching.json` the fixture exists specifically to avoid."""
+    top = _git(specs_root, "rev-parse", "--show-toplevel").strip() if os.path.isdir(specs_root) else ""
     return top or os.path.dirname(os.path.abspath(specs_root))
 
 
@@ -1146,7 +1162,7 @@ def load_config(root: str) -> dict:
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
-           "azureStates": None,
+           "azureStates": None, "integrationBranch": None, "releaseBranch": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1177,6 +1193,14 @@ def load_config(root: str) -> dict:
     val = obj.get("worktreeSetup")
     if isinstance(val, str) and val.strip():
         out["worktreeSetup"] = val.strip()
+
+    integration = obj.get("integrationBranch")
+    if isinstance(integration, str) and integration.strip():
+        out["integrationBranch"] = integration.strip()
+
+    release = obj.get("releaseBranch")
+    if isinstance(release, str) and release.strip():
+        out["releaseBranch"] = release.strip()
 
     # Both phases or neither. A half-declared mapping is worse than none: it would archive a
     # spec into a state the project has and then fail to recognise it on the way back.
@@ -6708,7 +6732,8 @@ def cmd_selftest(args, root: str) -> int:
     # it stays self-contained and never depends on this checkout's own config.
     blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
-                      ("worktreeSetup", None), ("present", False)):
+                      ("worktreeSetup", None), ("integrationBranch", None),
+                      ("releaseBranch", None), ("present", False)):
         if blank[key] != want:
             findings.append(_finding("sp-config-default-drift", "error",
                                      f"with nothing declared, config `{key}` is "
@@ -6893,7 +6918,11 @@ def cmd_config(args, root: str) -> int:
              f"  specsBranch: {cfg['specsBranch']}",
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
-                                  if cfg["azureStates"] else "(none declared)")]
+                                  if cfg["azureStates"] else "(none declared)"),
+             "  integrationBranch: " + (cfg["integrationBranch"]
+                                        or f"(none declared, defaults to {DEFAULT_INTEGRATION_BRANCH})"),
+             "  releaseBranch: " + (cfg["releaseBranch"]
+                                    or f"(none declared, defaults to {DEFAULT_RELEASE_BRANCH})")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
     emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
