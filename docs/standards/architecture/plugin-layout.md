@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-07-31
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the QUENCHING.md bash-block case the old does-a-copy-leave-the-plugin test missed
 maintainer: quenching
 ---
 
@@ -124,19 +124,28 @@ listing from being flattened. Same input, two encodings, two jobs — do not rec
 
 ### A mold cites nothing it does not also install
 
-The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves.
-Anything an align **copies into a target repo** is the opposite case: the copy lands in a repo that
-has none of this repository's `docs/`, and may have none of this plugin either. A cross-reference to
-`quality/surface-verification.md` is correct in the plugin's own bundle and dangles in every repo
-cut from the mold.
+The rule above governs citation **inside** the plugin, where `${CLAUDE_PLUGIN_ROOT}` resolves. The
+reason is mechanical, not a claim about what a target repo happens to have: Claude Code substitutes
+`${CLAUDE_PLUGIN_ROOT}` only while it **loads a file that is part of the plugin itself** — the
+variable is never exported to a shell, and never substituted for a copy sitting in a target repo, a
+`bash` block pasted into a terminal, or any other reader outside that load path. A cross-reference to
+`quality/surface-verification.md` is correct in the plugin's own bundle and dangles wherever that
+load path does not hold — **even in a repo that has this very plugin installed**, because
+installed-elsewhere is not the same fact as loaded-from-here.
 
-**The test is "does a copy of this leave the plugin?", not which folder it sits in.** Three trees
-answer yes today — `assets/templates/**` (the harness and front-matter molds),
+**The test is "is whoever reads this inside the plugin's own file-load path?", not "does a copy
+leave the plugin?"** The narrower test missed a case the wider one catches: the three
+`QUENCHING.md` operator manuals are meant to be pasted by a human into a raw terminal, so a
+`${CLAUDE_PLUGIN_ROOT}` citation inside one of *their* `bash` blocks dangles the moment a human
+reads that block verbatim — before the file is copied anywhere, and regardless of whether the
+plugin is loaded in the session doing the reading. Three trees still answer the wider test today —
+`assets/templates/**` (the harness and front-matter molds),
 `assets/docs/**` (the OKF skeleton and the operator manual, both copied by `/docs:align`) and
-`assets/specs/templates/**` — and a fourth added later inherits the rule without amending this
-list. Naming one folder was how a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed:
-the reasoning covered it, the wording did not, and nothing else checks. **No validator catches
-this** — a path that fails to resolve reads as ordinary prose, so the rule is the only guard.
+`assets/specs/templates/**` — plus every `QUENCHING.md`'s own `bash` blocks, copied or not; a
+fourth surface added later inherits the rule without amending this list. Naming one folder was how
+a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
+wording did not, and nothing else checks. **No validator catches this** — a path that fails to
+resolve reads as ordinary prose, so the rule is the only guard.
 
 So **a template states its caveat self-contained**, citing only what the same align installs
 alongside it. This is why a mold and the plugin's own copy of the same standard legitimately differ
