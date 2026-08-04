@@ -1,32 +1,19 @@
 # The execution profile — strategic capability use, priced
 
 Every Claude Code lever a command, agent, or hook may use, each stated three ways: what it
-buys, what it costs, and the default. `/quenching:skill:new` walks this file when choosing a mint's
-profile; `/quenching:skill:hook:new` and `/quenching:skill:agent:new` apply their sections; the doctrine audit in
-`/quenching:skill:align` §7 reads unjustified levers against it. Thresholds and finding
-codes live in `skills.py` and `docs/standards/automation/skills.md` — this file names the code,
-never the number.
+buys, what it costs, and the default. Thresholds and finding codes live in `skills.py` and
+`docs/standards/automation/skills.md` — this file names the code, never the number.
 
-**The premise: a lever is bought, never collected.** Each capability below exists to buy
-speed, tokens, or quality. Every one also has a standing cost — always-on context, latency,
-cache invalidation, or a per-event tax — and a lever whose buy nobody can state is bloat
-wearing a feature's name. The default profile is therefore *empty*, and every departure from
-it carries a stated reason into the mint's plan.
+**The premise: a lever is bought, never collected.** A lever whose buy nobody can state is
+bloat wearing a feature's name.
 
 ## Contents
 
-- [The cost model — where each byte lands](#the-cost-model--where-each-byte-lands)
-- [The default profile](#the-default-profile)
-- [`context: fork` — isolation, priced](#context-fork--isolation-priced)
-- [Model and effort — pin only what is mechanical](#model-and-effort--pin-only-what-is-mechanical)
-- [Subagents — when delegation pays](#subagents--when-delegation-pays)
-- [Hooks — the scope ladder and the handler ladder](#hooks--the-scope-ladder-and-the-handler-ladder)
-- [Invocation-surface controls — the budget levers](#invocation-surface-controls--the-budget-levers)
-- [Dynamic context — pay at render, not in turns](#dynamic-context--pay-at-render-not-in-turns)
-- [The profile is part of the plan](#the-profile-is-part-of-the-plan)
+`skills.py read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The cost model — where each byte lands
 
+<!-- rules -->
 Five places a capability's cost can land, from most expensive to least:
 
 | Where | What lands there | When it is paid |
@@ -37,9 +24,15 @@ Five places a capability's cost can land, from most expensive to least:
 | **Per invocation** | the command body; a forked context's fresh start | each run of that command |
 | **On demand** | bundled references; `!`-command output; deferred MCP schemas | only when a step actually reaches for them |
 
-Read every lever below against this table: the question is never "does it help" but "what
-does it buy, and which row does it charge". A quality gain charged to the always-on or
+Read every lever below against this table: name what it buys and which row it charges.
+
+<!-- rationale -->
+A quality gain charged to the always-on or
 per-event rows is paid by every iteration in the repo, including the ones it never helps.
+
+A validation hook that runs on the whole session
+buys its quality gain at the price of every iteration in the project — including every
+iteration that touches nothing it validates.
 
 ## The default profile
 
@@ -128,7 +121,7 @@ body** persists for the agent's whole run — preload only what every run reads)
 only when the agent genuinely learns across sessions; its memory file is a recurring cost on
 every run.
 
-**The verifier pattern** — the highest-value agent shape for this front. A verifier
+**The verifier pattern.** A verifier
 *inspects and reports; it never edits*. Its definition carries: the numbered check areas;
 an explicit **"not checked here"** list (the false-positive control — an LLM verifier's
 failure mode is flagging everything it can see); *if-present* guards on every optional
@@ -140,10 +133,9 @@ this plugin holds.
 
 ## Hooks — the scope ladder and the handler ladder
 
+<!-- rules -->
 A hook is the only capability that charges **other people's operations**: it fires on events
-the command that installed it does not own. A validation hook that runs on the whole session
-buys its quality gain at the price of every iteration in the project — including every
-iteration that touches nothing it validates. The doctrine is therefore a ladder: **install
+the command that installed it does not own. The doctrine is therefore a ladder: **install
 every hook at the narrowest scope that still catches what it exists to catch**, and climb
 only with evidence.
 
@@ -163,12 +155,11 @@ only with evidence.
 
 **The handler ladder** — cheapest first:
 
-1. **`command`** — a deterministic script. Its fast path is the whole economics: on no-match
-   it prints `{}` and the model never sees a token. Per-event cost is process time, never
-   context.
+1. **`command`** — a deterministic script. Its fast path: on no-match it prints `{}` and the
+   model never sees a token. Per-event cost is process time, never context.
 2. **`prompt`** — one cheap-model judgment call. Seconds and tokens per firing.
 3. **`agent`** — a full session-model inference per firing. On a per-tool-call event this is
-   the named trap: an LLM toll booth on every operation (`sk-hook-llm-frequent`).
+   a finding (`sk-hook-llm-frequent`).
 
 Climb the handler ladder only when the rung below cannot express the check — and when a
 `prompt`/`agent` handler sits on a tool event, its matcher earns extra scrutiny. The two rungs
@@ -197,22 +188,27 @@ no-match*. A hook that cannot state that line is not ready to install.
 
 **A handler whose script may not be installed guards its own absence.** `python3 <missing-file>`
 exits **2**, and exit 2 is the hook protocol's *error* code — on `PostToolUse` it feeds stderr
-back as a failure. So a hook pointing at a tool some other command merely *offers* to install
-turns every matched tool call into a reported error in exactly the repos that declined the offer,
-and it does so where nobody wired it. Lead with the guard, and keep the checker's own exit code
+back as a failure. Lead with the guard, and keep the checker's own exit code
 rather than swallowing it:
 
 ```yaml
 command: 'test -f "<path>" || exit 0; python3 "<path>"'
 ```
 
-`… || true` is the wrong shape — it hides the handler's real failures alongside its absence. The
+`… || true` is the wrong shape. The
 rule is one-directional: a **missing** handler is a no-op, a **failing** one still reports.
+
+<!-- rationale -->
+So a hook pointing at a tool some other command merely *offers* to install
+turns every matched tool call into a reported error in exactly the repos that declined the offer,
+and it does so where nobody wired it.
+
+`… || true` hides the handler's real failures alongside its absence.
 
 ## Invocation-surface controls — the budget levers
 
-The invocation/permission decision table lives in `docs/standards/automation/skills.md` and
-is not restated here. What this file adds is the **price** of each control:
+The invocation/permission decision table lives in `docs/standards/automation/skills.md`. The
+price of each control:
 
 - **`disable-model-invocation: true`** makes a command human-only — and removes its
   description from always-on context entirely. A utility the human runs by name costs
