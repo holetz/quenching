@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the six-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and each installing align compares its own tool's --version against the copy already installed in a target repo — bumped once per spec at conclude, immediately before the merge, never as a task, plus the half a bump cannot do, which is noticing that a target's copy has fallen behind, run ahead, or sits on disk with nothing invoking it, and the seventh version-carrying file that stays outside the six because no consumer reads it
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the three tool constants are the lockstep unit each tool's own selftest holds to — bumped once per spec at conclude, immediately before the merge, never as a task, plus the half a bump cannot do, which is noticing the legacy copies a target still carries under .claude/hooks/ from before resolution went plugin-first, and the seventh version-carrying file that stays outside the six because no consumer reads it
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/bin/session.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-07-29
+timestamp: 2026-08-03
 audience: both
 authority: current
-source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the conclude-time rule added after `/specs:develop` inferred a bump task from this doc's `resource:` alone; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin
+source: moved from CLAUDE.md; the drift half added by the notice-installed-tool-version-drift spec (task 4.1), proved by `skills.py drift` and its selftest fixture; the conclude-time rule added after `/specs:develop` inferred a bump task from this doc's `resource:` alone; the plugin-side-only rider revealed by the improve-command-from-session branch review, which caught session.py shipping 4.2.0 against a 4.3.0 plugin; rewritten for plugin-first resolution with no install (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — drift's subject became the legacy copy, not the stale dependency
 maintainer: quenching
 ---
 
@@ -24,9 +24,9 @@ makes each one wrong in its own way.
 | 1 | `plugins/quenching/.claude-plugin/plugin.json` → `version` | Claude Code, to detect and apply an upgrade |
 | 2 | `plugins/quenching/VERSION` | the same detection, as the pair's other half |
 | 3 | `.claude-plugin/marketplace.json` → the plugin entry's `version` | the marketplace listing |
-| 4 | `plugins/quenching/assets/hooks/okf-validate.py` → `VERSION` | `/docs:align`, comparing against an installed copy |
-| 5 | `plugins/quenching/assets/bin/specs.py` → `VERSION` | `/specs:align`, likewise |
-| 6 | `plugins/quenching/assets/bin/skills.py` → `VERSION` | `/skill:align`, likewise |
+| 4 | `plugins/quenching/assets/hooks/okf-validate.py` → `VERSION` | the tool's own `--version`; `skills.py drift`, identifying a legacy copy |
+| 5 | `plugins/quenching/assets/bin/specs.py` → `VERSION` | likewise |
+| 6 | `plugins/quenching/assets/bin/skills.py` → `VERSION` | likewise |
 
 ## Why each half matters
 
@@ -35,16 +35,18 @@ the pair Claude Code uses to decide that an installed plugin is stale and should
 one without the other and the upgrade either never fires or fires against a plugin that reports a
 version it does not have.
 
-**Artifacts 4–6 are the *installed-copy* trigger.** Each of the three stdlib tools is **installed
-into a target repository** by its own align, and each align decides whether to overwrite the copy
-already there by comparing `python3 <tool> --version` against the plugin's own `VERSION`. A tool
-whose constant was not bumped is therefore never upgraded in any target repo that already has it —
-the plugin ships a fix that silently never reaches the repos it was written for.
+**Artifacts 4–6 are the *tool identity*.** Nothing installs them any more — every command invokes
+`${CLAUDE_PLUGIN_ROOT}/assets/{bin,hooks}/<tool>` with no fallback and no manual rung
+([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
+§Resolving the tool) — so a bump no longer *delivers* anything. What the three constants still do
+is answer `--version`, which is half the uniform tool contract every tool here obeys, and give
+`skills.py drift` the number a **legacy copy** left under a target's `.claude/hooks/` is identified
+against. A tool whose constant was not bumped reports a version the plugin does not ship, and the
+one probe that reads it says nothing is wrong.
 
-That asymmetry is the whole reason the constant is duplicated in three places rather than imported
-from one: the tools **may not import each other**, because each installs standalone into a target's
-`.claude/hooks/` (see [frontmatter-parsing.md](../code/frontmatter-parsing.md) for the same
-constraint applied to the shared parser rule).
+The constant is duplicated in three places rather than imported from one because the tools **may
+not import each other** — see [frontmatter-parsing.md](../code/frontmatter-parsing.md), which owns
+that rule and the reason it survived the removal of install.
 
 ## When the bump happens — once, at conclude, before the merge
 
@@ -78,15 +80,17 @@ the same reason: a command rename or a new command is only fully known once the 
 
 `plugins/quenching/assets/bin/session.py` also carries a `VERSION` constant
 (`session.py:109`), and it is **not** a seventh member of the lockstep. It fits neither half above:
-Claude Code never reads it, and no align ever compares it, because `session.py` is a plugin-side
-tool that is **never installed into a target repo** — `/skill:retro` invokes it at
-`${CLAUDE_PLUGIN_ROOT}`, where the copy that executes is always the one that shipped with the
-plugin. The three-copy duplication the six exist to manage does not arise.
+Claude Code never reads it, and `drift` never compares it, because **no target repo can be holding
+a copy of it**. Every tool now runs from `${CLAUDE_PLUGIN_ROOT}`, so that is no longer what sets
+`session.py` apart — what does is that no align ever offered to install it, so it left no legacy
+copy under anyone's `.claude/hooks/` for a probe to find.
 
-**It must still be bumped with the rest**, and the reason is the opposite of the one that governs
-artifacts 4–6. Those are enforced by a consumer: miss one and an align silently stops upgrading a
-target. This one is enforced by **nothing at all** — `skills.py drift` does not know about it,
-no selftest asserts it, and `--version` still answers, just with the wrong number.
+**It must still be bumped with the rest**, and since install went away it is no longer the only one
+in that position. Artifacts 4–6 used to be enforced by a consumer — miss one and an align silently
+stopped upgrading a target. With nothing installing them, **no automated check asserts any of the
+six agree**: `drift` deliberately compares a legacy copy against the *shipped tool's own* constant
+rather than the plugin's `VERSION`, no selftest reads the pair, and `--version` still answers, just
+with the wrong number. The whole lockstep is now the discipline this one file always was.
 
 That is not theoretical. `session.py` was authored at `4.2.0` on a branch that stayed open while
 main released `4.3.0`; it reached the branch review still reporting `4.2.0`, under a comment that
@@ -96,8 +100,8 @@ long-lived branch produces and no checker covers.
 
 The rule, stated so a future plugin-side-only tool inherits it:
 
-- A tool that ships in the plugin but is never installed into a target **stays out of the six**.
-  Adding it would make `drift` compare a version no target holds.
+- A tool no target repo could be carrying a legacy copy of **stays out of the six**. Adding it
+  would give `drift` a row that is `absent` in every repo, forever.
 - It **carries a `VERSION` anyway**, because `--version` is part of the uniform tool contract
   (`0` ok · `1` findings · `2` refusal, `--json` everywhere) that every tool here answers to.
 - It is bumped **with the six, at the same moment** — `/specs:conclude` step 5, per §*When the bump
@@ -107,43 +111,42 @@ The rule, stated so a future plugin-side-only tool inherits it:
 
 ## Noticing drift — the half a bump cannot do
 
-Bumping the six is what makes an upgrade *possible*. It does nothing about a target that already
-holds a copy and never runs an align again: the offer is the only moment a version is compared, so
-that repo keeps whatever it got, indefinitely, and nothing says so. This repository ran
-`.claude/hooks/specs.py` at **1.0.0** against a plugin at **4.2.0** for months — long enough that
-the stale copy's `status` still took `--plan` where the current one takes `--spec`.
+Resolution is **plugin-first with no fallback and no manual rung**, so a bump reaches every repo
+the moment the plugin upgrades. What a bump cannot do is clear out what earlier versions left
+behind: a repo that once accepted an align's install offer still has `specs.py`, `skills.py` or
+`okf-validate.py` sitting under `.claude/hooks/`, and **nothing executes any of it**. This
+repository ran `.claude/hooks/specs.py` at **1.0.0** against a plugin at **4.2.0** for months, back
+when the manual rung could still resolve ahead of the plugin — long enough that the stale copy's
+`status` really did take `--plan` where the current one takes `--spec`. That failure is now
+impossible; what survives it is the copy, still on disk, read by nothing.
 
 `python3 assets/bin/skills.py drift --json` is what notices. Three rules make its answer worth
 trusting:
 
-**1. It runs from the plugin's copy, and refuses otherwise.** An installed copy would answer from
-the same stale `VERSION` it is being asked about, so `drift` derives the plugin root from its own
-location (or takes `--plugin-root`) and **exits 2** when neither resolves. A checker that cannot
-tell "no drift" from "could not look" reports the silence it exists to break.
+**1. It runs from the plugin's copy, and refuses otherwise.** `drift` derives the plugin root from
+its own location (or takes `--plugin-root`) and **exits 2** when neither resolves. A checker that
+cannot tell "nothing left over" from "could not look" reports the silence it exists to break.
 
 **1b. It reads; it never runs the copy.** The version comes from each tool's `VERSION = "…"`
 constant, parsed. Shelling out for `--version` would mean a probe **executing** whatever script a
 target happens to have under `.claude/hooks/` — a far larger claim than reading three lines, and
 one that also needs `python3` on `PATH`. A copy too old to declare a constant reads `unreadable`,
-which carries the same call to action as `behind`, so nothing is lost by not running it.
+which carries the same call to action as the rest: remove it.
 
-**2. Both directions are findings.** `behind` is the obvious one. `ahead` matters because
-resolution is **plugin-first** and every align deliberately leaves a newer installed copy alone —
-so an ahead copy is code that is never executed and never repaired, with both halves of that
-behaving correctly and saying nothing.
+**2. Every copy is a finding, and its version only says what kind of debris it is.** `behind`,
+`ahead` and `unreadable` are the three shapes a leftover takes, and none of them changes the
+remedy — the align for that front offers to **remove** it, never to overwrite it. There is no
+stale-dependency case left to distinguish, because there is no dependency.
 
-**3. Installed is not wired.** `okf-validate.py` does nothing unless a `hooks` block invokes it.
-This repo held it on disk with **no `hooks` block at all**: deleting it would have changed no
-behaviour, which is exactly why nobody noticed. A drift check comparing only versions would have
-caught 1.0.0-vs-4.2.0 and still missed the silence, so the wiring question is asked for the one
-tool that is a hook — and never for `specs.py` or `skills.py`, which are CLIs whose absence from
-`settings.json` is normal.
+**3. `absent` is the expected state, and is not reported.** All three tools are `absent` in any
+repo that never took the old offer, and in every repo an align has since cleaned. A probe that
+announced the normal case on every run would be noise, and a probe whose output is routine noise
+gets skipped.
 
-The same asymmetry decides severity. `behind` and `unwired` are **errors** (a different CLI
-contract; an inert script). `ahead`, `unreadable` and a missing **hook** are **warnings**. A
-missing CLI is not a finding at all: the plugin copy is what resolution runs, so warning about it
-would fire on every plugin-only repo — including this one — and a probe whose output is routine
-noise gets skipped.
+Severity follows from there: all three findings are **warnings**. A leftover copy breaks nothing —
+it is unread weight, and the repo is already running the current tool — so none of them is an
+error. What was once `sk-tool-unwired` is gone entirely: the plugin's own `hooks/hooks.json` wires
+`okf-validate.py`, so an installed copy's wiring is no longer a question anyone can be wrong about.
 
 ## The operator-manual rider
 
@@ -158,7 +161,8 @@ would have been churn.
 ## Verifying
 
 The lockstep is checked by reading every version surface back and confirming one value — the four
-the six resolve to, plus the plugin-side-only tool above, which no checker will catch:
+the six resolve to, plus the plugin-side-only tool above. **No checker catches any of them**, so
+this block is the whole enforcement:
 
 ```bash
 cd plugins/quenching
@@ -169,8 +173,7 @@ python3 assets/hooks/okf-validate.py --version
 python3 assets/bin/session.py --version        # outside the six; nothing else reads it
 ```
 
-And the other end of the same rule — what a target actually holds, in both directions, with the
-wiring question answered:
+And the other end of the same rule — which legacy copies a target still carries:
 
 ```bash
 python3 assets/bin/skills.py drift --json      # 0 ok · 1 findings · 2 refused to guess

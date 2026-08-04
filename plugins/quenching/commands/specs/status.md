@@ -56,11 +56,9 @@ point.
 ## Workflow (one read, one report)
 
 ### 1. Resolve the tool + workspace
-Resolve `specs.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
-§Resolving the tool (plugin path → the target's `.claude/hooks/specs.py` → the declared manual
-check, saying so in the report), invoked via `python3`/`py`. Resolve the `specs/` root at the repo
-root.
+Resolve `specs.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool, invoked via `python3`/`py`. Resolve the `specs/` root at the repo root.
 
 **No root at all** is a complete, valid answer: report `sp-no-workspace` and that `/quenching:specs:align`
 would scaffold it. A legacy `openspec/` present instead is `sp-legacy-workspace` — report it and

@@ -34,11 +34,9 @@ explicit none — lives in
 
 ## Resolving the tool
 
-Resolve `specs.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
-§Resolving the tool: `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then the target's
-`.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
-`python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
+Resolve `specs.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
 **No deltas.** A spec writes its durable rules **directly** into `docs/standards/` while it is

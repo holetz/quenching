@@ -17,10 +17,10 @@ described in §6.
 
 **Nothing external to install for the default.** This front has **no npm package, no Node runtime,
 no delta format, and no second spec store shadowing the one you declared**. The one tool is
-`specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), installed
-into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `.claude/quenching.json`
-(§4, `/specs:execute`) — absent in most repos, and its absence costs nothing. All you need is
-Python:
+`specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), resolved
+through the plugin and never installed into this repo. The one optional file is
+`.claude/quenching.json` (§4, `/specs:execute`) — absent in most repos, and its absence costs
+nothing. All you need is Python:
 
 ```bash
 python3 --version           # or `py --version` on Windows
@@ -296,8 +296,9 @@ a spec, never infers completion, never treats staleness as abandonment.
 ### `/specs:align` — force the workspace into shape
 
 The sweep, probe-first: it opens with `specs.py doctor` + `validate`, and a conformant workspace
-costs those two calls and stops. Otherwise: scaffolds `specs/` when absent, installs `specs.py`
-and this manual, **folds an older `backlog/` + `ready/` layout into `plans/`** and a v1
+costs those two calls and stops. Otherwise: scaffolds `specs/` when absent, installs this manual
+(never the tool — `specs.py` always resolves through the plugin), offers to remove a legacy
+installed copy if one exists, **folds an older `backlog/` + `ready/` layout into `plans/`** and a v1
 three-file layout into single files (`specs.py migrate`), normalizes filenames and slugs, stamps
 missing frontmatter, regenerates the listing zone, and migrates a legacy `openspec/` workspace
 (§10). One plan, one OK; a rename whose blast radius reaches code confirms on its own.
@@ -441,11 +442,11 @@ There is no `init` (scaffold is an asset copy), no `profiles`, no telemetry, and
 There is no `store` subcommand either: which store holds the specs is **declared** in
 `.claude/quenching.json`, never switched by a command mid-flight.
 
-`/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself any time:
+`specs.py` is never installed into this repo — run workspace health and the spec listing through
+the plugin's own command:
 
-```bash
-python3 .claude/hooks/specs.py doctor --json      # workspace health (and legacy detection)
-python3 .claude/hooks/specs.py list --json        # every spec, by folder and stage
+```
+/specs:status
 ```
 
 **`--block` requires `--reason`.** The tool refuses without one: a blocked task with no reason is

@@ -107,8 +107,8 @@ sentence, and **link out** rather than explaining in full here.
 - [**Canonical case list**](../standards/code/frontmatter-parsing.md) — the twelve frontmatter rows
   that `skills.py`, `specs.py` and `okf-validate.py` must all decide **identically**, duplicated
   byte-identically as each tool's `CANONICAL_CASES` and run by each tool's own `selftest`. It is the
-  **lockstep unit** standing in for the shared module the three cannot have — each installs
-  standalone into a target's `.claude/hooks/`, so none may import the others — and it works by
+  **lockstep unit** standing in for the shared module the three cannot have — each is a
+  self-contained single file and none may import the others — and it works by
   localising a break: a parser that drifts fails its OWN selftest on a row the other two still pass.
   A tool may read *more* than the list requires and must then not report the form it genuinely read,
   so a form a tool does **not** read can never become a row; that asymmetry is named per-tool
@@ -344,10 +344,11 @@ sentence, and **link out** rather than explaining in full here.
 - [**Version lockstep**](../standards/ci-cd/versioning-release.md) — the six version strings a
   release must bump together, split into two halves read by two independent consumers: the
   `plugin.json` `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the
-  `VERSION` constant in each of the three shipped tools, which its installing align compares against
-  the copy **already installed in a target repo**. Missing the second half is the silent failure —
-  the tool is never upgraded in any repo that already has it, which cannot be observed from this
-  repository at all. Distinct from the **Canonical case list**, which is the lockstep unit for the
+  `VERSION` constant in each of the three shipped tools, which answers `--version` and identifies
+  any **legacy copy** a target still carries under `.claude/hooks/` from before resolution went
+  plugin-first. Since nothing installs a tool any more, **no automated check asserts the six
+  agree** — the whole lockstep is discipline, read back by hand at conclude. Distinct from the
+  **Canonical case list**, which is the lockstep unit for the
   three tools' *parser behaviour* rather than their version strings.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
   in `.claude/quenching.json`, holding a command `/specs:execute` runs once inside a newly created
@@ -356,6 +357,17 @@ sentence, and **link out** rather than explaining in full here.
   case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`
   — exist only so a mistyped key cannot fail silently. Its consent is the isolation offer itself:
   the command is shown verbatim in the plan block, and choosing Worktree is the OK for it.
+- [**Withdrawn contract residue**](../standards/quality/withdrawn-contract-residue.md) — the prose
+  still asserting a contract a change **removed**, and the sibling of **Prose fan-out**
+  ([computed-fact-prose-fanout.md](../standards/quality/computed-fact-prose-fanout.md)) for the case
+  where nothing computes the fact: with no value to spell out, each site wrote the rule in its own
+  words, so no grep finds the set. The mitigation is upstream — a spec's `## Impact` names the
+  **class** of documents asserting the contract and derives the file list mechanically, because
+  enumerating instances under-counts a class that quietly gained a member. Measured five times on
+  one branch withdrawing the installed-tool contract: three caught in execution, two only at the
+  branch review, and one of those in a file `## Impact` **had** named and half-covered — which is
+  why naming the file is not enough, and the reviewer's question is *what did this make false?*
+  rather than *which files changed?*
 
 ## How to enrich
 

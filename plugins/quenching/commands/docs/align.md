@@ -29,7 +29,7 @@ The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/
 The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
 (`python3 okf-validate.py <docs-dir>` → exit 0 = conforms). Invoke it by its **literal quoted
 path** on every call, never through a shell variable holding the interpreter plus the path —
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Write the resolved path literally on every invocation.
 
 **Why `Bash` is unrestricted here.** The checker is invoked through `python3`, but a bundle-root
@@ -193,29 +193,25 @@ plan was rejected and nothing was written.
 
 **Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.
 
-### 5. Install the hook, the language declaration and the site layer — pass 1 only, offered
+### 5. Offer to remove a legacy hook copy, install the language declaration and the site layer — pass 1 only, offered
 All three are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
-**The enforcement hook.** Offer to copy **exactly**
-`${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` + `hooks-config.json` into the target's
-`.claude/hooks/` (never the directory recursively), and merge `settings.snippet.json` into
-`.claude/settings.json` (`PostToolUse` + `Stop` propose; opt-in `PreToolUse` hard-block via
-`hardBlock: true`). Set `docsDir` if the bundle root is not `docs/`.
+**The enforcement hook needs no install.** The plugin's own `hooks/hooks.json` wires
+`okf-validate.py` on `PostToolUse`/`Stop` automatically, from the plugin path — nothing is copied
+into the target's `.claude/hooks/` and nothing is merged into its `.claude/settings.json`. Set
+`docsDir` in `.claude/quenching.json` only if the bundle root is not `docs/`.
 
-**Ask the tool for the state; never hand-compare a version here.** One call answers installed,
-shipped and wired at once:
+**Offer to remove a legacy copy, if one exists.** A `.claude/hooks/okf-validate.py` and/or
+`hooks-config.json` left by a pre-`hooks.json` run of this command does nothing but drift now —
+one call answers whether either is still there:
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
 ```
 
-Read this front's row (`okf-validate.py`) and act on its `status`: `behind` → offer to overwrite
-**only the script**, never `hooks-config.json`, which holds the target's own knobs; `ahead` → leave
-it alone and **say so** — the target is ahead of this plugin, a fact to state rather than a
-regression to force; `absent` → the install offer above. A `sk-tool-unwired` finding is the one the
-script cannot fix by being copied: the file is on disk and no `hooks` block invokes it, so offer
-the `settings.snippet.json` merge even though the version is current. See
-[hooks/README.md](${CLAUDE_PLUGIN_ROOT}/assets/hooks/README.md).
+Read this front's row (`okf-validate.py`) and act on it: a legacy copy present → offer
+**removal**; absent → nothing to do. Never offer to install, overwrite or refresh one — the
+plugin path is the only wiring now.
 
 **The language declaration.** Ask **once**, and only when the target's **root** harness file
 (`CLAUDE.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,

@@ -1,26 +1,23 @@
 ---
-description: Create ONE spec in plans/ — effort proportional to what you gave it, never an interrogation. Triggers on "capture this", "park a spec", "add it to the backlog", "note this for later", "file a spec", "turn my plan into a spec", "convert this Claude Code plan", "make a spec from my plans folder". A sentence becomes the Problem section and nothing else, in seconds; a Claude Code plan file becomes every section it actually supports, mapped and never invented. Not for: filling a spec's remaining sections, or interrogating one → /specs:develop; building one → /specs:execute; closing one out → /specs:conclude; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
+description: Capture ONE spec — effort proportional to what you gave it, never an interrogation. Triggers on "capture this", "park a spec", "add it to the backlog", "note this for later", "file a spec", "turn my plan into a spec", "convert this Claude Code plan", "make a spec from my plans folder". Not for: filling a spec's remaining sections, or interrogating one → /specs:develop; building one → /specs:execute; closing one out → /specs:conclude; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
 argument-hint: [what to capture, or a path to a plan file]
-allowed-tools: Read, Grep, Glob, Write, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: sonnet
 ---
 
-# /quenching:specs:create — put one spec in `plans/`
+# /quenching:specs:create — capture one spec
 
 **Input**: `$ARGUMENTS` — a short description of the problem, **or** a path to a Claude Code plan
 file. With neither, glob `~/.claude/plans/*.md`; if that is empty too, ask what to capture.
 
-Creates ONE spec in `specs/plans/`. That folder is a spec's
-whole active life, so what is created here is what gets built: this command creates the file,
-`/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and `/quenching:specs:conclude` closes it
-out under the same basename. Nothing here to retire, hand off, or reconcile — and no ledger.
-
-The date prefix is stamped **once, here**, and never rewritten: `promote` moves the file without
-renaming it, so this basename is the spec's identity for its whole lifecycle.
+Creates ONE spec. That locator is a spec's whole active life, so what is created here is what gets
+built: this command creates it, `/quenching:specs:develop` fills its sections, `/quenching:specs:execute` builds it, and
+`/quenching:specs:conclude` closes it out under the same identity. Nothing here to retire, hand off, or
+reconcile — and no ledger.
 
 The layout, the fourteen canonical sections, the gates and the `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md);
-the tool fallback and the front's on-write check in
+the front's on-write check in
 [specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md);
 the shared log procedure in
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
@@ -35,15 +32,6 @@ what you were given, and nothing more.**
 | a sentence | `## Problem`, alone | seconds |
 | a Claude Code plan file | every section the plan actually supports | one read, one confirmation |
 
-Both obey the same prohibition — **zero interrogation**. Never ask for scope, tasks, design, or a
-verification policy. What was not said is left out, and an absent heading is a *not-yet*, not an
-omission. The gates get walked by `/quenching:specs:develop`; the hard questions get asked by
-`/quenching:specs:develop` too. Neither belongs here.
-
-The difference between the two rows is **not** effort spent thinking — it is only how much the
-input already contained. A rich plan file gets more sections because it *has* more sections, never
-because this command worked harder at it.
-
 ## Doctrine
 
 - **A sentence becomes `## Problem` and stops.** `specs.py new` stamps the frontmatter (`slug`,
@@ -55,66 +43,40 @@ because this command worked harder at it.
 - **Never invent what the input lacks.** On the plan-file path, `- none — the plan recorded no
   alternatives` is honest; a fabricated risk is not. Where the source said nothing, either leave
   the heading absent or write an explicit none that *says* the source was silent.
-- **The date is stamped once, and never again.** Never rename a spec to "fix" its date.
-- **Kebab slug in the repo's declared language, flat home.** One spec per file, no subfolders.
-  The language is the one the harness declares — the contract is
-  [communication.md](docs/standards/agents/communication.md), and it is declared once, there,
-  never again in a config key of this front's own. A pt-BR repo gets `avaliar-o-fluxo-de-criacao`,
-  not a translation nobody wrote: `slugify` folds the accents (`criação` → `criacao`), so the slug
-  stays typeable without becoming a different language. The slug is the identity every command
-  names, so it is worth a moment's thought — two specs resolving to one slug makes every later
-  command refuse (exit 2).
+- **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
+  and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
+  [communication.md](docs/standards/agents/communication.md) declares.
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
   answer: sharpen the existing spec instead, or pick a different slug.
-- **The folder is the listing.** There is no index to update — `specs.py list` derives what
-  `plans/` holds from disk on demand, so creating a spec is one file write and nothing else.
-- **A Claude Code plan file is read-only.** Never move, edit, or delete `~/.claude/plans/*.md` —
-  it stays where Claude Code put it.
 
 ## Resolving the tool
 
-Resolve `specs.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
-§Resolving the tool: `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then the target's
-`.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
-`python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
+Resolve `specs.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Workflow
 
-### 1. Resolve the workspace and classify the input
-**Read `.claude/quenching.json` before assuming a folder is the front.** Its `backend` key is
-the declaration, and only `files` has a workspace on disk; absent or unreadable means `files`.
-Read the file — do **not** spend a `specs.py config` invocation on it. The sentence path's whole
-promise is a spec in seconds, and it spends exactly three `specs.py` calls: `new`, `section
---write`, `validate`.
-
-Under `files`: find `specs/` at the target repo root, and if `plans/` and `archive/` are
-**absent**, install the seed from `${CLAUDE_PLUGIN_ROOT}/assets/specs/` and continue. If a legacy
-`backlog/` or `ready/` still holds specs, say so once and name `specs.py migrate` — never create a
-spec into a legacy folder.
-
-Under any **external** backend (`github`, `azure-boards`) there is no workspace and **no seed is
-installed**: the specs are issues or work items, and scaffolding `specs/plans/` beside them would
-plant an empty folder that looks like the front and holds none of it.
-
-Then classify what you were given: **prose** → the sentence path; **a path to an existing `.md`**,
-or an explicit ask to convert a plan → the plan-file path.
-**Done when:** the workspace resolves and the path is chosen.
+### 1. Classify the input
+**Prose** → the sentence path. **A path to an existing `.md`**, or an explicit ask to convert a
+plan → the plan-file path. This is the one decision the CLI cannot make for you: `specs.py new`
+(step 5) resolves the backend, the workspace and the seed on its own, and reports a legacy
+`backlog/`/`ready/` folder as a finding rather than writing into one.
+**Done when:** the path is chosen.
 
 ### 2. Derive the slug
 Take a title and a one-sentence problem from the input, and derive a kebab slug in the repo's
 declared language. On the plan-file path, derive it from the plan's title or goal ("Add rate
 limiting to the API" → `add-api-rate-limiting`).
 
-**Do not list the front to check for a collision.** `specs.py new` already refuses a taken slug
-with `sp-slug-exists` and exit 2, naming where it is — so a listing here asks a question that is
-about to be answered anyway, and asks it the expensive way: under `github` it is a paginated fetch
-of every issue (2.4s measured), on the path whose whole promise is that one sentence becomes a
-spec in seconds.
+**The collision check is `specs.py new`'s exit 2** (`sp-slug-exists`, naming where it is) — never a
+front listing first, which under `github` is a paginated fetch of every issue (2.4s measured).
 **Done when:** a canonical slug is in hand.
 
 ### 3. Plan-file path only — read it, and read the bundle
-Read the whole plan file and classify its parts against §The mapping below. Then, if the repo
+Read the whole plan file, then read
+[specs-create/plan-mapping.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/plan-mapping.md)
+§The mapping and classify the plan's parts against it. Then, if the repo
 carries an OKF bundle (`docs/index.md` with `okf_version`), read what constrains the work:
 `docs/standards/` for the subjects it touches, and `docs/knowledge/glossary.md` so the spec uses
 the repo's canonical terms. No bundle → skip silently.
@@ -137,7 +99,9 @@ cost more than the thing being confirmed.
 ```bash
 specs.py new <slug> --title "<title>" [--verification per-task|per-section|end-of-plan]
 ```
-Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it.
+Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it. Any
+other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`, `sp-worktree-failed`) is
+reported verbatim, naming `/quenching:specs:align`.
 `--verification` is passed **only** if the source stated a policy; otherwise the default stands and
 `/quenching:specs:develop` can set it later.
 **Done when:** the tool exited 0 and reported the locator it created.
@@ -156,19 +120,8 @@ specs.py section <slug> Problem --write   # body on stdin
 writing others around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
-**Nothing to regenerate.** The file on disk IS the record — `specs.py list` and `specs.py status`
-derive what `plans/` holds when asked, so a spec becomes visible the moment it is written. No
-listing is rebuilt here, and none may be: `plans/index.md` is a retired artifact.
-
-**Nothing is written into `docs/`.** Creating a spec used to append a line to the bundle's
-`docs/log.md`; that artifact is retired, and the spec's own frontmatter already records when it
-was captured. `specs/` stands on its own.
-
-**No glossary tail here.** Every other capture command runs **Enriching the glossary** as its tail;
-this one deliberately does not. A new spec names work, not a concept — the step was a no-op in the
-overwhelming majority of runs, and paying to read `knowledge/glossary.md` on a path whose contract
-is "seconds" is the wrong trade. A term a spec genuinely coins is caught by
-`/quenching:docs:glossary-backfill`, or by `/quenching:docs:define` when the human says the word matters.
+**No glossary tail.** Every other capture command runs **Enriching the glossary** as its tail; this
+one deliberately does not — a new spec names work, not a concept.
 
 ### 7. Check
 Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check. The OKF
@@ -194,30 +147,6 @@ unprompted: a new prompt in one of the two most-run commands costs friction for 
 the minority who isolate this early.
 **Done when:** the summary is shown.
 
-## The mapping — a Claude Code plan → canonical sections
-
-A Claude Code plan is prose with loose headings, and they may be in any language
-(`## Context` / `## Contexto`, `## Decisions` / `## Decisões`) — **match on meaning, never on the
-literal string.**
-
-| Native plan part | Canonical section |
-| --- | --- |
-| context, background, the problem, why now | `## Problem` |
-| the goal, what it changes | `## Proposal` |
-| non-goals, "fora de escopo", what it will not do | `## Out of Scope` |
-| declared scope, files and docs it will touch | `## Impact` |
-| acceptance criteria, how to confirm it worked | `## Validation` |
-| decisions, chosen approach, architecture, "Decisões" | `## Design` |
-| approaches weighed and dropped | `## Alternatives Considered` |
-| open questions, "a decidir", unresolved choices | `## Open Decisions` |
-| risks, trade-offs, "Riscos" | `## Risks` |
-| phases, steps, numbered work, "Etapas" | `## Tasks` (`- [ ]` under `### N. <Section>`) |
-| a verification / testing section | `## Tasks` (trailing verification items) |
-
-A plan that carries none of the middle rows produces a spec with `## Problem` and `## Proposal`
-and stops — which is the correct outcome, not a failure. **There is no rule that a converted plan
-must reach the ready gate**; `/quenching:specs:develop` takes it the rest of the way.
-
 ## Invariants to never violate
 
 - Never interrogate — no scope, task, design, or policy questions on either path.
@@ -227,10 +156,8 @@ must reach the ready gate**; `/quenching:specs:develop` takes it the rest of the
 - Never invent content a source plan lacks. Absent, or an honest none that names the silence.
 - Never work around `specs.py new`'s exit 2 by inventing a slug variant — a near-duplicate slug is
   worse than a refusal, because identity *is* the slug.
-- Never rename a spec to change its date. The prefix records when it was born.
-- Never move, edit, or delete a `~/.claude/plans/*.md` file.
-- Never create or refresh a `plans/index.md`. The artifact is retired, and `specs.py list` derives
-  the same listing from disk on demand.
+- Never create or refresh `plans/index.md` — a retired artifact even where a target repo still
+  carries a legacy one.
 - Never stamp an OKF `type:` on a spec to quiet the bundle validator.
 - Never create a spec into a legacy `backlog/` or `ready/` folder — report and name
   `specs.py migrate`.

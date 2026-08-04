@@ -32,8 +32,8 @@ restated.
 
 ## Resolving the tool
 
-Resolve `specs.py` and `okf-validate.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
+Resolve `specs.py` and `okf-validate.py` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 

@@ -2,13 +2,6 @@
 description: Capture ONE piece of generic knowledge into the bundle's knowledge/ home. Triggers on "add this knowledge", "record what we learned", "put this in the knowledge base". Not for: a full contract/decision/procedure/external-asset doc → /docs:add; ONE glossary term → /docs:define.
 argument-hint: [the-knowledge]
 allowed-tools: Read, Grep, Glob, Write, Edit
-hooks:
-  PostToolUse:
-    - matcher: "Write|Edit"
-      hooks:
-        - type: command
-          command: 'test -f "${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py" || exit 0; python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py"'
-          timeout: 10
 ---
 
 # /quenching:docs:learn — capture generic knowledge, OKF-conformant

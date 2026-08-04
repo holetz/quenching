@@ -183,9 +183,10 @@ When there is work: scaffolds missing homes, migrates variant folder names
 (`docs/arquitetura/` → `docs/standards/`), folds prefix-clustered files into subject subfolders
 (`nomenclatura-*.md` → `naming/`), translates non-English slugs, stamps missing frontmatter
 (**MERGE** — a filled key and any third-party key survive), regenerates every `index.md`,
-writes `okf_version`, installs this manual, then re-runs the validator. It also offers to
-install or upgrade the enforcement hook, and — when the repo has a `documentation/` home —
-an mkdocs-material site setup.
+writes `okf_version`, installs this manual, then re-runs the validator. The enforcement hook needs
+no install — the plugin wires it automatically — but the sweep offers to remove a legacy copy if
+one is still on disk, and — when the repo has a `documentation/` home — an mkdocs-material site
+setup.
 
 The **content stages** run in the same pass, each only when its probe signal found work:
 `import-memory` (drain the agent's project memory) and `harness` (re-thin `CLAUDE.md`), looping
@@ -265,8 +266,9 @@ Read this once and every command becomes predictable.
 
 ## 5. The enforcement hook
 
-`.claude/hooks/okf-validate.py` is a zero-dependency Python checker that keeps future edits
-conformant. It **proposes**, it does not block — unless you opt in.
+The plugin's own `okf-validate.py` — wired automatically via `hooks/hooks.json`, never installed
+into this repo — is a zero-dependency Python checker that keeps future edits conformant. It
+**proposes**, it does not block — unless you opt in.
 
 | Event | Behavior |
 | --- | --- |
@@ -274,13 +276,15 @@ conformant. It **proposes**, it does not block — unless you opt in.
 | `Stop` | End-of-turn sweep of the whole bundle, proposing residual gaps. **Dirty-gated**: a turn that edited no `docs/**` file costs one `stat`. |
 | `PreToolUse` | **Opt-in.** Denies the two hard violations before they land — an `index.md` carrying a `type`, or a concept doc with no `type`. Off by default. |
 
-Config lives in `.claude/hooks/hooks-config.json`, block `okfValidate`. Per-developer overrides
-go in `hooks-config.local.json` (gitignore it).
+`docsDir` lives in `.claude/quenching.json` — set it only if your bundle root is not `docs/`. The
+other knobs below have no home to declare in unless you hand-maintain
+`.claude/hooks/hooks-config.json` yourself (block `okfValidate`; per-developer overrides in
+`hooks-config.local.json`, gitignored) — nothing installs one for you.
 
 | Knob | Default | Effect |
 | --- | --- | --- |
 | `enabled` | `true` | `false` makes the hook inert. |
-| `docsDir` | `"docs"` | The bundle root, relative to the repo root. |
+| `docsDir` | `"docs"` | The bundle root, relative to the repo root — set in `.claude/quenching.json`. |
 | `warnAsError` | `false` | Promotes recommended-field warnings to failures. |
 | `blockOnFail` | `false` | Escalates the `PostToolUse`/`Stop` proposal to `decision: block`. |
 | `hardBlock` | `false` | Turns on the `PreToolUse` deny gate (also uncomment its block in `settings.json`). |
@@ -288,12 +292,10 @@ go in `hooks-config.local.json` (gitignore it).
 | `stopScan` | `"dirty"` | `"always"` restores the unconditional every-turn sweep. |
 | `ignoreGlobs` | *(none)* | Bundle-relative globs to skip — for regenerated or vendored paths. |
 
-Run it yourself any time:
+Run it yourself any time, through the plugin's own command:
 
-```bash
-python3 .claude/hooks/okf-validate.py docs           # human report; exit 0 = conforms
-python3 .claude/hooks/okf-validate.py docs --json    # machine-readable findings
-python3 .claude/hooks/okf-validate.py --version      # must match the plugin's version
+```
+/docs:status
 ```
 
 ---
@@ -342,8 +344,9 @@ bundle it leaves behind has none.
 
 **The hook is noisy on generated docs.** Add their paths to `ignoreGlobs`.
 **The hook fires on every turn.** Confirm `stopScan` is `"dirty"`.
-**`--version` disagrees with the plugin.** Run `/docs:align` — step 6 offers the upgrade,
-overwriting only the script and preserving your `hooks-config.json`.
+**A legacy `.claude/hooks/okf-validate.py` copy's `--version` disagrees with the plugin.** It is
+never executed — resolution is plugin-first with no fallback. Run `/docs:align`, which offers to
+remove it.
 
 ---
 

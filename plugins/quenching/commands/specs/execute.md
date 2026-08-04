@@ -47,17 +47,11 @@ The spec-driven facts live in
 
 ## Resolving the tool
 
-Resolve `specs.py` by the fallback in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)
-§Resolving the tool: `${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then the target's
-`.claude/hooks/specs.py`, else the manual fallback (**say so in the report**). Invoke with
-`python3`/`py`; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
+Resolve `specs.py` and `skills.py` (the section reader every `§X` citation above resolves through)
+per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
-
-`skills.py read` — the section reader every `§X` citation above resolves through — is the same
-fallback one directory over: `${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py` first, then the target's
-`.claude/hooks/skills.py`. Neither resolves → read the cited file with `Read` and **say in the
-report that the sections were loaded whole**.
 
 ## Workflow
 

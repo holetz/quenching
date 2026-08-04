@@ -19,7 +19,7 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 
 | Reason | Subtrees |
 | --- | --- |
-| **Payload copied whole** by an align into a target repo | `docs/` `specs/` `claude/` `mkdocs/` · `hooks/hooks-config.json` · `hooks/settings.snippet.json` |
+| **Payload copied whole** by an align into a target repo | `docs/` `specs/` `claude/` `mkdocs/` |
 | **Payload applied per insert** — a mold stamps one file at a time, the mold itself never lands | `templates/` |
 | **Tool the plugin executes** during a command | `bin/` · `hooks/okf-validate.py` |
 | **Development artifact of this repository** — never installed anywhere | `references/` `evals/` `checks/` |
@@ -35,8 +35,15 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 | `specs/QUENCHING.md` | the **operator manual** for the `specs/` front — the spec lifecycle, the `/specs:*` commands, the `specs.py` tool, the OKF bridge | `specs/QUENCHING.md` |
 | `claude/QUENCHING.md` | the **operator manual** for the `.claude/` front — the taxonomy axis, mirroring, the rule + registry, hook/settings hygiene | `.claude/QUENCHING.md` |
 | `mkdocs/` | the **site layer** payload — `mkdocs.yml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the `.pages` nav files ship inside `docs/documentation/**`) | the target's repo **root**, outside `docs/` |
-| `hooks/hooks-config.json` | the checker's config (block `okfValidate`) | `.claude/hooks/` |
-| `hooks/settings.snippet.json` | hook wiring (`PostToolUse` + `Stop`; opt-in `PreToolUse`) | merge into `.claude/settings.json` |
+
+Two files under `hooks/` used to belong to this table and no longer do — **nothing copies or
+merges them into a target any more**, since the plugin's own `hooks/hooks.json` wires the checker
+and `${CLAUDE_PLUGIN_ROOT}` resolves it:
+
+| Path | What it is | Reaches a target? |
+| --- | --- | --- |
+| `hooks/hooks-config.json` | the checker's config (block `okfValidate`) — the shipped copy is the **defaults reference**; the settings the checker actually reads come from the *target's* own `.claude/hooks/hooks-config.json`, if a human writes one, plus `docsDir` from `.claude/quenching.json` | **no** |
+| `hooks/settings.snippet.json` | a **reference copy** of what `hooks/hooks.json` declares, kept for reading | **no** — zero consumers |
 
 `specs/schema.json` and `specs/templates/spec.md` sit in this tree but are a hybrid: they ship
 *and* they are read at runtime by `bin/specs.py`, which carries a byte-identical embedded copy of
@@ -57,17 +64,22 @@ copy of the same standard legitimately differ in wording.
 
 | Path | Role | Installed into a target? |
 | --- | --- | --- |
-| `hooks/okf-validate.py` | the OKF v0.1 conformance checker — CLI **and** hook | yes, by `/docs:align`, into `.claude/hooks/` |
-| `bin/specs.py` | the `specs/` front's deterministic rails | yes, by `/specs:align` |
-| `bin/skills.py` | the `.claude/` front's `doctor` / `lint` / `drift` | yes, by `/skill:align` |
+| `hooks/okf-validate.py` | the OKF v0.1 conformance checker — CLI **and** hook | **no** — the plugin's own `hooks/hooks.json` wires it by `${CLAUDE_PLUGIN_ROOT}` |
+| `bin/specs.py` | the `specs/` front's deterministic rails | **no** — command bodies invoke the plugin path |
+| `bin/skills.py` | the `.claude/` front's `doctor` / `lint` / `drift` | **no** — same |
 | `bin/session.py` | reads a session transcript as evidence for `/skill:retro` | **no** — its input is `~/.claude/projects/**`, the operator's machine, so a target has nothing to hold |
 
+**None of the four is installed anywhere.** Resolution is plugin-first with no fallback and no
+manual rung ([references/align/tool-resolution.md](references/align/tool-resolution.md)), so a copy
+under a target's `.claude/hooks/` is legacy debris from before that change — reported by
+`skills.py drift` and offered for removal by the matching align, never overwritten.
+
 **Where an executable lives is decided by how it is invoked, not by whether it ships.**
-`okf-validate.py` sits in `hooks/` because it loads `hooks-config.json` from its own directory —
-separating the two breaks config loading in every installed copy. `bin/` is the Python the plugin
-runs during a command. The first three are the version lockstep's artifacts 4–6; `session.py`
-carries a `VERSION` for the uniform `--version` contract but stays outside the six, and says so in
-its own docstring.
+`okf-validate.py` sits in `hooks/` because it is the one tool a **hook event** fires rather than a
+command body — `hooks/hooks.json` names it at `PostToolUse` and `Stop`. `bin/` is the Python the
+plugin runs during a command. The first three are the version lockstep's artifacts 4–6;
+`session.py` carries a `VERSION` for the uniform `--version` contract but stays outside the six,
+and says so in its own docstring.
 
 ### Development artifacts of this repository
 
