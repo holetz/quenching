@@ -2549,9 +2549,10 @@ register("read",
          lambda sp: (sp.add_argument("path", help="a markdown file"),
                      sp.add_argument("--sections", action="append", default=[],
                                      help="a section name, or several comma-separated; "
-                                          "repeatable, for a heading carrying a comma. "
-                                          "A unique prefix resolves. Omit for the file's "
-                                          "heading index"),
+                                          "repeatable. A value that resolves whole is "
+                                          "never split, so a heading carrying a comma is "
+                                          "cited in full. A unique prefix resolves. Omit "
+                                          "for the file's heading index"),
                      sp.add_argument("--rules-only", action="store_true",
                                      help=f"only the {RULES_MARKER} half of each section; "
                                           f"a section with no marker comes back whole and "
