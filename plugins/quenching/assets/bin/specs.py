@@ -1325,6 +1325,63 @@ def base_inference_failures() -> list[str]:
     return out
 
 
+def resolve_subject(cfg: dict, key: str | None) -> tuple[dict | None, dict]:
+    """`subjects.<key>` — explicit or `azurePlacement.defaultSubject` — or the refusal
+    `## Open Decisions` names for each way it can fail. Generic over every backend: `subjects`
+    describes the PROJECT, not `azure-boards` alone (`plugin-configuration.md` §The recognised
+    keys), so `github`'s `create_spec` calls this too, for the fixed tags a subject carries
+    even where there is no parent to apply them alongside.
+
+    `subjects` undeclared is NOT a refusal — the feature is simply not in use, the same
+    `## Absence is the normal case` every other key in this file gets. It becomes one only
+    once a repository HAS declared subjects: a spec born with no resolved one there fails the
+    team's own checklist (no Parent), and `## Open Decisions` calls refusing the only honest
+    end."""
+    subjects = cfg.get("subjects") or {}
+    if not subjects:
+        return None, {}
+    resolved_key = key or (cfg.get("azurePlacement") or {}).get("defaultSubject")
+    if not resolved_key:
+        return None, {
+            "code": "sp-no-subject", "exit": 2,
+            "message": f"subjects are declared in {CONFIG_FILE} but none resolved — pass "
+                       f"`--subject <key>`, or declare `azurePlacement.defaultSubject`; "
+                       f"declared: {', '.join(sorted(subjects))}",
+        }
+    if resolved_key not in subjects:
+        return None, {
+            "code": "sp-subject-unknown", "exit": 2, "subject": resolved_key,
+            "message": f"subject '{resolved_key}' is not declared in {CONFIG_FILE}'s "
+                       f"`subjects` — declared: {', '.join(sorted(subjects))}",
+        }
+    return subjects[resolved_key], {}
+
+
+def subject_resolution_failures() -> list[str]:
+    """The two refusals `## Open Decisions` names, and the one non-refusal that keeps
+    `subjects` optional for a repository that never declared any."""
+    out: list[str] = []
+    engineering = {"name": "Engenharia", "description": "d", "tags": ["Vertical: Eng"]}
+    cases = (
+        ({"subjects": {}}, None, "no subjects declared is not a refusal", None, None),
+        ({"subjects": {"eng": engineering}}, "eng",
+         "an explicit key that exists resolves it", engineering, None),
+        ({"subjects": {"eng": engineering}, "azurePlacement": {"defaultSubject": "eng"}},
+         None, "no explicit key falls back to defaultSubject", engineering, None),
+        ({"subjects": {"eng": engineering}}, None,
+         "no key and no default refuses", None, "sp-no-subject"),
+        ({"subjects": {"eng": engineering}}, "ghost",
+         "a declared key that does not exist refuses", None, "sp-subject-unknown"),
+    )
+    for cfg, key, label, want_subject, want_code in cases:
+        subject, err = resolve_subject(cfg, key)
+        if subject != want_subject:
+            out.append(f"{label}: subject was {subject!r}, not {want_subject!r}")
+        if err.get("code") != want_code:
+            out.append(f"{label}: refusal code was {err.get('code')!r}, not {want_code!r}")
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
@@ -7299,6 +7356,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "origin_head/init_default/'main' untouched when "
                                         "none is declared"))
 
+    # Subject resolution: optional where nothing is declared, and a refusal on each of the
+    # two ways `## Open Decisions` names once a repository HAS declared `subjects`.
+    for failure in subject_resolution_failures():
+        findings.append(_finding("sp-subject-resolution-broken", "error",
+                                 f"subject resolution — {failure}",
+                                 remedy="resolve_subject: no `subjects` declared is not a "
+                                        "refusal; an unresolved key or a key naming an "
+                                        "undeclared subject both are"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -7463,8 +7529,9 @@ def cmd_selftest(args, root: str) -> int:
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
               f"written, a grouped document survives store-and-reload byte for byte whether "
               f"it fits one issue body or spills into continuation comments, an oversized body "
-              f"refuses without making the call, and the embedded "
-              f"schema and template match their asset files.")
+              f"refuses without making the call, the azure-boards WIQL never carries "
+              f"`@project`, subject resolution refuses only once `subjects` is declared, and "
+              f"the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
