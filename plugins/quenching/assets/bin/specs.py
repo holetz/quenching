@@ -3895,7 +3895,8 @@ class AzureBoardsBackend(SpecBackend):
                 work_item_type: str | None = None, iteration_path: str | None = None,
                 parent_id: int | None = None, team: str | None = None,
                 board_column: str | None = None,
-                column_map: dict[str, str] | None = None) -> None:
+                column_map: dict[str, str] | None = None,
+                tag_catalog: dict[str, str] | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
@@ -3915,6 +3916,7 @@ class AzureBoardsBackend(SpecBackend):
         self.team = team
         self.board_column = board_column
         self.column_map = column_map or {}
+        self.tag_catalog = tag_catalog or {}
         self._board_field: str | None = None   # WEF_<guid>_Kanban.Column — resolved once
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
@@ -4050,6 +4052,42 @@ class AzureBoardsBackend(SpecBackend):
             tags = [t.strip() for t in self._field(item, "System.Tags").split(";")]
             if self.discovery_tag and self.discovery_tag not in tags:
                 out.append({"id": int(item.get("id") or 0), "slug": m.group(1)})
+        return out
+
+    def board_findings(self) -> list[dict]:
+        """Three per-spec doctor findings, over the tag-scoped listing only (not the whole
+        area — `marker_without_discovery_tag` already covers what that misses): a board
+        column that disagrees with the de-para, a tag outside the declared catalog, and a
+        spec past the captured stage with no `start`/`target`.
+
+        One `work-item show` per spec, not per finding — doctor is not a build-loop hot
+        path, and `work-item show` returns every field, including the dynamic board-column
+        one `workitemsbatch` would need asked for by name."""
+        out: list[dict] = []
+        for row in self.list_specs():
+            info, rerr = self.read_spec(row["slug"])
+            if rerr or info is None:
+                continue
+            item_id = self._item_id(row["slug"])
+            item = self._az(f"reading work item {item_id} for doctor", "work-item", "show",
+                            "--id", str(item_id))
+            state = board_state_of(info)
+            expected = self.column_map.get(state, self.board_column)
+            if expected:
+                actual = self._field(item, self._resolve_board_field())
+                if actual and actual != expected:
+                    out.append({"kind": "column", "id": item_id, "slug": row["slug"],
+                               "actual": actual, "expected": expected})
+            tags = [t.strip() for t in self._field(item, "System.Tags").split(";")
+                   if t.strip()]
+            for tag in tags_outside_catalog(tags, self.tag_catalog):
+                out.append({"kind": "tag", "id": item_id, "slug": row["slug"], "tag": tag})
+            # Past `captured` (Backlog) is where the team's own rule ("a partir do
+            # Entendimento Técnico, as datas são obrigatórias") starts applying —
+            # `## Out of Scope` keeps this a finding, never a refusal.
+            if state != "captured" and not (info["frontmatter"].get("start")
+                                            and info["frontmatter"].get("target")):
+                out.append({"kind": "dates", "id": item_id, "slug": row["slug"]})
         return out
 
     # -- the five primitives -------------------------------------------------- #
@@ -4269,7 +4307,8 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                               iteration_path=placement.get("iterationPath"),
                               team=placement.get("team"),
                               board_column=placement.get("boardColumn"),
-                              column_map=cfg["azureColumns"]), {}
+                              column_map=cfg["azureColumns"],
+                              tag_catalog=cfg["tagCatalog"]), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -7805,6 +7844,38 @@ def cmd_doctor(args, root: str) -> int:
                                          remedy=f"re-apply the '{az.discovery_tag}' tag on "
                                                 f"the board; until then this spec exists "
                                                 f"only there"))
+            # The three per-spec findings §2.13 adds — cost is the tag-scoped listing (the
+            # specs this repository actually has), not the whole area the sweep above pays.
+            for row in az.board_findings():
+                if row["kind"] == "column":
+                    findings.append(_finding("sp-az-column-drift", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"is in column '{row['actual']}', not "
+                                             f"'{row['expected']}' — the next write brings "
+                                             f"it back",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             remedy="the board is the projection; move the "
+                                                    "spec through its stage/records instead "
+                                                    "of the card, or declare a different "
+                                                    "azureColumns mapping"))
+                elif row["kind"] == "tag":
+                    findings.append(_finding("sp-az-tag-uncatalogued", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"carries tag '{row['tag']}', which is not in "
+                                             f"the declared `tagCatalog`",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             tag=row["tag"],
+                                             remedy="add the tag to `tagCatalog` in "
+                                                    f"{CONFIG_FILE}, or remove it from the "
+                                                    f"work item"))
+                elif row["kind"] == "dates":
+                    findings.append(_finding("sp-az-dates-missing", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"is past the captured stage with no `start`/"
+                                             f"`target` — the team's own rule expects both "
+                                             f"from Entendimento Técnico on",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             remedy="record `start`/`target` on the spec"))
 
     leftovers = _v1_leftovers(root)
     for name in leftovers:
