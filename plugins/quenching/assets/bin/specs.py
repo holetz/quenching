@@ -3405,10 +3405,18 @@ def _az_said(stdout: str, stderr: str) -> str:
 def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
     """Every way an `az` call can fail, as an exit-2 refusal a human can act on.
 
-    FOUR OUTCOMES, FOUR REMEDIES — one more than the `gh` transport has, because `az boards`
+    FIVE OUTCOMES, FIVE REMEDIES — one more than the `gh` transport has, because `az boards`
     lives in an extension that is not installed by default. A human whose `az` is installed
     and logged in still gets "not recognised" until they add it, and telling them to log in
     again would be the wrong remedy delivered confidently.
+
+    The `code == 0` branch is reached only by `_az`'s single-item calls (show/create/update),
+    which never legitimately print nothing on success. It is never reached for the WIQL
+    query: measured on this org (az 2.89.0 + azure-devops 1.0.6), a query that matches zero
+    work items and a query whose macro failed to resolve are byte-identical — exit 0, empty
+    stdout, empty stderr — so refusing there on emptiness alone would refuse the ordinary
+    "no specs yet" case exactly as often as the fault it exists to catch. `_az`'s caller
+    decides which shape it asked for; this function only renders the refusal once asked.
 
     Always exit 2, always a refusal and never a finding: nothing was read and nothing was
     written."""
@@ -3419,6 +3427,13 @@ def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
                        "install `az` (https://aka.ms/azure-cli), then run "
                        "`az extension add --name azure-devops` and `az devops login`; no "
                        "spec was read or written",
+        }
+    if code == 0:
+        return {
+            "code": "sp-az-empty-response", "exit": 2, "action": action,
+            "message": f"`az boards` exited 0 while {action} but printed nothing — a "
+                       f"single-item call never legitimately returns empty, so the response "
+                       f"was cut short; nothing was written",
         }
     said = _az_said(stdout, stderr)
     haystack = f"{stderr or ''}\n{stdout or ''}".lower()
@@ -3492,6 +3507,14 @@ AZ_REFUSAL_CASES = (
      "DevOps organization, for example: https://dev.azure.com/MyOrganization/. You can set "
      "a default value by running: az devops configure --defaults "
      "organization=https://dev.azure.com/MyOrganization/.\n", "sp-az-no-project"),
+    # A fifth outcome, `code == 0`: this org's `az boards work-item show/create/update`
+    # never legitimately prints nothing on success, so an empty response is a cut-short
+    # transport failure rather than a shape to accept. Measured separately from the
+    # `@project` macro case in `azure_query_wiql_failures` — that one prints identically
+    # empty stdout for a query matching zero rows, which is why the refusal below reaches
+    # only the single-item calls (`_az`'s `expect='object'`, the default) and never the
+    # WIQL query (`expect='array'`).
+    ("az exits 0 with empty stdout on a single-item call", 0, "", "", "sp-az-empty-response"),
 )
 
 
@@ -3674,17 +3697,24 @@ class AzureBoardsBackend(SpecBackend):
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
     # -- transport ---------------------------------------------------------- #
-    def _az(self, action: str, *argv: str):
+    def _az(self, action: str, *argv: str, expect: str = "object"):
         """One `az boards` call, parsed. Raises `BackendRefusal` for every way it can fail.
 
         `--org` and `--project` on every call rather than relying on the configured
         defaults: resolution already read them once, and passing them explicitly means a
         human changing their `az` defaults mid-session cannot silently redirect a write to
-        another project."""
+        another project.
+
+        `expect='object'` (the default — show/create/update) refuses on exit 0 with empty
+        stdout; `expect='array'` (the WIQL query, the one caller that passes it) never does,
+        because that shape's emptiness is legitimate as often as it is a fault — see
+        `az_refusal`."""
         code, out, err = _az_run(self.cwd, "boards", *argv,
                                  "--org", self.org, "--output", "json")
         if code != 0:
             raise BackendRefusal(az_refusal(action, code, out, err))
+        if expect == "object" and not (out or "").strip():
+            raise BackendRefusal(az_refusal(action, 0, out, err))
         try:
             return json.loads(out or "null")
         except json.JSONDecodeError as e:
@@ -3709,8 +3739,8 @@ class AzureBoardsBackend(SpecBackend):
         # a saved query is one more thing a human has to create before the backend works.
         found = self._az("querying the project's work items", "query", "--project",
                          self.project, "--wiql",
-                         azure_query_wiql(self.project, self.area_path, self.discovery_tag)) \
-            or []
+                         azure_query_wiql(self.project, self.area_path, self.discovery_tag),
+                         expect="array") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
         rows: list[tuple[dict, int, str, str]] = []
