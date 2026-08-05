@@ -336,7 +336,8 @@ it.
 **The orchestrator is the spec's only writer.** An executor receives:
 
 - its task line (with `files:` / `verify:` / `pattern:`),
-- the whole `## Handoff` (small by construction),
+- `## Handoff`'s global block plus the `### N.` block of its own section — never a
+  section that already closed, and never the whole `## Handoff`,
 - the touched subjects' `docs/standards/` contracts.
 
 It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
@@ -357,7 +358,12 @@ not the executor's. They are born in the origin spec's `## Discoveries` and reso
 them — the run pauses, a task is written blocked, a discovery is recorded, the run's last commit
 lands — and on nothing else. Each names an act the executor just performed, never an assessment it
 has to make, which is what lets the rule hold in an unattended run; staleness is this section's
-failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`.
+failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`. What a
+rewrite touches is scoped the same way what an executor reads is: `specs.py section <slug> Handoff
+--write --scope global` for the evergreen block, `--scope current` for the block of the section
+whose tasks are still open. A section's block is never targeted again once its last task commits —
+that IS the close, no separate flag marks it — so a run that has moved on to `### 4.` never pays to
+resend `### 1.` through `### 3.` again.
 
 <!-- rationale -->
 
