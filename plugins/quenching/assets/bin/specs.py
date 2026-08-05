@@ -5875,6 +5875,7 @@ def cmd_next(args, root: str) -> int:
             t = openable[0]
             obj = {"ok": True, "action": "implement_task", "task": t["id"], "text": t["text"],
                    "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
+                   "cwd": t["cwd"],
                    "parallel": t["parallel"], **base,
                    "message": f"implement task {t['id']}: {t['text']}"}
             emit(args.json, obj, obj["message"])
