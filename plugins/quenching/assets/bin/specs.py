@@ -4092,7 +4092,8 @@ class AzureBoardsBackend(SpecBackend):
         self.column_map = column_map or {}
         self.tag_catalog = tag_catalog or {}
         self._board_field: str | None = None   # WEF_<guid>_Kanban.Column — resolved once
-        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
+        # descriptor, id, shell doc, native title, native tags/assignee/start/target
+        self._rows: list[tuple[dict, int, str, str, dict]] | None = None
 
     # -- transport ---------------------------------------------------------- #
     def _az_raw(self, action: str, *argv: str, expect: str = "object"):
