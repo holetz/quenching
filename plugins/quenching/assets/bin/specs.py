@@ -4036,9 +4036,9 @@ AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Descript
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
-    ONE WORK ITEM IS ONE SPEC and ONE TASK IS ONE CHILD WORK ITEM — the same hybrid shape
-    the `github` backend uses, through the same `hybrid_*` helpers, which is the point of
-    those helpers having stopped being `gh_*`. Everything the two backends agree on is
+    ONE WORK ITEM IS ONE SPEC, the whole document in `System.Description` — the same hybrid
+    shape the `github` backend uses, through the same `hybrid_*` helpers, which is the point
+    of those helpers having stopped being `gh_*`. Everything the two backends agree on is
     literally shared code rather than two implementations that must be kept in step.
 
     IT DERIVES NOTHING, exactly as `GitHubBackend` derives nothing: `derive_info` produces
