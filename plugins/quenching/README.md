@@ -323,8 +323,16 @@ continuation comments on its own issue and comes back byte for byte — and ther
 `specs/` folder on disk at all**. **Frontmatter records human judgments** (`priority`, `refined`,
 `approved`, `branch`, `reviewed`, `merge`, `outcome`); the filesystem or backend, git and section
 presence record everything else — `ready` is a *derived* stage, and the OK to build is the
-`approved: {date}` stamp. Because a spec writes its durable rule **directly into
-`docs/standards/`** (honestly `authority`-graded), there is no second store to bridge to:
+`approved: {date}` stamp. Four more frontmatter keys — `tags`, `assignee`, `start`, `target` — are
+**state, never records**: each has a faithful native counterpart on at least one backend (issue
+labels/assignees on `github`, `System.Tags`/`System.AssignedTo`/the two scheduling dates on
+`azure-boards`) and is reassembled from it on read rather than kept in the document, so a human's
+edit on the tracker IS the spec's new value. `.claude/quenching.json` is where a target declares
+`backend`, the per-backend placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
+project's own `subjects`/`tagCatalog` — the closed sets `/specs:create` proposes a spec's subject
+and tags from, confirmed by a human, never picked silently. Because a spec writes its durable rule
+**directly into `docs/standards/`** (honestly `authority`-graded), there is no second store to
+bridge to:
 isolation-while-building is a real git **branch or worktree** (offered inline by `/specs:execute`
 when it starts from the base branch, recorded as `branch: {base, work}`, each task committed alone
 with its sha on the task line). `specs.py export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
@@ -554,12 +562,12 @@ only, preserving the target's `hooks-config.json`. Details:
 `subprocess` over `gh`/`az`, never a bundled HTTP client, so every write and every list is one
 process spawn plus one network round trip, cached only for the lifetime of the running
 `specs.py` process. Measured on `github`: a 12-command build cycle spent 33 `gh` calls, because
-`list` re-lists every issue with no cache between processes. `azure-boards` is worse per spec —
-`az work-item show` has no batch form, so a `list` costs one call per spec listed, against
-`github`'s paged listing — mitigated only by the same per-process cache. Neither binary is a
-plugin dependency until a target repo declares that backend: `files` never shells out, and a
-missing `gh`/`az`, a missing extension, or a missing auth is a named **refusal (exit 2)**, on the
-first operation, never mid-build.
+`list` re-lists every issue with no cache between processes. `azure-boards`'s `list` reads in
+batches of 200 through `az devops invoke --resource workitemsbatch` — 1 + ⌈N/200⌉ calls for a
+listing rather than 1 + N, `az work-item show` having no batch form of its own — mitigated
+further by the same per-process cache. Neither binary is a plugin dependency until a target repo
+declares that backend: `files` never shells out, and a missing `gh`/`az`, a missing extension, or
+a missing auth is a named **refusal (exit 2)**, on the first operation, never mid-build.
 
 ## Install
 
