@@ -114,7 +114,10 @@ else.**
 | `outcome` | at archive | `conclude` | `done` · `abandoned` — stamped by `promote --to archive` |
 
 Read top to bottom, the optional records **narrate the spec's history**: ranked, interrogated,
-approved, built, reviewed, merged, closed. An absent record is a *not-yet*, never a defect.
+approved, isolated, reviewed, merged, closed. Not "built" — `branch` narrates that isolation was
+taken, never that the work finished; "built" is the derived stage `executing`, which a spec built
+in place, with no `branch` record at all, still reaches. An absent record is a *not-yet*, never a
+defect.
 
 `writeOnce: true` (`approved`, `branch`, `merge`, `outcome`) marks an irreversible transition, where
 rewriting the value would falsify something that already happened. `writeOnce: false` (`priority`,

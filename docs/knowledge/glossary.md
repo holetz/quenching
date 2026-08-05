@@ -261,7 +261,12 @@ sentence, and **link out** rather than explaining in full here.
   `## Tasks`→sub-issue mapping took the first. A mapping also needs the native value to be **the
   same fact**: an issue's `created_at` is when the ISSUE was made, so the capture date has no
   faithful counterpart and stays in the document. A field with no honest native copy is not
-  duplicated truth — it is the only copy.
+  duplicated truth — it is the only copy. A third case is neither of the two: **rendering** carries
+  state the document already *derives* — never a canonical field of its own — onto a native
+  surface, recalculated from scratch on every write and never read back, admitted only when it
+  also costs no extra call and is discardable without loss. The `spec:` labels a `github` or
+  `azure-boards` backend reconciles onto its own issue or work item — one per frontmatter record
+  present, plus one for the derived `executing` stage — are the example this repository has.
 - [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
   a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
   which every checker in this repo is blind to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
