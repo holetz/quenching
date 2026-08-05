@@ -128,12 +128,25 @@ and checking them would flag a spec for not delivering a doc it never claimed.
 
 <!-- rules -->
 The context an executor needs and cannot derive: the state of play, the conventions in force, what
-was already tried. **Small by construction** — it is sent with every task, and it does not carry
-the human sections.
+was already tried. **Small by construction, and scoped by construction**: it carries a small
+evergreen **global block** plus one block per `### N. <Section>` — the same grouping `## Tasks`
+already uses — and a task is sent only the global block plus the block of its own section, never a
+closed section's block and never the whole `## Handoff`.
 
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
-— rather than when someone judges it stale.
+— rather than when someone judges it stale. What changed is what a rewrite touches, not when one
+happens: `specs.py section <slug> Handoff --write --scope global` for the evergreen block,
+`--scope current` for the block of whichever section still has open work — never both, and never a
+closed section's.
+
+A section's block **closes** the moment its last task commits, but closing is not a fifth event:
+`--scope current` always resolves to the section the next open task belongs to, so once every task
+in `### N.` is checked, the next of the four events to fire targets `### (N+1).` instead — `### N.`
+is simply never addressed again. Nothing marks it "closed" in the text; the absence of any further
+write **is** the close, the same way a merged branch needs no explicit "done" flag. A section whose
+tasks all land between two rewrite events never gets a block of its own at all, and that is fine —
+`--scope current` opens one on demand, borrowing `## Tasks`' own heading text as its title.
 
 Each of those four is a moment the executor *just finished doing something*, never one where it
 appraises something: that is the property that makes the rule survivable unattended, and it is what
@@ -147,6 +160,12 @@ survives an unattended run. The cadence they replaced was one rewrite per commit
 which on a measured 13-task run produced rewrites ~90% identical to one another — the section is
 sent with every task, so a near-identical rewrite is paid for on both sides and buys nothing on
 either.
+
+Scoping what travels is the same fix applied one layer deeper: on a real 29-task, 7-section run
+(`configurable-spec-backend`), the flat `## Handoff` resent ~79,556 characters (~19,900 tokens)
+across the run, peaking at ~5,680 characters per task in the closing sections — mostly the history
+of sections already done, which a task in `### 6.` or `### 7.` never needed. A rewrite happening
+less often already fixed *when* the resend happened; this fixes *how much* each resend carries.
 
 ## `## Tasks`
 
