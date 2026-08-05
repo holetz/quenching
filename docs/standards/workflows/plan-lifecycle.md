@@ -4,10 +4,10 @@ title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, the append-only archive rule for facts that did not exist at the move, and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, plugins/quenching/assets/references/specs-develop/questions.md, specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
-timestamp: 2026-08-03
+timestamp: 2026-08-05
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1)
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write
 maintainer: quenching
 ---
 
@@ -96,7 +96,11 @@ record:
 | `outcome: done \| abandoned` | `conclude` | yes | the verdict on whether the work completed |
 
 Read top to bottom, the records narrate the spec's history in order: ranked, interrogated,
-approved, built, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition —
+approved, isolated, reviewed, merged, closed. **Not** "built" — `branch` narrates that isolation
+was taken (a worktree or a branch cut, `base` and `work` recorded), never that the work
+finished; "built" is the derived stage `executing` (`stages.derived`, keyed off task state or a
+filled `## Handoff`), which a spec built in place, with no `branch` record at all, still reaches.
+`writeOnce: true` marks an irreversible transition —
 rewriting the value would falsify a fact that already happened; the restampable three each carry
 their own `date` because their owning command may legitimately re-judge. In neither case may a
 command other than the one named in `writtenBy` touch the record. The vocabulary lives in
