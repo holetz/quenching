@@ -214,20 +214,23 @@ DEFAULT_SCHEMA: dict = {
         "outcome": list(OUTCOMES),
         "records": {
             "priority": {"fields": ["level", "criticality", "complexity", "date"],
-                         "writtenBy": "triage", "writeOnce": False},
+                         "writtenBy": "triage", "writeOnce": False, "label": "spec:ranked"},
             "refined": {"fields": ["mode", "date"],
-                        "writtenBy": "develop", "writeOnce": False},
+                        "writtenBy": "develop", "writeOnce": False,
+                        "label": "spec:interrogated"},
             "approved": {"fields": ["date"],
-                         "writtenBy": "develop, or execute inline", "writeOnce": True},
+                         "writtenBy": "develop, or execute inline", "writeOnce": True,
+                         "label": "spec:approved"},
             "branch": {"fields": ["base", "work"],
                        "writtenBy": "execute", "writeOnce": True},
             "reviewed": {"fields": ["date"],
-                         "writtenBy": "conclude", "writeOnce": False},
+                         "writtenBy": "conclude", "writeOnce": False,
+                         "label": "spec:reviewed"},
             "merge": {"fields": ["strategy", "subject", "pr"],
                       "strategies": list(MERGE_STRATEGIES),
                       "anchorless": list(MERGE_ANCHORLESS_STRATEGIES),
                       "noPr": list(MERGE_NO_PR_STRATEGIES),
-                      "writtenBy": "conclude", "writeOnce": True},
+                      "writtenBy": "conclude", "writeOnce": True, "label": "spec:merged"},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
         },
@@ -280,7 +283,8 @@ DEFAULT_SCHEMA: dict = {
              "warnWhenEmpty": ["Overview", "Handoff"]},
             {"id": "approved", "phase": "plans", "when": {"frontmatter": "approved"}},
             {"id": "executing", "phase": "plans",
-             "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]}},
+             "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]},
+             "label": "spec:built"},
         ],
     },
 }
@@ -2051,6 +2055,7 @@ BACKEND_CASES = (
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
+    ("derive labels off the stamped record", lambda b: _case_labels(b)),
     # AFTER the three cases that author the document, never on the fresh capture form. See
     # `_case_front`: on a capture form the case passes with the reader broken.
     ("rank the front", lambda b: _case_front(b)),
@@ -2155,6 +2160,13 @@ def _case_move(b: "SpecBackend") -> dict:
     info, _ = b.read_spec("alpha")
     b.move_spec(info, "archive")
     return _observable(b.read_spec("alpha")[0])
+
+
+def _case_labels(b: "SpecBackend") -> list[str]:
+    """`derive_labels` off the same document through both stores — proves the calculation
+    reads only `info`, never anything backend-specific, same as every case above it."""
+    info, _ = b.read_spec("alpha")
+    return derive_labels(info)
 
 
 def resolution_failures() -> list[str]:
@@ -3928,6 +3940,17 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     return labels
 
 
+def reconcile_label_set(current: list[str], desired: list[str], prefix: str = "spec:") -> list[str]:
+    """The label set a native tracker surface should carry next, given what it carries now.
+
+    Every label OUTSIDE `prefix` in `current` survives untouched — a human's own label is
+    never this tool's to remove. Every label UNDER `prefix` is replaced wholesale by
+    `desired`: a stale one a stage regression left behind is dropped, a newly-earned one is
+    added, in the same pass a PATCH can afford — see `derive_labels`."""
+    foreign = [l for l in current if not l.startswith(prefix)]
+    return foreign + list(desired)
+
+
 def _policy(fm: dict) -> str:
     v = str(fm.get("verification", "")).strip().lower()
     return v if v in VERIFICATION_POLICIES else DEFAULT_VERIFICATION
@@ -4945,6 +4968,32 @@ def record_round_trip_failures() -> list[str]:
     if parse_frontmatter(reflowed).get("merge") != {"strategy": "rebase"}:
         failures.append("re-stamping a block record left its old fields behind: "
                         f"{parse_frontmatter(reflowed).get('merge')!r}")
+    return failures
+
+
+def label_reconciliation_failures() -> list[str]:
+    """`reconcile_label_set` against the cases that decide whether it may ship: a label
+    outside the `spec:` prefix survives untouched — a human's own label is never this
+    tool's to touch — a stale `spec:` label a stage regression left behind is dropped, and
+    one the document newly earns is added, all in the one pass a PATCH can afford."""
+    failures: list[str] = []
+    cases = {
+        "foreign label survives, spec: labels replaced": (
+            ["bug", "spec:ranked"], ["spec:ranked", "spec:approved"],
+            ["bug", "spec:ranked", "spec:approved"]),
+        "stale spec: label dropped": (
+            ["spec:ranked", "spec:built"], ["spec:ranked"],
+            ["spec:ranked"]),
+        "nothing under the prefix is a no-op": (
+            ["help wanted"], [], ["help wanted"]),
+        "every spec: label sheds when the document sheds every record": (
+            ["spec:ranked", "spec:approved"], [], []),
+    }
+    for label, (current, desired, want) in cases.items():
+        got = reconcile_label_set(current, desired)
+        if got != want:
+            failures.append(f"{label}: reconcile_label_set({current!r}, {desired!r}) = "
+                            f"{got!r}, expected {want!r}")
     return failures
 
 
@@ -7139,6 +7188,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "block form, and a re-stamp replaces the old "
                                         "field lines rather than orphaning them"))
 
+    # The native-label projection: a foreign label must survive it untouched, and a stale
+    # `spec:` one must not outlive the record that earned it.
+    for failure in label_reconciliation_failures():
+        findings.append(_finding("sp-label-reconciliation-case", "error",
+                                 f"label reconciliation — {failure}",
+                                 remedy="reconcile_label_set replaces only the `spec:` "
+                                        "prefix wholesale; every other label the tracker "
+                                        "already carries passes through untouched"))
+
     # `pr:` on the merge record: a local conclusion without one stays valid, and one set
     # under a strategy `gh pr merge` cannot perform is flagged rather than silently kept.
     for failure in merge_pr_failures():
@@ -7420,7 +7478,8 @@ def cmd_selftest(args, root: str) -> int:
               f"each refuse with their own remedy, the unproved-backend warning says its "
               f"piece once per process on stderr and only for "
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
-              f"written, a grouped document survives store-and-reload byte for byte whether "
+              f"written, a foreign label survives label reconciliation while a stale "
+              f"`spec:` one does not, a grouped document survives store-and-reload byte for byte whether "
               f"it fits one issue body or spills into continuation comments, an oversized body "
               f"refuses without making the call, and the embedded "
               f"schema and template match their asset files.")
