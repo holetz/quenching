@@ -209,7 +209,7 @@ DEFAULT_SCHEMA: dict = {
     "frontmatter": {
         "required": ["slug", "title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed",
-                     "merge", "outcome"],
+                     "merge", "outcome", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
@@ -5043,6 +5043,78 @@ def cmd_verification(args, root: str) -> int:
     return 0
 
 
+# The four STATE frontmatter keys — never records, each with a faithful native counterpart
+# in at least one backend (`spec-backend.md` §A native value is the same fact).
+FIELD_KEYS = ("tags", "assignee", "start", "target")
+
+
+def parse_field_date(value: str) -> str | None:
+    """`value` as an ISO date, or `None` — REAL calendar validation, not a digit-shaped
+    regex: `^\\d{4}-\\d{2}-\\d{2}$` accepts `2026-13-99`, which `date.fromisoformat` refuses."""
+    try:
+        return datetime.date.fromisoformat(value).isoformat()
+    except ValueError:
+        return None
+
+
+def field_date_failures() -> list[str]:
+    """A real calendar date passes; a digit-shaped non-date — the exact case a regex alone
+    would have accepted — is refused."""
+    out: list[str] = []
+    cases = (("2026-08-05", "2026-08-05"), ("2026-13-99", None), ("not-a-date", None),
+             ("2026-02-30", None))
+    for value, want in cases:
+        got = parse_field_date(value)
+        if got != want:
+            out.append(f"parse_field_date({value!r}) returned {got!r}, not {want!r}")
+    return out
+
+
+def cmd_field(args, root: str) -> int:
+    """Read or set ONE of `tags`/`assignee`/`start`/`target`, through the backend — the ONE
+    deterministic verb `## Design` requires for each: an agent (or a human) may choose WHAT
+    to write, a tag from `tagCatalog`, an assignee, a date, but never HOW. `args.field` is
+    set by the subparser that dispatched here, one of `FIELD_KEYS`.
+
+    Not a `record`: these are state a backend reassembles on read, not a judgment with a
+    `writtenBy`/`writeOnce` rule of its own — `cmd_verification` argues the same distinction
+    for the one scalar that came before these four."""
+    key = args.field
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+    current = info["frontmatter"].get(key)
+
+    if args.value is None:
+        emit(args.json, {"ok": True, "slug": info["slug"], key: current},
+             f"{info['slug']} — {key}: {current if current else '(none)'}")
+        return 0
+
+    if key == "tags":
+        items = [t.strip() for t in args.value.split(",") if t.strip()]
+        rendered = "[" + ", ".join(json.dumps(t, ensure_ascii=False) for t in items) + "]"
+        stored: object = items
+    elif key in ("start", "target"):
+        value = parse_field_date(args.value.strip())
+        if value is None:
+            emit(args.json, {"ok": False, "code": f"sp-bad-{key}", "given": args.value,
+                             "message": f"'{args.value}' is not a real YYYY-MM-DD date"},
+                 f"error: '{args.value}' is not a real YYYY-MM-DD date")
+            return 2
+        rendered = stored = value
+    else:   # assignee
+        rendered = stored = args.value.strip()
+
+    backend.write_spec(info, set_frontmatter_key(info["text"], key, rendered))
+    emit(args.json, {"ok": True, "slug": info["slug"], key: stored, "previous": current},
+         f"{info['slug']} — {key}: {stored}"
+         + (f"  (was {current})" if current and current != stored else ""))
+    return 0
+
+
 def cmd_record(args, root: str) -> int:
     """Read or merge ONE frontmatter record, through the backend.
 
@@ -7499,6 +7571,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "flags nothing; a tag absent from a DECLARED "
                                         "catalog does"))
 
+    # `start`/`target` real-calendar validation — a digit-shaped regex would have accepted
+    # `2026-13-99`.
+    for failure in field_date_failures():
+        findings.append(_finding("sp-field-date-broken", "error",
+                                 f"field date validation — {failure}",
+                                 remedy="parse_field_date must reject anything "
+                                        "`date.fromisoformat` rejects, not just anything a "
+                                        "digit-shaped regex would"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -7667,7 +7748,8 @@ def cmd_selftest(args, root: str) -> int:
               f"`@project`, subject resolution refuses only once `subjects` is declared, the "
               f"board-state precedence puts archived over reviewed over the derived stage, "
               f"an undeclared tag catalog flags nothing while a declared one flags what is "
-              f"outside it, and the embedded schema and template match their asset files.")
+              f"outside it, a digit-shaped non-date refuses `start`/`target`, and the "
+              f"embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
@@ -8003,6 +8085,18 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("policy", nargs="?",
                     help="omit to read; one of " + ", ".join(VERIFICATION_POLICIES))
 
+    for field, value_help in (
+        ("tags", "omit to read; a comma-separated list to SET (replaces, never appends)"),
+        ("assignee", "omit to read; a name or identity to set"),
+        ("start", "omit to read; YYYY-MM-DD to set"),
+        ("target", "omit to read; YYYY-MM-DD to set"),
+    ):
+        sp = add_json(sub.add_parser(field, help=f"read or set ONE spec's `{field}` — "
+                                                 f"stored, never projected"))
+        sp.add_argument("spec")
+        sp.add_argument("value", nargs="?", help=value_help)
+        sp.set_defaults(field=field)
+
     sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
     sp.add_argument("spec")
     sp.add_argument("name", help="one of the declared records")
@@ -8083,6 +8177,10 @@ DISPATCH: dict = {
     "show": cmd_show,
     "section": cmd_section,
     "verification": cmd_verification,
+    "tags": cmd_field,
+    "assignee": cmd_field,
+    "start": cmd_field,
+    "target": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,
