@@ -4,10 +4,10 @@ title: Spec backend interface
 description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-03
+timestamp: 2026-08-05
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`
 maintainer: quenching
 ---
 
@@ -180,6 +180,30 @@ next one to take the native-construct permission up:
   body it will answer 422 to; and a declared part the comments no longer hold is its own **refusal
   (`sp-gh-parts-missing`, exit 2)** — returning the shorter document would let the next write
   persist that truncation as the new truth.
+
+## Placement is declared, and reaffirmed on every write
+
+A work item's position in an external tracker — its area, its type, its parent, its iteration,
+its board column — is not one of the fourteen sections, and it is not derived from anything the
+canonical document carries. **It is declared**, in `.claude/quenching.json`'s `azurePlacement`
+([plugin-configuration.md](../workflows/plugin-configuration.md)), for the same reason
+`azureStates` already is: the document is identical on every backend, and an external tracker's
+own organisational scheme belongs to the project the backend writes into, never to the spec.
+
+A backend free to GUESS placement would not fail loudly. Measured on `azure-boards`'s own
+target project: the declared area covers **one** sub-area of 761 unrelated work items, and a
+guessed default would write into the wrong part of somebody else's board — silently
+indistinguishable from a right write until a human goes looking. Declaring it, with no default for
+the one field with no honest guess (`areaPath`), is what turns that failure loud — the same
+argument `azureStates` already carries, applied to WHERE a spec is born rather than WHAT state it
+reads as.
+
+**Declared placement is reaffirmed on every write, not only at creation.** A human who moves the
+work item's area or its board column between two writes sees the next one bring it back — the
+tracker is the projection, `.claude/quenching.json` is the authority, and that is the same
+one-way relationship `state` already has with `move_spec`. This costs nothing extra: the fields
+travel on the SAME create/update call the write was already making, never a round trip of their
+own.
 
 ## Granular reading is about context, not I/O
 
