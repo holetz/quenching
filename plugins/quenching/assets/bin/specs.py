@@ -2916,7 +2916,7 @@ class GitHubBackend(SpecBackend):
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
                 }, int(issue.get("number") or 0), head, parts,
-                    str(issue.get("title") or "")))
+                    str(issue.get("title") or ""), self._native_fields(issue)))
         self._rows = rows
         self._legacy = legacy
         return rows
@@ -2938,7 +2938,7 @@ class GitHubBackend(SpecBackend):
     def _issue_parts(self, slug: str) -> tuple[int, int]:
         """`(issue number, how many parts are stored)` — both from the listing already in hand,
         so knowing whether there are stale continuation comments to clean up costs no call."""
-        for descriptor, number, _, parts, _title in self._load():
+        for descriptor, number, _, parts, _title, _native in self._load():
             if descriptor["slug"] == slug:
                 return number, parts
         raise BackendRefusal({
@@ -2948,58 +2948,111 @@ class GitHubBackend(SpecBackend):
                        f"was written",
         })
 
+    def _native_fields(self, issue: dict) -> dict:
+        """`tags`/`assignee`, reassembled from `labels`/`assignees` — the READ half of
+        `## Design` §Armazenado não é projetado. GitHub allows several assignees; the
+        canonical field is singular, so only the first is reflected — the same restriction
+        the schema already puts on every backend. `start`/`target` have no honest native
+        counterpart here (no scheduling fields on an issue) and stay in the document,
+        exactly as `date:` already does."""
+        out: dict = {}
+        labels = [lbl.get("name") for lbl in (issue.get("labels") or [])
+                 if isinstance(lbl, dict) and lbl.get("name")]
+        if labels:
+            out["tags"] = labels
+        assignees = [a.get("login") for a in (issue.get("assignees") or [])
+                    if isinstance(a, dict) and a.get("login")]
+        if assignees:
+            out["assignee"] = assignees[0]
+        return out
+
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, _, t in rows})
+                                {d["slug"]: t for d, _, _, _, t, _ in rows})
         if err:
             return None, err
         # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
         # resolved to a different one, and looking the document up by the request would
         # raise right after the resolution succeeded.
-        number, head, parts, native = next((n, d, p, t)
-                                           for descriptor, n, d, p, t in rows
-                                           if descriptor["slug"] == spec["slug"])
+        number, head, parts, native_title, native_fields = next(
+            (n, d, p, t, f) for descriptor, n, d, p, t, f in rows
+            if descriptor["slug"] == spec["slug"])
         full_text = head if parts <= 1 else self._joined(number, head, parts)
         # The title comes back from the issue's own, which is where the write put it. A
         # document that still carries its own `title:` is returned untouched.
-        return derive_info(spec, hybrid_title_join(full_text, native)), {}
+        info = derive_info(spec, hybrid_title_join(full_text, native_title))
+        info["frontmatter"].update(native_fields)
+        return info, {}
+
+    # `start`/`target` have no native counterpart on an issue (no scheduling fields) and
+    # stay in the document, exactly as `date:` already does — only these two are stored.
+    GH_STORED_KEYS = ("tags", "assignee")
 
     def write_spec(self, info: dict, text: str) -> None:
         number, had_parts = self._issue_parts(info["slug"])
-        self._store(number, info["slug"], info["file"], text, had_parts)
+        # FRESH, off the text THIS write is putting in place, and CARRIED FORWARD where it
+        # is silent — the same two-part fix `AzureBoardsBackend.write_spec` needed: an
+        # ordinary write (a section edit) hands text that never mentions `tags`/`assignee`
+        # at all, because `_store` already stripped them from the document; reading that
+        # absence as "clear them" would wipe both on the next unrelated write.
+        fresh = derive_info(info, text)
+        native_fields = carry_forward_fields(info["frontmatter"], fresh["frontmatter"],
+                                             self.GH_STORED_KEYS)
+        self._store(number, info["slug"], info["file"], text, had_parts, native_fields)
         self._invalidate()
 
     def _store(self, number: int, slug: str, filename: str, text: str,
-               had_parts: int) -> None:
+               had_parts: int, native_fields: dict | None = None) -> None:
         """The whole write, given an issue number already in hand.
 
         Split out for `migrate`, which knows every number from its own scan and must not go
         back to the listing between writes: `_invalidate` after each one would make the next
         lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
         the SAME serialisation either way — a migration with a writer of its own would be a
-        second implementation that runs exactly once, on the day it matters most."""
-        stored, title = hybrid_project(slug, text)
+        second implementation that runs exactly once, on the day it matters most.
+        `native_fields` is `None` for `migrate`, which never touches `tags`/`assignee`.
+
+        `labels`/`assignees` ride the SAME PATCH as `title`/`body` — no second call — and a
+        label GitHub does not already have fails the WHOLE request atomically (measured
+        against this repository: `not found`, nothing written), which is the write-refusal
+        `## Open Decisions` settles for §3.4: this tool never creates a label to make a
+        write succeed."""
+        stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
+        stored, title = hybrid_project(slug, stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
+        payload = {"title": title,
+                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+        if native_fields is not None:
+            if "tags" in native_fields:
+                payload["labels"] = native_fields["tags"] or []
+            if "assignee" in native_fields:
+                payload["assignees"] = [native_fields["assignee"]] \
+                    if native_fields["assignee"] else []
         self._write_api(f"updating issue #{number}", "PATCH",
-                        f"repos/{self.repo}/issues/{number}",
-                        {"title": title,
-                         "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
+                        f"repos/{self.repo}/issues/{number}", payload)
         self._sync_parts(number, chunks, had_parts)
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        stored, title = hybrid_project(m.group(1) if m else filename, text)
+        fresh = derive_info({"phase": phase}, text)
+        stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
+        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
+        payload = {"title": title,
+                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+        if fresh["frontmatter"].get("tags"):
+            payload["labels"] = fresh["frontmatter"]["tags"]
+        if fresh["frontmatter"].get("assignee"):
+            payload["assignees"] = [fresh["frontmatter"]["assignee"]]
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                {"title": title,
-                                 "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
+                                payload)
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
         self._sync_parts(number, chunks)
@@ -4253,7 +4306,15 @@ class AzureBoardsBackend(SpecBackend):
         self._update(item_id, **fields)
         self._apply_parent(item_id, self.parent_id)
         self._apply_column(item_id, fresh)
-        self._apply_native_fields(item_id, fresh["frontmatter"])
+        # CARRIED FORWARD, not read off `fresh` alone: `strip_frontmatter_keys` means an
+        # ORDINARY write — a section edit, a ticked task — hands this method text that never
+        # mentions `tags`/`assignee`/`start`/`target` at all, because they were never in the
+        # document to begin with. Reading that silence as "clear them" would wipe every
+        # stored field on the next unrelated write; `carry_forward_fields` keeps `info`'s
+        # (the pre-write read's) values unless THIS write's own text set one explicitly.
+        self._apply_native_fields(
+            item_id, carry_forward_fields(info["frontmatter"], fresh["frontmatter"],
+                                          FIELD_KEYS))
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -5112,6 +5173,39 @@ def strip_frontmatter_keys(text: str, keys: tuple[str, ...]) -> str:
     kept = [ln for i, ln in enumerate(lines)
            if not (1 <= i < close and ln.split(":", 1)[0].strip() in keys)]
     return "".join(kept)
+
+
+def carry_forward_fields(old_fm: dict, new_fm: dict, keys: tuple[str, ...]) -> dict:
+    """`keys`, from `new_fm` where THIS WRITE's own text declared one explicitly, and from
+    `old_fm` (the pre-write read) where it did not.
+
+    THE BUG THIS FIXES: a key `strip_frontmatter_keys` removes is gone from the document
+    once stored, so an ORDINARY write — editing a section, ticking a task — hands
+    `write_spec` text that never mentions `tags` at all. Reading that absence as "clear the
+    tags" would wipe every stored field on the next unrelated write. Presence in `new_fm` is
+    the signal an explicit `cmd_field`/`--subject` write leaves behind — `set_frontmatter_key`
+    inserts the line it is asked to set — so presence, not truthiness, is what is asked
+    (`tags: []` is a real instruction to clear; the key being ABSENT is silence)."""
+    return {k: new_fm[k] if k in new_fm else old_fm.get(k) for k in keys}
+
+
+def carry_forward_failures() -> list[str]:
+    """An ordinary write (nothing new declared) keeps every old value; an explicit write
+    (even to an empty list) overrides just the key it named."""
+    out: list[str] = []
+    old = {"tags": ["a"], "assignee": "someone", "start": "2026-01-01", "target": None}
+    cases = (
+        ({}, old, "an ordinary write (no keys in the new text) keeps everything"),
+        ({"tags": []}, {**old, "tags": []},
+         "an explicit empty list overrides just `tags`"),
+        ({"assignee": "other"}, {**old, "assignee": "other"},
+         "an explicit new value overrides just `assignee`, `tags` untouched"),
+    )
+    for new, want, label in cases:
+        got = carry_forward_fields(old, new, FIELD_KEYS)
+        if got != want:
+            out.append(f"{label}: carry_forward_fields returned {got!r}, not {want!r}")
+    return out
 
 
 def legacy_marker_fold(filename: str, text: str) -> tuple[str, str] | None:
@@ -7774,6 +7868,15 @@ def cmd_selftest(args, root: str) -> int:
                                  f"stored-field stripping — {failure}",
                                  remedy="strip_frontmatter_keys drops exactly `tags`/"
                                         "`assignee`/`start`/`target` and no other line"))
+
+    # The bug an ordinary write would otherwise reintroduce: a stripped key is gone from the
+    # text, so silence in the new write must mean "unchanged", never "clear it".
+    for failure in carry_forward_failures():
+        findings.append(_finding("sp-carry-forward-broken", "error",
+                                 f"stored-field carry-forward — {failure}",
+                                 remedy="carry_forward_fields: a key ABSENT from the new "
+                                        "write's frontmatter keeps the old value; a key "
+                                        "PRESENT (even empty) overrides it"))
 
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
