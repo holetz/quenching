@@ -7,7 +7,7 @@ tags: [architecture, specs, backend, interface, serialization]
 timestamp: 2026-08-05
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have
 maintainer: quenching
 ---
 
@@ -204,6 +204,49 @@ tracker is the projection, `.claude/quenching.json` is the authority, and that i
 one-way relationship `state` already has with `move_spec`. This costs nothing extra: the fields
 travel on the SAME create/update call the write was already making, never a round trip of their
 own.
+
+## Armazenado não é projetado
+
+`tags`, `assignee`, `start` and `target` are the frontmatter's four STATE keys — first-level,
+never a record — and each passes the same test §A native value is the same fact already applies
+to `title:`: a native mapping is valid only when the native value is the SAME FACT as the
+canonical one, and it earns its keep only once something reads it back.
+
+| Field | `files` | `azure-boards` | `github` |
+| --- | --- | --- | --- |
+| `tags` | frontmatter | `System.Tags` | issue labels |
+| `assignee` | frontmatter | `System.AssignedTo` | issue assignees (first only) |
+| `start` | frontmatter | `Microsoft.VSTS.Scheduling.StartDate` | frontmatter |
+| `target` | frontmatter | `Microsoft.VSTS.Scheduling.TargetDate` | frontmatter |
+
+**`tags` and `assignee` pass on both external backends.** A label and a spec's tag are the same
+fact — a name attached to the item — and so is an assignee: a login, an identity, one name a
+human reads as "who owns this". Both are reassembled on read and reaffirmed on every write, at no
+extra call: they ride the SAME create/update request the write was already making, exactly as
+placement does.
+
+**`start`/`target` pass ONLY on `azure-boards`.** `Microsoft.VSTS.Scheduling.StartDate`/
+`TargetDate` are the same fact a spec's own `start`/`target` name — a planned date, not a
+projection of something else. `github` has no equivalent: an issue carries no scheduling field,
+so `start`/`target` stay in the frontmatter there, unmapped, for the same reason `date:` stayed in
+the document when no backend had an honest native counterpart for IT either.
+
+**The discovery tag is the one exception `tags` carries, and it is a floor, not a ceiling.**
+`azure-boards`'s `System.Tags` also carries the discovery tag (`azurePlacement.discoveryTag`) —
+this backend's own index, never a spec's declared content. Reassembly on read EXCLUDES it, so
+`tags` reflects only what the spec itself declared; the write that reaffirms `tags` always
+re-adds it regardless, because a write that forgot it would make the spec invisible to its own
+listing on the very next read. `github` has no equivalent constant: discovery there is the body
+marker alone, never a label.
+
+**A backend with no faithful counterpart stores the document ONLY.** `write_spec` strips
+`tags`/`assignee` (and, on `azure-boards`, `start`/`target` too) from the text it stores — the
+native field is the storage, and a document that ALSO carried the value would be the same
+duplicated-truth failure `title:` was fixed for, at a smaller scale. An ORDINARY write — a
+section edit, a ticked task — never mentions these keys at all, because they are not in the
+document to begin with; reading that silence as "clear them" would wipe every stored field on
+the next unrelated save, so each backend carries forward the prior read's value for a key its
+own write's text does not explicitly declare.
 
 ## Granular reading is about context, not I/O
 
