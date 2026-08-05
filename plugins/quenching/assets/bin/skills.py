@@ -1674,6 +1674,30 @@ def cmd_selftest(args, root: str) -> int:
         failures.append("section reader: a `###` must resolve on its own and stop at the "
                         "next heading of the same level or shallower")
 
+    # The `--sections` ladder, also this tool's own: a value is first an address, then a
+    # list. It cannot go in the shared list — `specs.py`'s arm resolves name by name and
+    # splits nothing, so a comma case there would prove a rule that tool does not have.
+    # Local fixture for the same reason the `--rules-only` arms below use one: adding a
+    # comma heading to SECTION_FIXTURE would change an index both tools assert on.
+    comma_heads = markdown_sections(
+        "## What crosses, what stays\n\nCrossing body.\n\n"
+        "## The procedure\n\nProcedure body.\n\n## Invariants\n\nInvariant body.\n")
+    for label, ask, want in (
+            # the whole title wins, which is the bug this ladder exists to fix
+            ("whole", ["What crosses, what stays"], ["What crosses, what stays"]),
+            # a value that resolves to nothing is still a list
+            ("list", ["The procedure,Invariants"], ["The procedure", "Invariants"]),
+            # a PREFIX carrying a comma resolves whole too — the case that fails if step
+            # one is exact-match alone, and the reason it is the whole ladder
+            ("prefix", ["§What crosses, what"], ["§What crosses, what"]),
+            # a name that resolves to nothing travels on, so `cmd_read` refuses BY NAME
+            # rather than silently dropping it
+            ("refusal", ["Delta"], ["Delta"])):
+        got = expand_section_args(comma_heads, ask)
+        if got != want:
+            failures.append(f"--sections ladder {label}: {ask} expanded to {got}, "
+                            f"expected {want}")
+
     # `--rules-only`, both arms. The fallback arm is the one `## Validation` insists on:
     # a missing marker must never become an empty answer, because a caller that asked for
     # a rule and got silence proceeds as though the rule did not exist.
@@ -1704,8 +1728,8 @@ def cmd_selftest(args, root: str) -> int:
     # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
              + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5
-             + len(SECTION_CASES["cases"]) + 6)  # + the every-level index, the
-    # `###` resolution, and the four `--rules-only` arms
+             + len(SECTION_CASES["cases"]) + 10)  # + the every-level index, the
+    # `###` resolution, the four `--rules-only` arms, and the four `--sections` ladder arms
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
