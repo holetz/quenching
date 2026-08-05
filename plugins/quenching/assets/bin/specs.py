@@ -1615,12 +1615,18 @@ def parse_tasks(text: str) -> list[dict]:
     return out
 
 
+HANDOFF_HEADING_NUM_RE = re.compile(r"^(\d+)\.")
+
+
 def parse_handoff(text: str) -> dict:
     """`## Handoff` split into its global block plus one block per `### N.` heading — the
     SAME level-3 grouping `parse_tasks` already runs over `## Tasks`, reused rather than
-    redefined. A block is matched to its `## Tasks` counterpart by POSITION (the Nth
-    `### ` heading encountered under `## Handoff`), never by title text, so a heading
-    reworded in one section does not silently orphan its pair in the other.
+    redefined. A block is matched to its `## Tasks` counterpart by the LEADING NUMERAL in
+    its own heading text (`### 2. Segunda seção` → section 2), never by encounter order
+    and never by comparing title text: a section can close — and never receive its own
+    `## Handoff` block — before any later section's block is ever written, so encounter
+    order and the task-section number are not the same count. A heading with no leading
+    numeral (malformed, or hand-edited) falls back to one past the highest section seen.
 
     No `### ` heading at all — today's flat format, or a spec not yet built — reads back as
     a single global block and an empty `blocks` list, so nothing existing needs to migrate."""
@@ -1643,7 +1649,11 @@ def parse_handoff(text: str) -> dict:
         hm = HEADING_RE.match(line)
         if hm and len(hm.group(1)) == 3:
             flush(i)
-            cur = {"section": len(blocks) + 1, "title": hm.group(2).strip(),
+            title = hm.group(2).strip()
+            num = HANDOFF_HEADING_NUM_RE.match(title)
+            section = int(num.group(1)) if num else max((b["section"] for b in blocks),
+                                                         default=0) + 1
+            cur = {"section": section, "title": title,
                    "lineno": base + i, "body": "", "blockEndLineno": None}
             blocks.append(cur)
             body_start = i + 1
@@ -1652,6 +1662,39 @@ def parse_handoff(text: str) -> dict:
             global_lines.append(line)
     flush(len(lines))
     return {"global": "\n".join(global_lines), "blocks": blocks}
+
+
+def current_handoff_section(tasks: list[dict]) -> int | None:
+    """The `### N.` a scoped `## Handoff` write targets: the section of the next task
+    still open and unblocked — the same task `specs.py next` would hand out — or, once
+    every remaining task is blocked, the first blocked one's section, matching what
+    `next` itself falls back to. Every task done → the LAST section, so a finished run's
+    Handoff still describes where it landed. No tasks at all → None, nothing to scope to."""
+    if not tasks:
+        return None
+    open_tasks = [t for t in tasks if not t["checked"]]
+    if not open_tasks:
+        return tasks[-1]["section"] or 1
+    actionable = [t for t in open_tasks if not t["blocked"]]
+    return (actionable[0] if actionable else open_tasks[0])["section"] or 1
+
+
+def task_section_title(body_text: str, n: int) -> str | None:
+    """The literal `### N. <title>` heading text `## Tasks` gives section N, read once so a
+    `## Handoff` block opened for the first time can borrow a human-readable title instead
+    of inventing one. Display gloss only — `parse_handoff` matches blocks to `## Tasks` by
+    the heading's own leading numeral, never by this text."""
+    sections = parse_sections(mask_comments(body_text))
+    if "Tasks" not in sections:
+        return None
+    count = 0
+    for line in sections["Tasks"]["lines"]:
+        hm = HEADING_RE.match(line)
+        if hm and len(hm.group(1)) == 3:
+            count += 1
+            if count == n:
+                return hm.group(2).strip()
+    return None
 
 
 def task_progress(tasks: list[dict]) -> tuple[int, int, int]:
@@ -4186,6 +4229,42 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
     return text.rstrip() + "\n\n" + block, "created"
 
 
+def write_handoff_block(info: dict, scope: str, body: str) -> tuple[str, str]:
+    """Replace ONE piece of `## Handoff` — `scope="global"` for the evergreen block, or
+    `scope="current"` for the `### N.` block matching the next actionable task's section
+    — and leave every OTHER block exactly as it stood. That is the whole of "closing": a
+    section's block is simply never targeted again once its tasks are done, the same way
+    a merged branch needs no explicit "done" flag.
+
+    Reuses `upsert_section` for the actual splice rather than re-deriving its frontmatter
+    offset math — this function's only job is to compute `## Handoff`'s new FULL body
+    with one block swapped, then hand that whole block to the existing writer."""
+    body_text = body_after_frontmatter(info["text"])
+    parsed = parse_handoff(body_text)
+    new_body = body.strip("\n")
+
+    if scope == "global":
+        global_text, blocks = new_body, parsed["blocks"]
+    else:
+        tasks = parse_tasks(body_text)
+        n = current_handoff_section(tasks)
+        if n is None:
+            return info["text"], "no-op"
+        global_text = parsed["global"].strip("\n")
+        title = next((b["title"] for b in parsed["blocks"] if b["section"] == n),
+                     None) or task_section_title(body_text, n) or str(n)
+        blocks = [dict(b, body=new_body) if b["section"] == n else b
+                 for b in parsed["blocks"]]
+        if not any(b["section"] == n for b in parsed["blocks"]):
+            blocks = blocks + [{"section": n, "title": title, "body": new_body}]
+
+    parts = [global_text] if global_text else []
+    parts += [f"### {b['title']}\n\n{b['body'].strip(chr(10))}" for b in blocks]
+    section_text = "\n\n".join(p for p in parts if p.strip())
+    block = f"## Handoff\n\n{section_text}\n" if section_text else section_guidance("Handoff")
+    return upsert_section(info, "Handoff", block)
+
+
 SECTION_FIXTURE = '''---
 type: standard
 title: the section reader's fixture
@@ -4343,13 +4422,20 @@ HANDOFF_BLOCK_CASES = [
      "text": HANDOFF_BLOCK_FIXTURE,
      "global_contains": ["Global block: still true"],
      "global_excludes": ["Primeiro grupo", "Segundo grupo"]},
-    {"why": "each `### N.` heading opens a new block, matched by POSITION — the same "
-            "counter `parse_tasks` increments over `## Tasks` — never by title text",
+    {"why": "each `### N.` heading opens a new block, matched by the LEADING NUMERAL in "
+            "its own title — never by encounter order and never by title text",
      "text": HANDOFF_BLOCK_FIXTURE,
      "blocks": [
          {"section": 1, "contains": ["Bloco fechado da seção 1"], "excludes": ["Segundo grupo"]},
          {"section": 2, "contains": ["Bloco aberto da seção 2"], "excludes": ["Primeiro grupo"]},
      ]},
+    {"why": "a section that closed before ever getting its own `## Handoff` block — "
+            "section 1 here has no block at all — must not shift a LATER section's "
+            "number down to fill the gap; encounter order would mislabel this lone "
+            "`### 3.` block as section 1",
+     "text": "## Handoff\n\nGlobal.\n\n### 3. Terceira seção\n\nBloco da seção 3.\n",
+     "global_contains": ["Global."],
+     "blocks": [{"section": 3, "contains": ["Bloco da seção 3."], "excludes": []}]},
     {"why": "no `### N.` heading at all — today's flat format — reads back as a single "
             "global block and no per-section blocks, so nothing existing needs to migrate",
      "text": "## Handoff\n\nTodo o texto de hoje, sem nenhuma sub-seção.\n",
@@ -4391,6 +4477,72 @@ def handoff_block_failures() -> list[str]:
             for needle in wb.get("excludes", []):
                 if needle in gb["body"]:
                     out.append(f"{case['why']}: section {wb['section']} leaked {needle!r}")
+    return out
+
+
+# `write_handoff_block` is stateful across a build (each write reads the PRIOR write's
+# output), so — unlike the two case lists above — it is proved as one sequential
+# scenario rather than a table of independent inputs.
+HANDOFF_WRITE_FIXTURE = """---
+slug: x
+title: X
+date: 2026-08-04
+---
+
+## Tasks
+
+### 1. Primeira seção
+
+- [x] 1.1 feito
+
+### 2. Segunda seção
+
+- [ ] 2.1 aberto
+- [ ] 2.2 aberto
+
+### 3. Terceira seção
+
+- [ ] 3.1 aberto
+"""
+
+
+def handoff_write_failures() -> list[str]:
+    """A `global` write, then a `current` write into a section that closed with no block
+    of its own (section 1 has one task, already checked, so the FIRST scoped write lands
+    directly on section 2) — proving the write side of the same gap `HANDOFF_BLOCK_CASES`
+    proves on read. Then: a second `current` write updates section 2 in place rather than
+    duplicating it, and crossing into section 3 leaves section 2's block frozen."""
+    out: list[str] = []
+    info = derive_info({"slug": "x", "phase": "plans"}, HANDOFF_WRITE_FIXTURE)
+    text, _ = write_handoff_block(info, "global", "Fato evergreen.")
+    info = derive_info({"slug": "x", "phase": "plans"}, text)
+    if current_handoff_section(info["tasks"]) != 2:
+        out.append("the next actionable task is 2.1, in section 2, but "
+                   f"current_handoff_section reported {current_handoff_section(info['tasks'])}")
+    text, _ = write_handoff_block(info, "current", "Bloco da seção 2, em progresso.")
+    info = derive_info({"slug": "x", "phase": "plans"}, text)
+    parsed = parse_handoff(body_after_frontmatter(text))
+    if [b["section"] for b in parsed["blocks"]] != [2]:
+        out.append(f"first scoped write to section 2 produced blocks "
+                   f"{[b['section'] for b in parsed['blocks']]}, expected [2] — a section "
+                   f"that closed with no `## Handoff` block of its own must not shift a "
+                   f"later section's number")
+    if "2. Segunda seção" not in (parsed["blocks"][0]["title"] if parsed["blocks"] else ""):
+        out.append("a freshly opened block did not borrow its title from `## Tasks`")
+    text, _ = write_handoff_block(info, "current", "Bloco da seção 2, atualizado.")
+    parsed = parse_handoff(body_after_frontmatter(text))
+    if len(parsed["blocks"]) != 1 or "atualizado" not in parsed["blocks"][0]["body"]:
+        out.append("writing `current` again duplicated section 2's block instead of "
+                   "replacing it in place")
+    info = derive_info({"slug": "x", "phase": "plans"},
+                       text.replace("- [ ] 2.1 aberto", "- [x] 2.1 aberto")
+                           .replace("- [ ] 2.2 aberto", "- [x] 2.2 aberto"))
+    text, _ = write_handoff_block(info, "current", "Bloco da seção 3.")
+    parsed = parse_handoff(body_after_frontmatter(text))
+    sections = [b["section"] for b in parsed["blocks"]]
+    if sections != [2, 3]:
+        out.append(f"crossing into section 3 produced blocks {sections}, expected [2, 3] "
+                   f"— section 2's block must survive, frozen, once section 3 opens")
     return out
 
 
@@ -4469,16 +4621,28 @@ def cmd_section(args, root: str) -> int:
                     print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
         return 0 if not absent else 1
     heading = headings[0]
+    scope = getattr(args, "scope", None)
+    if scope and heading != "Handoff":
+        emit(args.json,
+             {"ok": False, "code": "sp-scope-not-handoff", "heading": heading,
+              "message": "--scope only applies to ## Handoff — every other section is "
+                         "written whole"},
+             "error: --scope only applies to ## Handoff")
+        return 2
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
-    block = (f"## {heading}\n\n{content.strip()}\n"
-             if content.strip() else section_guidance(heading))
-    new_text, action = upsert_section(info, heading, block)
+    if scope:
+        new_text, action = write_handoff_block(info, scope, content)
+    else:
+        block = (f"## {heading}\n\n{content.strip()}\n"
+                 if content.strip() else section_guidance(heading))
+        new_text, action = upsert_section(info, heading, block)
     backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
-          "path": display_locator(info["path"], root)},
-         f"{action} ## {heading} in {info['phase']}/{info['file']}")
+          "scope": scope, "path": display_locator(info["path"], root)},
+         f"{action} ## {heading}{f' ({scope})' if scope else ''} in "
+         f"{info['phase']}/{info['file']}")
     return 0
 
 
@@ -6826,9 +6990,17 @@ def cmd_selftest(args, root: str) -> int:
                                  f"canonical Handoff-block case — {failure}",
                                  remedy="parse_handoff must split `## Handoff` into its "
                                         "global block plus one block per `### N.` heading, "
-                                        "matched to `## Tasks` by position; a flat "
-                                        "`## Handoff` with no heading must still read back "
-                                        "as a single global block"))
+                                        "matched to `## Tasks` by the heading's own leading "
+                                        "numeral; a flat `## Handoff` with no heading must "
+                                        "still read back as a single global block"))
+
+    for failure in handoff_write_failures():
+        findings.append(_finding("sp-handoff-write-case", "error",
+                                 f"Handoff scoped-write case — {failure}",
+                                 remedy="write_handoff_block must update one block in "
+                                        "place, never duplicate it, and never let a "
+                                        "section that closed without its own block shift "
+                                        "a later section's number"))
 
     # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
     # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
@@ -7203,7 +7375,9 @@ def cmd_selftest(args, root: str) -> int:
               f"on both the key list and the indent, `--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
               f"path, the {len(HANDOFF_BLOCK_CASES)} Handoff-block cases match `## Tasks` by "
-              f"position and a flat `## Handoff` still reads back as one global block, "
+              f"their heading's own numeral and a flat `## Handoff` still reads back as one "
+              f"global block, a scoped Handoff write updates one block in place without a "
+              f"section that closed silently shifting a later one's number, "
               f"the {len(BACKEND_CASES)} backend cases agree between `files` and "
               f"`memory`, the config defaults hold with nothing declared, the release "
               f"lockstep moves all seven artifacts together and refuses a drifted one, a "
@@ -7487,6 +7661,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                          "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
+    sp.add_argument("--scope", choices=["global", "current"],
+                    help="with --write on ## Handoff only: replace just the evergreen "
+                         "global block, or just the ### N. block matching the next "
+                         "actionable task's section — every other block is left untouched")
 
     sp = add_json(sub.add_parser("verification",
                                  help="read or set ONE spec's verification policy"))
