@@ -1957,6 +1957,34 @@ def board_state_failures() -> list[str]:
     return out
 
 
+def tags_outside_catalog(tags: list[str], catalog: dict) -> list[str]:
+    """Which of `tags` are not a `tagCatalog` key — pure, so the write-time proposal
+    (`/specs:create`, §4.1) and `doctor`'s `sp-az-tag-uncatalogued` finding (§2.13) share
+    ONE answer rather than two parsers that could disagree.
+
+    No catalog declared flags nothing: `tagCatalog` is optional, and a repository that never
+    declared one has not opted into this validation at all — the same `## Absence is the
+    normal case` every other key here gets."""
+    if not catalog:
+        return []
+    return [t for t in tags if t not in catalog]
+
+
+def tag_catalog_failures() -> list[str]:
+    """The one flag and the two ways nothing is flagged."""
+    out: list[str] = []
+    cases = (
+        ([], {"a": "d"}, [], "no tags, nothing to flag"),
+        (["a", "b"], {"a": "d"}, ["b"], "one outside the catalog"),
+        (["a"], {}, [], "no catalog declared flags nothing"),
+    )
+    for tags, catalog, want, label in cases:
+        got = tags_outside_catalog(tags, catalog)
+        if got != want:
+            out.append(f"{label}: tags_outside_catalog returned {got!r}, not {want!r}")
+    return out
+
+
 def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
     """Resolve a slug against the files workspace and derive its document.
 
@@ -7423,6 +7451,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "(record), which outranks the derived stage — never "
                                         "the other order"))
 
+    # The one pure check both the write-time tag proposal and doctor's uncatalogued-tag
+    # finding (§2.13) share.
+    for failure in tag_catalog_failures():
+        findings.append(_finding("sp-tag-catalog-broken", "error",
+                                 f"tag-catalog validation — {failure}",
+                                 remedy="tags_outside_catalog: no `tagCatalog` declared "
+                                        "flags nothing; a tag absent from a DECLARED "
+                                        "catalog does"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -7590,7 +7627,8 @@ def cmd_selftest(args, root: str) -> int:
               f"refuses without making the call, the azure-boards WIQL never carries "
               f"`@project`, subject resolution refuses only once `subjects` is declared, the "
               f"board-state precedence puts archived over reviewed over the derived stage, "
-              f"and the embedded schema and template match their asset files.")
+              f"an undeclared tag catalog flags nothing while a declared one flags what is "
+              f"outside it, and the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
