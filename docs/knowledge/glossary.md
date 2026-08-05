@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-03
+timestamp: 2026-08-05
 audience: both
 authority: current
 source: quenching skeleton
@@ -330,7 +330,12 @@ sentence, and **link out** rather than explaining in full here.
   over N turns can lose to reading the whole file. A section runs to the next heading of the same
   level or shallower, a fenced block is never read as a heading, and a name that resolves to
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
-  same **Canonical set**, `SECTION_CASES`.
+  same **Canonical set**, `SECTION_CASES` — which pins the *sectioning* rule the two answer
+  identically, and therefore not the ladder below, a CLI-argument rule only the first has.
+  **They take that list differently, deliberately.** `skills.py` resolves each value whole before
+  reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
+  cited by its full title; `specs.py` splits unconditionally, which is unreachable there because
+  the fourteen canonical headings carry no comma and it refuses any name outside them.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
   só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos
