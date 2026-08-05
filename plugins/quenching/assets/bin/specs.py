@@ -3581,6 +3581,56 @@ def unproved_backend_failures() -> list[str]:
     return failures
 
 
+def azure_query_wiql(project: str, area_path: str | None, discovery_tag: str | None) -> str:
+    """The WIQL this backend's listing runs.
+
+    THE PROJECT IS NAMED LITERALLY, NEVER `@project`. Measured on this org (az 2.89.0 +
+    azure-devops 1.0.6): the macro resolves to nothing and the query exits 0 with byte-empty
+    stdout AND stderr — identical to a query that legitimately matches zero work items. There
+    is no signal at the transport layer to tell the two apart, so the literal name is the
+    only fix; a refusal keyed on empty output would refuse the ordinary "no specs yet" case
+    just as often as the macro bug it was meant to catch.
+
+    `area_path` and `discovery_tag` are optional here — `azurePlacement` is declared in
+    `.claude/quenching.json` starting at CONFIG_KEYS (§2), and `open_azure_backend` is what
+    populates them once that parse exists. Unset, the query is scoped by project alone, which
+    is the same breadth it always had."""
+    clauses = [f"[System.TeamProject] = '{project}'"]
+    if area_path:
+        clauses.append(f"[System.AreaPath] = '{area_path}'")
+    if discovery_tag:
+        clauses.append(f"[System.Tags] CONTAINS '{discovery_tag}'")
+    return f"SELECT [System.Id] FROM WorkItems WHERE {' AND '.join(clauses)}"
+
+
+def azure_query_wiql_failures() -> list[str]:
+    """The literal-project-name fix and the two optional scopes, pure and self-contained."""
+    out: list[str] = []
+    cases = (
+        ("Proj", None, None,
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj'"),
+        ("Proj", "Proj\\Area", None,
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj' AND "
+         "[System.AreaPath] = 'Proj\\Area'"),
+        ("Proj", None, "quenching-spec",
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj' AND "
+         "[System.Tags] CONTAINS 'quenching-spec'"),
+        ("Proj", "Proj\\Area", "quenching-spec",
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj' AND "
+         "[System.AreaPath] = 'Proj\\Area' AND [System.Tags] CONTAINS 'quenching-spec'"),
+    )
+    for project, area, tag, want in cases:
+        got = azure_query_wiql(project, area, tag)
+        if got != want:
+            out.append(f"azure_query_wiql({project!r}, {area!r}, {tag!r}) returned "
+                       f"{got!r}, not {want!r}")
+        if "@project" in got:
+            out.append(f"azure_query_wiql({project!r}, {area!r}, {tag!r}) still carries the "
+                       f"`@project` macro, which this org's `az` resolves to an empty, "
+                       f"indistinguishable-from-zero-matches response")
+    return out
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
@@ -3610,11 +3660,17 @@ class AzureBoardsBackend(SpecBackend):
 
     name = "azure-boards"
 
-    def __init__(self, org: str, project: str, states: dict, cwd: str) -> None:
+    def __init__(self, org: str, project: str, states: dict, cwd: str,
+                area_path: str | None = None, discovery_tag: str | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
         self.cwd = cwd
+        # Both optional here on purpose: `azurePlacement` is not yet a recognised config key
+        # (§2 declares it), so `open_azure_backend` cannot supply either until then. Unset,
+        # the listing keeps today's breadth — scoped by project alone.
+        self.area_path = area_path
+        self.discovery_tag = discovery_tag
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
     # -- transport ---------------------------------------------------------- #
@@ -3653,8 +3709,8 @@ class AzureBoardsBackend(SpecBackend):
         # a saved query is one more thing a human has to create before the backend works.
         found = self._az("querying the project's work items", "query", "--project",
                          self.project, "--wiql",
-                         "SELECT [System.Id] FROM WorkItems WHERE "
-                         "[System.TeamProject] = @project") or []
+                         azure_query_wiql(self.project, self.area_path, self.discovery_tag)) \
+            or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
         rows: list[tuple[dict, int, str, str]] = []
@@ -6855,6 +6911,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "extension, an unauthenticated identity and an API "
                                         "error are four refusals with four remedies; all "
                                         "exit 2 and none is a traceback"))
+
+    # The literal-project-name fix, checked against the exact macro that resolves to nothing
+    # on this org's `az` — a reworded query must break this check rather than reintroduce
+    # `@project` silently.
+    for failure in azure_query_wiql_failures():
+        findings.append(_finding("sp-az-wiql-broken", "error",
+                                 f"the azure-boards listing query — {failure}",
+                                 remedy="azure_query_wiql names the project literally and "
+                                        "AND-scopes by area path and discovery tag when "
+                                        "given; the `@project` macro must never come back"))
 
     # The other thing `azure-boards` ships with instead of proof: the warning that says so.
     # It runs here, beside the two checks above, because all three answer the same question
