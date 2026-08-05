@@ -1615,6 +1615,45 @@ def parse_tasks(text: str) -> list[dict]:
     return out
 
 
+def parse_handoff(text: str) -> dict:
+    """`## Handoff` split into its global block plus one block per `### N.` heading — the
+    SAME level-3 grouping `parse_tasks` already runs over `## Tasks`, reused rather than
+    redefined. A block is matched to its `## Tasks` counterpart by POSITION (the Nth
+    `### ` heading encountered under `## Handoff`), never by title text, so a heading
+    reworded in one section does not silently orphan its pair in the other.
+
+    No `### ` heading at all — today's flat format, or a spec not yet built — reads back as
+    a single global block and an empty `blocks` list, so nothing existing needs to migrate."""
+    sections = parse_sections(mask_comments(text))
+    if "Handoff" not in sections:
+        return {"global": "", "blocks": []}
+    base = sections["Handoff"]["lineno"] + 1
+    lines = sections["Handoff"]["lines"]
+    global_lines: list[str] = []
+    blocks: list[dict] = []
+    cur: dict | None = None
+    body_start = 0
+
+    def flush(end: int) -> None:
+        if cur is not None:
+            cur["body"] = "\n".join(lines[body_start:end])
+            cur["blockEndLineno"] = base + end
+
+    for i, line in enumerate(lines):
+        hm = HEADING_RE.match(line)
+        if hm and len(hm.group(1)) == 3:
+            flush(i)
+            cur = {"section": len(blocks) + 1, "title": hm.group(2).strip(),
+                   "lineno": base + i, "body": "", "blockEndLineno": None}
+            blocks.append(cur)
+            body_start = i + 1
+            continue
+        if cur is None:
+            global_lines.append(line)
+    flush(len(lines))
+    return {"global": "\n".join(global_lines), "blocks": blocks}
+
+
 def task_progress(tasks: list[dict]) -> tuple[int, int, int]:
     """(checked, blocked, total)."""
     return (sum(1 for t in tasks if t["checked"]),
@@ -4283,6 +4322,78 @@ def section_case_failures() -> list[str]:
     return out
 
 
+# The canonical case list for the `## Handoff` section-block rule. `## Handoff`-scoping is
+# `specs.py`'s own contract — nothing in `skills.py` reads a spec's `### N.` blocks — so,
+# unlike `CANONICAL_CASES` and `SECTION_CASES`, this list is not duplicated anywhere.
+HANDOFF_BLOCK_FIXTURE = """## Handoff
+
+Global block: still true no matter which section is being built.
+
+### 1. Primeiro grupo
+
+Bloco fechado da seção 1 — não muda mais depois que a última task da seção commitou.
+
+### 2. Segundo grupo
+
+Bloco aberto da seção 2 — é o que uma task desta seção recebe hoje.
+"""
+
+HANDOFF_BLOCK_CASES = [
+    {"why": "text before the first `### N.` heading is the global block",
+     "text": HANDOFF_BLOCK_FIXTURE,
+     "global_contains": ["Global block: still true"],
+     "global_excludes": ["Primeiro grupo", "Segundo grupo"]},
+    {"why": "each `### N.` heading opens a new block, matched by POSITION — the same "
+            "counter `parse_tasks` increments over `## Tasks` — never by title text",
+     "text": HANDOFF_BLOCK_FIXTURE,
+     "blocks": [
+         {"section": 1, "contains": ["Bloco fechado da seção 1"], "excludes": ["Segundo grupo"]},
+         {"section": 2, "contains": ["Bloco aberto da seção 2"], "excludes": ["Primeiro grupo"]},
+     ]},
+    {"why": "no `### N.` heading at all — today's flat format — reads back as a single "
+            "global block and no per-section blocks, so nothing existing needs to migrate",
+     "text": "## Handoff\n\nTodo o texto de hoje, sem nenhuma sub-seção.\n",
+     "global_contains": ["Todo o texto de hoje"],
+     "blocks": []},
+    {"why": "a spec whose `## Handoff` heading is absent entirely reads as an empty "
+            "global block and no blocks — the ordinary state before a spec's first build",
+     "text": "## Overview\n\nsomething else\n",
+     "global_contains": [],
+     "blocks": []},
+]
+
+
+def handoff_block_failures() -> list[str]:
+    """Run `HANDOFF_BLOCK_CASES` against `parse_handoff`."""
+    out: list[str] = []
+    for case in HANDOFF_BLOCK_CASES:
+        got = parse_handoff(case["text"])
+        for needle in case.get("global_contains", []):
+            if needle not in got["global"]:
+                out.append(f"{case['why']}: global block missing {needle!r}")
+        for needle in case.get("global_excludes", []):
+            if needle in got["global"]:
+                out.append(f"{case['why']}: global block leaked {needle!r}")
+        want_blocks = case.get("blocks")
+        if want_blocks is None:
+            continue
+        if len(got["blocks"]) != len(want_blocks):
+            out.append(f"{case['why']}: {len(got['blocks'])} block(s), expected "
+                       f"{len(want_blocks)}")
+            continue
+        for wb, gb in zip(want_blocks, got["blocks"]):
+            if gb["section"] != wb["section"]:
+                out.append(f"{case['why']}: block section {gb['section']}, expected "
+                           f"{wb['section']}")
+            for needle in wb.get("contains", []):
+                if needle not in gb["body"]:
+                    out.append(f"{case['why']}: section {wb['section']} missing {needle!r}")
+            for needle in wb.get("excludes", []):
+                if needle in gb["body"]:
+                    out.append(f"{case['why']}: section {wb['section']} leaked {needle!r}")
+    return out
+
+
 def cmd_section(args, root: str) -> int:
     """Deterministic partial read/write of N sections — what makes lean agent context real.
 
@@ -6708,6 +6819,17 @@ def cmd_selftest(args, root: str) -> int:
                                         "`skills.py` carries verbatim; the two tools move "
                                         "together or not at all"))
 
+    # `## Handoff`'s own section-block rule — specs.py-only, so unlike the case above there
+    # is no `skills.py` copy to drift from.
+    for failure in handoff_block_failures():
+        findings.append(_finding("sp-handoff-block-case", "error",
+                                 f"canonical Handoff-block case — {failure}",
+                                 remedy="parse_handoff must split `## Handoff` into its "
+                                        "global block plus one block per `### N.` heading, "
+                                        "matched to `## Tasks` by position; a flat "
+                                        "`## Handoff` with no heading must still read back "
+                                        "as a single global block"))
+
     # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
     # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
     # checked BEFORE the early return for the same reason the frontmatter cases are.
@@ -7062,13 +7184,14 @@ def cmd_selftest(args, root: str) -> int:
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
-                          "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1,
+                          "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1
+                                   + len(HANDOFF_BLOCK_CASES),
                           "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
     print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
-          f"{len(SECTION_CASES['cases']) + 1} section canonical case(s), "
-          f"{len(errors)} error(s))")
+          f"{len(SECTION_CASES['cases']) + 1} section + {len(HANDOFF_BLOCK_CASES)} "
+          f"Handoff-block canonical case(s), {len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
         print(f"          remedy: {f['remedy']}")
@@ -7079,7 +7202,9 @@ def cmd_selftest(args, root: str) -> int:
               f"stamps exactly the entry-gate headings, the task metadata grammar is closed "
               f"on both the key list and the indent, `--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
-              f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
+              f"path, the {len(HANDOFF_BLOCK_CASES)} Handoff-block cases match `## Tasks` by "
+              f"position and a flat `## Handoff` still reads back as one global block, "
+              f"the {len(BACKEND_CASES)} backend cases agree between `files` and "
               f"`memory`, the config defaults hold with nothing declared, the release "
               f"lockstep moves all seven artifacts together and refuses a drifted one, a "
               f"declared integration branch outranks origin/HEAD in the base-inference "
