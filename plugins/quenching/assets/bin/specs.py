@@ -2910,9 +2910,13 @@ class GitHubBackend(SpecBackend):
         self._store(number, info["slug"], info["file"], text, had_parts, labels)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
         # before that call, and fixing a nonexistent label's color 404s. Gated on an
-        # actual change so the no-milestone-change write this backend must cost no round
-        # trip for (task 5.2) never reaches this branch at all.
-        if labels != current_labels:
+        # actual SET change — `set(...)`, not `!=` on the lists — so the no-milestone-
+        # change write this backend must cost no round trip for (task 5.2) never reaches
+        # this branch at all. GitHub returns a listing's labels alphabetically, never in
+        # the schema order `reconcile_label_set` builds `labels` in, so comparing the
+        # lists as ORDERED sequences read a same-set reorder as a change every time —
+        # measured live against issue #877 on 2026-08-05, before this line read `set(...)`.
+        if set(labels) != set(current_labels):
             self._ensure_label_colors(desired)
         self._invalidate()
 
@@ -3926,7 +3930,9 @@ class AzureBoardsBackend(SpecBackend):
         tags = reconcile_label_set(current_tags, derive_labels(derive_info(info, text)))
         fields: dict[str, str] = {"title": title,
                                   "description": hybrid_wrap(info["file"], chunks[0][0])}
-        if tags != current_tags:
+        # `set(...)`, not `!=` on the lists — the same reorder-reads-as-a-change trap
+        # `github`'s `write_spec` hit, fixed there against issue #877 on 2026-08-05.
+        if set(tags) != set(current_tags):
             fields["fields"] = f"System.Tags={AZ_TAG_SEP.join(tags)}"
         self._update(item_id, **fields)
         self._invalidate()
