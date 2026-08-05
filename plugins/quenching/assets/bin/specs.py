@@ -3785,6 +3785,12 @@ class AzureBoardsBackend(SpecBackend):
     `Resolved` by a human on the board is still in flight, and only the declared archive
     state means closed. That is the same one-way reading `github` gets from `state=closed`.
 
+    A `spec:` TAG PER PRESENT RECORD, PLUS `spec:built` FOR `executing`, rides in the SAME
+    `--fields System.Tags=…` this backend's `_update` already sends — the same rendering of
+    derived state `github` does with labels, through the same `derive_labels` and
+    `reconcile_label_set`, over `;`-joined `System.Tags` rather than a `labels` array. No
+    color or description here: Azure Boards tags carry neither.
+
     The listing is fetched once per process and cached — a local cache and NOT a store:
     not authoritative, read by nothing outside this object, dropped on every write."""
 
@@ -3795,7 +3801,9 @@ class AzureBoardsBackend(SpecBackend):
         self.project = project
         self.states = states
         self.cwd = cwd
-        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
+        # descriptor, id, shell doc, title, current System.Tags — the last is what the tag
+        # reconciliation in `write_spec` diffs against, so it costs no call of its own
+        self._rows: list[tuple[dict, int, str, str, list[str]]] | None = None
 
     # -- transport ---------------------------------------------------------- #
     def _az(self, action: str, *argv: str):
@@ -3826,7 +3834,7 @@ class AzureBoardsBackend(SpecBackend):
             else "plans"
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str]]:
+    def _load(self) -> list[tuple[dict, int, str, str, list[str]]]:
         if self._rows is not None:
             return self._rows
         # WIQL rather than a saved query: the filter is this tool's, not the project's, and
@@ -3837,7 +3845,7 @@ class AzureBoardsBackend(SpecBackend):
                          "[System.TeamProject] = @project") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str, str]] = []
+        rows: list[tuple[dict, int, str, str, list[str]]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
             m = SPEC_FILE_RE.match(filename)
@@ -3854,7 +3862,9 @@ class AzureBoardsBackend(SpecBackend):
                         f"{item.get('id')}",
                 "slug": m.group(1),
             }, int(item.get("id") or 0), doc,
-                self._field(item, "System.Title")))
+                self._field(item, "System.Title"),
+                [t.strip() for t in self._field(item, "System.Tags").split(";")
+                 if t.strip()]))
         self._rows = rows
         return rows
 
@@ -3869,9 +3879,15 @@ class AzureBoardsBackend(SpecBackend):
         self._rows = None
 
     def _item_id(self, slug: str) -> int:
-        for descriptor, item_id, _, _title in self._load():
+        return self._item_tags(slug)[0]
+
+    def _item_tags(self, slug: str) -> tuple[int, list[str]]:
+        """`(work item id, its current System.Tags)` — both from the listing already in
+        hand, so knowing which tags a write must reconcile against costs no call of its
+        own."""
+        for descriptor, item_id, _, _title, tags in self._load():
             if descriptor["slug"] == slug:
-                return item_id
+                return item_id, tags
         raise BackendRefusal({
             "code": "sp-az-item-gone", "exit": 2, "slug": slug,
             "message": f"spec '{slug}' was in the listing and is not there any more — the "
@@ -3881,31 +3897,38 @@ class AzureBoardsBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, t in rows})
+                                {d["slug"]: t for d, _, _, t, _ in rows})
         if err:
             return None, err
-        _, full_text, native = next((i, d, t) for descriptor, i, d, t in rows
+        _, full_text, native = next((i, d, t) for descriptor, i, d, t, _tags in rows
                                     if descriptor["slug"] == spec["slug"])
         return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
-        item_id = self._item_id(info["slug"])
+        item_id, current_tags = self._item_tags(info["slug"])
         # `System.Description` has no published ceiling, so `hybrid_split` is handed None
         # and answers with the one chunk that is the whole document. The call is made anyway,
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
         stored, title = hybrid_project(info["slug"], text)
         chunks = hybrid_split(stored, None)
-        self._update(item_id, title=title,
-                     description=hybrid_wrap(info["file"], chunks[0][0]))
+        # `derive_info`/`derive_labels` — the SAME shared calculation `github` reconciles
+        # its labels with, over the text about to be written; this backend derives
+        # nothing of its own, per its own docstring above.
+        tags = reconcile_label_set(current_tags, derive_labels(derive_info(info, text)))
+        fields: dict[str, str] = {"title": title,
+                                  "description": hybrid_wrap(info["file"], chunks[0][0])}
+        if tags != current_tags:
+            fields["fields"] = f"System.Tags={AZ_TAG_SEP.join(tags)}"
+        self._update(item_id, **fields)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -3947,6 +3970,10 @@ class AzureBoardsBackend(SpecBackend):
 # `## Tasks`-as-children mapping was retired for the reasons at HYBRID SERIALISATION, and one
 # work item now carries the whole document.
 AZ_SPEC_TYPE = "Issue"
+
+# `System.Tags` is one string, not an array like a GitHub issue's `labels` — Azure Boards'
+# own convention joins tags with a semicolon, published in its field reference.
+AZ_TAG_SEP = "; "
 
 
 def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
