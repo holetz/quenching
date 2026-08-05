@@ -6960,6 +6960,7 @@ def cmd_selftest(args, root: str) -> int:
     # prose as shell. Ordering matters to the fixture — constraint must follow verify.
     probe = parse_tasks("## Tasks\n\n### 1. X\n\n"
                         "- [ ] 1.1 t\n"
+                        "      cwd: plugins/quenching\n"
                         "      verify: THE-REAL-CHECK\n"
                         "      constraint: prose that is not a command\n")
     if not probe or probe[0].get("verify") != "THE-REAL-CHECK":
@@ -6970,6 +6971,15 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="the metadata dispatch is exhaustive: every key in "
                                         "TASK_META_KEYS gets its own arm or is deliberately "
                                         "unread — never a trailing `else` that catches it"))
+    if not probe or probe[0].get("cwd") != "plugins/quenching":
+        findings.append(_finding("sp-task-meta-dispatch", "error",
+                                 "`cwd:` is admitted by TASK_META_RE but not captured into the "
+                                 "task's dict — grammar-admission and dispatch are two different "
+                                 "things, and a `verify:` reader would have nowhere to read the "
+                                 "declared directory from",
+                                 remedy="`cwd` needs its own arm in the parse_tasks dispatch, "
+                                        "same as `pattern`/`verify`/`subject`, and its own key "
+                                        "in the returned dict"))
 
     # `--moment build` is the set `/quenching:specs:execute` step 4 sends an executor — asserted
     # against the literal list rather than eyeballed, so an edit to DEFAULT_SCHEMA that drops or
