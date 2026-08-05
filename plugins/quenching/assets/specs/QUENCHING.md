@@ -66,8 +66,8 @@ its entire lifecycle.** Phases enrich it; they never split it.
 specs/
   QUENCHING.md              # this manual (payload — not a spec)
   plans/                    # a spec's WHOLE pre-archive life — defined, approved, building
-    index.md                # derived listing (generated zone, frontmatter-free)
-    <slug>.md               # one spec per file — the basename IS the slug
+    <slug>.md               # one spec per file — the basename IS the slug; no listing file,
+                            #   `specs.py list` derives the front on demand
   archive/                  # done or abandoned, told apart by `outcome:` frontmatter
     <slug>.md
 ```
@@ -300,8 +300,8 @@ costs those two calls and stops. Otherwise: scaffolds `specs/` when absent, inst
 (never the tool — `specs.py` always resolves through the plugin), offers to remove a legacy
 installed copy if one exists, **folds an older `backlog/` + `ready/` layout into `plans/`** and a v1
 three-file layout into single files (`specs.py migrate`), normalizes filenames and slugs, stamps
-missing frontmatter, regenerates the listing zone, and migrates a legacy `openspec/` workspace
-(§10). One plan, one OK; a rename whose blast radius reaches code confirms on its own.
+missing frontmatter, and migrates a legacy `openspec/` workspace (§10). One plan, one OK; a rename
+whose blast radius reaches code confirms on its own.
 
 **It aligns conformance and only *reports* the cycle.** An empty section, a complete spec
 awaiting approval, an unresolved discovery — each is reported with the command that owns it.
@@ -354,7 +354,9 @@ One file per spec, flat, no subfolders, the same shape in both folders.
 ---
 slug: session-tokens          # required — the identity key every command names
 title: <one line>             # required
-verification: per-task        # required — per-task | per-section | end-of-plan
+date: 2026-07-24              # required — the capture date, stamped once by `new` and never rewritten
+verification: per-task        # optional — per-task | per-section | end-of-plan; absent means
+                              #   the default (per-section), applied on read
 priority: {level: 2, criticality: high, complexity: medium, date: 2026-07-24}   # triage's ranking
 refined: {mode: premortem, date: 2026-07-25}   # once a real interrogation has run
 approved: {date: 2026-07-26}                   # a human said go — develop offers it, execute asks inline
@@ -366,9 +368,11 @@ outcome: done                                  # stamped at archive — done | a
 ```
 
 **Frontmatter records human judgments; everything else is derived.** There is no `created` field
-(the filename's date prefix is that fact), no `phase` field (the folder is that fact), and no
-`ready` flag (the ten gate sections are that fact). Read top to bottom, the records narrate the
-spec's history in order: ranked, interrogated, approved, built, reviewed, merged, closed. A
+(`date:` is that fact — it left the basename because a store with no filenames cannot hold it
+there, and no external store carries an honest copy of it to project from), no `phase` field (the
+folder is that fact), and no `ready` flag (the ten gate sections are that fact). Read top to
+bottom, the records narrate the spec's history in order: ranked, interrogated, approved, built,
+reviewed, merged, closed. A
 record is written only by its owning command; `approved`, `branch`, `merge` and `outcome` are
 write-once — rewriting one would falsify a fact that already happened. A spec carries no OKF
 `type:` — it is not a concept doc, it lives outside the bundle, and `specs.py validate` is what

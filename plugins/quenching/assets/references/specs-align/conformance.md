@@ -57,6 +57,43 @@ it is worth the human seeing it inside a plan rather than in a footnote.
 Offering to scaffold a repo that already holds unmigrated work would be the worst outcome the probe
 can produce.
 
+## Where the front is configured, and what the backend decides
+
+<!-- rules -->
+`.claude/quenching.json`, at the **repo root** — the `backend` key naming which store holds the
+specs. Read by `specs.py config --json`, which exits 0 whether or not anything is declared; the
+recognised keys, their defaults, and every way the file can be wrong are owned by
+[plugin-configuration.md](/docs/standards/workflows/plugin-configuration.md) §The recognised keys.
+It is **not** `specs/config.json` any more — a stranded copy is named (`sp-config-legacy-location`),
+never merged, and deliberately exempt from `sp-stray-file`.
+
+**The backend decides whether there is a workspace to align at all.** §The canonical workspace
+below, and every workspace-shape code in the FIXES table, describe the `files` backend — the
+default. Under `github` or `azure-boards` there is no folder, no filename and no listing; the specs
+live in the tracker, and the only thing that stays constant is what `specs.py` answers.
+
+**`doctor` is backend-blind, so a workspace-shape finding is read against the declared backend
+before it is acted on** — one call, paid only when such a finding appeared:
+
+```bash
+specs.py config --json      # the conformant path never reaches this
+```
+
+Under an external backend, `sp-no-workspace` and `sp-missing-phase` are **not** offers to scaffold.
+Name the declared backend, report that the shape codes do not apply to it, and align the specs
+themselves through `validate` as usual.
+
+<!-- rationale -->
+`doctor` reports the shape of the directory it was pointed at, and that is right: a repo that
+switched backends after scaffolding still holds real specs on disk, which must keep being judged.
+The reading rule has to live here instead.
+
+Measured on the quenching repository itself (`backend: github`, every spec an issue): with `specs/`
+present but empty, `doctor` warns `sp-missing-phase` twice and exits 0; with no `specs/` at all it
+raises `sp-no-workspace` at **error** severity and exits 1 — which forces the full inventory and
+puts a scaffold offer in the plan. Accepting it creates two folders no command reads and no listing
+derives, and which a human then has to delete.
+
 ## The canonical workspace
 
 ```
@@ -87,12 +124,12 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 
 | Code | Fires when | Fix |
 | --- | --- | --- |
-| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + the operator manual + template + schema). Declining ends the run. |
+| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + the operator manual + template + schema). Declining ends the run. **`files` backend only** — §Where the front is configured. |
 | `sp-v2-layout` **(tool)** | `backlog/` or `ready/` still holds specs | Run **`specs.py migrate`** (§Migrating an older workspace). It moves every file into `plans/` unrenamed. |
 | `sp-v1-leftover` **(tool)** | A three-file plan folder sits at the specs root | Run **`specs.py migrate`** — the same command folds it into one file. |
 | `sp-stray-dir` **(tool)** | A directory sits inside `plans/` | Unmigrated v1 work. Same remedy: `specs.py migrate`. Never fires inside `archive/`. |
 | `sp-legacy-workspace` | A legacy `openspec/` tree is present | The one-way `openspec/` fold (§below). The only place `openspec/` is touched. |
-| `sp-missing-phase` **(tool)** | `plans/` or `archive/` is absent | Create it. The folder IS the phase, so a missing one makes its specs unfindable. |
+| `sp-missing-phase` **(tool)** | `plans/` or `archive/` is absent | Create it. The folder IS the phase, so a missing one makes its specs unfindable. **`files` backend only** — §Where the front is configured. |
 | `sp-stray-file` **(tool)** | A file at the specs root other than `QUENCHING.md` / `schema.json` | Move it into a phase folder, or report it. |
 | `sp-bad-filename` | A file in a phase folder is not `<slug>.md` | Rename to the bare slug. A basename still carrying a `YYYY-MM-DD-` prefix is folded by `specs.py migrate`, which moves that date into `date:` in the same step — the prefix is the only copy, so dropping it without moving it loses the capture date. |
 | `sp-slug-mismatch` **(tool)** | Frontmatter `slug` disagrees with the basename | Make the frontmatter match the basename — the basename is the identity a human reads in a listing. |

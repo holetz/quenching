@@ -22,13 +22,13 @@ ordering and not a judgment. Triage is what turns it into one.
 that anything is finished — those are `/quenching:specs:conclude` and `/quenching:specs:develop`'s discoveries bank.
 A sweep that could also delete is a sweep nobody can safely re-run.
 
-The layout, the derived stages and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape of both the step 2 table and the step 6 report;
-the tool fallback and the front's on-write check in
-[specs-create/specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md);
-the shared log procedure in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). All cited, never
+The layout, the derived stages, the front's on-write check and the `specs.py` surface live in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §Derived stages §The `specs.py` tool surface §The report mold, which owns the
+shape of both the step 2 table and the step 6 report; how the tool is resolved and its path
+written in
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool §Write the resolved path literally on every invocation. Both cited, never
 restated.
 
 ## Resolving the tool
@@ -132,8 +132,9 @@ One call per approved spec, and **never an edit to the file**:
 specs.py record <slug> priority --set level=<n> --set criticality=<word> \
   [--set complexity=<hours>] --set date=<today>
 ```
-The tool merges: a field not named survives, and `slug`, `title`, `verification` and the other six
-records are never in reach of this write. Stamp `date` on every write. Leave `--set complexity` off
+The tool merges: a field not named survives, and `slug`, `title`, `date`, `verification` and the
+other six records are never in reach of this write. Stamp the record's own `date` on every write —
+it is a different key from the spec's capture `date:`. Leave `--set complexity` off
 rather than guessing it. Editing the frontmatter by hand would do the same thing only while the
 backend is `files` — against a backend whose specs are issues there is no file to edit.
 **Done when:** each approved row is on disk and no unapproved row was touched.
