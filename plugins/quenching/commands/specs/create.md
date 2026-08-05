@@ -118,6 +118,11 @@ Run `specs.py validate --spec <slug>` — the spec's own conformance, and the wh
 
 ### 7. Report
 
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. Its single-spec header line carries the locator `specs.py new` returned — the
 `path` field, `plans/<slug>.md` under `files` and an issue URL under `github` — which the mold
 already requires be the tool's own answer rather than a filename this command assembled.

@@ -98,6 +98,12 @@ Two things the payload does not decide, and which are named rather than routed a
 **Done when:** exactly one next command is identified, with the spec it applies to.
 
 ### 3. Report the ordering, and offer the hand-off
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. One body block, fixed: §The spec table with `Spec` `Title` `Stage` `Tasks`
 `Priority` `Age` `State`, the top candidate carrying `→` and every row its `reason` as `State`.
 `Age` is each candidate's `ageDays`, which `next --front` already returned. With more than a handful
