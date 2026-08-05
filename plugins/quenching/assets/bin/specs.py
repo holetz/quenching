@@ -3314,6 +3314,31 @@ def gh_refusal_failures() -> list[str]:
     return failures
 
 
+def github_native_field_failures() -> list[str]:
+    """`GitHubBackend._native_fields`, over fake issue payloads shaped exactly like the
+    REST API's own (`labels: [{name}, …]`, `assignees: [{login}, …]`) — no network, no
+    repository. The third of the three backends §3.5 proves a round trip for; `files`/
+    `memory` are `_case_field` (§3.2), `azure-boards` is `azure_native_field_failures`
+    (§3.3-3.4)."""
+    out: list[str] = []
+    gh = GitHubBackend("owner/repo", ".")
+    cases = (
+        ({}, {}, "no labels and no assignees reassembles nothing"),
+        ({"labels": [{"name": "bug"}, {"name": "Vertical: Risco"}]},
+         {"tags": ["bug", "Vertical: Risco"]}, "every label becomes a tag, in order"),
+        ({"assignees": [{"login": "holetz"}, {"login": "second"}]},
+         {"assignee": "holetz"},
+         "only the FIRST assignee is reflected — the canonical field is singular"),
+        ({"labels": [{"name": "bug"}], "assignees": [{"login": "holetz"}]},
+         {"tags": ["bug"], "assignee": "holetz"}, "both together"),
+    )
+    for issue, want, label in cases:
+        got = gh._native_fields(issue)
+        if got != want:
+            out.append(f"{label}: _native_fields returned {got!r}, not {want!r}")
+    return out
+
+
 # The fields `parse_tasks` derives, minus the ones a rebuild reproduces only because the
 # document does: `lineno`/`blockEndLineno`/`metaInsertAt`/`metaIndent`/`subjectLineno`/
 # `commitLineno` are POSITIONS. They are covered by the byte-for-byte equality below —
@@ -3983,6 +4008,16 @@ def field_strip_failures() -> list[str]:
     for kept in ("slug: x", "title: X", "date: 2026-01-01", "verification: per-section"):
         if kept not in got:
             out.append(f"strip_frontmatter_keys dropped `{kept}`, which it must keep")
+    # `github` strips only `tags`/`assignee` — `start`/`target` have no native counterpart
+    # on an issue and stay in the document, exactly as `date:` already does.
+    gh_stripped = strip_frontmatter_keys(text, GitHubBackend.GH_STORED_KEYS)
+    for key in ("tags", "assignee"):
+        if f"{key}:" in gh_stripped:
+            out.append(f"github stripping left `{key}:` in the stripped text")
+    for kept in ("start: 2026-01-01", "target: 2026-02-01"):
+        if kept not in gh_stripped:
+            out.append(f"github stripping dropped `{kept}`, which it must keep — no "
+                       f"native counterpart exists to reassemble it from")
     return out
 
 
@@ -7710,6 +7745,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are three refusals with three remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # The third of the three backends §3.5 proves a stored-field round trip for — labels and
+    # assignees reassembled exactly as the REST API shapes them.
+    for failure in github_native_field_failures():
+        findings.append(_finding("sp-gh-native-fields-broken", "error",
+                                 f"github stored-field reassembly — {failure}",
+                                 remedy="GitHubBackend._native_fields: every label becomes "
+                                        "a tag; only the first assignee is reflected, "
+                                        "because the canonical field is singular"))
+
     # What `azure-boards` has instead of an end-to-end run, and the reason it runs before
     # the early return: a primitive left inherited reaches a human as a traceback, which is
     # the one thing every external backend promises never to do.
@@ -8049,7 +8093,8 @@ def cmd_selftest(args, root: str) -> int:
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
               f"tag survives every azure-boards write whether or not a spec declares tags of "
               f"its own, the stored document never carries a second copy of a native field, "
-              f"and the embedded schema and template match their asset files.")
+              f"github reassembles every label into a tag and only its first assignee, and "
+              f"the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
