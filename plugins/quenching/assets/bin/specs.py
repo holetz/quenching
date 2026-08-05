@@ -3864,16 +3864,85 @@ def azure_query_wiql_failures() -> list[str]:
     return out
 
 
+def azure_native_field_pairs(fm: dict, discovery_tag: str | None) -> tuple[list[str], str | None]:
+    """`(the "field=value" pairs for --fields, the --assigned-to value)` — the pure half of
+    `_apply_native_fields`, so the one rule that matters most is checked without a live `az`:
+    the discovery tag is ALWAYS in the `System.Tags` pair, even where `fm` declares no tags
+    at all, because `_native_fields` excludes it on read and a write that forgot it would
+    silently drop the one thing that makes a spec findable again."""
+    pairs: list[str] = []
+    all_tags = list(fm.get("tags") or [])
+    if discovery_tag and discovery_tag not in all_tags:
+        all_tags.append(discovery_tag)
+    if all_tags:
+        pairs.append(f"System.Tags={'; '.join(all_tags)}")
+    for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
+                     ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
+        value = fm.get(key)
+        if value:
+            pairs.append(f"{ref}={value}")
+    assignee = fm.get("assignee")
+    return pairs, (str(assignee) if assignee else None)
+
+
+def azure_native_field_failures() -> list[str]:
+    """The one rule that must never regress: the discovery tag survives every write, tagged
+    or not — plus the ordinary cases, so a future edit cannot fix the alarming one by
+    breaking the boring ones."""
+    out: list[str] = []
+    cases = (
+        ({}, "quenching-spec", ["System.Tags=quenching-spec"], None,
+         "no tags at all still writes the discovery tag alone"),
+        ({"tags": ["Vertical: Risco"]}, "quenching-spec",
+         ["System.Tags=Vertical: Risco; quenching-spec"], None,
+         "a declared tag is joined with the discovery tag, never instead of it"),
+        ({"tags": ["quenching-spec"]}, "quenching-spec",
+         ["System.Tags=quenching-spec"], None,
+         "the discovery tag is never duplicated when already declared"),
+        ({"start": "2026-01-01", "target": "2026-02-01"}, "quenching-spec",
+         ["System.Tags=quenching-spec",
+          "Microsoft.VSTS.Scheduling.StartDate=2026-01-01",
+          "Microsoft.VSTS.Scheduling.TargetDate=2026-02-01"], None,
+         "both scheduling dates become their own pair"),
+        ({"assignee": "Someone"}, None, [], "Someone",
+         "no discovery tag declared writes no System.Tags pair at all"),
+    )
+    for fm, tag, want_pairs, want_assignee, label in cases:
+        pairs, assignee = azure_native_field_pairs(fm, tag)
+        if pairs != want_pairs:
+            out.append(f"{label}: pairs were {pairs!r}, not {want_pairs!r}")
+        if assignee != want_assignee:
+            out.append(f"{label}: assignee was {assignee!r}, not {want_assignee!r}")
+    return out
+
+
+def field_strip_failures() -> list[str]:
+    """`strip_frontmatter_keys` drops exactly the four stored keys and nothing else — the
+    WRITE half of the same round trip `azure_native_field_failures` checks the pairs for."""
+    out: list[str] = []
+    text = ("---\nslug: x\ntitle: X\ndate: 2026-01-01\nverification: per-section\n"
+           'tags: ["a", "b"]\nassignee: someone\nstart: 2026-01-01\ntarget: 2026-02-01\n'
+           "---\n\n# X\n")
+    got = strip_frontmatter_keys(text, FIELD_KEYS)
+    for key in FIELD_KEYS:
+        if f"{key}:" in got:
+            out.append(f"strip_frontmatter_keys left `{key}:` in the stripped text")
+    for kept in ("slug: x", "title: X", "date: 2026-01-01", "verification: per-section"):
+        if kept not in got:
+            out.append(f"strip_frontmatter_keys dropped `{kept}`, which it must keep")
+    return out
+
+
 # `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
 # resource, not guessed. `_show_many` pays 1 + ⌈N/200⌉ calls for a listing instead of 1 + N.
 AZ_BATCH_SIZE = 200
 # The fields `_show_many` actually reads back, via `_field`: identity, title, state, the
-# hybrid-wrapped document, and tags — the one §3 field pulled forward, because §2.6's
-# untagged-marker sweep already needs `System.Tags` to say which items lack the discovery
-# tag. Named once so a future field (assignee/dates) is a list edit here, not a second batch
-# call.
+# hybrid-wrapped document, tags (pulled forward at §2.6 for the untagged-marker sweep), and
+# — §3.3 — the assignee and the two scheduling dates that round out the four stored fields.
 AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description",
-                   "System.Tags")
+                   "System.Tags", "System.AssignedTo",
+                   "Microsoft.VSTS.Scheduling.StartDate",
+                   "Microsoft.VSTS.Scheduling.TargetDate")
 
 
 class AzureBoardsBackend(SpecBackend):
@@ -3973,8 +4042,35 @@ class AzureBoardsBackend(SpecBackend):
         return "archive" if self._field(item, "System.State") == self.states["archive"] \
             else "plans"
 
+    def _native_fields(self, item: dict) -> dict:
+        """`tags`/`assignee`/`start`/`target`, reassembled from their native counterparts —
+        the READ half of `## Design` §Armazenado não é projetado. `System.AssignedTo` comes
+        back as an identity object (`displayName`/`uniqueName`), never a plain string;
+        `System.Tags` is `; `-joined, and the discovery tag is excluded — it is this
+        backend's index, never part of a spec's own declared tags. The two scheduling fields
+        come back as a full datetime (`2026-01-01T03:00:00Z`); only the date is stored."""
+        out: dict = {}
+        tags = [t.strip() for t in self._field(item, "System.Tags").split(";") if t.strip()]
+        if self.discovery_tag:
+            tags = [t for t in tags if t != self.discovery_tag]
+        if tags:
+            out["tags"] = tags
+        assigned = (item.get("fields") or {}).get("System.AssignedTo")
+        if isinstance(assigned, dict):
+            name = assigned.get("displayName") or assigned.get("uniqueName")
+            if name:
+                out["assignee"] = name
+        elif isinstance(assigned, str) and assigned.strip():
+            out["assignee"] = assigned.strip()
+        for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
+                         ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
+            value = self._field(item, ref)
+            if value:
+                out[key] = value[:10]
+        return out
+
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str]]:
+    def _load(self) -> list[tuple[dict, int, str, str, dict]]:
         if self._rows is not None:
             return self._rows
         # WIQL rather than a saved query: the filter is this tool's, not the project's, and
@@ -3985,7 +4081,7 @@ class AzureBoardsBackend(SpecBackend):
                          expect="array") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str, str]] = []
+        rows: list[tuple[dict, int, str, str, dict]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
             m = SPEC_FILE_RE.match(filename)
@@ -4002,7 +4098,7 @@ class AzureBoardsBackend(SpecBackend):
                         f"{item.get('id')}",
                 "slug": m.group(1),
             }, int(item.get("id") or 0), doc,
-                self._field(item, "System.Title")))
+                self._field(item, "System.Title"), self._native_fields(item)))
         self._rows = rows
         return rows
 
@@ -4036,7 +4132,7 @@ class AzureBoardsBackend(SpecBackend):
         self._rows = None
 
     def _item_id(self, slug: str) -> int:
-        for descriptor, item_id, _, _title in self._load():
+        for descriptor, item_id, _, _title, _native in self._load():
             if descriptor["slug"] == slug:
                 return item_id
         raise BackendRefusal({
@@ -4107,28 +4203,42 @@ class AzureBoardsBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, t in rows})
+                                {d["slug"]: t for d, _, _, t, _ in rows})
         if err:
             return None, err
-        _, full_text, native = next((i, d, t) for descriptor, i, d, t in rows
-                                    if descriptor["slug"] == spec["slug"])
-        return derive_info(spec, hybrid_title_join(full_text, native)), {}
+        _, full_text, native_title, native_fields = next(
+            (i, d, t, f) for descriptor, i, d, t, f in rows
+            if descriptor["slug"] == spec["slug"])
+        info = derive_info(spec, hybrid_title_join(full_text, native_title))
+        # REASSEMBLED, not re-parsed: the stored document never carries these four keys
+        # (`write_spec` strips them — §Armazenado não é projetado), so the native fields ARE
+        # the only copy, and they win outright over whatever the raw text happened to say.
+        info["frontmatter"].update(native_fields)
+        return info, {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
+        # FRESH, off the text THIS write is putting in place — every caller (`cmd_record`,
+        # `cmd_field`, `cmd_promote`...) hands `write_spec` the OLD `info` beside the NEW
+        # `text`, so trusting `info["frontmatter"]` here would read the state a write is
+        # REPLACING rather than the one it is creating. `_apply_column` (§2.11) had exactly
+        # this bug from §2.5 until this task — the derivation was cheap and nothing forced
+        # it to be re-run.
+        fresh = derive_info(info, text)
         # `System.Description` has no published ceiling, so `hybrid_split` is handed None
         # and answers with the one chunk that is the whole document. The call is made anyway,
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
-        stored, title = hybrid_project(info["slug"], text)
+        stripped = strip_frontmatter_keys(text, FIELD_KEYS)
+        stored, title = hybrid_project(info["slug"], stripped)
         chunks = hybrid_split(stored, None)
         # Placement is REAFFIRMED here, not just declared at creation — a human moving the
         # work item to another area between writes sees the next one bring it back, the same
@@ -4142,13 +4252,19 @@ class AzureBoardsBackend(SpecBackend):
             fields["iteration"] = self.iteration_path
         self._update(item_id, **fields)
         self._apply_parent(item_id, self.parent_id)
-        self._apply_column(item_id, info)
+        self._apply_column(item_id, fresh)
+        self._apply_native_fields(item_id, fresh["frontmatter"])
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
-        stored, title = hybrid_project(m.group(1) if m else filename, text)
+        # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
+        # `board_state_of` reads only `phase`/`frontmatter`/`stage`, all of which come back
+        # from the text just handed to `az`.
+        fresh = derive_info({"phase": phase}, text)
+        stripped = strip_frontmatter_keys(text, FIELD_KEYS)
+        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         argv = ["work-item", "create", "--project", self.project,
                "--type", self.work_item_type, "--title", title,
                "--description", hybrid_wrap(filename, hybrid_split(stored, None)[0][0]),
@@ -4160,12 +4276,37 @@ class AzureBoardsBackend(SpecBackend):
         item = self._az("creating a work item", *argv)
         item_id = int((item or {}).get("id") or 0)
         self._apply_parent(item_id, self.parent_id)
-        # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
-        # `board_state_of` reads only `phase`/`frontmatter`/`stage`, all of which come back
-        # from the text just handed to `az`.
-        self._apply_column(item_id, derive_info({"phase": phase}, text))
+        self._apply_column(item_id, fresh)
+        # ALWAYS, even with no fixed tags: this is the ONE call that puts the discovery tag
+        # on a freshly created item. Skip it and the spec is invisible to `_load()`'s own
+        # tag-scoped listing the instant it exists — never found again by slug, by `list`,
+        # by anything.
+        self._apply_native_fields(item_id, fresh["frontmatter"])
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def _apply_native_fields(self, item_id: int, fm: dict) -> None:
+        """Reaffirm `tags`/`assignee`/`start`/`target`'s native counterparts, on every write.
+        `tags` and the two scheduling dates go through `--fields` — `az boards work-item
+        update` has no dedicated flag for any of the three; `assignee` does (`--assigned-to`).
+
+        THE DISCOVERY TAG IS ALWAYS INCLUDED, even where `fm` carries no `tags` at all — it
+        is `System.Tags`'s one non-optional member. `_native_fields` excludes it on READ
+        (§A descoberta: it is this backend's index, never a spec's own declared tag), so
+        writing back only `fm['tags']` would silently drop it from the item on the very next
+        write, making the spec unfindable by every later listing.
+
+        An absent `start`/`target`/`assignee` is left alone, never cleared — the same
+        asymmetry `_update` already has for every other optional field: this backend adds
+        what is declared and never erases what a human set directly on the board."""
+        pairs, assignee = azure_native_field_pairs(fm, self.discovery_tag)
+        argv = ["work-item", "update", "--id", str(item_id)]
+        if pairs:
+            argv += ["--fields", *pairs]
+        if assignee:
+            argv += ["--assigned-to", assignee]
+        if len(argv) > 4:
+            self._az(f"updating work item {item_id}'s stored fields", *argv)
 
     def _apply_parent(self, item_id: int, parent_id: int | None) -> None:
         """Reaffirm the declared parent on every write, resolved BY ID and never by title —
@@ -4949,6 +5090,28 @@ def set_frontmatter_key(text: str, key: str, value: str,
                 break
     lines.insert(at, f"{key}: {value}\n")
     return "".join(lines)
+
+
+def strip_frontmatter_keys(text: str, keys: tuple[str, ...]) -> str:
+    """`text` with each of `keys`' own frontmatter line removed — the WRITE half of
+    `## Design` §Armazenado não é projetado for `tags`/`assignee`/`start`/`target`: the
+    native field is the storage, so the document stored alongside it never carries a second,
+    unread copy that would go stale the instant a human edited the tracker instead.
+
+    Unlike `hybrid_title_split`, this never refuses. `title` is required and paired with a
+    `# <TITLE>` heading it has to reproduce at an exact offset; these four are optional
+    scalars/lists with no second copy elsewhere in the document, so dropping the line is the
+    whole operation — nothing to reconstruct on the way back, because `read_spec` reassembles
+    the VALUES into `info['frontmatter']` directly rather than rebuilding the text."""
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return text
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return text
+    kept = [ln for i, ln in enumerate(lines)
+           if not (1 <= i < close and ln.split(":", 1)[0].strip() in keys)]
+    return "".join(kept)
 
 
 def legacy_marker_fold(filename: str, text: str) -> tuple[str, str] | None:
@@ -7595,6 +7758,23 @@ def cmd_selftest(args, root: str) -> int:
                                         "`date.fromisoformat` rejects, not just anything a "
                                         "digit-shaped regex would"))
 
+    # The write side of the four stored fields: the discovery tag must survive every write,
+    # tagged or not, or a freshly created spec goes unfindable the instant it exists.
+    for failure in azure_native_field_failures():
+        findings.append(_finding("sp-az-native-fields-broken", "error",
+                                 f"azure-boards stored-field write — {failure}",
+                                 remedy="azure_native_field_pairs must always include the "
+                                        "discovery tag in the System.Tags pair, declared "
+                                        "tags or not"))
+
+    # The read side's mirror: the stored document must never carry a second, unread copy of
+    # a field the native store already owns.
+    for failure in field_strip_failures():
+        findings.append(_finding("sp-field-strip-broken", "error",
+                                 f"stored-field stripping — {failure}",
+                                 remedy="strip_frontmatter_keys drops exactly `tags`/"
+                                        "`assignee`/`start`/`target` and no other line"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -7763,8 +7943,10 @@ def cmd_selftest(args, root: str) -> int:
               f"`@project`, subject resolution refuses only once `subjects` is declared, the "
               f"board-state precedence puts archived over reviewed over the derived stage, "
               f"an undeclared tag catalog flags nothing while a declared one flags what is "
-              f"outside it, a digit-shaped non-date refuses `start`/`target`, and the "
-              f"embedded schema and template match their asset files.")
+              f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
+              f"tag survives every azure-boards write whether or not a spec declares tags of "
+              f"its own, the stored document never carries a second copy of a native field, "
+              f"and the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
