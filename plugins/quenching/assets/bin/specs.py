@@ -1071,6 +1071,10 @@ BACKENDS = ("files", "github", "azure-boards")
 # refusal lives; this tuple only says which sub-keys `load_config` keeps.
 AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
                         "iterationPath", "boardColumn", "defaultSubject")
+# `discoveryTag`'s default. Unlike `areaPath`, this name is the TOOL's, not the project's —
+# same argument `specsBranch` already carries — so it defaults rather than refuses;
+# configurable only to resolve a collision with a tag the project already uses.
+AZ_DEFAULT_DISCOVERY_TAG = "quenching-spec"
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
 # Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
@@ -3972,10 +3976,23 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                        "project's process, so this tool never guesses it. No spec was read "
                        "or written",
         }
+    area_path = cfg["azurePlacement"].get("areaPath")
+    if not area_path:
+        return None, {
+            "code": "sp-az-no-area", "exit": 2, "config": cfg["path"],
+            "message": "backend 'azure-boards' needs `areaPath` declared in "
+                       f"{CONFIG_FILE}'s `azurePlacement` — add "
+                       '`"azurePlacement": {"areaPath": "<Project>\\\\<Area>\\\\<Sub-area>"}`; '
+                       "an Azure Boards area is defined by the project, and a guessed default "
+                       "does not fail loudly — it writes to the wrong part of somebody else's "
+                       "board. No spec was read or written",
+        }
     (org, project), err = resolve_azure_project(cwd)
     if err:
         return None, err
-    return AzureBoardsBackend(org, project, states, cwd), {}
+    discovery_tag = cfg["azurePlacement"].get("discoveryTag") or AZ_DEFAULT_DISCOVERY_TAG
+    return AzureBoardsBackend(org, project, states, cwd,
+                              area_path=area_path, discovery_tag=discovery_tag), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
