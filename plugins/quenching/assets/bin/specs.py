@@ -3726,10 +3726,13 @@ def azure_query_wiql_failures() -> list[str]:
 # `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
 # resource, not guessed. `_show_many` pays 1 + ⌈N/200⌉ calls for a listing instead of 1 + N.
 AZ_BATCH_SIZE = 200
-# The fields `_show_many` actually reads back, via `_field`: identity, title, state, and the
-# hybrid-wrapped document. Named once so a future field (§3's tags/assignee/dates) is a list
-# edit here, not a second batch call.
-AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description")
+# The fields `_show_many` actually reads back, via `_field`: identity, title, state, the
+# hybrid-wrapped document, and tags — the one §3 field pulled forward, because §2.6's
+# untagged-marker sweep already needs `System.Tags` to say which items lack the discovery
+# tag. Named once so a future field (assignee/dates) is a list edit here, not a second batch
+# call.
+AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description",
+                   "System.Tags")
 
 
 class AzureBoardsBackend(SpecBackend):
@@ -3899,6 +3902,29 @@ class AzureBoardsBackend(SpecBackend):
                        f"work item was deleted or moved while this command ran; nothing "
                        f"was written",
         })
+
+    def marker_without_discovery_tag(self) -> list[dict]:
+        """Items carrying the spec marker in their description but NOT the discovery tag —
+        invisible to `_load()`'s tag-scoped listing, and the exact price `## Design` §A
+        descoberta accepts for making the tag an index rather than an authority: a human who
+        untags a card makes it vanish from `list`/`status`/every other command, silently.
+        `doctor`'s `sp-az-marker-untagged` is the one place that still finds it — a sweep
+        scoped by area alone, without the tag."""
+        found = self._az("querying the project's work items (untagged sweep)", "query",
+                         "--project", self.project, "--wiql",
+                         azure_query_wiql(self.project, self.area_path, None),
+                         expect="array") or []
+        ids = [int(r.get("id") or 0) for r in found if r.get("id")]
+        out: list[dict] = []
+        for item in self._show_many(ids):
+            filename, _, _ = hybrid_unwrap(self._field(item, "System.Description"))
+            m = SPEC_FILE_RE.match(filename)
+            if not m:
+                continue
+            tags = [t.strip() for t in self._field(item, "System.Tags").split(";")]
+            if self.discovery_tag and self.discovery_tag not in tags:
+                out.append({"id": int(item.get("id") or 0), "slug": m.group(1)})
+        return out
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
@@ -7595,6 +7621,26 @@ def cmd_doctor(args, root: str) -> int:
                                  path=f"specs/{LEGACY_CONFIG_FILE}",
                                  remedy=f"move its keys into {CONFIG_FILE} and delete it; "
                                         f"whatever it declares is doing nothing today"))
+
+    # The one doctor check that reaches the network — every other finding above is local by
+    # construction. Justified because it is the only place that can ever catch it: a card a
+    # human untagged is invisible to every OTHER command, which all read through the
+    # tag-scoped listing. Runs only when `azure-boards` is actually configured, so a
+    # workspace on `files` or `github` — or on `azure-boards` with nothing declared yet —
+    # never pays for it.
+    if cfg["backend"] == "azure-boards":
+        az, az_err = open_azure_backend(root)
+        if not az_err:
+            for row in az.marker_without_discovery_tag():
+                findings.append(_finding("sp-az-marker-untagged", "warn",
+                                         f"work item {row['id']} (spec '{row['slug']}') "
+                                         f"carries the quenching-spec marker but not the "
+                                         f"discovery tag '{az.discovery_tag}' — invisible to "
+                                         f"every command's tag-scoped listing",
+                                         path=str(row["id"]), slug=row["slug"],
+                                         remedy=f"re-apply the '{az.discovery_tag}' tag on "
+                                                f"the board; until then this spec exists "
+                                                f"only there"))
 
     leftovers = _v1_leftovers(root)
     for name in leftovers:
