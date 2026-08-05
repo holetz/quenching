@@ -23,12 +23,12 @@ that anything is finished — those are `/quenching:specs:conclude` and `/quench
 A sweep that could also delete is a sweep nobody can safely re-run.
 
 The layout, the derived stages, the front's on-write check and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape of both the step 2 table and the step 6 report;
-how the tool is resolved and its path written in
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md);
-the shared log procedure in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). All cited, never
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §Derived stages §The `specs.py` tool surface §The report mold, which owns the
+shape of both the step 2 table and the step 6 report; how the tool is resolved and its path
+written in
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool §Write the resolved path literally on every invocation. Both cited, never
 restated.
 
 ## Resolving the tool
