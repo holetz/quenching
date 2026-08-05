@@ -3764,7 +3764,9 @@ class AzureBoardsBackend(SpecBackend):
     def __init__(self, org: str, project: str, states: dict, cwd: str,
                 area_path: str | None = None, discovery_tag: str | None = None,
                 work_item_type: str | None = None, iteration_path: str | None = None,
-                parent_id: int | None = None) -> None:
+                parent_id: int | None = None, team: str | None = None,
+                board_column: str | None = None,
+                column_map: dict[str, str] | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
@@ -3781,6 +3783,10 @@ class AzureBoardsBackend(SpecBackend):
         # subject resolution (2.9-2.10) — `None` here until then, exactly as `area_path` was
         # `None` between §1 and §2.2.
         self.parent_id = parent_id
+        self.team = team
+        self.board_column = board_column
+        self.column_map = column_map or {}
+        self._board_field: str | None = None   # WEF_<guid>_Kanban.Column — resolved once
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
     # -- transport ---------------------------------------------------------- #
@@ -3931,6 +3937,7 @@ class AzureBoardsBackend(SpecBackend):
             fields["iteration"] = self.iteration_path
         self._update(item_id, **fields)
         self._apply_parent(item_id, self.parent_id)
+        self._apply_column(item_id, info)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -3948,6 +3955,10 @@ class AzureBoardsBackend(SpecBackend):
         item = self._az("creating a work item", *argv)
         item_id = int((item or {}).get("id") or 0)
         self._apply_parent(item_id, self.parent_id)
+        # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
+        # `_board_state` reads only `phase`/`frontmatter`/`stage`, all of which come back
+        # from the text just handed to `az`.
+        self._apply_column(item_id, derive_info({"phase": phase}, text))
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
@@ -3973,6 +3984,75 @@ class AzureBoardsBackend(SpecBackend):
         self._az(f"linking work item {item_id} to its parent {parent_id}",
                  "work-item", "relation", "add", "--id", str(item_id),
                  "--relation-type", "parent", "--target-id", str(parent_id))
+
+    def _resolve_board_field(self) -> str:
+        """The team's Kanban column field — `WEF_<guid>_Kanban.Column` — resolved once per
+        process and cached on `self`. `spec-backend.md` §Granular reading already allows a
+        process-local cache that is not a store: it is not authoritative and nothing outside
+        this object reads it.
+
+        FOUND, NEVER GUESSED: the guid is per-TEAM, so a second team's board carries a
+        different one. This asks the team for every board it has and keeps the one whose
+        `allowedMappings` names `self.work_item_type` — measured on this org, team 'Diretoria
+        Risco' has six boards (Stories, OKR, Releases, Funcionalidades, Iniciativas, Épicos)
+        and 'User Story' resolves to 'Stories'."""
+        if self._board_field is not None:
+            return self._board_field
+        if not self.team:
+            raise BackendRefusal({
+                "code": "sp-az-no-team", "exit": 2,
+                "message": "backend 'azure-boards' needs `team` declared in "
+                           f"{CONFIG_FILE}'s `azurePlacement` to resolve the board's column "
+                           "field — a board belongs to a team, and this tool never guesses "
+                           "which one. No spec was read or written",
+            })
+        listing = self._az_raw("listing the team's boards", "devops", "invoke",
+                               "--area", "work", "--resource", "boards",
+                               "--route-parameters", f"project={self.project}",
+                               f"team={self.team}")
+        for row in (listing or {}).get("value") or []:
+            board_id = row.get("id")
+            if not board_id:
+                continue
+            detail = self._az_raw(f"reading board '{row.get('name')}'", "devops", "invoke",
+                                  "--area", "work", "--resource", "boards",
+                                  "--route-parameters", f"project={self.project}",
+                                  f"team={self.team}", f"id={board_id}")
+            mappings = (detail or {}).get("allowedMappings") or {}
+            if any(self.work_item_type in m for m in mappings.values()):
+                field = ((detail.get("fields") or {}).get("columnField") or {}).get(
+                    "referenceName")
+                if field:
+                    self._board_field = field
+                    return field
+        raise BackendRefusal({
+            "code": "sp-az-no-board", "exit": 2,
+            "message": f"no board for team '{self.team}' accepts work item type "
+                       f"'{self.work_item_type}' — check azurePlacement.team and "
+                       f"workItemType; no spec was read or written",
+        })
+
+    def _board_state(self, info: dict) -> str:
+        """The de-para's KEY — archived (phase) > reviewed (record) > the derived stage —
+        inline here until §2.11 promotes it to a shared, tested core function; that task
+        also fixes the precedence in place of this comment describing it."""
+        if info["phase"] == "archive":
+            return "archived"
+        if info["frontmatter"].get("reviewed"):
+            return "reviewed"
+        return info["stage"]
+
+    def _apply_column(self, item_id: int, info: dict) -> None:
+        """Reaffirm the board column on every write, from the de-para (`azureColumns`),
+        falling back to `boardColumn` for a state absent from the table. A human who moved
+        the card sees the next write bring it back — the board is the projection, per
+        `## Design` §O de-para de coluna."""
+        column = self.column_map.get(self._board_state(info), self.board_column)
+        if not column:
+            return
+        field = self._resolve_board_field()
+        self._az(f"setting work item {item_id}'s board column", "work-item", "update",
+                 "--id", str(item_id), "--fields", f"{field}={column}")
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
@@ -4043,7 +4123,10 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
     return AzureBoardsBackend(org, project, states, cwd,
                               area_path=area_path, discovery_tag=discovery_tag,
                               work_item_type=work_item_type,
-                              iteration_path=placement.get("iterationPath")), {}
+                              iteration_path=placement.get("iterationPath"),
+                              team=placement.get("team"),
+                              board_column=placement.get("boardColumn"),
+                              column_map=cfg["azureColumns"]), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
