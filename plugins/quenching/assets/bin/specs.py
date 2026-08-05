@@ -2647,6 +2647,21 @@ GH_BODY_MAX = 65_536
 # the off-by-a-header every "just use the limit" split makes once.
 GH_PART_MAX = GH_BODY_MAX - 1_024
 
+# Color and one-line description for each `spec:` label — GitHub-only, never in
+# schema.json. `label:` there is the name every backend with a native tag concept can use;
+# color is a GitHub label's own visual property with no Azure Boards tag equivalent, so it
+# stays where the one backend that renders it lives. `_store`'s issue PATCH already creates
+# a label missing from the repo (Design item 7 of this spec), with an arbitrary color —
+# `_ensure_label_colors` is the one-time follow-up that fixes it.
+SPEC_LABEL_META = {
+    "spec:ranked":       ("c2e0c6", "priority is recorded — a human ranked this spec"),
+    "spec:interrogated": ("bfd4f2", "refined is recorded — a real interrogation happened"),
+    "spec:approved":     ("0e8a16", "a human said go"),
+    "spec:built":        ("5319e7", "the derived stage — task or Handoff work is under way"),
+    "spec:reviewed":     ("fbca04", "a human read the whole branch diff"),
+    "spec:merged":       ("1d76db", "the branch merged into the integration branch"),
+}
+
 
 def hybrid_short_title(text: str) -> str:
     """A title that fits, cut on a word boundary and marked with an ellipsis.
@@ -2731,6 +2746,10 @@ class GitHubBackend(SpecBackend):
         # reconciliation in `_store` diffs against, so it costs no call of its own
         self._rows: list[tuple[dict, int, str, int, str, list[str]]] | None = None
         self._legacy: list[tuple[int, str, str, int, str]] = []
+        # `spec:` labels already confirmed correctly colored THIS process — so a repo
+        # this tool has been reconciling against for a while pays no repeat GET+PATCH for
+        # a label it fixed on an earlier write in the same command.
+        self._colors_confirmed: set[str] = set()
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
@@ -2886,8 +2905,15 @@ class GitHubBackend(SpecBackend):
         # about to be written, never a second, backend-own way of deciding the stage: this
         # class derives nothing of its own, per its own docstring above.
         new_info = derive_info(info, text)
-        labels = reconcile_label_set(current_labels, derive_labels(new_info))
+        desired = derive_labels(new_info)
+        labels = reconcile_label_set(current_labels, desired)
         self._store(number, info["slug"], info["file"], text, had_parts, labels)
+        # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
+        # before that call, and fixing a nonexistent label's color 404s. Gated on an
+        # actual change so the no-milestone-change write this backend must cost no round
+        # trip for (task 5.2) never reaches this branch at all.
+        if labels != current_labels:
+            self._ensure_label_colors(desired)
         self._invalidate()
 
     def _store(self, number: int, slug: str, filename: str, text: str,
@@ -2913,6 +2939,29 @@ class GitHubBackend(SpecBackend):
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}", payload)
         self._sync_parts(number, chunks, had_parts)
+
+    def _ensure_label_colors(self, names: list[str]) -> None:
+        """Fix color and description for whichever of `names` are not already confirmed
+        correct this process — called only from `write_spec`, and only when a write is
+        about to change an issue's labels, so a no-milestone-change write never reaches
+        here at all.
+
+        One GET of the repo's own label registry, then a PATCH per label that still
+        disagrees — never more than once per label per process, per `_colors_confirmed`."""
+        todo = [n for n in names if n in SPEC_LABEL_META and n not in self._colors_confirmed]
+        if not todo:
+            return
+        existing = {l.get("name"): (l.get("color"), l.get("description"))
+                   for page in (self._api("listing labels", "--paginate", "--slurp",
+                                          f"repos/{self.repo}/labels?per_page=100") or [])
+                   for l in (page or [])}
+        for name in todo:
+            color, desc = SPEC_LABEL_META[name]
+            if existing.get(name) != (color, desc):
+                self._write_api(f"fixing color for label {name!r}", "PATCH",
+                                f"repos/{self.repo}/labels/{name}",
+                                {"color": color, "description": desc})
+            self._colors_confirmed.add(name)
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
