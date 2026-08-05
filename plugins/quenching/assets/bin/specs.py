@@ -1933,6 +1933,17 @@ class SpecBackend:
         """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
         raise NotImplementedError
 
+    def reconcile_labels(self, info: dict, schema: dict | None = None) -> None:
+        """Mirror `derive_labels(info, schema)` onto this backend's native label/tag
+        surface, if it has one — a rendering of derived state, not a sixth primitive.
+
+        No-op by default: `files` and `memory` have no native construct to reconcile
+        against, so neither overrides this. An external backend folds the reconciliation
+        into the same write its own store call already makes rather than a second round
+        trip, which is why this takes `info` and derives fresh rather than accepting a
+        precomputed label list — see docs/standards/architecture/spec-backend.md."""
+        return None
+
 
 class FilesBackend(SpecBackend):
     """Specs as markdown files under the specs workspace. The reference implementation:
