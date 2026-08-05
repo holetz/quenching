@@ -407,6 +407,12 @@ worktree was removed or its refusal reported, or the run recorded why nothing wa
 gate among them.
 
 ### 7. Report
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. The single-spec header line carries the archived locator and the outcome; four
 body blocks:
 

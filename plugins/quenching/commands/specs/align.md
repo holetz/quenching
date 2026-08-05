@@ -185,7 +185,14 @@ owns the `docs/` bundle alone, and a spec carries no OKF `type:` for it to judge
 This sweep writes nothing into the `docs/` bundle — the `specs/` front records itself, and the
 bundle log it used to append to is retired.
 
-Then §The report mold, with two body blocks:
+Then §The report mold — loaded here, in the step that emits it:
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
+Two body blocks:
 
 1. **Applied** — fixed. What the sweep changed, with counts, and the probe's re-run state.
 2. **Reported, not applied** — fixed, because an empty one is the good news this sweep exists to
