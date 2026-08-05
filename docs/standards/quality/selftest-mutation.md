@@ -4,10 +4,10 @@ title: Mutation-checking a selftest
 description: A selftest that has never been observed to fail is an untested test — the mutation pass that earns the claim, one mutation per rule the fixture exists to prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate this repo's three shipped selftests have not yet cleared
 resource: plugins/quenching/assets/bin/session.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
 tags: [quality, testing, selftest, mutation, verification]
-timestamp: 2026-08-02
+timestamp: 2026-08-05
 audience: both
 authority: background
-source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against skills.py's selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — the rest of that tool's corpus and the whole of specs.py's and okf-validate.py's still have not had it
+source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against skills.py's selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over skills.py's `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; the rest of that tool's corpus and the whole of specs.py's and okf-validate.py's still have not had it
 maintainer: quenching
 ---
 
@@ -57,6 +57,30 @@ plausible, entirely wrong finding, against a run whose honest redundant-read cou
 selftest that now holds that line was written *after* the bug, which is the ordinary case; the
 mutation pass is what confirms the line is actually held rather than merely intended.
 
+Three rules about how the pass itself is run, each learned by a pass that would otherwise have
+reported something it had not measured:
+
+**Run every mutation in every mode the check will be trusted in.** A tool with a `--json` arm and a
+human arm has two code paths, and a pass that exercises one grades one. Measured on
+`skills.py`'s `--sections` ladder (2026-08-05, three mutations): the new case shadowed an outer
+variable inside `cmd_selftest`, and `selftest --json` exited **0** while plain `selftest` — the form
+this repo's own `CLAUDE.md` verification block runs — raised `TypeError` after printing its case
+count. Only the mutation pass, run in both modes, separated them. The same shape governs any
+`verify:` line: one written solely over `--json` cannot observe the branch a human reads.
+
+**A survivor that is provably equivalent is recorded, not chased.** The same pass mutated
+`if got or "," not in value` to `if got:` and nothing failed — correctly, because `split(",")` over
+a comma-free value returns that value, so the two forms have identical output for every input. An
+equivalent mutant is a fact about the mutation, never a gap in the fixture; write down *why* it
+cannot be killed, and leave the clause if it earns its place as a statement of the contract. Hunting
+it produces assertions that test the code's shape instead of its rules.
+
+**Establish the before-state with `git diff`, never with a copy of the tool run from elsewhere.**
+The same pass tried to prove an untouched file by comparing case counts against a copy of the base
+under `/tmp`, and got 12 against 20 — pure artefact: `find_surface_root` resolved a different
+`schema.json` from outside the plugin tree. A shipped tool run outside its own tree silently grades
+something else.
+
 ## The second pass — `skills.py`, and why it counts as partial
 
 Run 2026-08-02 for `route-commands-without-always-on-descriptions`, against the rules that spec
@@ -99,14 +123,17 @@ a selftest that cannot fail is named rather than counted as coverage.
 
 ## Graduation gate
 
-`authority: background`, and the gate is explicit. Two passes exist: `session.py`'s whole selftest
-(four mutations, 2026-07-29) and `skills.py`'s **newest rules only** (seven, 2026-08-02). What is
+`authority: background`, and the gate is explicit. Three passes exist: `session.py`'s whole selftest
+(four mutations, 2026-07-29), `skills.py`'s **newest rules only** (seven, 2026-08-02), and
+`skills.py`'s `--sections` ladder (three, 2026-08-05 — two killed, one equivalent). What is
 still unchecked is the rest of `skills.py`'s corpus and the whole of `specs.py`'s and
 `okf-validate.py`'s — selftests CLAUDE.md's verification block treats as the repo's primary gate,
 and which **have never been observed to fail.** They may well be sound; nobody has checked.
 
 This becomes `authority: current` when a pass of the shape above has been run against all three
 shipped tools and the result recorded — not before. A pass over one tool's newest rules does not
-clear it, and booking it as partial rather than as progress is the same honesty the standard asks
-of the mutations themselves. Until then this describes a practice the repo has adopted twice and
-not generalised, which is what the `background` stamp is for.
+clear it, and a third pass over that same tool's newest rule clears it even less: the tally grows
+while the gap — `specs.py` and `okf-validate.py`, untouched — does not move at all. Booking that as
+partial rather than as progress is the same honesty the standard asks of the mutations themselves.
+Until then this describes a practice the repo has adopted three times on two tools and not
+generalised, which is what the `background` stamp is for.
