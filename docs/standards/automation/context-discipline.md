@@ -4,10 +4,10 @@ title: Context discipline — open less, and run for less time
 description: The two halves of a run's integral `tokens × turns remaining` and the only two ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention) and run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-03
+timestamp: 2026-08-04
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign
 maintainer: quenching
 ---
 
@@ -145,6 +145,10 @@ boundary, and a build offers to stop there.
 - **It writes no new state.** The resumption trail — `## Handoff`, `git log`, and the recorded
   commit subjects — is already maintained for other reasons, and that is precisely what makes the
   cut nearly free. An offer needing a record of its own would be moving cost, not cutting it.
+- **The same event also bounds what a rewrite touches, not only whether a run stops.**
+  `## Handoff`'s per-section blocks close on it: a `### N.` block is never targeted again once its
+  section's last task commits, so a task built later is never resent the record of a section
+  already done.
 
 <!-- rationale -->
 
@@ -155,6 +159,14 @@ sections each (0:4, 2:1, 3:6, 4:11, 5:5, 6:4, 7:3) — so the event fires a medi
 spec, and the smallest threshold that would change anything (≥2 sections remaining) would remove
 the offer entirely from the 2- and 3-section specs, which are the runs most able to end cleanly
 early.
+
+Measured on a real 29-task, 7-section run predating the per-section `## Handoff` redesign
+(`configurable-spec-backend`): the flat `## Handoff` resent **~79,556 characters (~19,900 tokens)**
+across the run, averaging ~2,743 chars per task and peaking at **~5,680 chars per task** in the
+closing sections — almost entirely the record of sections that had already closed. The section
+boundary was already the point where a run may stop; `scope-the-handoff-rewrite` is the same
+boundary applied to what a rewrite sends, closing a section's block the moment that boundary is
+crossed rather than resending it to every task built after.
 
 ## Two things measured and refused
 
