@@ -1693,9 +1693,9 @@ def cmd_selftest(args, root: str) -> int:
             # a name that resolves to nothing travels on, so `cmd_read` refuses BY NAME
             # rather than silently dropping it
             ("refusal", ["Delta"], ["Delta"])):
-        got = expand_section_args(comma_heads, ask)
-        if got != want:
-            failures.append(f"--sections ladder {label}: {ask} expanded to {got}, "
+        expanded = expand_section_args(comma_heads, ask)
+        if expanded != want:
+            failures.append(f"--sections ladder {label}: {ask} expanded to {expanded}, "
                             f"expected {want}")
 
     # `--rules-only`, both arms. The fallback arm is the one `## Validation` insists on:
