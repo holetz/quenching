@@ -150,7 +150,7 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_KEYS = ("files", "pattern", "verify", "constraint", "subject", "commit")
+TASK_META_KEYS = ("files", "pattern", "cwd", "verify", "constraint", "subject", "commit")
 TASK_META_RE = re.compile(rf"^\s+({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
 # `constraint:` is INERT by design: the grammar admits it and `next` hands it through, but no
@@ -1540,7 +1540,7 @@ def parse_tasks(text: str) -> list[dict]:
         parallel = bool(PARALLEL_RE.match(rest))
         blocked = BLOCKED_REASON_RE.search(body)
         files: list[str] = []
-        pattern = verify = subject = commit = None
+        pattern = cwd = verify = subject = commit = None
         subject_off = commit_off = last_meta_off = None
         meta_indent = None
         block_end = i + 1
@@ -1562,6 +1562,8 @@ def parse_tasks(text: str) -> list[dict]:
                 files = [p.strip() for p in val.split(",") if p.strip()]
             elif key == "pattern":
                 pattern = val
+            elif key == "cwd":
+                cwd = val
             elif key == "subject":
                 subject, subject_off = val, off
             elif key == "commit":
@@ -1585,6 +1587,7 @@ def parse_tasks(text: str) -> list[dict]:
             "parallel": parallel,
             "files": files,
             "pattern": pattern,
+            "cwd": cwd,
             "verify": verify,
             "subject": subject,
             "commit": commit,
@@ -6147,6 +6150,7 @@ def cmd_next(args, root: str) -> int:
             t = openable[0]
             obj = {"ok": True, "action": "implement_task", "task": t["id"], "text": t["text"],
                    "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
+                   "cwd": t["cwd"],
                    "parallel": t["parallel"], **base,
                    "message": f"implement task {t['id']}: {t['text']}"}
             emit(args.json, obj, obj["message"])
@@ -7250,6 +7254,7 @@ def cmd_selftest(args, root: str) -> int:
     # prose as shell. Ordering matters to the fixture — constraint must follow verify.
     probe = parse_tasks("## Tasks\n\n### 1. X\n\n"
                         "- [ ] 1.1 t\n"
+                        "      cwd: plugins/quenching\n"
                         "      verify: THE-REAL-CHECK\n"
                         "      constraint: prose that is not a command\n")
     if not probe or probe[0].get("verify") != "THE-REAL-CHECK":
@@ -7260,6 +7265,15 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="the metadata dispatch is exhaustive: every key in "
                                         "TASK_META_KEYS gets its own arm or is deliberately "
                                         "unread — never a trailing `else` that catches it"))
+    if not probe or probe[0].get("cwd") != "plugins/quenching":
+        findings.append(_finding("sp-task-meta-dispatch", "error",
+                                 "`cwd:` is admitted by TASK_META_RE but not captured into the "
+                                 "task's dict — grammar-admission and dispatch are two different "
+                                 "things, and a `verify:` reader would have nowhere to read the "
+                                 "declared directory from",
+                                 remedy="`cwd` needs its own arm in the parse_tasks dispatch, "
+                                        "same as `pattern`/`verify`/`subject`, and its own key "
+                                        "in the returned dict"))
 
     # `--moment build` is the set `/quenching:specs:execute` step 4 sends an executor — asserted
     # against the literal list rather than eyeballed, so an edit to DEFAULT_SCHEMA that drops or

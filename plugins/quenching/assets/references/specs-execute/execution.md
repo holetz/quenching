@@ -91,7 +91,8 @@ command that edits the surface — `/quenching:skill:new`, or `/quenching:skill:
 
 For each task the policy says to verify:
 
-1. Run the task's `verify:` command.
+1. Run the task's `verify:` command, from its declared `cwd:` — or, absent one, from the session's
+   or worktree's root, exactly as before this key existed.
 2. **Passes** → the task is done; go to the diff self-review.
 3. **Fails** → read the failure, change the code, and run it again.
 
