@@ -3897,6 +3897,26 @@ def spec_records(fm: dict, schema: dict | None = None) -> dict:
     return {k: (fm.get(k) or None) for k in record_keys(schema)}
 
 
+def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
+    """The `spec:` labels this document projects onto its tracker issue / work item —
+    read from the schema's `label:` map and nothing else.
+
+    One label per present record (`record_keys(schema)` order, skipping any without a
+    `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
+    labelled stage rule. A unidirectional projection: recomputed here on every write, never
+    read back — see docs/standards/architecture/spec-backend.md §Granular reading is about
+    context, not I/O for the sibling rule this one extends."""
+    s = schema or load_schema()
+    fm = info.get("frontmatter", {})
+    records = s.get("frontmatter", {}).get("records", {})
+    labels = [records[k]["label"] for k in record_keys(s)
+              if records[k].get("label") and fm.get(k)]
+    for rule in s.get("stages", {}).get("derived", []):
+        if rule.get("label") and info.get("stage") == rule["id"]:
+            labels.append(rule["label"])
+    return labels
+
+
 def _policy(fm: dict) -> str:
     v = str(fm.get("verification", "")).strip().lower()
     return v if v in VERIFICATION_POLICIES else DEFAULT_VERIFICATION
