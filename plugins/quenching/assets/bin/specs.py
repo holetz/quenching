@@ -1332,13 +1332,15 @@ def resolve_subject(cfg: dict, key: str | None) -> tuple[dict | None, dict]:
     keys), so `github`'s `create_spec` calls this too, for the fixed tags a subject carries
     even where there is no parent to apply them alongside.
 
-    `subjects` undeclared is NOT a refusal — the feature is simply not in use, the same
-    `## Absence is the normal case` every other key in this file gets. It becomes one only
-    once a repository HAS declared subjects: a spec born with no resolved one there fails the
-    team's own checklist (no Parent), and `## Open Decisions` calls refusing the only honest
-    end."""
+    `subjects` undeclared is NOT a refusal WHEN NOTHING WAS ASKED FOR — the feature is simply
+    not in use, the same `## Absence is the normal case` every other key in this file gets. An
+    EXPLICIT `--subject` still refuses against nothing declared: a human typed a key on
+    purpose, and silently ignoring it would build the spec they did not ask for. Declaring
+    subjects at all is what makes an unresolved one — explicit or defaulted — a refusal
+    instead: a spec born with no resolved subject fails the team's own checklist (no Parent),
+    and `## Open Decisions` calls refusing the only honest end."""
     subjects = cfg.get("subjects") or {}
-    if not subjects:
+    if key is None and not subjects:
         return None, {}
     resolved_key = key or (cfg.get("azurePlacement") or {}).get("defaultSubject")
     if not resolved_key:
@@ -1363,7 +1365,10 @@ def subject_resolution_failures() -> list[str]:
     out: list[str] = []
     engineering = {"name": "Engenharia", "description": "d", "tags": ["Vertical: Eng"]}
     cases = (
-        ({"subjects": {}}, None, "no subjects declared is not a refusal", None, None),
+        ({"subjects": {}}, None, "no subjects declared, nothing asked, is not a refusal",
+         None, None),
+        ({"subjects": {}}, "eng", "an explicit key against nothing declared still refuses",
+         None, "sp-subject-unknown"),
         ({"subjects": {"eng": engineering}}, "eng",
          "an explicit key that exists resolves it", engineering, None),
         ({"subjects": {"eng": engineering}, "azurePlacement": {"defaultSubject": "eng"}},
@@ -4338,6 +4343,9 @@ def cmd_new(args, root: str) -> int:
                          "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
              f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
         return 2
+    subject, serr = resolve_subject(load_config(root), args.subject)
+    if serr:
+        return emit_err(args.json, serr)
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{slug}.md"
@@ -4346,6 +4354,20 @@ def cmd_new(args, root: str) -> int:
             .replace("<TITLE>", title)
             .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
+    # The subject's fixed tags go into the CANONICAL DOCUMENT, never applied to the tracker
+    # directly — `tags:` is not yet a recognised frontmatter key (§3 makes it one), so this
+    # is inert on every backend until then, and never a second, backend-specific write path.
+    if subject and subject.get("tags"):
+        tags_repr = "[" + ", ".join(json.dumps(t, ensure_ascii=False)
+                                    for t in subject["tags"]) + "]"
+        close = body.index("\n---\n")
+        body = body[:close] + f"\ntags: {tags_repr}" + body[close:]
+    # The parent, by contrast, has no canonical-document counterpart to carry it in — it is
+    # `azure-boards`-only, applied through the SAME `self.parent_id` the backend already
+    # reaffirms on every write (§2.4); a resolved subject here simply overrides the
+    # `defaultSubject` `open_azure_backend` applied when the backend was opened.
+    if subject and subject.get("parent") and hasattr(backend, "parent_id"):
+        backend.parent_id = subject["parent"]
     path = backend.create_spec("plans", name, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
@@ -7794,6 +7816,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--title")
     sp.add_argument("--verification", choices=list(VERIFICATION_POLICIES),
                     help=f"when the suite runs (default: {DEFAULT_VERIFICATION})")
+    sp.add_argument("--subject",
+                    help="a key from `azurePlacement.subjects` — applies its parent (where "
+                         "the backend has one) and its fixed tags; omit to fall back to "
+                         "`defaultSubject`")
 
     add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
 
