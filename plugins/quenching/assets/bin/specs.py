@@ -3654,6 +3654,15 @@ def azure_query_wiql_failures() -> list[str]:
     return out
 
 
+# `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
+# resource, not guessed. `_show_many` pays 1 + ⌈N/200⌉ calls for a listing instead of 1 + N.
+AZ_BATCH_SIZE = 200
+# The fields `_show_many` actually reads back, via `_field`: identity, title, state, and the
+# hybrid-wrapped document. Named once so a future field (§3's tags/assignee/dates) is a list
+# edit here, not a second batch call.
+AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description")
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
@@ -3697,20 +3706,19 @@ class AzureBoardsBackend(SpecBackend):
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
     # -- transport ---------------------------------------------------------- #
-    def _az(self, action: str, *argv: str, expect: str = "object"):
-        """One `az boards` call, parsed. Raises `BackendRefusal` for every way it can fail.
+    def _az_raw(self, action: str, *argv: str, expect: str = "object"):
+        """One `az` call outside the `boards` command group, parsed. Raises `BackendRefusal`
+        for every way it can fail — the shared half `_az` wraps with the `boards` prefix
+        every other call in this backend uses. `workitemsbatch` (`_show_many`) is the one
+        caller that needs `az devops invoke` instead.
 
-        `--org` and `--project` on every call rather than relying on the configured
-        defaults: resolution already read them once, and passing them explicitly means a
-        human changing their `az` defaults mid-session cannot silently redirect a write to
-        another project.
+        `--org` on every call rather than relying on the configured default, for the same
+        reason `_az` does: resolution already read it once, and a human changing their `az`
+        defaults mid-session must not silently redirect a write to another project.
 
-        `expect='object'` (the default — show/create/update) refuses on exit 0 with empty
-        stdout; `expect='array'` (the WIQL query, the one caller that passes it) never does,
-        because that shape's emptiness is legitimate as often as it is a fault — see
-        `az_refusal`."""
-        code, out, err = _az_run(self.cwd, "boards", *argv,
-                                 "--org", self.org, "--output", "json")
+        `expect='object'` (the default) refuses on exit 0 with empty stdout; `expect='array'`
+        never does — see `az_refusal`."""
+        code, out, err = _az_run(self.cwd, *argv, "--org", self.org, "--output", "json")
         if code != 0:
             raise BackendRefusal(az_refusal(action, code, out, err))
         if expect == "object" and not (out or "").strip():
@@ -3720,9 +3728,13 @@ class AzureBoardsBackend(SpecBackend):
         except json.JSONDecodeError as e:
             raise BackendRefusal({
                 "code": "sp-az-bad-response", "exit": 2, "action": action,
-                "message": f"`az boards` exited 0 while {action} but its output is not "
-                           f"JSON: {e}",
+                "message": f"`az` exited 0 while {action} but its output is not JSON: {e}",
             }) from e
+
+    def _az(self, action: str, *argv: str, expect: str = "object"):
+        """One `az boards` call — see `_az_raw`, which this delegates to with the `boards`
+        prefix every call but the batch read shares."""
+        return self._az_raw(action, "boards", *argv, expect=expect)
 
     def _field(self, item: dict, name: str) -> str:
         return str((item.get("fields") or {}).get(name, "") or "")
@@ -3765,11 +3777,30 @@ class AzureBoardsBackend(SpecBackend):
         return rows
 
     def _show_many(self, ids: list[int]) -> list[dict]:
-        """Each work item's fields. One call per id — `az boards work-item show` takes a
-        single id, and there is no batch form in the CLI. The cost is declared rather than
-        hidden: it is why the listing is cached for the whole process."""
-        return [self._az(f"reading work item {i}", "work-item", "show", "--id", str(i))
-                for i in ids]
+        """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
+        `az devops invoke --resource workitemsbatch` — 1 + ⌈N/200⌉ calls for a listing rather
+        than 1 + N. `az boards work-item show` takes a single id and has no batch form; the
+        REST resource does, and — measured on this org — it is the one place that returns
+        `System.Description`, which the WIQL query itself never does (`azure_query_wiql` asks
+        for `System.Id` alone). The cost is still declared, not hidden: it is why the listing
+        stays cached for the whole process."""
+        import tempfile
+        items: list[dict] = []
+        for start in range(0, len(ids), AZ_BATCH_SIZE):
+            chunk = ids[start:start + AZ_BATCH_SIZE]
+            fd, path = tempfile.mkstemp(suffix=".json")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    json.dump({"ids": chunk, "fields": list(AZ_BATCH_FIELDS)}, fh)
+                result = self._az_raw(
+                    f"reading {len(chunk)} work item(s) in batch", "devops", "invoke",
+                    "--area", "wit", "--resource", "workitemsbatch",
+                    "--route-parameters", f"project={self.project}",
+                    "--http-method", "POST", "--in-file", path, "--api-version", "7.1")
+            finally:
+                os.unlink(path)
+            items.extend((result or {}).get("value") or [])
+        return items
 
     def _invalidate(self) -> None:
         self._rows = None
