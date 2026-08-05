@@ -2,7 +2,7 @@
 type: standard
 title: Plugin configuration contract
 description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the seven recognised keys and their defaults, the one key that deliberately has none and refuses instead, the one key a second tool reads and why it had nowhere else to live, the two keys with two consumers each — the release verb and the base-inference chain — why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-create/specs-front.md
+resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, backend, plugin]
 timestamp: 2026-08-04
 audience: both

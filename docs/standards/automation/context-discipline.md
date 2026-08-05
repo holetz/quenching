@@ -4,10 +4,10 @@ title: Context discipline — open less, and run for less time
 description: The two halves of a run's integral `tokens × turns remaining` and the only two ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention) and run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-03
+timestamp: 2026-08-04
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason; the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path
 maintainer: quenching
 ---
 
@@ -48,9 +48,10 @@ Three rules, in descending order of what they were measured to be worth:
    the preamble every turn pays for regardless of which branch runs.
 
    `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
-   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. Converting the other
-   twenty-four command bodies to this shape is future work; only `/quenching:specs:execute` is
-   converted today.
+   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. **Two command bodies
+   are converted** — `/quenching:specs:execute` and `/quenching:specs:develop`; the remaining
+   twenty-three are tracked by the `convert-the-remaining-command-bodies-to-section-addresses`
+   spec.
 3. **N sections in ONE call.** Turns are the *other* factor. Five sections fetched over five turns
    trades tokens for turns and can lose to reading the whole file, because a turn spent early is
    repaid by every turn after it. Both readers take a list for this reason; it is half the result,

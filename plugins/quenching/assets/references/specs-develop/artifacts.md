@@ -160,6 +160,13 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
   Each item is one reviewable unit of work — small enough to check off honestly, large enough not
   to be noise. Each is also **one commit**, so a section is what a `verification: per-section` spec
   verifies after.
+- **Within what the dependency order allows, group by file.** A section is the unit execution
+  delegates — *"delegate by file, or by section of tasks, never task by task"*
+  ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The cost of
+  delegating) — so six tasks over one file, kept in one section, cost that file **one** read; the
+  same six scattered across four phase-shaped sections cost it four. A `[P]` group is bounded to
+  one `### N.` section too, so scattering forecloses the parallelism as well as the delegation.
+  Dependency wins every time the two disagree; this decides only what was already free to move.
 - **The standards-writing items are explicit tasks, not an afterthought.** Every `docs/standards/`
   path declared under `## Impact`'s parsed sub-heading gets its own checkbox — e.g.
   `- [ ] 4.1 Write docs/standards/auth/session-tokens.md (authority: current once proved)`.
@@ -198,6 +205,11 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 Write the first four where they earn their place — a task touching three known files with an
 obvious test command deserves them; a one-line doc edit deserves none. Metadata that restates
 the task text is noise.
+
+**`files:` is the exception to "where it earns its place."** It is not a convenience on a delegable
+task — it is the permission. Omit it and the task can never be handed to an executor sub-agent and
+can never carry `[P]`, whichever way the work would actually have gone. Decide that deliberately or
+declare the paths; do not leave it to whether the line felt worth typing.
 
 **Scope each `verify:` to what its own task could break** — not to what the repo can check. A gate
 that re-runs a check whose inputs the section could not have touched is a `verify:` written too

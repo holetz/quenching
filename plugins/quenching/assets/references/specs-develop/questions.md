@@ -4,10 +4,8 @@ The owner of **what** `/quenching:specs:develop` asks and **when it stops**. The
 (resolve → derive → ask → one edit → re-derive); this file owns the banks and the mechanics they
 share, and the body never restates it.
 
-**There is no mode to choose.** v2 asked the human to pick between `interview`, `critic`,
-`premortem` and `alternatives` before it had read anything — a question the spec's own state
-answers better than the human can. The bank is now **derived**, from the same stage
-`specs.py status` reports, so the interrogation a spec gets is the one its content earns.
+The bank is **derived** from the same stage `specs.py status` reports, never chosen by the human, so
+the interrogation a spec gets is the one its content earns.
 
 ## Contents
 
@@ -39,14 +37,30 @@ human who came to sharpen a proposal did not sign up for the whole gate walk.
 
 Every bank obeys all four.
 
-### 1. One question at a time, with a recommendation
+### 1. Grouped by dependency, and every question carries a recommendation
 
 <!-- rules -->
-Ask **one** question. Wait for the answer. Then ask the next — chosen in light of what was just
-said, not from a list written in advance.
+**A question travels with the ones whose answers cannot change it, and alone otherwise.**
+
+- **Independent → one call.** Where answering A would not change what B asks, ask A and B together
+  in a single **AskUserQuestion** — up to the harness cap of **four per call**, each with its own
+  options.
+- **Dependent → sequential.** Where the next question's *content* depends on the last answer, ask
+  it alone, wait, and choose the next in light of what was just said rather than from a list
+  written in advance.
+
+Which shape a bank takes is a property of the bank, stated with it:
+
+| Bank | Shape | Why |
+| --- | --- | --- |
+| [discoveries](#bank-discoveries) | grouped | every line is independent, and all of them take the same fixed set of three resolutions |
+| [gate](#bank-gate) | grouped | `specs.py next` returns the missing headings, and a heading's answer does not move another's |
+| [shape](#bank-shape) | sequential | what is actually wrong decides which shapes are worth tabling at all |
+| [adversarial](#bank-adversarial) | sequential | a criticism once answered rewrites the next one |
 
 Every question carries **an inline recommendation and the reasoning behind it**, so the human can
-answer in one word:
+answer in one word — in a grouped call, the recommended option is listed **first and marked
+"(Recommended)"**:
 
 > **Weak** — "What should the failure budget be?"
 > **Strong** — "How many attempts before a task is declared blocked? I'd say five: enough to
@@ -54,12 +68,21 @@ answer in one word:
 > burning tokens. Agree, or is this suite slow enough that five is too many?"
 
 Use **AskUserQuestion** when the answer space is genuinely a small set of options (it renders as
-choices and takes one click); ask in prose when the answer is open-ended. Either way: one at a
-time.
+choices and takes one click); ask in prose when the answer is open-ended. Grouping never applies to
+prose questions — there is no way to answer four of them in one word each.
 
 <!-- rationale -->
-A batch of five questions gets one shallow answer covering the easiest of them. A single question
-gets a real one, and lets the next question be sharper for having heard it.
+The rule this replaced was *never batch* — absolute, and stronger than its own reason. That reason
+was always about **dependence**: a batch of five questions gets one shallow answer covering the
+easiest of them, and a single question lets the next be sharper for having heard it. Neither clause
+says anything about two questions that cannot reach each other, and paying a full round trip for
+each of those buys nothing — every turn re-sends the whole conversation, so a question asked alone
+costs the preamble again.
+
+Measured on this repository's own transcripts, question turns are **not** where this command's
+tokens go: real `/quenching:specs:develop` runs made 2–5 `AskUserQuestion` calls, against whole-file
+reference reads worth ~900k token-turns in a single run. Grouping is here because the old rule
+overreached, not because it closes a leak.
 
 The recommendation is not a formality. A pass that hands the human a bare question list has moved
 the work rather than done it — the command is supposed to arrive with an opinion.
@@ -120,6 +143,8 @@ conversation.
 **Goal.** Turn one stated problem into a shape worth arguing with — enough that the adversarial
 bank has a claim to attack.
 
+**Shape.** Sequential (§1) — what is actually wrong decides which shapes are worth tabling at all.
+
 **Where the questions come from.** The problem statement itself, read against the codebase. Ask
 about, roughly in this order:
 
@@ -151,6 +176,8 @@ disagreement the gate never requires: nothing about filling sections forces anyo
 **disagreed** with the spec.
 
 **Goal.** Make the proposal survive the argument, or change it.
+
+**Shape.** Sequential (§1) — a criticism once answered rewrites the next one.
 
 It runs three lenses. Use the one the spec's own state argues for; a spec that deserves two gets
 two, in this order.
@@ -219,9 +246,11 @@ explicitly accepted.
 **Goal.** Close the ten-section ready set, honestly. This is the bank that most easily degrades
 into filling headings to make a check pass, and the explicit-none rule is the whole defence.
 
+**Shape.** Grouped (§1) — the headings `next` reports are independent of one another.
+
 **Drive it off the tool, never off a reading of the file.** `specs.py next --spec <slug> --json`
 returns the first `missing` or `malformed` heading and the full list behind it. Ask about that
-heading.
+list, four headings to a call.
 
 **Where the questions come from.** The gap itself, in the spec's own terms:
 
@@ -234,6 +263,22 @@ heading.
 - a task ordering that has step 4 depending on step 7;
 - a term the spec uses in a sense the repo's glossary does not.
 
+**And the three questions only this moment can answer** — every one of them is a decision
+`/quenching:specs:execute` is forbidden to make for itself, so a spec that leaves them unasked is
+built with the cheap options closed:
+
+- **which task groups touch provably disjoint `files:`** → mark them `[P]` now. Execution **never
+  infers** the marker ([spec-driven.md](spec-driven.md) §`## Tasks` and the `[!]` blocked marker),
+  so an unmarked group runs serially forever, however disjoint it was.
+- **which delegable task is missing `files:`** → declaring it is what *permits* the task to be
+  handed to an executor sub-agent at all; omitting it forecloses both delegation and `[P]`.
+- **which task has an obvious existing file to imitate** → `pattern:`, the cheapest context an
+  executor can be given: one path beats three paragraphs of description.
+
+Measured across five `ready` specs on this repository — 48 tasks — `files:` was declared on 81% and
+`verify:` on 92%, but `pattern:` on 8% and `[P]` on **4%**, with three of the five specs carrying no
+parallel-eligible task at all. The mechanism was never the missing piece; the question was.
+
 This bank also settles the two declarations nothing else owns: the **`verification` policy** (one of
 the three values in [spec-driven.md](spec-driven.md) §Frontmatter, asked once and written to
 frontmatter, so `execute` never has to guess mid-build) and the parsed `### Standards this spec will
@@ -241,7 +286,8 @@ write into docs/standards/` sub-heading under `## Impact`.
 
 **Stop when** `specs.py next` stops reporting `write_section` — every gate section answered with
 content or a reasoned `- none`, every task with a judgeable completion, no `## Impact` path
-uncovered.
+uncovered. A `[P]` this bank set is **proved** when the edit lands, by `specs.py parallel`, never
+argued about here: the tool checks disjunction mechanically and names the group it refuses.
 
 ## Bank: discoveries
 
@@ -251,7 +297,10 @@ uncovered.
 on is this bank's judgment, never the executor's — which is exactly why it was captured without
 one.
 
-Ask about each unresolved line, one at a time, with a recommendation. Every line resolves **in
+**Shape.** Grouped (§1) — the lines do not reach each other, and every one of them takes the same
+three resolutions, so four fit in one call.
+
+Ask about the unresolved lines, four to a call, each with a recommendation. Every line resolves **in
 place**, so provenance is never lost:
 
 ```markdown
@@ -289,7 +338,8 @@ This bank asks a single question, and it is the only bank that adds nothing to t
 the spec now commits to — the proposal in one line, the task count, the `verification` policy, the
 declared `docs/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
 
-On yes, stamp `approved: {date: YYYY-MM-DD}` into frontmatter. On no, ask what would have to change
+On yes, stamp it with `specs.py record "<slug>" approved --set date=<today>` — never by editing the
+frontmatter, which works only while the backend is `files`. On no, ask what would have to change
 and route it back to the bank that owns it.
 
 **The gate is a floor, not a verdict.** `ready` means ten sections have content; it does not mean
@@ -297,6 +347,47 @@ the spec is good. And approval is not a gate either — `execute` on an unapprov
 and stamps rather than refusing, so declining here costs nothing but a question later.
 
 **Stop when** the human has answered. One question, one answer, done.
+
+## Gathering the evidence — delegated, and only for two banks
+
+<!-- rules -->
+
+The **adversarial** and **gate** banks ask questions that only a reading answers: which alternatives
+the codebase actually admits, which `docs/standards/` contract a task would violate, which term the
+spec uses in a sense the glossary does not. That reading is **optional and delegable**; the
+interrogation never is.
+
+Where it is taken, the sub-agent is `Read, Grep, Glob` and nothing else, and it returns **one
+compact table** and no trail:
+
+| Bank | What it is asked for |
+| --- | --- |
+| adversarial | candidate whole-shape alternatives, each with cost, benefit and what it forecloses |
+| adversarial | contradictions with a binding contract — the `docs/standards/` doc and the line |
+| gate | terms the spec uses in a sense `docs/knowledge/glossary.md` does not |
+| gate | `## Impact` paths no `## Tasks` item names, and tasks naming paths `## Impact` never declared |
+
+It follows the verifier shape of [agents.md](/docs/standards/automation/agents.md) §The verifier
+shape: it **inspects and reports, never edits**, and it states an explicit *not checked here* list,
+which is the false-positive control.
+
+**The orchestrator keeps every question, every write and every confirmation.** The sub-agent never
+talks to the human and never touches the spec. Its findings are material for questions the
+orchestrator still asks itself, under §1 — never answers substituted for them.
+
+<!-- rationale -->
+
+Two things that look like this and are not available. **`context: fork` cannot ask a question** —
+`sk-fork-gate` is an error, and a fork beside an `AskUserQuestion` grant is incoherent by
+construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md)
+§`context: fork`); a bank is nothing but questions. And a sub-agent **does not share the session's
+prompt cache** — it runs on a cold context and pays the full first read of every file it touches
+([context-discipline.md](/docs/standards/automation/context-discipline.md) §What a delegated
+executor costs), so delegation here is never a cache play.
+
+What it *is* is the delegation test met exactly: the returned table is far smaller than the sweep
+that produced it, and the sweep's file reads stay out of the long context that the interrogation
+then pays for on **every** turn that follows.
 
 ## Recording the pass
 
