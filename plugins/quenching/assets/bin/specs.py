@@ -150,7 +150,7 @@ SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^(\s*)-\s\[( |x|X|!)\]\s+(.*)$")
 CHECKBOX_LOOSE_RE = re.compile(r"^\s*-\s*\[.*?\]")   # looks like a checkbox (malformed detection)
 TASK_ID_RE = re.compile(r"^(\d+(?:\.\d+)*)\b")
-TASK_META_KEYS = ("files", "pattern", "verify", "constraint", "subject", "commit")
+TASK_META_KEYS = ("files", "pattern", "cwd", "verify", "constraint", "subject", "commit")
 TASK_META_RE = re.compile(rf"^\s+({'|'.join(TASK_META_KEYS)})\s*:\s*(.+?)\s*$",
                           re.IGNORECASE)
 # `constraint:` is INERT by design: the grammar admits it and `next` hands it through, but no
@@ -1540,7 +1540,7 @@ def parse_tasks(text: str) -> list[dict]:
         parallel = bool(PARALLEL_RE.match(rest))
         blocked = BLOCKED_REASON_RE.search(body)
         files: list[str] = []
-        pattern = verify = subject = commit = None
+        pattern = cwd = verify = subject = commit = None
         subject_off = commit_off = last_meta_off = None
         meta_indent = None
         block_end = i + 1
@@ -1562,6 +1562,8 @@ def parse_tasks(text: str) -> list[dict]:
                 files = [p.strip() for p in val.split(",") if p.strip()]
             elif key == "pattern":
                 pattern = val
+            elif key == "cwd":
+                cwd = val
             elif key == "subject":
                 subject, subject_off = val, off
             elif key == "commit":
@@ -1585,6 +1587,7 @@ def parse_tasks(text: str) -> list[dict]:
             "parallel": parallel,
             "files": files,
             "pattern": pattern,
+            "cwd": cwd,
             "verify": verify,
             "subject": subject,
             "commit": commit,
