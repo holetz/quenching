@@ -31,13 +31,15 @@ records the human judgments (`reviewed`, `merge`, `outcome`); git and the filesy
 everything else. A second call reads both and skips what already happened — see §Resuming.
 
 The distillation doctrine — what crosses into `docs/`, what stays, and how it is graded — lives in
-[specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md).
-The merge strategies, the squash caveat and the **read-if-present** rule for a target's
-`docs/standards/git/**` live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md).
-The layout, the gates and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape step 7 prints in.
+[specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
+§What crosses, what stays. The merge strategies, the squash caveat and the **read-if-present**
+rule for a target's `docs/standards/git/**` live in
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
+§Merge strategies §The squash caveat §The read-if-present rule. The layout, the gates and the
+`specs.py` surface live in
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §The gates and the stage-scoped explicit-none rule §The `specs.py` tool
+surface §The report mold, which owns the shape step 7 prints in.
 All three are cited, never restated.
 
 ## Resolving the tool
@@ -94,7 +96,7 @@ is already set is **reported and skipped**, not repeated:
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
-| merge stamp | `merge: {strategy, subject}` in frontmatter | skip the stamp; the merge itself may still be pending |
+| merge stamp | a `merge:` record in frontmatter | skip the stamp; the merge itself may still be pending |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | merge | `git branch --merged` lists the work branch | skip; never merge twice |
 
@@ -151,10 +153,11 @@ task. What lands **here** is what the work revealed and nobody declared: the `##
 worth a doc, and whatever the branch review just surfaced.
 
 Decide what crosses with the table in
-[distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md) §What crosses, what
-stays; write each through the insert procedure in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), stamping `authority`
-honestly. Present them as ONE plan and take one confirmation.
+[distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
+§What crosses, what stays; write each through the insert procedure in
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+§The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
+`authority` honestly. Present them as ONE plan and take one confirmation.
 
 These land **on the branch**, in their own commit, so the rule ships with the code that proved it.
 A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → skip silently.
@@ -201,8 +204,8 @@ This is the last writing step, and everything it writes lands on the **work bran
 merge. Three things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `docs/`, per
-[distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md), **branching on
-the outcome**:
+[distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
+§The procedure (one confirmation), **branching on the outcome**:
 
 - **`done`** — the full pass over what is *left*: a decision still sitting in `## Design`, a generic
   understanding, a term the spec coined, a follow-up worth its own spec. Most of the harvest was
@@ -212,7 +215,8 @@ the outcome**:
   distil nothing, and that is the correct result.
 
 One plan, one OK. Every write goes through
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). No bundle → skip
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+§The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
 silently. Commit what it writes **on the work branch**.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
@@ -244,9 +248,10 @@ write-once: a spec already carrying one refuses (exit 2) with the value it holds
 §Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
-none — see [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §When there is no
-merge commit to name. `specs.py validate` reports a record that gets this backwards either way
-(`sp-bad-merge`).
+none — see
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
+§When there is no merge commit to name. `specs.py validate` reports a record that gets this
+backwards either way (`sp-bad-merge`).
 
 The archived spec now lives in `archive/`, so stamping it is one of the two edits this command
 makes to a file already there — the other is the distillation's append to `## Outcome` above.
@@ -300,8 +305,9 @@ being merged.
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
 it. The repo's own
-[surface-verification.md](../../../../docs/standards/quality/surface-verification.md) is where that
-distinction is defined for the command surface.
+[surface-verification.md](../../../../docs/standards/quality/surface-verification.md)
+§The five preconditions a check must satisfy is where that distinction is defined for the command
+surface.
 
 **Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
 one, so a check with a `--only`-style selector gets the subset this branch can actually break — the
@@ -353,8 +359,8 @@ gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<s
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
 default branch — which stays `main`
-([branching.md](/docs/standards/git/branching.md)'s own §O consumidor não precisa mudar nada
-depends on it never moving — see `## Out of Scope` in the spec that introduced the develop/main
+([branching.md](/docs/standards/git/branching.md) §O consumidor não muda nada — depends on it
+never moving — see `## Out of Scope` in the spec that introduced the develop/main
 flow). `<base>` here is this spec's own resolved base — the same one the local route's merge
 targets — so a spec whose base is the declared integration branch opens its PR against that
 branch, never against the publication one, without any GitHub repository setting having to

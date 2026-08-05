@@ -7,7 +7,7 @@ tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-08-04
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason; the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign
 maintainer: quenching
 ---
 
@@ -48,9 +48,11 @@ Three rules, in descending order of what they were measured to be worth:
    the preamble every turn pays for regardless of which branch runs.
 
    `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
-   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. Converting the other
-   twenty-four command bodies to this shape is future work; only `/quenching:specs:execute` is
-   converted today.
+   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. Eight command bodies
+   are converted to this shape today — `/quenching:specs:execute`, `/quenching:specs:develop`, and
+   the six `specs/*` commands (`align`, `conclude`, `continue`, `create`, `status`, `triage`).
+   Seventeen remain: `docs/` (ten bodies), `skill/` (six bodies), and the root `align` command (one
+   body).
 3. **N sections in ONE call.** Turns are the *other* factor. Five sections fetched over five turns
    trades tokens for turns and can lose to reading the whole file, because a turn spent early is
    repaid by every turn after it. Both readers take a list for this reason; it is half the result,

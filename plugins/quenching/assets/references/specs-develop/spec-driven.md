@@ -15,23 +15,9 @@ is chosen: the same fourteen sections, the same frontmatter records, the same de
 *where and how* they are serialized differs, which is why every command drives `specs.py` rather
 than a path.
 
-*This reverses an earlier claim, and the reversal is worth knowing.* This front used to declare
-itself **"entirely native — no external CLI, no Node runtime, no main spec store, no delta
-format"**, and the four clauses did not survive equally:
-
-- **no Node runtime** — still true, and unconditional. `specs.py` is stdlib-only Python, in the
-  same mold as `okf-validate.py`.
-- **no external CLI** — traded deliberately. An external backend's transport is `subprocess` over
-  the vendor's own `gh` / `az`, so auth, paging and API errors stop being this plugin's code. The
-  cost is declared: that backend does not work without the binary installed, and a missing one is a
-  **refusal (exit 2)** naming it, never a traceback.
-- **no main spec store** — replaced by something stronger, not abandoned: there is still exactly
-  ONE store, and it is whichever backend was declared. What is prohibited is a *second*,
-  authoritative local copy shadowing it.
-- **no delta format** — still true in the sense that mattered. A backend may serialize natively
-  (a GitHub issue body *is* the whole document, spilling into continuation comments when it does
-  not fit) as long as it reconstructs the canonical document on read; that is a mapping inside one
-  implementation, not a delta bridging two copies that can disagree.
+What every backend owes that model — the five primitives, the obligation to reassemble the whole
+canonical document on read, and the refusal that never falls back to `files` — is owned by
+[spec-backend.md](/docs/standards/architecture/spec-backend.md) and never restated here.
 
 ## Contents
 
@@ -59,9 +45,9 @@ transition left — `plans/` → `archive/`, a `git mv` performed by `specs.py p
 narrates the close-out.
 
 `plans/` is **not** part of the OKF `docs/` bundle, and `okf-validate.py` is never pointed at it:
-a spec carries no OKF `type:`, and `specs.py validate` is its contract (see
-[specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)). The folder
-carries **no listing file** — `specs.py list` derives what it holds from disk on demand.
+a spec carries no OKF `type:`, and `specs.py validate` is its contract — the on-write check for
+this front, and the whole of it. The folder carries **no listing file** — `specs.py list` derives
+what it holds from disk on demand.
 
 Isolation-while-building is what a **branch or worktree** provides, with real merge, history, and
 reversion (what crosses into `docs/`: §Boundary).
@@ -95,8 +81,8 @@ folder moves survivable.
 
 <!-- rationale -->
 
-**The date used to lead the basename, and it left for a reason.** That prefix made a plain `ls`
-chronological, which was worth having while every spec was a file. It stopped being payable the
+**Why the date is not the basename's prefix.** A leading date makes a plain `ls` chronological,
+which is worth having while every spec is a file. It stops being payable the
 moment the front could live somewhere without filenames: an external backend had to mint a
 synthetic basename purely to carry a date, and the one native value that could have replaced it —
 an issue's `created_at` — is when the ISSUE was made, which a migration sets to the migration's own
@@ -124,7 +110,7 @@ else.**
 | `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
-| `merge` | once merged | `conclude` | `{strategy, subject}` — the strategy was a choice, the subject names the merge it produced. Known BEFORE the merge, so the stamp lands on the work branch and the merge is the last action. `rebase`/`fast-forward` create no merge commit, so the subject is an explicit none |
+| `merge` | once merged | `conclude` | `{strategy, subject, pr}` — the strategy was a choice, the subject names the merge it produced. Known BEFORE the merge, so the stamp lands on the work branch and the merge is the last action. `rebase`/`fast-forward` create no merge commit, so the subject is an explicit none. `pr` names the pull request the PR route opened — absent on every local conclusion, and **refused** under `fast-forward` (`sp-merge-pr-no-route`), the one strategy `gh pr merge` cannot perform |
 | `outcome` | at archive | `conclude` | `done` · `abandoned` — stamped by `promote --to archive` |
 
 Read top to bottom, the optional records **narrate the spec's history**: ranked, interrogated,
@@ -233,8 +219,7 @@ stage: since `- none — <reason>` counts as filled, a freshly created spec carr
 thought anything. Stage-scoping is the version where both rules survive.
 
 Admitting a present-but-empty heading (rule 2) would reintroduce the ambiguity this rule exists to
-remove. `## Tasks` in the `ready` set is the current form of the guarantee v1 spelled
-`applyRequires: ["tasks"]`.
+remove.
 
 ## Derived stages
 
@@ -376,6 +361,12 @@ One writer with mechanical writes is also what makes one file safe under paralle
 Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok · **1** findings ·
 **2** refusal. A command branches on the exit code and the JSON, never on prose.
 
+`specs.py` is **stdlib-only Python**, in the same mold as `okf-validate.py`: no runtime to install
+and no dependency to declare. An external backend's transport is `subprocess` over the vendor's own
+`gh` / `az`, so auth, paging and API errors are not this plugin's code — and the cost of that trade
+is declared rather than hidden: such a backend does not work without the binary installed, and a
+missing one is a **refusal (exit 2) naming it, never a traceback**.
+
 | Command | Use |
 | --- | --- |
 | `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again |
@@ -415,11 +406,10 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 ### Resolving the tool
 
-Each `/specs:*` command resolves the script by the same fallback
-([specs-front.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-create/specs-front.md)): the plugin path
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py` first, then a copy installed into the target's
-`.claude/hooks/specs.py`, and if neither resolves, the declared manual check — do the same rule by
-hand and **say in the report that the check was manual**, never silently skip it. Invoke with
+Owned by
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool, §Write the resolved path literally on every invocation: the plugin path
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py`, with **no fallback and no manual rung**. Invoke with
 `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`).
 
 ## Boundary: `specs/` vs the OKF `docs/` bundle
@@ -653,3 +643,21 @@ The labels moved; nothing a grep depends on did.
 A column label is prose, not one of the six canonical categories that standard fixes, so it
 translates like the rest of the report. Leaving the labels English would be the exact failure it
 names — reading the tag at session start and still reporting in English.
+
+## The native-only claim, and why it was traded
+
+**Nothing cites this section.** It is kept off every address a command loads, so it costs the reader
+nothing and stays on disk in full.
+
+<!-- rationale -->
+
+This front once declared itself *entirely native — no external CLI, no Node runtime, no main spec
+store, no delta format*. Three of those four still hold, and the wording above is what survives them:
+stdlib-only Python is unconditional; there is still exactly ONE store, now whichever backend was
+declared; and a backend that serialises natively is a mapping inside one implementation, not a delta
+bridging two copies that can disagree.
+
+The clause that was traded is **no external CLI**, and it was traded on purpose: putting an external
+backend's transport on the vendor's own `gh` / `az` moves auth, paging and API errors out of this
+plugin entirely. Worth knowing because the claim reads like a principle and was in fact a
+measurement — the alternative was this plugin owning an HTTP client per tracker.
