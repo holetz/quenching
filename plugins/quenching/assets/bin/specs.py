@@ -1110,9 +1110,11 @@ def announce_unproved(name: str) -> None:
     becomes a per-call tax on the agent reading this CLI, paid forever for a fact that never
     changes between calls. Silence is not defensible either, because the unproved paths do
     not all fail the same way: a wrong `AZ_SPEC_TYPE` fails LOUDLY — `az` answers with an
-    API error and the transport turns it into an exit-2 refusal — but a relation whose child
-    ids do not extract fails QUIETLY, returning a spec with no tasks, and a write that fails
-    halfway leaves work items behind on somebody's real board. So the line lands on the
+    API error and the transport turns it into an exit-2 refusal — but whether `System.
+    AssignedTo` accepts the display name this backend sends, or silently coerces it to
+    something else, is still an open measurement (`## Open Decisions`, task 6.1) and would
+    fail QUIETLY if it did not; a write that fails halfway leaves work items behind on
+    somebody's real board. So the line lands on the
     writes, where an unproved path can cost something that does not announce itself, and
     reads — the overwhelming majority of a build loop's calls — stay silent. The permanent,
     zero-noise half of the same answer is `sp-backend-unproved` in `doctor`.
