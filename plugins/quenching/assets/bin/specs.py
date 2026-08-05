@@ -1062,8 +1062,15 @@ def find_specs_root(root_arg: str | None) -> str:
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
-               "integrationBranch", "releaseBranch")
+               "integrationBranch", "releaseBranch",
+               "azurePlacement", "azureColumns", "subjects", "tagCatalog")
 BACKENDS = ("files", "github", "azure-boards")
+# `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
+# REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
+# where a spec is born rather than what state it reads as. `open_azure_backend` is where that
+# refusal lives; this tuple only says which sub-keys `load_config` keeps.
+AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
+                        "iterationPath", "boardColumn", "defaultSubject")
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
 # Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
@@ -1163,6 +1170,7 @@ def load_config(root: str) -> dict:
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
            "azureStates": None, "integrationBranch": None, "releaseBranch": None,
+           "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1209,6 +1217,63 @@ def load_config(root: str) -> dict:
         named = {p: str(states.get(p, "")).strip() for p in PHASES}
         if all(named.values()):
             out["azureStates"] = named
+
+    # `azurePlacement` describes the PROJECT, not the backend — `subjects` and `tagCatalog`
+    # apply equally to `github`, so they are read here unconditionally, the same as
+    # `azurePlacement` and `azureColumns` themselves; a repository on `files` or `github`
+    # simply never has anything ask for them. Every sub-key is independently optional at this
+    # layer — `areaPath`'s absence is a REFUSAL, but that refusal belongs to
+    # `open_azure_backend`, which is the one caller in a position to say no spec was read or
+    # written; `load_config` only ever reports.
+    placement_raw = obj.get("azurePlacement")
+    if isinstance(placement_raw, dict):
+        out["azurePlacement"] = {k: placement_raw[k].strip()
+                                 for k in AZURE_PLACEMENT_KEYS
+                                 if isinstance(placement_raw.get(k), str)
+                                 and placement_raw[k].strip()}
+
+    # A board-state → lane de-para, consulted by the backend and never derived by it. Any
+    # subset is legal — `boardColumn` in `azurePlacement` is the declared fallback for a
+    # state absent from this table, so the table itself carries no all-or-nothing rule.
+    columns_raw = obj.get("azureColumns")
+    if isinstance(columns_raw, dict):
+        out["azureColumns"] = {str(k): v.strip() for k, v in columns_raw.items()
+                               if isinstance(k, str) and k.strip()
+                               and isinstance(v, str) and v.strip()}
+
+    # One entry per subject a spec may be born under. `name` and `description` are required
+    # for an entry to exist at all — a nameless or description-less subject cannot be
+    # proposed to a human, which is the whole point of declaring one — `parent` (the Feature
+    # id a human already created) and `tags` (fixed tags applied at creation) are optional.
+    subjects_raw = obj.get("subjects")
+    if isinstance(subjects_raw, dict):
+        subjects: dict[str, dict] = {}
+        for key, val in subjects_raw.items():
+            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
+                continue
+            name = val.get("name")
+            description = val.get("description")
+            if not (isinstance(name, str) and name.strip()
+                    and isinstance(description, str) and description.strip()):
+                continue
+            entry = {"name": name.strip(), "description": description.strip()}
+            parent = val.get("parent")
+            if isinstance(parent, int) and not isinstance(parent, bool):
+                entry["parent"] = parent
+            tags = val.get("tags")
+            if isinstance(tags, list):
+                entry["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
+            subjects[key.strip()] = entry
+        out["subjects"] = subjects
+
+    # A catalogue of tag → description, read by an agent to PROPOSE a tag at creation time —
+    # the description is prompt material, never documentation, which is why an empty one is
+    # dropped rather than kept as a nameless tag nobody could ever choose correctly.
+    catalog_raw = obj.get("tagCatalog")
+    if isinstance(catalog_raw, dict):
+        out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
+                             if isinstance(tag, str) and tag.strip()
+                             and isinstance(desc, str) and desc.strip()}
     return out
 
 
@@ -7021,7 +7086,9 @@ def cmd_selftest(args, root: str) -> int:
     blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
                       ("worktreeSetup", None), ("integrationBranch", None),
-                      ("releaseBranch", None), ("present", False)):
+                      ("releaseBranch", None), ("present", False),
+                      ("azurePlacement", {}), ("azureColumns", {}),
+                      ("subjects", {}), ("tagCatalog", {})):
         if blank[key] != want:
             findings.append(_finding("sp-config-default-drift", "error",
                                      f"with nothing declared, config `{key}` is "
