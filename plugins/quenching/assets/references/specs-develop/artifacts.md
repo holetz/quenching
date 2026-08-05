@@ -198,11 +198,12 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 | --- | --- | --- |
 | `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
-| `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation` |
+| `cwd:` | the directory, relative to the repo root, `verify:` runs from | **absent means exactly today's behaviour** — the session's or worktree's root. Write it only when the task's own `verify:` cannot resolve from there (a plugin-internal tool like `specs.py selftest`, which only resolves from `plugins/quenching/`) |
+| `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation`. Runs from the task's declared `cwd:`, or the default when absent |
 | `constraint:` | a bound on HOW this task may be done — a file it must not touch, an approach already ruled out | **nothing reads it yet.** Admitted by the grammar and handed through untouched; its only plausible consumer is an executor sub-agent briefing itself, and the decision to dispatch one belongs elsewhere. Write it where an executor would otherwise have to guess; it costs nothing when unread |
 | `subject:` | the SUBJECT of the commit that implements this task | **written by the tool, never by hand** (`task --check --subject`), so code and spec stay linked without a trailer inside the commit message. Known before the commit exists, which is what lets the box travel inside it |
 
-Write the first four where they earn their place — a task touching three known files with an
+Write the first five where they earn their place — a task touching three known files with an
 obvious test command deserves them; a one-line doc edit deserves none. Metadata that restates
 the task text is noise.
 
