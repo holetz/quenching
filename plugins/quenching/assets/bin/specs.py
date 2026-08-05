@@ -2153,7 +2153,8 @@ BACKEND_CASES = (
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
-    # AFTER the three cases that author the document, never on the fresh capture form. See
+    ("set tags/assignee/start/target, then re-read", lambda b: _case_field(b)),
+    # AFTER the four cases that author the document, never on the fresh capture form. See
     # `_case_front`: on a capture form the case passes with the reader broken.
     ("rank the front", lambda b: _case_front(b)),
     ("move to archive", lambda b: _case_move(b)),
@@ -2251,6 +2252,20 @@ def _case_record(b: "SpecBackend") -> dict:
         info["text"], "priority", {"level": "1", "criticality": "high"}))
     info, _ = b.read_spec("alpha")
     return spec_records(info["frontmatter"])
+
+
+def _case_field(b: "SpecBackend") -> dict:
+    """The four STATE keys, round-tripped through `write_spec` — the SAME mechanism
+    `_case_write` already proves for a section body, applied to `set_frontmatter_key`
+    instead. Never a record: `_case_record` is what proves those, separately."""
+    info, _ = b.read_spec("alpha")
+    text = info["text"]
+    for key, value in (("tags", '["a", "b"]'), ("assignee", "someone"),
+                       ("start", "2026-01-01"), ("target", "2026-02-01")):
+        text = set_frontmatter_key(text, key, value)
+    b.write_spec(info, text)
+    info, _ = b.read_spec("alpha")
+    return {k: info["frontmatter"].get(k) for k in FIELD_KEYS}
 
 
 def _case_move(b: "SpecBackend") -> dict:
