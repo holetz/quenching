@@ -3762,16 +3762,20 @@ class AzureBoardsBackend(SpecBackend):
     name = "azure-boards"
 
     def __init__(self, org: str, project: str, states: dict, cwd: str,
-                area_path: str | None = None, discovery_tag: str | None = None) -> None:
+                area_path: str | None = None, discovery_tag: str | None = None,
+                work_item_type: str | None = None, iteration_path: str | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
         self.cwd = cwd
-        # Both optional here on purpose: `azurePlacement` is not yet a recognised config key
-        # (§2 declares it), so `open_azure_backend` cannot supply either until then. Unset,
-        # the listing keeps today's breadth — scoped by project alone.
+        # `open_azure_backend` is the sole caller — it reads `azurePlacement`, refuses for the
+        # one sub-key with no default (`areaPath`), and applies `AZ_DEFAULT_DISCOVERY_TAG` /
+        # `AZ_SPEC_TYPE` for the two that have one. Optional here only so the fake and the
+        # selftest fixtures can construct this backend without a config to read.
         self.area_path = area_path
         self.discovery_tag = discovery_tag
+        self.work_item_type = work_item_type or AZ_SPEC_TYPE
+        self.iteration_path = iteration_path
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
     # -- transport ---------------------------------------------------------- #
@@ -3910,20 +3914,32 @@ class AzureBoardsBackend(SpecBackend):
         # proved one instead of a shorter path of its own that nothing checks.
         stored, title = hybrid_project(info["slug"], text)
         chunks = hybrid_split(stored, None)
-        self._update(item_id, title=title,
-                     description=hybrid_wrap(info["file"], chunks[0][0]))
+        # Placement is REAFFIRMED here, not just declared at creation — a human moving the
+        # work item to another area between writes sees the next one bring it back, the same
+        # way `move_spec` already owns the state. `_update` only ever adds the fields given
+        # it, so an unset `iteration_path` is simply not one of them.
+        fields = {"title": title,
+                 "description": hybrid_wrap(info["file"], chunks[0][0])}
+        if self.area_path:
+            fields["area"] = self.area_path
+        if self.iteration_path:
+            fields["iteration"] = self.iteration_path
+        self._update(item_id, **fields)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
         stored, title = hybrid_project(m.group(1) if m else filename, text)
-        item = self._az("creating a work item", "work-item", "create", "--project",
-                        self.project, "--type", AZ_SPEC_TYPE,
-                        "--title", title,
-                        "--description", hybrid_wrap(filename,
-                                                     hybrid_split(stored, None)[0][0]),
-                        "--state", self.states[phase])
+        argv = ["work-item", "create", "--project", self.project,
+               "--type", self.work_item_type, "--title", title,
+               "--description", hybrid_wrap(filename, hybrid_split(stored, None)[0][0]),
+               "--state", self.states[phase]]
+        if self.area_path:
+            argv += ["--area", self.area_path]
+        if self.iteration_path:
+            argv += ["--iteration", self.iteration_path]
+        item = self._az("creating a work item", *argv)
         item_id = int((item or {}).get("id") or 0)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
@@ -3942,17 +3958,18 @@ class AzureBoardsBackend(SpecBackend):
         return self._az(f"updating work item {item_id}", *argv)
 
 
-# The work item type this backend creates. `Issue` exists in the Basic and Agile processes;
-# Scrum and CMMI name their equivalent differently, which is the same process-dependence
-# `azureStates` exists for. Left a constant rather than a fifth config key until a real Azure
-# DevOps project says otherwise — `## Out of Scope` accepts that this backend ships without
-# end-to-end proof, and inventing configuration for an unproven guess is worse than one named
-# place to change.
+# `workItemType`'s default. Measured against this org's own process guide: `User Story` is
+# the standard card for Story work, and `Issue` — the type this constant named before — is
+# documented there as OPTIONAL, for bugs of lesser severity. A default is what a repo that
+# declared nothing receives, and receiving "minor bug" on a Power BI panel that reads the
+# type is a silent error, not a neutral one. `azurePlacement.workItemType` overrides this for
+# a Scrum or CMMI process, whose equivalent is named differently — the same process-dependence
+# `azureStates` already carries.
 #
 # There is no second type any more: a spec was one work item plus one CHILD PER TASK until the
 # `## Tasks`-as-children mapping was retired for the reasons at HYBRID SERIALISATION, and one
 # work item now carries the whole document.
-AZ_SPEC_TYPE = "Issue"
+AZ_SPEC_TYPE = "User Story"
 
 
 def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -3990,9 +4007,13 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
     (org, project), err = resolve_azure_project(cwd)
     if err:
         return None, err
-    discovery_tag = cfg["azurePlacement"].get("discoveryTag") or AZ_DEFAULT_DISCOVERY_TAG
+    placement = cfg["azurePlacement"]
+    discovery_tag = placement.get("discoveryTag") or AZ_DEFAULT_DISCOVERY_TAG
+    work_item_type = placement.get("workItemType") or AZ_SPEC_TYPE
     return AzureBoardsBackend(org, project, states, cwd,
-                              area_path=area_path, discovery_tag=discovery_tag), {}
+                              area_path=area_path, discovery_tag=discovery_tag,
+                              work_item_type=work_item_type,
+                              iteration_path=placement.get("iterationPath")), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
