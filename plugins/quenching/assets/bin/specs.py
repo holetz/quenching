@@ -3763,7 +3763,8 @@ class AzureBoardsBackend(SpecBackend):
 
     def __init__(self, org: str, project: str, states: dict, cwd: str,
                 area_path: str | None = None, discovery_tag: str | None = None,
-                work_item_type: str | None = None, iteration_path: str | None = None) -> None:
+                work_item_type: str | None = None, iteration_path: str | None = None,
+                parent_id: int | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
@@ -3776,6 +3777,10 @@ class AzureBoardsBackend(SpecBackend):
         self.discovery_tag = discovery_tag
         self.work_item_type = work_item_type or AZ_SPEC_TYPE
         self.iteration_path = iteration_path
+        # `subjects.<key>.parent` is what resolves this in practice, once §2 finishes wiring
+        # subject resolution (2.9-2.10) — `None` here until then, exactly as `area_path` was
+        # `None` between §1 and §2.2.
+        self.parent_id = parent_id
         self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
 
     # -- transport ---------------------------------------------------------- #
@@ -3925,6 +3930,7 @@ class AzureBoardsBackend(SpecBackend):
         if self.iteration_path:
             fields["iteration"] = self.iteration_path
         self._update(item_id, **fields)
+        self._apply_parent(item_id, self.parent_id)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -3941,8 +3947,32 @@ class AzureBoardsBackend(SpecBackend):
             argv += ["--iteration", self.iteration_path]
         item = self._az("creating a work item", *argv)
         item_id = int((item or {}).get("id") or 0)
+        self._apply_parent(item_id, self.parent_id)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def _apply_parent(self, item_id: int, parent_id: int | None) -> None:
+        """Reaffirm the declared parent on every write, resolved BY ID and never by title —
+        `## Open Decisions` settles this task 2.4: the id (e.g. `788243`) is stable, and a
+        title is one rename away from breaking the link. `subjects.<key>.parent` is what
+        supplies it once §2.9-2.10 finish subject resolution; unset until then.
+
+        RESOLUTION IS THE READ BELOW, not a bespoke check — a parent id with no work item
+        behind it fails through the same `sp-az-api-error` refusal `_az` already raises for
+        any id `az` cannot find (`AZ_REFUSAL_CASES` covers it), so nothing new is needed to
+        say no; `## Out of Scope` already rules out this tool ever CREATING the parent.
+
+        Idempotent: the read is what lets every write call this safely — without it, ADDING
+        the same parent relation on every save would duplicate it rather than reaffirm it."""
+        if not parent_id:
+            return
+        current = self._az(f"reading work item {item_id}'s parent",
+                           "work-item", "show", "--id", str(item_id))
+        if int((current.get("fields") or {}).get("System.Parent") or 0) == parent_id:
+            return
+        self._az(f"linking work item {item_id} to its parent {parent_id}",
+                 "work-item", "relation", "add", "--id", str(item_id),
+                 "--relation-type", "parent", "--target-id", str(parent_id))
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
