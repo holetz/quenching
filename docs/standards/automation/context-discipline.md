@@ -48,10 +48,11 @@ Three rules, in descending order of what they were measured to be worth:
    the preamble every turn pays for regardless of which branch runs.
 
    `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
-   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. **Two command bodies
-   are converted** — `/quenching:specs:execute` and `/quenching:specs:develop`; the remaining
-   twenty-three are tracked by the `convert-the-remaining-command-bodies-to-section-addresses`
-   spec.
+   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. Eight command bodies
+   are converted to this shape today — `/quenching:specs:execute`, `/quenching:specs:develop`, and
+   the six `specs/*` commands (`align`, `conclude`, `continue`, `create`, `status`, `triage`).
+   Seventeen remain: `docs/` (ten bodies), `skill/` (six bodies), and the root `align` command (one
+   body).
 3. **N sections in ONE call.** Turns are the *other* factor. Five sections fetched over five turns
    trades tokens for turns and can lose to reading the whole file, because a turn spent early is
    repaid by every turn after it. Both readers take a list for this reason; it is half the result,
