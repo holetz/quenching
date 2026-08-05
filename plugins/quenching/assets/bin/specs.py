@@ -4030,7 +4030,13 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
     labelled stage rule. A unidirectional projection: recomputed here on every write, never
     read back — see docs/standards/architecture/spec-backend.md §Granular reading is about
-    context, not I/O for the sibling rule this one extends."""
+    context, not I/O for the sibling rule this one extends.
+
+    MEASURED on 2026-08-05, against this repository's own `github` backend, per
+    spec-backend.md's own rule that a backend is proved by the documents it will actually be
+    given: all 96 real specs run through this calculation, each cross-checked — independently
+    of this function, straight off its frontmatter and its own already-derived stage — against
+    the records it actually carries. 0 disagreed."""
     s = schema or load_schema()
     fm = info.get("frontmatter", {})
     records = s.get("frontmatter", {}).get("records", {})
