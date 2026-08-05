@@ -1921,6 +1921,42 @@ def derive_info(spec: dict, text: str) -> dict:
     return info
 
 
+def board_state_of(info: dict) -> str:
+    """The `azureColumns` de-para's KEY, computed in the core and merely CONSULTED by the
+    backend — `spec-backend.md` §The interface is the document, not the verbs already
+    forbids a backend deriving anything of its own, and a board-state precedence is exactly
+    that kind of derivation.
+
+    PRECEDENCE: `archived` (the `archive` phase) > `reviewed` (the record `/specs:conclude`
+    stamps) > the derived stage. `reviewed` outranks the derived stage because it is the
+    fact `plugin-configuration.md`'s `azureColumns` example maps to the `Aprovação` lane —
+    the derived stage alone cannot tell "approved and executing" from "reviewed and awaiting
+    merge", and the record is what does."""
+    if info["phase"] == "archive":
+        return "archived"
+    if info["frontmatter"].get("reviewed"):
+        return "reviewed"
+    return info["stage"]
+
+
+def board_state_failures() -> list[str]:
+    """The three-way precedence, each rung checked against the other two."""
+    out: list[str] = []
+    cases = (
+        ({"phase": "archive", "frontmatter": {"reviewed": {"date": "x"}}, "stage": "executing"},
+         "archived", "archived outranks reviewed"),
+        ({"phase": "plans", "frontmatter": {"reviewed": {"date": "x"}}, "stage": "executing"},
+         "reviewed", "reviewed outranks the derived stage"),
+        ({"phase": "plans", "frontmatter": {}, "stage": "executing"},
+         "executing", "the derived stage is the floor"),
+    )
+    for info, want, label in cases:
+        got = board_state_of(info)
+        if got != want:
+            out.append(f"{label}: board_state_of returned {got!r}, not {want!r}")
+    return out
+
+
 def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
     """Resolve a slug against the files workspace and derive its document.
 
@@ -4044,7 +4080,7 @@ class AzureBoardsBackend(SpecBackend):
         item_id = int((item or {}).get("id") or 0)
         self._apply_parent(item_id, self.parent_id)
         # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
-        # `_board_state` reads only `phase`/`frontmatter`/`stage`, all of which come back
+        # `board_state_of` reads only `phase`/`frontmatter`/`stage`, all of which come back
         # from the text just handed to `az`.
         self._apply_column(item_id, derive_info({"phase": phase}, text))
         self._invalidate()
@@ -4120,22 +4156,13 @@ class AzureBoardsBackend(SpecBackend):
                        f"workItemType; no spec was read or written",
         })
 
-    def _board_state(self, info: dict) -> str:
-        """The de-para's KEY — archived (phase) > reviewed (record) > the derived stage —
-        inline here until §2.11 promotes it to a shared, tested core function; that task
-        also fixes the precedence in place of this comment describing it."""
-        if info["phase"] == "archive":
-            return "archived"
-        if info["frontmatter"].get("reviewed"):
-            return "reviewed"
-        return info["stage"]
-
     def _apply_column(self, item_id: int, info: dict) -> None:
         """Reaffirm the board column on every write, from the de-para (`azureColumns`),
         falling back to `boardColumn` for a state absent from the table. A human who moved
         the card sees the next write bring it back — the board is the projection, per
-        `## Design` §O de-para de coluna."""
-        column = self.column_map.get(self._board_state(info), self.board_column)
+        `## Design` §O de-para de coluna. `board_state_of` is the CORE half — this backend
+        only ever consults the table, never derives the key itself."""
+        column = self.column_map.get(board_state_of(info), self.board_column)
         if not column:
             return
         field = self._resolve_board_field()
@@ -7387,6 +7414,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "refusal; an unresolved key or a key naming an "
                                         "undeclared subject both are"))
 
+    # The board-state precedence `azure-boards`'s column write consults — core logic, never
+    # a backend's own derivation, per `spec-backend.md` §The interface is the document.
+    for failure in board_state_failures():
+        findings.append(_finding("sp-board-state-broken", "error",
+                                 f"board-state precedence — {failure}",
+                                 remedy="board_state_of: archived (phase) outranks reviewed "
+                                        "(record), which outranks the derived stage — never "
+                                        "the other order"))
+
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
     # undocumented one does not — a grammar that admits everything admits the prose under a task.
@@ -7552,8 +7588,9 @@ def cmd_selftest(args, root: str) -> int:
               f"written, a grouped document survives store-and-reload byte for byte whether "
               f"it fits one issue body or spills into continuation comments, an oversized body "
               f"refuses without making the call, the azure-boards WIQL never carries "
-              f"`@project`, subject resolution refuses only once `subjects` is declared, and "
-              f"the embedded schema and template match their asset files.")
+              f"`@project`, subject resolution refuses only once `subjects` is declared, the "
+              f"board-state precedence puts archived over reviewed over the derived stage, "
+              f"and the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
