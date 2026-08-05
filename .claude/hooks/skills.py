@@ -1788,8 +1788,8 @@ def compare_versions(installed: str | None, shipped: str) -> str:
     `absent` is the caller's, because "no file" and "a file I could not read" are
     different facts and only one of them is a repo that thinks it is protected.
 
-    Both directions are reported because both are silent. Resolution is plugin-first
-    (specs-front.md §Resolving the tool) while every align deliberately leaves a NEWER
+    Both directions are reported because both are silent. Resolution is plugin-only
+    (align/tool-resolution.md §Resolving the tool) while every align deliberately leaves a NEWER
     installed copy alone — so an `ahead` copy is code that is never executed and never
     repaired, and both halves of that are correct behaviour saying nothing."""
     if installed is None:

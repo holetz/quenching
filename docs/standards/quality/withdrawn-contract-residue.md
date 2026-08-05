@@ -52,7 +52,7 @@ So: **declare the membership rule, then derive the list from it in the task**, a
 derivation be the thing the task runs.
 
 ```bash
-grep -rln 'specs-front.md' --include='*.md' plugins/ docs/
+grep -rln 'tool-resolution.md' --include='*.md' plugins/ docs/
 ```
 
 A list written from memory is a claim about a set nobody enumerated. A list derived from a rule is

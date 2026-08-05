@@ -94,7 +94,7 @@ is already set is **reported and skipped**, not repeated:
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
-| merge stamp | `merge: {strategy, subject}` in frontmatter | skip the stamp; the merge itself may still be pending |
+| merge stamp | a `merge:` record in frontmatter | skip the stamp; the merge itself may still be pending |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | merge | `git branch --merged` lists the work branch | skip; never merge twice |
 
