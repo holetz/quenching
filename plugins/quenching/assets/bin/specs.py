@@ -2697,14 +2697,22 @@ class GitHubBackend(SpecBackend):
     is the ONLY thing that ever decides a task is checked or blocked. This class turns issues
     into the canonical document and back and does no more than that.
 
-    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, none of them a label. Multi-field
-    records (`priority`, `branch`, `merge`, `refined`) have no honest single-string label
-    form — encoding `{level, criticality, complexity, date}` into a label name would invent
-    a second format only a new parser could read back, which is the backend deriving its
-    own encoding exactly where the interface forbids it. Keeping them in the body costs
-    the records being invisible in the issue list without opening the issue — accepted,
-    because `parse_frontmatter` already reads them for free and a label would not remove
-    that read, only add a second, driftable copy beside it.
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, none of them a label — every FIELD a
+    record carries, that is. Multi-field records (`priority`, `branch`, `merge`, `refined`)
+    have no honest single-string label form — encoding `{level, criticality, complexity,
+    date}` into a label name would invent a second format only a new parser could read
+    back, which is the backend deriving its own encoding exactly where the interface
+    forbids it. Keeping them in the body costs the records being invisible in the issue
+    list without opening the issue — that gap is what the `spec:` labels below close.
+
+    A `spec:` LABEL PER PRESENT RECORD, PLUS `spec:built` FOR THE DERIVED `executing`
+    STAGE, rides inside the same PATCH `_store` already makes — never a second call, never
+    read back. This is rendering derived state onto the tracker's own UI, not a second
+    encoding of a record's fields: `derive_labels` computes the desired set from `info`
+    alone, and `reconcile_label_set` folds it against whatever the issue already carries so
+    a human's own label (never under the `spec:` prefix) is untouched. See
+    docs/standards/architecture/spec-backend.md for the category this is, and why it is not
+    the sub-issue projection that was retired.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a
     store: it is not authoritative, nothing outside this object reads it, and every write
@@ -2718,8 +2726,10 @@ class GitHubBackend(SpecBackend):
     def __init__(self, repo: str, cwd: str) -> None:
         self.repo = repo
         self.cwd = cwd
-        # descriptor, issue number, first chunk, how many parts the marker declares
-        self._rows: list[tuple[dict, int, str, int, str]] | None = None
+        # descriptor, issue number, first chunk, how many parts the marker declares,
+        # issue title, and the issue's own labels as of this listing — what the label
+        # reconciliation in `_store` diffs against, so it costs no call of its own
+        self._rows: list[tuple[dict, int, str, int, str, list[str]]] | None = None
         self._legacy: list[tuple[int, str, str, int, str]] = []
 
     # -- transport ---------------------------------------------------------- #
@@ -2769,7 +2779,7 @@ class GitHubBackend(SpecBackend):
                          stdin=json.dumps(payload))
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str, int]]:
+    def _load(self) -> list[tuple[dict, int, str, int, str, list[str]]]:
         if self._rows is not None:
             return self._rows
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
@@ -2777,7 +2787,7 @@ class GitHubBackend(SpecBackend):
         # so a default (open-only) listing would report every archived spec as missing.
         pages = self._api("listing the repository's issues", "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
-        rows: list[tuple[dict, int, str, int, str]] = []
+        rows: list[tuple[dict, int, str, int, str, list[str]]] = []
         legacy: list[tuple[int, str, str, int, str]] = []
         for page in (pages or []):
             for issue in (page or []):
@@ -2811,7 +2821,9 @@ class GitHubBackend(SpecBackend):
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
                 }, int(issue.get("number") or 0), head, parts,
-                    str(issue.get("title") or "")))
+                    str(issue.get("title") or ""),
+                    [str(l.get("name")) for l in (issue.get("labels") or [])
+                     if isinstance(l, dict) and l.get("name")]))
         self._rows = rows
         self._legacy = legacy
         return rows
@@ -2830,12 +2842,14 @@ class GitHubBackend(SpecBackend):
     def _issue_number(self, slug: str) -> int:
         return self._issue_parts(slug)[0]
 
-    def _issue_parts(self, slug: str) -> tuple[int, int]:
-        """`(issue number, how many parts are stored)` — both from the listing already in hand,
-        so knowing whether there are stale continuation comments to clean up costs no call."""
-        for descriptor, number, _, parts, _title in self._load():
+    def _issue_parts(self, slug: str) -> tuple[int, int, list[str]]:
+        """`(issue number, how many parts are stored, its current labels)` — all three from
+        the listing already in hand, so knowing whether there are stale continuation
+        comments to clean up, or which labels a write must reconcile against, costs no
+        call of their own."""
+        for descriptor, number, _, parts, _title, labels in self._load():
             if descriptor["slug"] == slug:
-                return number, parts
+                return number, parts, labels
         raise BackendRefusal({
             "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
             "message": f"spec '{slug}' was in the listing and is not there any more — the "
@@ -2845,21 +2859,21 @@ class GitHubBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, _, t in rows})
+                                {d["slug"]: t for d, _, _, _, t, _ in rows})
         if err:
             return None, err
         # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
         # resolved to a different one, and looking the document up by the request would
         # raise right after the resolution succeeded.
         number, head, parts, native = next((n, d, p, t)
-                                           for descriptor, n, d, p, t in rows
+                                           for descriptor, n, d, p, t, _lb in rows
                                            if descriptor["slug"] == spec["slug"])
         full_text = head if parts <= 1 else self._joined(number, head, parts)
         # The title comes back from the issue's own, which is where the write put it. A
@@ -2867,25 +2881,37 @@ class GitHubBackend(SpecBackend):
         return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
-        number, had_parts = self._issue_parts(info["slug"])
-        self._store(number, info["slug"], info["file"], text, had_parts)
+        number, had_parts, current_labels = self._issue_parts(info["slug"])
+        # `derive_info` — the SAME shared derivation every read goes through — off the text
+        # about to be written, never a second, backend-own way of deciding the stage: this
+        # class derives nothing of its own, per its own docstring above.
+        new_info = derive_info(info, text)
+        labels = reconcile_label_set(current_labels, derive_labels(new_info))
+        self._store(number, info["slug"], info["file"], text, had_parts, labels)
         self._invalidate()
 
     def _store(self, number: int, slug: str, filename: str, text: str,
-               had_parts: int) -> None:
+               had_parts: int, labels: list[str] | None = None) -> None:
         """The whole write, given an issue number already in hand.
 
         Split out for `migrate`, which knows every number from its own scan and must not go
         back to the listing between writes: `_invalidate` after each one would make the next
         lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
         the SAME serialisation either way — a migration with a writer of its own would be a
-        second implementation that runs exactly once, on the day it matters most."""
+        second implementation that runs exactly once, on the day it matters most.
+
+        `labels`, when given, rides in this SAME PATCH — one call updates title, body and
+        the tracker's own `spec:` labels together, never a second round trip. `migrate`
+        omits it: a one-time bulk fold is not the moment to reconcile labels, and the next
+        ordinary `write_spec` on each folded spec does it for free."""
         stored, title = hybrid_project(slug, text)
         chunks = hybrid_split(stored, GH_PART_MAX)
+        payload = {"title": title,
+                   "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+        if labels is not None:
+            payload["labels"] = labels
         self._write_api(f"updating issue #{number}", "PATCH",
-                        f"repos/{self.repo}/issues/{number}",
-                        {"title": title,
-                         "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
+                        f"repos/{self.repo}/issues/{number}", payload)
         self._sync_parts(number, chunks, had_parts)
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
