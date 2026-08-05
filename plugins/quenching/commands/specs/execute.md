@@ -357,17 +357,28 @@ interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
 ### 6. Refresh `## Handoff` on four events, never on judgment
-Rewrite `## Handoff` to the state of play a fresh executor would need **and cannot derive** — on
-exactly four events:
+Rewrite the **relevant block** of `## Handoff` to the state of play a fresh executor would need
+**and cannot derive** — on exactly four events:
 
 - the run **pauses**;
 - a task is written **blocked**;
 - a **discovery** is recorded;
 - the run's **last commit** lands.
 
+`## Handoff` is a small evergreen **global block** plus one block per `## Tasks` `### N.` section.
+A rewrite touches ONE of the two — never both, never a closed section's:
+
+```bash
+specs.py section "<slug>" Handoff --write --scope global   # the evergreen block
+specs.py section "<slug>" Handoff --write --scope current  # the block of the open section
+```
+
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
 already in `git log` and in the `subjects` `status` returns, so the Handoff is not the resumption
-trail and must not be rewritten as one. It is sent with every task, so keep it small.
+trail and must not be rewritten as one. The global block plus the current section's block are sent
+with every task, so keep both small — a section's block, once its last task commits, is never
+targeted again: `--scope current` always resolves to whichever section still has open work, so
+closing costs nothing extra and adds no event of its own.
 
 **Not after every committed task, and not on a judgment call either** — both were tried and both
 failed;
@@ -381,7 +392,8 @@ recording. The trail this step already maintains — `## Handoff` plus `git log`
 `status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly
 why stopping there is nearly free. An offer that required writing something extra would be moving
 cost rather than cutting it.
-**Done when:** `## Handoff` describes the tree as it stands after the run's last commit.
+**Done when:** the global block and the current section's `## Handoff` block describe the tree as
+it stands after the run's last commit.
 
 ### 7. Report, and hand off
 Emit §The report mold. The single-spec header line carries overall progress; three body blocks:
