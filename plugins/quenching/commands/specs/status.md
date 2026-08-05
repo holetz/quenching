@@ -19,11 +19,14 @@ status view that disagreed with the sweep would be worse than none.
 
 The workspace facts (layout, the fourteen sections, the derived stages, the `specs.py` surface)
 live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape step 4 prints in;
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §The
+report mold, which owns the shape step 4 prints in;
 every `sp-*` code and what the sweep would do about it, plus where the front is configured and what
 the declared backend decides, in
-[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+§Findings the sweep FIXES (inside the one plan → one OK) §Findings the sweep REPORTS (never
+auto-closes) §Where the front is configured, and what the backend decides.
 Both are **cited, never restated** — this command owns no contract of its own, which is the
 point.
 
@@ -33,9 +36,10 @@ point.
   status read that changed the thing it read would break its own contract and make the preview a
   lie.
 - **Report in the sweep's vocabulary.** Every finding carries the `sp-*` code
-  [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md) defines and
-  the command that closes it. Never invent a code, never soften one, and never report a finding the
-  sweep would not raise — the whole value is that the two agree.
+  [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+  §Findings the sweep FIXES (inside the one plan → one OK) §Findings the sweep REPORTS (never
+  auto-closes) defines, and the command that closes it. Never invent a code, never soften one, and
+  never report a finding the sweep would not raise — the whole value is that the two agree.
 - **Distinguish "would fix" from "would only report".** Split the output the way the sweep splits
   it: what `/quenching:specs:align` would fix on one OK, what a cycle command closes, and what neither closes
   because it needs a human. A reader must be able to tell what a sweep would actually do to their
@@ -83,8 +87,10 @@ writes nothing.
 
 ### 3. Classify against the sweep's own codes
 Map each observation onto a code from
-[conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md), keeping its
-two tables intact — what the sweep **fixes** versus what it only **reports**. Every code is the
+[conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+§Findings the sweep FIXES (inside the one plan → one OK) §Findings the sweep REPORTS (never
+auto-closes), keeping its two tables intact — what the sweep **fixes** versus what it only
+**reports**. Every code is the
 sweep's; this command contributes none of its own. Without an OKF bundle, note once that a legacy
 `openspec/` fold could not complete (main specs have nowhere to land) and mention `/quenching:docs:align`.
 **Done when:** every observation carries a code and lands in exactly one table.
@@ -96,7 +102,7 @@ disappears — in this order:
 1. **Header** — the front-wide header line, then the resolved root, whether an OKF bundle is
    present, and the verifier states quoted per §Quoting a tool's own output: `doctor`, `validate`,
    the listing check. If the probe would have stopped
-   (`/quenching:specs:align` §The probe), say so in one line: that is the single most useful fact here.
+   (`/quenching:specs:align` step 1), say so in one line: that is the single most useful fact here.
 2. **Specs** — §The spec table with `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State`. `Age` is
    days since `list --json`'s `date`; this command never calls `next --front`, and says so rather
    than leaving the figure sourceless. `Records` lists which of the seven are set; `State` is *ready
