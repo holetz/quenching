@@ -4059,6 +4059,15 @@ class AzureBoardsBackend(SpecBackend):
     `Resolved` by a human on the board is still in flight, and only the declared archive
     state means closed. That is the same one-way reading `github` gets from `state=closed`.
 
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, none of them a `System.Tags` entry — the
+    same refusal `GitHubBackend` already carries for its labels, and native tag STORAGE
+    (§3) is exactly where this boundary becomes one worth stating rather than assuming:
+    multi-field records (`priority`, `branch`, `merge`, `refined`) have no honest single-tag
+    form, and encoding `{level, criticality, complexity, date}` into a tag name would invent
+    a second format only a new parser could read back — the backend deriving its own
+    encoding exactly where the interface forbids it. A tag stores a tag, never a record; the
+    rule survives native storage, it does not retire with it.
+
     The listing is fetched once per process and cached — a local cache and NOT a store:
     not authoritative, read by nothing outside this object, dropped on every write."""
 
