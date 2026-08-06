@@ -21,7 +21,12 @@
         "writtenBy": "triage",
         "writeOnce": false,
         "label": "spec:ranked",
-        "why": "a human's ranking of this spec against every other one — nothing in the file, the filesystem or git can compute it"
+        "why": "a human's ranking of this spec against every other one — nothing in the file, the filesystem or git can compute it",
+        "complexity": {
+          "levels": ["low", "medium", "high", "xhigh"],
+          "writtenBy": ["triage", "create", "develop"],
+          "why": "the discrete scale the orchestrator derives the gears plan from: low runs the whole cycle in one session on a single authorization and ends opening a PR, medium isolates the larger stages in sub-agents, high keeps the stage-by-stage stops and confirmations, and xhigh adds at least one judgment stage (adversarial review, premortem) to the plan. Each level must change some gear, or it is vocabulary without effect. Computed by create and by the close of develop, and proposed by triage — no longer a value reserved to human judgment, so the field carries its own writtenBy list under a record whose writtenBy stays triage."
+        }
       },
       "refined": {
         "fields": ["mode", "date"],
