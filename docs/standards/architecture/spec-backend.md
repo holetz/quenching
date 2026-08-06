@@ -4,10 +4,10 @@ title: Spec backend interface
 description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-05
+timestamp: 2026-08-06
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project
 maintainer: quenching
 ---
 
@@ -285,8 +285,20 @@ never be somewhere real work can land.
 The interface and the equality are proved for `files` and `memory`, and the reassembly obligation is
 proved offline for the hybrid serialisation both external backends share.
 
-**`azure-boards` has never been exercised end to end.** What it must satisfy is stated here, and for
-that backend the statement is a contract to meet rather than a report of one met.
+`azure-boards` has been exercised end to end once (`provar-e-posicionar-o-backend-azure-boards`,
+task 6.3), against a real Azure DevOps project (org `unicredbr`, team "Diretoria Risco") and a
+throwaway test spec: `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+`show` and `promote --outcome done`, each matching `files` for the same state, the board's own
+column tracked against the declared de-para through every transition — `captured` → `Backlog`/
+`New` through `archived` → `Concluído`/`Closed`. The test spec, like `github`'s own first run, had
+no `### N.` groups — but `azure-boards` never splits a document into continuation parts at all
+(`hybrid_split` is handed no limit; the field's own measured ceiling is 1,048,576 characters, and
+this repository's largest real spec is 74,180), so the loss `github`'s split-and-join mapping once
+took does not apply the same way here. What the run did surface, live, three times: a WIQL clause
+comparing a GUID where only a name resolves, a CLI flag that does not exist on `create`, and — the
+one that changed the interface's own assumption — `System.State` and the board's `Kanban.Column`
+are not two independent fields on this process; the column is what a write actually controls, and
+the state is a resolved consequence of it.
 
 `github` has been exercised end to end once, against a throwaway test spec. That is worth less than
 it sounds, and the gap is the reason this section stays: the test spec had no `### N.` groups and no
