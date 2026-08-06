@@ -4,7 +4,7 @@ A Claude Code **plugin marketplace** holding one plugin, `quenching`
 ([plugins/quenching/](plugins/quenching/)): a three-front aligner that forces a *target* repo's
 `docs/` OKF bundle, native `specs/` workspace, and `.claude/` command surface into one canonical
 shape. There is no application code, no build step and no test framework — the repo is markdown
-command bodies plus three dependency-free stdlib Python tools.
+command bodies plus four dependency-free stdlib Python tools.
 
 Language: pt-BR — the contract is [docs/standards/agents/communication.md](docs/standards/agents/communication.md).
 
