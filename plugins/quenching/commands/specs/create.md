@@ -18,7 +18,7 @@ The layout, the fourteen canonical sections, the gates, the front's on-write che
 `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
-§The `specs.py` tool surface §The report mold, which owns the shape step 7 prints in.
+§The `specs.py` tool surface §The report mold, which owns the shape step 8 prints in.
 
 ## The one rule: effort proportional to input
 
@@ -85,18 +85,63 @@ Read the whole plan file, then read
 exactly the cost this command exists to avoid.
 **Done when:** the plan's parts are classified, or the sentence path skipped this.
 
-### 4. Create the plan
+### 4. Propose a subject and tags, where the target declares them
 
 ```bash
-specs.py new <slug> --title "<title>"
+specs.py config --json
 ```
 
-Exit 2 means the slug already exists — say so and stop, never invent a variant to get past it. Any
-other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`, `sp-worktree-failed`) is
-reported verbatim, naming `/quenching:specs:align`.
-**Done when:** the tool exited 0 and reported the locator it created.
+Read `subjects` and `tagCatalog`. **Both absent or empty → skip this step whole** — most
+repositories declare neither, and proposing from nothing is not a lighter version of this step,
+it is the wrong step.
 
-### 5. Write the sections
+**A declared `subjects`:** read each key's `name`/`description`, judge which one the input best
+fits, and confirm with **one** `AskUserQuestion` naming the candidate and its description —
+never silently pick one, and never skip the confirmation because a `defaultSubject` exists:
+`specs.py new` falls back to it on its own where nothing was resolved, but a human still chose
+this spec's content and gets the same say over where it is filed.
+
+**A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
+documentation, written for exactly this judgment
+([plugin-configuration.md](docs/standards/workflows/plugin-configuration.md) §Two keys are
+prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
+question as the subject where both apply, or its own `AskUserQuestion` otherwise. A tag outside
+the declared catalog is never proposed: `tagCatalog` is the closed set this judgment draws from.
+
+**The write is always the deterministic verb, never this command inventing its own.** The chosen
+subject's key is carried to step 5's `--subject`; any confirmed catalog tag beyond the subject's
+own fixed ones is carried to step 5's follow-up `specs.py tags` call — nothing is written here,
+only decided.
+**Done when:** a subject (or none) and zero or more tags are confirmed, or the step was skipped
+whole.
+
+### 5. Create the plan
+
+```bash
+specs.py new <slug> --title "<title>" [--subject <key>]
+```
+
+`--subject` only where step 4 resolved one. Exit 2 means the slug already exists — say so and
+stop, never invent a variant to get past it. `sp-no-subject`/`sp-subject-unknown` means step 4's
+own resolution disagrees with the target's declared config RIGHT NOW (a race, or a stale read) —
+re-run `specs.py config --json` and redo step 4 rather than retrying blind. Any other backend
+failure (`sp-backend-unavailable`, `sp-worktree-unusable`, `sp-worktree-failed`) is reported
+verbatim, naming `/quenching:specs:align`.
+
+**Where step 4 confirmed a catalog tag beyond the subject's own fixed ones**, one follow-up call,
+right after this one succeeds:
+
+```bash
+specs.py tags <slug> "<subject's fixed tags>,<confirmed catalog tag>,..."
+```
+
+`specs.py tags` **replaces** the whole list, never appends — the full set, fixed tags included,
+or the fixed ones `--subject` just applied are lost. Skip this call whole when no catalog tag was
+confirmed beyond what `--subject` already applied.
+**Done when:** the tool exited 0 and reported the locator it created, and any confirmed catalog
+tag is applied.
+
+### 6. Write the sections
 
 Always write `## Problem` — the problem or opportunity in the source's own framing. Two sentences
 is a complete answer.
@@ -112,12 +157,12 @@ specs.py section <slug> Problem --write   # body on stdin
 writing others around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
-### 6. Check
+### 7. Check
 
 Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check.
 **Done when:** the check is clean, or the residue is reported verbatim.
 
-### 7. Report
+### 8. Report
 
 ```bash
 skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
