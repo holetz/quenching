@@ -488,6 +488,8 @@ verification: <VERIFICATION>
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
+               A trailing parenthetical is closed grammar: `(new)` is the ONLY reserved
+               annotation, and anything else is refused with `sp-files-annotation`.
      pattern:  an existing file to imitate — the cheapest context an executor can be given.
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
@@ -1646,6 +1648,47 @@ def _stage_match(when: dict, sections: dict, fm: dict, tasks: list[dict]) -> boo
     return False
 
 
+def _split_files(val: str) -> list[str]:
+    """Comma-split that respects parentheses: a comma inside `(…)` belongs to the same
+    entry, so a comment like `a.md (descartável, revertido ao fim)` reads as ONE path
+    instead of two invented ones the executor could not tell from real paths. Depth is
+    tracked, never counted: an unbalanced `(` simply keeps the rest of the line one
+    entry. Stdlib-only."""
+    out: list[str] = []
+    depth = 0
+    start = 0
+    for i, ch in enumerate(val):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        elif ch == "," and depth == 0:
+            piece = val[start:i].strip()
+            if piece:
+                out.append(piece)
+            start = i + 1
+    piece = val[start:].strip()
+    if piece:
+        out.append(piece)
+    return out
+
+
+FILES_ANNOTATION_RE = re.compile(r"\s*\(([^()]*)\)\s*$")
+
+
+def _files_bad_annotation(entry: str) -> str | None:
+    """The single reserved `files:` annotation is `(new)` — a path about to be created,
+    which `_norm_file` strips for comparisons. Any OTHER trailing parenthetical is a
+    human comment; kept inside the entry, the executor receives a path that exists
+    nowhere with the same confidence as a real one — the silent failure this rule
+    closes. Return the annotation text so the caller can refuse the entry."""
+    m = FILES_ANNOTATION_RE.search(entry)
+    if not m:
+        return None
+    note = m.group(1)
+    return None if note == "new" else note
+
+
 def parse_tasks(text: str) -> list[dict]:
     """Every checkbox under `## Tasks`, in order: index, explicit id, state, text, line
     number, the `[P]` marker, the optional indented metadata (`files`/`pattern`/`verify`),
@@ -1697,7 +1740,7 @@ def parse_tasks(text: str) -> list[dict]:
                 meta_indent = cont[:len(cont) - len(cont.lstrip())]
             last_meta_off = off
             if key == "files":
-                files = [p.strip() for p in val.split(",") if p.strip()]
+                files = _split_files(val)
             elif key == "pattern":
                 pattern = val
             elif key == "cwd":
@@ -5740,6 +5783,73 @@ def handoff_block_failures() -> list[str]:
     return out
 
 
+FILES_PARSE_CASES = [
+    {"why": "a comma inside parentheses belongs to the same entry — the split that "
+            "invented `revertido ao fim)` out of a comment",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+             "      files: a.md (x, y), b.ts (new)\n",
+     "want": ["a.md (x, y)", "b.ts (new)"]},
+    {"why": "the canonical template example splits at the SEPARATOR commas only",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+             "      files: src/middleware/auth.ts, src/config/limits.ts (new)\n",
+     "want": ["src/middleware/auth.ts", "src/config/limits.ts (new)"]},
+    {"why": "the repro of the original defect reads as ONE entry, never two",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+             "      files: plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)\n",
+     "want": ["plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)"]},
+    {"why": "nested parentheses keep the whole nesting one entry",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: x (a (b), c), y\n",
+     "want": ["x (a (b), c)", "y"]},
+    {"why": "an unbalanced `(` keeps the rest of the line one entry rather than "
+            "splitting mid-string",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: foo(bar, baz.ts\n",
+     "want": ["foo(bar, baz.ts"]},
+    {"why": "empty pieces (a trailing comma, a doubled one) are dropped, as before",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: a.ts, b.ts,\n",
+     "want": ["a.ts", "b.ts"]},
+    {"why": "a single plain path is untouched",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: src/a.ts\n",
+     "want": ["src/a.ts"]},
+]
+
+
+FILES_ANNOTATION_CASES = [
+    {"entry": "a.md (x, y)", "why": "a comma-carrying comment is an annotation, not a path"},
+    {"entry": "plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)",
+     "why": "the original repro's comment is refused whole — never split, never kept as "
+            "part of the path"},
+    {"entry": "src/(old)/x.py", "bad": False,
+     "why": "parentheses in the MIDDLE of a path are not an annotation — only a "
+            "trailing parenthetical is"},
+    {"entry": "src/a.py (new)", "bad": False,
+     "why": "`(new)` is the one reserved annotation — the path it names is about to be "
+            "created"},
+    {"entry": "c/dir/", "bad": False, "why": "a plain path is never an annotation"},
+]
+
+
+def files_parse_failures() -> list[str]:
+    """Run `FILES_PARSE_CASES` against `parse_tasks` and `FILES_ANNOTATION_CASES`
+    against `_files_bad_annotation`, asserting `files:` reads back entry-for-entry and
+    refuses what it must not interpret. A comma inside parentheses must never split a
+    path, and a trailing parenthetical that is not `(new)` must never reach an executor
+    as if it were a path — both are the same silence, closed at the parse."""
+    out: list[str] = []
+    for case in FILES_PARSE_CASES:
+        got = parse_tasks(case["text"])
+        files = got[0]["files"] if got else []
+        if files != case["want"]:
+            out.append(f"{case['why']}: got {files!r}, expected {case['want']!r}")
+    for case in FILES_ANNOTATION_CASES:
+        note = _files_bad_annotation(case["entry"])
+        want_bad = case.get("bad", True)
+        if want_bad and note is None:
+            out.append(f"{case['why']}: {case['entry']!r} was not refused")
+        elif not want_bad and note is not None:
+            out.append(f"{case['why']}: {case['entry']!r} refused with `({note})`")
+    return out
+
+
 # `write_handoff_block` is stateful across a build (each write reads the PRIOR write's
 # output), so — unlike the two case lists above — it is proved as one sequential
 # scenario rather than a table of independent inputs.
@@ -7559,6 +7669,16 @@ def cmd_next(args, root: str) -> int:
         openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
         if openable:
             t = openable[0]
+            bad = [e for e in t["files"] if _files_bad_annotation(e)]
+            if bad:
+                # The consumer of `files:` is an executor who cannot tell an invented
+                # piece from a path the task will create — refuse HERE, at the door,
+                # never hand the list over.
+                return emit_err(args.json, {
+                    "code": "sp-files-annotation",
+                    "message": f"task {t['id']} declares files entries that are not "
+                               f"paths: {', '.join(repr(b) for b in bad)} — remove the "
+                               f"comment; `(new)` is the only reserved `files:` annotation"})
             obj = {"ok": True, "action": "implement_task", "task": t["id"], "text": t["text"],
                    "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
                    "cwd": t["cwd"],
@@ -7625,6 +7745,12 @@ def cmd_parallel(args, root: str) -> int:
     findings = []
     for gi, group in enumerate(parallel_groups(info["tasks"]), 1):
         undeclared = [t["id"] for t in group if not t["files"]]
+        annotations = []
+        for t in group:
+            for e in t["files"]:
+                note = _files_bad_annotation(e)
+                if note:
+                    annotations.append({"task": t["id"], "entry": e, "note": note})
         clashes = []
         for i, a in enumerate(group):
             for b in group[i + 1:]:
@@ -7633,10 +7759,10 @@ def cmd_parallel(args, root: str) -> int:
                         if _overlaps(fa, fb):
                             clashes.append({"a": a["id"], "b": b["id"],
                                             "file": _norm_file(fa)})
-        eligible = not undeclared and not clashes
+        eligible = not undeclared and not clashes and not annotations
         findings.append({"group": gi, "tasks": [t["id"] for t in group],
                          "eligible": eligible, "undeclared": undeclared,
-                         "clashes": clashes})
+                         "annotations": annotations, "clashes": clashes})
     ok = all(f["eligible"] for f in findings)
     if args.json:
         print(json.dumps({"ok": ok, "slug": info["slug"], "groups": findings},
@@ -7649,6 +7775,9 @@ def cmd_parallel(args, root: str) -> int:
                   f"{'eligible' if f['eligible'] else 'NOT eligible'}")
             for c in f["clashes"]:
                 print(f"    {c['a']} and {c['b']} both touch {c['file']}")
+            for a in f["annotations"]:
+                print(f"    {a['task']} declares non-path files entry {a['entry']!r} — "
+                      f"remove the comment; `(new)` is the only reserved annotation")
             if f["undeclared"]:
                 print(f"    no files: declared by {', '.join(f['undeclared'])}")
     return 0 if ok else 1
@@ -8160,6 +8289,22 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                                     f"names it", spec=s["slug"], path=where, standard=p,
                                     remedy="add a task that writes it, or drop the declaration"))
 
+    # A `files:` entry carrying a parenthetical that is not the reserved `(new)` is a
+    # human comment the parser must not interpret — kept whole it would reach an
+    # executor as a path that exists nowhere, which is the exact silence `_split_files`
+    # exists to stop. Refuse it at the points that hand paths out and report it here.
+    for t in tasks:
+        for entry in t["files"]:
+            note = _files_bad_annotation(entry)
+            if note:
+                out.append(_finding("sp-files-annotation", "error",
+                                    f"{where}: task {t['id'] or t['index']} declares files "
+                                    f"entry {entry!r} with annotation `({note})` — only "
+                                    f"`(new)` is reserved", spec=s["slug"], path=where,
+                                    task=t["id"] or t["index"], entry=entry,
+                                    remedy="remove the comment — `(new)` is the only "
+                                           "reserved `files:` annotation"))
+
     # Judged against the READY gate: a spec is "unrefined" once it could be built, not the
     # moment it is captured. Warning on every fresh capture would train the reader to
     # ignore the code.
@@ -8408,6 +8553,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "matched to `## Tasks` by the heading's own leading "
                                         "numeral; a flat `## Handoff` with no heading must "
                                         "still read back as a single global block"))
+
+    # The `files:` split — specs.py-only, no sibling copy to drift from. A comma inside
+    # parentheses must stay inside its entry: an invented piece handed to an executor
+    # looks exactly like a path the task will create.
+    for failure in files_parse_failures():
+        findings.append(_finding("sp-files-parse-case", "error",
+                                 f"canonical files-parse case — {failure}",
+                                 remedy="_split_files must keep commas inside `(…)` in the "
+                                        "same entry, drop empty pieces, and leave plain "
+                                        "paths untouched"))
 
     for failure in handoff_write_failures():
         findings.append(_finding("sp-handoff-write-case", "error",
@@ -8912,13 +9067,16 @@ def cmd_selftest(args, root: str) -> int:
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
                           "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1
-                                   + len(HANDOFF_BLOCK_CASES),
+                                   + len(HANDOFF_BLOCK_CASES)
+                                   + len(FILES_PARSE_CASES) + len(FILES_ANNOTATION_CASES),
                           "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
     print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
           f"{len(SECTION_CASES['cases']) + 1} section + {len(HANDOFF_BLOCK_CASES)} "
-          f"Handoff-block canonical case(s), {len(errors)} error(s))")
+          f"Handoff-block + {len(FILES_PARSE_CASES)} split + "
+          f"{len(FILES_ANNOTATION_CASES)} annotation canonical case(s), "
+          f"{len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
         print(f"          remedy: {f['remedy']}")
@@ -8927,7 +9085,9 @@ def cmd_selftest(args, root: str) -> int:
     if not findings:
         print(f"  OK — the canonical frontmatter and section cases pass, the capture form "
               f"stamps exactly the entry-gate headings, the task metadata grammar is closed "
-              f"on both the key list and the indent, `--moment build` resolves the six "
+              f"on both the key list and the indent, a comma inside `files:` parentheses "
+              f"stays in its own entry while `(new)` and plain paths pass untouched, "
+              f"`--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
               f"path, the {len(HANDOFF_BLOCK_CASES)} Handoff-block cases match `## Tasks` by "
               f"their heading's own numeral and a flat `## Handoff` still reads back as one "
