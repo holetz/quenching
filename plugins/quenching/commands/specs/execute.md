@@ -16,7 +16,7 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
 **reviewed**, and it is **committed**. The mechanics of that live in
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-§Declared versus emergent `docs/` §Delegating an executor, which this body cites and never restates.
+§Declared versus emergent `docs/`, which this body cites and never restates.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
@@ -296,7 +296,12 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    writes nothing under `docs/` **may** go to an executor sub-agent under
    [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
-   that rule untouched.
+   that rule untouched. When it is, load the rules that bound it before dispatching:
+
+   ```bash
+   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+     --sections "§Delegating an executor"
+   ```
 
 c. **Write only the `docs/` this task names.** A `docs/standards/` path declared under `## Impact`
    and named by this task is part of its deliverable — write it through the insert procedure in
