@@ -4494,6 +4494,82 @@ AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Descript
                    "Microsoft.VSTS.Scheduling.TargetDate")
 
 
+def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
+                     parent: tuple[int, str] | None = None) -> list[dict]:
+    """The JSON patch ops one write sends, diffed against the item as it was READ.
+
+    THE DIFF DOES NOT WEAKEN THE REAFFIRMATION `spec-backend.md` §Placement declares — it
+    removes the ops that change nothing. A human who moved the card leaves `current` and
+    `desired` disagreeing, the op is emitted, and the card comes back. What disappears is the
+    revision an unchanged field used to bump on every `record` write.
+
+    THE FORMAT OP IS COUPLED TO THE VALUE, never diffed on its own. Measured against the org:
+    a patch carrying only `/multilineFieldsFormat/System.Description` answers `400 The type
+    changed without a value`, and one whose value equals the stored text changes neither the
+    revision nor the format. So `markdown` emits its op ONLY where the description itself is
+    an op — which is exactly the case the diff can rule out.
+
+    The parent travels as a relation rather than a field, and `parent` carries BOTH halves
+    because they are not interchangeable: the id is what `System.Parent` is diffed against,
+    the url is what the op must carry — a relation whose `url` is a bare id is rejected. That
+    `System.Parent` is read back with the document is what spares this a `work-item show` of
+    its own."""
+    ops = [{"op": "add", "path": f"/fields/{key}", "value": value}
+           for key, value in desired.items() if current.get(key) != value]
+    if markdown and any(o["path"] == "/fields/System.Description" for o in ops):
+        ops.append({"op": "add", "path": "/multilineFieldsFormat/System.Description",
+                    "value": "Markdown"})
+    if parent and int(current.get("System.Parent") or 0) != parent[0]:
+        ops.append({"op": "add", "path": "/relations/-",
+                    "value": {"rel": "System.LinkTypes.Hierarchy-Reverse",
+                              "url": parent[1]}})
+    return ops
+
+
+AZ_PATCH_PARENT = (788243, "https://dev.azure.com/o/_apis/wit/workItems/788243")
+
+# (label, current, desired, markdown, parent, expected op paths in order). Self-contained:
+# no network and no `az`. The assembly is what a write's whole cost now rests on, so it is
+# asserted here rather than discovered against a real board.
+AZ_PATCH_CASES = (
+    ("nothing changed emits nothing",
+     {"System.Title": "t", "System.Description": "d"},
+     {"System.Title": "t", "System.Description": "d"}, False, None, ()),
+    ("one changed field is one op",
+     {"System.Title": "t", "System.Description": "d"},
+     {"System.Title": "t2", "System.Description": "d"}, False, None,
+     ("/fields/System.Title",)),
+    ("a field the item does not carry yet is an op",
+     {"System.Title": "t"}, {"System.Title": "t", "System.Tags": "spec"}, False, None,
+     ("/fields/System.Tags",)),
+    ("markdown rides with the description it needs",
+     {"System.Description": "d"}, {"System.Description": "d2"}, True, None,
+     ("/fields/System.Description", "/multilineFieldsFormat/System.Description")),
+    ("markdown is never emitted alone",
+     {"System.Title": "t", "System.Description": "d"},
+     {"System.Title": "t2", "System.Description": "d"}, True, None,
+     ("/fields/System.Title",)),
+    ("an unlinked parent is a relation op",
+     {"System.Title": "t"}, {"System.Title": "t"}, False, AZ_PATCH_PARENT, ("/relations/-",)),
+    ("a parent already linked emits nothing",
+     {"System.Title": "t", "System.Parent": 788243}, {"System.Title": "t"}, False,
+     AZ_PATCH_PARENT, ()),
+)
+
+
+def azure_patch_failures() -> list[str]:
+    failures: list[str] = []
+    for label, current, desired, markdown, parent, want in AZ_PATCH_CASES:
+        ops = azure_patch_body(current, desired, markdown=markdown, parent=parent)
+        got = tuple(o["path"] for o in ops)
+        if got != want:
+            failures.append(f"{label}: emitted {got}, expected {want}")
+        for op in ops:
+            if op["path"] == "/relations/-" and op["value"]["url"].isdigit():
+                failures.append(f"{label}: the relation carries a bare id, not a work-item url")
+    return failures
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
@@ -9030,6 +9106,17 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are four refusals with four remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # The assembly a consolidated write rests on, asserted offline. The format op is the
+    # case worth having a check for: coupled to its value it works, emitted alone the API
+    # answers `400 The type changed without a value`, and only a diff can tell them apart.
+    for failure in azure_patch_failures():
+        findings.append(_finding("sp-az-patch-broken", "error",
+                                 f"the azure-boards PATCH body is misassembled — {failure}",
+                                 remedy="one op per field that actually differs from the "
+                                        "item as read, the multilineFieldsFormat op only "
+                                        "alongside its own value, and no op at all where "
+                                        "nothing changed"))
+
     # The literal-project-name fix, checked against the exact macro that resolves to nothing
     # on this org's `az` — a reworded query must break this check rather than reintroduce
     # `@project` silently.
@@ -9366,7 +9453,10 @@ def cmd_selftest(args, root: str) -> int:
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
-              f"each refuse with their own remedy, no backend warns as unproved "
+              f"each refuse with their own remedy, the {len(AZ_PATCH_CASES)} AZ_PATCH_CASES "
+              f"put one op on every field that differs and none on one that does not, with "
+              f"the multilineFieldsFormat op never travelling without its own value, "
+              f"no backend warns as unproved "
               f"({', '.join(UNPROVED_BACKENDS) or 'none declared'}), every record reads "
               f"back as it was "
               f"written, a foreign label survives label reconciliation while a stale "
