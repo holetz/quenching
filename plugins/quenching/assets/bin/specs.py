@@ -1094,8 +1094,8 @@ DEFAULT_RELEASE_BRANCH = "main"
 # projects it ran against.
 
 # The backends that ship without ever having run against a real target. Empty now:
-# `azure-boards` was the one name here, and the configurable-spec-backend-azure plan's own
-# §6 ran it end to end against a real Azure DevOps project (org unicredbr, team "Diretoria
+# `azure-boards` was the one name here, and the provar-e-posicionar-o-backend-azure-boards
+# plan's §6 ran it end to end against a real Azure DevOps project (org unicredbr, team "Diretoria
 # Risco") — `new --subject`, every `section --write`, `record`, `task --check`, `status`,
 # `show` and `promote --outcome done`, each compared against `files` for the same state and
 # matching, plus the board's own column tracking the de-para through every transition. This
@@ -1113,11 +1113,9 @@ def announce_unproved(name: str) -> None:
     becomes a per-call tax on the agent reading this CLI, paid forever for a fact that never
     changes between calls. Silence is not defensible either, because the unproved paths do
     not all fail the same way: a wrong `AZ_SPEC_TYPE` fails LOUDLY — `az` answers with an
-    API error and the transport turns it into an exit-2 refusal — but whether `System.
-    AssignedTo` accepts the display name this backend sends, or silently coerces it to
-    something else, is still an open measurement (`## Open Decisions`, task 6.1) and would
-    fail QUIETLY if it did not; a write that fails halfway leaves work items behind on
-    somebody's real board. So the line lands on the
+    API error and the transport turns it into an exit-2 refusal — but a field that accepts a
+    value and silently coerces it to another fails QUIETLY, and a write that fails halfway
+    leaves work items behind on somebody's real board. So the line lands on the
     writes, where an unproved path can cost something that does not announce itself, and
     reads — the overwhelming majority of a build loop's calls — stay silent. The permanent,
     zero-noise half of the same answer is `sp-backend-unproved` in `doctor`.
@@ -3958,10 +3956,9 @@ def azure_query_wiql(project: str, area_path: str | None, discovery_tag: str | N
     only fix; a refusal keyed on empty output would refuse the ordinary "no specs yet" case
     just as often as the macro bug it was meant to catch.
 
-    `area_path` and `discovery_tag` are optional here — `azurePlacement` is declared in
-    `.claude/quenching.json` starting at CONFIG_KEYS (§2), and `open_azure_backend` is what
-    populates them once that parse exists. Unset, the query is scoped by project alone, which
-    is the same breadth it always had."""
+    `area_path` and `discovery_tag` are optional here — they come from `azurePlacement` in
+    `.claude/quenching.json`, which `open_azure_backend` reads and hands the backend. Unset,
+    the query is scoped by project alone, which is the same breadth it always had."""
     clauses = [f"[System.TeamProject] = '{project}'"]
     if area_path:
         clauses.append(f"[System.AreaPath] = '{area_path}'")
@@ -4151,9 +4148,9 @@ class AzureBoardsBackend(SpecBackend):
         self.discovery_tag = discovery_tag
         self.work_item_type = work_item_type or AZ_SPEC_TYPE
         self.iteration_path = iteration_path
-        # `subjects.<key>.parent` is what resolves this in practice, once §2 finishes wiring
-        # subject resolution (2.9-2.10) — `None` here until then, exactly as `area_path` was
-        # `None` between §1 and §2.2.
+        # `subjects.<key>.parent` is what resolves this in practice: `open_azure_backend`
+        # applies `defaultSubject`'s, and `cmd_new` overrides it for an explicit `--subject`.
+        # `None` where neither declared one — a repository with no `subjects` links nothing.
         self.parent_id = parent_id
         self.team = team
         self.board_column = board_column
@@ -4493,7 +4490,7 @@ class AzureBoardsBackend(SpecBackend):
         """Reaffirm the declared parent on every write, resolved BY ID and never by title —
         `## Open Decisions` settles this task 2.4: the id (e.g. `788243`) is stable, and a
         title is one rename away from breaking the link. `subjects.<key>.parent` is what
-        supplies it once §2.9-2.10 finish subject resolution; unset until then.
+        supplies it; unset where no subject resolved one.
 
         RESOLUTION IS THE READ BELOW, not a bespoke check — a parent id with no work item
         behind it fails through the same `sp-az-api-error` refusal `_az` already raises for
@@ -4908,8 +4905,9 @@ def cmd_new(args, root: str) -> int:
             .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
     # The subject's fixed tags go into the CANONICAL DOCUMENT, never applied to the tracker
-    # directly — `tags:` is not yet a recognised frontmatter key (§3 makes it one), so this
-    # is inert on every backend until then, and never a second, backend-specific write path.
+    # directly: `tags:` is a recognised frontmatter key, so `create_spec` reads them off this
+    # text through the same path every other stored field takes — never a second,
+    # backend-specific write path of this command's own.
     if subject and subject.get("tags"):
         tags_repr = "[" + ", ".join(json.dumps(t, ensure_ascii=False)
                                     for t in subject["tags"]) + "]"
