@@ -9179,11 +9179,13 @@ def cmd_release(args, root: str) -> int:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "add", "message": f"git add failed: {err}"})
     subject = f"release: {result['oldVersion']} -> {new_version}"
-    code, out, err = _git_run(repo, "commit", "-m", subject)
+    code, _, err = _git_run(repo, "commit", "-m", subject)
     if code != 0:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "commit", "message": f"git commit failed: {err}"})
-    commit_hash = out.strip()
+    # `git commit`'s own output is the summary, not a hash — report HEAD's bare hash so the
+    # release command's self-check can compare it to `rev-parse <version>^{commit}`.
+    commit_hash = _git(repo, "rev-parse", "HEAD").strip()
     code, _, err = _git_run(repo, "tag", "-a", new_version, "-m", subject)
     if code != 0:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
