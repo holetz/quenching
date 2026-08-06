@@ -14,11 +14,10 @@ Builds the `## Tasks` of ONE spec: writing each task, verifying it under the spe
 policy, reviewing its diff, and committing it alone with the box already ticked inside that commit.
 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
-**reviewed**, and it is **committed**. The mechanics of that live in
-[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
-which this body cites and never restates.
+**reviewed**, and it is **committed**.
 
-**Every `§X` below is an address, and it is loaded as one — never by opening the file.**
+**Every `§X` in this body is an address, and it is loaded as one — never by opening the file.**
+The example uses `§A` / `§B` as placeholders — they are not addresses.
 
 ```bash
 skills.py read <the cited file> --sections "§A" --sections "§B"
@@ -34,11 +33,6 @@ whole section, saying so, where it does not.
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
 *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
 opens on why that split holds.
-
-The spec-driven facts live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §The `specs.py` tool surface
-§The report mold.
 
 ## Resolving the tool
 
