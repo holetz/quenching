@@ -4,10 +4,10 @@ title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, the append-only archive rule for facts that did not exist at the move, and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, plugins/quenching/assets/references/specs-develop/questions.md, specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
-timestamp: 2026-08-05
+timestamp: 2026-08-06
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5)
 maintainer: quenching
 ---
 
@@ -71,7 +71,7 @@ The organizing principle, and the admission test for every frontmatter key:
 That is why there is no `phase` (the folder), no `ready` flag (the ten gate sections), and no
 attempt counter (the visible `- [!]` marker).
 
-**`date` is the one fact that moved the other way, and the test is what moved it.** It used to be
+**`date` was the first field to move the other way, and the test is what moved it.** It used to be
 excluded on exactly these grounds — the filename's `YYYY-MM-DD-` prefix recorded it, so a field
 would have been a second copy. The test says a field earns its place when no derivation reproduces
 it, and the derivation that supported the exclusion was *the basename*. A store with no filenames
@@ -81,13 +81,25 @@ here, 68 of 70 capture dates would have been rewritten to the migration's own af
 is **declared, not derived**, and the basename went back to being the slug alone. The rule did not
 bend; the derivation it relied on stopped existing.
 
+**`complexity` is the second — and it moved against the test rather than by it.** It used to earn
+its place as a human's guess, the triage sweep's rough size in hours, a judgment like any other.
+Then part of it became computed: `/specs:create` derives a level from its own classification of
+the input (a sentence is `low`, a plan file is `medium`), `/specs:develop` re-evaluates the level
+when a pass closes, and both write through `specs.py record` on a human's confirmation, never a
+silent restamp — the judgment left in the field is the word on the proposal, not the value itself.
+What keeps it in frontmatter is the consumer: the orchestrator derives its whole gears plan from
+this level before the build, when the sections that would evidence it do not exist yet, and no
+file, filesystem or git state carries the level in the discrete scale the gears plan needs. So the
+field declares its own writers — `[triage, create, develop]` — under a record whose owner stays
+`triage`, and the admission test keeps its shape for every other key.
+
 Beyond the declared identity (`slug`, `title`, `date`) and the optional `verification` — absent
 means the default, applied on read, never stamped to make it explicit — every optional key is one
 record:
 
 | Record | Written by | Write-once | What only a human can answer |
 | --- | --- | --- | --- |
-| `priority: {level, criticality, complexity, date}` | `triage` | no | this spec's rank against every other one |
+| `priority: {level, criticality, complexity, date}` | `triage` — `complexity` its own `[triage, create, develop]` | no | this spec's rank against every other one — `complexity` is the exception below |
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
 | `approved: {date}` | `develop`, or `execute` inline | yes | that a human said go |
 | `branch: {base, work}` | `execute` | yes | after a merge, git cannot say what the base was |
@@ -103,7 +115,9 @@ filled `## Handoff`), which a spec built in place, with no `branch` record at al
 `writeOnce: true` marks an irreversible transition —
 rewriting the value would falsify a fact that already happened; the restampable three each carry
 their own `date` because their owning command may legitimately re-judge. In neither case may a
-command other than the one named in `writtenBy` touch the record. The vocabulary lives in
+command other than the one named in `writtenBy` touch the record — `complexity` excepted, which
+names its own list because part of it is computed (§ above), under a record whose owner stays
+`triage`. The vocabulary lives in
 `assets/specs/schema.json` (`frontmatter.records`), which `specs.py` embeds as its fallback.
 
 ## `ready` is derived, and `approved` is a human's word
