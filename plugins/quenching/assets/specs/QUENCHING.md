@@ -40,6 +40,7 @@ python3 --version           # or `py --version` on Windows
 | Close it out — review, archive, distil, then merge | `/specs:conclude` |
 | Rank everything that is parked | `/specs:triage` |
 | Fix the workspace itself — scaffold, filenames, the v2/v1 fold | `/specs:align` |
+| Run one spec end to end — capture, develop, execute, conclude — on one authorization | `/specs:orchestrate` |
 | Align **every** front (`docs/`, `specs/`, `.claude/`) | `/align` |
 
 > `/specs:develop` is the short form of `/quenching:specs:develop`; use the long form if
