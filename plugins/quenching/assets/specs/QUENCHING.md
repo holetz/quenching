@@ -159,8 +159,9 @@ itself.
 ### `/specs:status` — look, change nothing
 
 The read-only view. Reports every spec by derived stage with task progress, each spec's
-frontmatter records as the history they narrate (ranked, interrogated, approved, built, reviewed,
-merged, closed), and the verifier results (`specs.py doctor` / `validate`) — split into what
+frontmatter records as the history they narrate (ranked, interrogated, approved, isolated,
+reviewed, merged, closed — `branch` narrates isolation, not that the work finished; "built" is the
+derived stage `executing`), and the verifier results (`specs.py doctor` / `validate`) — split into what
 `/specs:align` would fix on one OK, what a cycle command closes, and what neither closes because
 it needs you. It speaks the sweep's own `sp-*` vocabulary, so it doubles as an honest dry run.
 
@@ -371,8 +372,10 @@ outcome: done                                  # stamped at archive — done | a
 (`date:` is that fact — it left the basename because a store with no filenames cannot hold it
 there, and no external store carries an honest copy of it to project from), no `phase` field (the
 folder is that fact), and no `ready` flag (the ten gate sections are that fact). Read top to
-bottom, the records narrate the spec's history in order: ranked, interrogated, approved, built,
-reviewed, merged, closed. A
+bottom, the records narrate the spec's history in order: ranked, interrogated, approved, isolated,
+reviewed, merged, closed. Not "built" — `branch` narrates that isolation was taken, never that the
+work finished; "built" is the derived stage `executing`, which a spec built in place, with no
+`branch` record at all, still reaches. A
 record is written only by its owning command; `approved`, `branch`, `merge` and `outcome` are
 write-once — rewriting one would falsify a fact that already happened. A spec carries no OKF
 `type:` — it is not a concept doc, it lives outside the bundle, and `specs.py validate` is what

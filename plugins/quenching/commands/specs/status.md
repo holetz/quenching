@@ -1,5 +1,5 @@
 ---
-description: Read the whole specs/ front and report where it stands — writes nothing, ever. Triggers on "specs status", "how is the specs front", "what is in plans", "show me the specs workspace", "is specs conformant", "what would align fix", "dry run the specs sweep". Reports every finding in the sweep's own sp- vocabulary, split into what /specs:align would fix on one OK, what a cycle command closes, and what neither closes because it needs a human. Shows each spec's frontmatter records as the history they narrate — ranked, interrogated, approved, built, reviewed, merged, closed. Near-free by construction, no sub-agents and no per-spec fan-out, so it doubles as an honest dry run before a sweep is authorized. Not for: fixing anything → /specs:align; being handed the single next action → /specs:continue; ranking the front → /specs:triage; sharpening a spec → /specs:develop.
+description: Read the whole specs/ front and report where it stands — writes nothing, ever. Triggers on "specs status", "how is the specs front", "what is in plans", "show me the specs workspace", "is specs conformant", "what would align fix", "dry run the specs sweep". Reports every finding in the sweep's own sp- vocabulary, split into what /specs:align would fix on one OK, what a cycle command closes, and what neither closes because it needs a human. Shows each spec's frontmatter records as the history they narrate — ranked, interrogated, approved, isolated, reviewed, merged, closed. Near-free by construction, no sub-agents and no per-spec fan-out, so it doubles as an honest dry run before a sweep is authorized. Not for: fixing anything → /specs:align; being handed the single next action → /specs:continue; ranking the front → /specs:triage; sharpening a spec → /specs:develop.
 argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
@@ -46,8 +46,9 @@ point.
   repo.
 - **Show the records as the history they are.** `priority`, `refined`, `approved`, `branch`,
   `reviewed`, `merge`, `outcome`, read in that order, narrate a spec's life: ranked, interrogated,
-  approved, built, reviewed, merged, closed. An absent record is a **not-yet**, never a defect —
-  most specs carry two or three, and that is normal.
+  approved, isolated, reviewed, merged, closed — `branch` narrates isolation, not that the work
+  finished; that is the derived stage `executing`. An absent record is a **not-yet**, never a
+  defect — most specs carry two or three, and that is normal.
 - **Cheap by construction, and never through a path.** One `doctor`, one `validate`, one
   `list --json` — which carries the records, so no spec file is opened at all. Reach for
   `specs.py status --spec <slug> --json` **only** for a spec the user named. A dozen active specs
@@ -96,6 +97,12 @@ sweep's; this command contributes none of its own. Without an OKF bundle, note o
 **Done when:** every observation carries a code and lands in exactly one table.
 
 ### 4. Report
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. Five body blocks, **all fixed** — an empty one prints its title and `—`, never
 disappears — in this order:
 
