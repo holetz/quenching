@@ -38,14 +38,14 @@ sentence, and **link out** rather than explaining in full here.
   `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
   `resource-self`). The category has to stay small — a check that cannot tell "wrong" from "worth a
   look" belongs here or nowhere, and folding one into must-fix makes that set unusable.
-- [**Always-on ceiling**](../standards/automation/context-budget.md) — the per-surface character
+- [**Always-on ceiling**](../standards/automation/skills.md) — the per-surface character
   total `skills.py budget` compares the summed descriptions against, commands **and** agent
   definitions alike; set from a measurement and never guessed, and deliberately kept EQUAL to the
   current total so it has no headroom and the next **always-on** command crosses it the day it is
   minted. A `disable-model-invocation: true` command counts 0 and crosses nothing, so the ratchet
   has two exits — re-measure, or make the command typed-only where that is the honest design.
   `budget` reports and never refuses — crossing it prompts a re-measure, not a block.
-- [**Always-on metadata**](../standards/automation/context-budget.md) — the frontmatter
+- [**Always-on metadata**](../standards/automation/skills.md) — the frontmatter
   `description` of every command, resident in every session's context before anything fires and
   therefore the only surface cost paid whether or not a command runs; measured by
   `skills.py budget` from the parsed value, never the YAML source.
@@ -146,7 +146,7 @@ sentence, and **link out** rather than explaining in full here.
   loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
   exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
   neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
-  beats shortening the reads. [context-budget.md](../standards/automation/context-budget.md)
+  beats shortening the reads. [skills.md](../standards/automation/skills.md)
   §The other half owns the integral itself and the 344-turn run it was measured on.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
@@ -363,7 +363,7 @@ sentence, and **link out** rather than explaining in full here.
   code and cannot diverge between targets. The selected backend is the sole source of truth: there
   is no shadow local store, and a declared-but-unimplemented backend refuses rather than falling
   back to `files`.
-- [**Typed-only command**](../standards/automation/context-budget.md) — a command carrying
+- [**Typed-only command**](../standards/automation/skills.md) — a command carrying
   `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
   every session's context and `skills.py budget` charges it **0**. Residency and content are
   independent axes, so the description **keeps all three parts at full length** — the human picking
