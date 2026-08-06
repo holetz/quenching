@@ -70,6 +70,37 @@ irreversible items still interrupt.
 **Irreversible cycle actions** — Judgment the align does not have decides these: a
 spec whose tasks are all checked may still be waiting on a deploy.
 
+## The PR route — where review lives when the run does not stop
+
+<!-- rules -->
+The two protected classes gate **individually, always** — no gear, no authorization, and no route
+waives them. What the orchestrator's minimal gear changes is not the gates but where the review
+that fires no gate lands: the whole cycle runs in one session on a single authorization and ends
+opening a pull request ([orchestration-gears.md](/docs/standards/automation/orchestration-gears.md)
+§Deriving the gears plan, the `low` row), so nothing stops mid-session for a human to review. The
+review is not lost — it moves to the PR, opened against the integration branch declared in
+`.claude/quenching.json` (`integrationBranch`), where the merge waits on human review and on the
+checks before it lands.
+
+The route already exists — nothing new is built for it. `conclude` offers pull request or local
+alongside the strategy ([plan-git-record.md](/docs/standards/workflows/plan-git-record.md) §The
+route is a second choice, and it moves when `merge:` is stamped), and the `merge` record's `pr`
+field names the pull request — the fact the base branch's history cannot reproduce: which PR the
+merge went through, and where the review and the checks still live once the branch is gone
+(§Two frontmatter records carry the underivable git facts).
+
+No gear above the minimal changes any of this contract: the two classes still gate individually in
+every gear, and a run that stops stage by stage keeps its review where the contract always put it
+— at those stops, item by item, in the session. The PR route is the minimal gear's answer to a run
+that does not stop: it relocates review, never removes it.
+
+<!-- rationale -->
+**The PR route** — the cycle-authorization contract was written for runs that stop at the gates; a
+minimal-gear run that never fires one would end with nobody having seen the work. The PR is where
+that review happens instead — before the merge, with the checks, on the branch the cycle built.
+Relocating review is the alternative to adding a stop, which is exactly what the minimal gear
+exists to avoid.
+
 ## The convergence contract
 
 <!-- rules -->
