@@ -193,7 +193,7 @@ spec never promised to write), and an unfilled `<placeholder>` declares nothing.
 sub-heading declares nothing and is never flagged — **the check is opt-in by writing the heading**.
 
 A bullet may carry a `§`address beside its path —
-`docs/standards/automation/skills.md §The two caps` — naming exactly which sections of that
+`docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
 only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not, so no code
 changed to accept it. Without an address, `/quenching:specs:execute` step 4 reads the file whole,
@@ -215,7 +215,7 @@ phase-scoped rule above keeps unambiguous.
 ```
 
 Written by the orchestrator when attempts stop converging; `next` skips it. `--block` **requires**
-`--reason`. There is no attempt budget: v1 kept a counter in `.specs.json` and stopped at five,
+`--reason`. There is no attempt limit: v1 kept a counter in `.specs.json` and stopped at five,
 which meant a task went quiet with no trace of *why* and resumed only via a `--reset-attempts`
 incantation that bought five more attempts at the same wrong approach.
 
