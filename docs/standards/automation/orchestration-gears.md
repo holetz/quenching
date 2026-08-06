@@ -7,7 +7,7 @@ tags: [automation, specs, orchestration]
 timestamp: 2026-08-06
 audience: both
 authority: current
-source: fluxo-rapido-para-problemas-simplorios plan (task 2.3) — the gears contract the orchestrate body cites by section name; promoted to current by the phase-3 proof run (task 3.4, 2026-08-06) — a full minimal-gear cycle on the payload-quenching-orchestrate-entry spec ran capture → archive in one session and ended with pull request #886 open against develop, 19 tool calls against the ~50 the originating session spent without writing its change
+source: fluxo-rapido-para-problemas-simplorios plan (task 2.3) — the gears contract the orchestrate body cites by section name; promoted to current by the phase-3 proof run (task 3.4, 2026-08-06) — a full minimal-gear cycle on the payload-quenching-orchestrate-entry spec ran capture → archive in one session and ended with pull request 886 open against develop, 19 tool calls against the ~50 the originating session spent without writing its change
 maintainer: quenching
 ---
 
