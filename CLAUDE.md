@@ -27,7 +27,7 @@ python3 assets/bin/session.py --version                                   # outs
 # the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
 python3 assets/hooks/okf-validate.py assets/docs                          # 0 error(s); stale-doc warns are advisory
 # the command surface
-python3 assets/bin/skills.py --root . doctor --json                       # 25 commands, no findings
+python3 assets/bin/skills.py --root . doctor --json                       # 26 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings reported, not fatal)
 python3 assets/bin/skills.py --root . budget --json                       # exit 1 = over the ceiling; re-measure, never estimate
 # each tool proves the shared frontmatter rule against the SAME canonical case list
@@ -71,10 +71,14 @@ measures it graded and with a boundary arm; check 3 is a worse copy kept opt-in.
 
 ### Two rules that must survive any refactor
 
-- **Never add `context: fork` to these commands.** Every sweep command gates on a mid-flow
-  confirmation (one plan → one OK) when run standalone — and even a cycle-authorized run
-  (`assets/references/align/convergence.md` §cycle-authorization) must still surface
-  code-coupled confirmations mid-flow, which a forked context cannot present.
+- **Never add `context: fork` to these commands — save the orchestrator's minimal gear.** Every
+  sweep command gates on a mid-flow confirmation (one plan → one OK) when run standalone — and
+  even a cycle-authorized run (`assets/references/align/convergence.md` §cycle-authorization)
+  must still surface code-coupled confirmations mid-flow, which a forked context cannot present.
+  The one admission is `/quenching:specs:orchestrate` under its minimal gear, where no mid-flow
+  confirmation exists to present: neither protected class stops that run and the human review
+  lives in the PR it opens (§The PR route). Any gear above the minimal brings the code-coupled
+  gates back, and with them the prohibition.
 - **Never downgrade classification or executor sub-agents to `haiku` in `/docs:import-memory`.**
   A misclassification there becomes a wrong memory deletion — see the model-policy table in
   [README.md](plugins/quenching/README.md#cost-model) for which sub-agent calls elsewhere are safe
