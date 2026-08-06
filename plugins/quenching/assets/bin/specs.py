@@ -2924,6 +2924,18 @@ HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+
 # A `display:none` div is the nearest equivalent that does: invisible once the field renders,
 # present in the raw value every read gets. `hybrid_wrap`'s `fmt='div'` writes it; this is what
 # reads it back.
+#
+# THAT INVISIBILITY HOLDS UNDER `Markdown` TOO, and it was not obvious that it would: the
+# original measurement was taken while `System.Description` was `html`, where a div is
+# unremarkable. Once the field carries `multilineFieldsFormat: Markdown` the renderer could
+# just as well have escaped the tag and printed the marker as the first visible line of every
+# card. Verified by inspection of WI 961489 on 2026-08-06, ten sections in and already
+# converted: the div stays invisible and the frontmatter's `---` renders as a rule nobody
+# minded. So the storage format does NOT change, and the `[//]: # (…)` comment form
+# `## Alternatives Considered` holds in reserve stays unbuilt.
+#
+# The `;?` below is not decoration: Azure normalises `display:none` to `display:none;`, so a
+# marker written by this tool and a marker read back from the API differ by one character.
 HYBRID_DIV_MARKER_RE = re.compile(
     r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?'
     r"\s*</div>[ \t]*\r?\n")
