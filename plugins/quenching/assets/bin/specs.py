@@ -4074,6 +4074,15 @@ AZ_STDERR_SIGNALS = (
     ("must be specified", "sp-az-no-project",
      "run `az devops configure --defaults organization=https://dev.azure.com/<org> "
      "project=<project>`"),
+    # The PATCH endpoint's own vocabulary. A consolidated write is all-or-nothing, so these
+    # three take the document edit down with them — which is exactly why each carries the
+    # remedy for ITS cause instead of arriving as one anonymous `sp-az-api-error`.
+    ("the type changed without a value", "sp-az-format-uncoupled",
+     "the multilineFieldsFormat op travelled without its own System.Description value — "
+     "`azure_patch_body` couples them, so reaching this means the coupling broke"),
+    ("rule error", "sp-az-rule-error",
+     "the process rejected a field value — check `azureColumns`/`azureStates` against what "
+     "this project's board actually allows; nothing was written"),
 )
 
 
@@ -4249,6 +4258,16 @@ AZ_REFUSAL_CASES = (
     # only the single-item calls (`_az`'s `expect='object'`, the default) and never the
     # WIQL query (`expect='array'`).
     ("az exits 0 with empty stdout on a single-item call", 0, "", "", "sp-az-empty-response"),
+    # The PATCH endpoint's own two, which `az boards work-item update` never produced: the
+    # consolidated write is the first caller that can send a format op or a board column in
+    # the same body as the document, and all-or-nothing makes naming the cause the whole
+    # mitigation `## Risks` accepted the atomicity on.
+    ("a format op sent without its own value", 1, "",
+     "ERROR: VS403319: The type changed without a value for field System.Description.\n",
+     "sp-az-format-uncoupled"),
+    ("a column value the process refuses", 1, "",
+     "ERROR: TF401320: Rule Error for field WEF_a_Kanban.Column. Error code: "
+     "AllowedValues.\n", "sp-az-rule-error"),
 )
 
 
