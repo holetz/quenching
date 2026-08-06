@@ -7,7 +7,7 @@ tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-08-05
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from skills.md §The other half, which carries the same grading for the same reason; the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown
 maintainer: quenching
 ---
 
@@ -15,8 +15,8 @@ maintainer: quenching
 
 Every turn re-sends the whole conversation. A block of context loaded once is therefore paid once
 for **each turn that follows it**, and a run's true cost is `tokens × turns remaining`, not
-`tokens`. [skills.md](skills.md) §The other half owns that integral and the run it
-was measured on; this file owns what to *do* about it.
+`tokens`. The measurement history behind the integral, 344-turn run included, retired with
+context-budget.md; this file owns what to *do* about it.
 
 There are exactly two factors, so there are exactly two ways to cut it: **open less** and **run for
 less time**. Nothing else is available, and a proposal that does neither is not an optimisation.
