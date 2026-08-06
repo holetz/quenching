@@ -4241,9 +4241,9 @@ def cmd_list(args, root: str) -> int:
                          indent=2, ensure_ascii=False))
         return 0
     if not rows:
-        print(f"no specs under {root}")
+        print(f"no specs on the {backend.name} front")
         return 0
-    print(f"specs — {root} ({len(rows)})")
+    print(f"specs — {backend.name} front ({len(rows)})")
     for folder in PHASE_DIRS:
         group = [r for r in rows if r["folder"] == folder]
         if not group:
@@ -7509,11 +7509,11 @@ def cmd_selftest(args, root: str) -> int:
     # coincidence, not by contract.
     impact_probe = parse_impact_standards(
         "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
-        "- `docs/standards/automation/context-budget.md` §The two caps §The per-surface "
+        "- `docs/standards/automation/skills.md` §The two caps §The per-surface "
         "ceiling — revisado.\n"
         "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
         "lê inteiro.\n", DEFAULT_SCHEMA)
-    want_impact = ["docs/standards/automation/context-budget.md",
+    want_impact = ["docs/standards/automation/skills.md",
                    "docs/standards/workflows/plan-artifacts.md"]
     if impact_probe != want_impact:
         findings.append(_finding("sp-impact-address-tolerance", "error",
@@ -7700,27 +7700,11 @@ def cmd_config(args, root: str) -> int:
 
 def cmd_doctor(args, root: str) -> int:
     findings: list[dict] = []
-    if not os.path.isdir(root):
-        findings.append(_finding("sp-no-workspace", "error", f"no specs/ workspace at {root}",
-                                 remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
-        return _emit_doctor(args, root, findings)
-
-    for ph in PHASES:
-        if not os.path.isdir(os.path.join(root, ph)):
-            findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
-                                     path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
-    # A v2 folder that still holds specs is the one shape `list` reads correctly but
-    # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
-    for folder in LEGACY_PHASES:
-        held = [s for s in spec_files(root) if s["folder"] == folder]
-        if held:
-            findings.append(_finding("sp-v2-layout", "error",
-                                     f"`{folder}/` still holds {len(held)} spec(s) — v3 "
-                                     f"folded backlog/ and ready/ into plans/",
-                                     path=folder, count=len(held),
-                                     remedy="specs.py migrate  (moves them into plans/ "
-                                            "unrenamed; specs/archive/** is never touched)"))
-
+    # The config findings come first, and reading the config here also decides whether
+    # the workspace-shape half below applies at all. Under an external backend there
+    # may be no specs/ folder: its layout is then not a finding to suppress after the
+    # fact, it is one that never made sense to produce — the guard sits before the
+    # PHASES loop, never a filter after it.
     # The real failure mode of a machine-read config is `worktree_setup` written where
     # `worktreeSetup` was expected, followed by silence — the file is valid JSON, the key
     # is simply never looked at, and the setup that was declared never runs. Both findings
@@ -7776,24 +7760,50 @@ def cmd_doctor(args, root: str) -> int:
                                  remedy=f"move its keys into {CONFIG_FILE} and delete it; "
                                         f"whatever it declares is doing nothing today"))
 
-    leftovers = _v1_leftovers(root)
-    for name in leftovers:
-        findings.append(_finding("sp-v1-leftover", "error",
-                                 f"`{name}/` is a v1 three-file plan folder",
-                                 path=name,
-                                 remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
-                                        f"specs/archive/** is never touched)"))
-    for entry in sorted(os.listdir(root)):
-        full = os.path.join(root, entry)
-        # `config.json` stays exempt even though nothing reads it any more: it has its own
-        # finding above, which says where it went. Reporting it as a stray would offer
-        # "move it into a phase folder", which is the one thing that must not happen to it.
-        if os.path.isfile(full) \
-                and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
-                and not entry.startswith("."):
-            findings.append(_finding("sp-stray-file", "warn",
-                                     f"stray file at the specs root: {entry}", path=entry,
-                                     remedy="move it into a phase folder or remove it"))
+    # The workspace shape — the folder IS the phase, but only under the `files` backend,
+    # the one backend that has a folder. An external backend's workspace is the tracker
+    # itself, so none of these findings apply there: producing them would describe a
+    # world this repo does not inhabit.
+    if cfg["backend"] == "files":
+        if not os.path.isdir(root):
+            findings.append(_finding("sp-no-workspace", "error", f"no specs/ workspace at {root}",
+                                     remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
+            return _emit_doctor(args, root, findings)
+
+        for ph in PHASES:
+            if not os.path.isdir(os.path.join(root, ph)):
+                findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
+                                         path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
+        # A v2 folder that still holds specs is the one shape `list` reads correctly but
+        # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
+        for folder in LEGACY_PHASES:
+            held = [s for s in spec_files(root) if s["folder"] == folder]
+            if held:
+                findings.append(_finding("sp-v2-layout", "error",
+                                         f"`{folder}/` still holds {len(held)} spec(s) — v3 "
+                                         f"folded backlog/ and ready/ into plans/",
+                                         path=folder, count=len(held),
+                                         remedy="specs.py migrate  (moves them into plans/ "
+                                                "unrenamed; specs/archive/** is never touched)"))
+
+        leftovers = _v1_leftovers(root)
+        for name in leftovers:
+            findings.append(_finding("sp-v1-leftover", "error",
+                                     f"`{name}/` is a v1 three-file plan folder",
+                                     path=name,
+                                     remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
+                                            f"specs/archive/** is never touched)"))
+        for entry in sorted(os.listdir(root)):
+            full = os.path.join(root, entry)
+            # `config.json` stays exempt even though nothing reads it any more: it has its own
+            # finding above, which says where it went. Reporting it as a stray would offer
+            # "move it into a phase folder", which is the one thing that must not happen to it.
+            if os.path.isfile(full) \
+                    and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
+                    and not entry.startswith("."):
+                findings.append(_finding("sp-stray-file", "warn",
+                                         f"stray file at the specs root: {entry}", path=entry,
+                                         remedy="move it into a phase folder or remove it"))
     return _emit_doctor(args, root, findings)
 
 
