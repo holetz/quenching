@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — docs/ then specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a docs/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: one front only → /docs:align, /specs:align, /skill:align; reading without changing → /docs:status, /specs:status; the next action on one spec → /specs:continue.
+description: Align the whole repository — /.docs/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a /.docs/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: one front only → /docs:align, /specs:align, /skill:align; reading without changing → /docs:status, /specs:status; the next action on one spec → /specs:continue.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -14,8 +14,8 @@ one that spans all three.
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `docs/` — the OKF bundle | `/quenching:docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
-| 2 | `specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
+| 1 | `/.docs/` — the OKF bundle | `/quenching:docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
+| 2 | `/.specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
 | 3 | `.claude/` — the automation surface | `/quenching:skill:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
 The surface is **one column, not a matrix**: there is no separate "align-and-update" anywhere. An
@@ -45,24 +45,24 @@ here, not three edits that must stay in agreement.
 
 ## Doctrine
 
-- **Order is a dependency, not a preference.** `docs/` → `specs/` → `.claude/`:
+- **Order is a dependency, not a preference.** `/.docs/` → `/.specs/` → `.claude/`:
   - **docs first** — both other fronts write OKF artifacts into the bundle (the skill front's
-    rule `docs/standards/automation/skills.md` and registry
-    `docs/documentation/reference/automation.md`; the `docs/standards/` docs a spec's
+    rule `/.docs/standards/automation/skills.md` and registry
+    `/.docs/documentation/reference/automation.md`; the `/.docs/standards/` docs a spec's
     distillation mints). None can land in a tree that is not there.
   - **specs before skills** — when migrating a legacy `openspec/` workspace, `/quenching:specs:align`
     removes the CLI-generated `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow
     copies, so `/quenching:skill:align` inventories an already-clean surface instead of classifying plugin
-    duplicates onto the taxonomy axis (a native `specs/` repo has no such copies, so the order is
+    duplicates onto the taxonomy axis (a native `/.specs/` repo has no such copies, so the order is
     harmless there and still holds).
   Never run a later front before an earlier one.
 - **Loop across fronts, because they feed each other.** This is the whole reason this command is
   not three invocations typed in a row. The concrete edges:
-  - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `docs/` → the `docs/`
+  - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `/.docs/` → the `/.docs/`
     front's glossary stage must now index those terms.
-  - `/quenching:skill:align` **creates** the rule and registry in `docs/` → the `docs/` front's `index.md`
+  - `/quenching:skill:align` **creates** the rule and registry in `/.docs/` → the `docs` front's `index.md`
     must list them.
-  - `/quenching:docs:align`'s **harness** stage moves a fact into `docs/` that a `specs/` spec should now
+  - `/quenching:docs:align`'s **harness** stage moves a fact into `/.docs/` that a `/.specs/` spec should now
     cite instead of restating.
   A single cross-front pass would leave every one of those half-done.
 - **One OK for the whole repo; authorization nests one level.** The gate fires **once**, before
@@ -74,8 +74,8 @@ here, not three edits that must stay in agreement.
 - **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
   behaviour must change, change that front's align — the same ONE-authority-per-concern rule that
   keeps each align from re-deriving its own stages' logic.
-- **Front presence decides the pass; only `docs/` is installed unasked.** An absent `docs/` bundle
-  is *the* thing this plugin installs, so front 1 always runs. An absent `specs/` is **offered as
+- **Front presence decides the pass; only `/.docs/` is installed unasked.** An absent `/.docs/` bundle
+  is *the* thing this plugin installs, so front 1 always runs. An absent `/.specs/` is **offered as
   its own line in the plan** — scaffolding it imposes a spec-driven workflow, so it is opt-in,
   never a side effect. An empty `.claude/` surface (no commands, no skills) skips front 3 with a
   note rather than scaffolding a taxonomy for nothing.
@@ -88,11 +88,11 @@ here, not three edits that must stay in agreement.
 ### 1. Probe the three fronts (read-only, cheap)
 Presence and rough scale only — **not** a full inventory, which each align does for itself, and
 each already probes before paying for one:
-- **docs/** — does a bundle root exist (`docs/` or the repo's variant, `index.md` /
-  `okf_version`)? Run `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <docs> --json` and keep
+- **`/.docs/`** — does the bundle root exist (`/.docs/index.md` with `okf_version`)? Run
+  `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py /.docs --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
-- **specs/** — does a `specs/` root exist? If yes, `specs.py doctor --json` and
+- **`/.specs/`** — does a `/.specs/` root exist? If yes, `specs.py doctor --json` and
   `specs.py list --json` for the spec count and how many read complete.
 - **.claude/** — `skills.py doctor --json` for the command count and its findings; `Glob`
   `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
@@ -123,14 +123,14 @@ nothing has been written.
 One short table: front · state · what its align will do, including which of its **content stages**
 have work (counts and scope, **not** full diffs — each align still presents its own detailed plan
 as narration when it runs) · skipped-and-why. Name the specs proposed for conclusion. An absent
-`specs/` appears as an explicit opt-in line (*"scaffold `specs/`? — declining skips front 2"*).
+`/.specs/` appears as an explicit opt-in line (*"scaffold `/.specs/`? — declining skips front 2"*).
 
 State plainly: *"this authorizes up to 3 cross-front passes of every stage below; each front align
 inherits this OK and will not ask again; only a rename touching product code and each spec's
 close-out still confirm on their own."* Wait for **one** OK.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
-### 3. Front 1 — `/quenching:docs:align` (the `docs/` bundle)
+### 3. Front 1 — `/quenching:docs:align` (the `/.docs/` bundle)
 Invoke via the **Skill** tool under its registry name **`quenching:docs:align`** — the command path
 prefixed by the plugin. Every front below is named the same way; the three forms and the condition
 on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
@@ -141,12 +141,12 @@ Declare the authorization mode verbatim per
 granted at run start — skip your plan-confirmation pause; present your plan as narration and
 execute; code-coupled and irreversible items still gate individually."*
 
-It loops the `docs/` front to its own fixpoint. Record what it changed and its residual validator
+It loops the `docs` front to its own fixpoint. Record what it changed and its residual validator
 findings. A hard failure here (the bundle could not be established) **stops the run** — fronts 2
 and 3 write into the bundle.
 **Done when:** the align has finished and its outcome is recorded.
 
-### 4. Front 2 — `/quenching:specs:align` (the `specs/` workspace)
+### 4. Front 2 — `/quenching:specs:align` (the `/.specs/` workspace)
 Skip if the front was marked absent and the scaffold line was declined. Otherwise invoke
 **`quenching:specs:align`** with the same declaration. Record its counts, **which specs were
 concluded** (their distillations are the main cross-front feed into front 1's next pass), and its
@@ -164,8 +164,8 @@ verify the front order held before invoking. Record its counts and its **doctrin
 
 ### 6. Re-probe across fronts → decide (loop or stop)
 Re-run step 1's probe **plus** a check of the specific cross-front edges: did front 2 conclude
-anything (→ new `docs/` content for front 1's glossary stage)? did front 3 create the rule or
-registry (→ `docs/` listings to regenerate)? Then decide by the four outcomes in
+anything (→ new `/.docs/` content for front 1's glossary stage)? did front 3 create the rule or
+registry (→ `/.docs/` listings to regenerate)? Then decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another cross-front pass from step 3 under the same
 authorization, narrating what each front will do this time (fronts whose input is unchanged will
@@ -184,8 +184,8 @@ state (validator findings · `doctor`/`validate` · registry-vs-disk), and — e
 so the loop's value is visible.
 
 State which **operator manuals** each front installed, refreshed, or left alone
-(`docs/QUENCHING.md`, `specs/QUENCHING.md`, `.claude/QUENCHING.md`) — each front writes its own;
-this command only reports them, and points a first-time adopter at `docs/QUENCHING.md` as the place
+(`/.docs/QUENCHING.md`, `/.specs/QUENCHING.md`, `.claude/QUENCHING.md`) — each front writes its own;
+this command only reports them, and points a first-time adopter at `/.docs/QUENCHING.md` as the place
 to start.
 
 This command writes **nothing** of its own — not even a record that it ran. Every write belongs
@@ -204,7 +204,7 @@ to the front align that made it, and the report is where this run is accounted f
   tool, always.
 - Never act on a front's reported residue (concluding a spec it only listed, minting a command,
   writing a standard) — carry it into the report and name the command that owns it.
-- Never scaffold `specs/` without its own explicit line in the plan, and never scaffold a
+- Never scaffold `/.specs/` without its own explicit line in the plan, and never scaffold a
   `.claude/` taxonomy for an empty surface.
 - Never loop past the cross-front pass cap of 3, never re-run a pass that just changed nothing, and
   never widen scope to force a clean number.

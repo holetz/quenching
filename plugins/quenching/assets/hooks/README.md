@@ -1,15 +1,15 @@
 # assets/hooks/ — the OKF enforcement hook
 
 Self-contained enforcement payload of the `quenching` plugin. Keeps a target
-repo's `docs/` bundle aligned to OKF. **Nothing here is installed into a target** —
+repo's `/.docs/` bundle aligned to OKF. **Nothing here is installed into a target** —
 the plugin's own `hooks/hooks.json` wires the checker at
 `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`, so it works in every repo that
 has the plugin.
 
 | File | Role |
 | --- | --- |
-| `okf-validate.py` | The OKF v0.1 conformance checker. Zero dependencies. Runs as a **CLI** (`okf-validate.py <docs-dir>` — used by the skills and the verification step) or as a **hook** (reads the hook JSON on stdin). `--version` prints its version (kept in lockstep with the plugin `VERSION`). |
-| `hooks-config.json` | The **defaults reference** for the `okfValidate` block: `enabled`, `docsDir`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`. A target that wants to override them maintains its own `.claude/hooks/hooks-config.json`; `docsDir`'s preferred home is `.claude/quenching.json`. |
+| `okf-validate.py` | The OKF v0.1 conformance checker. Zero dependencies. Runs as a **CLI** (`okf-validate.py /.docs` — used by the skills and the verification step) or as a **hook** (reads the hook JSON on stdin). `--version` prints its version (kept in lockstep with the plugin `VERSION`). |
+| `hooks-config.json` | The **defaults reference** for the `okfValidate` block: `enabled`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`. A target that wants to override them maintains its own `.claude/hooks/hooks-config.json`. |
 | `settings.snippet.json` | The wiring, kept as a **reference copy** of what `hooks/hooks.json` declares. Nothing merges it into a target any more. |
 
 ## What it checks (the OKF core)
@@ -19,7 +19,7 @@ has the plugin.
   fields (`title`/`description`/`resource`/`timestamp`) → WARN.
 - **`index.md`** (reserved listing): must **not** carry a concept `type` (ERROR).
   A non-root `index.md` must have **no frontmatter** (ERROR). The **root**
-  `docs/index.md` may carry frontmatter but only `okf_version` (should be `"0.1"`).
+  `/.docs/index.md` may carry frontmatter but only `okf_version` (should be `"0.1"`).
 - **`log.md`** (reserved history): `## YYYY-MM-DD` headings, newest first; no `type`.
 - **Structural integrity** (whole-tree, CLI + `Stop`; all WARN): `dir-no-index` (a folder
   holds concept docs but has no `index.md`), `index-broken-link` (a listing points to a
@@ -38,7 +38,7 @@ has the plugin.
 
 - **Dirty-gated Stop** (`stopScan: "dirty"`, the default): `PostToolUse` touches a
   marker file in the system temp dir (`okf-dirty-<sha1(project)[:12]>`) on every
-  `docs/**` edit; `Stop` scans only when the marker exists, else exits on **one stat**
+  `/.docs/**` edit; `Stop` scans only when the marker exists, else exits on **one stat**
   (<5 ms). The marker is cleared after any **completed** scan (a fixing edit re-arms
   it) and **kept** when `deadlineMs` aborts a scan mid-walk. Trade-off: a brand-new
   session over an already-dirty bundle does not re-report until the first docs edit —
@@ -54,15 +54,11 @@ has the plugin.
 
 ## Configuring a target
 
-Nothing is copied and nothing is merged. The only thing a target may want to declare is
-where its bundle lives, when it is not `docs/`:
-
-- `docsDir` in the target's `.claude/quenching.json` — the preferred home, read relative
-  to the project root.
-- The remaining knobs (`enabled`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`,
-  `stopScan`, `ignoreGlobs`) are read from the target's own
-  `.claude/hooks/hooks-config.json` when it maintains one by hand. The copy in this
-  directory is the **defaults reference**, not something an align installs.
+Nothing is copied and nothing is merged. The bundle root is the fixed `/.docs/` convention —
+no config names it. The knobs (`enabled`, `warnAsError`, `blockOnFail`, `hardBlock`,
+`deadlineMs`, `stopScan`, `ignoreGlobs`) are read from the target's own
+`.claude/hooks/hooks-config.json` when it maintains one by hand. The copy in this
+directory is the **defaults reference**, not something an align installs.
 
 ## Legacy copies
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""specs.py — self-contained deterministic trail for the `specs/` front.
+"""specs.py — self-contained deterministic trail for the `/.specs/` front.
 
 Payload of the `quenching` plugin, sibling of `assets/hooks/okf-validate.py`
 and built in the same mold: stdlib-only, ZERO dependencies (its own minimal
@@ -10,7 +10,7 @@ ONE SPEC IS ONE FILE
 A spec is a single markdown file for its whole lifecycle. Phases enrich it; they
 never split it. The file lives in ONE folder until it is closed, and is never renamed:
 
-    specs/
+    .specs/
       plans/                     # ACTIVE — captured -> proposed -> designed -> refined
         <slug>.md                #          -> ready -> approved -> executing
       archive/                   # done or abandoned, told apart by `outcome:` frontmatter
@@ -76,8 +76,8 @@ OUTPUT CONTRACT (uniform across every subcommand)
   2  refusal  (an ambiguous slug; a gate not met; archiving `done` with open tasks)
 
 WORKSPACE RESOLUTION
-  --root PATH, else $SPECS_ROOT, else the nearest `specs/` directory walking up from
-  cwd (or cwd itself if it is named `specs`). `new` creates `./specs` when none exists.
+  --root PATH, else $SPECS_ROOT, else the nearest `/.specs/` directory walking up from
+  cwd (or cwd itself if it is named `.specs`). `new` creates `./.specs` when none exists.
 
 ASSETS
   Schema and template load from `<script>/../specs/` when present (so editing the
@@ -98,7 +98,7 @@ import re
 import sys
 import unicodedata
 
-VERSION = "4.12.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.13.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -192,7 +192,7 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
-STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
+STANDARD_PATH_RE = re.compile(r"/\.docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
 
 # --------------------------------------------------------------------------- #
 # embedded assets (fallbacks when the sibling asset files are absent)
@@ -209,12 +209,14 @@ DEFAULT_SCHEMA: dict = {
     "frontmatter": {
         "required": ["slug", "title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed",
-                     "merge", "outcome"],
+                     "merge", "outcome", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
             "priority": {"fields": ["level", "criticality", "complexity", "date"],
-                         "writtenBy": "triage", "writeOnce": False, "label": "spec:ranked"},
+                         "writtenBy": "triage", "writeOnce": False, "label": "spec:ranked",
+                         "complexity": {"levels": ["low", "medium", "high", "xhigh"],
+                                        "writtenBy": ["triage", "create", "develop"]}},
             "refined": {"fields": ["mode", "date"],
                         "writtenBy": "develop", "writeOnce": False,
                         "label": "spec:interrogated"},
@@ -252,9 +254,9 @@ DEFAULT_SCHEMA: dict = {
         {"heading": "Outcome", "order": 14, "group": "archive", "moment": "close"},
     ],
     "impact": {
-        "parsedSubheading": "Standards this spec will write into docs/standards/",
-        "acceptedAliases": ["Standards this plan will write into docs/standards/"],
-        "pathPrefix": "docs/standards/",
+        "parsedSubheading": "Standards this spec will write into /.docs/standards/",
+        "acceptedAliases": ["Standards this plan will write into /.docs/standards/"],
+        "pathPrefix": "/.docs/standards/",
     },
     "phases": [
         {"id": "plans", "folder": "plans", "role": "active",
@@ -386,21 +388,21 @@ verification: <VERIFICATION>
 <!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
-     docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
-     `docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
+     /.docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
+     `/.docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
      validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
      anchor.
 
      Example of a parsed bullet:
-       - `docs/standards/naming/command-surface.md` — the bijection rule for wrappers
+       - `/.docs/standards/naming/command-surface.md` — the bijection rule for wrappers
 
      The sibling sub-headings are prose for the reader and are deliberately NOT parsed: they
      name paths the spec never promised to write. A spec with no such sub-heading declares
      nothing and is never flagged — the check is opt-in by writing the heading. -->
 
-### Standards this spec will write into docs/standards/
+### Standards this spec will write into /.docs/standards/
 
-- `<docs/standards/subject/concept.md>` — <the rule it states>
+- `</.docs/standards/subject/concept.md>` — <the rule it states>
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -488,6 +490,8 @@ verification: <VERIFICATION>
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
+               A trailing parenthetical is closed grammar: `(new)` is the ONLY reserved
+               annotation, and anything else is refused with `sp-files-annotation`.
      pattern:  an existing file to imitate — the cheapest context an executor can be given.
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
@@ -503,7 +507,7 @@ verification: <VERIFICATION>
        - [ ] 3.3 [P] Add the rate-limit config loader
 
      Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
-     marked tasks' `files:` sets are provably disjoint and none writes into `docs/` —
+     marked tasks' `files:` sets are provably disjoint and none writes into `/.docs/` —
      `specs.py parallel` checks the disjunction mechanically rather than judging it in prose.
      Serial execution is the default and needs no marker.
 
@@ -552,7 +556,7 @@ verification: <VERIFICATION>
 # --------------------------------------------------------------------------- #
 # The YAML comment rule — one rule, three copies
 #
-# `docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
+# `/.docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
 # list and the lockstep obligation. `skills.py` and `okf-validate.py` carry the same
 # functions; each installs standalone into a target's `.claude/hooks/`, so none may
 # import the others. EDIT ALL THREE, OR NONE — `CANONICAL_CASES` below is what makes
@@ -722,7 +726,7 @@ def frontmatter_anomalies(text: str) -> list[dict]:
     Every entry is a suspicion the tool cannot resolve, never a proven violation: a
     stripped comment and lost prose are byte-identical, and nothing here guarantees
     Claude Code's own loader resolves a duplicate key the way this one does. Callers
-    surface them at WARN — see `docs/standards/quality/parse-honesty.md`."""
+    surface them at WARN — see `/.docs/standards/quality/parse-honesty.md`."""
     body = _frontmatter_body(text)
     if body is None:
         return []
@@ -781,7 +785,7 @@ def _anomaly(key: str, kind: str, detail: str) -> dict:
     return {"key": key, "kind": kind, "detail": detail}
 
 
-# The canonical case list from `docs/standards/code/frontmatter-parsing.md`. It is
+# The canonical case list from `/.docs/standards/code/frontmatter-parsing.md`. It is
 # duplicated VERBATIM in skills.py and okf-validate.py and is the lockstep unit for
 # all three: adding a row means adding it in three places, and a parser that drifts
 # fails here on a row the other two still pass.
@@ -1049,25 +1053,36 @@ def find_specs_root(root_arg: str | None) -> str:
     if env:
         return os.path.abspath(env)
     cur = os.path.abspath(os.getcwd())
-    if os.path.basename(cur) == "specs":
+    if os.path.basename(cur) == ".specs":
         return cur
     d = cur
     while True:
-        cand = os.path.join(d, "specs")
+        cand = os.path.join(d, ".specs")
         if os.path.isdir(cand):
             return cand
         parent = os.path.dirname(d)
         if parent == d:
             break
         d = parent
-    return os.path.join(cur, "specs")   # default (created by `new`)
+    return os.path.join(cur, ".specs")   # default (created by `new`)
 
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
-               "integrationBranch", "releaseBranch", "hooks", "profiles")
+               "integrationBranch", "releaseBranch", "hooks", "profiles",
+               "azurePlacement", "azureColumns", "subjects", "tagCatalog")
 BACKENDS = ("files", "github", "azure-boards")
+# `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
+# REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
+# where a spec is born rather than what state it reads as. `open_azure_backend` is where that
+# refusal lives; this tuple only says which sub-keys `load_config` keeps.
+AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
+                        "iterationPath", "boardColumn", "defaultSubject")
+# `discoveryTag`'s default. Unlike `areaPath`, this name is the TOOL's, not the project's —
+# same argument `specsBranch` already carries — so it defaults rather than refuses;
+# configurable only to resolve a collision with a tag the project already uses.
+AZ_DEFAULT_DISCOVERY_TAG = "quenching-spec"
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
 # Unlike `specsBranch`, these two default to `None` in `load_config`'s own return — never
@@ -1097,12 +1112,15 @@ DEFAULT_RELEASE_BRANCH = "main"
 # the read (`installed` must be a list of non-empty strings) and its content is never
 # interpreted: what a front is, and what the list means, is the standard's, not the loader's.
 
-# The backends that ship without ever having run against a real target. `## Out of Scope`
-# accepts that for `azure-boards`, and the selftest's completeness and refusal checks are
-# what it has instead. Named HERE rather than inside the backend so that retiring the
-# caveat is one edit: a real Azure DevOps project exercises it, this tuple loses a name,
-# and the doctor finding and the write-time line go quiet together.
-UNPROVED_BACKENDS = ("azure-boards",)
+# The backends that ship without ever having run against a real target. Empty now:
+# `azure-boards` was the one name here, and the provar-e-posicionar-o-backend-azure-boards
+# plan's §6 ran it end to end against a real Azure DevOps project (org unicredbr, team "Diretoria
+# Risco") — `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+# `show` and `promote --outcome done`, each compared against `files` for the same state and
+# matching, plus the board's own column tracking the de-para through every transition. This
+# tuple losing the name is what retires the caveat everywhere at once: the doctor finding
+# and the write-time line (`announce_unproved`) both go quiet together.
+UNPROVED_BACKENDS = ()
 
 _UNPROVED_ANNOUNCED: set[str] = set()
 
@@ -1114,9 +1132,9 @@ def announce_unproved(name: str) -> None:
     becomes a per-call tax on the agent reading this CLI, paid forever for a fact that never
     changes between calls. Silence is not defensible either, because the unproved paths do
     not all fail the same way: a wrong `AZ_SPEC_TYPE` fails LOUDLY — `az` answers with an
-    API error and the transport turns it into an exit-2 refusal — but a relation whose child
-    ids do not extract fails QUIETLY, returning a spec with no tasks, and a write that fails
-    halfway leaves work items behind on somebody's real board. So the line lands on the
+    API error and the transport turns it into an exit-2 refusal — but a field that accepts a
+    value and silently coerces it to another fails QUIETLY, and a write that fails halfway
+    leaves work items behind on somebody's real board. So the line lands on the
     writes, where an unproved path can cost something that does not announce itself, and
     reads — the overwhelming majority of a build loop's calls — stay silent. The permanent,
     zero-noise half of the same answer is `sp-backend-unproved` in `doctor`.
@@ -1137,7 +1155,7 @@ def find_repo_root(specs_root: str) -> str:
 
     Git's own top level first, because it is the answer that survives being invoked from a
     subdirectory. Falling back to the specs workspace's parent, which is the repo root by
-    construction: `specs/` sits beside `.claude/`, never below it.
+    construction: `/.specs/` sits beside `.claude/`, never below it.
 
     The git call is skipped outright when `specs_root` does not exist. `_git` falls back to
     running from `.` when its `cwd` is missing, so calling it on a path built to be absent —
@@ -1152,13 +1170,13 @@ def load_config(root: str) -> dict:
     """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
 
-    THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `specs/config.json`, at the
+    THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `/.specs/config.json`, at the
     root of the specs workspace, holding one key. Two things broke that home: a repo whose
-    backend is external may have no `specs/` folder at all, so a config that lives inside
+    backend is external may have no `/.specs/` folder at all, so a config that lives inside
     the workspace cannot say where the workspace is; and the config stopped being the specs
     front's alone. `.claude/` is the one directory every front already shares.
 
-    A leftover `specs/config.json` comes back as `legacyPath` rather than being read. Merging
+    A leftover `/.specs/config.json` comes back as `legacyPath` rather than being read. Merging
     the two silently would leave a repo with a config that half-works and no way to tell which
     file won; `doctor` names it instead.
 
@@ -1179,6 +1197,7 @@ def load_config(root: str) -> dict:
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
            "azureStates": None, "hooks": {}, "profiles": None,
            "integrationBranch": None, "releaseBranch": None,
+           "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1258,17 +1277,73 @@ def load_config(root: str) -> dict:
         if (isinstance(installed, list)
                 and all(isinstance(front, str) and front.strip() for front in installed)):
             out["profiles"] = {"installed": [front.strip() for front in installed]}
+    # `azurePlacement` describes the PROJECT, not the backend — `subjects` and `tagCatalog`
+    # apply equally to `github`, so they are read here unconditionally, the same as
+    # `azurePlacement` and `azureColumns` themselves; a repository on `files` or `github`
+    # simply never has anything ask for them. Every sub-key is independently optional at this
+    # layer — `areaPath`'s absence is a REFUSAL, but that refusal belongs to
+    # `open_azure_backend`, which is the one caller in a position to say no spec was read or
+    # written; `load_config` only ever reports.
+    placement_raw = obj.get("azurePlacement")
+    if isinstance(placement_raw, dict):
+        out["azurePlacement"] = {k: placement_raw[k].strip()
+                                 for k in AZURE_PLACEMENT_KEYS
+                                 if isinstance(placement_raw.get(k), str)
+                                 and placement_raw[k].strip()}
+
+    # A board-state → lane de-para, consulted by the backend and never derived by it. Any
+    # subset is legal — `boardColumn` in `azurePlacement` is the declared fallback for a
+    # state absent from this table, so the table itself carries no all-or-nothing rule.
+    columns_raw = obj.get("azureColumns")
+    if isinstance(columns_raw, dict):
+        out["azureColumns"] = {str(k): v.strip() for k, v in columns_raw.items()
+                               if isinstance(k, str) and k.strip()
+                               and isinstance(v, str) and v.strip()}
+
+    # One entry per subject a spec may be born under. `name` and `description` are required
+    # for an entry to exist at all — a nameless or description-less subject cannot be
+    # proposed to a human, which is the whole point of declaring one — `parent` (the Feature
+    # id a human already created) and `tags` (fixed tags applied at creation) are optional.
+    subjects_raw = obj.get("subjects")
+    if isinstance(subjects_raw, dict):
+        subjects: dict[str, dict] = {}
+        for key, val in subjects_raw.items():
+            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
+                continue
+            name = val.get("name")
+            description = val.get("description")
+            if not (isinstance(name, str) and name.strip()
+                    and isinstance(description, str) and description.strip()):
+                continue
+            entry = {"name": name.strip(), "description": description.strip()}
+            parent = val.get("parent")
+            if isinstance(parent, int) and not isinstance(parent, bool):
+                entry["parent"] = parent
+            tags = val.get("tags")
+            if isinstance(tags, list):
+                entry["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
+            subjects[key.strip()] = entry
+        out["subjects"] = subjects
+
+    # A catalogue of tag → description, read by an agent to PROPOSE a tag at creation time —
+    # the description is prompt material, never documentation, which is why an empty one is
+    # dropped rather than kept as a nameless tag nobody could ever choose correctly.
+    catalog_raw = obj.get("tagCatalog")
+    if isinstance(catalog_raw, dict):
+        out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
+                             if isinstance(tag, str) and tag.strip()
+                             and isinstance(desc, str) and desc.strip()}
     return out
 
 
 def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
     """An unstamped spec's `base`, stopping at the first that answers — the chain
-    docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
+    /.docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
     record is absent, and the caller's own git facts (`origin_head`, `init_default`)
     already resolved: this function decides only the ORDER, never runs git itself.
 
     A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
-    flow (docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
+    flow (/.docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
     PUBLICATION branch — so falling through to it by default would merge an unstamped
     spec into the one branch that must only ever receive a deliberate release. Left
     undeclared, this function changes nothing: most repositories have no `develop`
@@ -1305,8 +1380,70 @@ def base_inference_failures() -> list[str]:
     return out
 
 
+def resolve_subject(cfg: dict, key: str | None) -> tuple[dict | None, dict]:
+    """`subjects.<key>` — explicit or `azurePlacement.defaultSubject` — or the refusal
+    `## Open Decisions` names for each way it can fail. Generic over every backend: `subjects`
+    describes the PROJECT, not `azure-boards` alone (`plugin-configuration.md` §The recognised
+    keys), so `github`'s `create_spec` calls this too, for the fixed tags a subject carries
+    even where there is no parent to apply them alongside.
+
+    `subjects` undeclared is NOT a refusal WHEN NOTHING WAS ASKED FOR — the feature is simply
+    not in use, the same `## Absence is the normal case` every other key in this file gets. An
+    EXPLICIT `--subject` still refuses against nothing declared: a human typed a key on
+    purpose, and silently ignoring it would build the spec they did not ask for. Declaring
+    subjects at all is what makes an unresolved one — explicit or defaulted — a refusal
+    instead: a spec born with no resolved subject fails the team's own checklist (no Parent),
+    and `## Open Decisions` calls refusing the only honest end."""
+    subjects = cfg.get("subjects") or {}
+    if key is None and not subjects:
+        return None, {}
+    resolved_key = key or (cfg.get("azurePlacement") or {}).get("defaultSubject")
+    if not resolved_key:
+        return None, {
+            "code": "sp-no-subject", "exit": 2,
+            "message": f"subjects are declared in {CONFIG_FILE} but none resolved — pass "
+                       f"`--subject <key>`, or declare `azurePlacement.defaultSubject`; "
+                       f"declared: {', '.join(sorted(subjects))}",
+        }
+    if resolved_key not in subjects:
+        return None, {
+            "code": "sp-subject-unknown", "exit": 2, "subject": resolved_key,
+            "message": f"subject '{resolved_key}' is not declared in {CONFIG_FILE}'s "
+                       f"`subjects` — declared: {', '.join(sorted(subjects))}",
+        }
+    return subjects[resolved_key], {}
+
+
+def subject_resolution_failures() -> list[str]:
+    """The two refusals `## Open Decisions` names, and the one non-refusal that keeps
+    `subjects` optional for a repository that never declared any."""
+    out: list[str] = []
+    engineering = {"name": "Engenharia", "description": "d", "tags": ["Vertical: Eng"]}
+    cases = (
+        ({"subjects": {}}, None, "no subjects declared, nothing asked, is not a refusal",
+         None, None),
+        ({"subjects": {}}, "eng", "an explicit key against nothing declared still refuses",
+         None, "sp-subject-unknown"),
+        ({"subjects": {"eng": engineering}}, "eng",
+         "an explicit key that exists resolves it", engineering, None),
+        ({"subjects": {"eng": engineering}, "azurePlacement": {"defaultSubject": "eng"}},
+         None, "no explicit key falls back to defaultSubject", engineering, None),
+        ({"subjects": {"eng": engineering}}, None,
+         "no key and no default refuses", None, "sp-no-subject"),
+        ({"subjects": {"eng": engineering}}, "ghost",
+         "a declared key that does not exist refuses", None, "sp-subject-unknown"),
+    )
+    for cfg, key, label, want_subject, want_code in cases:
+        subject, err = resolve_subject(cfg, key)
+        if subject != want_subject:
+            out.append(f"{label}: subject was {subject!r}, not {want_subject!r}")
+        if err.get("code") != want_code:
+            out.append(f"{label}: refusal code was {err.get('code')!r}, not {want_code!r}")
+    return out
+
+
 # --------------------------------------------------------------------------- #
-# release — the mechanical half of docs/standards/ci-cd/versioning-release.md
+# release — the mechanical half of /.docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
 # Seven artifacts, not six: `session.py` sits outside the SIX-artifact lockstep that
 # standard names (nothing installs a copy of it, so `drift` never compares it against
@@ -1557,6 +1694,47 @@ def _stage_match(when: dict, sections: dict, fm: dict, tasks: list[dict]) -> boo
     return False
 
 
+def _split_files(val: str) -> list[str]:
+    """Comma-split that respects parentheses: a comma inside `(…)` belongs to the same
+    entry, so a comment like `a.md (descartável, revertido ao fim)` reads as ONE path
+    instead of two invented ones the executor could not tell from real paths. Depth is
+    tracked, never counted: an unbalanced `(` simply keeps the rest of the line one
+    entry. Stdlib-only."""
+    out: list[str] = []
+    depth = 0
+    start = 0
+    for i, ch in enumerate(val):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        elif ch == "," and depth == 0:
+            piece = val[start:i].strip()
+            if piece:
+                out.append(piece)
+            start = i + 1
+    piece = val[start:].strip()
+    if piece:
+        out.append(piece)
+    return out
+
+
+FILES_ANNOTATION_RE = re.compile(r"\s*\(([^()]*)\)\s*$")
+
+
+def _files_bad_annotation(entry: str) -> str | None:
+    """The single reserved `files:` annotation is `(new)` — a path about to be created,
+    which `_norm_file` strips for comparisons. Any OTHER trailing parenthetical is a
+    human comment; kept inside the entry, the executor receives a path that exists
+    nowhere with the same confidence as a real one — the silent failure this rule
+    closes. Return the annotation text so the caller can refuse the entry."""
+    m = FILES_ANNOTATION_RE.search(entry)
+    if not m:
+        return None
+    note = m.group(1)
+    return None if note == "new" else note
+
+
 def parse_tasks(text: str) -> list[dict]:
     """Every checkbox under `## Tasks`, in order: index, explicit id, state, text, line
     number, the `[P]` marker, the optional indented metadata (`files`/`pattern`/`verify`),
@@ -1608,7 +1786,7 @@ def parse_tasks(text: str) -> list[dict]:
                 meta_indent = cont[:len(cont) - len(cont.lstrip())]
             last_meta_off = off
             if key == "files":
-                files = [p.strip() for p in val.split(",") if p.strip()]
+                files = _split_files(val)
             elif key == "pattern":
                 pattern = val
             elif key == "cwd":
@@ -1757,7 +1935,7 @@ def task_progress(tasks: list[dict]) -> tuple[int, int, int]:
 
 
 def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
-    """The `docs/standards/**.md` paths a spec DECLARES it will write, read from the one
+    """The `/.docs/standards/**.md` paths a spec DECLARES it will write, read from the one
     fixed sub-heading of `## Impact`.
 
     Only that sub-heading is parsed, and deliberately so. Its siblings name paths the spec
@@ -1924,6 +2102,70 @@ def derive_info(spec: dict, text: str) -> dict:
     return info
 
 
+def board_state_of(info: dict) -> str:
+    """The `azureColumns` de-para's KEY, computed in the core and merely CONSULTED by the
+    backend — `spec-backend.md` §The interface is the document, not the verbs already
+    forbids a backend deriving anything of its own, and a board-state precedence is exactly
+    that kind of derivation.
+
+    PRECEDENCE: `archived` (the `archive` phase) > `reviewed` (the record `/specs:conclude`
+    stamps) > the derived stage. `reviewed` outranks the derived stage because it is the
+    fact `plugin-configuration.md`'s `azureColumns` example maps to the `Aprovação` lane —
+    the derived stage alone cannot tell "approved and executing" from "reviewed and awaiting
+    merge", and the record is what does."""
+    if info["phase"] == "archive":
+        return "archived"
+    if info["frontmatter"].get("reviewed"):
+        return "reviewed"
+    return info["stage"]
+
+
+def board_state_failures() -> list[str]:
+    """The three-way precedence, each rung checked against the other two."""
+    out: list[str] = []
+    cases = (
+        ({"phase": "archive", "frontmatter": {"reviewed": {"date": "x"}}, "stage": "executing"},
+         "archived", "archived outranks reviewed"),
+        ({"phase": "plans", "frontmatter": {"reviewed": {"date": "x"}}, "stage": "executing"},
+         "reviewed", "reviewed outranks the derived stage"),
+        ({"phase": "plans", "frontmatter": {}, "stage": "executing"},
+         "executing", "the derived stage is the floor"),
+    )
+    for info, want, label in cases:
+        got = board_state_of(info)
+        if got != want:
+            out.append(f"{label}: board_state_of returned {got!r}, not {want!r}")
+    return out
+
+
+def tags_outside_catalog(tags: list[str], catalog: dict) -> list[str]:
+    """Which of `tags` are not a `tagCatalog` key — pure, so the write-time proposal
+    (`/specs:create`, §4.1) and `doctor`'s `sp-az-tag-uncatalogued` finding (§2.13) share
+    ONE answer rather than two parsers that could disagree.
+
+    No catalog declared flags nothing: `tagCatalog` is optional, and a repository that never
+    declared one has not opted into this validation at all — the same `## Absence is the
+    normal case` every other key here gets."""
+    if not catalog:
+        return []
+    return [t for t in tags if t not in catalog]
+
+
+def tag_catalog_failures() -> list[str]:
+    """The one flag and the two ways nothing is flagged."""
+    out: list[str] = []
+    cases = (
+        ([], {"a": "d"}, [], "no tags, nothing to flag"),
+        (["a", "b"], {"a": "d"}, ["b"], "one outside the catalog"),
+        (["a"], {}, [], "no catalog declared flags nothing"),
+    )
+    for tags, catalog, want, label in cases:
+        got = tags_outside_catalog(tags, catalog)
+        if got != want:
+            out.append(f"{label}: tags_outside_catalog returned {got!r}, not {want!r}")
+    return out
+
+
 def load_spec(root: str, slug: str) -> tuple[dict | None, dict]:
     """Resolve a slug against the files workspace and derive its document.
 
@@ -1985,16 +2227,14 @@ class SpecBackend:
         """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
         raise NotImplementedError
 
-    def reconcile_labels(self, info: dict, schema: dict | None = None) -> None:
-        """Mirror `derive_labels(info, schema)` onto this backend's native label/tag
-        surface, if it has one — a rendering of derived state, not a sixth primitive.
-
-        No-op by default: `files` and `memory` have no native construct to reconcile
-        against, so neither overrides this. An external backend folds the reconciliation
-        into the same write its own store call already makes rather than a second round
-        trip, which is why this takes `info` and derives fresh rather than accepting a
-        precomputed label list — see docs/standards/architecture/spec-backend.md."""
-        return None
+    # There is no `reconcile_labels` hook here, and the absence is deliberate. One existed
+    # briefly — a no-op on the base class, meant for an external backend to override — and
+    # nothing ever called it or overrode it, because the reconciliation belongs INSIDE
+    # `write_spec`: it has to ride the store call's own request to satisfy the "costs zero
+    # calls beyond the write already being made" condition
+    # (/.docs/standards/architecture/spec-backend.md §Rendering derived state). A hook that
+    # every implementer must fold into `write_spec` anyway is a sixth primitive that does
+    # nothing, and this interface stays five.
 
 
 class FilesBackend(SpecBackend):
@@ -2103,8 +2343,9 @@ BACKEND_CASES = (
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
+    ("set tags/assignee/start/target, then re-read", lambda b: _case_field(b)),
     ("derive labels off the stamped record", lambda b: _case_labels(b)),
-    # AFTER the three cases that author the document, never on the fresh capture form. See
+    # AFTER the five cases that author the document, never on the fresh capture form. See
     # `_case_front`: on a capture form the case passes with the reader broken.
     ("rank the front", lambda b: _case_front(b)),
     ("move to archive", lambda b: _case_move(b)),
@@ -2209,6 +2450,20 @@ def _case_record(b: "SpecBackend") -> dict:
     return spec_records(info["frontmatter"])
 
 
+def _case_field(b: "SpecBackend") -> dict:
+    """The four STATE keys, round-tripped through `write_spec` — the SAME mechanism
+    `_case_write` already proves for a section body, applied to `set_frontmatter_key`
+    instead. Never a record: `_case_record` is what proves those, separately."""
+    info, _ = b.read_spec("alpha")
+    text = info["text"]
+    for key, value in (("tags", '["a", "b"]'), ("assignee", "someone"),
+                       ("start", "2026-01-01"), ("target", "2026-02-01")):
+        text = set_frontmatter_key(text, key, value)
+    b.write_spec(info, text)
+    info, _ = b.read_spec("alpha")
+    return {k: info["frontmatter"].get(k) for k in FIELD_KEYS}
+
+
 def _case_move(b: "SpecBackend") -> dict:
     info, _ = b.read_spec("alpha")
     b.move_spec(info, "archive")
@@ -2297,7 +2552,7 @@ def backend_equivalence_failures() -> list[str]:
     import tempfile
     failures: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
-        root = os.path.join(tmp, "specs")
+        root = os.path.join(tmp, ".specs")
         os.makedirs(os.path.join(root, "plans"))
         os.makedirs(os.path.join(root, "archive"))
         files: SpecBackend = FilesBackend(root)
@@ -2570,19 +2825,37 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # marker did not simply disappear with the date: a repo's issue tracker belongs to its humans,
 # and a backend that treated every open issue as a spec would list the bug reports and then
 # write over them. An HTML comment is the one place in a markdown body that survives a round
-# trip through the issue editor while staying invisible to a human reading the issue, and the
-# same reasoning applies one level down to a continuation comment's own marker, below.
+# trip through GitHub's issue editor while staying invisible to a human reading the issue, and
+# the same reasoning applies one level down to a continuation comment's own marker, below.
 HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
                               r"\s*-->[ \t]*\r?\n")
 
+# `azure-boards`'s own marker shape — measured (task 6.1) that `System.Description` strips any
+# HTML comment on write, in every position tried, which the comment form above cannot survive.
+# A `display:none` div is the nearest equivalent that does: invisible once the field renders,
+# present in the raw value every read gets. `hybrid_wrap`'s `fmt='div'` writes it; this is what
+# reads it back.
+HYBRID_DIV_MARKER_RE = re.compile(
+    r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?'
+    r"\s*</div>[ \t]*\r?\n")
 
-def hybrid_wrap(filename: str, text: str, parts: int = 1) -> str:
+
+def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") -> str:
     """The marker line a spec issue is recognised by, and the document under it.
 
     `parts=` is written ONLY when there is more than one. The single-part form — every document
     but the two largest this repository holds — is therefore byte-identical to the marker as it
-    was before continuations existed, and one regex reads both."""
+    was before continuations existed, and one regex reads both.
+
+    `fmt='div'` is `azure-boards`'s own variant — measured (task 6.1) that `System.Description`
+    STRIPS any HTML comment on write, in any position, which makes the default form invisible
+    the instant it round-trips. A `display:none` div survives the same round trip intact and
+    reads the same way `github`'s comment does: invisible once the field renders as rich text,
+    present in the raw value every read gets. `github`/`files` keep the comment — it already
+    round-trips there, in 69 real specs, and changing it would mean migrating every one."""
     count = f" parts={parts}" if parts > 1 else ""
+    if fmt == "div":
+        return f'<div style="display:none">quenching-spec: {filename}{count}</div>\n{text}'
     return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
 
 
@@ -2595,12 +2868,18 @@ def hybrid_unwrap(body: str) -> tuple[str, str, int]:
 
     `parts` is what tells a reader whether the chunk it just got IS the document or only its
     head, and it is read from the body already in hand. A one-part spec — the normal case —
-    never pays a call to discover there is nothing more to fetch."""
+    never pays a call to discover there is nothing more to fetch.
+
+    BOTH marker shapes are tried, comment first — the reader does not know which backend wrote
+    what it was handed, and never needs to: exactly one of the two ever matches a given body."""
     body = (body or "").replace("\r\n", "\n")
     m = HYBRID_MARKER_RE.match(body)
-    if not m:
-        return "", "", 0
-    return m.group(1), body[m.end():], int(m.group(2) or 1)
+    if m:
+        return m.group(1), body[m.end():], int(m.group(2) or 1)
+    m = HYBRID_DIV_MARKER_RE.match(body)
+    if m:
+        return m.group(1), body[m.end():], int(m.group(2) or 1)
+    return "", "", 0
 
 
 HYBRID_PART_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec-part:\s*(\d+)/(\d+)"
@@ -2779,7 +3058,7 @@ class GitHubBackend(SpecBackend):
     encoding of a record's fields: `derive_labels` computes the desired set from `info`
     alone, and `reconcile_label_set` folds it against whatever the issue already carries so
     a human's own label (never under the `spec:` prefix) is untouched. See
-    docs/standards/architecture/spec-backend.md for the category this is, and why it is not
+    /.docs/standards/architecture/spec-backend.md for the category this is, and why it is not
     the sub-issue projection that was retired.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a
@@ -2893,9 +3172,8 @@ class GitHubBackend(SpecBackend):
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
                 }, int(issue.get("number") or 0), head, parts,
-                    str(issue.get("title") or ""),
-                    [str(l.get("name")) for l in (issue.get("labels") or [])
-                     if isinstance(l, dict) and l.get("name")]))
+                    str(issue.get("title") or ""), self._native_fields(issue),
+                    self._issue_labels(issue)))
         self._rows = rows
         self._legacy = legacy
         return rows
@@ -2918,8 +3196,12 @@ class GitHubBackend(SpecBackend):
         """`(issue number, how many parts are stored, its current labels)` — all three from
         the listing already in hand, so knowing whether there are stale continuation
         comments to clean up, or which labels a write must reconcile against, costs no
-        call of their own."""
-        for descriptor, number, _, parts, _title, labels in self._load():
+        call of their own.
+
+        The labels come back RAW, `spec:` rendering included — this is the one caller that
+        needs them that way, because `reconcile_label_set` diffs against what the issue
+        actually carries. Every other reader goes through `declared_tags`."""
+        for descriptor, number, _, parts, _title, _native, labels in self._load():
             if descriptor["slug"] == slug:
                 return number, parts, labels
         raise BackendRefusal({
@@ -2929,38 +3211,87 @@ class GitHubBackend(SpecBackend):
                        f"was written",
         })
 
+    def _issue_labels(self, issue: dict) -> list[str]:
+        """Every label name on `issue`, RAW — the `spec:` rendering included. Only the write
+        path wants them this way; readers want `declared_tags` over the result."""
+        return [str(lbl.get("name")) for lbl in (issue.get("labels") or [])
+                if isinstance(lbl, dict) and lbl.get("name")]
+
+    def _native_fields(self, issue: dict) -> dict:
+        """`tags`/`assignee`, reassembled from `labels`/`assignees` — the READ half of
+        `## Design` §Armazenado não é projetado. GitHub allows several assignees; the
+        canonical field is singular, so only the first is reflected — the same restriction
+        the schema already puts on every backend. `start`/`target` have no honest native
+        counterpart here (no scheduling fields on an issue) and stay in the document,
+        exactly as `date:` already does.
+
+        EVERY `spec:` LABEL IS EXCLUDED. That surface carries two mechanisms — this storage
+        and the rendering of derived state `derive_labels` computes — and the reserved prefix
+        is what keeps them from reading each other's writes as the spec's own declared
+        content. Reassembling one would make the very next write reaffirm a rendered label as
+        a tag the document claims."""
+        out: dict = {}
+        labels = declared_tags(self._issue_labels(issue))
+        if labels:
+            out["tags"] = labels
+        assignees = [a.get("login") for a in (issue.get("assignees") or [])
+                    if isinstance(a, dict) and a.get("login")]
+        if assignees:
+            out["assignee"] = assignees[0]
+        return out
+
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, _, t, _ in rows})
+                                {d["slug"]: t for d, _, _, _, t, _, _ in rows})
         if err:
             return None, err
         # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
         # resolved to a different one, and looking the document up by the request would
         # raise right after the resolution succeeded.
-        number, head, parts, native = next((n, d, p, t)
-                                           for descriptor, n, d, p, t, _lb in rows
-                                           if descriptor["slug"] == spec["slug"])
+        number, head, parts, native_title, native_fields = next(
+            (n, d, p, t, f) for descriptor, n, d, p, t, f, _lb in rows
+            if descriptor["slug"] == spec["slug"])
         full_text = head if parts <= 1 else self._joined(number, head, parts)
         # The title comes back from the issue's own, which is where the write put it. A
         # document that still carries its own `title:` is returned untouched.
-        return derive_info(spec, hybrid_title_join(full_text, native)), {}
+        info = derive_info(spec, hybrid_title_join(full_text, native_title))
+        info["frontmatter"].update(native_fields)
+        return info, {}
+
+    # `start`/`target` have no native counterpart on an issue (no scheduling fields) and
+    # stay in the document, exactly as `date:` already does — only these two are stored.
+    GH_STORED_KEYS = ("tags", "assignee")
 
     def write_spec(self, info: dict, text: str) -> None:
         number, had_parts, current_labels = self._issue_parts(info["slug"])
         # `derive_info` — the SAME shared derivation every read goes through — off the text
         # about to be written, never a second, backend-own way of deciding the stage: this
-        # class derives nothing of its own, per its own docstring above.
+        # class derives nothing of its own, per its own docstring above. It is also FRESH,
+        # which the stored fields need for a second reason: every caller hands `write_spec`
+        # the OLD `info` beside the NEW `text`.
         new_info = derive_info(info, text)
+        # CARRIED FORWARD where this write's own text is silent — `_store` strips `tags`/
+        # `assignee` from the document, so an ordinary write (a section edit, a ticked task)
+        # hands text that never mentions them at all; reading that absence as "clear them"
+        # would wipe both on the next unrelated write.
+        native_fields = carry_forward_fields(info["frontmatter"], new_info["frontmatter"],
+                                             self.GH_STORED_KEYS)
+        # ONE SURFACE, TWO MECHANISMS, joined here and nowhere else: the spec's own declared
+        # tags are STORAGE, the `spec:` set is a RENDERING recomputed on every write. The
+        # reserved prefix keeps them disjoint — `reconcile_label_set` replaces the rendered
+        # half wholesale and never touches a name outside it, which is exactly what the
+        # stored tags are.
         desired = derive_labels(new_info)
-        labels = reconcile_label_set(current_labels, desired)
-        self._store(number, info["slug"], info["file"], text, had_parts, labels)
+        labels = reconcile_label_set(declared_tags(native_fields.get("tags") or []), desired)
+        self._store(number, info["slug"], info["file"], text, had_parts, labels,
+                    native_fields)
         # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
         # before that call, and fixing a nonexistent label's color 404s. Gated on an
         # actual SET change — `set(...)`, not `!=` on the lists — so the no-milestone-
@@ -2974,7 +3305,8 @@ class GitHubBackend(SpecBackend):
         self._invalidate()
 
     def _store(self, number: int, slug: str, filename: str, text: str,
-               had_parts: int, labels: list[str] | None = None) -> None:
+               had_parts: int, labels: list[str] | None = None,
+               native_fields: dict | None = None) -> None:
         """The whole write, given an issue number already in hand.
 
         Split out for `migrate`, which knows every number from its own scan and must not go
@@ -2982,17 +3314,28 @@ class GitHubBackend(SpecBackend):
         lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
         the SAME serialisation either way — a migration with a writer of its own would be a
         second implementation that runs exactly once, on the day it matters most.
+        `labels`/`assignees`, when given, ride in this SAME PATCH — one call updates title,
+        body, the spec's own stored tags and the tracker's `spec:` rendering together, never
+        a second round trip. `migrate` omits both: a one-time bulk fold is not the moment to
+        reconcile either, and the next ordinary `write_spec` on each folded spec does it for
+        free.
 
-        `labels`, when given, rides in this SAME PATCH — one call updates title, body and
-        the tracker's own `spec:` labels together, never a second round trip. `migrate`
-        omits it: a one-time bulk fold is not the moment to reconcile labels, and the next
-        ordinary `write_spec` on each folded spec does it for free."""
-        stored, title = hybrid_project(slug, text)
+        A label GitHub does not already have fails the WHOLE request atomically (measured
+        against this repository: `not found`, nothing written), which is the write-refusal
+        `## Open Decisions` settles for §3.4: this tool never creates a label to make a
+        write of the SPEC'S OWN tags succeed. `_ensure_label_colors` is not an exception to
+        that — it grooms the `spec:` set this tool renders and owns, never a name the
+        document declared."""
+        stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
+        stored, title = hybrid_project(slug, stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
         payload = {"title": title,
                    "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
         if labels is not None:
             payload["labels"] = labels
+        if native_fields is not None and "assignee" in native_fields:
+            payload["assignees"] = [native_fields["assignee"]] \
+                if native_fields["assignee"] else []
         self._write_api(f"updating issue #{number}", "PATCH",
                         f"repos/{self.repo}/issues/{number}", payload)
         self._sync_parts(number, chunks, had_parts)
@@ -3022,11 +3365,24 @@ class GitHubBackend(SpecBackend):
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
-        stored, title = hybrid_project(m.group(1) if m else filename, text)
+        fresh = derive_info({"phase": phase}, text)
+        stripped = strip_frontmatter_keys(text, self.GH_STORED_KEYS)
+        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         chunks = hybrid_split(stored, GH_PART_MAX)
+        payload = {"title": title,
+                  "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+        # The same union `write_spec` makes, from an empty current set: the spec's declared
+        # tags plus whatever the fresh document already renders. A capture form renders
+        # nothing (no records, `captured` stage), so this is usually just the tags — but
+        # deriving it rather than assuming that keeps the two paths one rule.
+        labels = reconcile_label_set(declared_tags(fresh["frontmatter"].get("tags") or []),
+                                     derive_labels(fresh))
+        if labels:
+            payload["labels"] = labels
+        if fresh["frontmatter"].get("assignee"):
+            payload["assignees"] = [fresh["frontmatter"]["assignee"]]
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                {"title": title,
-                                 "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
+                                payload)
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
         self._sync_parts(number, chunks)
@@ -3285,7 +3641,44 @@ def gh_refusal_failures() -> list[str]:
         failures.append("a marker with no `parts=` did not read as a single-part document")
     if hybrid_unwrap("An ordinary bug report.\n") != ("", "", 0):
         failures.append("an issue with no marker was read as a spec")
+    # `azure-boards`'s own marker (task 6.1): a comment does not survive `System.Description`,
+    # a `display:none` div does. Round-tripped as written, and as the org's own `az` gives it
+    # back — the `style` attribute gets a trailing `;` and the marker text a trailing space,
+    # measured on the real board.
+    for label, body in (
+        ("as written", hybrid_wrap("alpha.md", doc, fmt="div")),
+        ("as az returns it",
+         '<div style="display:none;">quenching-spec: alpha.md </div>\n' + doc),
+    ):
+        name, back, parts = hybrid_unwrap(body)
+        if (name, back, parts) != ("alpha.md", doc, 1):
+            failures.append(f"div marker round trip {label}: got {(name, back, parts)!r}")
     return failures
+
+
+def github_native_field_failures() -> list[str]:
+    """`GitHubBackend._native_fields`, over fake issue payloads shaped exactly like the
+    REST API's own (`labels: [{name}, …]`, `assignees: [{login}, …]`) — no network, no
+    repository. The third of the three backends §3.5 proves a round trip for; `files`/
+    `memory` are `_case_field` (§3.2), `azure-boards` is `azure_native_field_failures`
+    (§3.3-3.4)."""
+    out: list[str] = []
+    gh = GitHubBackend("owner/repo", ".")
+    cases = (
+        ({}, {}, "no labels and no assignees reassembles nothing"),
+        ({"labels": [{"name": "bug"}, {"name": "Vertical: Risco"}]},
+         {"tags": ["bug", "Vertical: Risco"]}, "every label becomes a tag, in order"),
+        ({"assignees": [{"login": "holetz"}, {"login": "second"}]},
+         {"assignee": "holetz"},
+         "only the FIRST assignee is reflected — the canonical field is singular"),
+        ({"labels": [{"name": "bug"}], "assignees": [{"login": "holetz"}]},
+         {"tags": ["bug"], "assignee": "holetz"}, "both together"),
+    )
+    for issue, want, label in cases:
+        got = gh._native_fields(issue)
+        if got != want:
+            out.append(f"{label}: _native_fields returned {got!r}, not {want!r}")
+    return out
 
 
 # The fields `parse_tasks` derives, minus the ones a rebuild reproduces only because the
@@ -3642,10 +4035,18 @@ def _az_said(stdout: str, stderr: str) -> str:
 def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
     """Every way an `az` call can fail, as an exit-2 refusal a human can act on.
 
-    FOUR OUTCOMES, FOUR REMEDIES — one more than the `gh` transport has, because `az boards`
+    FIVE OUTCOMES, FIVE REMEDIES — one more than the `gh` transport has, because `az boards`
     lives in an extension that is not installed by default. A human whose `az` is installed
     and logged in still gets "not recognised" until they add it, and telling them to log in
     again would be the wrong remedy delivered confidently.
+
+    The `code == 0` branch is reached only by `_az`'s single-item calls (show/create/update),
+    which never legitimately print nothing on success. It is never reached for the WIQL
+    query: measured on this org (az 2.89.0 + azure-devops 1.0.6), a query that matches zero
+    work items and a query whose macro failed to resolve are byte-identical — exit 0, empty
+    stdout, empty stderr — so refusing there on emptiness alone would refuse the ordinary
+    "no specs yet" case exactly as often as the fault it exists to catch. `_az`'s caller
+    decides which shape it asked for; this function only renders the refusal once asked.
 
     Always exit 2, always a refusal and never a finding: nothing was read and nothing was
     written."""
@@ -3656,6 +4057,13 @@ def az_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
                        "install `az` (https://aka.ms/azure-cli), then run "
                        "`az extension add --name azure-devops` and `az devops login`; no "
                        "spec was read or written",
+        }
+    if code == 0:
+        return {
+            "code": "sp-az-empty-response", "exit": 2, "action": action,
+            "message": f"`az boards` exited 0 while {action} but printed nothing — a "
+                       f"single-item call never legitimately returns empty, so the response "
+                       f"was cut short; nothing was written",
         }
     said = _az_said(stdout, stderr)
     haystack = f"{stderr or ''}\n{stdout or ''}".lower()
@@ -3701,7 +4109,22 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
                        f"`az devops configure --defaults organization=https://dev.azure.com/"
                        f"<org> project=<project>`; no spec was read or written",
         }
-    return (org, project), {}
+    # RESOLVED TO ITS NAME, never left as whatever `az devops configure` happens to hold.
+    # Measured (task 6.3): a human's default is legitimately a project GUID — `--project`
+    # routing accepts either — but `azure_query_wiql`'s `[System.TeamProject] = '<value>'`
+    # compares against the field's own text value, which is always the NAME; a GUID there
+    # answers `sp-az-api-error` ("not found in hierarchy") on every listing. `az devops
+    # project show` accepts either shape as input and always returns the name, so this is a
+    # no-op for a repo whose default was already a name.
+    code, out, err = _az_run(cwd, "devops", "project", "show", "--project", project,
+                             "--org", org, "--output", "json")
+    if code != 0:
+        return ("", ""), az_refusal("resolving the project's name", code, out, err)
+    try:
+        name = json.loads(out or "null").get("name") or project
+    except json.JSONDecodeError:
+        name = project
+    return (org, name), {}
 
 
 AZ_REFUSAL_CASES = (
@@ -3729,6 +4152,14 @@ AZ_REFUSAL_CASES = (
      "DevOps organization, for example: https://dev.azure.com/MyOrganization/. You can set "
      "a default value by running: az devops configure --defaults "
      "organization=https://dev.azure.com/MyOrganization/.\n", "sp-az-no-project"),
+    # A fifth outcome, `code == 0`: this org's `az boards work-item show/create/update`
+    # never legitimately prints nothing on success, so an empty response is a cut-short
+    # transport failure rather than a shape to accept. Measured separately from the
+    # `@project` macro case in `azure_query_wiql_failures` — that one prints identically
+    # empty stdout for a query matching zero rows, which is why the refusal below reaches
+    # only the single-item calls (`_az`'s `expect='object'`, the default) and never the
+    # WIQL query (`expect='array'`).
+    ("az exits 0 with empty stdout on a single-item call", 0, "", "", "sp-az-empty-response"),
 )
 
 
@@ -3818,12 +4249,168 @@ def unproved_backend_failures() -> list[str]:
     return failures
 
 
+def azure_query_wiql(project: str, area_path: str | None, discovery_tag: str | None) -> str:
+    """The WIQL this backend's listing runs.
+
+    THE PROJECT IS NAMED LITERALLY, NEVER `@project`. Measured on this org (az 2.89.0 +
+    azure-devops 1.0.6): the macro resolves to nothing and the query exits 0 with byte-empty
+    stdout AND stderr — identical to a query that legitimately matches zero work items. There
+    is no signal at the transport layer to tell the two apart, so the literal name is the
+    only fix; a refusal keyed on empty output would refuse the ordinary "no specs yet" case
+    just as often as the macro bug it was meant to catch.
+
+    `area_path` and `discovery_tag` are optional here — they come from `azurePlacement` in
+    `.claude/quenching.json`, which `open_azure_backend` reads and hands the backend. Unset,
+    the query is scoped by project alone, which is the same breadth it always had."""
+    clauses = [f"[System.TeamProject] = '{project}'"]
+    if area_path:
+        clauses.append(f"[System.AreaPath] = '{area_path}'")
+    if discovery_tag:
+        clauses.append(f"[System.Tags] CONTAINS '{discovery_tag}'")
+    return f"SELECT [System.Id] FROM WorkItems WHERE {' AND '.join(clauses)}"
+
+
+def azure_query_wiql_failures() -> list[str]:
+    """The literal-project-name fix and the two optional scopes, pure and self-contained."""
+    out: list[str] = []
+    cases = (
+        ("Proj", None, None,
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj'"),
+        ("Proj", "Proj\\Area", None,
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj' AND "
+         "[System.AreaPath] = 'Proj\\Area'"),
+        ("Proj", None, "quenching-spec",
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj' AND "
+         "[System.Tags] CONTAINS 'quenching-spec'"),
+        ("Proj", "Proj\\Area", "quenching-spec",
+         "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = 'Proj' AND "
+         "[System.AreaPath] = 'Proj\\Area' AND [System.Tags] CONTAINS 'quenching-spec'"),
+    )
+    for project, area, tag, want in cases:
+        got = azure_query_wiql(project, area, tag)
+        if got != want:
+            out.append(f"azure_query_wiql({project!r}, {area!r}, {tag!r}) returned "
+                       f"{got!r}, not {want!r}")
+        if "@project" in got:
+            out.append(f"azure_query_wiql({project!r}, {area!r}, {tag!r}) still carries the "
+                       f"`@project` macro, which this org's `az` resolves to an empty, "
+                       f"indistinguishable-from-zero-matches response")
+    return out
+
+
+def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
+                             rendered: list[str] | None = None) -> tuple[list[str], str | None]:
+    """`(the "field=value" pairs for --fields, the --assigned-to value)` — the pure half of
+    `_apply_native_fields`, so the one rule that matters most is checked without a live `az`:
+    the discovery tag is ALWAYS in the `System.Tags` pair, even where `fm` declares no tags
+    at all, because `_native_fields` excludes it on read and a write that forgot it would
+    silently drop the one thing that makes a spec findable again.
+
+    `System.Tags` is ONE field carrying three classes, joined here and separated on read by
+    `declared_tags`: what the spec declared (`fm['tags']`, storage), this backend's index
+    (the discovery tag), and `rendered` — the `spec:` set `derive_labels` recomputes on every
+    write. `fm['tags']` is filtered through `declared_tags` on the way in as well, so a
+    reserved name that somehow reached the document cannot be written back as if the spec had
+    declared it."""
+    pairs: list[str] = []
+    all_tags = declared_tags(list(fm.get("tags") or []), discovery_tag)
+    if discovery_tag and discovery_tag not in all_tags:
+        all_tags.append(discovery_tag)
+    for name in rendered or []:
+        if name not in all_tags:
+            all_tags.append(name)
+    if all_tags:
+        pairs.append(f"System.Tags={'; '.join(all_tags)}")
+    for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
+                     ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
+        value = fm.get(key)
+        if value:
+            pairs.append(f"{ref}={value}")
+    assignee = fm.get("assignee")
+    return pairs, (str(assignee) if assignee else None)
+
+
+def azure_native_field_failures() -> list[str]:
+    """The one rule that must never regress: the discovery tag survives every write, tagged
+    or not — plus the ordinary cases, so a future edit cannot fix the alarming one by
+    breaking the boring ones."""
+    out: list[str] = []
+    cases = (
+        ({}, "quenching-spec", ["System.Tags=quenching-spec"], None,
+         "no tags at all still writes the discovery tag alone"),
+        ({"tags": ["Vertical: Risco"]}, "quenching-spec",
+         ["System.Tags=Vertical: Risco; quenching-spec"], None,
+         "a declared tag is joined with the discovery tag, never instead of it"),
+        ({"tags": ["quenching-spec"]}, "quenching-spec",
+         ["System.Tags=quenching-spec"], None,
+         "the discovery tag is never duplicated when already declared"),
+        ({"start": "2026-01-01", "target": "2026-02-01"}, "quenching-spec",
+         ["System.Tags=quenching-spec",
+          "Microsoft.VSTS.Scheduling.StartDate=2026-01-01",
+          "Microsoft.VSTS.Scheduling.TargetDate=2026-02-01"], None,
+         "both scheduling dates become their own pair"),
+        ({"assignee": "Someone"}, None, [], "Someone",
+         "no discovery tag declared writes no System.Tags pair at all"),
+    )
+    for fm, tag, want_pairs, want_assignee, label in cases:
+        pairs, assignee = azure_native_field_pairs(fm, tag)
+        if pairs != want_pairs:
+            out.append(f"{label}: pairs were {pairs!r}, not {want_pairs!r}")
+        if assignee != want_assignee:
+            out.append(f"{label}: assignee was {assignee!r}, not {want_assignee!r}")
+    return out
+
+
+def field_strip_failures() -> list[str]:
+    """`strip_frontmatter_keys` drops exactly the four stored keys and nothing else — the
+    WRITE half of the same round trip `azure_native_field_failures` checks the pairs for."""
+    out: list[str] = []
+    text = ("---\nslug: x\ntitle: X\ndate: 2026-01-01\nverification: per-section\n"
+           'tags: ["a", "b"]\nassignee: someone\nstart: 2026-01-01\ntarget: 2026-02-01\n'
+           "---\n\n# X\n")
+    got = strip_frontmatter_keys(text, FIELD_KEYS)
+    for key in FIELD_KEYS:
+        if f"{key}:" in got:
+            out.append(f"strip_frontmatter_keys left `{key}:` in the stripped text")
+    for kept in ("slug: x", "title: X", "date: 2026-01-01", "verification: per-section"):
+        if kept not in got:
+            out.append(f"strip_frontmatter_keys dropped `{kept}`, which it must keep")
+    # `github` strips only `tags`/`assignee` — `start`/`target` have no native counterpart
+    # on an issue and stay in the document, exactly as `date:` already does.
+    gh_stripped = strip_frontmatter_keys(text, GitHubBackend.GH_STORED_KEYS)
+    for key in ("tags", "assignee"):
+        if f"{key}:" in gh_stripped:
+            out.append(f"github stripping left `{key}:` in the stripped text")
+    for kept in ("start: 2026-01-01", "target: 2026-02-01"):
+        if kept not in gh_stripped:
+            out.append(f"github stripping dropped `{kept}`, which it must keep — no "
+                       f"native counterpart exists to reassemble it from")
+    return out
+
+
+# `System.Description`'s real ceiling — measured (task 6.2), not documented anywhere `az`
+# prints: writing past it answers `TF401262: … exceeds the maximum allowed length of
+# 1048576`. Checked in `_az_with_description`, before the call is made.
+AZ_DESCRIPTION_MAX = 1_048_576
+
+# `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
+# resource, not guessed. `_show_many` pays 1 + ⌈N/200⌉ calls for a listing instead of 1 + N.
+AZ_BATCH_SIZE = 200
+# The fields `_show_many` actually reads back, via `_field`: identity, title, state, the
+# hybrid-wrapped document, tags (pulled forward at §2.6 for the untagged-marker sweep), and
+# — §3.3 — the assignee and the two scheduling dates that round out the four stored fields.
+AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description",
+                   "System.Tags", "System.AssignedTo",
+                   "Microsoft.VSTS.Scheduling.StartDate",
+                   "Microsoft.VSTS.Scheduling.TargetDate")
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
-    ONE WORK ITEM IS ONE SPEC and ONE TASK IS ONE CHILD WORK ITEM — the same hybrid shape
-    the `github` backend uses, through the same `hybrid_*` helpers, which is the point of
-    those helpers having stopped being `gh_*`. Everything the two backends agree on is
+    ONE WORK ITEM IS ONE SPEC, the whole document in `System.Description` — the same hybrid
+    shape the `github` backend uses, through the same `hybrid_*` helpers, which is the point
+    of those helpers having stopped being `gh_*`. Everything the two backends agree on is
     literally shared code rather than two implementations that must be kept in step.
 
     IT DERIVES NOTHING, exactly as `GitHubBackend` derives nothing: `derive_info` produces
@@ -3842,46 +4429,91 @@ class AzureBoardsBackend(SpecBackend):
     `Resolved` by a human on the board is still in flight, and only the declared archive
     state means closed. That is the same one-way reading `github` gets from `state=closed`.
 
-    A `spec:` TAG PER PRESENT RECORD, PLUS `spec:built` FOR `executing`, rides in the SAME
-    `--fields System.Tags=…` this backend's `_update` already sends — the same rendering of
-    derived state `github` does with labels, through the same `derive_labels` and
-    `reconcile_label_set`, over `;`-joined `System.Tags` rather than a `labels` array. No
-    color or description here: Azure Boards tags carry neither.
+    `System.Tags` CARRIES THREE CLASSES AND KEEPS THEM DISJOINT. The spec's own declared
+    tags are STORAGE, reassembled on read. The discovery tag is this backend's INDEX,
+    re-added on every write. A `spec:` tag per present record, plus `spec:built` for
+    `executing`, is a RENDERING of derived state — the same one `github` does with labels,
+    through the same `derive_labels` and `reconcile_label_set`, over `;`-joined
+    `System.Tags` rather than a `labels` array (no color or description here: Azure Boards
+    tags carry neither). `declared_tags` is the one filter that separates the first from the
+    other two on every read.
+
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, and the rendering is not a counterexample
+    — it names that a record EXISTS, never the record's own fields. Multi-field records
+    (`priority`, `branch`, `merge`, `refined`) have no honest single-tag form, and encoding
+    `{level, criticality, complexity, date}` into a tag name would invent a second format
+    only a new parser could read back — the backend deriving its own encoding exactly where
+    the interface forbids it. A tag stores a tag, never a record; the rule survives native
+    storage, it does not retire with it.
 
     The listing is fetched once per process and cached — a local cache and NOT a store:
     not authoritative, read by nothing outside this object, dropped on every write."""
 
     name = "azure-boards"
 
-    def __init__(self, org: str, project: str, states: dict, cwd: str) -> None:
+    def __init__(self, org: str, project: str, states: dict, cwd: str,
+                area_path: str | None = None, discovery_tag: str | None = None,
+                work_item_type: str | None = None, iteration_path: str | None = None,
+                parent_id: int | None = None, team: str | None = None,
+                board_column: str | None = None,
+                column_map: dict[str, str] | None = None,
+                tag_catalog: dict[str, str] | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
         self.cwd = cwd
-        # descriptor, id, shell doc, title, current System.Tags — the last is what the tag
-        # reconciliation in `write_spec` diffs against, so it costs no call of its own
-        self._rows: list[tuple[dict, int, str, str, list[str]]] | None = None
+        # `open_azure_backend` is the sole caller — it reads `azurePlacement`, refuses for the
+        # one sub-key with no default (`areaPath`), and applies `AZ_DEFAULT_DISCOVERY_TAG` /
+        # `AZ_SPEC_TYPE` for the two that have one. Optional here only so the fake and the
+        # selftest fixtures can construct this backend without a config to read.
+        self.area_path = area_path
+        self.discovery_tag = discovery_tag
+        self.work_item_type = work_item_type or AZ_SPEC_TYPE
+        self.iteration_path = iteration_path
+        # `subjects.<key>.parent` is what resolves this in practice: `open_azure_backend`
+        # applies `defaultSubject`'s, and `cmd_new` overrides it for an explicit `--subject`.
+        # `None` where neither declared one — a repository with no `subjects` links nothing.
+        self.parent_id = parent_id
+        self.team = team
+        self.board_column = board_column
+        self.column_map = column_map or {}
+        self.tag_catalog = tag_catalog or {}
+        self._board_field: str | None = None   # WEF_<guid>_Kanban.Column — resolved once
+        # descriptor, id, shell doc, native title, the four stored fields, and the RAW
+        # System.Tags the tag reconciliation in `write_spec` diffs against — the last costs
+        # no call of its own, and is the one place tags are seen before `declared_tags`.
+        self._rows: list[tuple[dict, int, str, str, dict, list[str]]] | None = None
 
     # -- transport ---------------------------------------------------------- #
-    def _az(self, action: str, *argv: str):
-        """One `az boards` call, parsed. Raises `BackendRefusal` for every way it can fail.
+    def _az_raw(self, action: str, *argv: str, expect: str = "object"):
+        """One `az` call outside the `boards` command group, parsed. Raises `BackendRefusal`
+        for every way it can fail — the shared half `_az` wraps with the `boards` prefix
+        every other call in this backend uses. `workitemsbatch` (`_show_many`) is the one
+        caller that needs `az devops invoke` instead.
 
-        `--org` and `--project` on every call rather than relying on the configured
-        defaults: resolution already read them once, and passing them explicitly means a
-        human changing their `az` defaults mid-session cannot silently redirect a write to
-        another project."""
-        code, out, err = _az_run(self.cwd, "boards", *argv,
-                                 "--org", self.org, "--output", "json")
+        `--org` on every call rather than relying on the configured default, for the same
+        reason `_az` does: resolution already read it once, and a human changing their `az`
+        defaults mid-session must not silently redirect a write to another project.
+
+        `expect='object'` (the default) refuses on exit 0 with empty stdout; `expect='array'`
+        never does — see `az_refusal`."""
+        code, out, err = _az_run(self.cwd, *argv, "--org", self.org, "--output", "json")
         if code != 0:
             raise BackendRefusal(az_refusal(action, code, out, err))
+        if expect == "object" and not (out or "").strip():
+            raise BackendRefusal(az_refusal(action, 0, out, err))
         try:
             return json.loads(out or "null")
         except json.JSONDecodeError as e:
             raise BackendRefusal({
                 "code": "sp-az-bad-response", "exit": 2, "action": action,
-                "message": f"`az boards` exited 0 while {action} but its output is not "
-                           f"JSON: {e}",
+                "message": f"`az` exited 0 while {action} but its output is not JSON: {e}",
             }) from e
+
+    def _az(self, action: str, *argv: str, expect: str = "object"):
+        """One `az boards` call — see `_az_raw`, which this delegates to with the `boards`
+        prefix every call but the batch read shares."""
+        return self._az_raw(action, "boards", *argv, expect=expect)
 
     def _field(self, item: dict, name: str) -> str:
         return str((item.get("fields") or {}).get(name, "") or "")
@@ -3890,21 +4522,62 @@ class AzureBoardsBackend(SpecBackend):
         return "archive" if self._field(item, "System.State") == self.states["archive"] \
             else "plans"
 
+    def _raw_tags(self, item: dict) -> list[str]:
+        """`System.Tags` split, RAW — the discovery tag and the `spec:` rendering included.
+        Only the write path's reconciliation wants them this way; every reader goes through
+        `declared_tags` over the result."""
+        return [t.strip() for t in self._field(item, "System.Tags").split(";") if t.strip()]
+
+    def _native_fields(self, item: dict) -> dict:
+        """`tags`/`assignee`/`start`/`target`, reassembled from their native counterparts —
+        the READ half of `## Design` §Armazenado não é projetado. `System.AssignedTo` comes
+        back as an identity object (`displayName`/`uniqueName`), never a plain string;
+        `System.Tags` is `; `-joined. The two scheduling fields come back as a full datetime
+        (`2026-01-01T03:00:00Z`); only the date is stored.
+
+        `declared_tags` IS THE FILTER, and it removes two things rather than one: the
+        discovery tag (this backend's index) and every `spec:` name (the rendering of derived
+        state). Neither is part of what a spec declared, and reassembling either would make
+        the next write reaffirm it as the document's own content.
+
+        `uniqueName` (the UPN/e-mail), NEVER `displayName` — measured on this org (task 6.1):
+        `--assigned-to` refuses a display name outright (`is an unknown identity`) and only
+        resolves a UPN. Reading `displayName` back would read a value this same backend could
+        never write again, failing the same-fact-read-back test `spec-backend.md` sets."""
+        out: dict = {}
+        tags = declared_tags(self._raw_tags(item), self.discovery_tag)
+        if tags:
+            out["tags"] = tags
+        assigned = (item.get("fields") or {}).get("System.AssignedTo")
+        if isinstance(assigned, dict):
+            name = assigned.get("uniqueName") or assigned.get("displayName")
+            if name:
+                out["assignee"] = name
+        elif isinstance(assigned, str) and assigned.strip():
+            out["assignee"] = assigned.strip()
+        for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
+                         ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
+            value = self._field(item, ref)
+            if value:
+                out[key] = value[:10]
+        return out
+
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str, str, list[str]]]:
+    def _load(self) -> list[tuple[dict, int, str, str, dict, list[str]]]:
         if self._rows is not None:
             return self._rows
         # WIQL rather than a saved query: the filter is this tool's, not the project's, and
         # a saved query is one more thing a human has to create before the backend works.
         found = self._az("querying the project's work items", "query", "--project",
                          self.project, "--wiql",
-                         "SELECT [System.Id] FROM WorkItems WHERE "
-                         "[System.TeamProject] = @project") or []
+                         azure_query_wiql(self.project, self.area_path, self.discovery_tag),
+                         expect="array") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str, str, list[str]]] = []
+        rows: list[tuple[dict, int, str, str, dict, list[str]]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
+            doc = azure_restore_trailing_newline(doc)
             m = SPEC_FILE_RE.match(filename)
             if not m:
                 # An ordinary work item a human created. The marker is what tells a spec
@@ -3919,18 +4592,36 @@ class AzureBoardsBackend(SpecBackend):
                         f"{item.get('id')}",
                 "slug": m.group(1),
             }, int(item.get("id") or 0), doc,
-                self._field(item, "System.Title"),
-                [t.strip() for t in self._field(item, "System.Tags").split(";")
-                 if t.strip()]))
+                self._field(item, "System.Title"), self._native_fields(item),
+                self._raw_tags(item)))
         self._rows = rows
         return rows
 
     def _show_many(self, ids: list[int]) -> list[dict]:
-        """Each work item's fields. One call per id — `az boards work-item show` takes a
-        single id, and there is no batch form in the CLI. The cost is declared rather than
-        hidden: it is why the listing is cached for the whole process."""
-        return [self._az(f"reading work item {i}", "work-item", "show", "--id", str(i))
-                for i in ids]
+        """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
+        `az devops invoke --resource workitemsbatch` — 1 + ⌈N/200⌉ calls for a listing rather
+        than 1 + N. `az boards work-item show` takes a single id and has no batch form; the
+        REST resource does, and — measured on this org — it is the one place that returns
+        `System.Description`, which the WIQL query itself never does (`azure_query_wiql` asks
+        for `System.Id` alone). The cost is still declared, not hidden: it is why the listing
+        stays cached for the whole process."""
+        import tempfile
+        items: list[dict] = []
+        for start in range(0, len(ids), AZ_BATCH_SIZE):
+            chunk = ids[start:start + AZ_BATCH_SIZE]
+            fd, path = tempfile.mkstemp(suffix=".json")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    json.dump({"ids": chunk, "fields": list(AZ_BATCH_FIELDS)}, fh)
+                result = self._az_raw(
+                    f"reading {len(chunk)} work item(s) in batch", "devops", "invoke",
+                    "--area", "wit", "--resource", "workitemsbatch",
+                    "--route-parameters", f"project={self.project}",
+                    "--http-method", "POST", "--in-file", path, "--api-version", "7.1")
+            finally:
+                os.unlink(path)
+            items.extend((result or {}).get("value") or [])
+        return items
 
     def _invalidate(self) -> None:
         self._rows = None
@@ -3941,8 +4632,9 @@ class AzureBoardsBackend(SpecBackend):
     def _item_tags(self, slug: str) -> tuple[int, list[str]]:
         """`(work item id, its current System.Tags)` — both from the listing already in
         hand, so knowing which tags a write must reconcile against costs no call of its
-        own."""
-        for descriptor, item_id, _, _title, tags in self._load():
+        own. The tags come back RAW, discovery tag and `spec:` rendering included: this is
+        the write path's view, and the only one that wants them unfiltered."""
+        for descriptor, item_id, _, _title, _native, tags in self._load():
             if descriptor["slug"] == slug:
                 return item_id, tags
         raise BackendRefusal({
@@ -3951,6 +4643,67 @@ class AzureBoardsBackend(SpecBackend):
                        f"work item was deleted or moved while this command ran; nothing "
                        f"was written",
         })
+
+    def marker_without_discovery_tag(self) -> list[dict]:
+        """Items carrying the spec marker in their description but NOT the discovery tag —
+        invisible to `_load()`'s tag-scoped listing, and the exact price `## Design` §A
+        descoberta accepts for making the tag an index rather than an authority: a human who
+        untags a card makes it vanish from `list`/`status`/every other command, silently.
+        `doctor`'s `sp-az-marker-untagged` is the one place that still finds it — a sweep
+        scoped by area alone, without the tag."""
+        found = self._az("querying the project's work items (untagged sweep)", "query",
+                         "--project", self.project, "--wiql",
+                         azure_query_wiql(self.project, self.area_path, None),
+                         expect="array") or []
+        ids = [int(r.get("id") or 0) for r in found if r.get("id")]
+        out: list[dict] = []
+        for item in self._show_many(ids):
+            filename, _, _ = hybrid_unwrap(self._field(item, "System.Description"))
+            m = SPEC_FILE_RE.match(filename)
+            if not m:
+                continue
+            tags = self._raw_tags(item)
+            if self.discovery_tag and self.discovery_tag not in tags:
+                out.append({"id": int(item.get("id") or 0), "slug": m.group(1)})
+        return out
+
+    def board_findings(self) -> list[dict]:
+        """Three per-spec doctor findings, over the tag-scoped listing only (not the whole
+        area — `marker_without_discovery_tag` already covers what that misses): a board
+        column that disagrees with the de-para, a tag outside the declared catalog, and a
+        spec past the captured stage with no `start`/`target`.
+
+        One `work-item show` per spec, not per finding — doctor is not a build-loop hot
+        path, and `work-item show` returns every field, including the dynamic board-column
+        one `workitemsbatch` would need asked for by name."""
+        out: list[dict] = []
+        for row in self.list_specs():
+            info, rerr = self.read_spec(row["slug"])
+            if rerr or info is None:
+                continue
+            item_id = self._item_id(row["slug"])
+            item = self._az(f"reading work item {item_id} for doctor", "work-item", "show",
+                            "--id", str(item_id))
+            state = board_state_of(info)
+            expected = self.column_map.get(state, self.board_column)
+            if expected:
+                actual = self._field(item, self._resolve_board_field())
+                if actual and actual != expected:
+                    out.append({"kind": "column", "id": item_id, "slug": row["slug"],
+                               "actual": actual, "expected": expected})
+            # `declared_tags`, never the raw set: the discovery tag and the `spec:`
+            # rendering are the TOOL's, so a catalogue that never lists them is complete,
+            # not lacking — flagging them would make this finding fire on every spec.
+            tags = declared_tags(self._raw_tags(item), self.discovery_tag)
+            for tag in tags_outside_catalog(tags, self.tag_catalog):
+                out.append({"kind": "tag", "id": item_id, "slug": row["slug"], "tag": tag})
+            # Past `captured` (Backlog) is where the team's own rule ("a partir do
+            # Entendimento Técnico, as datas são obrigatórias") starts applying —
+            # `## Out of Scope` keeps this a finding, never a refusal.
+            if state != "captured" and not (info["frontmatter"].get("start")
+                                            and info["frontmatter"].get("target")):
+                out.append({"kind": "dates", "id": item_id, "slug": row["slug"]})
+        return out
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
@@ -3961,74 +4714,365 @@ class AzureBoardsBackend(SpecBackend):
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, t, _ in rows})
+                                {d["slug"]: t for d, _, _, t, _, _ in rows})
         if err:
             return None, err
-        _, full_text, native = next((i, d, t) for descriptor, i, d, t, _tags in rows
-                                    if descriptor["slug"] == spec["slug"])
-        return derive_info(spec, hybrid_title_join(full_text, native)), {}
+        _, full_text, native_title, native_fields = next(
+            (i, d, t, f) for descriptor, i, d, t, f, _tags in rows
+            if descriptor["slug"] == spec["slug"])
+        info = derive_info(spec, hybrid_title_join(full_text, native_title))
+        # REASSEMBLED, not re-parsed: the stored document never carries these four keys
+        # (`write_spec` strips them — §Armazenado não é projetado), so the native fields ARE
+        # the only copy, and they win outright over whatever the raw text happened to say.
+        info["frontmatter"].update(native_fields)
+        return info, {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
-        item_id, current_tags = self._item_tags(info["slug"])
+        item_id = self._item_id(info["slug"])
+        # FRESH, off the text THIS write is putting in place — every caller (`cmd_record`,
+        # `cmd_field`, `cmd_promote`...) hands `write_spec` the OLD `info` beside the NEW
+        # `text`, so trusting `info["frontmatter"]` here would read the state a write is
+        # REPLACING rather than the one it is creating. `_apply_column` (§2.11) had exactly
+        # this bug from §2.5 until this task — the derivation was cheap and nothing forced
+        # it to be re-run. It is also what `derive_labels` renders from, the SAME shared
+        # calculation `github` reconciles its labels with.
+        fresh = derive_info(info, text)
         # `System.Description` has no published ceiling, so `hybrid_split` is handed None
         # and answers with the one chunk that is the whole document. The call is made anyway,
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
-        stored, title = hybrid_project(info["slug"], text)
+        stripped = strip_frontmatter_keys(text, FIELD_KEYS)
+        stored, title = hybrid_project(info["slug"], stripped)
         chunks = hybrid_split(stored, None)
-        # `derive_info`/`derive_labels` — the SAME shared calculation `github` reconciles
-        # its labels with, over the text about to be written; this backend derives
-        # nothing of its own, per its own docstring above.
-        tags = reconcile_label_set(current_tags, derive_labels(derive_info(info, text)))
-        fields: dict[str, str] = {"title": title,
-                                  "description": hybrid_wrap(info["file"], chunks[0][0])}
-        # `set(...)`, not `!=` on the lists — the same reorder-reads-as-a-change trap
-        # `github`'s `write_spec` hit, fixed there against issue #877 on 2026-08-05.
-        if set(tags) != set(current_tags):
-            fields["fields"] = f"System.Tags={AZ_TAG_SEP.join(tags)}"
+        # Placement is REAFFIRMED here, not just declared at creation — a human moving the
+        # work item to another area between writes sees the next one bring it back, the same
+        # way `move_spec` already owns the state. `_update` only ever adds the fields given
+        # it, so an unset `iteration_path` is simply not one of them.
+        fields = {"title": title,
+                  "description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
+        if self.area_path:
+            fields["area"] = self.area_path
+        if self.iteration_path:
+            fields["iteration"] = self.iteration_path
         self._update(item_id, **fields)
+        self._apply_parent(item_id, self.parent_id)
+        self._apply_column(item_id, fresh)
+        # CARRIED FORWARD, not read off `fresh` alone: `strip_frontmatter_keys` means an
+        # ORDINARY write — a section edit, a ticked task — hands this method text that never
+        # mentions `tags`/`assignee`/`start`/`target` at all, because they were never in the
+        # document to begin with. Reading that silence as "clear them" would wipe every
+        # stored field on the next unrelated write; `carry_forward_fields` keeps `info`'s
+        # (the pre-write read's) values unless THIS write's own text set one explicitly.
+        #
+        # The RENDERED half rides the same call: `derive_labels` off the fresh document, into
+        # the one `System.Tags` pair `_apply_native_fields` already builds. It is not carried
+        # forward and never diffed against what the item holds — a rendering is recomputed
+        # from the source on every write by definition.
+        self._apply_native_fields(
+            item_id, carry_forward_fields(info["frontmatter"], fresh["frontmatter"],
+                                          FIELD_KEYS),
+            derive_labels(fresh))
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
-        stored, title = hybrid_project(m.group(1) if m else filename, text)
-        item = self._az("creating a work item", "work-item", "create", "--project",
-                        self.project, "--type", AZ_SPEC_TYPE,
-                        "--title", title,
-                        "--description", hybrid_wrap(filename,
-                                                     hybrid_split(stored, None)[0][0]),
-                        "--state", self.states[phase])
+        # `derive_info` off a minimal descriptor — `create_spec` never receives one, and
+        # `board_state_of` reads only `phase`/`frontmatter`/`stage`, all of which come back
+        # from the text just handed to `az`.
+        fresh = derive_info({"phase": phase}, text)
+        stripped = strip_frontmatter_keys(text, FIELD_KEYS)
+        stored, title = hybrid_project(m.group(1) if m else filename, stripped)
+        # NO `--state`: measured (task 6.3), `az boards work-item create` has no such flag —
+        # only `update` does. A new item is born in whatever state its TYPE defaults to
+        # ("New", typically) — left alone, because `_apply_column` below is what actually
+        # decides it (§task 6.3: column and state are not independent on this process; the
+        # board resolves state FROM the column, and a direct `--state` write the column
+        # write follows would just be undone).
+        argv = ["work-item", "create", "--project", self.project,
+               "--type", self.work_item_type, "--title", title]
+        if self.area_path:
+            argv += ["--area", self.area_path]
+        if self.iteration_path:
+            argv += ["--iteration", self.iteration_path]
+        description = hybrid_wrap(filename, hybrid_split(stored, None)[0][0], fmt="div")
+        item = self._az_with_description("creating a work item", argv, description)
         item_id = int((item or {}).get("id") or 0)
+        self._apply_parent(item_id, self.parent_id)
+        # No column applicable (`azureColumns`/`boardColumn` both absent) is the one case
+        # left where the state has to be forced directly — nothing else will ever set it.
+        if not self._apply_column(item_id, fresh):
+            self._update(item_id, state=self.states[phase])
+        # ALWAYS, even with no fixed tags: this is the ONE call that puts the discovery tag
+        # on a freshly created item. Skip it and the spec is invisible to `_load()`'s own
+        # tag-scoped listing the instant it exists — never found again by slug, by `list`,
+        # by anything. The rendering rides along, from the same fresh document — usually
+        # empty on a capture form, which has no records and sits at `captured`.
+        self._apply_native_fields(item_id, fresh["frontmatter"], derive_labels(fresh))
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
+
+    def _apply_native_fields(self, item_id: int, fm: dict,
+                             rendered: list[str] | None = None) -> None:
+        """Reaffirm `tags`/`assignee`/`start`/`target`'s native counterparts, on every write.
+        `tags` and the two scheduling dates go through `--fields` — `az boards work-item
+        update` has no dedicated flag for any of the three; `assignee` does (`--assigned-to`).
+
+        THE DISCOVERY TAG IS ALWAYS INCLUDED, even where `fm` carries no `tags` at all — it
+        is `System.Tags`'s one non-optional member. `_native_fields` excludes it on READ
+        (§A descoberta: it is this backend's index, never a spec's own declared tag), so
+        writing back only `fm['tags']` would silently drop it from the item on the very next
+        write, making the spec unfindable by every later listing.
+
+        `rendered` is the `spec:` set `derive_labels` computed for THIS write — a rendering of
+        derived state, not storage. It rides in the same `System.Tags` pair rather than a
+        second call, which is the third of the four conditions `spec-backend.md` §Rendering
+        derived state admits the category under.
+
+        An absent `start`/`target`/`assignee` is left alone, never cleared — the same
+        asymmetry `_update` already has for every other optional field: this backend adds
+        what is declared and never erases what a human set directly on the board."""
+        pairs, assignee = azure_native_field_pairs(fm, self.discovery_tag, rendered)
+        argv = ["work-item", "update", "--id", str(item_id)]
+        if pairs:
+            argv += ["--fields", *pairs]
+        if assignee:
+            argv += ["--assigned-to", assignee]
+        if len(argv) > 4:
+            self._az(f"updating work item {item_id}'s stored fields", *argv)
+
+    def _apply_parent(self, item_id: int, parent_id: int | None) -> None:
+        """Reaffirm the declared parent on every write, resolved BY ID and never by title —
+        `## Open Decisions` settles this task 2.4: the id (e.g. `788243`) is stable, and a
+        title is one rename away from breaking the link. `subjects.<key>.parent` is what
+        supplies it; unset where no subject resolved one.
+
+        RESOLUTION IS THE READ BELOW, not a bespoke check — a parent id with no work item
+        behind it fails through the same `sp-az-api-error` refusal `_az` already raises for
+        any id `az` cannot find (`AZ_REFUSAL_CASES` covers it), so nothing new is needed to
+        say no; `## Out of Scope` already rules out this tool ever CREATING the parent.
+
+        Idempotent: the read is what lets every write call this safely — without it, ADDING
+        the same parent relation on every save would duplicate it rather than reaffirm it."""
+        if not parent_id:
+            return
+        current = self._az(f"reading work item {item_id}'s parent",
+                           "work-item", "show", "--id", str(item_id))
+        if int((current.get("fields") or {}).get("System.Parent") or 0) == parent_id:
+            return
+        self._az(f"linking work item {item_id} to its parent {parent_id}",
+                 "work-item", "relation", "add", "--id", str(item_id),
+                 "--relation-type", "parent", "--target-id", str(parent_id))
+
+    def _resolve_board_field(self) -> str:
+        """The team's Kanban column field — `WEF_<guid>_Kanban.Column` — resolved once per
+        process and cached on `self`. `spec-backend.md` §Granular reading already allows a
+        process-local cache that is not a store: it is not authoritative and nothing outside
+        this object reads it.
+
+        FOUND, NEVER GUESSED: the guid is per-TEAM, so a second team's board carries a
+        different one. This asks the team for every board it has and keeps the one whose
+        `allowedMappings` names `self.work_item_type` — measured on this org, team 'Diretoria
+        Risco' has six boards (Stories, OKR, Releases, Funcionalidades, Iniciativas, Épicos)
+        and 'User Story' resolves to 'Stories'."""
+        if self._board_field is not None:
+            return self._board_field
+        if not self.team:
+            raise BackendRefusal({
+                "code": "sp-az-no-team", "exit": 2,
+                "message": "backend 'azure-boards' needs `team` declared in "
+                           f"{CONFIG_FILE}'s `azurePlacement` to resolve the board's column "
+                           "field — a board belongs to a team, and this tool never guesses "
+                           "which one. No spec was read or written",
+            })
+        listing = self._az_raw("listing the team's boards", "devops", "invoke",
+                               "--area", "work", "--resource", "boards",
+                               "--route-parameters", f"project={self.project}",
+                               f"team={self.team}")
+        for row in (listing or {}).get("value") or []:
+            board_id = row.get("id")
+            if not board_id:
+                continue
+            detail = self._az_raw(f"reading board '{row.get('name')}'", "devops", "invoke",
+                                  "--area", "work", "--resource", "boards",
+                                  "--route-parameters", f"project={self.project}",
+                                  f"team={self.team}", f"id={board_id}")
+            mappings = (detail or {}).get("allowedMappings") or {}
+            if any(self.work_item_type in m for m in mappings.values()):
+                field = ((detail.get("fields") or {}).get("columnField") or {}).get(
+                    "referenceName")
+                if field:
+                    self._board_field = field
+                    return field
+        raise BackendRefusal({
+            "code": "sp-az-no-board", "exit": 2,
+            "message": f"no board for team '{self.team}' accepts work item type "
+                       f"'{self.work_item_type}' — check azurePlacement.team and "
+                       f"workItemType; no spec was read or written",
+        })
+
+    def _apply_column(self, item_id: int, info: dict) -> bool:
+        """Reaffirm the board column on every write, from the de-para (`azureColumns`),
+        falling back to `boardColumn` for a state absent from the table. A human who moved
+        the card sees the next write bring it back — the board is the projection, per
+        `## Design` §O de-para de coluna. `board_state_of` is the CORE half — this backend
+        only ever consults the table, never derives the key itself.
+
+        COLUMN AND STATE ARE NOT INDEPENDENT — measured (task 6.3): setting the board column
+        silently rewrites `System.State` to whatever this process's `allowedMappings` names
+        for it (`Backlog`, the `incoming` column, only ever resolves to `New`; `Concluído`,
+        `outgoing`, only ever to `Closed`). Applying `azureStates` and `azureColumns` as two
+        independent writes was the design before this task — the second call was silently
+        undoing the first. Returns whether a column was actually applied, so a caller with
+        nothing declared here (`azureColumns` AND `boardColumn` both absent) knows to fall
+        back to forcing `System.State` directly — the only case left where that is correct."""
+        column = self.column_map.get(board_state_of(info), self.board_column)
+        if not column:
+            return False
+        field = self._resolve_board_field()
+        self._az(f"setting work item {item_id}'s board column", "work-item", "update",
+                 "--id", str(item_id), "--fields", f"{field}={column}")
+        return True
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
-        self._update(item_id, state=self.states[dest_phase])
+        # The column is what actually moves a card between phases in the human's own vocabulary
+        # (Kanban.Column), and applying it is what the board itself resolves `System.State`
+        # from — never the reverse. `states[dest_phase]` is the fallback for a repo whose
+        # `azureColumns`/`boardColumn` cannot answer for this phase at all.
+        dest_info = dict(info)
+        dest_info["phase"] = dest_phase
+        if not self._apply_column(item_id, dest_info):
+            self._update(item_id, state=self.states[dest_phase])
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
     def _update(self, item_id: int, **fields: str):
+        # `description` is pulled out and routed through `_az_with_description` — see there
+        # for why a document cannot travel as an ordinary `--description` argument.
+        description = fields.pop("description", None)
         argv: list[str] = ["work-item", "update", "--id", str(item_id)]
         for key, value in fields.items():
             argv += [f"--{key}", value]
-        return self._az(f"updating work item {item_id}", *argv)
+        if description is None:
+            return self._az(f"updating work item {item_id}", *argv)
+        return self._az_with_description(f"updating work item {item_id}", argv, description)
+
+    def _az_with_description(self, action: str, argv: list[str], description: str):
+        """*argv* (a `work-item create`/`update` call, minus any description flag) plus
+        `System.Description` from a temp file, via `--fields System.Description=@<path>`.
+
+        TWO CEILINGS, AND ONLY THE SECOND ONE IS AZURE'S. A document handed to `az` as a
+        literal `--description <text>` argument hits Linux's own per-argument limit
+        (`MAX_ARG_STRLEN`, 128 KiB) long before it reaches the API — measured on this org:
+        `az` itself raises `OSError` building the argv above ~128,000 characters, nothing to
+        do with the work item at all. `--fields KEY=@path` reads the value from disk instead,
+        which has no ceiling of its own; what remains is `System.Description`'s REAL one,
+        measured the same way: `az` answers `TF401262: … exceeds the maximum allowed length
+        of 1048576` above it. Refusing here, before the call, names the size and the ceiling
+        instead of surfacing that error anonymously mid-write — the same reasoning
+        `GitHubBackend._write_api`'s body-ceiling check already carries."""
+        if len(description) > AZ_DESCRIPTION_MAX:
+            raise BackendRefusal({
+                "code": "sp-az-description-too-large", "exit": 2, "action": action,
+                "size": len(description), "max": AZ_DESCRIPTION_MAX,
+                "message": f"the document is {len(description)} characters and "
+                           f"System.Description holds {AZ_DESCRIPTION_MAX} (measured: `az` "
+                           f"answers TF401262 above it) — shorten a section while {action}; "
+                           f"nothing was written",
+            })
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=".txt")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(description)
+            return self._az(action, *argv, "--fields", f"System.Description=@{path}")
+        finally:
+            os.unlink(path)
 
 
-# The work item type this backend creates. `Issue` exists in the Basic and Agile processes;
-# Scrum and CMMI name their equivalent differently, which is the same process-dependence
-# `azureStates` exists for. Left a constant rather than a fifth config key until a real Azure
-# DevOps project says otherwise — `## Out of Scope` accepts that this backend ships without
-# end-to-end proof, and inventing configuration for an unproven guess is worse than one named
-# place to change.
+def azure_restore_trailing_newline(doc: str) -> str:
+    """Undo the one transport artefact `az`'s `@file` field mechanism leaves on every read:
+    measured (task 6.2), it strips EVERY trailing newline unconditionally — `"x\\n"`,
+    `"x\\n\\n\\n"` and `"x"` all read back as `"x"`, so whether the document ended in a
+    newline cannot survive the round trip in either direction. Every document this tool ever
+    writes ends in exactly one (`TEMPLATE_SPEC`, `capture_form`, every section writer) —
+    restoring it here is not a guess, it is undoing a transport artefact, on the one backend
+    whose transport has it."""
+    if doc and not doc.endswith("\n"):
+        return doc + "\n"
+    return doc
+
+
+def azure_trailing_newline_failures() -> list[str]:
+    """The one case that matters (a stripped newline restored) and the two it must leave
+    alone (already-terminated, and genuinely empty)."""
+    out: list[str] = []
+    cases = (("x", "x\n"), ("x\n", "x\n"), ("", ""))
+    for given, want in cases:
+        got = azure_restore_trailing_newline(given)
+        if got != want:
+            out.append(f"azure_restore_trailing_newline({given!r}) returned {got!r}, "
+                       f"not {want!r}")
+    return out
+
+
+def azure_description_ceiling_failures() -> list[str]:
+    """The measured ceiling refuses BEFORE any call is made — self-contained, since only the
+    over-ceiling path never reaches `az`; the under-ceiling path is what §6.3's real cycle
+    exercises."""
+    out: list[str] = []
+    az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".")
+    try:
+        az._az_with_description("testing", ["work-item", "update", "--id", "1"],
+                                "x" * (AZ_DESCRIPTION_MAX + 1))
+        out.append("a description over AZ_DESCRIPTION_MAX did not refuse")
+    except BackendRefusal as e:
+        if e.err.get("code") != "sp-az-description-too-large":
+            out.append(f"over-ceiling refusal code was {e.err.get('code')!r}, not "
+                       f"'sp-az-description-too-large'")
+        if e.err.get("exit") != 2:
+            out.append(f"over-ceiling refusal exit was {e.err.get('exit')!r}, not 2")
+    return out
+
+
+def azure_native_fields_read_failures() -> list[str]:
+    """`AzureBoardsBackend._native_fields`, over fake `System.AssignedTo` shapes — no
+    network. The one rule measured on this org (task 6.1): `uniqueName` (the UPN), never
+    `displayName` — `--assigned-to` refuses a display name outright, so reading one back
+    would read a value this backend could never write again."""
+    out: list[str] = []
+    az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".",
+                            discovery_tag="quenching-spec")
+    cases = (
+        ({"fields": {"System.AssignedTo": {"displayName": "Israel Holetz",
+                                           "uniqueName": "israel@x.com"}}},
+         "israel@x.com", "uniqueName wins over displayName"),
+        ({"fields": {"System.AssignedTo": {"displayName": "Israel Holetz"}}},
+         "Israel Holetz", "no uniqueName falls back to displayName"),
+        ({"fields": {}}, None, "no assignee at all reassembles nothing"),
+    )
+    for item, want, label in cases:
+        got = az._native_fields(item).get("assignee")
+        if got != want:
+            out.append(f"{label}: _native_fields()['assignee'] was {got!r}, not {want!r}")
+    return out
+
+
+# `workItemType`'s default. Measured against this org's own process guide: `User Story` is
+# the standard card for Story work, and `Issue` — the type this constant named before — is
+# documented there as OPTIONAL, for bugs of lesser severity. A default is what a repo that
+# declared nothing receives, and receiving "minor bug" on a Power BI panel that reads the
+# type is a silent error, not a neutral one. `azurePlacement.workItemType` overrides this for
+# a Scrum or CMMI process, whose equivalent is named differently — the same process-dependence
+# `azureStates` already carries.
 #
 # There is no second type any more: a spec was one work item plus one CHILD PER TASK until the
 # `## Tasks`-as-children mapping was retired for the reasons at HYBRID SERIALISATION, and one
 # work item now carries the whole document.
-AZ_SPEC_TYPE = "Issue"
+AZ_SPEC_TYPE = "User Story"
 
 # `System.Tags` is one string, not an array like a GitHub issue's `labels` — Azure Boards'
 # own convention joins tags with a semicolon, published in its field reference.
@@ -4056,10 +5100,31 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                        "project's process, so this tool never guesses it. No spec was read "
                        "or written",
         }
+    area_path = cfg["azurePlacement"].get("areaPath")
+    if not area_path:
+        return None, {
+            "code": "sp-az-no-area", "exit": 2, "config": cfg["path"],
+            "message": "backend 'azure-boards' needs `areaPath` declared in "
+                       f"{CONFIG_FILE}'s `azurePlacement` — add "
+                       '`"azurePlacement": {"areaPath": "<Project>\\\\<Area>\\\\<Sub-area>"}`; '
+                       "an Azure Boards area is defined by the project, and a guessed default "
+                       "does not fail loudly — it writes to the wrong part of somebody else's "
+                       "board. No spec was read or written",
+        }
     (org, project), err = resolve_azure_project(cwd)
     if err:
         return None, err
-    return AzureBoardsBackend(org, project, states, cwd), {}
+    placement = cfg["azurePlacement"]
+    discovery_tag = placement.get("discoveryTag") or AZ_DEFAULT_DISCOVERY_TAG
+    work_item_type = placement.get("workItemType") or AZ_SPEC_TYPE
+    return AzureBoardsBackend(org, project, states, cwd,
+                              area_path=area_path, discovery_tag=discovery_tag,
+                              work_item_type=work_item_type,
+                              iteration_path=placement.get("iterationPath"),
+                              team=placement.get("team"),
+                              board_column=placement.get("boardColumn"),
+                              column_map=cfg["azureColumns"],
+                              tag_catalog=cfg["tagCatalog"]), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -4088,7 +5153,7 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     One label per present record (`record_keys(schema)` order, skipping any without a
     `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
     labelled stage rule. A unidirectional projection: recomputed here on every write, never
-    read back — see docs/standards/architecture/spec-backend.md §Granular reading is about
+    read back — see /.docs/standards/architecture/spec-backend.md §Granular reading is about
     context, not I/O for the sibling rule this one extends.
 
     MEASURED on 2026-08-05, against this repository's own `github` backend, per
@@ -4105,6 +5170,49 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
         if rule.get("label") and info.get("stage") == rule["id"]:
             labels.append(rule["label"])
     return labels
+
+
+# The prefix `derive_labels` renders under, RESERVED so that storage and rendering can share
+# one native surface. `tags` is stored in the very field the `spec:` labels render onto —
+# issue `labels`, `System.Tags` on a work item — so without a reserved half the two mechanisms
+# would each read the other's writes as the spec's own content. See
+# docs/standards/architecture/spec-backend.md §Armazenado não é projetado, §The `spec:` prefix
+# is reserved.
+SPEC_LABEL_PREFIX = "spec:"
+
+
+def declared_tags(names: list[str], discovery_tag: str | None = None) -> list[str]:
+    """`names` minus everything the tool owns — the `spec:` rendering and, on `azure-boards`,
+    the discovery tag — leaving only what the SPEC ITSELF declared.
+
+    The one filter every reader of a native tag surface goes through, so `_native_fields`
+    (reassembly), `tags_outside_catalog` (the catalogue check) and `doctor`'s own findings
+    cannot drift into three different ideas of which names belong to the document. A name the
+    tool renders is not a tag the spec claims, and reading one back would make the next write
+    reaffirm it as declared content — the exact duplication a reserved prefix exists to
+    prevent."""
+    return [n for n in names
+            if not n.startswith(SPEC_LABEL_PREFIX) and n != discovery_tag]
+
+
+def declared_tag_failures() -> list[str]:
+    """Both halves of the reserved prefix: a rendered name and the discovery tag are filtered
+    out, and an ordinary tag that merely CONTAINS the prefix is not."""
+    out: list[str] = []
+    cases = (
+        (["a", "spec:built", "quenching-spec"], "quenching-spec", ["a"],
+         "the rendering and the discovery tag are both the tool's, never the spec's"),
+        (["a", "b"], None, ["a", "b"], "no discovery tag declared filters only the prefix"),
+        (["not-spec:built"], None, ["not-spec:built"],
+         "the prefix is a PREFIX — a name merely containing it is the spec's own"),
+        ([], "quenching-spec", [], "nothing declared filters to nothing"),
+    )
+    for names, tag, want, label in cases:
+        got = declared_tags(names, tag)
+        if got != want:
+            out.append(f"{label}: declared_tags({names!r}, {tag!r}) returned {got!r}, "
+                       f"not {want!r}")
+    return out
 
 
 def reconcile_label_set(current: list[str], desired: list[str], prefix: str = "spec:") -> list[str]:
@@ -4225,6 +5333,9 @@ def cmd_new(args, root: str) -> int:
                          "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
              f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
         return 2
+    subject, serr = resolve_subject(load_config(root), args.subject)
+    if serr:
+        return emit_err(args.json, serr)
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{slug}.md"
@@ -4233,6 +5344,21 @@ def cmd_new(args, root: str) -> int:
             .replace("<TITLE>", title)
             .replace("<DATE>", today())
             .replace("<VERIFICATION>", policy))
+    # The subject's fixed tags go into the CANONICAL DOCUMENT, never applied to the tracker
+    # directly: `tags:` is a recognised frontmatter key, so `create_spec` reads them off this
+    # text through the same path every other stored field takes — never a second,
+    # backend-specific write path of this command's own.
+    if subject and subject.get("tags"):
+        tags_repr = "[" + ", ".join(json.dumps(t, ensure_ascii=False)
+                                    for t in subject["tags"]) + "]"
+        close = body.index("\n---\n")
+        body = body[:close] + f"\ntags: {tags_repr}" + body[close:]
+    # The parent, by contrast, has no canonical-document counterpart to carry it in — it is
+    # `azure-boards`-only, applied through the SAME `self.parent_id` the backend already
+    # reaffirms on every write (§2.4); a resolved subject here simply overrides the
+    # `defaultSubject` `open_azure_backend` applied when the backend was opened.
+    if subject and subject.get("parent") and hasattr(backend, "parent_id"):
+        backend.parent_id = subject["parent"]
     path = backend.create_spec("plans", name, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
@@ -4703,6 +5829,73 @@ def handoff_block_failures() -> list[str]:
     return out
 
 
+FILES_PARSE_CASES = [
+    {"why": "a comma inside parentheses belongs to the same entry — the split that "
+            "invented `revertido ao fim)` out of a comment",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+             "      files: a.md (x, y), b.ts (new)\n",
+     "want": ["a.md (x, y)", "b.ts (new)"]},
+    {"why": "the canonical template example splits at the SEPARATOR commas only",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+             "      files: src/middleware/auth.ts, src/config/limits.ts (new)\n",
+     "want": ["src/middleware/auth.ts", "src/config/limits.ts (new)"]},
+    {"why": "the repro of the original defect reads as ONE entry, never two",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n"
+             "      files: plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)\n",
+     "want": ["plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)"]},
+    {"why": "nested parentheses keep the whole nesting one entry",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: x (a (b), c), y\n",
+     "want": ["x (a (b), c)", "y"]},
+    {"why": "an unbalanced `(` keeps the rest of the line one entry rather than "
+            "splitting mid-string",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: foo(bar, baz.ts\n",
+     "want": ["foo(bar, baz.ts"]},
+    {"why": "empty pieces (a trailing comma, a doubled one) are dropped, as before",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: a.ts, b.ts,\n",
+     "want": ["a.ts", "b.ts"]},
+    {"why": "a single plain path is untouched",
+     "text": "## Tasks\n\n### 1. X\n\n- [ ] 1.1 t\n      files: src/a.ts\n",
+     "want": ["src/a.ts"]},
+]
+
+
+FILES_ANNOTATION_CASES = [
+    {"entry": "a.md (x, y)", "why": "a comma-carrying comment is an annotation, not a path"},
+    {"entry": "plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)",
+     "why": "the original repro's comment is refused whole — never split, never kept as "
+            "part of the path"},
+    {"entry": "src/(old)/x.py", "bad": False,
+     "why": "parentheses in the MIDDLE of a path are not an annotation — only a "
+            "trailing parenthetical is"},
+    {"entry": "src/a.py (new)", "bad": False,
+     "why": "`(new)` is the one reserved annotation — the path it names is about to be "
+            "created"},
+    {"entry": "c/dir/", "bad": False, "why": "a plain path is never an annotation"},
+]
+
+
+def files_parse_failures() -> list[str]:
+    """Run `FILES_PARSE_CASES` against `parse_tasks` and `FILES_ANNOTATION_CASES`
+    against `_files_bad_annotation`, asserting `files:` reads back entry-for-entry and
+    refuses what it must not interpret. A comma inside parentheses must never split a
+    path, and a trailing parenthetical that is not `(new)` must never reach an executor
+    as if it were a path — both are the same silence, closed at the parse."""
+    out: list[str] = []
+    for case in FILES_PARSE_CASES:
+        got = parse_tasks(case["text"])
+        files = got[0]["files"] if got else []
+        if files != case["want"]:
+            out.append(f"{case['why']}: got {files!r}, expected {case['want']!r}")
+    for case in FILES_ANNOTATION_CASES:
+        note = _files_bad_annotation(case["entry"])
+        want_bad = case.get("bad", True)
+        if want_bad and note is None:
+            out.append(f"{case['why']}: {case['entry']!r} was not refused")
+        elif not want_bad and note is not None:
+            out.append(f"{case['why']}: {case['entry']!r} refused with `({note})`")
+    return out
+
+
 # `write_handoff_block` is stateful across a build (each write reads the PRIOR write's
 # output), so — unlike the two case lists above — it is proved as one sequential
 # scenario rather than a table of independent inputs.
@@ -4902,6 +6095,61 @@ def set_frontmatter_key(text: str, key: str, value: str,
     return "".join(lines)
 
 
+def strip_frontmatter_keys(text: str, keys: tuple[str, ...]) -> str:
+    """`text` with each of `keys`' own frontmatter line removed — the WRITE half of
+    `## Design` §Armazenado não é projetado for `tags`/`assignee`/`start`/`target`: the
+    native field is the storage, so the document stored alongside it never carries a second,
+    unread copy that would go stale the instant a human edited the tracker instead.
+
+    Unlike `hybrid_title_split`, this never refuses. `title` is required and paired with a
+    `# <TITLE>` heading it has to reproduce at an exact offset; these four are optional
+    scalars/lists with no second copy elsewhere in the document, so dropping the line is the
+    whole operation — nothing to reconstruct on the way back, because `read_spec` reassembles
+    the VALUES into `info['frontmatter']` directly rather than rebuilding the text."""
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return text
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return text
+    kept = [ln for i, ln in enumerate(lines)
+           if not (1 <= i < close and ln.split(":", 1)[0].strip() in keys)]
+    return "".join(kept)
+
+
+def carry_forward_fields(old_fm: dict, new_fm: dict, keys: tuple[str, ...]) -> dict:
+    """`keys`, from `new_fm` where THIS WRITE's own text declared one explicitly, and from
+    `old_fm` (the pre-write read) where it did not.
+
+    THE BUG THIS FIXES: a key `strip_frontmatter_keys` removes is gone from the document
+    once stored, so an ORDINARY write — editing a section, ticking a task — hands
+    `write_spec` text that never mentions `tags` at all. Reading that absence as "clear the
+    tags" would wipe every stored field on the next unrelated write. Presence in `new_fm` is
+    the signal an explicit `cmd_field`/`--subject` write leaves behind — `set_frontmatter_key`
+    inserts the line it is asked to set — so presence, not truthiness, is what is asked
+    (`tags: []` is a real instruction to clear; the key being ABSENT is silence)."""
+    return {k: new_fm[k] if k in new_fm else old_fm.get(k) for k in keys}
+
+
+def carry_forward_failures() -> list[str]:
+    """An ordinary write (nothing new declared) keeps every old value; an explicit write
+    (even to an empty list) overrides just the key it named."""
+    out: list[str] = []
+    old = {"tags": ["a"], "assignee": "someone", "start": "2026-01-01", "target": None}
+    cases = (
+        ({}, old, "an ordinary write (no keys in the new text) keeps everything"),
+        ({"tags": []}, {**old, "tags": []},
+         "an explicit empty list overrides just `tags`"),
+        ({"assignee": "other"}, {**old, "assignee": "other"},
+         "an explicit new value overrides just `assignee`, `tags` untouched"),
+    )
+    for new, want, label in cases:
+        got = carry_forward_fields(old, new, FIELD_KEYS)
+        if got != want:
+            out.append(f"{label}: carry_forward_fields returned {got!r}, not {want!r}")
+    return out
+
+
 def legacy_marker_fold(filename: str, text: str) -> tuple[str, str] | None:
     """`("<slug>.md", the document carrying its own `date:`)` for a spec still stored under
     the dated basename — or None when there is nothing to fold.
@@ -5009,6 +6257,93 @@ def cmd_verification(args, root: str) -> int:
     return 0
 
 
+def record_field_value_error(rspec: dict, k: str, v: str) -> str | None:
+    """The one per-field value rule: a field declaring `levels:` admits only those.
+
+    `priority.complexity` is the first field to declare one — the scale the orchestrator
+    derives the gears plan from — but the rule is generic: a field without a `levels:`
+    block stays unrestricted, exactly as every field was before this one. `writtenBy` on
+    the block is the schema's declaration of who may write the field, read by the command
+    bodies that call `record`; the tool itself cannot know who calls it, so the value rule
+    is the only half it enforces."""
+    fspec = rspec.get(k)
+    if isinstance(fspec, dict) and fspec.get("levels") and v not in fspec["levels"]:
+        return (f"`{k}:` must be one of {', '.join(fspec['levels'])} — got '{v}'")
+    return None
+
+
+# The four STATE frontmatter keys — never records, each with a faithful native counterpart
+# in at least one backend (`spec-backend.md` §A native value is the same fact).
+FIELD_KEYS = ("tags", "assignee", "start", "target")
+
+
+def parse_field_date(value: str) -> str | None:
+    """`value` as an ISO date, or `None` — REAL calendar validation, not a digit-shaped
+    regex: `^\\d{4}-\\d{2}-\\d{2}$` accepts `2026-13-99`, which `date.fromisoformat` refuses."""
+    try:
+        return datetime.date.fromisoformat(value).isoformat()
+    except ValueError:
+        return None
+
+
+def field_date_failures() -> list[str]:
+    """A real calendar date passes; a digit-shaped non-date — the exact case a regex alone
+    would have accepted — is refused."""
+    out: list[str] = []
+    cases = (("2026-08-05", "2026-08-05"), ("2026-13-99", None), ("not-a-date", None),
+             ("2026-02-30", None))
+    for value, want in cases:
+        got = parse_field_date(value)
+        if got != want:
+            out.append(f"parse_field_date({value!r}) returned {got!r}, not {want!r}")
+    return out
+
+
+def cmd_field(args, root: str) -> int:
+    """Read or set ONE of `tags`/`assignee`/`start`/`target`, through the backend — the ONE
+    deterministic verb `## Design` requires for each: an agent (or a human) may choose WHAT
+    to write, a tag from `tagCatalog`, an assignee, a date, but never HOW. `args.field` is
+    set by the subparser that dispatched here, one of `FIELD_KEYS`.
+
+    Not a `record`: these are state a backend reassembles on read, not a judgment with a
+    `writtenBy`/`writeOnce` rule of its own — `cmd_verification` argues the same distinction
+    for the one scalar that came before these four."""
+    key = args.field
+    backend, err = open_backend(root)
+    if err:
+        return emit_err(args.json, err)
+    info, err = backend.read_spec(args.spec)
+    if err:
+        return emit_err(args.json, err)
+    current = info["frontmatter"].get(key)
+
+    if args.value is None:
+        emit(args.json, {"ok": True, "slug": info["slug"], key: current},
+             f"{info['slug']} — {key}: {current if current else '(none)'}")
+        return 0
+
+    if key == "tags":
+        items = [t.strip() for t in args.value.split(",") if t.strip()]
+        rendered = "[" + ", ".join(json.dumps(t, ensure_ascii=False) for t in items) + "]"
+        stored: object = items
+    elif key in ("start", "target"):
+        value = parse_field_date(args.value.strip())
+        if value is None:
+            emit(args.json, {"ok": False, "code": f"sp-bad-{key}", "given": args.value,
+                             "message": f"'{args.value}' is not a real YYYY-MM-DD date"},
+                 f"error: '{args.value}' is not a real YYYY-MM-DD date")
+            return 2
+        rendered = stored = value
+    else:   # assignee
+        rendered = stored = args.value.strip()
+
+    backend.write_spec(info, set_frontmatter_key(info["text"], key, rendered))
+    emit(args.json, {"ok": True, "slug": info["slug"], key: stored, "previous": current},
+         f"{info['slug']} — {key}: {stored}"
+         + (f"  (was {current})" if current and current != stored else ""))
+    return 0
+
+
 def cmd_record(args, root: str) -> int:
     """Read or merge ONE frontmatter record, through the backend.
 
@@ -5082,6 +6417,14 @@ def cmd_record(args, root: str) -> int:
                              f"{', '.join(fields)} — got '{pair}'"},
                  f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
             return 2
+        err = record_field_value_error(rspec, k, v)
+        if err:
+            emit(args.json,
+                 {"ok": False, "code": "sp-invalid-record-value", "record": args.name,
+                  "field": k, "given": v, "levels": rspec[k].get("levels", []),
+                  "message": err},
+                 f"refused: {err}")
+            return 2
         merged[k] = v
     if (args.name == "merge" and merged.get("pr")
             and merged.get("strategy") in MERGE_NO_PR_STRATEGIES):
@@ -5137,6 +6480,29 @@ def record_round_trip_failures() -> list[str]:
     if parse_frontmatter(reflowed).get("merge") != {"strategy": "rebase"}:
         failures.append("re-stamping a block record left its old fields behind: "
                         f"{parse_frontmatter(reflowed).get('merge')!r}")
+    return failures
+
+
+def record_field_failures() -> list[str]:
+    """A field declaring `levels:` admits exactly those — and a field that declares none
+    stays unrestricted. The refusal half is the point of the complexity scale: an hour
+    count that sailed through the old record would silently break every gear derivation
+    downstream, which is why the rule is proved here rather than eyeballed."""
+    failures: list[str] = []
+    rspec = {"fields": ["level", "criticality", "complexity", "date"],
+             "complexity": {"levels": ["low", "medium", "high", "xhigh"],
+                            "writtenBy": ["triage", "create", "develop"]}}
+    for good in ("low", "medium", "high", "xhigh"):
+        err = record_field_value_error(rspec, "complexity", good)
+        if err is not None:
+            failures.append(f"declared level {good!r} refused: {err}")
+    for bad in ("8", "simple", ""):
+        err = record_field_value_error(rspec, "complexity", bad)
+        if err is None:
+            failures.append(f"undeclared value {bad!r} admitted — the scale is closed")
+    err = record_field_value_error(rspec, "level", "1")
+    if err is not None:
+        failures.append(f"a field without a levels block must stay unrestricted: {err}")
     return failures
 
 
@@ -5606,7 +6972,7 @@ def worktree_dir_ignored(cwd: str, rel: str = SPECS_WORKTREE_DIR) -> bool:
     the question is asked BEFORE `git worktree add`, never after.
 
     Resolved against the repo top level, not against `cwd`: this tool's `cwd` is the specs
-    workspace, and `.claude/worktrees/` relative to `<repo>/specs/` is a different path that
+    workspace, and `.claude/worktrees/` relative to `<repo>/.specs/` is a different path that
     would answer the wrong question. No git and no repo answer `False` — a tree git cannot
     speak for is one where nothing can promise the worktree stays out of `git status`."""
     top = _git(cwd, "rev-parse", "--show-toplevel").strip()
@@ -5803,7 +7169,7 @@ def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
 
       already inside a worktree   nothing nests a worktree in a worktree; the specs branch is
                                   already the tree underfoot.
-      the workspace is populated  a `specs/` holding phase folders in the code tree is the
+      the workspace is populated  a `/.specs/` holding phase folders in the code tree is the
                                   PRE-MIGRATION store and stays authoritative until a human
                                   moves it. Switching silently would make every repository that
                                   upgrades this tool look like it had lost every spec it has —
@@ -5842,7 +7208,7 @@ def _resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
     path, err = specs_worktree(top, cfg.get("specsBranch") or DEFAULT_SPECS_BRANCH)
     if err:
         return root, err
-    return os.path.join(path, os.path.basename(os.path.normpath(root)) or "specs"), {}
+    return os.path.join(path, os.path.basename(os.path.normpath(root)) or ".specs"), {}
 
 
 def files_specs_worktree(root: str, cfg: dict) -> tuple[str | None, dict]:
@@ -5871,14 +7237,14 @@ def files_root_failures() -> list[str]:
     cfg = {"specsBranch": DEFAULT_SPECS_BRANCH}
     out: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
-        populated = os.path.join(tmp, "specs")
+        populated = os.path.join(tmp, ".specs")
         os.makedirs(os.path.join(populated, "plans"))
         got, err = resolve_files_root(populated, cfg)
         if got != populated or err:
             out.append(f"a populated workspace resolved to {got!r} (err={err.get('code')!r}), "
                        f"not to itself — the pre-migration store must stay authoritative")
 
-        nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", "specs")
+        nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", ".specs")
         os.makedirs(nested)
         got, err = resolve_files_root(nested, cfg)
         if got != nested or err:
@@ -6079,7 +7445,7 @@ def command_writes(args) -> bool:
     reads a skill makes most.
 
     `migrate` is deliberately absent. It rewrites the DECLARED workspace's own folder layout —
-    the pre-migration `specs/` in the code tree — and never touches the specs worktree, so the
+    the pre-migration `/.specs/` in the code tree — and never touches the specs worktree, so the
     worktree's lock would guard nothing it writes. `release` is absent for the same reason: it
     writes the plugin's own version-carrying artifacts, never a spec."""
     cmd = getattr(args, "cmd", "")
@@ -6395,6 +7761,16 @@ def cmd_next(args, root: str) -> int:
         openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
         if openable:
             t = openable[0]
+            bad = [e for e in t["files"] if _files_bad_annotation(e)]
+            if bad:
+                # The consumer of `files:` is an executor who cannot tell an invented
+                # piece from a path the task will create — refuse HERE, at the door,
+                # never hand the list over.
+                return emit_err(args.json, {
+                    "code": "sp-files-annotation",
+                    "message": f"task {t['id']} declares files entries that are not "
+                               f"paths: {', '.join(repr(b) for b in bad)} — remove the "
+                               f"comment; `(new)` is the only reserved `files:` annotation"})
             obj = {"ok": True, "action": "implement_task", "task": t["id"], "text": t["text"],
                    "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
                    "cwd": t["cwd"],
@@ -6461,6 +7837,12 @@ def cmd_parallel(args, root: str) -> int:
     findings = []
     for gi, group in enumerate(parallel_groups(info["tasks"]), 1):
         undeclared = [t["id"] for t in group if not t["files"]]
+        annotations = []
+        for t in group:
+            for e in t["files"]:
+                note = _files_bad_annotation(e)
+                if note:
+                    annotations.append({"task": t["id"], "entry": e, "note": note})
         clashes = []
         for i, a in enumerate(group):
             for b in group[i + 1:]:
@@ -6469,10 +7851,10 @@ def cmd_parallel(args, root: str) -> int:
                         if _overlaps(fa, fb):
                             clashes.append({"a": a["id"], "b": b["id"],
                                             "file": _norm_file(fa)})
-        eligible = not undeclared and not clashes
+        eligible = not undeclared and not clashes and not annotations
         findings.append({"group": gi, "tasks": [t["id"] for t in group],
                          "eligible": eligible, "undeclared": undeclared,
-                         "clashes": clashes})
+                         "annotations": annotations, "clashes": clashes})
     ok = all(f["eligible"] for f in findings)
     if args.json:
         print(json.dumps({"ok": ok, "slug": info["slug"], "groups": findings},
@@ -6485,6 +7867,9 @@ def cmd_parallel(args, root: str) -> int:
                   f"{'eligible' if f['eligible'] else 'NOT eligible'}")
             for c in f["clashes"]:
                 print(f"    {c['a']} and {c['b']} both touch {c['file']}")
+            for a in f["annotations"]:
+                print(f"    {a['task']} declares non-path files entry {a['entry']!r} — "
+                      f"remove the comment; `(new)` is the only reserved annotation")
             if f["undeclared"]:
                 print(f"    no files: declared by {', '.join(f['undeclared'])}")
     return 0 if ok else 1
@@ -6771,7 +8156,7 @@ def _migrate_markers(backend, dry: bool) -> list[dict]:
 
 
 def cmd_migrate(args, root: str) -> int:
-    """One-way, to the CURRENT layout. `specs/archive/**` is NEVER touched — it is
+    """One-way, to the CURRENT layout. `/.specs/archive/**` is NEVER touched — it is
     historical and read-only, and churning it would break every link into it for no gain.
 
     Two folds, either of which may apply:
@@ -6799,7 +8184,7 @@ def cmd_migrate(args, root: str) -> int:
 
     # The external fold: specs an issue tracker still holds under the dated basename. It is
     # asked of the backend, not of the filesystem, and it is the only fold that can apply to a
-    # repo with no `specs/` folder at all.
+    # repo with no `/.specs/` folder at all.
     markers: list[dict] = []
     backend, berr = open_backend(root)
     if not berr and backend is not None and hasattr(backend, "legacy_rows"):
@@ -6871,7 +8256,7 @@ def cmd_migrate(args, root: str) -> int:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
     else:
         verb = "would migrate" if args.dry_run else "migrated"
-        print(f"{verb} {len(migrated)} item(s) — specs/archive/** untouched")
+        print(f"{verb} {len(migrated)} item(s) — `/.specs/archive/**` untouched")
         for m in migrated:
             src = m.get("dateSource")
             print(f"  {m['from']:<40} → {m['to']}" +
@@ -6923,7 +8308,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                             f"{where}: `{a['key']}`: {a['detail']}", spec=s["slug"], path=where,
                             kind=a["kind"], key=a["key"],
                             remedy="quote the value, or write the comment on its own line — "
-                                   "see docs/standards/code/frontmatter-parsing.md"))
+                                   "see /.docs/standards/code/frontmatter-parsing.md"))
 
     schema = load_schema()
     for key in schema.get("frontmatter", {}).get("required", []):
@@ -6995,6 +8380,22 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                                     f"{where}: `{p}` is declared under ## Impact but no task "
                                     f"names it", spec=s["slug"], path=where, standard=p,
                                     remedy="add a task that writes it, or drop the declaration"))
+
+    # A `files:` entry carrying a parenthetical that is not the reserved `(new)` is a
+    # human comment the parser must not interpret — kept whole it would reach an
+    # executor as a path that exists nowhere, which is the exact silence `_split_files`
+    # exists to stop. Refuse it at the points that hand paths out and report it here.
+    for t in tasks:
+        for entry in t["files"]:
+            note = _files_bad_annotation(entry)
+            if note:
+                out.append(_finding("sp-files-annotation", "error",
+                                    f"{where}: task {t['id'] or t['index']} declares files "
+                                    f"entry {entry!r} with annotation `({note})` — only "
+                                    f"`(new)` is reserved", spec=s["slug"], path=where,
+                                    task=t["id"] or t["index"], entry=entry,
+                                    remedy="remove the comment — `(new)` is the only "
+                                           "reserved `files:` annotation"))
 
     # Judged against the READY gate: a spec is "unrefined" once it could be built, not the
     # moment it is captured. Warning on every fresh capture would train the reader to
@@ -7204,7 +8605,7 @@ def cmd_selftest(args, root: str) -> int:
         findings.append(_finding("sp-frontmatter-case", "error",
                                  f"canonical frontmatter case — {failure}",
                                  remedy="this parser disagrees with the case list in "
-                                        "docs/standards/code/frontmatter-parsing.md; the three "
+                                        "/.docs/standards/code/frontmatter-parsing.md; the three "
                                         "tools move together or not at all"))
 
     # The section rule, against the SAME canonical list `skills.py` proves. Self-contained,
@@ -7244,6 +8645,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "matched to `## Tasks` by the heading's own leading "
                                         "numeral; a flat `## Handoff` with no heading must "
                                         "still read back as a single global block"))
+
+    # The `files:` split — specs.py-only, no sibling copy to drift from. A comma inside
+    # parentheses must stay inside its entry: an invented piece handed to an executor
+    # looks exactly like a path the task will create.
+    for failure in files_parse_failures():
+        findings.append(_finding("sp-files-parse-case", "error",
+                                 f"canonical files-parse case — {failure}",
+                                 remedy="_split_files must keep commas inside `(…)` in the "
+                                        "same entry, drop empty pieces, and leave plain "
+                                        "paths untouched"))
 
     for failure in handoff_write_failures():
         findings.append(_finding("sp-handoff-write-case", "error",
@@ -7359,6 +8770,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "block form, and a re-stamp replaces the old "
                                         "field lines rather than orphaning them"))
 
+    # A field declaring `levels:` admits exactly those — the one per-field value rule the
+    # complexity scale rests on. The refusal half is the point: an hour count that sailed
+    # through the old record would silently break every gear derivation downstream.
+    for failure in record_field_failures():
+        findings.append(_finding("sp-record-field-value-broken", "error",
+                                 f"a record field value rule — {failure}",
+                                 remedy="record_field_value_error must admit exactly the "
+                                        "declared levels and nothing else; a field with "
+                                        "no levels block is unrestricted"))
+
     # The native-label projection: a foreign label must survive it untouched, and a stale
     # `spec:` one must not outlive the record that earned it.
     for failure in label_reconciliation_failures():
@@ -7388,6 +8809,42 @@ def cmd_selftest(args, root: str) -> int:
                                         "error are three refusals with three remedies; all "
                                         "exit 2 and none is a traceback"))
 
+    # The third of the three backends §3.5 proves a stored-field round trip for — labels and
+    # assignees reassembled exactly as the REST API shapes them.
+    for failure in github_native_field_failures():
+        findings.append(_finding("sp-gh-native-fields-broken", "error",
+                                 f"github stored-field reassembly — {failure}",
+                                 remedy="GitHubBackend._native_fields: every label becomes "
+                                        "a tag; only the first assignee is reflected, "
+                                        "because the canonical field is singular"))
+
+    # Measured on this org (task 6.1): `--assigned-to` refuses a display name outright, so
+    # `_native_fields` must read back the UPN, never the display name, or a carried-forward
+    # assignee would fail its own reaffirming write.
+    for failure in azure_native_fields_read_failures():
+        findings.append(_finding("sp-az-native-fields-read-broken", "error",
+                                 f"azure-boards assignee reassembly — {failure}",
+                                 remedy="AzureBoardsBackend._native_fields must prefer "
+                                        "uniqueName over displayName for System.AssignedTo"))
+
+    # Measured on this org (task 6.2): `TF401262` above 1,048,576 characters — checked before
+    # the call, the same way the github body ceiling is.
+    for failure in azure_description_ceiling_failures():
+        findings.append(_finding("sp-az-description-ceiling-broken", "error",
+                                 f"azure-boards description ceiling — {failure}",
+                                 remedy="_az_with_description must refuse "
+                                        "sp-az-description-too-large before making the call, "
+                                        "never let az answer TF401262 anonymously"))
+
+    # The `@file` transport strips every trailing newline (task 6.2) — restored on read,
+    # since every document this tool writes ends in exactly one.
+    for failure in azure_trailing_newline_failures():
+        findings.append(_finding("sp-az-trailing-newline-broken", "error",
+                                 f"azure-boards trailing-newline restore — {failure}",
+                                 remedy="azure_restore_trailing_newline must add back "
+                                        "exactly one newline when the read document lacks "
+                                        "one, and change nothing otherwise"))
+
     # What `azure-boards` has instead of an end-to-end run, and the reason it runs before
     # the early return: a primitive left inherited reaches a human as a traceback, which is
     # the one thing every external backend promises never to do.
@@ -7409,6 +8866,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "extension, an unauthenticated identity and an API "
                                         "error are four refusals with four remedies; all "
                                         "exit 2 and none is a traceback"))
+
+    # The literal-project-name fix, checked against the exact macro that resolves to nothing
+    # on this org's `az` — a reworded query must break this check rather than reintroduce
+    # `@project` silently.
+    for failure in azure_query_wiql_failures():
+        findings.append(_finding("sp-az-wiql-broken", "error",
+                                 f"the azure-boards listing query — {failure}",
+                                 remedy="azure_query_wiql names the project literally and "
+                                        "AND-scopes by area path and discovery tag when "
+                                        "given; the `@project` macro must never come back"))
 
     # The other thing `azure-boards` ships with instead of proof: the warning that says so.
     # It runs here, beside the two checks above, because all three answer the same question
@@ -7445,11 +8912,13 @@ def cmd_selftest(args, root: str) -> int:
     # backend would break every such repo while every configured one kept working — the
     # failure shape that goes unnoticed longest. Read against a path that cannot exist, so
     # it stays self-contained and never depends on this checkout's own config.
-    blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
+    blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", ".specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
                       ("worktreeSetup", None), ("azureStates", None), ("hooks", {}),
                       ("profiles", None),
-                      ("integrationBranch", None), ("releaseBranch", None), ("present", False)):
+                      ("integrationBranch", None), ("releaseBranch", None), ("present", False),
+                      ("azurePlacement", {}), ("azureColumns", {}),
+                      ("subjects", {}), ("tagCatalog", {})):
         if blank[key] != want:
             findings.append(_finding("sp-config-default-drift", "error",
                                      f"with nothing declared, config `{key}` is "
@@ -7482,6 +8951,79 @@ def cmd_selftest(args, root: str) -> int:
                                         "integrationBranch before origin_head, and leave "
                                         "origin_head/init_default/'main' untouched when "
                                         "none is declared"))
+
+    # Subject resolution: optional where nothing is declared, and a refusal on each of the
+    # two ways `## Open Decisions` names once a repository HAS declared `subjects`.
+    for failure in subject_resolution_failures():
+        findings.append(_finding("sp-subject-resolution-broken", "error",
+                                 f"subject resolution — {failure}",
+                                 remedy="resolve_subject: no `subjects` declared is not a "
+                                        "refusal; an unresolved key or a key naming an "
+                                        "undeclared subject both are"))
+
+    # The board-state precedence `azure-boards`'s column write consults — core logic, never
+    # a backend's own derivation, per `spec-backend.md` §The interface is the document.
+    for failure in board_state_failures():
+        findings.append(_finding("sp-board-state-broken", "error",
+                                 f"board-state precedence — {failure}",
+                                 remedy="board_state_of: archived (phase) outranks reviewed "
+                                        "(record), which outranks the derived stage — never "
+                                        "the other order"))
+
+    # The one pure check both the write-time tag proposal and doctor's uncatalogued-tag
+    # finding (§2.13) share.
+    for failure in tag_catalog_failures():
+        findings.append(_finding("sp-tag-catalog-broken", "error",
+                                 f"tag-catalog validation — {failure}",
+                                 remedy="tags_outside_catalog: no `tagCatalog` declared "
+                                        "flags nothing; a tag absent from a DECLARED "
+                                        "catalog does"))
+
+    # The reserved prefix that lets storage and rendering share one native tag surface.
+    # It runs beside the catalogue check above because they read the same names and must
+    # agree on which of them belong to the document: a regression here makes `doctor` flag
+    # every rendered label as uncatalogued, and makes every write reaffirm one as declared.
+    for failure in declared_tag_failures():
+        findings.append(_finding("sp-declared-tags-broken", "error",
+                                 f"reserved-prefix filtering — {failure}",
+                                 remedy="declared_tags drops every `spec:`-prefixed name and "
+                                        "the discovery tag, and nothing else — a name merely "
+                                        "containing the prefix is the spec's own"))
+
+    # `start`/`target` real-calendar validation — a digit-shaped regex would have accepted
+    # `2026-13-99`.
+    for failure in field_date_failures():
+        findings.append(_finding("sp-field-date-broken", "error",
+                                 f"field date validation — {failure}",
+                                 remedy="parse_field_date must reject anything "
+                                        "`date.fromisoformat` rejects, not just anything a "
+                                        "digit-shaped regex would"))
+
+    # The write side of the four stored fields: the discovery tag must survive every write,
+    # tagged or not, or a freshly created spec goes unfindable the instant it exists.
+    for failure in azure_native_field_failures():
+        findings.append(_finding("sp-az-native-fields-broken", "error",
+                                 f"azure-boards stored-field write — {failure}",
+                                 remedy="azure_native_field_pairs must always include the "
+                                        "discovery tag in the System.Tags pair, declared "
+                                        "tags or not"))
+
+    # The read side's mirror: the stored document must never carry a second, unread copy of
+    # a field the native store already owns.
+    for failure in field_strip_failures():
+        findings.append(_finding("sp-field-strip-broken", "error",
+                                 f"stored-field stripping — {failure}",
+                                 remedy="strip_frontmatter_keys drops exactly `tags`/"
+                                        "`assignee`/`start`/`target` and no other line"))
+
+    # The bug an ordinary write would otherwise reintroduce: a stripped key is gone from the
+    # text, so silence in the new write must mean "unchanged", never "clear it".
+    for failure in carry_forward_failures():
+        findings.append(_finding("sp-carry-forward-broken", "error",
+                                 f"stored-field carry-forward — {failure}",
+                                 remedy="carry_forward_fields: a key ABSENT from the new "
+                                        "write's frontmatter keeps the old value; a key "
+                                        "PRESENT (even empty) overrides it"))
 
     # The task metadata grammar, asserted key by key rather than eyeballed. Self-contained, so
     # it runs on an installed copy too. Both halves matter: every documented key parses, AND an
@@ -7545,7 +9087,7 @@ def cmd_selftest(args, root: str) -> int:
                                  f"{want_build} — `/quenching:specs:execute` step 4 would read "
                                  f"the wrong section set",
                                  remedy="DEFAULT_SCHEMA's `moment: build` sections must match "
-                                        "docs/standards/workflows/plan-artifacts.md §Fourteen "
+                                        "/.docs/standards/workflows/plan-artifacts.md §Fourteen "
                                         "canonical sections"))
 
     # A `## Impact` bullet may carry a `§`address beside its path (the executor's optional
@@ -7554,19 +9096,19 @@ def cmd_selftest(args, root: str) -> int:
     # fixture, never the real command surface: editing that to pass would prove it by
     # coincidence, not by contract.
     impact_probe = parse_impact_standards(
-        "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
-        "- `docs/standards/automation/skills.md` §The verifier — revisado.\n"
-        "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
+        "## Impact\n\n### Standards this spec will write into /.docs/standards/\n\n"
+        "- `/.docs/standards/automation/skills.md` §The verifier — revisado.\n"
+        "- `/.docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
         "lê inteiro.\n", DEFAULT_SCHEMA)
-    want_impact = ["docs/standards/automation/skills.md",
-                   "docs/standards/workflows/plan-artifacts.md"]
+    want_impact = ["/.docs/standards/automation/skills.md",
+                   "/.docs/standards/workflows/plan-artifacts.md"]
     if impact_probe != want_impact:
         findings.append(_finding("sp-impact-address-tolerance", "error",
                                  f"parse_impact_standards() on a §addressed bullet returned "
                                  f"{impact_probe}, expected {want_impact} — a `§`address beside "
                                  f"the path must not break the declaration it sits on",
                                  remedy="parse_impact_standards must keep matching only the "
-                                        "docs/standards/**.md path and ignore the rest of the "
+                                        "/.docs/standards/**.md path and ignore the rest of the "
                                         "line, addressed or not"))
 
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
@@ -7627,13 +9169,16 @@ def cmd_selftest(args, root: str) -> int:
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
                           "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1
-                                   + len(HANDOFF_BLOCK_CASES),
+                                   + len(HANDOFF_BLOCK_CASES)
+                                   + len(FILES_PARSE_CASES) + len(FILES_ANNOTATION_CASES),
                           "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
     print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
           f"{len(SECTION_CASES['cases']) + 1} section + {len(HANDOFF_BLOCK_CASES)} "
-          f"Handoff-block canonical case(s), {len(errors)} error(s))")
+          f"Handoff-block + {len(FILES_PARSE_CASES)} split + "
+          f"{len(FILES_ANNOTATION_CASES)} annotation canonical case(s), "
+          f"{len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
         print(f"          remedy: {f['remedy']}")
@@ -7642,7 +9187,9 @@ def cmd_selftest(args, root: str) -> int:
     if not findings:
         print(f"  OK — the canonical frontmatter and section cases pass, the capture form "
               f"stamps exactly the entry-gate headings, the task metadata grammar is closed "
-              f"on both the key list and the indent, `--moment build` resolves the six "
+              f"on both the key list and the indent, a comma inside `files:` parentheses "
+              f"stays in its own entry while `(new)` and plain paths pass untouched, "
+              f"`--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
               f"path, the {len(HANDOFF_BLOCK_CASES)} Handoff-block cases match `## Tasks` by "
               f"their heading's own numeral and a flat `## Handoff` still reads back as one "
@@ -7656,14 +9203,26 @@ def cmd_selftest(args, root: str) -> int:
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
-              f"each refuse with their own remedy, the unproved-backend warning says its "
-              f"piece once per process on stderr and only for "
-              f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
+              f"each refuse with their own remedy, no backend warns as unproved "
+              f"({', '.join(UNPROVED_BACKENDS) or 'none declared'}), every record reads "
+              f"back as it was "
               f"written, a foreign label survives label reconciliation while a stale "
-              f"`spec:` one does not, a grouped document survives store-and-reload byte for byte whether "
+              f"`spec:` one does not, the reserved `spec:` prefix and the discovery tag are "
+              f"filtered out of a spec's own declared tags while a name merely containing "
+              f"the prefix is not, "
+              f"a grouped document survives store-and-reload byte for byte whether "
               f"it fits one issue body or spills into continuation comments, an oversized body "
-              f"refuses without making the call, and the embedded "
-              f"schema and template match their asset files.")
+              f"refuses without making the call, the azure-boards WIQL never carries "
+              f"`@project`, subject resolution refuses only once `subjects` is declared, the "
+              f"board-state precedence puts archived over reviewed over the derived stage, "
+              f"an undeclared tag catalog flags nothing while a declared one flags what is "
+              f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
+              f"tag survives every azure-boards write whether or not a spec declares tags of "
+              f"its own, the stored document never carries a second copy of a native field, "
+              f"github reassembles every label into a tag and only its first assignee, the "
+              f"azure-boards div marker and comment marker both round-trip, its description "
+              f"ceiling refuses before the call and its stripped trailing newline is "
+              f"restored, and the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
@@ -7672,7 +9231,7 @@ def cmd_release(args, root: str) -> int:
     and tag that commit — the MECHANICAL half of a release. Judging what the number should
     be, whether a lone merge on `develop` is a release or a habit, and the `develop -> main`
     merge itself all belong to the command that calls this; see
-    docs/standards/git/branching.md.
+    /.docs/standards/git/branching.md.
 
     Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
     not this plugin's own checkout, a lockstep already disagreeing with itself, or a
@@ -7696,6 +9255,21 @@ def cmd_release(args, root: str) -> int:
                                     "message": "this is not the plugin's own repository — "
                                                "missing: " + ", ".join(missing)})
 
+    # The bump must land on the INTEGRATION branch: the deliberate `develop -> main` merge
+    # is the moment that carries the version (versioning-release.md), so committing the
+    # bump from any other checkout would publish a number `main` never received. The repo
+    # above came from `os.getcwd()`; this guards which branch that checkout is on.
+    integration = load_config(root)["integrationBranch"] or DEFAULT_INTEGRATION_BRANCH
+    current = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+    if current != integration:
+        return emit_err(args.json, {"code": "sp-release-wrong-branch", "exit": 2,
+                                    "branch": current, "integrationBranch": integration,
+                                    "message": f"this checkout is on '{current}', not the "
+                                               f"integration branch '{integration}' — the "
+                                               f"bump must be committed on the integration "
+                                               f"branch so the develop -> main merge "
+                                               f"carries it"})
+
     result = bump_release_artifacts(repo, new_version)
     if not result["ok"]:
         return emit_err(args.json, {"code": "sp-release-drift", "exit": 2,
@@ -7711,12 +9285,16 @@ def cmd_release(args, root: str) -> int:
     if code != 0:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "commit", "message": f"git commit failed: {err}"})
+    # `git commit`'s own output is the summary, not a hash — report HEAD's bare hash so the
+    # release command's self-check can compare it to `rev-parse <version>^{commit}`.
+    commit_hash = _git(repo, "rev-parse", "HEAD").strip()
     code, _, err = _git_run(repo, "tag", "-a", new_version, "-m", subject)
     if code != 0:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "tag", "message": f"git tag failed: {err}"})
 
     emit(args.json, {"ok": True, "oldVersion": result["oldVersion"], "newVersion": new_version,
+                     "branch": integration, "commit": commit_hash,
                      "artifacts": result["artifacts"], "tag": new_version, "subject": subject},
          f"release: {result['oldVersion']} -> {new_version}, tagged {new_version}")
     return 0
@@ -7803,19 +9381,70 @@ def cmd_doctor(args, root: str) -> int:
     # one that is plainly stranded.
     if cfg["legacyPath"]:
         findings.append(_finding("sp-config-legacy-location", "warn",
-                                 f"`specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
+                                 f"`/.specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
                                  f"longer read — the plugin's config is {CONFIG_FILE}",
-                                 path=f"specs/{LEGACY_CONFIG_FILE}",
+                                 path=f".specs/{LEGACY_CONFIG_FILE}",
                                  remedy=f"move its keys into {CONFIG_FILE} and delete it; "
                                         f"whatever it declares is doing nothing today"))
 
+    # The one doctor check that reaches the network — every other finding above is local by
+    # construction. Justified because it is the only place that can ever catch it: a card a
+    # human untagged is invisible to every OTHER command, which all read through the
+    # tag-scoped listing. Runs only when `azure-boards` is actually configured, so a
+    # workspace on `files` or `github` — or on `azure-boards` with nothing declared yet —
+    # never pays for it.
+    if cfg["backend"] == "azure-boards":
+        az, az_err = open_azure_backend(root)
+        if not az_err:
+            for row in az.marker_without_discovery_tag():
+                findings.append(_finding("sp-az-marker-untagged", "warn",
+                                         f"work item {row['id']} (spec '{row['slug']}') "
+                                         f"carries the quenching-spec marker but not the "
+                                         f"discovery tag '{az.discovery_tag}' — invisible to "
+                                         f"every command's tag-scoped listing",
+                                         path=str(row["id"]), slug=row["slug"],
+                                         remedy=f"re-apply the '{az.discovery_tag}' tag on "
+                                                f"the board; until then this spec exists "
+                                                f"only there"))
+            # The three per-spec findings §2.13 adds — cost is the tag-scoped listing (the
+            # specs this repository actually has), not the whole area the sweep above pays.
+            for row in az.board_findings():
+                if row["kind"] == "column":
+                    findings.append(_finding("sp-az-column-drift", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"is in column '{row['actual']}', not "
+                                             f"'{row['expected']}' — the next write brings "
+                                             f"it back",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             remedy="the board is the projection; move the "
+                                                    "spec through its stage/records instead "
+                                                    "of the card, or declare a different "
+                                                    "azureColumns mapping"))
+                elif row["kind"] == "tag":
+                    findings.append(_finding("sp-az-tag-uncatalogued", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"carries tag '{row['tag']}', which is not in "
+                                             f"the declared `tagCatalog`",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             tag=row["tag"],
+                                             remedy="add the tag to `tagCatalog` in "
+                                                    f"{CONFIG_FILE}, or remove it from the "
+                                                    f"work item"))
+                elif row["kind"] == "dates":
+                    findings.append(_finding("sp-az-dates-missing", "warn",
+                                             f"work item {row['id']} (spec '{row['slug']}') "
+                                             f"is past the captured stage with no `start`/"
+                                             f"`target` — the team's own rule expects both "
+                                             f"from Entendimento Técnico on",
+                                             path=str(row["id"]), slug=row["slug"],
+                                             remedy="record `start`/`target` on the spec"))
     # The workspace shape — the folder IS the phase, but only under the `files` backend,
     # the one backend that has a folder. An external backend's workspace is the tracker
     # itself, so none of these findings apply there: producing them would describe a
     # world this repo does not inhabit.
     if cfg["backend"] == "files":
         if not os.path.isdir(root):
-            findings.append(_finding("sp-no-workspace", "error", f"no specs/ workspace at {root}",
+            findings.append(_finding("sp-no-workspace", "error", f"no `/.specs/` workspace at {root}",
                                      remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
             return _emit_doctor(args, root, findings)
 
@@ -7833,7 +9462,7 @@ def cmd_doctor(args, root: str) -> int:
                                          f"folded backlog/ and ready/ into plans/",
                                          path=folder, count=len(held),
                                          remedy="specs.py migrate  (moves them into plans/ "
-                                                "unrenamed; specs/archive/** is never touched)"))
+                                                "unrenamed; `/.specs/archive/**` is never touched)"))
 
         leftovers = _v1_leftovers(root)
         for name in leftovers:
@@ -7841,7 +9470,7 @@ def cmd_doctor(args, root: str) -> int:
                                      f"`{name}/` is a v1 three-file plan folder",
                                      path=name,
                                      remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
-                                            f"specs/archive/** is never touched)"))
+                                            f"`/.specs/archive/**` is never touched)"))
         for entry in sorted(os.listdir(root)):
             full = os.path.join(root, entry)
             # `config.json` stays exempt even though nothing reads it any more: it has its own
@@ -7906,8 +9535,8 @@ def cmd_export(args, root: str) -> int:
 # --------------------------------------------------------------------------- #
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     p = argparse.ArgumentParser(prog="specs.py",
-                                description="deterministic trail for the specs/ front")
-    p.add_argument("--root", help="the specs/ workspace directory (default: nearest specs/ upward)")
+                                description="deterministic trail for the specs front")
+    p.add_argument("--root", help="the `/.specs/` workspace directory (default: nearest `/.specs/` upward)")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
 
@@ -7920,6 +9549,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--title")
     sp.add_argument("--verification", choices=list(VERIFICATION_POLICIES),
                     help=f"when the suite runs (default: {DEFAULT_VERIFICATION})")
+    sp.add_argument("--subject",
+                    help="a key from `azurePlacement.subjects` — applies its parent (where "
+                         "the backend has one) and its fixed tags; omit to fall back to "
+                         "`defaultSubject`")
 
     add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
 
@@ -7960,6 +9593,18 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     # `sp-bad-verification` and the declared set like every other refusal here.
     sp.add_argument("policy", nargs="?",
                     help="omit to read; one of " + ", ".join(VERIFICATION_POLICIES))
+
+    for field, value_help in (
+        ("tags", "omit to read; a comma-separated list to SET (replaces, never appends)"),
+        ("assignee", "omit to read; a name or identity to set"),
+        ("start", "omit to read; YYYY-MM-DD to set"),
+        ("target", "omit to read; YYYY-MM-DD to set"),
+    ):
+        sp = add_json(sub.add_parser(field, help=f"read or set ONE spec's `{field}` — "
+                                                 f"stored, never projected"))
+        sp.add_argument("spec")
+        sp.add_argument("value", nargs="?", help=value_help)
+        sp.set_defaults(field=field)
 
     sp = add_json(sub.add_parser("record", help="read or merge ONE frontmatter record"))
     sp.add_argument("spec")
@@ -8041,6 +9686,10 @@ DISPATCH: dict = {
     "show": cmd_show,
     "section": cmd_section,
     "verification": cmd_verification,
+    "tags": cmd_field,
+    "assignee": cmd_field,
+    "start": cmd_field,
+    "target": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,

@@ -1,5 +1,5 @@
 ---
-description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the docs/ or specs/ front → /docs:align, /specs:align.
+description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the `docs` or `specs` front → /docs:align, /specs:align.
 argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
@@ -38,7 +38,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 
 - **The legacy `openspec-*` surface is not this sweep's.** `.claude/skills/openspec-*/` and
   `.claude/commands/opsx/` are legacy CLI artifacts a prior `openspec init` left behind — a
-  native `specs/` repo has none. When present they belong to `/quenching:specs:align`, which
+  native `/.specs/` repo has none. When present they belong to `/quenching:specs:align`, which
   removes them when migrating a legacy `openspec/` workspace
   ([specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
   §Findings the sweep FIXES). Inventory them only to **note** them; never classify them onto the axis,
@@ -59,7 +59,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   `/quenching:skill:new` run would cost N sessions to reach a verdict none of them can reach.
   The edit still gates on its own OK, and a **trigger phrase is never deleted here** — that is
   `/quenching:skill:eval`'s, on a measured miss.
-- **This front is honestly short, and says so.** `docs/` and `specs/` each have an out-of-band
+- **This front is honestly short, and says so.** `/.docs/` and `/.specs/` each have an out-of-band
   store to drain; this one has none, and the migration is idempotent — so the loop reaches a
   fixpoint in **1–2 passes**, essentially always. It is not ceremony: a rename in the migration
   shifts the registry and can dangle a reference, and re-probing catches that in the same run. But
@@ -84,7 +84,7 @@ Resolve `skills.py` per
 tool always resolves via the plugin path.
 
 **Every shell grant is scoped**, per
-[`docs/standards/automation/skills.md`](../../../../docs/standards/automation/skills.md)
+[`/.docs/standards/automation/skills.md`](../../../../.docs/standards/automation/skills.md)
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
 blast-radius sweep (§3), `mkdir`/`mv`/`cp` for the renames and the manual install, `rm` for a
 confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
@@ -128,7 +128,7 @@ place, every boundary present — while the surface pays for prose about *how* e
 §8's review a parser can decide, for one call; the prose no parser names, §8 cuts by the read.
 
 An **empty** surface (no commands, no skills) also stops: scaffolding a taxonomy for zero commands
-is ceremony. Note whether an OKF bundle exists (`docs/index.md` with `okf_version`) and say so once
+is ceremony. Note whether an OKF bundle exists (`/.docs/index.md` with `okf_version`) and say so once
 — without one the rule and registry stay out of scope, while the migration still applies.
 
 The registry zone is deliberately **not** probed: `registry reindex` has no dry run, and it is one
@@ -150,9 +150,9 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §The single axis — several unrelated folders
-→ unroutable). Read `docs/standards/automation/skills.md` if present — it governs; note whether
-the rule and the registry (`docs/documentation/reference/automation.md`) exist, and whether
-the rule and the registry (`docs/documentation/reference/automation.md`) exist.
+→ unroutable). Read `/.docs/standards/automation/skills.md` if present — it governs; note whether
+the rule and the registry (`/.docs/documentation/reference/automation.md`) exist, and whether
+the rule and the registry (`/.docs/documentation/reference/automation.md`) exist.
 **Done when:** the inventory table (item · classification · `sk-*` gap) covers every item in the
 working set, and no file changed.
 
@@ -287,7 +287,7 @@ sweep.
 against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-([skills.md](../../../../docs/standards/automation/skills.md) §The admission criterion). The split is
+([skills.md](../../../../.docs/standards/automation/skills.md) §The admission criterion). The split is
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in

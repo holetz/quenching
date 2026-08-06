@@ -67,7 +67,7 @@ unproven standard is `authority: background`.
 
 ### 4. Write the concept doc
 Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
-links absolute (`/docs/...`); within-home links relative.
+links absolute (`/.docs/...`); within-home links relative.
 
 ### 5. Update the folder's `index.md`
 Add a bullet-link with the doc's `description` (`* [<title>](<rel-path>.md) — <description>`).

@@ -40,6 +40,7 @@ python3 --version           # or `py --version` on Windows
 | Close it out — review, archive, distil, then merge | `/specs:conclude` |
 | Rank everything that is parked | `/specs:triage` |
 | Fix the workspace itself — scaffold, filenames, the v2/v1 fold | `/specs:align` |
+| Run one spec end to end — capture, develop, execute, conclude — on one authorization | `/specs:orchestrate` |
 | Align **every** front (`docs/`, `specs/`, `.claude/`) | `/align` |
 
 > `/specs:develop` is the short form of `/quenching:specs:develop`; use the long form if
@@ -365,6 +366,10 @@ branch: {base: main, work: plan/session-tokens} # stamped when isolation is take
 reviewed: {date: 2026-07-28}                   # a human read the whole branch diff
 merge: {strategy: merge-commit, subject: "plan/session-tokens: merge (merge-commit)"}  # + pr: on the PR route
 outcome: done                                  # stamped at archive — done | abandoned
+tags: [Vertical: Risco, Área: Crédito]         # STATE, not a record — set by `specs.py tags`
+assignee: someone                              # STATE — set by `specs.py assignee`
+start: 2026-08-01                              # STATE — set by `specs.py start`
+target: 2026-08-31                             # STATE — set by `specs.py target`
 ---
 ```
 
@@ -380,6 +385,15 @@ record is written only by its owning command; `approved`, `branch`, `merge` and 
 write-once — rewriting one would falsify a fact that already happened. A spec carries no OKF
 `type:` — it is not a concept doc, it lives outside the bundle, and `specs.py validate` is what
 checks it.
+
+**`tags`, `assignee`, `start` and `target` are STATE, never records** — first-level keys, each set
+by its own deterministic verb (`specs.py tags|assignee|start|target <slug> [value]`, read when
+`value` is omitted). Where a backend has a faithful native counterpart — issue labels/assignees on
+`github`, `System.Tags`/`System.AssignedTo`/the two scheduling dates on `azure-boards` — that
+counterpart IS the storage: the value is reassembled from it on every read, never kept in the
+document too, and a human's edit on the tracker is the spec's new value on the very next read.
+`start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
+`date:` does everywhere.
 
 Fourteen canonical headings, in this order: `## Overview`, `## Problem`, `## Proposal`,
 `## Out of Scope`, `## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`,
@@ -426,7 +440,7 @@ code and the JSON, never on prose.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P]` | create in `plans/` with `## Problem` alone; stamps the date ONCE |
+| `specs.py new <slug> [--title T] [--verification P] [--subject KEY]` | create in `plans/` with `## Problem` alone; stamps the date ONCE. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
 | `specs.py list [--json]` | every spec, grouped by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections, stage, tasks, the frontmatter records, commits, and the gate's outstanding list |
 | `specs.py section <slug> "<Heading>[,<Heading>…]" [--write]` | read N sections in ONE call, returned in the order asked; `--write` takes exactly one and creates it in canonical position |
@@ -439,8 +453,9 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
-| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`; exit 0 whether or not anything is declared |
+| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog`; exit 0 whether or not anything is declared |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
+| `specs.py tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list |
 | `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. **The post-capture writer**: `new --verification` answers at the one moment nobody has an opinion yet, and an external backend has no file to hand-edit |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
 | `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing keeps it in sync, so it is a rescue copy for an external backend and never a second store |
