@@ -579,13 +579,27 @@ All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 
 ## Upgrade
 
-Bump `version` in `.claude-plugin/plugin.json` and `VERSION` on each release; that is
-the key Claude Code uses to detect and apply an upgrade. Mirror it in the marketplace manifest's
-plugin entry (`.claude-plugin/marketplace.json`) too, and keep the `VERSION` constant in **all
-three** shipped scripts — `assets/hooks/okf-validate.py`, `assets/bin/specs.py` and
-`assets/bin/skills.py` — in lockstep with that pair, since each one's `--version` is what its
-installing align compares against an already-installed copy in a target repo (`/docs:align` for
-the hook, `/specs:align` for `specs.py`, `/skill:align` for `skills.py`). Six sources, one number.
+Resolution is **plugin-first, with no install and no fallback** — every command reaches its tool
+at `${CLAUDE_PLUGIN_ROOT}/assets/{bin,hooks}/<tool>` — so a version bump reaches every consumer the
+moment Claude Code applies the plugin upgrade; there is nothing installed to compare against and
+nothing to sync. What each front's align (`/docs:align`, `/specs:align`, `/skill:align`) still does
+is offer to **remove** a legacy copy a repo installed before resolution went plugin-first —
+`skills.py drift` is what finds one, reading the leftover's own `VERSION` constant against the
+shipped tool's.
+
+Publishing the bump itself is mechanized, not a manual edit. `specs.py release <version>` moves the
+seven version-carrying files together and creates the tag in one act: `.claude-plugin/plugin.json`,
+`VERSION`, the marketplace manifest's plugin entry, the three tool scripts' own `VERSION` constants
+(`assets/hooks/okf-validate.py`, `assets/bin/specs.py`, `assets/bin/skills.py`), and
+`assets/bin/session.py`, which carries the same constant though no consumer reads it back. This
+repository's own `/release` command (`.claude/commands/release.md` — not shipped by the plugin)
+drives it: run once, deliberately, at the **`develop → main` merge**, never at a spec's own
+conclude, it reads what accumulated on `develop` since the last release, proposes a patch/minor/major
+bump with its reasoning, and gates on one confirmation before merging, bumping, tagging and pushing.
+See [`docs/standards/ci-cd/versioning-release.md`](/docs/standards/ci-cd/versioning-release.md) for
+why each half of the lockstep matters, and
+[`docs/standards/git/branching.md`](/docs/standards/git/branching.md) for the `develop`/`main` split
+`/release` publishes into.
 
 - **4.2.0:** **nothing is written after the thing it describes, so the merge is last.** The
   task→commit anchor inverted from the commit's **sha** to its **subject** — known *before* the
