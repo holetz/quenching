@@ -82,10 +82,6 @@ SUBCOMMANDS
                   outside the markers. Exits 1 when the repo carries no registry
                   doc or no zone markers — a table is never placed at a guessed
                   anchor inside prose a human wrote.
-  budget [--ceiling N]
-                  what the surface costs before anything fires: per command and
-                  summed, sorted by cost, against the ceiling. Reports; never
-                  refuses.
   read PATH [--sections "A,B"] [--rules-only]
                   N sections of any markdown file in ONE call, frontmatter stripped.
                   Without `--sections`, prints the file's heading index — what exists
@@ -163,47 +159,6 @@ UNSCOPED_TOOLS = ("Bash",)      # granting the whole shell for the turn
 EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
 TOOL_EVENTS = ("PreToolUse", "PostToolUse")   # the per-tool-call hook events
 LLM_HANDLERS = ("prompt", "agent")            # hook handlers that run an inference per firing
-
-# The surface-wide always-on ceiling. Set to this plugin's own measured total — every
-# command description plus every agent description, taken on parsed values — so the number
-# is one a run produced rather than one somebody picked. It is REVISED, never guessed:
-# move it only from a measurement, and `--ceiling` overrides it for a surface with its own
-# budget.
-#
-# It EQUALS the current total, so it has no headroom and the next command minted crosses it on
-# the day it is minted. That is deliberate: `budget` reports and never refuses, so the
-# crossing prompts a re-measure rather than blocking anything. The pre-diet 36503 was a
-# baseline the surface then sat 5,798 under, which meant it could never fire.
-#
-# 2026-07-27: re-measured at 11565 over 24 commands (0 agents), replacing 2083. The old
-# number was NOT a smaller surface being honest — it was taken on 2026-07-26 against
-# descriptions written as bare `/`-menu labels, immediately after the collapse deleted the
-# half that carried triggers and boundaries. Restoring those (and the evals' two measured
-# trigger additions) is what the surface now costs, and the two numbers are measurements of
-# different surfaces rather than growth to be alarmed by. A ceiling set mid-shrink could
-# never fire honestly, which is why this waited for the fold to land.
-#
-# 2026-07-28: re-measured at 12726 over 25 commands (0 agents), replacing 11565. The
-# mechanism worked exactly as the paragraph above predicted: `move-conclude-merge-last`
-# minted the 25th command (`/specs:isolate`) and the ceiling fired the same day. The
-# +1161 is that command's own description plus the boundary clauses five siblings grew to
-# name it. Revised from the measurement `budget` printed, never estimated.
-#
-# 2026-08-02: re-measured at 12875 over the same 26 commands (25 routed, 0 agents),
-# replacing 12726. NO command was minted and none was reclassified — the +149 is three
-# descriptions growing (`/specs:execute` +62, `/specs:develop` +56, `/specs:conclude`
-# +31) since a03f31a. That is the ratchet's second firing mode, silent by construction,
-# and it went unseen because nothing in the repo's verification routine ran `budget`;
-# that routine now does. Revised from the measurement `budget` printed, never estimated.
-#
-# 2026-08-03: re-measured at 14898 over the same 26 commands (25 routed, 0 agents),
-# replacing 12875. NO command was minted and none was reclassified — the +2023 is
-# eleven descriptions regaining the trigger phrases and `Not for:` boundaries that
-# `restore-routing-info-on-docs-commands` restored (nine `/docs:*` plus `/skill:eval`,
-# `/skill:new`), the description-growth firing mode's SECOND occurrence (2026-08-02 was
-# its first). Revised from the measurement `budget` printed, never estimated.
-DEFAULT_CEILING = 14898
-CHARS_PER_TOKEN = 4             # a rule of thumb for the report, never a tokenizer count
 
 # the registry's derived zone — markers, cells, and location, per the automation mold
 REGISTRY_RELPATH = ("docs", "documentation", "reference", "automation.md")
@@ -864,10 +819,9 @@ def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
 def description_is_resident(fm: dict) -> bool:
     """Is this command's `description` in every session's context?
 
-    THE one place that answers it. `budget` charges the always-on total from it and
-    `lint` scopes its two routing codes by it, so the two instruments can never
-    disagree about the same surface — two copies of this condition is the shape that
-    diverges in silence.
+    THE one place that answers it. `lint` scopes its two routing codes by it, so
+    the routing codes and residency can never disagree about the same surface — two
+    copies of this condition is the shape that diverges in silence.
 
     `disable-model-invocation: true` is the only field that makes the answer no.
     Measured, not assumed: Claude Code drops the description from the listing AND
@@ -926,8 +880,7 @@ def lint_command(cmd: dict, base: str, named_by: set[str] | None = None) -> list
     # that is actually in context. For a typed-only command there is no listing for a
     # trigger phrase to sit in and no neighbour for a boundary to discriminate against
     # — the human reaches it by typing the name. Reporting it as badly written for a
-    # routing that cannot happen is `lint` contradicting `budget`, which already
-    # charges the same command 0.
+    # routing that cannot happen is `lint` penalizing a description nothing routes from.
     if description_is_resident(fm):
         triggers = _quoted_phrases(description)
         if not triggers:
@@ -1008,9 +961,8 @@ def _lint_invocation(fm: dict, where: dict, named_by: set[str] | None = None) ->
     The second incoherence is narrower and was invisible until it was measured: a
     command another body reaches BY NAME cannot also be typed-only, because the Skill
     tool refuses it (row 7 of the mechanics reference). Nothing else on this surface
-    catches it — `budget` charges the command 0 and calls that an improvement, `doctor`
-    still counts it as present, and the conductor does not fail, it simply does
-    nothing."""
+    catches it — `doctor` still counts it as present, and the conductor does not
+    fail, it simply does nothing."""
     out, values = [], {}
     for key in ("user-invocable", "disable-model-invocation"):
         if key not in fm:
@@ -1849,21 +1801,10 @@ register("registry",
          cmd_registry)
 
 
-# --------------------------------------------------------------------------- #
-# budget — what the surface costs before a single skill fires
-#
-# `lint` catches ONE skill over ONE cap. This is the number no per-skill check can
-# see: every description and when_to_use, plus every wrapper description, are in
-# context on every session whether or not anything fires. It REPORTS and never
-# refuses — a surface may legitimately be large, and the decision to cut is the
-# human's, so exit 2 is never reached from here.
-# --------------------------------------------------------------------------- #
 def agent_definitions(root: str) -> list[tuple[str, dict]]:
     """`(filename, frontmatter)` for every `<root>/agents/*.md`, sorted.
 
-    Shared by `doctor` (which checks each definition is reachable) and `budget` (which
-    charges each description to the always-on total) so the two can never disagree about
-    what the agent surface contains."""
+    Read by `doctor` (which checks each definition is reachable)."""
     agents_dir = os.path.join(root, "agents")
     if not os.path.isdir(agents_dir):
         return []
@@ -1871,109 +1812,6 @@ def agent_definitions(root: str) -> list[tuple[str, dict]]:
             for fn in sorted(os.listdir(agents_dir)) if fn.endswith(".md")]
 
 
-def agent_budget_rows(root: str) -> list[dict]:
-    """Per agent definition: the `description` that listing it costs every session.
-
-    An agent's description is always-on context by exactly the same mechanism as a
-    command's — it is carried so the model can decide whether to delegate, and it is paid
-    whether or not any delegation happens. Charging commands for that and exempting agents
-    understated the surface by however many agents a repo had defined."""
-    return sorted(
-        ({"agent": f"agents/{fn}",
-          "description": len(str(fm.get("description", ""))),
-          "total": len(str(fm.get("description", "")))}
-         for fn, fm in agent_definitions(root)),
-        key=lambda r: (-r["total"], r["agent"]))
-
-
-def budget_rows(surface: dict) -> list[dict]:
-    """Per command: the `description` that listing it costs every session.
-
-    `when_to_use` is gone with the skill half — it was a Claude-Code-only extension
-    restating the description's first clause, and one file has one description.
-    `argument-hint` is still deliberately excluded: it totals a few dozen characters
-    across a whole surface and is not carried in the listing.
-
-    A typed-only command counts 0: Claude Code drops its description from context
-    entirely (the command is reachable only by typing it), so charging it to the
-    always-on total would report a cost the model never pays. The row stays in the
-    table, marked, so the surface's full inventory is still visible. The predicate is
-    `description_is_resident` — the same one `lint` scopes its routing codes by."""
-    rows = []
-    for c in surface["commands"]:
-        description = len(str(c["frontmatter"].get("description", "")))
-        resident = description_is_resident(c["frontmatter"])
-        rows.append({"command": c["command"], "description": description,
-                     "total": description if resident else 0,
-                     **({"alwaysOn": False} if not resident else {})})
-    return sorted(rows, key=lambda r: (-r["total"], r["command"]))
-
-
-def cmd_budget(args, root: str) -> int:
-    surface = load_surface(root)
-    rows = budget_rows(surface)
-    agents = agent_budget_rows(root)
-    # The two classes, reported side by side so a falling total can be READ. A surface
-    # that halves its cost by writing tighter descriptions and one that halves it by
-    # flagging half the surface typed-only look identical in the total alone, and only
-    # one of them is the honest design context-budget.md asks for. `typedOnly.characters`
-    # is the description text that left context — the number that grows when the field
-    # is used to dodge the measurement rather than to declare a human-must-choose
-    # command. `commands_total` sums the routed class alone, which is what makes
-    # `breakdown.commands` and `classes.routed.characters` equal by construction rather
-    # than by an assertion somebody has to maintain.
-    routed = [r for r in rows if r.get("alwaysOn") is not False]
-    typed_only = [r for r in rows if r.get("alwaysOn") is False]
-    commands_total = sum(r["total"] for r in routed)
-    agents_total = sum(r["total"] for r in agents)
-    total = commands_total + agents_total
-    ceiling = args.ceiling if args.ceiling is not None else DEFAULT_CEILING
-    findings = []
-    if total > ceiling:
-        findings.append(finding("sk-budget-ceiling", "error",
-                                f"the surface's always-on metadata is {total} characters, over "
-                                f"the {ceiling} ceiling — every session pays it before a command "
-                                "fires", characters=total, ceiling=ceiling,
-                                command=SURFACE_MISSING))
-    payload = {"root": root, "total": total, "ceiling": ceiling,
-               "approxTokens": round(total / CHARS_PER_TOKEN),
-               "breakdown": {"commands": commands_total, "agents": agents_total},
-               "classes": {
-                   "routed": {"commands": len(routed),
-                              "characters": sum(r["total"] for r in routed)},
-                   "typedOnly": {"commands": len(typed_only),
-                                 "characters": sum(r["description"] for r in typed_only)}},
-               "commands": rows, "agents": agents}
-    if args.json:
-        print(json.dumps({"ok": not findings, **payload, "findings": findings},
-                         indent=2, ensure_ascii=False))
-        return exit_for(findings)
-    print(f"skills budget — {root} ({plural(len(rows), 'command')}, "
-          f"{plural(len(agents), 'agent')})")
-    print(f"  {'chars':>6}  command")
-    for r in rows:
-        print(f"  {r['total']:>6}  {r['command']}")
-    for r in agents:
-        print(f"  {r['total']:>6}  {r['agent']}")
-    print(f"\n  {total} characters always on (~{payload['approxTokens']} tokens), "
-          f"ceiling {ceiling}")
-    if agents:
-        print(f"  commands {commands_total} + agents {agents_total}")
-    cls = payload["classes"]
-    print(f"  routed {plural(cls['routed']['commands'], 'command')}, "
-          f"{cls['routed']['characters']} characters in context · "
-          f"typed-only {plural(cls['typedOnly']['commands'], 'command')}, "
-          f"{cls['typedOnly']['characters']} characters out of it")
-    for f in findings:
-        print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
-    return exit_for(findings)
-
-
-register("budget",
-         lambda sp: sp.add_argument("--ceiling", type=int,
-                                    help=f"characters the surface may cost (default: "
-                                         f"{DEFAULT_CEILING}, this plugin's measured baseline)"),
-         cmd_budget)
 
 
 # --------------------------------------------------------------------------- #
