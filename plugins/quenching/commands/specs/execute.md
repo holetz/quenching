@@ -42,7 +42,7 @@ The git conventions live in
 
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §Boundary
+§The `specs/` layout §The fourteen sections §The `specs.py` tool surface §Boundary
 §The report mold.
 
 ## Resolving the tool
@@ -221,6 +221,14 @@ probe costs nothing.
 found already held, or declined, and any unresolved hook has been reported.
 
 ### 3. Settle the approval, off the state step 2 already read
+**Load the stage ladder first** — what the derived stage names and means — before reading anything
+off the payload:
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§Derived stages"
+```
+
 The `specs.py status --json` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
 subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
