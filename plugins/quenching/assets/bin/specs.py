@@ -4601,7 +4601,14 @@ AZ_BATCH_SIZE = 200
 AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description",
                    "System.Tags", "System.AssignedTo",
                    "Microsoft.VSTS.Scheduling.StartDate",
-                   "Microsoft.VSTS.Scheduling.TargetDate")
+                   "Microsoft.VSTS.Scheduling.TargetDate",
+                   # Task 1.1, measured: asking for it costs +198 bytes on a 6-item batch
+                   # (+0,8%) and removes `_apply_parent`'s whole `work-item show`. `$expand`
+                   # would have brought it for free along with the board's column field, but
+                   # it was rejected — the items come back carrying TWO
+                   # `WEF_<guid>_Kanban.Column`, one per board, and picking between them by
+                   # value is the guess §Placement forbids.
+                   "System.Parent")
 
 
 def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
@@ -5161,13 +5168,15 @@ class AzureBoardsBackend(SpecBackend):
         # `markdown=True` on every write, not once at creation: the format op only travels
         # where the description is itself an op, so an item already in `Markdown` pays
         # nothing and one still in `html` is converted by the first write that touches it.
-        # `parent=None` until `System.Parent` is in `AZ_BATCH_FIELDS` (task 3.3) — with
-        # nothing to diff against, a relation op would be re-added on every write rather
-        # than reaffirmed, which is why `_apply_parent`'s own read stays for now.
-        ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True)
+        # The parent rides the same body: `System.Parent` comes back with the document, so
+        # the link is REAFFIRMED by diff — already linked emits nothing, unlinked emits one
+        # relation op — where it used to cost a `work-item show` of its own on every write.
+        parent = (self.parent_id, self._work_item_url(self.parent_id)) \
+            if self.parent_id else None
+        ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True,
+                               parent=parent)
         if ops:
             self._az_patch(f"updating work item {item_id}", item_id, ops)
-        self._apply_parent(item_id, self.parent_id)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -5233,29 +5242,6 @@ class AzureBoardsBackend(SpecBackend):
         separately rather than one being derived from the other."""
         return f"{self.org.rstrip('/')}/{self.project}/_apis/wit/workItems/{item_id}"
 
-    def _apply_parent(self, item_id: int, parent_id: int | None) -> None:
-        """Reaffirm the declared parent on every write, resolved BY ID and never by title —
-        `## Open Decisions` settles this task 2.4: the id (e.g. `788243`) is stable, and a
-        title is one rename away from breaking the link. `subjects.<key>.parent` is what
-        supplies it; unset where no subject resolved one.
-
-        RESOLUTION IS THE READ BELOW, not a bespoke check — a parent id with no work item
-        behind it fails through the same `sp-az-api-error` refusal `_az` already raises for
-        any id `az` cannot find (`AZ_REFUSAL_CASES` covers it), so nothing new is needed to
-        say no; `## Out of Scope` already rules out this tool ever CREATING the parent.
-
-        Idempotent: the read is what lets every write call this safely — without it, ADDING
-        the same parent relation on every save would duplicate it rather than reaffirm it."""
-        if not parent_id:
-            return
-        current = self._az(f"reading work item {item_id}'s parent",
-                           "work-item", "show", "--id", str(item_id))
-        if int((current.get("fields") or {}).get("System.Parent") or 0) == parent_id:
-            return
-        self._az(f"linking work item {item_id} to its parent {parent_id}",
-                 "work-item", "relation", "add", "--id", str(item_id),
-                 "--relation-type", "parent", "--target-id", str(parent_id))
-
     def _resolve_board_field(self) -> str:
         """The team's Kanban column field — `WEF_<guid>_Kanban.Column` — resolved once per
         process and cached on `self`. `spec-backend.md` §Granular reading already allows a
@@ -5269,6 +5255,16 @@ class AzureBoardsBackend(SpecBackend):
         and 'User Story' resolves to 'Stories'."""
         if self._board_field is not None:
             return self._board_field
+        # BETWEEN PROCESSES, not just within one. The guid is per-team and per-process
+        # caching meant paying 1 + N calls on every `specs.py` invocation — measured 2,8s on
+        # a team with six boards. Task 1.1 ruled out reading it off the item itself, so the
+        # resolution stays authoritative and only its ANSWER is remembered, keyed by the team
+        # and work item type it was resolved for.
+        cache_key = f"boardField:{self.team}:{self.work_item_type}"
+        cached = azure_cache_read(self.org, self.project).get(cache_key)
+        if cached:
+            self._board_field = cached
+            return cached
         if not self.team:
             raise BackendRefusal({
                 "code": "sp-az-no-team", "exit": 2,
@@ -5295,6 +5291,7 @@ class AzureBoardsBackend(SpecBackend):
                     "referenceName")
                 if field:
                     self._board_field = field
+                    azure_cache_write(self.org, self.project, **{cache_key: field})
                     return field
         raise BackendRefusal({
             "code": "sp-az-no-board", "exit": 2,
