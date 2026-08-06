@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec backend interface
-description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, and the in-memory fake that turns "identical" into a checked property
+description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
 timestamp: 2026-08-06
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass
 maintainer: quenching
 ---
 
@@ -43,6 +43,47 @@ picks the spec, `derive_info` derives everything, and both are pure and shared.
 
 A corollary worth stating: **a backend that starts deriving anything is broken**, even if its answer
 happens to be right today.
+
+## A tolerant resolution announces itself, at a choke point rather than verb by verb
+
+`resolve_one` is tolerant in four rungs: the exact slug, the exact title, one close match above the
+threshold, then nothing. The last two answer a slug the human did not type, so the descriptor comes
+back carrying **`resolvedBy`** — `"title"` or `"approximate"` — and **`resolvedFrom`**, what it
+matched. Acting on a spec the human did not name is worse than refusing; the receipt is what makes
+the tolerance honest rather than a wrong answer delivered confidently.
+
+**A receipt only one verb carries is not a receipt.** For a while `status` was the only payload that
+propagated the two keys, while `section`, `task`, `record`, `promote` and the rest resolved through
+the same tolerance and announced nothing — `promote` among them, which archives. Every one of those
+verbs could write to a spec nobody named, and nothing in the JSON a caller branched on said so.
+
+The fix is not to write the two keys into each verb's payload. **The receipt is recorded where the
+human's slug is resolved and folded in where the payload is emitted** — one entry point
+(`read_one`) and one exit (`emit`), with the verb in between never mentioning it. A verb added
+tomorrow announces without its author knowing the rule exists.
+
+Three properties this shape has and the enumerated one does not:
+
+- **The count cannot go stale.** It was six verbs when the problem was written down, ten when it
+  was designed and eleven when it was built — and each number was produced by somebody reading the
+  file carefully. This is the failure mode
+  [shared-mold-keys.md](shared-mold-keys.md) measured on `resource:`: a rule that depends on the
+  author remembering is a rule the next author forgets.
+- **`resolve_one` stays pure.** The receipt is recorded one layer above it, in the command layer,
+  never inside the resolution — the purity over the listing is what makes "every backend resolves
+  the same way and gets the same refusals" a property instead of a claim, and a side effect there
+  would spend it to buy what the layer above already gives.
+- **The guard is structural.** `specs.py selftest` walks `DISPATCH` — the registry a verb must join
+  to exist — and refuses any verb whose own source resolves `args.spec` directly. It parses rather
+  than matches text, because the finding it emits names the very call it forbids.
+
+Both keys ride on every payload from a verb that resolved a spec at all, `null` on the exact path,
+so a caller reads `payload["resolvedBy"]` without testing for presence. A verb that resolves no spec
+carries neither: a null answer to a question nobody asked is noise. The receipt goes to the human
+reader too — the person running the verb by hand is exactly the one who mistyped the slug.
+
+**Only the human's own argument is announced.** Code already walking a listing resolves slugs it
+just read itself, and a receipt for those would be a receipt for nothing.
 
 ## The selected backend is the source of truth
 
