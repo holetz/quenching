@@ -53,6 +53,7 @@ to one front).
 | `integrationBranch` | any branch name | **none** — `specs.py release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
 | `releaseBranch` | any branch name | **none** — `specs.py release` applies `main` at the point of use | the release verb only |
 | `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event, through the config the core read |
+| `profiles` | `{"installed": ["docs", "specs", "skill"]}` | none — an absent key leaves all three fronts installed | the `/align` conductor, through the config the core read |
 
 **`docsDir` is the one key `specs.py` does not read, and it is here because it had nowhere else to
 live.** The checker's other settings (`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`,
@@ -107,6 +108,16 @@ of hook objects each carrying a `command`; a hook with `enabled: false` is filte
 read and never announced — and interprets nothing: it does not know what the declared command is
 for, and it never evaluates a `condition`. The three-part contract and the reason the extension
 lives in config rather than in a command are [extension-points.md](../automation/extension-points.md).
+
+**`profiles` is where a repository declares which fronts it uses** —
+`{"installed": ["docs", "specs", "skill"]}` is the shape, the three names the plugin's own
+fronts ([install-profiles.md](../architecture/install-profiles.md) §The front is the unit of
+installation). The core reads the block and validates its **shape** — `installed` must be a list
+of non-empty strings — and interprets nothing: what a front is, and what the list means, is the
+standard's, not the loader's. Absent, it declares nothing and nothing changes: behaviour with no
+profile is behaviour with all three fronts installed, which is the ordinary case. What a profile
+turns on and off, and what `/align` does with an uninstalled front, are
+[install-profiles.md](../architecture/install-profiles.md).
 
 ## Absence is the normal case, and never a finding
 
