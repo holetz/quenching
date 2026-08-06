@@ -52,7 +52,7 @@ per
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
 code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**No deltas.** A spec writes its durable rules **directly** into `docs/standards/` while it is
+**No deltas.** A spec writes its durable rules **directly** into `/.docs/standards/` while it is
 built, isolated on a branch. Whichever backend holds the spec is the only one that holds it, so
 there is no second store to bridge to: nothing here writes a delta and nothing later syncs one.
 
@@ -69,12 +69,12 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
   own gate is legal — stated once in
   [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §The gates, applied here on every write.
-- **Read `docs/` before writing — in the branch that needs it.** The relevant `docs/standards/` and
+- **Read `/.docs/` before writing — in the branch that needs it.** The relevant `/.docs/standards/` and
   `knowledge/glossary.md` are binding on wording, so a spec does not contradict a rule the repo
   already agreed on or invent a second name for a thing that already has one. Only the
   **adversarial** and **gate** banks ask questions that reading answers, so it is step 3b's and
   never the preamble's; shape, discoveries and approval skip it. No OKF bundle in the repo
-  (`docs/index.md` with `okf_version`) → skip silently.
+  (`/.docs/index.md` with `okf_version`) → skip silently.
 - **Never edit code.** If the work implies code changes, that is `/quenching:specs:execute`. If a request
   changes the spec's *intent* rather than sharpening it, say so and offer a fresh
   `/quenching:specs:create` instead of quietly rewriting what was already agreed.
@@ -131,9 +131,9 @@ specs.py section <slug> "<Heading1>,<Heading2>,…"     # only the sections this
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
 | approval | `## Proposal` `## Impact` `## Risks` | none — this bank writes nothing into the body |
 
-**The adversarial and gate banks also read `docs/`** (Doctrine): the `docs/standards/` this spec's
+**The adversarial and gate banks also read `/.docs/`** (Doctrine): the `/.docs/standards/` this spec's
 `## Impact` declares — the declared files, never the folders they sit in — and
-`docs/knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
+`/.docs/knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
 sub-agent under
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §Gathering the
 evidence, which returns one compact table and keeps the file reads out of the context every later
@@ -283,7 +283,7 @@ is friction for everyone.
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
   `/quenching:specs:execute`.
-- **Never write into `docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
+- **Never write into `/.docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
   understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does

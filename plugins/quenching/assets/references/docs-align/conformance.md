@@ -14,7 +14,7 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
 | `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/quenching:docs:harness`, not the validator) |
-| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/quenching:docs:align` for `docs/`, not authored knowledge) |
+| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/quenching:docs:align` for `/.docs/`, not authored knowledge) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
@@ -99,11 +99,11 @@ A doc that is provably **lying about itself**. These join the structural set the
   implemented, and flagging syntax nobody writes would make the must-fix set unusable.
 - **WARN `resource-self`** — the doc's own path falls inside the scope its `resource` declares.
   Such a doc governs nothing and is eternally fresh, which silently disables `stale-doc` for it.
-  Matching is **segment-wise**: a single `*` does not cross a `/`, so `docs/*` does not contain
-  `docs/standards/x.md`.
+  Matching is **segment-wise**: a single `*` does not cross a `/`, so `/.docs/*` does not contain
+  `/.docs/standards/x.md`.
   - **The bundle-aggregate exemption.** An entry whose scope contains the bundle **root** is an
     aggregate, not a mistake, and never raises this. `knowledge/glossary.md` really does govern
-    the whole bundle, so `resource: docs/**` is truthful and narrowing it would be the
+    the whole bundle, so `resource: /.docs/**` is truthful and narrowing it would be the
     fabrication. This is `TYPES_WITHOUT_RESOURCE` generalized — one exemption mechanism, not two.
 
 ## Staleness (CLI only — advisory, never blocking)
@@ -129,20 +129,20 @@ deadline.
 <!-- rules -->
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/docs        # human report; exit 0/1
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/docs --json # machine-readable findings
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/.docs        # human report; exit 0/1
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/.docs --json # machine-readable findings
 ```
 
 As a hook (stdin JSON): **PostToolUse**/**Stop** PROPOSE fixes via `additionalContext`;
 opt-in **PreToolUse** (`hardBlock: true`) denies writing an `index.md` with a `type` or a
 concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
-(`docsDir`/`warnAsError`/`blockOnFail`/`hardBlock`/`deadlineMs`).
+(`warnAsError`/`blockOnFail`/`hardBlock`/`deadlineMs`).
 
 ## Verify gate (Step 5 of /quenching:docs:align)
 
 <!-- rules -->
 
-A bundle is **aligned** when `okf-validate.py <docs>` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `okf-validate.py /.docs` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `resource-unresolved`, `resource-self`. (These are WARN,
 so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)
