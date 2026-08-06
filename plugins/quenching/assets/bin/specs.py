@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""specs.py — self-contained deterministic trail for the `specs/` front.
+"""specs.py — self-contained deterministic trail for the `/.specs/` front.
 
 Payload of the `quenching` plugin, sibling of `assets/hooks/okf-validate.py`
 and built in the same mold: stdlib-only, ZERO dependencies (its own minimal
@@ -10,7 +10,7 @@ ONE SPEC IS ONE FILE
 A spec is a single markdown file for its whole lifecycle. Phases enrich it; they
 never split it. The file lives in ONE folder until it is closed, and is never renamed:
 
-    specs/
+    .specs/
       plans/                     # ACTIVE — captured -> proposed -> designed -> refined
         <slug>.md                #          -> ready -> approved -> executing
       archive/                   # done or abandoned, told apart by `outcome:` frontmatter
@@ -76,7 +76,7 @@ OUTPUT CONTRACT (uniform across every subcommand)
   2  refusal  (an ambiguous slug; a gate not met; archiving `done` with open tasks)
 
 WORKSPACE RESOLUTION
-  --root PATH, else $SPECS_ROOT, else the nearest `specs/` directory walking up from
+  --root PATH, else $SPECS_ROOT, else the nearest `/.specs/` directory walking up from
   cwd (or cwd itself if it is named `specs`). `new` creates `./specs` when none exists.
 
 ASSETS
@@ -192,7 +192,7 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
-STANDARD_PATH_RE = re.compile(r"docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
+STANDARD_PATH_RE = re.compile(r"/\.docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
 
 # --------------------------------------------------------------------------- #
 # embedded assets (fallbacks when the sibling asset files are absent)
@@ -252,9 +252,9 @@ DEFAULT_SCHEMA: dict = {
         {"heading": "Outcome", "order": 14, "group": "archive", "moment": "close"},
     ],
     "impact": {
-        "parsedSubheading": "Standards this spec will write into docs/standards/",
-        "acceptedAliases": ["Standards this plan will write into docs/standards/"],
-        "pathPrefix": "docs/standards/",
+        "parsedSubheading": "Standards this spec will write into /.docs/standards/",
+        "acceptedAliases": ["Standards this plan will write into /.docs/standards/"],
+        "pathPrefix": "/.docs/standards/",
     },
     "phases": [
         {"id": "plans", "folder": "plans", "role": "active",
@@ -386,21 +386,21 @@ verification: <VERIFICATION>
 <!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
-     docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
-     `docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
+     /.docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
+     `/.docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
      validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
      anchor.
 
      Example of a parsed bullet:
-       - `docs/standards/naming/command-surface.md` — the bijection rule for wrappers
+       - `/.docs/standards/naming/command-surface.md` — the bijection rule for wrappers
 
      The sibling sub-headings are prose for the reader and are deliberately NOT parsed: they
      name paths the spec never promised to write. A spec with no such sub-heading declares
      nothing and is never flagged — the check is opt-in by writing the heading. -->
 
-### Standards this spec will write into docs/standards/
+### Standards this spec will write into /.docs/standards/
 
-- `<docs/standards/subject/concept.md>` — <the rule it states>
+- `</.docs/standards/subject/concept.md>` — <the rule it states>
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -503,7 +503,7 @@ verification: <VERIFICATION>
        - [ ] 3.3 [P] Add the rate-limit config loader
 
      Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
-     marked tasks' `files:` sets are provably disjoint and none writes into `docs/` —
+     marked tasks' `files:` sets are provably disjoint and none writes into `/.docs/` —
      `specs.py parallel` checks the disjunction mechanically rather than judging it in prose.
      Serial execution is the default and needs no marker.
 
@@ -552,7 +552,7 @@ verification: <VERIFICATION>
 # --------------------------------------------------------------------------- #
 # The YAML comment rule — one rule, three copies
 #
-# `docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
+# `/.docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
 # list and the lockstep obligation. `skills.py` and `okf-validate.py` carry the same
 # functions; each installs standalone into a target's `.claude/hooks/`, so none may
 # import the others. EDIT ALL THREE, OR NONE — `CANONICAL_CASES` below is what makes
@@ -722,7 +722,7 @@ def frontmatter_anomalies(text: str) -> list[dict]:
     Every entry is a suspicion the tool cannot resolve, never a proven violation: a
     stripped comment and lost prose are byte-identical, and nothing here guarantees
     Claude Code's own loader resolves a duplicate key the way this one does. Callers
-    surface them at WARN — see `docs/standards/quality/parse-honesty.md`."""
+    surface them at WARN — see `/.docs/standards/quality/parse-honesty.md`."""
     body = _frontmatter_body(text)
     if body is None:
         return []
@@ -781,7 +781,7 @@ def _anomaly(key: str, kind: str, detail: str) -> dict:
     return {"key": key, "kind": kind, "detail": detail}
 
 
-# The canonical case list from `docs/standards/code/frontmatter-parsing.md`. It is
+# The canonical case list from `/.docs/standards/code/frontmatter-parsing.md`. It is
 # duplicated VERBATIM in skills.py and okf-validate.py and is the lockstep unit for
 # all three: adding a row means adding it in three places, and a parser that drifts
 # fails here on a row the other two still pass.
@@ -1049,18 +1049,18 @@ def find_specs_root(root_arg: str | None) -> str:
     if env:
         return os.path.abspath(env)
     cur = os.path.abspath(os.getcwd())
-    if os.path.basename(cur) == "specs":
+    if os.path.basename(cur) == ".specs":
         return cur
     d = cur
     while True:
-        cand = os.path.join(d, "specs")
+        cand = os.path.join(d, ".specs")
         if os.path.isdir(cand):
             return cand
         parent = os.path.dirname(d)
         if parent == d:
             break
         d = parent
-    return os.path.join(cur, "specs")   # default (created by `new`)
+    return os.path.join(cur, ".specs")   # default (created by `new`)
 
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
@@ -1126,7 +1126,7 @@ def find_repo_root(specs_root: str) -> str:
 
     Git's own top level first, because it is the answer that survives being invoked from a
     subdirectory. Falling back to the specs workspace's parent, which is the repo root by
-    construction: `specs/` sits beside `.claude/`, never below it.
+    construction: `/.specs/` sits beside `.claude/`, never below it.
 
     The git call is skipped outright when `specs_root` does not exist. `_git` falls back to
     running from `.` when its `cwd` is missing, so calling it on a path built to be absent —
@@ -1141,13 +1141,13 @@ def load_config(root: str) -> dict:
     """`.claude/quenching.json` — the plugin's declared parameters, read as data and never
     as a refusal.
 
-    THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `specs/config.json`, at the
+    THE FILE MOVED, AND THE MOVE IS THE POINT. It used to be `/.specs/config.json`, at the
     root of the specs workspace, holding one key. Two things broke that home: a repo whose
-    backend is external may have no `specs/` folder at all, so a config that lives inside
+    backend is external may have no `/.specs/` folder at all, so a config that lives inside
     the workspace cannot say where the workspace is; and the config stopped being the specs
     front's alone. `.claude/` is the one directory every front already shares.
 
-    A leftover `specs/config.json` comes back as `legacyPath` rather than being read. Merging
+    A leftover `/.specs/config.json` comes back as `legacyPath` rather than being read. Merging
     the two silently would leave a repo with a config that half-works and no way to tell which
     file won; `doctor` names it instead.
 
@@ -1218,12 +1218,12 @@ def load_config(root: str) -> dict:
 
 def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
     """An unstamped spec's `base`, stopping at the first that answers — the chain
-    docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
+    /.docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
     record is absent, and the caller's own git facts (`origin_head`, `init_default`)
     already resolved: this function decides only the ORDER, never runs git itself.
 
     A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
-    flow (docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
+    flow (/.docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
     PUBLICATION branch — so falling through to it by default would merge an unstamped
     spec into the one branch that must only ever receive a deliberate release. Left
     undeclared, this function changes nothing: most repositories have no `develop`
@@ -1261,7 +1261,7 @@ def base_inference_failures() -> list[str]:
 
 
 # --------------------------------------------------------------------------- #
-# release — the mechanical half of docs/standards/ci-cd/versioning-release.md
+# release — the mechanical half of /.docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
 # Seven artifacts, not six: `session.py` sits outside the SIX-artifact lockstep that
 # standard names (nothing installs a copy of it, so `drift` never compares it against
@@ -1712,7 +1712,7 @@ def task_progress(tasks: list[dict]) -> tuple[int, int, int]:
 
 
 def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
-    """The `docs/standards/**.md` paths a spec DECLARES it will write, read from the one
+    """The `/.docs/standards/**.md` paths a spec DECLARES it will write, read from the one
     fixed sub-heading of `## Impact`.
 
     Only that sub-heading is parsed, and deliberately so. Its siblings name paths the spec
@@ -1948,7 +1948,7 @@ class SpecBackend:
         against, so neither overrides this. An external backend folds the reconciliation
         into the same write its own store call already makes rather than a second round
         trip, which is why this takes `info` and derives fresh rather than accepting a
-        precomputed label list — see docs/standards/architecture/spec-backend.md."""
+        precomputed label list — see /.docs/standards/architecture/spec-backend.md."""
         return None
 
 
@@ -2252,7 +2252,7 @@ def backend_equivalence_failures() -> list[str]:
     import tempfile
     failures: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
-        root = os.path.join(tmp, "specs")
+        root = os.path.join(tmp, ".specs")
         os.makedirs(os.path.join(root, "plans"))
         os.makedirs(os.path.join(root, "archive"))
         files: SpecBackend = FilesBackend(root)
@@ -2734,7 +2734,7 @@ class GitHubBackend(SpecBackend):
     encoding of a record's fields: `derive_labels` computes the desired set from `info`
     alone, and `reconcile_label_set` folds it against whatever the issue already carries so
     a human's own label (never under the `spec:` prefix) is untouched. See
-    docs/standards/architecture/spec-backend.md for the category this is, and why it is not
+    /.docs/standards/architecture/spec-backend.md for the category this is, and why it is not
     the sub-issue projection that was retired.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a
@@ -4043,7 +4043,7 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     One label per present record (`record_keys(schema)` order, skipping any without a
     `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
     labelled stage rule. A unidirectional projection: recomputed here on every write, never
-    read back — see docs/standards/architecture/spec-backend.md §Granular reading is about
+    read back — see /.docs/standards/architecture/spec-backend.md §Granular reading is about
     context, not I/O for the sibling rule this one extends.
 
     MEASURED on 2026-08-05, against this repository's own `github` backend, per
@@ -5758,7 +5758,7 @@ def resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
 
       already inside a worktree   nothing nests a worktree in a worktree; the specs branch is
                                   already the tree underfoot.
-      the workspace is populated  a `specs/` holding phase folders in the code tree is the
+      the workspace is populated  a `/.specs/` holding phase folders in the code tree is the
                                   PRE-MIGRATION store and stays authoritative until a human
                                   moves it. Switching silently would make every repository that
                                   upgrades this tool look like it had lost every spec it has —
@@ -5797,7 +5797,7 @@ def _resolve_files_root(root: str, cfg: dict) -> tuple[str, dict]:
     path, err = specs_worktree(top, cfg.get("specsBranch") or DEFAULT_SPECS_BRANCH)
     if err:
         return root, err
-    return os.path.join(path, os.path.basename(os.path.normpath(root)) or "specs"), {}
+    return os.path.join(path, os.path.basename(os.path.normpath(root)) or ".specs"), {}
 
 
 def files_specs_worktree(root: str, cfg: dict) -> tuple[str | None, dict]:
@@ -5826,14 +5826,14 @@ def files_root_failures() -> list[str]:
     cfg = {"specsBranch": DEFAULT_SPECS_BRANCH}
     out: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
-        populated = os.path.join(tmp, "specs")
+        populated = os.path.join(tmp, ".specs")
         os.makedirs(os.path.join(populated, "plans"))
         got, err = resolve_files_root(populated, cfg)
         if got != populated or err:
             out.append(f"a populated workspace resolved to {got!r} (err={err.get('code')!r}), "
                        f"not to itself — the pre-migration store must stay authoritative")
 
-        nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", "specs")
+        nested = os.path.join(tmp, SPECS_WORKTREE_DIR, "specs", ".specs")
         os.makedirs(nested)
         got, err = resolve_files_root(nested, cfg)
         if got != nested or err:
@@ -6034,7 +6034,7 @@ def command_writes(args) -> bool:
     reads a skill makes most.
 
     `migrate` is deliberately absent. It rewrites the DECLARED workspace's own folder layout —
-    the pre-migration `specs/` in the code tree — and never touches the specs worktree, so the
+    the pre-migration `/.specs/` in the code tree — and never touches the specs worktree, so the
     worktree's lock would guard nothing it writes. `release` is absent for the same reason: it
     writes the plugin's own version-carrying artifacts, never a spec."""
     cmd = getattr(args, "cmd", "")
@@ -6726,7 +6726,7 @@ def _migrate_markers(backend, dry: bool) -> list[dict]:
 
 
 def cmd_migrate(args, root: str) -> int:
-    """One-way, to the CURRENT layout. `specs/archive/**` is NEVER touched — it is
+    """One-way, to the CURRENT layout. `/.specs/archive/**` is NEVER touched — it is
     historical and read-only, and churning it would break every link into it for no gain.
 
     Two folds, either of which may apply:
@@ -6754,7 +6754,7 @@ def cmd_migrate(args, root: str) -> int:
 
     # The external fold: specs an issue tracker still holds under the dated basename. It is
     # asked of the backend, not of the filesystem, and it is the only fold that can apply to a
-    # repo with no `specs/` folder at all.
+    # repo with no `/.specs/` folder at all.
     markers: list[dict] = []
     backend, berr = open_backend(root)
     if not berr and backend is not None and hasattr(backend, "legacy_rows"):
@@ -6826,7 +6826,7 @@ def cmd_migrate(args, root: str) -> int:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
     else:
         verb = "would migrate" if args.dry_run else "migrated"
-        print(f"{verb} {len(migrated)} item(s) — specs/archive/** untouched")
+        print(f"{verb} {len(migrated)} item(s) — `/.specs/archive/**` untouched")
         for m in migrated:
             src = m.get("dateSource")
             print(f"  {m['from']:<40} → {m['to']}" +
@@ -6878,7 +6878,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                             f"{where}: `{a['key']}`: {a['detail']}", spec=s["slug"], path=where,
                             kind=a["kind"], key=a["key"],
                             remedy="quote the value, or write the comment on its own line — "
-                                   "see docs/standards/code/frontmatter-parsing.md"))
+                                   "see /.docs/standards/code/frontmatter-parsing.md"))
 
     schema = load_schema()
     for key in schema.get("frontmatter", {}).get("required", []):
@@ -7159,7 +7159,7 @@ def cmd_selftest(args, root: str) -> int:
         findings.append(_finding("sp-frontmatter-case", "error",
                                  f"canonical frontmatter case — {failure}",
                                  remedy="this parser disagrees with the case list in "
-                                        "docs/standards/code/frontmatter-parsing.md; the three "
+                                        "/.docs/standards/code/frontmatter-parsing.md; the three "
                                         "tools move together or not at all"))
 
     # The section rule, against the SAME canonical list `skills.py` proves. Self-contained,
@@ -7400,7 +7400,7 @@ def cmd_selftest(args, root: str) -> int:
     # backend would break every such repo while every configured one kept working — the
     # failure shape that goes unnoticed longest. Read against a path that cannot exist, so
     # it stays self-contained and never depends on this checkout's own config.
-    blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
+    blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", ".specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
                       ("worktreeSetup", None), ("integrationBranch", None),
                       ("releaseBranch", None), ("present", False)):
@@ -7499,7 +7499,7 @@ def cmd_selftest(args, root: str) -> int:
                                  f"{want_build} — `/quenching:specs:execute` step 4 would read "
                                  f"the wrong section set",
                                  remedy="DEFAULT_SCHEMA's `moment: build` sections must match "
-                                        "docs/standards/workflows/plan-artifacts.md §Fourteen "
+                                        "/.docs/standards/workflows/plan-artifacts.md §Fourteen "
                                         "canonical sections"))
 
     # A `## Impact` bullet may carry a `§`address beside its path (the executor's optional
@@ -7508,20 +7508,20 @@ def cmd_selftest(args, root: str) -> int:
     # fixture, never the real command surface: editing that to pass would prove it by
     # coincidence, not by contract.
     impact_probe = parse_impact_standards(
-        "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
-        "- `docs/standards/automation/context-budget.md` §The two caps §The per-surface "
+        "## Impact\n\n### Standards this spec will write into /.docs/standards/\n\n"
+        "- `/.docs/standards/automation/context-budget.md` §The two caps §The per-surface "
         "ceiling — revisado.\n"
-        "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
+        "- `/.docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
         "lê inteiro.\n", DEFAULT_SCHEMA)
-    want_impact = ["docs/standards/automation/context-budget.md",
-                   "docs/standards/workflows/plan-artifacts.md"]
+    want_impact = ["/.docs/standards/automation/context-budget.md",
+                   "/.docs/standards/workflows/plan-artifacts.md"]
     if impact_probe != want_impact:
         findings.append(_finding("sp-impact-address-tolerance", "error",
                                  f"parse_impact_standards() on a §addressed bullet returned "
                                  f"{impact_probe}, expected {want_impact} — a `§`address beside "
                                  f"the path must not break the declaration it sits on",
                                  remedy="parse_impact_standards must keep matching only the "
-                                        "docs/standards/**.md path and ignore the rest of the "
+                                        "/.docs/standards/**.md path and ignore the rest of the "
                                         "line, addressed or not"))
 
     tpl_path = os.path.join(ASSET_DIR, "templates", "spec.md")
@@ -7627,7 +7627,7 @@ def cmd_release(args, root: str) -> int:
     and tag that commit — the MECHANICAL half of a release. Judging what the number should
     be, whether a lone merge on `develop` is a release or a habit, and the `develop -> main`
     merge itself all belong to the command that calls this; see
-    docs/standards/git/branching.md.
+    /.docs/standards/git/branching.md.
 
     Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
     not this plugin's own checkout, a lockstep already disagreeing with itself, or a
@@ -7701,7 +7701,7 @@ def cmd_config(args, root: str) -> int:
 def cmd_doctor(args, root: str) -> int:
     findings: list[dict] = []
     if not os.path.isdir(root):
-        findings.append(_finding("sp-no-workspace", "error", f"no specs/ workspace at {root}",
+        findings.append(_finding("sp-no-workspace", "error", f"no `/.specs/` workspace at {root}",
                                  remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
         return _emit_doctor(args, root, findings)
 
@@ -7719,7 +7719,7 @@ def cmd_doctor(args, root: str) -> int:
                                      f"folded backlog/ and ready/ into plans/",
                                      path=folder, count=len(held),
                                      remedy="specs.py migrate  (moves them into plans/ "
-                                            "unrenamed; specs/archive/** is never touched)"))
+                                            "unrenamed; `/.specs/archive/**` is never touched)"))
 
     # The real failure mode of a machine-read config is `worktree_setup` written where
     # `worktreeSetup` was expected, followed by silence — the file is valid JSON, the key
@@ -7770,9 +7770,9 @@ def cmd_doctor(args, root: str) -> int:
     # one that is plainly stranded.
     if cfg["legacyPath"]:
         findings.append(_finding("sp-config-legacy-location", "warn",
-                                 f"`specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
+                                 f"`/.specs/{LEGACY_CONFIG_FILE}` is still on disk and is no "
                                  f"longer read — the plugin's config is {CONFIG_FILE}",
-                                 path=f"specs/{LEGACY_CONFIG_FILE}",
+                                 path=f".specs/{LEGACY_CONFIG_FILE}",
                                  remedy=f"move its keys into {CONFIG_FILE} and delete it; "
                                         f"whatever it declares is doing nothing today"))
 
@@ -7782,7 +7782,7 @@ def cmd_doctor(args, root: str) -> int:
                                  f"`{name}/` is a v1 three-file plan folder",
                                  path=name,
                                  remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
-                                        f"specs/archive/** is never touched)"))
+                                        f"`/.specs/archive/**` is never touched)"))
     for entry in sorted(os.listdir(root)):
         full = os.path.join(root, entry)
         # `config.json` stays exempt even though nothing reads it any more: it has its own
@@ -7847,8 +7847,8 @@ def cmd_export(args, root: str) -> int:
 # --------------------------------------------------------------------------- #
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     p = argparse.ArgumentParser(prog="specs.py",
-                                description="deterministic trail for the specs/ front")
-    p.add_argument("--root", help="the specs/ workspace directory (default: nearest specs/ upward)")
+                                description="deterministic trail for the specs front")
+    p.add_argument("--root", help="the `/.specs/` workspace directory (default: nearest `/.specs/` upward)")
     p.add_argument("--version", action="store_true", help="print the version and exit")
     sub = p.add_subparsers(dest="cmd")
 
