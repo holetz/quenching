@@ -149,6 +149,12 @@ bundle — the log this used to append to is retired.
 **Done when:** the validator is clean, or its residue is reported verbatim.
 
 ### 6. Report
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. Two body blocks:
 
 1. **The ranking as it now stands** — fixed. §The spec table, the same rows the human just approved

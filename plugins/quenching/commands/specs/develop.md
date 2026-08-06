@@ -230,6 +230,12 @@ or the same bank selected again with nothing left to ask → go to step 8.
 **Done when:** the human has taken or declined the next bank.
 
 ### 8. Report
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body blocks:
 
 1. **The pass** — fixed. The bank(s) that ran; how many questions were asked and answered; the
