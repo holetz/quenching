@@ -2956,7 +2956,16 @@ def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") 
     round-trips there, in 69 real specs, and changing it would mean migrating every one."""
     count = f" parts={parts}" if parts > 1 else ""
     if fmt == "div":
-        return f'<div style="display:none">quenching-spec: {filename}{count}</div>\n{text}'
+        # WRITTEN IN THE FORM AZURE STORES, character for character: `display:none;` with
+        # the semicolon and a space before `</div>`, both of which its HTML normaliser adds
+        # on write. A marker written any other way comes back different from what went out,
+        # and `System.Description` then differs on every diff — so the one field a write
+        # always carries could never be elided. Measured live 2026-08-06; the round-trip case
+        # in `hybrid_split_failures` has carried this exact shape since task 6.1 of the
+        # previous plan. The reader stays tolerant (`;?`, `\s*`) for documents written before
+        # this.
+        return (f'<div style="display:none;">quenching-spec: {filename}{count} </div>\n'
+                f'{text}')
     return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
 
 
@@ -4063,6 +4072,10 @@ def hybrid_serialization_failures() -> list[str]:
 # number and same meaning as `GH_MISSING`, kept separate so neither constant becomes the
 # other's by accident.
 AZ_MISSING = 127
+# Azure DevOps' own application id. `az rest` issues a token for whatever `--resource` names,
+# and the default (ARM) is rejected by dev.azure.com — this is the audience the API accepts,
+# and it is a constant of the service rather than of any organisation.
+AZ_DEVOPS_RESOURCE_ID = "499b84ac-1321-427f-aa17-267ca6975798"
 
 # `az` does NOT have gh's exit 4 — it answers almost everything with exit 1 and says why in
 # stderr, so the split into remedies is made on what it SAID rather than on the code. Each
@@ -4508,7 +4521,10 @@ def azure_native_fields(fm: dict, discovery_tag: str | None,
         if name not in all_tags:
             all_tags.append(name)
     if all_tags:
-        fields["System.Tags"] = "; ".join(all_tags)
+        # SORTED, because the comparison is a set. Azure returns `System.Tags` in its own
+        # order, so joining in insertion order made every write see a difference that was
+        # only a permutation — measured live 2026-08-06.
+        fields["System.Tags"] = "; ".join(sorted(all_tags))
     for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
                      ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
         value = fm.get(key)
@@ -4530,6 +4546,10 @@ def azure_comparable_fields(fields: dict) -> dict:
     single write — the exact no-op op the diff exists to remove, reintroduced as a silent
     default."""
     out = dict(fields)
+    tags = out.get("System.Tags")
+    if isinstance(tags, str):
+        out["System.Tags"] = "; ".join(sorted(t.strip() for t in tags.split(";")
+                                              if t.strip()))
     assigned = out.get("System.AssignedTo")
     if isinstance(assigned, dict):
         out["System.AssignedTo"] = assigned.get("uniqueName") or assigned.get("displayName")
@@ -4620,7 +4640,12 @@ AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Descript
                    # it was rejected — the items come back carrying TWO
                    # `WEF_<guid>_Kanban.Column`, one per board, and picking between them by
                    # value is the guess §Placement forbids.
-                   "System.Parent")
+                   "System.Parent",
+                   # Reaffirmed on every write, so read on every write too — measured live
+                   # 2026-08-06: absent from this list, `current` answers None for both and
+                   # the diff emits them on EVERY write, which is the no-op op it exists to
+                   # remove.
+                   "System.AreaPath", "System.IterationPath")
 
 
 def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
@@ -4840,6 +4865,8 @@ class AzureBoardsBackend(SpecBackend):
         # it belongs to — a stale entry would diff a write against the item as it was
         # two writes ago and elide an op that was still needed.
         self._raw: dict[int, dict] = {}
+        # slug -> its row, for the narrowed read. Same lifetime as `_rows`, same reset.
+        self._one: dict[str, tuple | None] = {}
 
     # -- transport ---------------------------------------------------------- #
     def _az_raw(self, action: str, *argv: str, expect: str = "object"):
@@ -4978,12 +5005,19 @@ class AzureBoardsBackend(SpecBackend):
         keeps reaching `read_spec`'s `resolve_one` exactly as before."""
         if self._rows is not None:
             return next((r for r in self._rows if r[0]["slug"] == slug), None)
+        if slug in self._one:
+            return self._one[slug]
         item_id = (azure_cache_read(self.org, self.project).get("slugs") or {}).get(slug)
         if not item_id:
             return None
         items = self._show_many([int(item_id)])
         row = self._row_of(items[0]) if items else None
-        return row if row and row[0]["slug"] == slug else None
+        row = row if row and row[0]["slug"] == slug else None
+        # MEMOISED FOR THE PROCESS, like `_rows` beside it: one command reads the spec and
+        # then writes it, and without this the narrowed read happens twice — measured live,
+        # two `workitemsbatch` calls for one `section --write`.
+        self._one[slug] = row
+        return row
 
     def _show_many(self, ids: list[int]) -> list[dict]:
         """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
@@ -5000,7 +5034,16 @@ class AzureBoardsBackend(SpecBackend):
             fd, path = tempfile.mkstemp(suffix=".json")
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                    json.dump({"ids": chunk, "fields": list(AZ_BATCH_FIELDS)}, fh)
+                    # The board's column field is per-team and its name is only known once
+                    # resolved; asked for here when it already is, so the column diffs like
+                    # every other reaffirmed field instead of being written blind.
+                    fields = list(AZ_BATCH_FIELDS)
+                    known = self._board_field or azure_cache_read(
+                        self.org, self.project).get(
+                            f"boardField:{self.team}:{self.work_item_type}")
+                    if known:
+                        fields.append(known)
+                    json.dump({"ids": chunk, "fields": fields}, fh)
                 result = self._az_raw(
                     f"reading {len(chunk)} work item(s) in batch", "devops", "invoke",
                     "--area", "wit", "--resource", "workitemsbatch",
@@ -5014,6 +5057,7 @@ class AzureBoardsBackend(SpecBackend):
     def _invalidate(self) -> None:
         self._rows = None
         self._raw = {}
+        self._one = {}
 
     def _item_id(self, slug: str) -> int:
         return self._item_tags(slug)[0]
@@ -5340,10 +5384,14 @@ class AzureBoardsBackend(SpecBackend):
     def _az_patch(self, action: str, item_id: int, ops: list[dict]):
         """One work item, one JSON patch — the whole write in a single `az` process.
 
-        `az devops invoke` rather than `az rest`: the extension already carries the auth
-        `_show_many` proves works, where `az rest` against dev.azure.com needs its resource
-        id spelled out. `--media-type application/json-patch+json` is not optional — the work
-        item PATCH endpoint rejects the default `application/json` outright.
+        `az rest`, and NOT `az devops invoke` — measured, not preferred. The extension routes
+        by resource NAME, and `workitems` resolves to the CREATE route (`/workitems/${type}`);
+        asked to PATCH an id it dies inside msrest with `KeyError: 'type'`, a traceback rather
+        than a refusal. `az rest` addresses the endpoint directly, at the price of naming
+        Azure DevOps' resource id so the token is issued for the right audience.
+
+        `Content-Type: application/json-patch+json` is not optional — the work item PATCH
+        endpoint rejects the default `application/json` outright.
 
         THE CEILING IS CHECKED HERE, and here is now the only door a document goes through —
         `_az_with_description`, which used to be it, has no callers left. The measured
@@ -5370,12 +5418,24 @@ class AzureBoardsBackend(SpecBackend):
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as fh:
                 json.dump(ops, fh)
-            return self._az_raw(action, "devops", "invoke", "--area", "wit",
-                                "--resource", "workitems",
-                                "--route-parameters", f"project={self.project}",
-                                f"id={item_id}", "--http-method", "PATCH",
-                                "--media-type", "application/json-patch+json",
-                                "--in-file", path, "--api-version", "7.1")
+            from urllib.parse import quote
+            uri = (f"{self.org.rstrip('/')}/{quote(self.project)}/_apis/wit/workitems/"
+                   f"{item_id}?api-version=7.1")
+            code, out, err = _az_run(
+                self.cwd, "rest", "--method", "PATCH", "--uri", uri,
+                "--resource", AZ_DEVOPS_RESOURCE_ID,
+                "--headers", "Content-Type=application/json-patch+json",
+                "--body", f"@{path}")
+            if code != 0:
+                raise BackendRefusal(az_refusal(action, code, out, err))
+            try:
+                return json.loads(out or "null")
+            except json.JSONDecodeError as e:
+                raise BackendRefusal({
+                    "code": "sp-az-bad-response", "exit": 2, "action": action,
+                    "message": f"`az rest` exited 0 while {action} but its output is not "
+                               f"JSON: {e}",
+                }) from e
         except BackendRefusal as e:
             e.err["ops"] = [op["path"] for op in ops]
             culprit = azure_patch_culprit(ops, str(e.err.get("az") or ""))
