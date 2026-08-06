@@ -443,58 +443,11 @@ absent → install · older banner → overwrite · same-or-newer → leave · *
 human → keep and report**. The banner's version is filled from `VERSION` at copy time, so a
 release adds no new lockstep item.
 
-## Cost model
+## Model policy
 
-The plugin keeps its context and token footprint predictable on three levels:
-
-1. **Always-on metadata (shared cap).** Every command's `description` is loaded into context
-   each session, and Claude Code truncates at **1,536 characters** per command — a budget
-   shared with every other installed plugin. Collapsing the 28 skill+wrapper pairs into one
-   file per entry point first took the surface's always-on total from **30,705 characters to
-   2,083**, measured by `skills.py budget`.
-
-   **What that saving cost, stated plainly:** the deleted skill description is where the quoted
-   trigger phrases and the `Not for:` boundary lived, so every command reported
-   `sk-trigger-position` and `sk-no-boundary` against a description written as a `/`-menu label.
-   Both are warnings, so the budget looked clean while the routing information was absent — see
-   `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
-
-   **Where it stands now: 14,224 characters** (~3,556 approximate tokens) across 25 commands and
-   0 agent definitions, measured 2026-08-03 — 24 of those commands routed, 1 typed-only holding a
-   further 876 characters *outside* the total. Most of the difference between 2,083 and that figure
-   is the routing information being bought back deliberately — the triggers and boundaries the
-   collapse had dropped. `/skill:retro` took the other exit instead:
-   `disable-model-invocation: true` drops its description from the always-on total entirely, so
-   it cost **0** and the ceiling never fired.
-
-   **The default ceiling stays at 14,898** — the peak measured before the standalone isolation
-   command was retired and its offer folded inline into `/specs:execute`. It is revised only from
-   a measurement, and
-   this change makes none: the total coming in under the ceiling is the proof the retirement
-   returned budget rather than being reabsorbed by the descriptions that grew to replace it. The
-   rule and the revision procedure live in
-   [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md)
-   §The per-surface ceiling.
-
-   **The ceiling has now fired three times, the last two with nothing minted.** The 2026-07-28
-   figure of 12,726 was set when the isolation command (since retired) became the 25th command.
-   It was crossed again
-   by **+149** with no new command at all — three descriptions grew — which is why `budget` is
-   now part of this repo's stated verification routine. It crossed a third time by **+2,023** when
-   eleven descriptions regained the trigger phrases and `Not for:` boundaries the collapse had
-   dropped. The rule and the revision procedure live in
-   [`docs/standards/automation/context-budget.md`](/docs/standards/automation/context-budget.md).
-2. **Body on invocation.** A command's body loads only when it runs; every body stays well
-   under 500 lines. Shared procedure lives once, in its owners —
-   [`docs-add/homes.md`](assets/references/docs-add/homes.md) (the insert procedure) and
-   [`docs-align/conformance.md`](assets/references/docs-align/conformance.md) (the checks) —
-   and the other commands cite it by `${CLAUDE_PLUGIN_ROOT}` absolute path, never restate it.
-3. **References on demand.** `assets/references/**/*.md` files are read only when a step needs
-   them. They sit under `assets/` rather than beside a command because `commands/**` is the only
-   tree Claude Code registers — `docs/standards/architecture/plugin-layout.md`.
-
-Because the command registry is built at **session start**, none of that is testable in the session
-that changes it. `assets/checks/functional-checks.sh` is the only check that proves the surface loads:
+The command registry is built at **session start**, so a change under `commands/**` is not testable
+in the session that writes it. `assets/checks/functional-checks.sh` is the only check that proves the
+surface loads:
 it spawns fresh `claude -p` processes — each loading the checkout under test via `--plugin-dir`, so
 it sees a branch — and asserts on captured tool calls that `${CLAUDE_PLUGIN_ROOT}` substitutes in a
 command body, that a conductor reaches its stage by registry name, and that a spoken phrase still
@@ -506,7 +459,7 @@ the spec cycle, which would charge every spec for a front most of them never tou
 is the body subset; spoken routing is opt-in (`--only 3`) because `/skill:eval` measures it better,
 graded and with a should-not-trigger arm.
 
-**Model policy** (conservative — judgment is never downgraded):
+**The model policy is conservative — judgment is never downgraded:**
 
 | Surface | Policy |
 | --- | --- |
@@ -607,7 +560,7 @@ why each half of the lockstep matters, and
   branch-aware, so `/specs:continue` returns the spec whose branch you are standing on and demotes
   one alive elsewhere. `parse_frontmatter` learned block mappings (indent-scoped), which is what
   lets an explicit-none merge record wrap or carry a comma. New `assets/checks/conclude-order-check.sh`
-  asserts the ordering on a real history — the one claim no in-process check can see. The budget
+  asserts the ordering on a real history — the one claim no in-process check can see. The always-on
   ceiling fired on the 25th command exactly as designed and was re-measured to **12,726**.
 - **4.1.0:** **the capability layer got proved, applied and closed.** Both new mints were measured
   by `/skill:eval` — `/skill:agent:new` at +0.364 pass rate for 182,367 fewer tokens,
@@ -615,7 +568,7 @@ why each half of the lockstep matters, and
   sandboxed routing probe, taking `functional-checks.sh` to **9 assertions across 7 sandboxed
   sessions**. `skills.py` closed its two blind spots: `lint` now reads a **frontmatter `hooks:`
   block** (the scope ladder's narrowest rung, the mold's shape only, fail-open via
-  `sk-hook-unparseable`) and serves both rungs from one implementation, and `budget` counts
+  `sk-hook-unparseable`) and serves both rungs from one implementation, and the cost report counts
   `agents/*.md` descriptions as its own breakdown line; the ceiling was re-measured and re-set to
   **11,565** from a run. The profile doctrine was then applied to its own author: five inline
   `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on `/specs:align`,
