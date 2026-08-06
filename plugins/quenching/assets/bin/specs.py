@@ -214,20 +214,23 @@ DEFAULT_SCHEMA: dict = {
         "outcome": list(OUTCOMES),
         "records": {
             "priority": {"fields": ["level", "criticality", "complexity", "date"],
-                         "writtenBy": "triage", "writeOnce": False},
+                         "writtenBy": "triage", "writeOnce": False, "label": "spec:ranked"},
             "refined": {"fields": ["mode", "date"],
-                        "writtenBy": "develop", "writeOnce": False},
+                        "writtenBy": "develop", "writeOnce": False,
+                        "label": "spec:interrogated"},
             "approved": {"fields": ["date"],
-                         "writtenBy": "develop, or execute inline", "writeOnce": True},
+                         "writtenBy": "develop, or execute inline", "writeOnce": True,
+                         "label": "spec:approved"},
             "branch": {"fields": ["base", "work"],
                        "writtenBy": "execute", "writeOnce": True},
             "reviewed": {"fields": ["date"],
-                         "writtenBy": "conclude", "writeOnce": False},
+                         "writtenBy": "conclude", "writeOnce": False,
+                         "label": "spec:reviewed"},
             "merge": {"fields": ["strategy", "subject", "pr"],
                       "strategies": list(MERGE_STRATEGIES),
                       "anchorless": list(MERGE_ANCHORLESS_STRATEGIES),
                       "noPr": list(MERGE_NO_PR_STRATEGIES),
-                      "writtenBy": "conclude", "writeOnce": True},
+                      "writtenBy": "conclude", "writeOnce": True, "label": "spec:merged"},
             "outcome": {"valuesFrom": "frontmatter.outcome",
                         "writtenBy": "conclude", "writeOnce": True},
         },
@@ -280,7 +283,8 @@ DEFAULT_SCHEMA: dict = {
              "warnWhenEmpty": ["Overview", "Handoff"]},
             {"id": "approved", "phase": "plans", "when": {"frontmatter": "approved"}},
             {"id": "executing", "phase": "plans",
-             "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]}},
+             "when": {"anyOf": [{"taskState": ["x", "!"]}, {"filled": ["Handoff"]}]},
+             "label": "spec:built"},
         ],
     },
 }
@@ -1615,6 +1619,88 @@ def parse_tasks(text: str) -> list[dict]:
     return out
 
 
+HANDOFF_HEADING_NUM_RE = re.compile(r"^(\d+)\.")
+
+
+def parse_handoff(text: str) -> dict:
+    """`## Handoff` split into its global block plus one block per `### N.` heading — the
+    SAME level-3 grouping `parse_tasks` already runs over `## Tasks`, reused rather than
+    redefined. A block is matched to its `## Tasks` counterpart by the LEADING NUMERAL in
+    its own heading text (`### 2. Segunda seção` → section 2), never by encounter order
+    and never by comparing title text: a section can close — and never receive its own
+    `## Handoff` block — before any later section's block is ever written, so encounter
+    order and the task-section number are not the same count. A heading with no leading
+    numeral (malformed, or hand-edited) falls back to one past the highest section seen.
+
+    No `### ` heading at all — today's flat format, or a spec not yet built — reads back as
+    a single global block and an empty `blocks` list, so nothing existing needs to migrate."""
+    sections = parse_sections(mask_comments(text))
+    if "Handoff" not in sections:
+        return {"global": "", "blocks": []}
+    base = sections["Handoff"]["lineno"] + 1
+    lines = sections["Handoff"]["lines"]
+    global_lines: list[str] = []
+    blocks: list[dict] = []
+    cur: dict | None = None
+    body_start = 0
+
+    def flush(end: int) -> None:
+        if cur is not None:
+            cur["body"] = "\n".join(lines[body_start:end])
+            cur["blockEndLineno"] = base + end
+
+    for i, line in enumerate(lines):
+        hm = HEADING_RE.match(line)
+        if hm and len(hm.group(1)) == 3:
+            flush(i)
+            title = hm.group(2).strip()
+            num = HANDOFF_HEADING_NUM_RE.match(title)
+            section = int(num.group(1)) if num else max((b["section"] for b in blocks),
+                                                         default=0) + 1
+            cur = {"section": section, "title": title,
+                   "lineno": base + i, "body": "", "blockEndLineno": None}
+            blocks.append(cur)
+            body_start = i + 1
+            continue
+        if cur is None:
+            global_lines.append(line)
+    flush(len(lines))
+    return {"global": "\n".join(global_lines), "blocks": blocks}
+
+
+def current_handoff_section(tasks: list[dict]) -> int | None:
+    """The `### N.` a scoped `## Handoff` write targets: the section of the next task
+    still open and unblocked — the same task `specs.py next` would hand out — or, once
+    every remaining task is blocked, the first blocked one's section, matching what
+    `next` itself falls back to. Every task done → the LAST section, so a finished run's
+    Handoff still describes where it landed. No tasks at all → None, nothing to scope to."""
+    if not tasks:
+        return None
+    open_tasks = [t for t in tasks if not t["checked"]]
+    if not open_tasks:
+        return tasks[-1]["section"] or 1
+    actionable = [t for t in open_tasks if not t["blocked"]]
+    return (actionable[0] if actionable else open_tasks[0])["section"] or 1
+
+
+def task_section_title(body_text: str, n: int) -> str | None:
+    """The literal `### N. <title>` heading text `## Tasks` gives section N, read once so a
+    `## Handoff` block opened for the first time can borrow a human-readable title instead
+    of inventing one. Display gloss only — `parse_handoff` matches blocks to `## Tasks` by
+    the heading's own leading numeral, never by this text."""
+    sections = parse_sections(mask_comments(body_text))
+    if "Tasks" not in sections:
+        return None
+    count = 0
+    for line in sections["Tasks"]["lines"]:
+        hm = HEADING_RE.match(line)
+        if hm and len(hm.group(1)) == 3:
+            count += 1
+            if count == n:
+                return hm.group(2).strip()
+    return None
+
+
 def task_progress(tasks: list[dict]) -> tuple[int, int, int]:
     """(checked, blocked, total)."""
     return (sum(1 for t in tasks if t["checked"]),
@@ -1851,6 +1937,17 @@ class SpecBackend:
         """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
         raise NotImplementedError
 
+    def reconcile_labels(self, info: dict, schema: dict | None = None) -> None:
+        """Mirror `derive_labels(info, schema)` onto this backend's native label/tag
+        surface, if it has one — a rendering of derived state, not a sixth primitive.
+
+        No-op by default: `files` and `memory` have no native construct to reconcile
+        against, so neither overrides this. An external backend folds the reconciliation
+        into the same write its own store call already makes rather than a second round
+        trip, which is why this takes `info` and derives fresh rather than accepting a
+        precomputed label list — see docs/standards/architecture/spec-backend.md."""
+        return None
+
 
 class FilesBackend(SpecBackend):
     """Specs as markdown files under the specs workspace. The reference implementation:
@@ -1958,6 +2055,7 @@ BACKEND_CASES = (
     ("write a section, then re-read", lambda b: _case_write(b)),
     ("tick a task", lambda b: _case_task(b)),
     ("stamp a record, then re-read", lambda b: _case_record(b)),
+    ("derive labels off the stamped record", lambda b: _case_labels(b)),
     # AFTER the three cases that author the document, never on the fresh capture form. See
     # `_case_front`: on a capture form the case passes with the reader broken.
     ("rank the front", lambda b: _case_front(b)),
@@ -2067,6 +2165,13 @@ def _case_move(b: "SpecBackend") -> dict:
     info, _ = b.read_spec("alpha")
     b.move_spec(info, "archive")
     return _observable(b.read_spec("alpha")[0])
+
+
+def _case_labels(b: "SpecBackend") -> list[str]:
+    """`derive_labels` off the same document through both stores — proves the calculation
+    reads only `info`, never anything backend-specific, same as every case above it."""
+    info, _ = b.read_spec("alpha")
+    return derive_labels(info)
 
 
 def resolution_failures() -> list[str]:
@@ -2547,6 +2652,21 @@ GH_BODY_MAX = 65_536
 # the off-by-a-header every "just use the limit" split makes once.
 GH_PART_MAX = GH_BODY_MAX - 1_024
 
+# Color and one-line description for each `spec:` label — GitHub-only, never in
+# schema.json. `label:` there is the name every backend with a native tag concept can use;
+# color is a GitHub label's own visual property with no Azure Boards tag equivalent, so it
+# stays where the one backend that renders it lives. `_store`'s issue PATCH already creates
+# a label missing from the repo (Design item 7 of this spec), with an arbitrary color —
+# `_ensure_label_colors` is the one-time follow-up that fixes it.
+SPEC_LABEL_META = {
+    "spec:ranked":       ("c2e0c6", "priority is recorded — a human ranked this spec"),
+    "spec:interrogated": ("bfd4f2", "refined is recorded — a real interrogation happened"),
+    "spec:approved":     ("0e8a16", "a human said go"),
+    "spec:built":        ("5319e7", "the derived stage — task or Handoff work is under way"),
+    "spec:reviewed":     ("fbca04", "a human read the whole branch diff"),
+    "spec:merged":       ("1d76db", "the branch merged into the integration branch"),
+}
+
 
 def hybrid_short_title(text: str) -> str:
     """A title that fits, cut on a word boundary and marked with an ellipsis.
@@ -2597,14 +2717,22 @@ class GitHubBackend(SpecBackend):
     is the ONLY thing that ever decides a task is checked or blocked. This class turns issues
     into the canonical document and back and does no more than that.
 
-    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, none of them a label. Multi-field
-    records (`priority`, `branch`, `merge`, `refined`) have no honest single-string label
-    form — encoding `{level, criticality, complexity, date}` into a label name would invent
-    a second format only a new parser could read back, which is the backend deriving its
-    own encoding exactly where the interface forbids it. Keeping them in the body costs
-    the records being invisible in the issue list without opening the issue — accepted,
-    because `parse_frontmatter` already reads them for free and a label would not remove
-    that read, only add a second, driftable copy beside it.
+    THE SEVEN FRONTMATTER RECORDS STAY IN THE BODY, none of them a label — every FIELD a
+    record carries, that is. Multi-field records (`priority`, `branch`, `merge`, `refined`)
+    have no honest single-string label form — encoding `{level, criticality, complexity,
+    date}` into a label name would invent a second format only a new parser could read
+    back, which is the backend deriving its own encoding exactly where the interface
+    forbids it. Keeping them in the body costs the records being invisible in the issue
+    list without opening the issue — that gap is what the `spec:` labels below close.
+
+    A `spec:` LABEL PER PRESENT RECORD, PLUS `spec:built` FOR THE DERIVED `executing`
+    STAGE, rides inside the same PATCH `_store` already makes — never a second call, never
+    read back. This is rendering derived state onto the tracker's own UI, not a second
+    encoding of a record's fields: `derive_labels` computes the desired set from `info`
+    alone, and `reconcile_label_set` folds it against whatever the issue already carries so
+    a human's own label (never under the `spec:` prefix) is untouched. See
+    docs/standards/architecture/spec-backend.md for the category this is, and why it is not
+    the sub-issue projection that was retired.
 
     The listing is fetched once per process and cached, which is a local cache and NOT a
     store: it is not authoritative, nothing outside this object reads it, and every write
@@ -2618,9 +2746,15 @@ class GitHubBackend(SpecBackend):
     def __init__(self, repo: str, cwd: str) -> None:
         self.repo = repo
         self.cwd = cwd
-        # descriptor, issue number, first chunk, how many parts the marker declares
-        self._rows: list[tuple[dict, int, str, int, str]] | None = None
+        # descriptor, issue number, first chunk, how many parts the marker declares,
+        # issue title, and the issue's own labels as of this listing — what the label
+        # reconciliation in `_store` diffs against, so it costs no call of its own
+        self._rows: list[tuple[dict, int, str, int, str, list[str]]] | None = None
         self._legacy: list[tuple[int, str, str, int, str]] = []
+        # `spec:` labels already confirmed correctly colored THIS process — so a repo
+        # this tool has been reconciling against for a while pays no repeat GET+PATCH for
+        # a label it fixed on an earlier write in the same command.
+        self._colors_confirmed: set[str] = set()
 
     # -- transport ---------------------------------------------------------- #
     def _api(self, action: str, *argv: str, stdin: str | None = None):
@@ -2669,7 +2803,7 @@ class GitHubBackend(SpecBackend):
                          stdin=json.dumps(payload))
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str, int]]:
+    def _load(self) -> list[tuple[dict, int, str, int, str, list[str]]]:
         if self._rows is not None:
             return self._rows
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
@@ -2677,7 +2811,7 @@ class GitHubBackend(SpecBackend):
         # so a default (open-only) listing would report every archived spec as missing.
         pages = self._api("listing the repository's issues", "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
-        rows: list[tuple[dict, int, str, int, str]] = []
+        rows: list[tuple[dict, int, str, int, str, list[str]]] = []
         legacy: list[tuple[int, str, str, int, str]] = []
         for page in (pages or []):
             for issue in (page or []):
@@ -2711,7 +2845,9 @@ class GitHubBackend(SpecBackend):
                     # document and this listing has already paid for it. Only a spilled one
                     # costs `read_spec` a second call, and only for the slug it was given.
                 }, int(issue.get("number") or 0), head, parts,
-                    str(issue.get("title") or "")))
+                    str(issue.get("title") or ""),
+                    [str(l.get("name")) for l in (issue.get("labels") or [])
+                     if isinstance(l, dict) and l.get("name")]))
         self._rows = rows
         self._legacy = legacy
         return rows
@@ -2730,12 +2866,14 @@ class GitHubBackend(SpecBackend):
     def _issue_number(self, slug: str) -> int:
         return self._issue_parts(slug)[0]
 
-    def _issue_parts(self, slug: str) -> tuple[int, int]:
-        """`(issue number, how many parts are stored)` — both from the listing already in hand,
-        so knowing whether there are stale continuation comments to clean up costs no call."""
-        for descriptor, number, _, parts, _title in self._load():
+    def _issue_parts(self, slug: str) -> tuple[int, int, list[str]]:
+        """`(issue number, how many parts are stored, its current labels)` — all three from
+        the listing already in hand, so knowing whether there are stale continuation
+        comments to clean up, or which labels a write must reconcile against, costs no
+        call of their own."""
+        for descriptor, number, _, parts, _title, labels in self._load():
             if descriptor["slug"] == slug:
-                return number, parts
+                return number, parts, labels
         raise BackendRefusal({
             "code": "sp-gh-issue-gone", "exit": 2, "slug": slug,
             "message": f"spec '{slug}' was in the listing and is not there any more — the "
@@ -2745,21 +2883,21 @@ class GitHubBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, _, t in rows})
+                                {d["slug"]: t for d, _, _, _, t, _ in rows})
         if err:
             return None, err
         # `spec["slug"]`, never the slug that was ASKED for: a title or approximate match
         # resolved to a different one, and looking the document up by the request would
         # raise right after the resolution succeeded.
         number, head, parts, native = next((n, d, p, t)
-                                           for descriptor, n, d, p, t in rows
+                                           for descriptor, n, d, p, t, _lb in rows
                                            if descriptor["slug"] == spec["slug"])
         full_text = head if parts <= 1 else self._joined(number, head, parts)
         # The title comes back from the issue's own, which is where the write put it. A
@@ -2767,26 +2905,72 @@ class GitHubBackend(SpecBackend):
         return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
-        number, had_parts = self._issue_parts(info["slug"])
-        self._store(number, info["slug"], info["file"], text, had_parts)
+        number, had_parts, current_labels = self._issue_parts(info["slug"])
+        # `derive_info` — the SAME shared derivation every read goes through — off the text
+        # about to be written, never a second, backend-own way of deciding the stage: this
+        # class derives nothing of its own, per its own docstring above.
+        new_info = derive_info(info, text)
+        desired = derive_labels(new_info)
+        labels = reconcile_label_set(current_labels, desired)
+        self._store(number, info["slug"], info["file"], text, had_parts, labels)
+        # AFTER `_store`: a label `_store`'s own PATCH just created does not exist yet
+        # before that call, and fixing a nonexistent label's color 404s. Gated on an
+        # actual SET change — `set(...)`, not `!=` on the lists — so the no-milestone-
+        # change write this backend must cost no round trip for (task 5.2) never reaches
+        # this branch at all. GitHub returns a listing's labels alphabetically, never in
+        # the schema order `reconcile_label_set` builds `labels` in, so comparing the
+        # lists as ORDERED sequences read a same-set reorder as a change every time —
+        # measured live against issue #877 on 2026-08-05, before this line read `set(...)`.
+        if set(labels) != set(current_labels):
+            self._ensure_label_colors(desired)
         self._invalidate()
 
     def _store(self, number: int, slug: str, filename: str, text: str,
-               had_parts: int) -> None:
+               had_parts: int, labels: list[str] | None = None) -> None:
         """The whole write, given an issue number already in hand.
 
         Split out for `migrate`, which knows every number from its own scan and must not go
         back to the listing between writes: `_invalidate` after each one would make the next
         lookup refetch all eight pages, turning a 73-spec fold into 73 full listings. It is
         the SAME serialisation either way — a migration with a writer of its own would be a
-        second implementation that runs exactly once, on the day it matters most."""
+        second implementation that runs exactly once, on the day it matters most.
+
+        `labels`, when given, rides in this SAME PATCH — one call updates title, body and
+        the tracker's own `spec:` labels together, never a second round trip. `migrate`
+        omits it: a one-time bulk fold is not the moment to reconcile labels, and the next
+        ordinary `write_spec` on each folded spec does it for free."""
         stored, title = hybrid_project(slug, text)
         chunks = hybrid_split(stored, GH_PART_MAX)
+        payload = {"title": title,
+                   "body": hybrid_wrap(filename, chunks[0][0], len(chunks))}
+        if labels is not None:
+            payload["labels"] = labels
         self._write_api(f"updating issue #{number}", "PATCH",
-                        f"repos/{self.repo}/issues/{number}",
-                        {"title": title,
-                         "body": hybrid_wrap(filename, chunks[0][0], len(chunks))})
+                        f"repos/{self.repo}/issues/{number}", payload)
         self._sync_parts(number, chunks, had_parts)
+
+    def _ensure_label_colors(self, names: list[str]) -> None:
+        """Fix color and description for whichever of `names` are not already confirmed
+        correct this process — called only from `write_spec`, and only when a write is
+        about to change an issue's labels, so a no-milestone-change write never reaches
+        here at all.
+
+        One GET of the repo's own label registry, then a PATCH per label that still
+        disagrees — never more than once per label per process, per `_colors_confirmed`."""
+        todo = [n for n in names if n in SPEC_LABEL_META and n not in self._colors_confirmed]
+        if not todo:
+            return
+        existing = {l.get("name"): (l.get("color"), l.get("description"))
+                   for page in (self._api("listing labels", "--paginate", "--slurp",
+                                          f"repos/{self.repo}/labels?per_page=100") or [])
+                   for l in (page or [])}
+        for name in todo:
+            color, desc = SPEC_LABEL_META[name]
+            if existing.get(name) != (color, desc):
+                self._write_api(f"fixing color for label {name!r}", "PATCH",
+                                f"repos/{self.repo}/labels/{name}",
+                                {"color": color, "description": desc})
+            self._colors_confirmed.add(name)
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         m = SPEC_FILE_RE.match(filename)
@@ -3610,6 +3794,12 @@ class AzureBoardsBackend(SpecBackend):
     `Resolved` by a human on the board is still in flight, and only the declared archive
     state means closed. That is the same one-way reading `github` gets from `state=closed`.
 
+    A `spec:` TAG PER PRESENT RECORD, PLUS `spec:built` FOR `executing`, rides in the SAME
+    `--fields System.Tags=…` this backend's `_update` already sends — the same rendering of
+    derived state `github` does with labels, through the same `derive_labels` and
+    `reconcile_label_set`, over `;`-joined `System.Tags` rather than a `labels` array. No
+    color or description here: Azure Boards tags carry neither.
+
     The listing is fetched once per process and cached — a local cache and NOT a store:
     not authoritative, read by nothing outside this object, dropped on every write."""
 
@@ -3620,7 +3810,9 @@ class AzureBoardsBackend(SpecBackend):
         self.project = project
         self.states = states
         self.cwd = cwd
-        self._rows: list[tuple[dict, int, str]] | None = None   # descriptor, id, shell doc
+        # descriptor, id, shell doc, title, current System.Tags — the last is what the tag
+        # reconciliation in `write_spec` diffs against, so it costs no call of its own
+        self._rows: list[tuple[dict, int, str, str, list[str]]] | None = None
 
     # -- transport ---------------------------------------------------------- #
     def _az(self, action: str, *argv: str):
@@ -3651,7 +3843,7 @@ class AzureBoardsBackend(SpecBackend):
             else "plans"
 
     # -- the listing, fetched once ------------------------------------------- #
-    def _load(self) -> list[tuple[dict, int, str]]:
+    def _load(self) -> list[tuple[dict, int, str, str, list[str]]]:
         if self._rows is not None:
             return self._rows
         # WIQL rather than a saved query: the filter is this tool's, not the project's, and
@@ -3662,7 +3854,7 @@ class AzureBoardsBackend(SpecBackend):
                          "[System.TeamProject] = @project") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str, str]] = []
+        rows: list[tuple[dict, int, str, str, list[str]]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
             m = SPEC_FILE_RE.match(filename)
@@ -3679,7 +3871,9 @@ class AzureBoardsBackend(SpecBackend):
                         f"{item.get('id')}",
                 "slug": m.group(1),
             }, int(item.get("id") or 0), doc,
-                self._field(item, "System.Title")))
+                self._field(item, "System.Title"),
+                [t.strip() for t in self._field(item, "System.Tags").split(";")
+                 if t.strip()]))
         self._rows = rows
         return rows
 
@@ -3694,9 +3888,15 @@ class AzureBoardsBackend(SpecBackend):
         self._rows = None
 
     def _item_id(self, slug: str) -> int:
-        for descriptor, item_id, _, _title in self._load():
+        return self._item_tags(slug)[0]
+
+    def _item_tags(self, slug: str) -> tuple[int, list[str]]:
+        """`(work item id, its current System.Tags)` — both from the listing already in
+        hand, so knowing which tags a write must reconcile against costs no call of its
+        own."""
+        for descriptor, item_id, _, _title, tags in self._load():
             if descriptor["slug"] == slug:
-                return item_id
+                return item_id, tags
         raise BackendRefusal({
             "code": "sp-az-item-gone", "exit": 2, "slug": slug,
             "message": f"spec '{slug}' was in the listing and is not there any more — the "
@@ -3706,31 +3906,40 @@ class AzureBoardsBackend(SpecBackend):
 
     # -- the five primitives -------------------------------------------------- #
     def list_specs(self, phase: str | None = None) -> list[dict]:
-        rows = [dict(d) for d, _, _, _ in self._load()
+        rows = [dict(d) for d, _, _, _, _ in self._load()
                 if phase is None or d["phase"] == phase]
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
         rows = self._load()
         spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, t in rows})
+                                {d["slug"]: t for d, _, _, t, _ in rows})
         if err:
             return None, err
-        _, full_text, native = next((i, d, t) for descriptor, i, d, t in rows
+        _, full_text, native = next((i, d, t) for descriptor, i, d, t, _tags in rows
                                     if descriptor["slug"] == spec["slug"])
         return derive_info(spec, hybrid_title_join(full_text, native)), {}
 
     def write_spec(self, info: dict, text: str) -> None:
         announce_unproved(self.name)
-        item_id = self._item_id(info["slug"])
+        item_id, current_tags = self._item_tags(info["slug"])
         # `System.Description` has no published ceiling, so `hybrid_split` is handed None
         # and answers with the one chunk that is the whole document. The call is made anyway,
         # rather than skipped, so this backend goes through the SAME serialisation as the
         # proved one instead of a shorter path of its own that nothing checks.
         stored, title = hybrid_project(info["slug"], text)
         chunks = hybrid_split(stored, None)
-        self._update(item_id, title=title,
-                     description=hybrid_wrap(info["file"], chunks[0][0]))
+        # `derive_info`/`derive_labels` — the SAME shared calculation `github` reconciles
+        # its labels with, over the text about to be written; this backend derives
+        # nothing of its own, per its own docstring above.
+        tags = reconcile_label_set(current_tags, derive_labels(derive_info(info, text)))
+        fields: dict[str, str] = {"title": title,
+                                  "description": hybrid_wrap(info["file"], chunks[0][0])}
+        # `set(...)`, not `!=` on the lists — the same reorder-reads-as-a-change trap
+        # `github`'s `write_spec` hit, fixed there against issue #877 on 2026-08-05.
+        if set(tags) != set(current_tags):
+            fields["fields"] = f"System.Tags={AZ_TAG_SEP.join(tags)}"
+        self._update(item_id, **fields)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -3772,6 +3981,10 @@ class AzureBoardsBackend(SpecBackend):
 # `## Tasks`-as-children mapping was retired for the reasons at HYBRID SERIALISATION, and one
 # work item now carries the whole document.
 AZ_SPEC_TYPE = "Issue"
+
+# `System.Tags` is one string, not an array like a GitHub issue's `labels` — Azure Boards'
+# own convention joins tags with a semicolon, published in its field reference.
+AZ_TAG_SEP = "; "
 
 
 def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
@@ -3818,6 +4031,43 @@ def spec_records(fm: dict, schema: dict | None = None) -> dict:
     Reading the frontmatter top to bottom narrates the spec's history in order, so the
     order here is the schema's, not the file's."""
     return {k: (fm.get(k) or None) for k in record_keys(schema)}
+
+
+def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
+    """The `spec:` labels this document projects onto its tracker issue / work item —
+    read from the schema's `label:` map and nothing else.
+
+    One label per present record (`record_keys(schema)` order, skipping any without a
+    `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
+    labelled stage rule. A unidirectional projection: recomputed here on every write, never
+    read back — see docs/standards/architecture/spec-backend.md §Granular reading is about
+    context, not I/O for the sibling rule this one extends.
+
+    MEASURED on 2026-08-05, against this repository's own `github` backend, per
+    spec-backend.md's own rule that a backend is proved by the documents it will actually be
+    given: all 96 real specs run through this calculation, each cross-checked — independently
+    of this function, straight off its frontmatter and its own already-derived stage — against
+    the records it actually carries. 0 disagreed."""
+    s = schema or load_schema()
+    fm = info.get("frontmatter", {})
+    records = s.get("frontmatter", {}).get("records", {})
+    labels = [records[k]["label"] for k in record_keys(s)
+              if records[k].get("label") and fm.get(k)]
+    for rule in s.get("stages", {}).get("derived", []):
+        if rule.get("label") and info.get("stage") == rule["id"]:
+            labels.append(rule["label"])
+    return labels
+
+
+def reconcile_label_set(current: list[str], desired: list[str], prefix: str = "spec:") -> list[str]:
+    """The label set a native tracker surface should carry next, given what it carries now.
+
+    Every label OUTSIDE `prefix` in `current` survives untouched — a human's own label is
+    never this tool's to remove. Every label UNDER `prefix` is replaced wholesale by
+    `desired`: a stale one a stage regression left behind is dropped, a newly-earned one is
+    added, in the same pass a PATCH can afford — see `derive_labels`."""
+    foreign = [l for l in current if not l.startswith(prefix)]
+    return foreign + list(desired)
 
 
 def _policy(fm: dict) -> str:
@@ -4154,6 +4404,42 @@ def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
     return text.rstrip() + "\n\n" + block, "created"
 
 
+def write_handoff_block(info: dict, scope: str, body: str) -> tuple[str, str]:
+    """Replace ONE piece of `## Handoff` — `scope="global"` for the evergreen block, or
+    `scope="current"` for the `### N.` block matching the next actionable task's section
+    — and leave every OTHER block exactly as it stood. That is the whole of "closing": a
+    section's block is simply never targeted again once its tasks are done, the same way
+    a merged branch needs no explicit "done" flag.
+
+    Reuses `upsert_section` for the actual splice rather than re-deriving its frontmatter
+    offset math — this function's only job is to compute `## Handoff`'s new FULL body
+    with one block swapped, then hand that whole block to the existing writer."""
+    body_text = body_after_frontmatter(info["text"])
+    parsed = parse_handoff(body_text)
+    new_body = body.strip("\n")
+
+    if scope == "global":
+        global_text, blocks = new_body, parsed["blocks"]
+    else:
+        tasks = parse_tasks(body_text)
+        n = current_handoff_section(tasks)
+        if n is None:
+            return info["text"], "no-op"
+        global_text = parsed["global"].strip("\n")
+        title = next((b["title"] for b in parsed["blocks"] if b["section"] == n),
+                     None) or task_section_title(body_text, n) or str(n)
+        blocks = [dict(b, body=new_body) if b["section"] == n else b
+                 for b in parsed["blocks"]]
+        if not any(b["section"] == n for b in parsed["blocks"]):
+            blocks = blocks + [{"section": n, "title": title, "body": new_body}]
+
+    parts = [global_text] if global_text else []
+    parts += [f"### {b['title']}\n\n{b['body'].strip(chr(10))}" for b in blocks]
+    section_text = "\n\n".join(p for p in parts if p.strip())
+    block = f"## Handoff\n\n{section_text}\n" if section_text else section_guidance("Handoff")
+    return upsert_section(info, "Handoff", block)
+
+
 SECTION_FIXTURE = '''---
 type: standard
 title: the section reader's fixture
@@ -4290,6 +4576,151 @@ def section_case_failures() -> list[str]:
     return out
 
 
+# The canonical case list for the `## Handoff` section-block rule. `## Handoff`-scoping is
+# `specs.py`'s own contract — nothing in `skills.py` reads a spec's `### N.` blocks — so,
+# unlike `CANONICAL_CASES` and `SECTION_CASES`, this list is not duplicated anywhere.
+HANDOFF_BLOCK_FIXTURE = """## Handoff
+
+Global block: still true no matter which section is being built.
+
+### 1. Primeiro grupo
+
+Bloco fechado da seção 1 — não muda mais depois que a última task da seção commitou.
+
+### 2. Segundo grupo
+
+Bloco aberto da seção 2 — é o que uma task desta seção recebe hoje.
+"""
+
+HANDOFF_BLOCK_CASES = [
+    {"why": "text before the first `### N.` heading is the global block",
+     "text": HANDOFF_BLOCK_FIXTURE,
+     "global_contains": ["Global block: still true"],
+     "global_excludes": ["Primeiro grupo", "Segundo grupo"]},
+    {"why": "each `### N.` heading opens a new block, matched by the LEADING NUMERAL in "
+            "its own title — never by encounter order and never by title text",
+     "text": HANDOFF_BLOCK_FIXTURE,
+     "blocks": [
+         {"section": 1, "contains": ["Bloco fechado da seção 1"], "excludes": ["Segundo grupo"]},
+         {"section": 2, "contains": ["Bloco aberto da seção 2"], "excludes": ["Primeiro grupo"]},
+     ]},
+    {"why": "a section that closed before ever getting its own `## Handoff` block — "
+            "section 1 here has no block at all — must not shift a LATER section's "
+            "number down to fill the gap; encounter order would mislabel this lone "
+            "`### 3.` block as section 1",
+     "text": "## Handoff\n\nGlobal.\n\n### 3. Terceira seção\n\nBloco da seção 3.\n",
+     "global_contains": ["Global."],
+     "blocks": [{"section": 3, "contains": ["Bloco da seção 3."], "excludes": []}]},
+    {"why": "no `### N.` heading at all — today's flat format — reads back as a single "
+            "global block and no per-section blocks, so nothing existing needs to migrate",
+     "text": "## Handoff\n\nTodo o texto de hoje, sem nenhuma sub-seção.\n",
+     "global_contains": ["Todo o texto de hoje"],
+     "blocks": []},
+    {"why": "a spec whose `## Handoff` heading is absent entirely reads as an empty "
+            "global block and no blocks — the ordinary state before a spec's first build",
+     "text": "## Overview\n\nsomething else\n",
+     "global_contains": [],
+     "blocks": []},
+]
+
+
+def handoff_block_failures() -> list[str]:
+    """Run `HANDOFF_BLOCK_CASES` against `parse_handoff`."""
+    out: list[str] = []
+    for case in HANDOFF_BLOCK_CASES:
+        got = parse_handoff(case["text"])
+        for needle in case.get("global_contains", []):
+            if needle not in got["global"]:
+                out.append(f"{case['why']}: global block missing {needle!r}")
+        for needle in case.get("global_excludes", []):
+            if needle in got["global"]:
+                out.append(f"{case['why']}: global block leaked {needle!r}")
+        want_blocks = case.get("blocks")
+        if want_blocks is None:
+            continue
+        if len(got["blocks"]) != len(want_blocks):
+            out.append(f"{case['why']}: {len(got['blocks'])} block(s), expected "
+                       f"{len(want_blocks)}")
+            continue
+        for wb, gb in zip(want_blocks, got["blocks"]):
+            if gb["section"] != wb["section"]:
+                out.append(f"{case['why']}: block section {gb['section']}, expected "
+                           f"{wb['section']}")
+            for needle in wb.get("contains", []):
+                if needle not in gb["body"]:
+                    out.append(f"{case['why']}: section {wb['section']} missing {needle!r}")
+            for needle in wb.get("excludes", []):
+                if needle in gb["body"]:
+                    out.append(f"{case['why']}: section {wb['section']} leaked {needle!r}")
+    return out
+
+
+# `write_handoff_block` is stateful across a build (each write reads the PRIOR write's
+# output), so — unlike the two case lists above — it is proved as one sequential
+# scenario rather than a table of independent inputs.
+HANDOFF_WRITE_FIXTURE = """---
+slug: x
+title: X
+date: 2026-08-04
+---
+
+## Tasks
+
+### 1. Primeira seção
+
+- [x] 1.1 feito
+
+### 2. Segunda seção
+
+- [ ] 2.1 aberto
+- [ ] 2.2 aberto
+
+### 3. Terceira seção
+
+- [ ] 3.1 aberto
+"""
+
+
+def handoff_write_failures() -> list[str]:
+    """A `global` write, then a `current` write into a section that closed with no block
+    of its own (section 1 has one task, already checked, so the FIRST scoped write lands
+    directly on section 2) — proving the write side of the same gap `HANDOFF_BLOCK_CASES`
+    proves on read. Then: a second `current` write updates section 2 in place rather than
+    duplicating it, and crossing into section 3 leaves section 2's block frozen."""
+    out: list[str] = []
+    info = derive_info({"slug": "x", "phase": "plans"}, HANDOFF_WRITE_FIXTURE)
+    text, _ = write_handoff_block(info, "global", "Fato evergreen.")
+    info = derive_info({"slug": "x", "phase": "plans"}, text)
+    if current_handoff_section(info["tasks"]) != 2:
+        out.append("the next actionable task is 2.1, in section 2, but "
+                   f"current_handoff_section reported {current_handoff_section(info['tasks'])}")
+    text, _ = write_handoff_block(info, "current", "Bloco da seção 2, em progresso.")
+    info = derive_info({"slug": "x", "phase": "plans"}, text)
+    parsed = parse_handoff(body_after_frontmatter(text))
+    if [b["section"] for b in parsed["blocks"]] != [2]:
+        out.append(f"first scoped write to section 2 produced blocks "
+                   f"{[b['section'] for b in parsed['blocks']]}, expected [2] — a section "
+                   f"that closed with no `## Handoff` block of its own must not shift a "
+                   f"later section's number")
+    if "2. Segunda seção" not in (parsed["blocks"][0]["title"] if parsed["blocks"] else ""):
+        out.append("a freshly opened block did not borrow its title from `## Tasks`")
+    text, _ = write_handoff_block(info, "current", "Bloco da seção 2, atualizado.")
+    parsed = parse_handoff(body_after_frontmatter(text))
+    if len(parsed["blocks"]) != 1 or "atualizado" not in parsed["blocks"][0]["body"]:
+        out.append("writing `current` again duplicated section 2's block instead of "
+                   "replacing it in place")
+    info = derive_info({"slug": "x", "phase": "plans"},
+                       text.replace("- [ ] 2.1 aberto", "- [x] 2.1 aberto")
+                           .replace("- [ ] 2.2 aberto", "- [x] 2.2 aberto"))
+    text, _ = write_handoff_block(info, "current", "Bloco da seção 3.")
+    parsed = parse_handoff(body_after_frontmatter(text))
+    sections = [b["section"] for b in parsed["blocks"]]
+    if sections != [2, 3]:
+        out.append(f"crossing into section 3 produced blocks {sections}, expected [2, 3] "
+                   f"— section 2's block must survive, frozen, once section 3 opens")
+    return out
+
+
 def cmd_section(args, root: str) -> int:
     """Deterministic partial read/write of N sections — what makes lean agent context real.
 
@@ -4365,16 +4796,28 @@ def cmd_section(args, root: str) -> int:
                     print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
         return 0 if not absent else 1
     heading = headings[0]
+    scope = getattr(args, "scope", None)
+    if scope and heading != "Handoff":
+        emit(args.json,
+             {"ok": False, "code": "sp-scope-not-handoff", "heading": heading,
+              "message": "--scope only applies to ## Handoff — every other section is "
+                         "written whole"},
+             "error: --scope only applies to ## Handoff")
+        return 2
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
-    block = (f"## {heading}\n\n{content.strip()}\n"
-             if content.strip() else section_guidance(heading))
-    new_text, action = upsert_section(info, heading, block)
+    if scope:
+        new_text, action = write_handoff_block(info, scope, content)
+    else:
+        block = (f"## {heading}\n\n{content.strip()}\n"
+                 if content.strip() else section_guidance(heading))
+        new_text, action = upsert_section(info, heading, block)
     backend.write_spec(info, new_text)
     emit(args.json,
          {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
-          "path": display_locator(info["path"], root)},
-         f"{action} ## {heading} in {info['phase']}/{info['file']}")
+          "scope": scope, "path": display_locator(info["path"], root)},
+         f"{action} ## {heading}{f' ({scope})' if scope else ''} in "
+         f"{info['phase']}/{info['file']}")
     return 0
 
 
@@ -4646,6 +5089,32 @@ def record_round_trip_failures() -> list[str]:
     if parse_frontmatter(reflowed).get("merge") != {"strategy": "rebase"}:
         failures.append("re-stamping a block record left its old fields behind: "
                         f"{parse_frontmatter(reflowed).get('merge')!r}")
+    return failures
+
+
+def label_reconciliation_failures() -> list[str]:
+    """`reconcile_label_set` against the cases that decide whether it may ship: a label
+    outside the `spec:` prefix survives untouched — a human's own label is never this
+    tool's to touch — a stale `spec:` label a stage regression left behind is dropped, and
+    one the document newly earns is added, all in the one pass a PATCH can afford."""
+    failures: list[str] = []
+    cases = {
+        "foreign label survives, spec: labels replaced": (
+            ["bug", "spec:ranked"], ["spec:ranked", "spec:approved"],
+            ["bug", "spec:ranked", "spec:approved"]),
+        "stale spec: label dropped": (
+            ["spec:ranked", "spec:built"], ["spec:ranked"],
+            ["spec:ranked"]),
+        "nothing under the prefix is a no-op": (
+            ["help wanted"], [], ["help wanted"]),
+        "every spec: label sheds when the document sheds every record": (
+            ["spec:ranked", "spec:approved"], [], []),
+    }
+    for label, (current, desired, want) in cases.items():
+        got = reconcile_label_set(current, desired)
+        if got != want:
+            failures.append(f"{label}: reconcile_label_set({current!r}, {desired!r}) = "
+                            f"{got!r}, expected {want!r}")
     return failures
 
 
@@ -6716,6 +7185,25 @@ def cmd_selftest(args, root: str) -> int:
                                         "`skills.py` carries verbatim; the two tools move "
                                         "together or not at all"))
 
+    # `## Handoff`'s own section-block rule — specs.py-only, so unlike the case above there
+    # is no `skills.py` copy to drift from.
+    for failure in handoff_block_failures():
+        findings.append(_finding("sp-handoff-block-case", "error",
+                                 f"canonical Handoff-block case — {failure}",
+                                 remedy="parse_handoff must split `## Handoff` into its "
+                                        "global block plus one block per `### N.` heading, "
+                                        "matched to `## Tasks` by the heading's own leading "
+                                        "numeral; a flat `## Handoff` with no heading must "
+                                        "still read back as a single global block"))
+
+    for failure in handoff_write_failures():
+        findings.append(_finding("sp-handoff-write-case", "error",
+                                 f"Handoff scoped-write case — {failure}",
+                                 remedy="write_handoff_block must update one block in "
+                                        "place, never duplicate it, and never let a "
+                                        "section that closed without its own block shift "
+                                        "a later section's number"))
+
     # What `new` actually stamps, asserted against the gate rather than eyeballed. Runs on
     # TEMPLATE_SPEC, so it is self-contained and fires on an installed copy too — and it is
     # checked BEFORE the early return for the same reason the frontmatter cases are.
@@ -6821,6 +7309,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "trip; a comma-carrying or long value goes in the "
                                         "block form, and a re-stamp replaces the old "
                                         "field lines rather than orphaning them"))
+
+    # The native-label projection: a foreign label must survive it untouched, and a stale
+    # `spec:` one must not outlive the record that earned it.
+    for failure in label_reconciliation_failures():
+        findings.append(_finding("sp-label-reconciliation-case", "error",
+                                 f"label reconciliation — {failure}",
+                                 remedy="reconcile_label_set replaces only the `spec:` "
+                                        "prefix wholesale; every other label the tracker "
+                                        "already carries passes through untouched"))
 
     # `pr:` on the merge record: a local conclusion without one stays valid, and one set
     # under a strategy `gh pr merge` cannot perform is flagged rather than silently kept.
@@ -7070,13 +7567,14 @@ def cmd_selftest(args, root: str) -> int:
     errors = [f for f in findings if f["severity"] == "error"]
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
-                          "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1,
+                          "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1
+                                   + len(HANDOFF_BLOCK_CASES),
                           "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
     print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
-          f"{len(SECTION_CASES['cases']) + 1} section canonical case(s), "
-          f"{len(errors)} error(s))")
+          f"{len(SECTION_CASES['cases']) + 1} section + {len(HANDOFF_BLOCK_CASES)} "
+          f"Handoff-block canonical case(s), {len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
         print(f"          remedy: {f['remedy']}")
@@ -7087,7 +7585,11 @@ def cmd_selftest(args, root: str) -> int:
               f"stamps exactly the entry-gate headings, the task metadata grammar is closed "
               f"on both the key list and the indent, `--moment build` resolves the six "
               f"sections an executor is sent, a §addressed Impact bullet still declares its "
-              f"path, the {len(BACKEND_CASES)} backend cases agree between `files` and "
+              f"path, the {len(HANDOFF_BLOCK_CASES)} Handoff-block cases match `## Tasks` by "
+              f"their heading's own numeral and a flat `## Handoff` still reads back as one "
+              f"global block, a scoped Handoff write updates one block in place without a "
+              f"section that closed silently shifting a later one's number, "
+              f"the {len(BACKEND_CASES)} backend cases agree between `files` and "
               f"`memory`, the config defaults hold with nothing declared, the release "
               f"lockstep moves all seven artifacts together and refuses a drifted one, a "
               f"declared integration branch outranks origin/HEAD in the base-inference "
@@ -7098,7 +7600,8 @@ def cmd_selftest(args, root: str) -> int:
               f"each refuse with their own remedy, the unproved-backend warning says its "
               f"piece once per process on stderr and only for "
               f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
-              f"written, a grouped document survives store-and-reload byte for byte whether "
+              f"written, a foreign label survives label reconciliation while a stale "
+              f"`spec:` one does not, a grouped document survives store-and-reload byte for byte whether "
               f"it fits one issue body or spills into continuation comments, an oversized body "
               f"refuses without making the call, and the embedded "
               f"schema and template match their asset files.")
@@ -7370,6 +7873,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                          "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
                     help="replace the section from stdin, creating it in canonical position")
+    sp.add_argument("--scope", choices=["global", "current"],
+                    help="with --write on ## Handoff only: replace just the evergreen "
+                         "global block, or just the ### N. block matching the next "
+                         "actionable task's section — every other block is left untouched")
 
     sp = add_json(sub.add_parser("verification",
                                  help="read or set ONE spec's verification policy"))
