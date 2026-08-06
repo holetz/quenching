@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Align surface — one align per front, probe first
-description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, and the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/align/**
+description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the two conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:orchestrate` conducts the four stages of one spec, and neither reimplements what it conducts
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/docs/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/orchestrate.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/references/align/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-08-03
+timestamp: 2026-08-06
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4)
 maintainer: quenching
 ---
 
@@ -41,7 +41,25 @@ The two real loops survive where the looping is real: `/docs:align` keeps its in
 the fronts feed each other (a spec's distillation is glossary work; the skill front's registry is
 a `docs/` listing). The conductor contract — one human OK authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
-`align/convergence.md`, cited by `/align` alone.
+`align/convergence.md`, shared by both conductors and never restated by either (§Two conductor
+categories).
+
+## Two conductor categories
+
+The conductor contract is shared, never owned by a single command. Two conductors exist, told
+apart by what they conduct:
+
+| The conductor | What it conducts | The contract |
+| --- | --- | --- |
+| `/align` | the three fronts, in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
+| `/quenching:specs:orchestrate` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan ([orchestration-gears.md](../automation/orchestration-gears.md)) |
+
+The spec orchestrator is a conductor, not an align: it conducts no front, so it earns no row in
+the 1×4 column. It conducts the lifecycle of one spec, invoking each stage as the command that
+owns it — the same conduct-never-reimplement rule that binds `/align` — and derives its run from
+the `complexity` the spec's `priority` record carries, per the gears contract. Both open on one
+human OK that authorizes the whole run, nest one level, and surface code-coupled confirmations
+individually; the clause that once limited the contract to `/align` is gone.
 
 ## Probe before the inventory
 
