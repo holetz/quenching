@@ -23,12 +23,11 @@ The example uses `§A` / `§B` as placeholders — they are not addresses.
 skills.py read <the cited file> --sections "§A" --sections "§B"
 ```
 
-One call, N sections, no frontmatter; a unique prefix resolves, so `§B` is enough. The
-reason is the whole of this command's own cost: a preamble is re-sent on every turn that follows
-it, so what is loaded at turn one is paid for the length of the run — and a section runs ~400
-tokens against 4,600 for the file that holds it. `--rules-only`
-narrows further to the `<!-- rules -->` half where a section carries the marker, and returns the
-whole section, saying so, where it does not.
+One call, N sections, no frontmatter; a unique prefix resolves, so `§B` is enough. The reason is
+this command's own cost: a preamble is re-sent every turn that follows it, so what is loaded at
+turn one is paid for the length of the run — a section runs ~400 tokens against 4,600 for the
+file that holds it. `--rules-only` narrows to the `<!-- rules -->` half where a section carries
+the marker, and returns the whole section, saying so, where it does not.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
 *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
@@ -37,8 +36,7 @@ opens on why that split holds.
 ## Resolving the tool
 
 Resolve `specs.py` and `skills.py` (the section reader every `§X` citation above resolves through)
-per
-[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
@@ -51,16 +49,15 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 **Done when:** one spec in `plans/` is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
-**The precondition comes first.** Load the rule that binds this step before reading anything:
+**The precondition comes first.** Load the rule that binds this step:
 
 ```bash
 skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
   --sections "§The precondition"
 ```
 
-Everything this step needs is read in **one call** — the tree, the
-isolation ref, the spec's own state (which step 3 reads anyway, so it is read here once), and the
-environment probe below, which belongs in this same call:
+The rest of this step is read in **one call** — the tree, the isolation ref, the spec's own state
+(step 3 reads it anyway, so it is read here once), and the environment probe below:
 
 ```bash
 git status --porcelain
@@ -79,10 +76,9 @@ specs.py config --json
 the pre-existing changes and the report says so.
 
 **Then resolve the work ref, and check before offering.** The spec's work branch is the `branch`
-record's `work` when the `status` payload carries one, else the default `plan/<slug>` — which is the
-ref already listed above. A record naming something else costs one more `git branch --list "<work>"`
-to know whether it is alive, and only on a spec that has a record. Two outcomes end the question
-here:
+record's `work` when the `status` payload carries one, else `plan/<slug>` — the ref already listed.
+A record naming something else costs one more `git branch --list "<work>"` to know whether it is
+alive. Two outcomes end the question here:
 
 - **This checkout is on the work ref** (`git branch --show-current` equals it) → the spec **is**
   isolated. Go straight to the loop and offer nothing; asking again buys nothing and costs the
@@ -107,28 +103,25 @@ default. Left undeclared, this step answers nothing and the chain is exactly as 
 
 **Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
 disagreeing with the resolved base means the human already answered the isolation question at
-checkout — asking again is friction the loop does not need to pay. Show the inference on the same
-line as the confirmation, before stamping — `base: main — inferred; this branch was not cut by
-this command` — and stamp:
+checkout. Show the inference on the same line as the confirmation, before stamping —
+`base: main — inferred; this branch was not cut by this command` — and stamp:
 
 ```bash
 specs.py record "<slug>" branch --set base=<resolved base> --set work=<current branch>
 ```
 
-Then go straight to the loop. Never derive `base` from `git merge-base` or `--fork-point` here:
-both answer a commit, not a branch name, and a commit ancestral to three branches identifies none
-of them.
+Never derive `base` from `git merge-base` or `--fork-point` here: both answer a commit, not a
+branch name, and a commit ancestral to three branches identifies none of them.
 
 **On the base with the work ref alive and unclaimed → offer to take it, never to cut a second
 one.** Two forms, worktree first as always: `git worktree add ../<repo>-<slug> <work ref>` beside
 this checkout, or `git checkout <work ref>` in it. **Nothing is stamped** — a `branch` record, where
 one exists, is write-once and already true, and a ref cut by hand with no record is the case
-`base` cannot honestly be inferred for from here. Declining leaves the run on the base, which is
-the human's to choose; say plainly that the commits will land there.
+`base` cannot honestly be inferred for from here. Declining leaves the run on the base; say plainly
+that the commits will land there.
 
 **On the base branch, with nothing to check out → offer isolation here, inline.** Load the rules
-that name the branch and record the isolation, then read what the workspace declares first, so the
-offer can show it:
+that name the branch and record the isolation, then read what the workspace declares:
 
 ```bash
 skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
@@ -141,8 +134,7 @@ path, what will be stamped, and — when `worktreeSetup` is non-null — **the s
 exactly as read, never paraphrased or reformatted. **That block is the consent.** Choosing
 **Worktree** IS the OK for the command shown, and there is no second prompt and no remembered
 "this repo is authorised" state: the human judges the command on the same screen where they choose
-the form, which is the only screen where judging it is possible. Nothing declared → say nothing; an
-absent config is the normal case, not a finding.
+the form. Nothing declared → say nothing; an absent config is the normal case, not a finding.
 
 Then ask with **AskUserQuestion**:
 
@@ -203,15 +195,13 @@ print('unresolved hook targets:', gone or 'none')"
 
 Anything other than `none` → **report it before the first task**, name the hook and the missing
 path, and let the human decide: fix the wiring, or build knowing every commit will trip it. Never
-route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent, and the
-probe costs nothing.
+route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent.
 
 **Done when:** the tree is clean (or the override is on the record), isolation has been taken,
 found already held, or declined, and any unresolved hook has been reported.
 
 ### 3. Settle the approval, off the state step 2 already read
-**Load the stage ladder first** — what the derived stage names and means — before reading anything
-off the payload:
+**Load the stage ladder first** — what the derived stage names and means:
 
 ```bash
 skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
@@ -236,7 +226,7 @@ this command never has to.
 
 Mention any open `specs.py validate` warning **once** — `sp-unrefined` (nobody has interrogated
 this spec), `sp-impact-uncovered` (a declared standard no task writes) — and offer
-`/quenching:specs:develop` before building. Never gate on it: the ready gate is a floor, not a verdict.
+`/quenching:specs:develop`. Never gate on it: the ready gate is a floor, not a verdict.
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
 
 ### 4. Read what the tasks must satisfy
@@ -290,7 +280,7 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    writes nothing under `docs/` **may** go to an executor sub-agent under
    [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
-   that rule untouched. When it is, load the rules that bound it before dispatching:
+   that rule untouched; when it is, load the rules that bound it before dispatching:
 
    ```bash
    skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
@@ -298,8 +288,7 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    ```
 
 c. **Write only the `docs/` this task names.** When this task writes `docs/`, load the rule that
-   draws the line between declared and emergent, and the boundary it crosses — before writing
-   anything:
+   draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
    skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
@@ -308,22 +297,16 @@ c. **Write only the `docs/` this task names.** When this task writes `docs/`, lo
      --sections "§Boundary"
    ```
 
-   A `docs/standards/` path declared under `## Impact`
-   and named by this task is part of its deliverable — write it through the insert procedure in
+   A `docs/standards/` path declared under `## Impact` and named by this task is part of its
+   deliverable — written through the insert procedure in
    [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
-   stamp §Updating `index.md` §Enriching the glossary §Self-check, stamp `authority` honestly, and
-   self-check it against
-   [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
-   §Concept docs §Resource integrity.
-   Anything else the work reveals costs one line — `specs.py discover "<slug>" "<finding>"` — and
-   no authoring. The line between the two, and why it falls there, is
-   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §Declared versus emergent `docs/`.
+   stamp §Updating `index.md` §Enriching the glossary §Self-check; stamp `authority` honestly and
+   self-check against [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
+   §Concept docs §Resource integrity. Anything else the work reveals costs one line —
+   `specs.py discover "<slug>" "<finding>"` — and no authoring.
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
-   task.** The verification policy that decides when the suite runs, the validation loop, the
-   self-review's four items and the commit's hard rules, then the git conventions that name the
-   subject, one call per file:
+   task.** The verification policy, the validation loop, the self-review, the commit's hard rules; then the git conventions that name the subject — one call per file:
 
    ```bash
    skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
@@ -334,8 +317,8 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
-   dead code — and fix what it finds. This happens on the written diff, *before* the chain below,
-   so what the chain commits is already the reviewed version.
+   dead code — and fix what it finds, on the written diff, *before* the chain below, so what the
+   chain commits is already the reviewed version.
 
 e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
    [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages, or the
