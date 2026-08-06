@@ -4557,8 +4557,55 @@ AZ_PATCH_CASES = (
 )
 
 
+AZ_PATCH_TYPE_ERROR = "The type changed without a value"
+
+
+def azure_patch_culprit(ops: list[dict], said: str) -> str | None:
+    """Which op azure devops rejected, read off what it said — or None where it named none.
+
+    ONLY VALUE-BEARING PATHS ARE CANDIDATES. `/relations/-` ends in `-`, which occurs in
+    almost every sentence an API writes, so admitting every op here would attribute a field's
+    rejection to the parent link at random.
+
+    The type error is special-cased because it names no field at all, and it has exactly one
+    cause: the format op travelled without its own value — the coupling `azure_patch_body`
+    exists to hold. Seeing it means that coupling broke, and saying so beats a generic
+    refusal that sends a human looking at the field."""
+    if AZ_PATCH_TYPE_ERROR.lower() in said.lower():
+        return next((o["path"] for o in ops
+                     if o["path"].startswith("/multilineFieldsFormat/")), None)
+    for op in ops:
+        if not op["path"].startswith(("/fields/", "/multilineFieldsFormat/")):
+            continue
+        if op["path"].rsplit("/", 1)[-1] in said:
+            return op["path"]
+    return None
+
+
+# (label, ops' paths, what az said, the op expected to be named).
+AZ_CULPRIT_CASES = (
+    ("a rejected column value names its own field",
+     ("/fields/System.Title", "/fields/WEF_a_Kanban.Column"),
+     "TF401320: Rule Error for field WEF_a_Kanban.Column: value not allowed",
+     "/fields/WEF_a_Kanban.Column"),
+    ("the type error names the format op, never a field",
+     ("/fields/System.Title", "/multilineFieldsFormat/System.Description"),
+     "400 The type changed without a value",
+     "/multilineFieldsFormat/System.Description"),
+    ("a relation op is never guessed at from a hyphen",
+     ("/relations/-",), "VS402323: some-rule-failed for this work item", None),
+    ("a message naming nothing names no op",
+     ("/fields/System.Title",), "TF400813: the user is not authorized", None),
+)
+
+
 def azure_patch_failures() -> list[str]:
     failures: list[str] = []
+    for label, paths, said, want in AZ_CULPRIT_CASES:
+        got = azure_patch_culprit([{"op": "add", "path": p, "value": "v"} for p in paths],
+                                  said)
+        if got != want:
+            failures.append(f"{label}: named {got!r}, expected {want!r}")
     for label, current, desired, markdown, parent, want in AZ_PATCH_CASES:
         ops = azure_patch_body(current, desired, markdown=markdown, parent=parent)
         got = tuple(o["path"] for o in ops)
@@ -5124,6 +5171,57 @@ class AzureBoardsBackend(SpecBackend):
         if description is None:
             return self._az(f"updating work item {item_id}", *argv)
         return self._az_with_description(f"updating work item {item_id}", argv, description)
+
+    def _az_patch(self, action: str, item_id: int, ops: list[dict]):
+        """One work item, one JSON patch — the whole write in a single `az` process.
+
+        `az devops invoke` rather than `az rest`: the extension already carries the auth
+        `_show_many` proves works, where `az rest` against dev.azure.com needs its resource
+        id spelled out. `--media-type application/json-patch+json` is not optional — the work
+        item PATCH endpoint rejects the default `application/json` outright.
+
+        THE CEILING IS CHECKED AT THIS CHOKE POINT, not at the caller. `_az_with_description`
+        used to be the only door a document went through; this is the other one, and the same
+        measured `System.Description` limit applies (`TF401262` above it). Naming the size
+        before the call beats surfacing that error anonymously mid-write.
+
+        ONE PATCH IS ALL-OR-NOTHING, so the refusal names the op. `## Risks` accepts the
+        atomicity — a rejected op takes the document edit down with it — on the condition
+        that a human is told WHICH one; a patch of eight ops that fails without saying is
+        worse to diagnose than the four separate writes it replaced."""
+        for op in ops:
+            value = op.get("value")
+            if isinstance(value, str) and len(value) > AZ_DESCRIPTION_MAX:
+                raise BackendRefusal({
+                    "code": "sp-az-description-too-large", "exit": 2, "action": action,
+                    "size": len(value), "max": AZ_DESCRIPTION_MAX, "op": op["path"],
+                    "message": f"the value for {op['path']} is {len(value)} characters and "
+                               f"the field holds {AZ_DESCRIPTION_MAX} (measured: `az` "
+                               f"answers TF401262 above it) — shorten a section while "
+                               f"{action}; nothing was written",
+                })
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump(ops, fh)
+            return self._az_raw(action, "devops", "invoke", "--area", "wit",
+                                "--resource", "workitems",
+                                "--route-parameters", f"project={self.project}",
+                                f"id={item_id}", "--http-method", "PATCH",
+                                "--media-type", "application/json-patch+json",
+                                "--in-file", path, "--api-version", "7.1")
+        except BackendRefusal as e:
+            e.err["ops"] = [op["path"] for op in ops]
+            culprit = azure_patch_culprit(ops, str(e.err.get("az") or ""))
+            if culprit:
+                e.err["op"] = culprit
+                e.err["message"] = (f"{e.err.get('message', '')} — the op azure devops "
+                                    f"rejected is {culprit}; the whole patch was refused, so "
+                                    f"nothing was written")
+            raise
+        finally:
+            os.unlink(path)
 
     def _az_with_description(self, action: str, argv: list[str], description: str):
         """*argv* (a `work-item create`/`update` call, minus any description flag) plus
@@ -9455,7 +9553,9 @@ def cmd_selftest(args, root: str) -> int:
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
               f"each refuse with their own remedy, the {len(AZ_PATCH_CASES)} AZ_PATCH_CASES "
               f"put one op on every field that differs and none on one that does not, with "
-              f"the multilineFieldsFormat op never travelling without its own value, "
+              f"the multilineFieldsFormat op never travelling without its own value and the "
+              f"{len(AZ_CULPRIT_CASES)} culprit cases naming the rejected op without "
+              f"ever guessing at a relation, "
               f"no backend warns as unproved "
               f"({', '.join(UNPROVED_BACKENDS) or 'none declared'}), every record reads "
               f"back as it was "
