@@ -4420,7 +4420,19 @@ def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
     write. `fm['tags']` is filtered through `declared_tags` on the way in as well, so a
     reserved name that somehow reached the document cannot be written back as if the spec had
     declared it."""
-    pairs: list[str] = []
+    fields, assignee = azure_native_fields(fm, discovery_tag, rendered)
+    return [f"{ref}={value}" for ref, value in fields.items()], assignee
+
+
+def azure_native_fields(fm: dict, discovery_tag: str | None,
+                        rendered: list[str] | None = None) -> tuple[dict, str | None]:
+    """The same answer as `azure_native_field_pairs`, keyed by reference name.
+
+    THE DICT IS THE PRIMARY FORM and the pairs are rendered from it, not the other way
+    round: `--fields KEY=VALUE` is one transport's spelling, and the consolidated PATCH needs
+    the values themselves to diff them against the item as read. Two builders would be two
+    places for the discovery-tag rule to be forgotten in."""
+    fields: dict = {}
     all_tags = declared_tags(list(fm.get("tags") or []), discovery_tag)
     if discovery_tag and discovery_tag not in all_tags:
         all_tags.append(discovery_tag)
@@ -4428,14 +4440,37 @@ def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
         if name not in all_tags:
             all_tags.append(name)
     if all_tags:
-        pairs.append(f"System.Tags={'; '.join(all_tags)}")
+        fields["System.Tags"] = "; ".join(all_tags)
     for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
                      ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
         value = fm.get(key)
         if value:
-            pairs.append(f"{ref}={value}")
+            fields[ref] = value
     assignee = fm.get("assignee")
-    return pairs, (str(assignee) if assignee else None)
+    return fields, (str(assignee) if assignee else None)
+
+
+def azure_comparable_fields(fields: dict) -> dict:
+    """The item as READ, rewritten into the shapes this backend WRITES — the only form a
+    diff may compare against.
+
+    TWO FIELDS COME BACK IN A SHAPE THAT CAN NEVER BE WRITTEN, both already measured and
+    documented in `_native_fields`: `System.AssignedTo` arrives as an identity object and
+    goes out as a UPN, and the two scheduling dates arrive as a full datetime
+    (`2026-01-01T03:00:00Z`) and go out as a date. Diffing the raw read against what a write
+    produces would find those three always different, so the patch would carry them on every
+    single write — the exact no-op op the diff exists to remove, reintroduced as a silent
+    default."""
+    out = dict(fields)
+    assigned = out.get("System.AssignedTo")
+    if isinstance(assigned, dict):
+        out["System.AssignedTo"] = assigned.get("uniqueName") or assigned.get("displayName")
+    for ref in ("Microsoft.VSTS.Scheduling.StartDate",
+                "Microsoft.VSTS.Scheduling.TargetDate"):
+        value = out.get(ref)
+        if isinstance(value, str) and len(value) > 10:
+            out[ref] = value[:10]
+    return out
 
 
 def azure_native_field_failures() -> list[str]:
@@ -4573,6 +4608,17 @@ AZ_PATCH_CASES = (
     ("a parent already linked emits nothing",
      {"System.Title": "t", "System.Parent": 788243}, {"System.Title": "t"}, False,
      AZ_PATCH_PARENT, ()),
+    # The two fields whose read shape is not their write shape. Fed through
+    # `azure_comparable_fields` first, an unchanged assignee and an unchanged date must
+    # vanish from the patch exactly like any other unchanged field.
+    ("an identity object equals the UPN it was written from",
+     azure_comparable_fields({"System.AssignedTo": {"uniqueName": "a@b.c",
+                                                    "displayName": "A B"}}),
+     {"System.AssignedTo": "a@b.c"}, False, None, ()),
+    ("a datetime equals the date it was written from",
+     azure_comparable_fields({"Microsoft.VSTS.Scheduling.StartDate":
+                              "2026-01-01T03:00:00Z"}),
+     {"Microsoft.VSTS.Scheduling.StartDate": "2026-01-01"}, False, None, ()),
 )
 
 
@@ -4714,6 +4760,11 @@ class AzureBoardsBackend(SpecBackend):
         # System.Tags the tag reconciliation in `write_spec` diffs against — the last costs
         # no call of its own, and is the one place tags are seen before `declared_tags`.
         self._rows: list[tuple[dict, int, str, str, dict, list[str]]] | None = None
+        # item id -> its fields, already in the shapes THIS backend writes. Filled by
+        # `_load`, read by `write_spec`'s diff, cleared by `_invalidate` with the rows
+        # it belongs to — a stale entry would diff a write against the item as it was
+        # two writes ago and elide an op that was still needed.
+        self._raw: dict[int, dict] = {}
 
     # -- transport ---------------------------------------------------------- #
     def _az_raw(self, action: str, *argv: str, expect: str = "object"):
@@ -4816,6 +4867,12 @@ class AzureBoardsBackend(SpecBackend):
                 # list and must never write over.
                 continue
             phase = self._phase_of(item)
+            # KEYED BY ID, never a seventh slot on the row. The tuple is already six wide and
+            # its last widening shipped a `list_specs` that unpacked five — every operation
+            # under this backend died on it. One writer here, readers ask by id, and the
+            # unpack sites stay exactly as they are.
+            self._raw[int(item.get("id") or 0)] = azure_comparable_fields(
+                item.get("fields") or {})
             rows.append(({
                 # The SAME key set `spec_files` returns and nothing more.
                 "phase": phase, "folder": phase, "legacy": False, "file": filename,
@@ -4856,6 +4913,7 @@ class AzureBoardsBackend(SpecBackend):
 
     def _invalidate(self) -> None:
         self._rows = None
+        self._raw = {}
 
     def _item_id(self, slug: str) -> int:
         return self._item_tags(slug)[0]
@@ -4980,15 +5038,12 @@ class AzureBoardsBackend(SpecBackend):
         # work item to another area between writes sees the next one bring it back, the same
         # way `move_spec` already owns the state. `_update` only ever adds the fields given
         # it, so an unset `iteration_path` is simply not one of them.
-        fields = {"title": title,
-                  "description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
+        desired = {"System.Title": title,
+                   "System.Description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
         if self.area_path:
-            fields["area"] = self.area_path
+            desired["System.AreaPath"] = self.area_path
         if self.iteration_path:
-            fields["iteration"] = self.iteration_path
-        self._update(item_id, **fields)
-        self._apply_parent(item_id, self.parent_id)
-        self._apply_column(item_id, fresh)
+            desired["System.IterationPath"] = self.iteration_path
         # CARRIED FORWARD, not read off `fresh` alone: `strip_frontmatter_keys` means an
         # ORDINARY write — a section edit, a ticked task — hands this method text that never
         # mentions `tags`/`assignee`/`start`/`target` at all, because they were never in the
@@ -5000,10 +5055,28 @@ class AzureBoardsBackend(SpecBackend):
         # the one `System.Tags` pair `_apply_native_fields` already builds. It is not carried
         # forward and never diffed against what the item holds — a rendering is recomputed
         # from the source on every write by definition.
-        self._apply_native_fields(
-            item_id, carry_forward_fields(info["frontmatter"], fresh["frontmatter"],
-                                          FIELD_KEYS),
-            derive_labels(fresh))
+        native, assignee = azure_native_fields(
+            carry_forward_fields(info["frontmatter"], fresh["frontmatter"], FIELD_KEYS),
+            self.discovery_tag, derive_labels(fresh))
+        desired.update(native)
+        if assignee:
+            desired["System.AssignedTo"] = assignee
+        # The column rides the SAME body, which is what kept `azureStates` and `azureColumns`
+        # from undoing each other before: the board resolves `System.State` from the column,
+        # and one patch cannot race itself.
+        column = self.column_map.get(board_state_of(fresh), self.board_column)
+        if column:
+            desired[self._resolve_board_field()] = column
+        # `markdown=True` on every write, not once at creation: the format op only travels
+        # where the description is itself an op, so an item already in `Markdown` pays
+        # nothing and one still in `html` is converted by the first write that touches it.
+        # `parent=None` until `System.Parent` is in `AZ_BATCH_FIELDS` (task 3.3) — with
+        # nothing to diff against, a relation op would be re-added on every write rather
+        # than reaffirmed, which is why `_apply_parent`'s own read stays for now.
+        ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True)
+        if ops:
+            self._az_patch(f"updating work item {item_id}", item_id, ops)
+        self._apply_parent(item_id, self.parent_id)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
