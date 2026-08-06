@@ -16,7 +16,7 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
 **reviewed**, and it is **committed**. The mechanics of that live in
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-§The precondition §The verification policy §The validation loop §The diff self-review §The commit
+§The verification policy §The validation loop §The diff self-review §The commit
 §Declared versus emergent `docs/` §Delegating an executor, which this body cites and never restates.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
@@ -38,8 +38,7 @@ opens on why that split holds.
 
 The git conventions live in
 [specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
-§The read-if-present rule §Branch and worktree names §Recording the isolation §Commit messages
-§The subject is the anchor.
+§The read-if-present rule §Commit messages §The subject is the anchor.
 
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -63,7 +62,14 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 **Done when:** one spec in `plans/` is resolved.
 
 ### 2. Take the tree, the isolation and the state in one read
-**The precondition comes first.** Everything this step needs is read in **one call** — the tree, the
+**The precondition comes first.** Load the rule that binds this step before reading anything:
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+  --sections "§The precondition"
+```
+
+Everything this step needs is read in **one call** — the tree, the
 isolation ref, the spec's own state (which step 3 reads anyway, so it is read here once), and the
 environment probe below, which belongs in this same call:
 
@@ -131,10 +137,13 @@ one exists, is write-once and already true, and a ref cut by hand with no record
 `base` cannot honestly be inferred for from here. Declining leaves the run on the base, which is
 the human's to choose; say plainly that the commits will land there.
 
-**On the base branch, with nothing to check out → offer isolation here, inline.** Read what the
-workspace declares first, so the offer can show it:
+**On the base branch, with nothing to check out → offer isolation here, inline.** Load the rules
+that name the branch and record the isolation, then read what the workspace declares first, so the
+offer can show it:
 
 ```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+  --sections "§Branch and worktree names" --sections "§Recording the isolation"
 specs.py config --json        # `worktreeSetup`, or null — exit 0 either way
 ```
 
