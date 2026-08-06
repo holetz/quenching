@@ -46,7 +46,7 @@ and conformance rules with `/quenching:docs:align`
   lookup. A capture that introduces a repo-specific term ends by adding its entry there (MERGE,
   alphabetical, linked to the concept doc), so any agent can resolve the term the moment it lands.
   `/quenching:docs:glossary-backfill` is the whole-bundle counterpart that backfills terms already sitting
-  in `docs/` but never fed into the glossary — this skill only ever looks at the capture in hand.
+  in `/.docs/` but never fed into the glossary — this skill only ever looks at the capture in hand.
 
 ## Workflow
 
@@ -69,7 +69,7 @@ Copy `${CLAUDE_PLUGIN_ROOT}/assets/templates/concept-front.md` and complete the 
 
 ### 4. Write the concept doc
 Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
-links absolute (`/docs/...`); within-home links relative. Body prose MAY be the repo's language.
+links absolute (`/.docs/...`); within-home links relative. Body prose MAY be the repo's language.
 
 ### 5. Update `knowledge/index.md`
 Add a bullet-link with the doc's `description`

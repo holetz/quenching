@@ -133,6 +133,17 @@ merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`.
 
+**Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
+first-level frontmatter key with its own deterministic verb (`specs.py tags|assignee|start|target
+<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. Where a
+backend has a faithful native counterpart — issue labels/assignees on `github`,
+`System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
+`azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
+document too, so a human's edit on the tracker is the spec's new value on the next read.
+`start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
+`date:` does everywhere (`docs/standards/architecture/spec-backend.md` §Armazenado não é
+projetado has the full test).
+
 ## The fourteen sections
 
 <!-- rules -->
@@ -372,14 +383,15 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again |
+| `specs.py new <slug> [--title T] [--verification P] [--subject KEY]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
 | `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
+| `specs.py tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
 | `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
-| `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates` |
+| `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
