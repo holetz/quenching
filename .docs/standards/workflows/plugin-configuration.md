@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the seven recognised keys and their defaults, the one key that deliberately has none and refuses instead, the one key a second tool reads and why it had nowhere else to live, the two keys with two consumers each — the release verb and the base-inference chain — why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
+description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the six recognised keys and their defaults, the one key that deliberately has none and refuses instead, the two keys with two consumers each — the release verb and the base-inference chain — why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, backend, plugin]
 timestamp: 2026-08-04
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; `docsDir` added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude; `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md)
+source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; the bundle-root config key added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude, and removed by the docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — the bundle root became the fixed `/.docs/` convention, and the key that said where the bundle lives had nothing left to say ([bundle-root.md](../architecture/bundle-root.md)); `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md)
 maintainer: quenching
 ---
 
@@ -36,10 +36,9 @@ not inside `docs/`.
 }
 ```
 
-Read with `json.load` — a plain object, no new format, no prose to parse. **`specs.py` is no longer
-its only reader**: `okf-validate.py` reads `docsDir` from the same file, which is what makes this
-the *plugin's* configuration rather than the `specs/` front's (§The configuration stopped belonging
-to one front).
+Read with `json.load` — a plain object, no new format, no prose to parse. **`specs.py` is the one
+reader**, and the file is the *plugin's* configuration rather than the `specs/` front's
+(§The configuration stopped belonging to one front).
 
 ## The recognised keys
 
@@ -49,21 +48,17 @@ to one front).
 | `specsBranch` | any branch name | `specs` | the `files` backend only |
 | `worktreeSetup` | a shell command, run as written | none | `/specs:execute`'s isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
-| `docsDir` | a path relative to the repo root | `docs` | `okf-validate.py`, as CLI **and** hook |
 | `integrationBranch` | any branch name | **none** — `specs.py release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
 | `releaseBranch` | any branch name | **none** — `specs.py release` applies `main` at the point of use | the release verb only |
 
-**`docsDir` is the one key `specs.py` does not read, and it is here because it had nowhere else to
-live.** The checker's other settings (`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`,
-`stopScan`, `ignoreGlobs`) come from the target's own `.claude/hooks/hooks-config.json`, which the
-target maintains by hand — nothing installs one any more. `docsDir` could not: the checker is now
-wired by the plugin's own `hooks/hooks.json`, so it runs from the plugin's tree, and a per-repo
-override has to be read relative to the **project directory** rather than the script's. This file is
-the only per-repo configuration the plugin already resolves that way, so `docsDir` was moved into
-it and takes precedence over any `hooks-config.json` value.
-
-Whether the other six deserve the same treatment is **open** — they are currently reachable only by
-a target hand-writing a file no command creates.
+**The checker's settings never lived in this file, and the bundle root is not one either.**
+`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan` and `ignoreGlobs` come from the
+target's own `.claude/hooks/hooks-config.json`, which the target maintains by hand — nothing
+installs one any more. The bundle root the checker validates is the fixed `/.docs/` convention,
+which no configuration names ([bundle-root.md](../architecture/bundle-root.md)) — the
+key that used to say where the bundle lives is gone rather than relocated. Whether the other six
+deserve a home in this file is **open** — they are currently reachable only by a target
+hand-writing a file no command creates.
 
 `worktreeSetup` keeps the contract it had in its old home unchanged — who runs it, with which cwd,
 what a failure means, and why the consent is the isolation offer rather than a prompt of its own,

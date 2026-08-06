@@ -91,7 +91,9 @@ it is reached is a reason not to.
 reasoning was that `okf-validate.py` had to sit beside the `hooks-config.json` it loaded *from its
 own directory*, so separating the pair would break config loading in every installed copy. Both
 halves are now false: `_load_config` reads the **target's** `.claude/hooks/hooks-config.json`
-(plus `docsDir` from `.claude/quenching.json`), and there are no installed copies left to break.
+and nothing else — the bundle root it validates is the fixed `/.docs/` convention, which no
+configuration names ([bundle-root.md](bundle-root.md)) — and there are no installed copies left to
+break.
 The file stays in `hooks/` on the invocation rule alone — which is the rule that was doing the
 work all along.
 

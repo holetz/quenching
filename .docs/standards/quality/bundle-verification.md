@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Bundle verification
-description: What the docs/ front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
+description: What the docs front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
 resource: plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/commands/docs/status.md
 tags: [quality, verification, okf, validator, conformance]
 timestamp: 2026-07-31
@@ -13,7 +13,7 @@ maintainer: quenching
 
 # Bundle verification
 
-What the `docs/` front proves mechanically, what it leaves to a skill reading its own work, and
+What the `docs` front proves mechanically, what it leaves to a skill reading its own work, and
 how to tell which a given invariant deserves. `assets/hooks/okf-validate.py` is the
 implementation; `quenching-docs-align/references/conformance.md` is the code-by-code contract.
 This standard is the rule *behind* both.
@@ -32,7 +32,7 @@ skills, the honest options are a **deterministic check** or an accepted gap reco
 a third paragraph.
 
 The same held for `resource:`: four skills forbade inventing one, and nothing checked that it
-pointed at anything. The repo's own shipped seed carried a self-pointing `resource: docs/**`, in
+pointed at anything. The repo's own shipped seed carried a self-pointing `resource: /.docs/**`, in
 violation of the rule it was meant to demonstrate, for as long as only prose guarded it.
 
 **Corollary.** When a check lands, the prose it replaces gets *cut*, not kept as belt-and-braces.
@@ -186,7 +186,7 @@ repo's own bundle are lists.
 - **A doc must not point at itself.** A self-scoped doc governs nothing and is eternally fresh,
   which silently disables `stale-doc` for it.
 - **Except a bundle aggregate.** A scope containing the bundle *root* is legitimate:
-  `knowledge/glossary.md` really does govern the whole bundle, so `resource: docs/**` is truthful
+  `knowledge/glossary.md` really does govern the whole bundle, so `resource: /.docs/**` is truthful
   and narrowing it to look tidier would be the fabrication. This is the `TYPES_WITHOUT_RESOURCE`
   exemption generalized — one mechanism, not two.
 
