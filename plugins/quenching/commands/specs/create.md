@@ -45,7 +45,7 @@ makes legal. Writing fourteen `- none` headings here would make a fresh capture 
 the heading absent or write an explicit none that *says* the source was silent.
 - **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
 and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
-[communication.md](docs/standards/agents/communication.md) §Declaring it declares.
+[communication.md](/.docs/standards/agents/communication.md) §Declaring it declares.
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
 answer: sharpen the existing spec instead, or pick a different slug.
 
