@@ -4059,6 +4059,11 @@ def field_strip_failures() -> list[str]:
     return out
 
 
+# `System.Description`'s real ceiling — measured (task 6.2), not documented anywhere `az`
+# prints: writing past it answers `TF401262: … exceeds the maximum allowed length of
+# 1048576`. Checked in `_az_with_description`, before the call is made.
+AZ_DESCRIPTION_MAX = 1_048_576
+
 # `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
 # resource, not guessed. `_show_many` pays 1 + ⌈N/200⌉ calls for a listing instead of 1 + N.
 AZ_BATCH_SIZE = 200
@@ -4225,6 +4230,7 @@ class AzureBoardsBackend(SpecBackend):
         rows: list[tuple[dict, int, str, str, dict]] = []
         for item in self._show_many([i for i in ids if i]):
             filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
+            doc = azure_restore_trailing_newline(doc)
             m = SPEC_FILE_RE.match(filename)
             if not m:
                 # An ordinary work item a human created. The marker is what tells a spec
@@ -4416,14 +4422,13 @@ class AzureBoardsBackend(SpecBackend):
         stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         argv = ["work-item", "create", "--project", self.project,
                "--type", self.work_item_type, "--title", title,
-               "--description", hybrid_wrap(filename, hybrid_split(stored, None)[0][0],
-                                            fmt="div"),
                "--state", self.states[phase]]
         if self.area_path:
             argv += ["--area", self.area_path]
         if self.iteration_path:
             argv += ["--iteration", self.iteration_path]
-        item = self._az("creating a work item", *argv)
+        description = hybrid_wrap(filename, hybrid_split(stored, None)[0][0], fmt="div")
+        item = self._az_with_description("creating a work item", argv, description)
         item_id = int((item or {}).get("id") or 0)
         self._apply_parent(item_id, self.parent_id)
         self._apply_column(item_id, fresh)
@@ -4549,10 +4554,92 @@ class AzureBoardsBackend(SpecBackend):
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
     def _update(self, item_id: int, **fields: str):
+        # `description` is pulled out and routed through `_az_with_description` — see there
+        # for why a document cannot travel as an ordinary `--description` argument.
+        description = fields.pop("description", None)
         argv: list[str] = ["work-item", "update", "--id", str(item_id)]
         for key, value in fields.items():
             argv += [f"--{key}", value]
-        return self._az(f"updating work item {item_id}", *argv)
+        if description is None:
+            return self._az(f"updating work item {item_id}", *argv)
+        return self._az_with_description(f"updating work item {item_id}", argv, description)
+
+    def _az_with_description(self, action: str, argv: list[str], description: str):
+        """*argv* (a `work-item create`/`update` call, minus any description flag) plus
+        `System.Description` from a temp file, via `--fields System.Description=@<path>`.
+
+        TWO CEILINGS, AND ONLY THE SECOND ONE IS AZURE'S. A document handed to `az` as a
+        literal `--description <text>` argument hits Linux's own per-argument limit
+        (`MAX_ARG_STRLEN`, 128 KiB) long before it reaches the API — measured on this org:
+        `az` itself raises `OSError` building the argv above ~128,000 characters, nothing to
+        do with the work item at all. `--fields KEY=@path` reads the value from disk instead,
+        which has no ceiling of its own; what remains is `System.Description`'s REAL one,
+        measured the same way: `az` answers `TF401262: … exceeds the maximum allowed length
+        of 1048576` above it. Refusing here, before the call, names the size and the ceiling
+        instead of surfacing that error anonymously mid-write — the same reasoning
+        `GitHubBackend._write_api`'s body-ceiling check already carries."""
+        if len(description) > AZ_DESCRIPTION_MAX:
+            raise BackendRefusal({
+                "code": "sp-az-description-too-large", "exit": 2, "action": action,
+                "size": len(description), "max": AZ_DESCRIPTION_MAX,
+                "message": f"the document is {len(description)} characters and "
+                           f"System.Description holds {AZ_DESCRIPTION_MAX} (measured: `az` "
+                           f"answers TF401262 above it) — shorten a section while {action}; "
+                           f"nothing was written",
+            })
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=".txt")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(description)
+            return self._az(action, *argv, "--fields", f"System.Description=@{path}")
+        finally:
+            os.unlink(path)
+
+
+def azure_restore_trailing_newline(doc: str) -> str:
+    """Undo the one transport artefact `az`'s `@file` field mechanism leaves on every read:
+    measured (task 6.2), it strips EVERY trailing newline unconditionally — `"x\\n"`,
+    `"x\\n\\n\\n"` and `"x"` all read back as `"x"`, so whether the document ended in a
+    newline cannot survive the round trip in either direction. Every document this tool ever
+    writes ends in exactly one (`TEMPLATE_SPEC`, `capture_form`, every section writer) —
+    restoring it here is not a guess, it is undoing a transport artefact, on the one backend
+    whose transport has it."""
+    if doc and not doc.endswith("\n"):
+        return doc + "\n"
+    return doc
+
+
+def azure_trailing_newline_failures() -> list[str]:
+    """The one case that matters (a stripped newline restored) and the two it must leave
+    alone (already-terminated, and genuinely empty)."""
+    out: list[str] = []
+    cases = (("x", "x\n"), ("x\n", "x\n"), ("", ""))
+    for given, want in cases:
+        got = azure_restore_trailing_newline(given)
+        if got != want:
+            out.append(f"azure_restore_trailing_newline({given!r}) returned {got!r}, "
+                       f"not {want!r}")
+    return out
+
+
+def azure_description_ceiling_failures() -> list[str]:
+    """The measured ceiling refuses BEFORE any call is made — self-contained, since only the
+    over-ceiling path never reaches `az`; the under-ceiling path is what §6.3's real cycle
+    exercises."""
+    out: list[str] = []
+    az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".")
+    try:
+        az._az_with_description("testing", ["work-item", "update", "--id", "1"],
+                                "x" * (AZ_DESCRIPTION_MAX + 1))
+        out.append("a description over AZ_DESCRIPTION_MAX did not refuse")
+    except BackendRefusal as e:
+        if e.err.get("code") != "sp-az-description-too-large":
+            out.append(f"over-ceiling refusal code was {e.err.get('code')!r}, not "
+                       f"'sp-az-description-too-large'")
+        if e.err.get("exit") != 2:
+            out.append(f"over-ceiling refusal exit was {e.err.get('exit')!r}, not 2")
+    return out
 
 
 def azure_native_fields_read_failures() -> list[str]:
@@ -7840,6 +7927,24 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="AzureBoardsBackend._native_fields must prefer "
                                         "uniqueName over displayName for System.AssignedTo"))
 
+    # Measured on this org (task 6.2): `TF401262` above 1,048,576 characters — checked before
+    # the call, the same way the github body ceiling is.
+    for failure in azure_description_ceiling_failures():
+        findings.append(_finding("sp-az-description-ceiling-broken", "error",
+                                 f"azure-boards description ceiling — {failure}",
+                                 remedy="_az_with_description must refuse "
+                                        "sp-az-description-too-large before making the call, "
+                                        "never let az answer TF401262 anonymously"))
+
+    # The `@file` transport strips every trailing newline (task 6.2) — restored on read,
+    # since every document this tool writes ends in exactly one.
+    for failure in azure_trailing_newline_failures():
+        findings.append(_finding("sp-az-trailing-newline-broken", "error",
+                                 f"azure-boards trailing-newline restore — {failure}",
+                                 remedy="azure_restore_trailing_newline must add back "
+                                        "exactly one newline when the read document lacks "
+                                        "one, and change nothing otherwise"))
+
     # What `azure-boards` has instead of an end-to-end run, and the reason it runs before
     # the early return: a primitive left inherited reaches a human as a traceback, which is
     # the one thing every external backend promises never to do.
@@ -8179,8 +8284,10 @@ def cmd_selftest(args, root: str) -> int:
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
               f"tag survives every azure-boards write whether or not a spec declares tags of "
               f"its own, the stored document never carries a second copy of a native field, "
-              f"github reassembles every label into a tag and only its first assignee, and "
-              f"the embedded schema and template match their asset files.")
+              f"github reassembles every label into a tag and only its first assignee, the "
+              f"azure-boards div marker and comment marker both round-trip, its description "
+              f"ceiling refuses before the call and its stripped trailing newline is "
+              f"restored, and the embedded schema and template match their asset files.")
     return 1 if errors else 0
 
 
