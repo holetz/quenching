@@ -57,7 +57,7 @@ warning printed into it breaks the parse it exists to inform.
 
 A line on every call is the honest-looking default and the wrong one. The fact never changes between
 calls, so re-stating it charges every agent session for a constant — the same cost
-[context-budget.md](../automation/context-budget.md) prices for a description that is always
+[skills.md](../automation/skills.md) prices for a description that is always
 resident, paid here in output instead. An agent that reads the same sentence forty times in a build
 loop has been taxed thirty-nine times for nothing.
 
