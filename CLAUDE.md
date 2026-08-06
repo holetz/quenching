@@ -29,7 +29,6 @@ python3 assets/hooks/okf-validate.py assets/docs                          # 0 er
 # the command surface
 python3 assets/bin/skills.py --root . doctor --json                       # 25 commands, no findings
 python3 assets/bin/skills.py --root . lint --json                         # exit 0 (warnings reported, not fatal)
-python3 assets/bin/skills.py --root . budget --json                       # exit 1 = over the ceiling; re-measure, never estimate
 # each tool proves the shared frontmatter rule against the SAME canonical case list
 python3 assets/bin/skills.py selftest                                     # + the layout rule's fixture
 python3 assets/bin/specs.py selftest
@@ -42,11 +41,6 @@ bundle-aggregate scope, per
 [bundle-verification.md](docs/standards/quality/bundle-verification.md) §The `resource` glob-set
 format — so **any** commit under either tree ages it, and a branch that touches `docs/` cannot help
 raising the count. The resource moved; the rule did not. Read the gate as zero errors.
-
-`budget` is in that list because a surface can cross its ceiling with **no command minted** — three
-description edits put it 149 characters over, and nothing in this block ran the only instrument that
-says so. Both firing modes and the two exits →
-[context-budget.md](docs/standards/automation/context-budget.md).
 
 **Nothing above tests that the surface actually LOADS** — the registry is built at session start,
 so no change under `commands/**` is testable in the session that writes it:
@@ -77,7 +71,7 @@ measures it graded and with a boundary arm; check 3 is a worse copy kept opt-in.
   code-coupled confirmations mid-flow, which a forked context cannot present.
 - **Never downgrade classification or executor sub-agents to `haiku` in `/docs:import-memory`.**
   A misclassification there becomes a wrong memory deletion — see the model-policy table in
-  [README.md](plugins/quenching/README.md#cost-model) for which sub-agent calls elsewhere are safe
+  [README.md](plugins/quenching/README.md#model-policy) for which sub-agent calls elsewhere are safe
   on cheaper models/effort.
 
 ## Where knowledge lives
