@@ -2624,19 +2624,37 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
 # marker did not simply disappear with the date: a repo's issue tracker belongs to its humans,
 # and a backend that treated every open issue as a spec would list the bug reports and then
 # write over them. An HTML comment is the one place in a markdown body that survives a round
-# trip through the issue editor while staying invisible to a human reading the issue, and the
-# same reasoning applies one level down to a continuation comment's own marker, below.
+# trip through GitHub's issue editor while staying invisible to a human reading the issue, and
+# the same reasoning applies one level down to a continuation comment's own marker, below.
 HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?"
                               r"\s*-->[ \t]*\r?\n")
 
+# `azure-boards`'s own marker shape — measured (task 6.1) that `System.Description` strips any
+# HTML comment on write, in every position tried, which the comment form above cannot survive.
+# A `display:none` div is the nearest equivalent that does: invisible once the field renders,
+# present in the raw value every read gets. `hybrid_wrap`'s `fmt='div'` writes it; this is what
+# reads it back.
+HYBRID_DIV_MARKER_RE = re.compile(
+    r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?'
+    r"\s*</div>[ \t]*\r?\n")
 
-def hybrid_wrap(filename: str, text: str, parts: int = 1) -> str:
+
+def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") -> str:
     """The marker line a spec issue is recognised by, and the document under it.
 
     `parts=` is written ONLY when there is more than one. The single-part form — every document
     but the two largest this repository holds — is therefore byte-identical to the marker as it
-    was before continuations existed, and one regex reads both."""
+    was before continuations existed, and one regex reads both.
+
+    `fmt='div'` is `azure-boards`'s own variant — measured (task 6.1) that `System.Description`
+    STRIPS any HTML comment on write, in any position, which makes the default form invisible
+    the instant it round-trips. A `display:none` div survives the same round trip intact and
+    reads the same way `github`'s comment does: invisible once the field renders as rich text,
+    present in the raw value every read gets. `github`/`files` keep the comment — it already
+    round-trips there, in 69 real specs, and changing it would mean migrating every one."""
     count = f" parts={parts}" if parts > 1 else ""
+    if fmt == "div":
+        return f'<div style="display:none">quenching-spec: {filename}{count}</div>\n{text}'
     return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
 
 
@@ -2649,12 +2667,18 @@ def hybrid_unwrap(body: str) -> tuple[str, str, int]:
 
     `parts` is what tells a reader whether the chunk it just got IS the document or only its
     head, and it is read from the body already in hand. A one-part spec — the normal case —
-    never pays a call to discover there is nothing more to fetch."""
+    never pays a call to discover there is nothing more to fetch.
+
+    BOTH marker shapes are tried, comment first — the reader does not know which backend wrote
+    what it was handed, and never needs to: exactly one of the two ever matches a given body."""
     body = (body or "").replace("\r\n", "\n")
     m = HYBRID_MARKER_RE.match(body)
-    if not m:
-        return "", "", 0
-    return m.group(1), body[m.end():], int(m.group(2) or 1)
+    if m:
+        return m.group(1), body[m.end():], int(m.group(2) or 1)
+    m = HYBRID_DIV_MARKER_RE.match(body)
+    if m:
+        return m.group(1), body[m.end():], int(m.group(2) or 1)
+    return "", "", 0
 
 
 HYBRID_PART_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec-part:\s*(\d+)/(\d+)"
@@ -3313,6 +3337,18 @@ def gh_refusal_failures() -> list[str]:
         failures.append("a marker with no `parts=` did not read as a single-part document")
     if hybrid_unwrap("An ordinary bug report.\n") != ("", "", 0):
         failures.append("an issue with no marker was read as a spec")
+    # `azure-boards`'s own marker (task 6.1): a comment does not survive `System.Description`,
+    # a `display:none` div does. Round-tripped as written, and as the org's own `az` gives it
+    # back — the `style` attribute gets a trailing `;` and the marker text a trailing space,
+    # measured on the real board.
+    for label, body in (
+        ("as written", hybrid_wrap("alpha.md", doc, fmt="div")),
+        ("as az returns it",
+         '<div style="display:none;">quenching-spec: alpha.md </div>\n' + doc),
+    ):
+        name, back, parts = hybrid_unwrap(body)
+        if (name, back, parts) != ("alpha.md", doc, 1):
+            failures.append(f"div marker round trip {label}: got {(name, back, parts)!r}")
     return failures
 
 
@@ -4350,7 +4386,7 @@ class AzureBoardsBackend(SpecBackend):
         # way `move_spec` already owns the state. `_update` only ever adds the fields given
         # it, so an unset `iteration_path` is simply not one of them.
         fields = {"title": title,
-                 "description": hybrid_wrap(info["file"], chunks[0][0])}
+                 "description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
         if self.area_path:
             fields["area"] = self.area_path
         if self.iteration_path:
@@ -4380,7 +4416,8 @@ class AzureBoardsBackend(SpecBackend):
         stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         argv = ["work-item", "create", "--project", self.project,
                "--type", self.work_item_type, "--title", title,
-               "--description", hybrid_wrap(filename, hybrid_split(stored, None)[0][0]),
+               "--description", hybrid_wrap(filename, hybrid_split(stored, None)[0][0],
+                                            fmt="div"),
                "--state", self.states[phase]]
         if self.area_path:
             argv += ["--area", self.area_path]
