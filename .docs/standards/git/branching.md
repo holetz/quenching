@@ -20,7 +20,7 @@ Este repositório usa duas branches de longa duração, cada uma com uma funçã
 | Branch | Função |
 | --- | --- |
 | `develop` | **Integra.** As branches `plan/<slug>` são cortadas dela e mergeiam nela. Várias specs se acumulam aqui sem que nada seja publicado. |
-| `main` | **Publica.** Só recebe o merge `develop → main`, e é esse merge — nunca outro — que move o lockstep de versão ([versioning-release.md](../ci-cd/versioning-release.md)) e cria a tag. |
+| `main` | **Publica.** Só recebe o merge `develop → main`, e é o ato de release — nunca outro — que move o lockstep de versão ([versioning-release.md](../ci-cd/versioning-release.md)) e cria a tag. |
 
 `main` continua sendo a branch default do repositório no GitHub — ver
 [§O consumidor não muda nada](#o-consumidor-não-muda-nada) — e é por isso que quem já instalou o
