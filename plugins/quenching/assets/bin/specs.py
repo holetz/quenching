@@ -2549,6 +2549,10 @@ def announcement_failures() -> list[str]:
     So the last two cases below ask `DISPATCH` — the registry a new verb has to join to exist
     at all — instead of asking a maintainer to remember.
 
+    The mechanism it grades lives with `emit`, where the payloads are built: `_RESOLUTION`,
+    `read_one`, `announced` and `receipt_line`. The case list sits here instead because what
+    it asserts is a property of the resolution above, not of the printing below.
+
     Self-contained: no backend, no store, and the source it reads is its own."""
     global _RESOLUTION
     before = _RESOLUTION
