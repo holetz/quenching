@@ -15,8 +15,8 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
 **reviewed**, and it is **committed**. The mechanics of that live in
-[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-§Declared versus emergent `docs/`, which this body cites and never restates.
+[specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md),
+which this body cites and never restates.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
@@ -37,7 +37,7 @@ opens on why that split holds.
 
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §The `specs.py` tool surface §Boundary
+§The `specs/` layout §The fourteen sections §The `specs.py` tool surface
 §The report mold.
 
 ## Resolving the tool
@@ -303,7 +303,18 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
-c. **Write only the `docs/` this task names.** A `docs/standards/` path declared under `## Impact`
+c. **Write only the `docs/` this task names.** When this task writes `docs/`, load the rule that
+   draws the line between declared and emergent, and the boundary it crosses — before writing
+   anything:
+
+   ```bash
+   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+     --sections "§Declared versus emergent"
+   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+     --sections "§Boundary"
+   ```
+
+   A `docs/standards/` path declared under `## Impact`
    and named by this task is part of its deliverable — write it through the insert procedure in
    [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
    stamp §Updating `index.md` §Enriching the glossary §Self-check, stamp `authority` honestly, and
