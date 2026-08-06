@@ -4409,7 +4409,7 @@ def azure_query_wiql_failures() -> list[str]:
 def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
                              rendered: list[str] | None = None) -> tuple[list[str], str | None]:
     """`(the "field=value" pairs for --fields, the --assigned-to value)` — the pure half of
-    `_apply_native_fields`, so the one rule that matters most is checked without a live `az`:
+    `azure_native_fields`, so the one rule that matters most is checked without a live `az`:
     the discovery tag is ALWAYS in the `System.Tags` pair, even where `fm` declares no tags
     at all, because `_native_fields` excludes it on read and a write that forgot it would
     silently drop the one thing that makes a spec findable again.
@@ -5022,7 +5022,7 @@ class AzureBoardsBackend(SpecBackend):
         # FRESH, off the text THIS write is putting in place — every caller (`cmd_record`,
         # `cmd_field`, `cmd_promote`...) hands `write_spec` the OLD `info` beside the NEW
         # `text`, so trusting `info["frontmatter"]` here would read the state a write is
-        # REPLACING rather than the one it is creating. `_apply_column` (§2.11) had exactly
+        # REPLACING rather than the one it is creating. The board column (§2.11) had exactly
         # this bug from §2.5 until this task — the derivation was cheap and nothing forced
         # it to be re-run. It is also what `derive_labels` renders from, the SAME shared
         # calculation `github` reconciles its labels with.
@@ -5036,8 +5036,8 @@ class AzureBoardsBackend(SpecBackend):
         chunks = hybrid_split(stored, None)
         # Placement is REAFFIRMED here, not just declared at creation — a human moving the
         # work item to another area between writes sees the next one bring it back, the same
-        # way `move_spec` already owns the state. `_update` only ever adds the fields given
-        # it, so an unset `iteration_path` is simply not one of them.
+        # way `move_spec` already owns the state. Only declared fields reach `desired`, so
+        # an unset `iteration_path` is simply not one of them.
         desired = {"System.Title": title,
                    "System.Description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
         if self.area_path:
@@ -5052,7 +5052,7 @@ class AzureBoardsBackend(SpecBackend):
         # (the pre-write read's) values unless THIS write's own text set one explicitly.
         #
         # The RENDERED half rides the same call: `derive_labels` off the fresh document, into
-        # the one `System.Tags` pair `_apply_native_fields` already builds. It is not carried
+        # the one `System.Tags` value `azure_native_fields` already builds. It is not carried
         # forward and never diffed against what the item holds — a rendering is recomputed
         # from the source on every write by definition.
         native, assignee = azure_native_fields(
@@ -5090,7 +5090,7 @@ class AzureBoardsBackend(SpecBackend):
         stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         # NO `--state`: measured (task 6.3), `az boards work-item create` has no such flag —
         # only `update` does. A new item is born in whatever state its TYPE defaults to
-        # ("New", typically) — left alone, because `_apply_column` below is what actually
+        # ("New", typically) — left alone, because the column op below is what actually
         # decides it (§task 6.3: column and state are not independent on this process; the
         # board resolves state FROM the column, and a direct `--state` write the column
         # write follows would just be undone).
@@ -5103,48 +5103,44 @@ class AzureBoardsBackend(SpecBackend):
         description = hybrid_wrap(filename, hybrid_split(stored, None)[0][0], fmt="div")
         item = self._az_with_description("creating a work item", argv, description)
         item_id = int((item or {}).get("id") or 0)
-        self._apply_parent(item_id, self.parent_id)
-        # No column applicable (`azureColumns`/`boardColumn` both absent) is the one case
-        # left where the state has to be forced directly — nothing else will ever set it.
-        if not self._apply_column(item_id, fresh):
-            self._update(item_id, state=self.states[phase])
-        # ALWAYS, even with no fixed tags: this is the ONE call that puts the discovery tag
-        # on a freshly created item. Skip it and the spec is invisible to `_load()`'s own
-        # tag-scoped listing the instant it exists — never found again by slug, by `list`,
-        # by anything. The rendering rides along, from the same fresh document — usually
-        # empty on a capture form, which has no records and sits at `captured`.
-        self._apply_native_fields(item_id, fresh["frontmatter"], derive_labels(fresh))
+        # ONE PATCH for everything the creation could not carry. The item was born this
+        # instant, so `current` is `{}` by construction and every op below is genuinely new —
+        # and the parent needs no read to know it is unlinked, which is the one place
+        # `_apply_parent`'s round trip is provably unnecessary rather than merely cached.
+        #
+        # THE STATE FALLBACK IS DECIDED BEFORE SENDING, never as a second write. No column
+        # applicable (`azureColumns` AND `boardColumn` both absent) is the one case where the
+        # state has to be forced directly; with a column, forcing it too would be undone by
+        # the board resolving state FROM the column (§task 6.3).
+        #
+        # The discovery tag rides here, and it is not optional: skip it and the spec is
+        # invisible to `_load()`'s tag-scoped listing the instant it exists — never found
+        # again by slug, by `list`, by anything.
+        desired, assignee = azure_native_fields(fresh["frontmatter"], self.discovery_tag,
+                                                derive_labels(fresh))
+        if assignee:
+            desired["System.AssignedTo"] = assignee
+        column = self.column_map.get(board_state_of(fresh), self.board_column)
+        if column:
+            desired[self._resolve_board_field()] = column
+        else:
+            desired["System.State"] = self.states[phase]
+        parent = (self.parent_id, self._work_item_url(self.parent_id)) \
+            if self.parent_id else None
+        ops = azure_patch_body({}, desired, parent=parent)
+        if ops:
+            self._az_patch(f"placing new work item {item_id}", item_id, ops)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
-    def _apply_native_fields(self, item_id: int, fm: dict,
-                             rendered: list[str] | None = None) -> None:
-        """Reaffirm `tags`/`assignee`/`start`/`target`'s native counterparts, on every write.
-        `tags` and the two scheduling dates go through `--fields` — `az boards work-item
-        update` has no dedicated flag for any of the three; `assignee` does (`--assigned-to`).
+    def _work_item_url(self, item_id: int) -> str:
+        """The REST identity of one work item — what a `/relations/-` op must carry.
 
-        THE DISCOVERY TAG IS ALWAYS INCLUDED, even where `fm` carries no `tags` at all — it
-        is `System.Tags`'s one non-optional member. `_native_fields` excludes it on READ
-        (§A descoberta: it is this backend's index, never a spec's own declared tag), so
-        writing back only `fm['tags']` would silently drop it from the item on the very next
-        write, making the spec unfindable by every later listing.
-
-        `rendered` is the `spec:` set `derive_labels` computed for THIS write — a rendering of
-        derived state, not storage. It rides in the same `System.Tags` pair rather than a
-        second call, which is the third of the four conditions `spec-backend.md` §Rendering
-        derived state admits the category under.
-
-        An absent `start`/`target`/`assignee` is left alone, never cleared — the same
-        asymmetry `_update` already has for every other optional field: this backend adds
-        what is declared and never erases what a human set directly on the board."""
-        pairs, assignee = azure_native_field_pairs(fm, self.discovery_tag, rendered)
-        argv = ["work-item", "update", "--id", str(item_id)]
-        if pairs:
-            argv += ["--fields", *pairs]
-        if assignee:
-            argv += ["--assigned-to", assignee]
-        if len(argv) > 4:
-            self._az(f"updating work item {item_id}'s stored fields", *argv)
+        NOT THE LOCATOR. `_apis/wit/workItems/<id>` is the API's spelling and is rejected by
+        a browser; `_workitems/edit/<id>` is what `_load` puts in `path` and what every
+        report prints. A relation handed the browser form is refused, so the two are built
+        separately rather than one being derived from the other."""
+        return f"{self.org.rstrip('/')}/{self.project}/_apis/wit/workItems/{item_id}"
 
     def _apply_parent(self, item_id: int, parent_id: int | None) -> None:
         """Reaffirm the declared parent on every write, resolved BY ID and never by title —
@@ -5216,29 +5212,6 @@ class AzureBoardsBackend(SpecBackend):
                        f"workItemType; no spec was read or written",
         })
 
-    def _apply_column(self, item_id: int, info: dict) -> bool:
-        """Reaffirm the board column on every write, from the de-para (`azureColumns`),
-        falling back to `boardColumn` for a state absent from the table. A human who moved
-        the card sees the next write bring it back — the board is the projection, per
-        `## Design` §O de-para de coluna. `board_state_of` is the CORE half — this backend
-        only ever consults the table, never derives the key itself.
-
-        COLUMN AND STATE ARE NOT INDEPENDENT — measured (task 6.3): setting the board column
-        silently rewrites `System.State` to whatever this process's `allowedMappings` names
-        for it (`Backlog`, the `incoming` column, only ever resolves to `New`; `Concluído`,
-        `outgoing`, only ever to `Closed`). Applying `azureStates` and `azureColumns` as two
-        independent writes was the design before this task — the second call was silently
-        undoing the first. Returns whether a column was actually applied, so a caller with
-        nothing declared here (`azureColumns` AND `boardColumn` both absent) knows to fall
-        back to forcing `System.State` directly — the only case left where that is correct."""
-        column = self.column_map.get(board_state_of(info), self.board_column)
-        if not column:
-            return False
-        field = self._resolve_board_field()
-        self._az(f"setting work item {item_id}'s board column", "work-item", "update",
-                 "--id", str(item_id), "--fields", f"{field}={column}")
-        return True
-
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
@@ -5248,21 +5221,14 @@ class AzureBoardsBackend(SpecBackend):
         # `azureColumns`/`boardColumn` cannot answer for this phase at all.
         dest_info = dict(info)
         dest_info["phase"] = dest_phase
-        if not self._apply_column(item_id, dest_info):
-            self._update(item_id, state=self.states[dest_phase])
+        column = self.column_map.get(board_state_of(dest_info), self.board_column)
+        desired = {self._resolve_board_field(): column} if column \
+            else {"System.State": self.states[dest_phase]}
+        ops = azure_patch_body(self._raw.get(item_id, {}), desired)
+        if ops:
+            self._az_patch(f"moving work item {item_id} to {dest_phase}", item_id, ops)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
-
-    def _update(self, item_id: int, **fields: str):
-        # `description` is pulled out and routed through `_az_with_description` — see there
-        # for why a document cannot travel as an ordinary `--description` argument.
-        description = fields.pop("description", None)
-        argv: list[str] = ["work-item", "update", "--id", str(item_id)]
-        for key, value in fields.items():
-            argv += [f"--{key}", value]
-        if description is None:
-            return self._az(f"updating work item {item_id}", *argv)
-        return self._az_with_description(f"updating work item {item_id}", argv, description)
 
     def _az_patch(self, action: str, item_id: int, ops: list[dict]):
         """One work item, one JSON patch — the whole write in a single `az` process.
