@@ -1093,12 +1093,15 @@ DEFAULT_RELEASE_BRANCH = "main"
 # Guessing would not fail loudly: it would read every archived spec as active in half the
 # projects it ran against.
 
-# The backends that ship without ever having run against a real target. `## Out of Scope`
-# accepts that for `azure-boards`, and the selftest's completeness and refusal checks are
-# what it has instead. Named HERE rather than inside the backend so that retiring the
-# caveat is one edit: a real Azure DevOps project exercises it, this tuple loses a name,
-# and the doctor finding and the write-time line go quiet together.
-UNPROVED_BACKENDS = ("azure-boards",)
+# The backends that ship without ever having run against a real target. Empty now:
+# `azure-boards` was the one name here, and the configurable-spec-backend-azure plan's own
+# §6 ran it end to end against a real Azure DevOps project (org unicredbr, team "Diretoria
+# Risco") — `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+# `show` and `promote --outcome done`, each compared against `files` for the same state and
+# matching, plus the board's own column tracking the de-para through every transition. This
+# tuple losing the name is what retires the caveat everywhere at once: the doctor finding
+# and the write-time line (`announce_unproved`) both go quiet together.
+UNPROVED_BACKENDS = ()
 
 _UNPROVED_ANNOUNCED: set[str] = set()
 
@@ -8312,9 +8315,9 @@ def cmd_selftest(args, root: str) -> int:
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
-              f"each refuse with their own remedy, the unproved-backend warning says its "
-              f"piece once per process on stderr and only for "
-              f"{', '.join(UNPROVED_BACKENDS)}, every record reads back as it was "
+              f"each refuse with their own remedy, no backend warns as unproved "
+              f"({', '.join(UNPROVED_BACKENDS) or 'none declared'}), every record reads "
+              f"back as it was "
               f"written, a grouped document survives store-and-reload byte for byte whether "
               f"it fits one issue body or spills into continuation comments, an oversized body "
               f"refuses without making the call, the azure-boards WIQL never carries "
