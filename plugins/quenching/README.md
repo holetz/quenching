@@ -7,7 +7,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: the eight `/specs:*` commands over a `specs/` front whose **backend is
+**spec-driven plan cycle**: the nine `/specs:*` commands over a `specs/` front whose **backend is
 configurable** — `files` (a dedicated branch), `github`, or `azure-boards` — with the OKF bundle
 as its knowledge substrate, driven end to end by the bundled stdlib `specs.py`.
 
@@ -45,18 +45,26 @@ across fronts**, because they feed each other: a spec's distillation is glossary
 `docs/` front must then index; the skill front creates the rule and registry that the `docs/`
 listings must carry.
 
+The **cycle conductor** is the second conductor: `/specs:orchestrate` conducts the four stages of
+ONE spec — create, develop, execute, conclude — in one run on one authorization, entering at the
+derived stage, invoking each stage as the command that owns it, and writing nothing itself. It
+shares the cycle-authorization contract with `/align`, and derives its run from the spec's
+`priority.complexity` per the gears contract
+([`orchestration-gears.md`](/docs/standards/automation/orchestration-gears.md)).
+
 Every entry point shares one contract: any item whose blast radius reaches **product code**
 confirms on its own, always — and inside a conducted run, so does every **irreversible close**.
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The twenty-five commands
+## The twenty-six commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
-there is no `skills/` tree and no wrapper. The twenty-five split by front: `/docs:*` for the ten
+there is no `skills/` tree and no wrapper. The twenty-six split by front: `/docs:*` for the ten
 that act on the OKF `docs/` bundle (one nested a level deeper at `/docs:documentation:build`),
-`/specs:*` for the eight that act on the native `specs/` workspace, `/skill:*` for the six that
+`/specs:*` for the nine that act on the native `specs/` workspace (the ninth —
+`/specs:orchestrate` — conducts the whole cycle of one spec), `/skill:*` for the six that
 act on the target's `.claude/` automation surface (two nested: `/skill:agent:new`,
 `/skill:hook:new`), and the root `/align` for the one that spans all three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
@@ -298,7 +306,7 @@ never acts on a front's reported residue — it names the residue and the comman
 Triggers: *"align everything"*, *"align the whole repo"*, *"run all the aligns"*, *"normalize
 this repo"*, *"install quenching in this repo"*, *"set the repo up end to end"*.
 
-## The `specs/` flow — the eight `/specs:*` commands
+## The `specs/` flow — the nine `/specs:*` commands
 
 The plugin's **spec-driven plan cycle**. **Where a spec is stored is declared, not fixed**: a
 target repo names its backend in `.claude/quenching.json` — `backend: "files"` (on a dedicated
@@ -341,6 +349,7 @@ names for losing access to an external backend.
 | `/specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Nothing is committed to the base after it. |
 | `/specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/specs:align` | The front's align + installer — see below. |
+| `/specs:orchestrate` | The **cycle conductor**: conducts the four stages of ONE spec — create, develop, execute, conclude — in one run on one authorization, entering at the derived stage, invoking each stage as the command that owns it, never reimplementing any. Presents ONE gears plan derived from `priority.complexity` before any write; re-evaluates the gear at the end of every stage and asks for a fresh authorization when it moves up. Typed-only — a whole lifecycle is a human's choice. |
 
 The shared facts live once — the layout, the fourteen canonical sections, the gates, the record
 vocabulary, the `specs.py` surface, and the `specs/`↔`docs/` boundary in
@@ -459,13 +468,13 @@ The plugin keeps its context and token footprint predictable on three levels:
    Both are warnings, so the budget looked clean while the routing information was absent — see
    `docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
 
-   **Where it stands now: 14,224 characters** (~3,556 approximate tokens) across 25 commands and
-   0 agent definitions, measured 2026-08-03 — 24 of those commands routed, 1 typed-only holding a
-   further 876 characters *outside* the total. Most of the difference between 2,083 and that figure
-   is the routing information being bought back deliberately — the triggers and boundaries the
-   collapse had dropped. `/skill:retro` took the other exit instead:
-   `disable-model-invocation: true` drops its description from the always-on total entirely, so
-   it cost **0** and the ceiling never fired.
+   **Where it stands now: 12,812 characters** (~3,203 approximate tokens) across 26 commands and
+   0 agent definitions, measured 2026-08-06 — 24 of those commands routed, 2 typed-only holding a
+   further 1,843 characters (876 + 967) *outside* the total. Most of the difference between 2,083
+   and that figure is the routing information being bought back deliberately — the triggers and
+   boundaries the collapse had dropped. `/skill:retro` and `/specs:orchestrate` took the other
+   exit instead: `disable-model-invocation: true` drops a description from the always-on total
+   entirely, so each costs **0** and the ceiling never fired.
 
    **The default ceiling stays at 14,898** — the peak measured before the standalone isolation
    command was retired and its offer folded inline into `/specs:execute`. It is revised only from
@@ -530,6 +539,7 @@ graded and with a should-not-trigger arm.
 | `/specs:develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each bank's declared stop condition, not by a model tier. One **read-only** sub-agent is permitted, and only for the adversarial and gate banks: it sweeps the code and the `docs/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `specs.py` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
 | `/specs:continue` | no pin, no sub-agents — one `specs.py next --front` call and a hand-off; the ranking logic lives in the tool, not the model |
 | `/specs:execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `docs/` — pinned to the **session model, never `haiku`**; with this command pinned, *session model* means `sonnet` for those executors (it writes production code, the same rationale that protects `/docs:import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `specs.py task --check`/`--block`, every `docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `specs.py parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
+| `/specs:orchestrate` | **no pin** — typed-only (`disable-model-invocation: true`): a whole lifecycle is a human's choice, so the description pays no routed budget; the plan gate and every nested confirmation stay in the conducting session, and each stage runs under its own policy row |
 
 Two rules are deliberate and must survive any future "optimization":
 
