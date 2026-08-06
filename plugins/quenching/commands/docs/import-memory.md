@@ -9,7 +9,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write,
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
 Promotes the durable facts the user has accumulated in **project memory** into the canonical
-OKF `docs/` bundle, then clears them from memory — so knowledge that was living in
+OKF `/.docs/` bundle, then clears them from memory — so knowledge that was living in
 `~/.claude/projects/<cwd>/memory/` becomes conformant docs anyone browsing the repo can find.
 Assumes the bundle already exists (run `/quenching:docs:align` first if not). The memory-type → home routing
 and the deletion contract are in [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md);
@@ -28,8 +28,8 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   invoked as a stage of `/quenching:docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
-- **Three destinations only.** This skill writes into exactly two `docs/` homes — `standards/`
-  and `knowledge/` — plus `specs/plans/` for a **unit of work** (a quenching-managed folder
+- **Three destinations only.** This skill writes into exactly two `/.docs/` homes — `standards/`
+  and `knowledge/` — plus `/.specs/plans/` for a **unit of work** (a quenching-managed folder
   outside the OKF bundle). A memory whose natural fit is a
   `vision`, `documentation`, or `reference` doc is **re-routed to the nearest of the three** per the routing
   table ([docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md)); a memory that fits none of
@@ -37,8 +37,8 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   `vision/`, `documentation/`, `reference/`, or `catalog/` doc from a
   memory.
 - **Bounded reconnaissance — read indexes, not the whole tree.** Because the skill writes to only
-  two `docs/` homes (plus the backlog), it only ever inspects those. **Never enumerate the whole bundle** (`find docs
-  -type f`, `find docs -type d`): a real repo's `catalog/` and `reference/repositories/` can hold
+  two `/.docs/` homes (plus the backlog), it only ever inspects those. **Never enumerate the whole bundle** (`find .docs
+  -type f`, `find .docs -type d`): a real repo's `catalog/` and `reference/repositories/` can hold
   thousands of files and will drown the session at startup — the exact failure this skill must
   avoid. To learn a home's existing subjects (so a concept path doesn't collide), read that home's
   top `index.md` (the honest listing) plus at most a `-maxdepth 2` directory listing — never a
@@ -165,15 +165,15 @@ First **orient, bounded** — three `Read`s and two `Glob`s, no shell, so it beh
 every platform. Never enumerate the whole tree (`catalog/` and `reference/repositories/` will
 overflow the session):
 
-- `Read` — `docs/standards/index.md` and `docs/knowledge/index.md` (the honest listings; a missing
-  file just means that home is empty). For what `specs/plans/` already holds, `specs.py list --json`
+- `Read` — `/.docs/standards/index.md` and `/.docs/knowledge/index.md` (the honest listings; a missing
+  file just means that home is empty). For what `/.specs/plans/` already holds, `specs.py list --json`
   derives it from disk — there is no listing file to read.
-- `Glob` — `docs/standards/*/index.md` and `docs/knowledge/*/index.md` for the existing subject
+- `Glob` — `/.docs/standards/*/index.md` and `/.docs/knowledge/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
 Then apply [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md): map by content (type is a
 hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
-`knowledge/` (in `docs/`) plus `specs/plans/` (a spec); a memory whose natural fit is `vision`,
+`knowledge/` (in `/.docs/`) plus `/.specs/plans/` (a spec); a memory whose natural fit is `vision`,
 `documentation`, or `reference` is **re-routed to the nearest of the three** per the routing table, and a
 memory that fits none is flagged. Split multi-fact memories. Mark `user` memories and any
 unroutable fact as **KEEP (ask)** — not for deletion.
@@ -184,20 +184,20 @@ Fan-out partials **merge into ONE table** — never one table per slice. Note an
 will dangle. **Wait for a single confirmation** before writing anything.
 
 ### 5. Per memory: write, verify, then delete
-For each **migrate** row that lands in `docs/` (`standards/` / `knowledge/`), run the full insert
+For each **migrate** row that lands in `/.docs/` (`standards/` / `knowledge/`), run the full insert
 procedure exactly as
 [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) specifies it —
 stamp → index → log → glossary → self-check (against
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)) —
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
-  line is `**Creation**: [<title>](/docs/<path>.md) — migrated from project memory`.
+  line is `**Creation**: [<title>](/.docs/<path>.md) — migrated from project memory`.
 - A **unit of work** row instead follows the `/quenching:specs:create` path: run `specs.py new <slug>` and
   write the memory's content into `## Problem` and nothing else, then `specs.py validate --spec
   <slug>` as the self-check per
   [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-  (the OKF hook does not cover `specs/`); the bundle-log line is
-  `**Creation**: [<title>](/specs/plans/<slug>.md) — migrated from project memory`.
+  (the OKF hook does not cover `/.specs/`); the bundle-log line is
+  `**Creation**: [<title>](/.specs/plans/<slug>.md) — migrated from project memory`.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/quenching:specs:triage`'s to place.
 - **Only after the self-check passes:** delete the memory `.md` (`rm` — the one destructive shell
@@ -221,14 +221,14 @@ if it ends empty. If the `okf-validate.py` hook is wired, it machine-verifies ea
 - Never skip the single up-front plan+confirmation — this writes docs and deletes memory. A
   cycle-authorized run (convergence.md §contract) replaces the gate with narration; the plan is still
   presented in full and write-then-verify-then-delete still holds.
-- Never write outside the three destinations (`standards/` + `knowledge/` in `docs/`, or a spec
-  in `specs/plans/`) — re-route to the nearest, or flag-and-keep; never fabricate a
+- Never write outside the three destinations (`standards/` + `knowledge/` in `/.docs/`, or a spec
+  in `/.specs/plans/`) — re-route to the nearest, or flag-and-keep; never fabricate a
   `vision`/`documentation`/`reference`/`catalog` doc from a memory.
 - Fan-out never fractures the single up-front plan, never skips a memory, and never lets a
   sub-agent delete ahead of a landed, self-checked doc.
 - When a migrated memory names a repo-specific term, feed `knowledge/glossary.md` before deleting
   the memory — but never clobber a filled glossary entry, and keep it a one-liner + link.
-- Never enumerate the whole bundle (`find docs -type f`) or descend into `catalog/` /
-  `reference/repositories/` — inspect only the two `docs/` homes' `index.md` plus the backlog
+- Never enumerate the whole bundle (`find .docs -type f`) or descend into `catalog/` /
+  `reference/repositories/` — inspect only the two `/.docs/` homes' `index.md` plus the backlog
   index (bounded). Never load every memory body into the orchestrator; recon is metadata-first,
   bodies are read inline (small dir) or by per-slice sub-agents (large dir).
