@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-03
+timestamp: 2026-08-05
 audience: both
 authority: current
 source: quenching skeleton
@@ -242,11 +242,12 @@ sentence, and **link out** rather than explaining in full here.
   `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
-  `worktreeSetup` and `azureStates`. It replaced `specs/config.json`, whose home stopped working once
-  a repository could have no `specs/` folder at all. Absence yields the documented defaults, never a
-  null and never a refusal — except `azureStates`, which has no default because the project's own
-  process defines the states, and whose absence refuses instead of guessing; every other way it can
-  be wrong comes back as a field for `doctor` to judge.
+  `worktreeSetup`, `azureStates`, `docsDir`, `integrationBranch`, `releaseBranch`, `azurePlacement`,
+  `azureColumns`, `subjects` and `tagCatalog`. It replaced `specs/config.json`, whose home stopped
+  working once a repository could have no `specs/` folder at all. Absence yields the documented
+  defaults, never a null and never a refusal — except `azureStates` and `azurePlacement.areaPath`,
+  neither of which has a default because the project itself defines them, and whose absence refuses
+  instead of guessing; every other way it can be wrong comes back as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
@@ -261,7 +262,12 @@ sentence, and **link out** rather than explaining in full here.
   `## Tasks`→sub-issue mapping took the first. A mapping also needs the native value to be **the
   same fact**: an issue's `created_at` is when the ISSUE was made, so the capture date has no
   faithful counterpart and stays in the document. A field with no honest native copy is not
-  duplicated truth — it is the only copy.
+  duplicated truth — it is the only copy. A third case is neither of the two: **rendering** carries
+  state the document already *derives* — never a canonical field of its own — onto a native
+  surface, recalculated from scratch on every write and never read back, admitted only when it
+  also costs no extra call and is discardable without loss. The `spec:` labels a `github` or
+  `azure-boards` backend reconciles onto its own issue or work item — one per frontmatter record
+  present, plus one for the derived `executing` stage — are the example this repository has.
 - [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
   a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
   which every checker in this repo is blind to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
@@ -282,6 +288,16 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Reserved tag prefix**](../standards/architecture/spec-backend.md) — `spec:`, the half of a
+  tracker's native tag surface (`github` issue labels, `azure-boards` `System.Tags`) that belongs
+  to the TOOL rather than to the document, and the rule that lets **storage** and **rendering**
+  share one field without either reading the other's writes as the spec's own content. A write
+  hands the surface the union — the spec's declared `tags` plus the freshly derived `spec:` set —
+  and `declared_tags` filters the reserved names back out on every read, alongside the second
+  reserved name, `azurePlacement.discoveryTag`. A spec may not declare a tag under the prefix, for
+  the same reason it may not declare the discovery tag: the next write recomputes it anyway. It is
+  also what keeps `tagCatalog` honest — a catalogue that never lists a reserved name is complete,
+  not lacking.
 - [**Resource glob set**](../standards/quality/bundle-verification.md) — the format of an OKF
   doc's `resource:`, a plugin convention rather than an OKF rule: a **comma-separated** list of
   repo-root-relative paths and globs using `*`/`**` **only**, matched **segment-wise everywhere**
@@ -330,7 +346,12 @@ sentence, and **link out** rather than explaining in full here.
   over N turns can lose to reading the whole file. A section runs to the next heading of the same
   level or shallower, a fenced block is never read as a heading, and a name that resolves to
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
-  same **Canonical set**, `SECTION_CASES`.
+  same **Canonical set**, `SECTION_CASES` — which pins the *sectioning* rule the two answer
+  identically, and therefore not the ladder below, a CLI-argument rule only the first has.
+  **They take that list differently, deliberately.** `skills.py` resolves each value whole before
+  reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
+  cited by its full title; `specs.py` splits unconditionally, which is unreachable there because
+  the fourteen canonical headings carry no comma and it refuses any name outside them.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
   só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos

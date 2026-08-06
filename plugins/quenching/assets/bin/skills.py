@@ -122,7 +122,7 @@ import pathlib
 import re
 import sys
 
-VERSION = "4.12.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
+VERSION = "4.13.0"  # lockstep with the plugin VERSION file, plugin.json, specs.py, okf-validate.py
 
 COMMANDS_DIR = "commands"
 CLAUDE_DIR = ".claude"
@@ -1674,6 +1674,30 @@ def cmd_selftest(args, root: str) -> int:
         failures.append("section reader: a `###` must resolve on its own and stop at the "
                         "next heading of the same level or shallower")
 
+    # The `--sections` ladder, also this tool's own: a value is first an address, then a
+    # list. It cannot go in the shared list — `specs.py`'s arm resolves name by name and
+    # splits nothing, so a comma case there would prove a rule that tool does not have.
+    # Local fixture for the same reason the `--rules-only` arms below use one: adding a
+    # comma heading to SECTION_FIXTURE would change an index both tools assert on.
+    comma_heads = markdown_sections(
+        "## What crosses, what stays\n\nCrossing body.\n\n"
+        "## The procedure\n\nProcedure body.\n\n## Invariants\n\nInvariant body.\n")
+    for label, ask, want in (
+            # the whole title wins, which is the bug this ladder exists to fix
+            ("whole", ["What crosses, what stays"], ["What crosses, what stays"]),
+            # a value that resolves to nothing is still a list
+            ("list", ["The procedure,Invariants"], ["The procedure", "Invariants"]),
+            # a PREFIX carrying a comma resolves whole too — the case that fails if step
+            # one is exact-match alone, and the reason it is the whole ladder
+            ("prefix", ["§What crosses, what"], ["§What crosses, what"]),
+            # a name that resolves to nothing travels on, so `cmd_read` refuses BY NAME
+            # rather than silently dropping it
+            ("refusal", ["Delta"], ["Delta"])):
+        expanded = expand_section_args(comma_heads, ask)
+        if expanded != want:
+            failures.append(f"--sections ladder {label}: {ask} expanded to {expanded}, "
+                            f"expected {want}")
+
     # `--rules-only`, both arms. The fallback arm is the one `## Validation` insists on:
     # a missing marker must never become an empty answer, because a caller that asked for
     # a rule and got silence proceeds as though the rule did not exist.
@@ -1704,8 +1728,8 @@ def cmd_selftest(args, root: str) -> int:
     # check's own shape (one WARN per file) and its target-surface silence
     cases = (len(EXPECTED) + len(EXPECTED_HOOKS) + len(CANONICAL_CASES)
              + len(EXPECTED_DRIFT) + len(EXPECTED_CITATIONS) + 5
-             + len(SECTION_CASES["cases"]) + 6)  # + the every-level index, the
-    # `###` resolution, and the four `--rules-only` arms
+             + len(SECTION_CASES["cases"]) + 10)  # + the every-level index, the
+    # `###` resolution, the four `--rules-only` arms, and the four `--sections` ladder arms
     if args.json:
         print(json.dumps({"ok": not failures, "cases": cases,
                           "failures": failures}, indent=2, ensure_ascii=False))
@@ -2313,6 +2337,35 @@ def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], l
     return got, missing
 
 
+def expand_section_args(heads: list[dict], raw: list[str]) -> list[str]:
+    """The names a `--sections` value asks for. **A value is first an ADDRESS, and only
+    then a list.**
+
+    A heading may carry a comma of its own — `## What crosses, what stays` — so splitting
+    every value unconditionally leaves those headings unciteable by their own title, which
+    is the form the command bodies write. Each value is resolved whole first, by the same
+    ladder `select_sections` applies; only one that resolves to nothing AND carries a comma
+    is read as a list.
+
+    Whole-first is what makes the rule deterministic — a value that is both a heading and a
+    well-formed list has one reading, and it is the one that was cited — and it is why step
+    one is the whole ladder rather than exact-match alone: a comma-free value resolving by
+    prefix passes through untouched, so every prefix citation already written keeps working
+    by construction. Measured over 14,944 simulated list values across this repo's markdown,
+    none resolves whole, so the precedence costs the short form nothing."""
+    wanted: list[str] = []
+    for value in (v.strip() for v in raw):
+        if not value:
+            continue
+        got, _ = select_sections(heads, [value])
+        if got or "," not in value:
+            # unresolved and comma-free travels on, so `cmd_read` refuses by name
+            wanted.append(value)
+        else:
+            wanted.extend(p for p in (s.strip() for s in value.split(",")) if p)
+    return wanted
+
+
 SECTION_FIXTURE = '''---
 type: standard
 title: the section reader's fixture
@@ -2479,10 +2532,7 @@ def cmd_read(args, root: str) -> int:
                       f"  ({h['chars']} chars)")
         return 0
 
-    # Repeatable AND comma-separated: a heading may itself contain a comma, so the short
-    # form cannot be the only form.
-    wanted = [s for group in args.sections
-              for s in (p.strip() for p in group.split(",")) if s]
+    wanted = expand_section_args(heads, args.sections)
     got, missing = select_sections(heads, wanted)
     if missing:
         # A refusal, never an empty answer: a caller that asked for a rule and got
@@ -2523,9 +2573,10 @@ register("read",
          lambda sp: (sp.add_argument("path", help="a markdown file"),
                      sp.add_argument("--sections", action="append", default=[],
                                      help="a section name, or several comma-separated; "
-                                          "repeatable, for a heading carrying a comma. "
-                                          "A unique prefix resolves. Omit for the file's "
-                                          "heading index"),
+                                          "repeatable. A value that resolves whole is "
+                                          "never split, so a heading carrying a comma is "
+                                          "cited in full. A unique prefix resolves. Omit "
+                                          "for the file's heading index"),
                      sp.add_argument("--rules-only", action="store_true",
                                      help=f"only the {RULES_MARKER} half of each section; "
                                           f"a section with no marker comes back whole and "

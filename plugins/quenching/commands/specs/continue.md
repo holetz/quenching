@@ -17,8 +17,9 @@ as much as the work it routes to is a router nobody runs — and this is the com
 most often, on the least context, by someone who has just come back to a repo.
 
 The layout, the derived stages and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape below — both cited and never restated.
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §Derived stages §The `specs.py` tool surface §The report mold, which owns the
+shape below — both cited and never restated.
 
 ## Resolving the tool
 
@@ -98,6 +99,12 @@ Two things the payload does not decide, and which are named rather than routed a
 **Done when:** exactly one next command is identified, with the spec it applies to.
 
 ### 3. Report the ordering, and offer the hand-off
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. One body block, fixed: §The spec table with `Spec` `Title` `Stage` `Tasks`
 `Priority` `Age` `State`, the top candidate carrying `→` and every row its `reason` as `State`.
 `Age` is each candidate's `ageDays`, which `next --front` already returned. With more than a handful

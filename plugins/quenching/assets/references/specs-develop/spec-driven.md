@@ -114,7 +114,10 @@ else.**
 | `outcome` | at archive | `conclude` | `done` · `abandoned` — stamped by `promote --to archive` |
 
 Read top to bottom, the optional records **narrate the spec's history**: ranked, interrogated,
-approved, built, reviewed, merged, closed. An absent record is a *not-yet*, never a defect.
+approved, isolated, reviewed, merged, closed. Not "built" — `branch` narrates that isolation was
+taken, never that the work finished; "built" is the derived stage `executing`, which a spec built
+in place, with no `branch` record at all, still reaches. An absent record is a *not-yet*, never a
+defect.
 
 `writeOnce: true` (`approved`, `branch`, `merge`, `outcome`) marks an irreversible transition, where
 rewriting the value would falsify something that already happened. `writeOnce: false` (`priority`,
@@ -129,6 +132,17 @@ mirror inside the file is worth its keep, and `validate` compares it to the file
 merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`.
+
+**Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
+first-level frontmatter key with its own deterministic verb (`specs.py tags|assignee|start|target
+<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. Where a
+backend has a faithful native counterpart — issue labels/assignees on `github`,
+`System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
+`azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
+document too, so a human's edit on the tracker is the spec's new value on the next read.
+`start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
+`date:` does everywhere (`docs/standards/architecture/spec-backend.md` §Armazenado não é
+projetado has the full test).
 
 ## The fourteen sections
 
@@ -321,7 +335,8 @@ it.
 **The orchestrator is the spec's only writer.** An executor receives:
 
 - its task line (with `files:` / `verify:` / `pattern:`),
-- the whole `## Handoff` (small by construction),
+- `## Handoff`'s global block plus the `### N.` block of its own section — never a
+  section that already closed, and never the whole `## Handoff`,
 - the touched subjects' `docs/standards/` contracts.
 
 It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
@@ -342,7 +357,12 @@ not the executor's. They are born in the origin spec's `## Discoveries` and reso
 them — the run pauses, a task is written blocked, a discovery is recorded, the run's last commit
 lands — and on nothing else. Each names an act the executor just performed, never an assessment it
 has to make, which is what lets the rule hold in an unattended run; staleness is this section's
-failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`.
+failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`. What a
+rewrite touches is scoped the same way what an executor reads is: `specs.py section <slug> Handoff
+--write --scope global` for the evergreen block, `--scope current` for the block of the section
+whose tasks are still open. A section's block is never targeted again once its last task commits —
+that IS the close, no separate flag marks it — so a run that has moved on to `### 4.` never pays to
+resend `### 1.` through `### 3.` again.
 
 <!-- rationale -->
 
@@ -363,14 +383,15 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again |
+| `specs.py new <slug> [--title T] [--verification P] [--subject KEY]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
 | `specs.py list [--json]` | every spec, by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
 | `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
+| `specs.py tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
 | `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
-| `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates` |
+| `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
 | `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
 | `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
@@ -490,9 +511,9 @@ One spec:
 executing · 5/9 tasks · https://github.com/o/r/issues/41
 ```
 
-**The third field is the locator the tool returned** — the `path` field from `specs.py new` or
-`list` — never a filename the body assembled. Under `backend: github` it is an issue URL, under
-`files` a repo-relative path.
+**The third field is the locator the tool returned** — the `path` field `specs.py new`, `status`,
+`list`, `next --front` and `section --write` all carry — never a filename the body assembled. Under
+`backend: github` it is an issue URL, under `files` a repo-relative path.
 
 <!-- rationale -->
 
