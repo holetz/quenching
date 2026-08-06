@@ -7432,11 +7432,6 @@ def _now_iso() -> str:
     return datetime.datetime.now().replace(microsecond=0).isoformat()
 
 
-# Every subcommand that can MODIFY a spec. `list`/`status`/`show`/`next`/`parallel`/`validate`/
-# `config`/`doctor`/`selftest` are absent because they only read.
-WRITING_COMMANDS = ("new", "task", "discover", "section", "promote", "verification")
-
-
 def command_writes(args) -> bool:
     """Whether THIS invocation will modify a spec — the scope the lock is taken for.
 
@@ -7550,11 +7545,33 @@ def lock_failures() -> list[str]:
         out.append("a holder with no usable pid was judged gone — absence of evidence is not "
                    "proof of death")
 
-    reads = argparse.Namespace(cmd="section", write=False, spec="x")
-    writes = argparse.Namespace(cmd="section", write=True, spec="x")
-    if command_writes(reads) or not command_writes(writes):
-        out.append("`section` is classified wrong — the lock follows the invocation, not the "
-                   "subcommand")
+    # The classification, asserted in BOTH directions, because either one loses an edit: a
+    # writer left out takes no lock and overwrites someone, and a reader dragged in queues
+    # the two calls a skill makes most behind a writer.
+    #
+    # The four FLAG-GATED subcommands are asserted as pairs — the same subcommand reads or
+    # writes depending on the invocation, which is the whole reason `command_writes` takes
+    # `args` rather than a name. A list of names cannot express that, which is why there is
+    # no longer one: the writers live here, exercised, instead of in a constant nothing read
+    # and nothing kept current.
+    for label, writes, reads in (
+            ("section", argparse.Namespace(cmd="section", write=True, spec="x"),
+             argparse.Namespace(cmd="section", write=False, spec="x")),
+            ("record", argparse.Namespace(cmd="record", set=["complexity=high"], spec="x"),
+             argparse.Namespace(cmd="record", set=None, spec="x")),
+            ("verification", argparse.Namespace(cmd="verification", policy="per-task", spec="x"),
+             argparse.Namespace(cmd="verification", policy=None, spec="x")),
+            ("promote", argparse.Namespace(cmd="promote", dry_run=False, spec="x"),
+             argparse.Namespace(cmd="promote", dry_run=True, spec="x"))):
+        if not command_writes(writes):
+            out.append(f"`{label}` was classified as a reader while writing — it would take no "
+                       f"lock and overwrite whoever holds one")
+        if command_writes(reads):
+            out.append(f"`{label}` was classified as a writer while only reading — the lock "
+                       f"follows the invocation, not the subcommand")
+    for cmd in ("new", "task", "discover"):
+        if not command_writes(argparse.Namespace(cmd=cmd, spec="x")):
+            out.append(f"`{cmd}` takes no writer lock, but it modifies a spec")
     for cmd in ("list", "status", "show", "next", "parallel", "validate", "config",
                 "doctor", "selftest"):
         if command_writes(argparse.Namespace(cmd=cmd)):
