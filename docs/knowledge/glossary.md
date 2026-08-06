@@ -292,6 +292,11 @@ sentence, and **link out** rather than explaining in full here.
   **unreserved**: dropping the reservation too would send every surviving instance down the
   concept-doc path, turning it into a `no-frontmatter`/`missing-type` ERROR in target repos that
   changed nothing. `docs/log.md` is the first artifact retired this way.
+- [**Retiring a standard**](../standards/workflows/retiring-a-standard.md) — removing a bundle
+  standard rather than deprecating it — `git rm` is the verb, the inheriting doc carries the
+  `retired with <doc> (<spec>, <data>)` stamp, the citation sweep is human with the branch review
+  as its net, and the GENERATED listing row goes in the same commit; distinct from the reserved
+  artifact, which KEEPS its slot when retired.
 - [**Routed command**](../standards/automation/skills.md) — a command something reaches **without a
   human typing its name**, whether by a spoken trigger or by another command's body naming it; its
   `description` stays resident in every session's context and is charged against the
