@@ -1066,7 +1066,7 @@ def find_specs_root(root_arg: str | None) -> str:
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
-               "integrationBranch", "releaseBranch")
+               "integrationBranch", "releaseBranch", "hooks")
 BACKENDS = ("files", "github", "azure-boards")
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
@@ -1085,6 +1085,12 @@ DEFAULT_RELEASE_BRANCH = "main"
 # Closed, Scrum says New/…/Done/Removed, and a customised process says whatever it likes.
 # Guessing would not fail loudly: it would read every archived spec as active in half the
 # projects it ran against.
+
+# `hooks` defaults to {} — an absent key declares no events, and that is the normal case.
+# The shape is checked at the read: an event must map to a list of hook objects each
+# carrying a non-empty string `command`; anything else is left out of the read. One filter
+# rides on that shape check — `enabled: false` never leaves here, per extension-points.md —
+# and `condition` is carried along untouched, never evaluated by anything in this tool.
 
 # The backends that ship without ever having run against a real target. `## Out of Scope`
 # accepts that for `azure-boards`, and the selftest's completeness and refusal checks are
@@ -1166,7 +1172,7 @@ def load_config(root: str) -> dict:
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
-           "azureStates": None, "integrationBranch": None, "releaseBranch": None,
+           "azureStates": None, "hooks": {}, "integrationBranch": None, "releaseBranch": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1213,6 +1219,32 @@ def load_config(root: str) -> dict:
         named = {p: str(states.get(p, "")).strip() for p in PHASES}
         if all(named.values()):
             out["azureStates"] = named
+
+    events = obj.get("hooks")
+    if isinstance(events, dict):
+        parsed: dict[str, list[dict]] = {}
+        for event, entries in events.items():
+            if not isinstance(entries, list):
+                continue
+            kept: list[dict] = []
+            for hook in entries:
+                if not isinstance(hook, dict):
+                    continue
+                command = hook.get("command")
+                if not (isinstance(command, str) and command.strip()):
+                    continue
+                if hook.get("enabled") is False:
+                    # extension-points.md: filtered at the read, never announced.
+                    continue
+                row: dict = {"command": command.strip()}
+                for field, kind in (("optional", bool), ("condition", str), ("prompt", str)):
+                    value = hook.get(field)
+                    if isinstance(value, kind):
+                        row[field] = value
+                kept.append(row)
+            if kept:
+                parsed[event] = kept
+        out["hooks"] = parsed
     return out
 
 
@@ -7402,8 +7434,8 @@ def cmd_selftest(args, root: str) -> int:
     # it stays self-contained and never depends on this checkout's own config.
     blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
-                      ("worktreeSetup", None), ("integrationBranch", None),
-                      ("releaseBranch", None), ("present", False)):
+                      ("worktreeSetup", None), ("azureStates", None), ("hooks", {}),
+                      ("integrationBranch", None), ("releaseBranch", None), ("present", False)):
         if blank[key] != want:
             findings.append(_finding("sp-config-default-drift", "error",
                                      f"with nothing declared, config `{key}` is "
@@ -7687,6 +7719,8 @@ def cmd_config(args, root: str) -> int:
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
                                   if cfg["azureStates"] else "(none declared)"),
+             "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
+                            if cfg["hooks"] else "(none declared)"),
              "  integrationBranch: " + (cfg["integrationBranch"]
                                         or f"(none declared, defaults to {DEFAULT_INTEGRATION_BRANCH})"),
              "  releaseBranch: " + (cfg["releaseBranch"]
