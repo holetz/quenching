@@ -1070,7 +1070,7 @@ def find_specs_root(root_arg: str | None) -> str:
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
-               "integrationBranch", "releaseBranch",
+               "integrationBranch", "releaseBranch", "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog")
 BACKENDS = ("files", "github", "azure-boards")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
@@ -1100,6 +1100,17 @@ DEFAULT_RELEASE_BRANCH = "main"
 # Closed, Scrum says New/…/Done/Removed, and a customised process says whatever it likes.
 # Guessing would not fail loudly: it would read every archived spec as active in half the
 # projects it ran against.
+
+# `hooks` defaults to {} — an absent key declares no events, and that is the normal case.
+# The shape is checked at the read: an event must map to a list of hook objects each
+# carrying a non-empty string `command`; anything else is left out of the read. One filter
+# rides on that shape check — `enabled: false` never leaves here, per extension-points.md —
+# and `condition` is carried along untouched, never evaluated by anything in this tool.
+
+# `profiles` has NO default — an absent key declares nothing, which install-profiles.md reads
+# as "all three fronts installed", the ordinary case. Like `hooks`, its shape is checked at
+# the read (`installed` must be a list of non-empty strings) and its content is never
+# interpreted: what a front is, and what the list means, is the standard's, not the loader's.
 
 # The backends that ship without ever having run against a real target. Empty now:
 # `azure-boards` was the one name here, and the provar-e-posicionar-o-backend-azure-boards
@@ -1184,7 +1195,8 @@ def load_config(root: str) -> dict:
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
-           "azureStates": None, "integrationBranch": None, "releaseBranch": None,
+           "azureStates": None, "hooks": {}, "profiles": None,
+           "integrationBranch": None, "releaseBranch": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
@@ -1233,6 +1245,38 @@ def load_config(root: str) -> dict:
         if all(named.values()):
             out["azureStates"] = named
 
+    events = obj.get("hooks")
+    if isinstance(events, dict):
+        parsed: dict[str, list[dict]] = {}
+        for event, entries in events.items():
+            if not isinstance(entries, list):
+                continue
+            kept: list[dict] = []
+            for hook in entries:
+                if not isinstance(hook, dict):
+                    continue
+                command = hook.get("command")
+                if not (isinstance(command, str) and command.strip()):
+                    continue
+                if hook.get("enabled") is False:
+                    # extension-points.md: filtered at the read, never announced.
+                    continue
+                row: dict = {"command": command.strip()}
+                for field, kind in (("optional", bool), ("condition", str), ("prompt", str)):
+                    value = hook.get(field)
+                    if isinstance(value, kind):
+                        row[field] = value
+                kept.append(row)
+            if kept:
+                parsed[event] = kept
+        out["hooks"] = parsed
+
+    profiles = obj.get("profiles")
+    if isinstance(profiles, dict):
+        installed = profiles.get("installed")
+        if (isinstance(installed, list)
+                and all(isinstance(front, str) and front.strip() for front in installed)):
+            out["profiles"] = {"installed": [front.strip() for front in installed]}
     # `azurePlacement` describes the PROJECT, not the backend — `subjects` and `tagCatalog`
     # apply equally to `github`, so they are read here unconditionally, the same as
     # `azurePlacement` and `azureColumns` themselves; a repository on `files` or `github`
@@ -5368,9 +5412,9 @@ def cmd_list(args, root: str) -> int:
                          indent=2, ensure_ascii=False))
         return 0
     if not rows:
-        print(f"no specs under {root}")
+        print(f"no specs on the {backend.name} front")
         return 0
-    print(f"specs — {root} ({len(rows)})")
+    print(f"specs — {backend.name} front ({len(rows)})")
     for folder in PHASE_DIRS:
         group = [r for r in rows if r["folder"] == folder]
         if not group:
@@ -8870,8 +8914,9 @@ def cmd_selftest(args, root: str) -> int:
     # it stays self-contained and never depends on this checkout's own config.
     blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", ".specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
-                      ("worktreeSetup", None), ("integrationBranch", None),
-                      ("releaseBranch", None), ("present", False),
+                      ("worktreeSetup", None), ("azureStates", None), ("hooks", {}),
+                      ("profiles", None),
+                      ("integrationBranch", None), ("releaseBranch", None), ("present", False),
                       ("azurePlacement", {}), ("azureColumns", {}),
                       ("subjects", {}), ("tagCatalog", {})):
         if blank[key] != want:
@@ -9052,11 +9097,10 @@ def cmd_selftest(args, root: str) -> int:
     # coincidence, not by contract.
     impact_probe = parse_impact_standards(
         "## Impact\n\n### Standards this spec will write into /.docs/standards/\n\n"
-        "- `/.docs/standards/automation/context-budget.md` §The two caps §The per-surface "
-        "ceiling — revisado.\n"
+        "- `/.docs/standards/automation/skills.md` §The verifier — revisado.\n"
         "- `/.docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
         "lê inteiro.\n", DEFAULT_SCHEMA)
-    want_impact = ["/.docs/standards/automation/context-budget.md",
+    want_impact = ["/.docs/standards/automation/skills.md",
                    "/.docs/standards/workflows/plan-artifacts.md"]
     if impact_probe != want_impact:
         findings.append(_finding("sp-impact-address-tolerance", "error",
@@ -9267,6 +9311,10 @@ def cmd_config(args, root: str) -> int:
              "  worktreeSetup: " + (cfg["worktreeSetup"] or "(none declared)"),
              "  azureStates: " + (", ".join(f"{p}={s}" for p, s in cfg["azureStates"].items())
                                   if cfg["azureStates"] else "(none declared)"),
+             "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
+                            if cfg["hooks"] else "(none declared)"),
+             "  profiles: " + (", ".join(cfg["profiles"]["installed"])
+                               if cfg["profiles"] else "(none declared)"),
              "  integrationBranch: " + (cfg["integrationBranch"]
                                         or f"(none declared, defaults to {DEFAULT_INTEGRATION_BRANCH})"),
              "  releaseBranch: " + (cfg["releaseBranch"]
@@ -9279,27 +9327,11 @@ def cmd_config(args, root: str) -> int:
 
 def cmd_doctor(args, root: str) -> int:
     findings: list[dict] = []
-    if not os.path.isdir(root):
-        findings.append(_finding("sp-no-workspace", "error", f"no `/.specs/` workspace at {root}",
-                                 remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
-        return _emit_doctor(args, root, findings)
-
-    for ph in PHASES:
-        if not os.path.isdir(os.path.join(root, ph)):
-            findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
-                                     path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
-    # A v2 folder that still holds specs is the one shape `list` reads correctly but
-    # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
-    for folder in LEGACY_PHASES:
-        held = [s for s in spec_files(root) if s["folder"] == folder]
-        if held:
-            findings.append(_finding("sp-v2-layout", "error",
-                                     f"`{folder}/` still holds {len(held)} spec(s) — v3 "
-                                     f"folded backlog/ and ready/ into plans/",
-                                     path=folder, count=len(held),
-                                     remedy="specs.py migrate  (moves them into plans/ "
-                                            "unrenamed; `/.specs/archive/**` is never touched)"))
-
+    # The config findings come first, and reading the config here also decides whether
+    # the workspace-shape half below applies at all. Under an external backend there
+    # may be no specs/ folder: its layout is then not a finding to suppress after the
+    # fact, it is one that never made sense to produce — the guard sits before the
+    # PHASES loop, never a filter after it.
     # The real failure mode of a machine-read config is `worktree_setup` written where
     # `worktreeSetup` was expected, followed by silence — the file is valid JSON, the key
     # is simply never looked at, and the setup that was declared never runs. Both findings
@@ -9406,25 +9438,50 @@ def cmd_doctor(args, root: str) -> int:
                                              f"from Entendimento Técnico on",
                                              path=str(row["id"]), slug=row["slug"],
                                              remedy="record `start`/`target` on the spec"))
+    # The workspace shape — the folder IS the phase, but only under the `files` backend,
+    # the one backend that has a folder. An external backend's workspace is the tracker
+    # itself, so none of these findings apply there: producing them would describe a
+    # world this repo does not inhabit.
+    if cfg["backend"] == "files":
+        if not os.path.isdir(root):
+            findings.append(_finding("sp-no-workspace", "error", f"no `/.specs/` workspace at {root}",
+                                     remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
+            return _emit_doctor(args, root, findings)
 
-    leftovers = _v1_leftovers(root)
-    for name in leftovers:
-        findings.append(_finding("sp-v1-leftover", "error",
-                                 f"`{name}/` is a v1 three-file plan folder",
-                                 path=name,
-                                 remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
-                                        f"`/.specs/archive/**` is never touched)"))
-    for entry in sorted(os.listdir(root)):
-        full = os.path.join(root, entry)
-        # `config.json` stays exempt even though nothing reads it any more: it has its own
-        # finding above, which says where it went. Reporting it as a stray would offer
-        # "move it into a phase folder", which is the one thing that must not happen to it.
-        if os.path.isfile(full) \
-                and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
-                and not entry.startswith("."):
-            findings.append(_finding("sp-stray-file", "warn",
-                                     f"stray file at the specs root: {entry}", path=entry,
-                                     remedy="move it into a phase folder or remove it"))
+        for ph in PHASES:
+            if not os.path.isdir(os.path.join(root, ph)):
+                findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
+                                         path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
+        # A v2 folder that still holds specs is the one shape `list` reads correctly but
+        # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
+        for folder in LEGACY_PHASES:
+            held = [s for s in spec_files(root) if s["folder"] == folder]
+            if held:
+                findings.append(_finding("sp-v2-layout", "error",
+                                         f"`{folder}/` still holds {len(held)} spec(s) — v3 "
+                                         f"folded backlog/ and ready/ into plans/",
+                                         path=folder, count=len(held),
+                                         remedy="specs.py migrate  (moves them into plans/ "
+                                                "unrenamed; `/.specs/archive/**` is never touched)"))
+
+        leftovers = _v1_leftovers(root)
+        for name in leftovers:
+            findings.append(_finding("sp-v1-leftover", "error",
+                                     f"`{name}/` is a v1 three-file plan folder",
+                                     path=name,
+                                     remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
+                                            f"`/.specs/archive/**` is never touched)"))
+        for entry in sorted(os.listdir(root)):
+            full = os.path.join(root, entry)
+            # `config.json` stays exempt even though nothing reads it any more: it has its own
+            # finding above, which says where it went. Reporting it as a stray would offer
+            # "move it into a phase folder", which is the one thing that must not happen to it.
+            if os.path.isfile(full) \
+                    and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
+                    and not entry.startswith("."):
+                findings.append(_finding("sp-stray-file", "warn",
+                                         f"stray file at the specs root: {entry}", path=entry,
+                                         remedy="move it into a phase folder or remove it"))
     return _emit_doctor(args, root, findings)
 
 

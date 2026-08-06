@@ -4,9 +4,8 @@ In a target repo this rule is stamped to `docs/standards/automation/skills.md` f
 `assets/templates/automation/skills-standard.md`; this file is the plugin-side owner.
 
 **Owned elsewhere — cite, never restate.** The
-invocation/permission decision table and the scoped-`allowed-tools` rule live in
-`docs/standards/automation/skills.md`; the metadata caps and the surface ceiling in
-`docs/standards/automation/context-budget.md`; the registry zone's row format in
+invocation/permission decision table, the scoped-`allowed-tools` rule, and the description
+caps all live in `docs/standards/automation/skills.md`; the registry zone's row format in
 `skills.py registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
 restated threshold.
 

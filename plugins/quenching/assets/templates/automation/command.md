@@ -15,7 +15,7 @@ allowed-tools: <only the tools the steps actually use, each SCOPED — e.g. Read
 #   session's prompt cache — price the switch against what it saves.>
 # disable-model-invocation: <true blocks programmatic invocation, so a conductor can no
 #   longer reach this command by name and a spoken trigger can no longer route to it — AND
-#   removes the description from always-on context (`budget` counts it at 0). Use it only
+#   removes the description from always-on context entirely. Use it only
 #   for a command whose cost or blast radius means a human must choose it.>
 # context: <fork runs the body in a forked context — self-contained, noisy, summary-out
 #   work ONLY; never beside a mid-flow gate or an AskUserQuestion grant (`sk-fork-gate`).
@@ -71,8 +71,7 @@ exist, exists; every step's criterion held. Report what was written.>
      rule and names each gap by a stable `sk-*` code; `skills.py doctor --json` decides the
      surface-wide invariant (every command has a non-empty description, no two resolve to the
      same `/` path, every segment kebab-case). Thresholds live in
-     `docs/standards/automation/skills.md` and `docs/standards/automation/context-budget.md` —
-     this mold never restates a number.
+     `docs/standards/automation/skills.md` — this mold never restates a number.
 
      What lint checks (fix an `error`, report a `warn` by its code):
        • the two caps — the description against `sk-metadata-cap` (error) and against

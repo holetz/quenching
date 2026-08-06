@@ -29,7 +29,7 @@ and a command may invoke an agent as one step.
 
 ## The definition contract
 
-- **`description` is always-on context** — the same budget discipline and caps as a
+- **`description` is always-on context** — the same cost discipline and caps as a
   command's, counted on the parsed value. It states what the agent does **and when to invoke
   it**; an empty one is `sk-agent-no-description` (the agent can never be delegated to).
 - **`tools` is scoped** to the narrowest set — read-only (`Read, Grep, Glob`) for a

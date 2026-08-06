@@ -82,9 +82,8 @@ interrogation do not.
   is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
   concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
   a quoted trigger is **never** deleted, which only a measured miss retires
-  ([skill-evaluation.md](skill-evaluation.md) §Description tuning). `budget` joins `doctor` and
-  `lint` in the probe, because it is the only one of the three that can see a description grown
-  expensive while structurally clean.
+  ([skill-evaluation.md](skill-evaluation.md) §Description tuning). `doctor` and `lint` stand in
+  the probe.
 - **Post-apply verification**: regenerate the registry zone, confirm the surface invariant, and
   report residue.
 
@@ -109,8 +108,8 @@ and a command is reachable by both paths.
 reaching the command by name. Confusing the two is how a command meant to be human-gated ends up
 firing from a description match, or how a conductor ends up running and doing nothing. The two
 also differ in what they cost: `disable-model-invocation: true` removes the description from
-always-on context entirely (`budget` counts the command at 0), while `user-invocable: false`
-saves nothing — the description still loads.
+always-on context entirely, while `user-invocable: false` saves nothing — the description still
+loads.
 
 ### What `disable-model-invocation` closes, and how we know
 
@@ -137,10 +136,10 @@ Residency is an authored decision like the two above, and it has one test:
 > A command is **routed** if, and only if, something reaches it **without a human typing its name** —
 > a spoken trigger, or another command's body naming it. Everything else is **typed-only**.
 
-Routed commands keep their description resident and are charged against the surface ceiling.
-Typed-only commands declare `disable-model-invocation: true`, cost 0, and **keep their description
-at full length** — see [context-budget.md](context-budget.md) §*The tier for a description that is
-not in context*. Nothing is shortened by this decision; only residency changes.
+Routed commands keep their description resident. Typed-only commands declare
+`disable-model-invocation: true` — their description leaves every session's context, so nothing
+ever reads it — and **keep it at full length**; nothing is shortened by this decision, only
+residency changes.
 
 Two consequences that are not obvious from the test itself:
 
@@ -207,7 +206,13 @@ refusal, errors setting the exit code and warnings never doing so.
 | `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated |
 | `selftest` | that a file parked under `commands/` which is not an entry point fires `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
-| `budget` | what the surface costs before anything fires — see [context-budget.md](context-budget.md) |
+
+**The caps, inherited from the README's cost model.** A `description` is bounded by **1,536
+characters** — Claude Code truncates past it, a fact of the host rather than a ceiling of ours,
+which is why `sk-metadata-cap` reports the truncation's tail, where the `Not for:` boundary lives
+— and by **1,024 characters** (`sk-description-portable`), the Agent Skills standard's hard limit
+on a command's portability outside Claude Code. A body stays well under **500 lines**
+(`sk-body-length`).
 
 Every threshold this standard names is implemented there, and the tool is the normative
 statement: a rule whose only check is a sentence decays, because nothing fails when it is broken.
