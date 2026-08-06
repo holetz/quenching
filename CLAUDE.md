@@ -71,10 +71,14 @@ measures it graded and with a boundary arm; check 3 is a worse copy kept opt-in.
 
 ### Two rules that must survive any refactor
 
-- **Never add `context: fork` to these commands.** Every sweep command gates on a mid-flow
-  confirmation (one plan → one OK) when run standalone — and even a cycle-authorized run
-  (`assets/references/align/convergence.md` §cycle-authorization) must still surface
-  code-coupled confirmations mid-flow, which a forked context cannot present.
+- **Never add `context: fork` to these commands — save the orchestrator's minimal gear.** Every
+  sweep command gates on a mid-flow confirmation (one plan → one OK) when run standalone — and
+  even a cycle-authorized run (`assets/references/align/convergence.md` §cycle-authorization)
+  must still surface code-coupled confirmations mid-flow, which a forked context cannot present.
+  The one admission is `/quenching:specs:orchestrate` under its minimal gear, where no mid-flow
+  confirmation exists to present: neither protected class stops that run and the human review
+  lives in the PR it opens (§The PR route). Any gear above the minimal brings the code-coupled
+  gates back, and with them the prohibition.
 - **Never downgrade classification or executor sub-agents to `haiku` in `/docs:import-memory`.**
   A misclassification there becomes a wrong memory deletion — see the model-policy table in
   [README.md](plugins/quenching/README.md#cost-model) for which sub-agent calls elsewhere are safe
