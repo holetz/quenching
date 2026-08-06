@@ -4086,6 +4086,53 @@ AZ_STDERR_SIGNALS = (
 )
 
 
+def azure_cache_path(org: str, project: str) -> str:
+    """Where this org+project's resolutions are remembered, BETWEEN processes.
+
+    OUTSIDE THE REPOSITORY, always. A cache in the tree is committed, travels to another
+    machine and to another checkout, and a stale entry there points at a work item that was
+    recreated — writing somebody else's card while looking exactly like a hit. The user cache
+    directory is per-machine by construction, which is the property that matters.
+
+    IT IS NOT A STORE. `spec-backend.md` §Granular reading already admits a cache inside
+    `specs.py` on three conditions — it is not authoritative, nothing outside the CLI reads
+    it, and the backend stays the source of truth. Crossing processes changes none of those;
+    what it changes is that a wrong entry now survives the process that wrote it, which is
+    why every reader here re-validates against what came back rather than trusting the hit.
+
+    Keyed by org and project so two projects in one org never see each other's answers."""
+    import hashlib
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(
+        os.path.expanduser("~"), ".cache")
+    key = hashlib.sha256(f"{org}\n{project}".encode()).hexdigest()[:16]
+    return os.path.join(base, "quenching", "azure", f"{key}.json")
+
+
+def azure_cache_read(org: str, project: str) -> dict:
+    """What was remembered, or `{}` — an unreadable or corrupt cache is a miss, never a
+    failure. Nothing here is authoritative, so there is nothing to refuse over."""
+    try:
+        with open(azure_cache_path(org, project), encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def azure_cache_write(org: str, project: str, **entries) -> None:
+    """Merge `entries` into the cache. A write that cannot happen is silently nothing: the
+    cache only ever saves a call, so failing to save one is not worth a refusal."""
+    path = azure_cache_path(org, project)
+    data = azure_cache_read(org, project)
+    data.update(entries)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh)
+    except OSError:
+        pass
+
+
 def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
     """Exit code, stdout AND stderr of one `az` command.
 
@@ -4211,9 +4258,17 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
     # Measured (task 6.3): a human's default is legitimately a project GUID — `--project`
     # routing accepts either — but `azure_query_wiql`'s `[System.TeamProject] = '<value>'`
     # compares against the field's own text value, which is always the NAME; a GUID there
-    # answers `sp-az-api-error` ("not found in hierarchy") on every listing. `az devops
-    # project show` accepts either shape as input and always returns the name, so this is a
-    # no-op for a repo whose default was already a name.
+    # answers `sp-az-api-error` ("not found in hierarchy") on every listing.
+    #
+    # CACHED, because this answer does not change. A project is renamed about as often as it
+    # is created, and the call to ask cost 0,5s of `az` startup on EVERY process — measured
+    # 2026-08-06 on `unicredbr`, whose configured default is itself a GUID, which is exactly
+    # the case a local shape test cannot shortcut. The cache is keyed on the RAW default, so
+    # a human who runs `az devops configure --defaults project=…` is followed rather than
+    # ignored: a changed default is a different key and resolves again.
+    cached = azure_cache_read(org, project).get("projectName")
+    if cached:
+        return (org, cached), {}
     code, out, err = _az_run(cwd, "devops", "project", "show", "--project", project,
                              "--org", org, "--output", "json")
     if code != 0:
@@ -4222,6 +4277,7 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
         name = json.loads(out or "null").get("name") or project
     except json.JSONDecodeError:
         name = project
+    azure_cache_write(org, project, projectName=name)
     return (org, name), {}
 
 
