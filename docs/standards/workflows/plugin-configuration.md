@@ -52,6 +52,7 @@ to one front).
 | `docsDir` | a path relative to the repo root | `docs` | `okf-validate.py`, as CLI **and** hook |
 | `integrationBranch` | any branch name | **none** — `specs.py release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
 | `releaseBranch` | any branch name | **none** — `specs.py release` applies `main` at the point of use | the release verb only |
+| `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event, through the config the core read |
 
 **`docsDir` is the one key `specs.py` does not read, and it is here because it had nowhere else to
 live.** The checker's other settings (`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`,
@@ -97,6 +98,15 @@ writes nothing.
 This is also the one key whose absence is a refusal rather than a default, and the exception is
 narrow on purpose: it refuses only for the backend that needs it. A repository on `files` or
 `github` never sees it, which is why §Absence is the normal case below still holds.
+
+**`hooks` is where a repository declares the work it wants attached to an event a command
+announces** — `{"after_specs_execute_task": [{"command": "/my:security-review",
+"optional": true}]}` is the shape, and `after_specs_execute_task` is the one event this plugin
+ships. The core reads the block whole and validates its **shape** — an event must map to a list
+of hook objects each carrying a `command`; a hook with `enabled: false` is filtered out of the
+read and never announced — and interprets nothing: it does not know what the declared command is
+for, and it never evaluates a `condition`. The three-part contract and the reason the extension
+lives in config rather than in a command are [extension-points.md](../automation/extension-points.md).
 
 ## Absence is the normal case, and never a finding
 
