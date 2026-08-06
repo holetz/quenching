@@ -215,7 +215,7 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 
 | Key | What it carries | Why execute wants it |
 | --- | --- | --- |
-| `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
+| `files:` | comma-separated paths this task may touch; a comma inside parentheses never separates — a trailing `(…)` that is not the reserved `(new)` is refused with `sp-files-annotation` | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
 | `cwd:` | the directory, relative to the repo root, `verify:` runs from | **absent means exactly today's behaviour** — the session's or worktree's root. Write it only when the task's own `verify:` cannot resolve from there (a plugin-internal tool like `specs.py selftest`, which only resolves from `plugins/quenching/`) |
 | `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation`. Runs from the task's declared `cwd:`, or the default when absent |

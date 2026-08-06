@@ -7,7 +7,7 @@ tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-08-05
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02)
 maintainer: quenching
 ---
 
@@ -128,6 +128,19 @@ at the gate having proved nothing about the task. Measured 2026-08-03: that asse
 against the shipped `assets/docs` skeleton — conformant by construction — stopped a build whose
 deliverable was correct, over 29 warnings the bundle already carried at the branch point. Assert
 zero errors, and name the doc the task wrote.
+
+### The `files:` grammar is closed: `(new)` is the only reserved annotation
+
+`files:` is comma-separated, and a comma inside parentheses **never** separates — a comment like
+`a.md (descartável, revertido ao fim)` reads as ONE entry, not two. That split alone would still
+hand the executor a path that exists nowhere with the same confidence as a real one, so the
+grammar is closed on the other side too: a trailing parenthetical that is not exactly `(new)` is a
+human comment the parser must not interpret, and it is **refused** — `validate` reports it as
+`sp-files-annotation`, `next` refuses to hand the task out, and `parallel` refuses to prove
+disjunction over it. `(new)` stays the one reserved annotation, meaning "a path this task will
+create"; parentheses in the middle of a path are not an annotation. The failure this refuses is
+silent by construction — an executor cannot tell an invented piece from a path the task will
+create — which is exactly why it is refused instead of normalised or dropped.
 
 ## A blocked task is a visible marker, not a hidden counter
 
