@@ -4912,34 +4912,59 @@ class AzureBoardsBackend(SpecBackend):
                          expect="array") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str, str, dict, list[str]]] = []
-        for item in self._show_many([i for i in ids if i]):
-            filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
-            doc = azure_restore_trailing_newline(doc)
-            m = SPEC_FILE_RE.match(filename)
-            if not m:
-                # An ordinary work item a human created. The marker is what tells a spec
-                # apart from the project's real backlog, which this backend must never
-                # list and must never write over.
-                continue
-            phase = self._phase_of(item)
-            # KEYED BY ID, never a seventh slot on the row. The tuple is already six wide and
-            # its last widening shipped a `list_specs` that unpacked five — every operation
-            # under this backend died on it. One writer here, readers ask by id, and the
-            # unpack sites stay exactly as they are.
-            self._raw[int(item.get("id") or 0)] = azure_comparable_fields(
-                item.get("fields") or {})
-            rows.append(({
-                # The SAME key set `spec_files` returns and nothing more.
-                "phase": phase, "folder": phase, "legacy": False, "file": filename,
-                "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
-                        f"{item.get('id')}",
-                "slug": m.group(1),
-            }, int(item.get("id") or 0), doc,
-                self._field(item, "System.Title"), self._native_fields(item),
-                self._raw_tags(item)))
+        rows = [row for row in (self._row_of(item)
+                                for item in self._show_many([i for i in ids if i])) if row]
         self._rows = rows
+        azure_cache_write(self.org, self.project,
+                          slugs={d["slug"]: item_id for d, item_id, *_ in rows})
         return rows
+
+    def _row_of(self, item: dict) -> tuple[dict, int, str, str, dict, list[str]] | None:
+        """One work item as a listing row, or None where the marker says it is not a spec.
+
+        The marker is what tells a spec apart from the project's real backlog, which this
+        backend must never list and must never write over — so an ordinary work item a human
+        created answers None here rather than being carried any further."""
+        filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
+        m = SPEC_FILE_RE.match(filename)
+        if not m:
+            return None
+        item_id = int(item.get("id") or 0)
+        # KEYED BY ID, never a seventh slot on the row. The tuple is already six wide and its
+        # last widening shipped a `list_specs` that unpacked five — every operation under this
+        # backend died on it. One writer here, readers ask by id, and the unpack sites stay
+        # exactly as they are.
+        self._raw[item_id] = azure_comparable_fields(item.get("fields") or {})
+        phase = self._phase_of(item)
+        return ({
+            # The SAME key set `spec_files` returns and nothing more.
+            "phase": phase, "folder": phase, "legacy": False, "file": filename,
+            "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}",
+            "slug": m.group(1),
+        }, item_id, azure_restore_trailing_newline(doc),
+            self._field(item, "System.Title"), self._native_fields(item),
+            self._raw_tags(item))
+
+    def _row_for(self, slug: str) -> tuple[dict, int, str, str, dict, list[str]] | None:
+        """One spec's row from a remembered id — the WIQL and the whole-front batch skipped —
+        or None, which means "ask the listing", never "it is not there".
+
+        THE CACHE ONLY EVER NARROWS THE READ. The item is still fetched and still unwrapped,
+        and the marker that comes back is compared against the slug that was asked for: a
+        remembered id pointing at a recreated, retitled or deleted work item answers None and
+        falls through to `_load`. Nothing is written on the strength of the cache alone,
+        which is the whole reason it is allowed to cross processes at all.
+
+        A slug the cache never saw is also None — no fuzzy resolution happens here, so a typo
+        keeps reaching `read_spec`'s `resolve_one` exactly as before."""
+        if self._rows is not None:
+            return next((r for r in self._rows if r[0]["slug"] == slug), None)
+        item_id = (azure_cache_read(self.org, self.project).get("slugs") or {}).get(slug)
+        if not item_id:
+            return None
+        items = self._show_many([int(item_id)])
+        row = self._row_of(items[0]) if items else None
+        return row if row and row[0]["slug"] == slug else None
 
     def _show_many(self, ids: list[int]) -> list[dict]:
         """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
@@ -4979,7 +5004,9 @@ class AzureBoardsBackend(SpecBackend):
         hand, so knowing which tags a write must reconcile against costs no call of its
         own. The tags come back RAW, discovery tag and `spec:` rendering included: this is
         the write path's view, and the only one that wants them unfiltered."""
-        for descriptor, item_id, _, _title, _native, tags in self._load():
+        row = self._row_for(slug)
+        for descriptor, item_id, _, _title, _native, tags in ([row] if row
+                                                              else self._load()):
             if descriptor["slug"] == slug:
                 return item_id, tags
         raise BackendRefusal({
@@ -5057,14 +5084,22 @@ class AzureBoardsBackend(SpecBackend):
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, t, _, _ in rows})
-        if err:
-            return None, err
-        _, full_text, native_title, native_fields = next(
-            (i, d, t, f) for descriptor, i, d, t, f, _tags in rows
-            if descriptor["slug"] == spec["slug"])
+        # The remembered id first: an exact slug answers with ONE work item fetched and no
+        # WIQL at all, and anything else — a typo, a slug the cache never saw, an id that no
+        # longer holds this spec — falls through to the listing, where `resolve_one` still
+        # does the fuzzy matching it always did.
+        hit = self._row_for(slug)
+        if hit:
+            spec, full_text, native_title, native_fields = dict(hit[0]), hit[2], hit[3], hit[4]
+        else:
+            rows = self._load()
+            spec, err = resolve_one(self.list_specs(), slug,
+                                    {d["slug"]: t for d, _, _, t, _, _ in rows})
+            if err:
+                return None, err
+            _, full_text, native_title, native_fields = next(
+                (i, d, t, f) for descriptor, i, d, t, f, _tags in rows
+                if descriptor["slug"] == spec["slug"])
         info = derive_info(spec, hybrid_title_join(full_text, native_title))
         # REASSEMBLED, not re-parsed: the stored document never carries these four keys
         # (`write_spec` strips them — §Armazenado não é projetado), so the native fields ARE
