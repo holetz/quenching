@@ -1,5 +1,5 @@
 ---
-description: Read the whole docs/ front and report where the OKF bundle stands — writes nothing. Triggers on "what's the status of the docs", "how healthy is the knowledge base", "is the bundle conformant". Not for: forcing the bundle into canonical shape → /docs:align.
+description: Read the whole `docs` front and report where the OKF bundle stands — writes nothing. Triggers on "what's the status of the docs", "how healthy is the knowledge base", "is the bundle conformant". Not for: forcing the bundle into canonical shape → /docs:align.
 argument-hint: [optional-home-or-path]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 
 **Input**: `$ARGUMENTS` (optionally a home or path to focus; omit to read the whole bundle).
 
-The **read-only** view of the `docs/` front. Every other skill here either fixes something
+The **read-only** view of the `docs` front. Every other skill here either fixes something
 (`/quenching:docs:align`) or acts on one
 item a human named. This one only looks — and because it looks at exactly what those sweeps look
 at, it is also their honest preview: the plan you would be authorizing, before you authorize it.
@@ -54,27 +54,27 @@ point: a status view that disagreed with the sweep would be worse than none.
 ## Workflow (one read, one report)
 
 ### 1. Resolve the bundle
-Resolve the `docs/` root at the repo root (or `docsDir` from `.claude/quenching.json` when a
-target has customized it). Resolve `okf-validate.py` per
+Resolve the bundle at its fixed root `/.docs/` at the repo root — the root is never read from
+config. Resolve `okf-validate.py` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Invoke via `python3`/`py`; branch on the **exit code** and the `--json`,
 never on prose.
 
-**No bundle at all** is a complete, valid answer: report that `docs/` is absent and that
-`/quenching:docs:align` would install it, then stop. A `docs/` that exists without an `okf_version` root
+**No bundle at all** is a complete, valid answer: report that `/.docs/` is absent and that
+`/quenching:docs:align` would install it, then stop. A `/.docs/` that exists without an `okf_version` root
 `index.md` is an un-installed tree, not a broken bundle — say which.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `okf-validate.py <docs> --json` — every conformance finding, with `stale-doc` included, since
+- `okf-validate.py /.docs --json` — every conformance finding, with `stale-doc` included, since
   this is CLI mode (per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
   §Staleness, it never runs in the hook path).
-- `Glob` `docs/**/*.md` for the density counts, and read `docs/index.md`, each home's `index.md`,
-  and `docs/knowledge/glossary.md`.
+- `Glob` `/.docs/**/*.md` for the density counts, and read `/.docs/index.md`, each home's `index.md`,
+  and `/.docs/knowledge/glossary.md`.
 - `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `CLAUDE.md`/`AGENTS.md` size —
   the two out-of-band stores whose content the cycle would pull in.
 - Note whether a **retired `log.md`** is still present anywhere in the bundle (`Glob`
-  `docs/**/log.md`) — a figure for §5, never a finding.
+  `/.docs/**/log.md`) — a figure for §5, never a finding.
 
 Nothing here writes. If the checker is unavailable, collect what the frontmatter supports and mark
 every conformance row as unverified rather than reporting a clean bundle.

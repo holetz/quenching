@@ -91,21 +91,21 @@ verification: <VERIFICATION>
 <!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
-     docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
-     `docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
+     /.docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
+     `/.docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
      validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
      anchor.
 
      Example of a parsed bullet:
-       - `docs/standards/naming/command-surface.md` — the bijection rule for wrappers
+       - `/.docs/standards/naming/command-surface.md` — the bijection rule for wrappers
 
      The sibling sub-headings are prose for the reader and are deliberately NOT parsed: they
      name paths the spec never promised to write. A spec with no such sub-heading declares
      nothing and is never flagged — the check is opt-in by writing the heading. -->
 
-### Standards this spec will write into docs/standards/
+### Standards this spec will write into /.docs/standards/
 
-- `<docs/standards/subject/concept.md>` — <the rule it states>
+- `</.docs/standards/subject/concept.md>` — <the rule it states>
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -193,6 +193,8 @@ verification: <VERIFICATION>
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
+               A trailing parenthetical is closed grammar: `(new)` is the ONLY reserved
+               annotation, and anything else is refused with `sp-files-annotation`.
      pattern:  an existing file to imitate — the cheapest context an executor can be given.
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
@@ -208,7 +210,7 @@ verification: <VERIFICATION>
        - [ ] 3.3 [P] Add the rate-limit config loader
 
      Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
-     marked tasks' `files:` sets are provably disjoint and none writes into `docs/` —
+     marked tasks' `files:` sets are provably disjoint and none writes into `/.docs/` —
      `specs.py parallel` checks the disjunction mechanically rather than judging it in prose.
      Serial execution is the default and needs no marker.
 
