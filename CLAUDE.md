@@ -23,6 +23,7 @@ cat VERSION
 python3 assets/bin/specs.py --version
 python3 assets/bin/skills.py --version
 python3 assets/hooks/okf-validate.py --version
+python3 assets/bin/session.py --version                                   # outside the six; nothing else reads it
 # the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
 python3 assets/hooks/okf-validate.py assets/docs                          # 0 error(s); stale-doc warns are advisory
 # the command surface
