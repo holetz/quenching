@@ -3805,7 +3805,22 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
                        f"`az devops configure --defaults organization=https://dev.azure.com/"
                        f"<org> project=<project>`; no spec was read or written",
         }
-    return (org, project), {}
+    # RESOLVED TO ITS NAME, never left as whatever `az devops configure` happens to hold.
+    # Measured (task 6.3): a human's default is legitimately a project GUID — `--project`
+    # routing accepts either — but `azure_query_wiql`'s `[System.TeamProject] = '<value>'`
+    # compares against the field's own text value, which is always the NAME; a GUID there
+    # answers `sp-az-api-error` ("not found in hierarchy") on every listing. `az devops
+    # project show` accepts either shape as input and always returns the name, so this is a
+    # no-op for a repo whose default was already a name.
+    code, out, err = _az_run(cwd, "devops", "project", "show", "--project", project,
+                             "--org", org, "--output", "json")
+    if code != 0:
+        return ("", ""), az_refusal("resolving the project's name", code, out, err)
+    try:
+        name = json.loads(out or "null").get("name") or project
+    except json.JSONDecodeError:
+        name = project
+    return (org, name), {}
 
 
 AZ_REFUSAL_CASES = (
@@ -4420,9 +4435,14 @@ class AzureBoardsBackend(SpecBackend):
         fresh = derive_info({"phase": phase}, text)
         stripped = strip_frontmatter_keys(text, FIELD_KEYS)
         stored, title = hybrid_project(m.group(1) if m else filename, stripped)
+        # NO `--state`: measured (task 6.3), `az boards work-item create` has no such flag —
+        # only `update` does. A new item is born in whatever state its TYPE defaults to
+        # ("New", typically) — left alone, because `_apply_column` below is what actually
+        # decides it (§task 6.3: column and state are not independent on this process; the
+        # board resolves state FROM the column, and a direct `--state` write the column
+        # write follows would just be undone).
         argv = ["work-item", "create", "--project", self.project,
-               "--type", self.work_item_type, "--title", title,
-               "--state", self.states[phase]]
+               "--type", self.work_item_type, "--title", title]
         if self.area_path:
             argv += ["--area", self.area_path]
         if self.iteration_path:
@@ -4431,7 +4451,10 @@ class AzureBoardsBackend(SpecBackend):
         item = self._az_with_description("creating a work item", argv, description)
         item_id = int((item or {}).get("id") or 0)
         self._apply_parent(item_id, self.parent_id)
-        self._apply_column(item_id, fresh)
+        # No column applicable (`azureColumns`/`boardColumn` both absent) is the one case
+        # left where the state has to be forced directly — nothing else will ever set it.
+        if not self._apply_column(item_id, fresh):
+            self._update(item_id, state=self.states[phase])
         # ALWAYS, even with no fixed tags: this is the ONE call that puts the discovery tag
         # on a freshly created item. Skip it and the spec is invisible to `_load()`'s own
         # tag-scoped listing the instant it exists — never found again by slug, by `list`,
@@ -4533,23 +4556,40 @@ class AzureBoardsBackend(SpecBackend):
                        f"workItemType; no spec was read or written",
         })
 
-    def _apply_column(self, item_id: int, info: dict) -> None:
+    def _apply_column(self, item_id: int, info: dict) -> bool:
         """Reaffirm the board column on every write, from the de-para (`azureColumns`),
         falling back to `boardColumn` for a state absent from the table. A human who moved
         the card sees the next write bring it back — the board is the projection, per
         `## Design` §O de-para de coluna. `board_state_of` is the CORE half — this backend
-        only ever consults the table, never derives the key itself."""
+        only ever consults the table, never derives the key itself.
+
+        COLUMN AND STATE ARE NOT INDEPENDENT — measured (task 6.3): setting the board column
+        silently rewrites `System.State` to whatever this process's `allowedMappings` names
+        for it (`Backlog`, the `incoming` column, only ever resolves to `New`; `Concluído`,
+        `outgoing`, only ever to `Closed`). Applying `azureStates` and `azureColumns` as two
+        independent writes was the design before this task — the second call was silently
+        undoing the first. Returns whether a column was actually applied, so a caller with
+        nothing declared here (`azureColumns` AND `boardColumn` both absent) knows to fall
+        back to forcing `System.State` directly — the only case left where that is correct."""
         column = self.column_map.get(board_state_of(info), self.board_column)
         if not column:
-            return
+            return False
         field = self._resolve_board_field()
         self._az(f"setting work item {item_id}'s board column", "work-item", "update",
                  "--id", str(item_id), "--fields", f"{field}={column}")
+        return True
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
         item_id = self._item_id(info["slug"])
-        self._update(item_id, state=self.states[dest_phase])
+        # The column is what actually moves a card between phases in the human's own vocabulary
+        # (Kanban.Column), and applying it is what the board itself resolves `System.State`
+        # from — never the reverse. `states[dest_phase]` is the fallback for a repo whose
+        # `azureColumns`/`boardColumn` cannot answer for this phase at all.
+        dest_info = dict(info)
+        dest_info["phase"] = dest_phase
+        if not self._apply_column(item_id, dest_info):
+            self._update(item_id, state=self.states[dest_phase])
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
