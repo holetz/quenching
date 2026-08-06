@@ -16,29 +16,24 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 **A task is not done when the code is written.** It is done when it **ran**, its diff was
 **reviewed**, and it is **committed**. The mechanics of that live in
 [specs-execute/execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-§The verification policy §The validation loop §The diff self-review §The commit
 §Declared versus emergent `docs/` §Delegating an executor, which this body cites and never restates.
 
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
 ```bash
-skills.py read <the cited file> --sections "§The verification policy" --sections "§The commit"
+skills.py read <the cited file> --sections "§A" --sections "§B"
 ```
 
-One call, N sections, no frontmatter; a unique prefix resolves, so `§The commit` is enough. The
+One call, N sections, no frontmatter; a unique prefix resolves, so `§B` is enough. The
 reason is the whole of this command's own cost: a preamble is re-sent on every turn that follows
-it, so what is loaded at turn one is paid for the length of the run — and `execution.md`
-§The verification policy is ~400 tokens against 4,600 for the file that holds it. `--rules-only`
+it, so what is loaded at turn one is paid for the length of the run — and a section runs ~400
+tokens against 4,600 for the file that holds it. `--rules-only`
 narrows further to the `<!-- rules -->` half where a section carries the marker, and returns the
 whole section, saying so, where it does not.
 
 **This command stops at the last commit.** Reviewing the whole branch, writing the `docs/` the work
 *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
 opens on why that split holds.
-
-The git conventions live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
-§The read-if-present rule §Commit messages §The subject is the anchor.
 
 The spec-driven facts live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
@@ -315,7 +310,20 @@ c. **Write only the `docs/` this task names.** A `docs/standards/` path declared
    [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §Declared versus emergent `docs/`.
 
-d. **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
+d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
+   task.** The verification policy that decides when the suite runs, the validation loop, the
+   self-review's four items and the commit's hard rules, then the git conventions that name the
+   subject, one call per file:
+
+   ```bash
+   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+     --sections "§The verification policy" --sections "§The validation loop" \
+     --sections "§The diff self-review" --sections "§The commit"
+   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+     --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor"
+   ```
+
+   **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
    dead code — and fix what it finds. This happens on the written diff, *before* the chain below,
    so what the chain commits is already the reviewed version.
 
