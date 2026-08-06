@@ -396,6 +396,12 @@ cost rather than cutting it.
 it stands after the run's last commit.
 
 ### 7. Report, and hand off
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. The single-spec header line carries overall progress; three body blocks:
 
 1. **This session** — fixed. The isolation and its `branch` record, tasks completed, each task's
@@ -418,10 +424,12 @@ named the command, so stop. Paused → say why and wait.
 ## Output during the loop
 
 Progress as it happens, not a report — the mold governs step 7, this governs the loop. Its glyphs
-are §The report mold's, and mean the same.
+are §The report mold's, and mean the same. **Only the mold's own header line opens with a `##` that
+carries the slug** — this banner prints plain text, never a heading, so the two can never be
+confused for each other:
 
 ```
-## Building: <slug>
+Building: <slug>
 
 Task 3/7 — 3.2 <task title>
   files: src/middleware/auth.ts, src/config/limits.ts

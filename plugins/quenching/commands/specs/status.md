@@ -97,6 +97,12 @@ sweep's; this command contributes none of its own. Without an OKF bundle, note o
 **Done when:** every observation carries a code and lands in exactly one table.
 
 ### 4. Report
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
 Emit §The report mold. Five body blocks, **all fixed** — an empty one prints its title and `—`, never
 disappears — in this order:
 

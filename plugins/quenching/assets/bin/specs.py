@@ -2129,8 +2129,13 @@ def _case_front(b: "SpecBackend") -> dict:
     — `titleize("alpha")` gives back the same `Alpha` the frontmatter carries, and the task
     counts, the progress and the stage are all already the empty ones. A fixture that cannot
     tell the two apart is a case that asserts nothing, and the only reason this one is known
-    to discriminate is that reverting the reader was tried against it."""
-    return _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None)
+    to discriminate is that reverting the reader was tried against it.
+
+    `path` is stripped from the result exactly as `_listing` and `_observable` strip it — the
+    one field the locator is allowed to differ on, so the fixture is fed no `root` worth
+    trusting."""
+    c = _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None, "")
+    return {k: v for k, v in c.items() if k != "path"}
 
 
 def _case_write(b: "SpecBackend") -> dict:
@@ -4226,6 +4231,7 @@ def cmd_list(args, root: str) -> int:
             "records": spec_records(info["frontmatter"]),
             "unreadable": unreadable,
             "tasks": {"checked": checked, "blocked": blocked, "total": total},
+            "path": display_locator(s["path"], root),
         })
     if args.json:
         print(json.dumps({"ok": True, "root": root, "count": len(rows), "specs": rows},
@@ -4295,6 +4301,7 @@ def cmd_status(args, root: str) -> int:
                   "commits": [{"id": t["id"], "commit": t["commit"]}
                               for t in info["tasks"] if t["commit"]]},
         "promote": gates,
+        "path": display_locator(info["path"], root),
     }
     if args.json:
         print(json.dumps(obj, indent=2, ensure_ascii=False))
@@ -6165,7 +6172,7 @@ def _work_ref(fm: dict, slug: str) -> str:
 
 
 def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
-               current: str | None) -> dict:
+               current: str | None, root: str) -> dict:
     # ASKED OF THE BACKEND, never of the path. Against GitHub the locator is an issue URL, so
     # every candidate derived from an EMPTY document — the whole front ranked as `captured`
     # with no title, no tasks and nothing executing, and `/specs:continue` handed out its
@@ -6202,6 +6209,7 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
         "ageDays": _days_since(info["date"]),
         "unreadable": unreadable,
         "branch": {"work": work, "live": live, "current": on_it},
+        "path": display_locator(s["path"], root),
         "_key": (branch_rank, 0 if executing else 1, -progress, prank,
                  info["date"], s["slug"]),
         "_why": pwhy,
@@ -6251,7 +6259,7 @@ def _next_front(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    cands = [_candidate(backend, s, schema, heads, current)
+    cands = [_candidate(backend, s, schema, heads, current, root)
              for s in backend.list_specs("plans")]
     cands.sort(key=lambda c: c["_key"])
     ranked = []
