@@ -2,12 +2,12 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, .claude/hooks/**, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
+resource: .claude/settings.json, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-08-03
+timestamp: 2026-08-06
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface, and skills.py enforces both rungs from one implementation (8 selftest cases). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface, and skills.py enforces both rungs from one implementation (8 selftest cases). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
 maintainer: quenching
 ---
 
@@ -86,6 +86,16 @@ bundle.
 same checker fires twice — once from the plugin at the current version, once from a copy frozen at
 whatever it was installed at. That is legacy debris, reported by `skills.py drift` and removed by
 `/docs:align`, not a second opinion worth keeping.
+
+**This repository carried that dead rung until 2026-08-06, and it was not silent.** The frozen copy
+was 4.4.5 against a shipped 4.13.0, and 4.4.5 still resolved its bundle root from a `docsDir`
+config key defaulting to `docs` — while the root had become the fixed `/.docs/` convention. So the
+dead rung reported `bundle root is not a directory` on every `Stop` sweep, against a bundle the
+current checker passed with zero errors. The lesson is the sharper half of the rule above: a frozen
+duplicate is not merely redundant, because the contract it was frozen against can move underneath
+it, and then it reports **failures of its own staleness as findings about your repo**. Removing the
+`hooks` block from `.claude/settings.json` and the two copies under `.claude/hooks/` left the
+plugin's own wiring as the only rung, which is what the paragraph above already prescribed.
 
 The full pricing doctrine lives once, in
 [capabilities.md](/plugins/quenching/assets/references/skill-new/capabilities.md) §Hooks;
