@@ -17,8 +17,9 @@ as much as the work it routes to is a router nobody runs — and this is the com
 most often, on the least context, by someone who has just come back to a repo.
 
 The layout, the derived stages and the `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape below — both cited and never restated.
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §Derived stages §The `specs.py` tool surface §The report mold, which owns the
+shape below — both cited and never restated.
 
 ## Resolving the tool
 

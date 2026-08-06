@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-03
+timestamp: 2026-08-05
 audience: both
 authority: current
 source: quenching skeleton
@@ -261,7 +261,12 @@ sentence, and **link out** rather than explaining in full here.
   `## Tasks`→sub-issue mapping took the first. A mapping also needs the native value to be **the
   same fact**: an issue's `created_at` is when the ISSUE was made, so the capture date has no
   faithful counterpart and stays in the document. A field with no honest native copy is not
-  duplicated truth — it is the only copy.
+  duplicated truth — it is the only copy. A third case is neither of the two: **rendering** carries
+  state the document already *derives* — never a canonical field of its own — onto a native
+  surface, recalculated from scratch on every write and never read back, admitted only when it
+  also costs no extra call and is discardable without loss. The `spec:` labels a `github` or
+  `azure-boards` backend reconciles onto its own issue or work item — one per frontmatter record
+  present, plus one for the derived `executing` stage — are the example this repository has.
 - [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
   a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
   which every checker in this repo is blind to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
@@ -330,7 +335,12 @@ sentence, and **link out** rather than explaining in full here.
   over N turns can lose to reading the whole file. A section runs to the next heading of the same
   level or shallower, a fenced block is never read as a heading, and a name that resolves to
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
-  same **Canonical set**, `SECTION_CASES`.
+  same **Canonical set**, `SECTION_CASES` — which pins the *sectioning* rule the two answer
+  identically, and therefore not the ladder below, a CLI-argument rule only the first has.
+  **They take that list differently, deliberately.** `skills.py` resolves each value whole before
+  reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
+  cited by its full title; `specs.py` splits unconditionally, which is unreachable there because
+  the fourteen canonical headings carry no comma and it refuses any name outside them.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
   só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos

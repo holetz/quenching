@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec backend interface
-description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, and the in-memory fake that turns "identical" into a checked property
+description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-03
+timestamp: 2026-08-05
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write
 maintainer: quenching
 ---
 
@@ -180,6 +180,47 @@ next one to take the native-construct permission up:
   body it will answer 422 to; and a declared part the comments no longer hold is its own **refusal
   (`sp-gh-parts-missing`, exit 2)** — returning the shorter document would let the next write
   persist that truncation as the new truth.
+
+### Rendering derived state is a third category, admitted under cumulative conditions
+
+Projection and storage, above, are not the only way a native construct earns its place.
+A native surface may also carry a RENDERING of state this document already derives —
+never a duplicate of a canonical field, never read back, and free. This is the third
+category, and admission is cumulative: all four conditions below, none optional.
+
+The `spec:` labels `github` reconciles onto its own issue's `labels` (`azure-boards`:
+`System.Tags`, on the work item) are exactly this — one per frontmatter record present,
+plus `spec:built` for the derived `executing` stage. `derive_labels` computes the desired
+set from `info` alone, wholly independent of whatever the issue already carries, and
+`reconcile_label_set` folds that set into the native surface without touching anything
+outside the `spec:` prefix. Nothing in `list_specs`, `read_spec` or `validate` ever reads
+a label back — the reassembly obligation above is untouched, because nothing here is part
+of what gets reassembled.
+
+- **It does not duplicate a canonical field.** A label names a MILESTONE — that a record
+  exists — never the record's own fields. `priority: {level, criticality, complexity,
+  date}` has no label form for the same reason it was refused a label-only encoding above:
+  a label can hold a name, not a struct.
+- **It is recalculated from the source on every write**, never edited in place and never
+  trusted to still be correct from an earlier one. `derive_labels` takes `info` and
+  nothing cached, and runs again on every `write_spec`.
+- **It costs zero calls beyond the write already being made.** GitHub's label set rides
+  inside the SAME `PATCH` `_store` already sends; Azure's `System.Tags` rides inside the
+  SAME `--fields` update `_update` already sends. MEASURED live, 2026-08-05, against this
+  repository's own issue #877: a write that changes no record and no stage costs exactly
+  the one `PATCH` it always did. The first cut did not — it compared the desired label set
+  against the issue's current one as ORDERED lists, and GitHub returns a listing's labels
+  alphabetically, never in the schema's own order, so a same-set reorder read as a change
+  on every write and cost an extra `GET` fixing colors that were already right. Comparing
+  the two as sets was the fix.
+- **It is discardable without loss.** Deleting a `spec:` label deletes nothing the document
+  does not already say; the next write recreates it. Deleting every `spec:` label in the
+  repository loses zero information — the claim `labels-historico-spec-issue`'s own
+  `## Proposal` made before this rule existed to check it against.
+
+The twin test above — whether a native value is the same fact as the canonical one —
+does not apply here: a rendering is not a claim that the label IS the record, only that
+the record's presence is visible without opening the issue.
 
 ## Granular reading is about context, not I/O
 
