@@ -91,7 +91,8 @@ command that edits the surface — `/quenching:skill:new`, or `/quenching:skill:
 
 For each task the policy says to verify:
 
-1. Run the task's `verify:` command.
+1. Run the task's `verify:` command, from its declared `cwd:` — or, absent one, from the session's
+   or worktree's root, exactly as before this key existed.
 2. **Passes** → the task is done; go to the diff self-review.
 3. **Fails** → read the failure, change the code, and run it again.
 
@@ -279,6 +280,18 @@ argued about.
 
 The four events are the command body's. Why four events rather than a threshold or a judgment:
 §Tooling asides.
+
+**The four events say when a rewrite happens; they do not say how much it touches.** Since
+`## Handoff` gained per-section blocks — a small global block plus one `### N.` block per `## Tasks`
+section — a rewrite at any of the four events targets ONE of the two:
+`specs.py section <slug> Handoff --write --scope global` for the evergreen block, or `--scope
+current` for the block of whichever `### N.` still has open work. A section's block closes — stops
+being targeted — the moment its last task commits, but that close adds no fifth event: `--scope
+current` always resolves to whichever section still has an open task, so once `### N.` has none
+left, the NEXT of the four events to fire already writes `### (N+1).` instead, wherever in the run
+that next event happens to land. A section whose every task commits between two rewrite events
+never gets a block of its own at all — `--scope current` opens one on demand when the next event
+finally fires, borrowing that section's own `## Tasks` heading as its title.
 
 ## The section boundary — where a run may stop
 

@@ -128,12 +128,25 @@ and checking them would flag a spec for not delivering a doc it never claimed.
 
 <!-- rules -->
 The context an executor needs and cannot derive: the state of play, the conventions in force, what
-was already tried. **Small by construction** — it is sent with every task, and it does not carry
-the human sections.
+was already tried. **Small by construction, and scoped by construction**: it carries a small
+evergreen **global block** plus one block per `### N. <Section>` — the same grouping `## Tasks`
+already uses — and a task is sent only the global block plus the block of its own section, never a
+closed section's block and never the whole `## Handoff`.
 
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
-— rather than when someone judges it stale.
+— rather than when someone judges it stale. What changed is what a rewrite touches, not when one
+happens: `specs.py section <slug> Handoff --write --scope global` for the evergreen block,
+`--scope current` for the block of whichever section still has open work — never both, and never a
+closed section's.
+
+A section's block **closes** the moment its last task commits, but closing is not a fifth event:
+`--scope current` always resolves to the section the next open task belongs to, so once every task
+in `### N.` is checked, the next of the four events to fire targets `### (N+1).` instead — `### N.`
+is simply never addressed again. Nothing marks it "closed" in the text; the absence of any further
+write **is** the close, the same way a merged branch needs no explicit "done" flag. A section whose
+tasks all land between two rewrite events never gets a block of its own at all, and that is fine —
+`--scope current` opens one on demand, borrowing `## Tasks`' own heading text as its title.
 
 Each of those four is a moment the executor *just finished doing something*, never one where it
 appraises something: that is the property that makes the rule survivable unattended, and it is what
@@ -147,6 +160,12 @@ survives an unattended run. The cadence they replaced was one rewrite per commit
 which on a measured 13-task run produced rewrites ~90% identical to one another — the section is
 sent with every task, so a near-identical rewrite is paid for on both sides and buys nothing on
 either.
+
+Scoping what travels is the same fix applied one layer deeper: on a real 29-task, 7-section run
+(`configurable-spec-backend`), the flat `## Handoff` resent ~79,556 characters (~19,900 tokens)
+across the run, peaking at ~5,680 characters per task in the closing sections — mostly the history
+of sections already done, which a task in `### 6.` or `### 7.` never needed. A rewrite happening
+less often already fixed *when* the resend happened; this fixes *how much* each resend carries.
 
 ## `## Tasks`
 
@@ -198,11 +217,12 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 | --- | --- | --- |
 | `files:` | comma-separated paths this task may touch | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
-| `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation` |
+| `cwd:` | the directory, relative to the repo root, `verify:` runs from | **absent means exactly today's behaviour** — the session's or worktree's root. Write it only when the task's own `verify:` cannot resolve from there (a plugin-internal tool like `specs.py selftest`, which only resolves from `plugins/quenching/`) |
+| `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation`. Runs from the task's declared `cwd:`, or the default when absent |
 | `constraint:` | a bound on HOW this task may be done — a file it must not touch, an approach already ruled out | **nothing reads it yet.** Admitted by the grammar and handed through untouched; its only plausible consumer is an executor sub-agent briefing itself, and the decision to dispatch one belongs elsewhere. Write it where an executor would otherwise have to guess; it costs nothing when unread |
 | `subject:` | the SUBJECT of the commit that implements this task | **written by the tool, never by hand** (`task --check --subject`), so code and spec stay linked without a trailer inside the commit message. Known before the commit exists, which is what lets the box travel inside it |
 
-Write the first four where they earn their place — a task touching three known files with an
+Write the first five where they earn their place — a task touching three known files with an
 obvious test command deserves them; a one-line doc edit deserves none. Metadata that restates
 the task text is noise.
 

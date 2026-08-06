@@ -16,8 +16,9 @@ reconcile — and no ledger.
 
 The layout, the fourteen canonical sections, the gates, the front's on-write check and the
 `specs.py` surface live in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape step 8 prints in.
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
+§The `specs.py` tool surface §The report mold, which owns the shape step 8 prints in.
 
 ## The one rule: effort proportional to input
 
@@ -44,7 +45,7 @@ makes legal. Writing fourteen `- none` headings here would make a fresh capture 
 the heading absent or write an explicit none that *says* the source was silent.
 - **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
 and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
-[communication.md](docs/standards/agents/communication.md) declares.
+[communication.md](docs/standards/agents/communication.md) §Declaring it declares.
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
 answer: sharpen the existing spec instead, or pick a different slug.
 
@@ -162,6 +163,11 @@ Run `specs.py validate --spec <slug>` — the spec's own conformance, and the wh
 **Done when:** the check is clean, or the residue is reported verbatim.
 
 ### 8. Report
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
 
 Emit §The report mold. Its single-spec header line carries the locator `specs.py new` returned — the
 `path` field, `plans/<slug>.md` under `files` and an issue URL under `github` — which the mold
