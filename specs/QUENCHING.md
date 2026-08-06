@@ -1,4 +1,4 @@
-<!-- quenching v4.11.0 · operator manual · generated payload.
+<!-- quenching v4.12.0 · operator manual · generated payload.
      Refreshed by /specs:align (or /align). Edit the plugin asset, not this copy —
      a run with a newer plugin overwrites this file. Remove this banner to keep
      your own version: the align will then leave it alone and report it. -->
@@ -17,10 +17,10 @@ described in §6.
 
 **Nothing external to install for the default.** This front has **no npm package, no Node runtime,
 no delta format, and no second spec store shadowing the one you declared**. The one tool is
-`specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), installed
-into `.claude/hooks/specs.py` by `/specs:align`. The one optional file is `.claude/quenching.json`
-(§4, `/specs:execute`) — absent in most repos, and its absence costs nothing. All you need is
-Python:
+`specs.py` — a single stdlib-only Python script (the same mold as the OKF validator), resolved
+through the plugin and never installed into this repo. The one optional file is
+`.claude/quenching.json` (§4, `/specs:execute`) — absent in most repos, and its absence costs
+nothing. All you need is Python:
 
 ```bash
 python3 --version           # or `py --version` on Windows
@@ -66,8 +66,8 @@ its entire lifecycle.** Phases enrich it; they never split it.
 specs/
   QUENCHING.md              # this manual (payload — not a spec)
   plans/                    # a spec's WHOLE pre-archive life — defined, approved, building
-    index.md                # derived listing (generated zone, frontmatter-free)
-    <slug>.md               # one spec per file — the basename IS the slug
+    <slug>.md               # one spec per file — the basename IS the slug; no listing file,
+                            #   `specs.py list` derives the front on demand
   archive/                  # done or abandoned, told apart by `outcome:` frontmatter
     <slug>.md
 ```
@@ -296,11 +296,12 @@ a spec, never infers completion, never treats staleness as abandonment.
 ### `/specs:align` — force the workspace into shape
 
 The sweep, probe-first: it opens with `specs.py doctor` + `validate`, and a conformant workspace
-costs those two calls and stops. Otherwise: scaffolds `specs/` when absent, installs `specs.py`
-and this manual, **folds an older `backlog/` + `ready/` layout into `plans/`** and a v1
+costs those two calls and stops. Otherwise: scaffolds `specs/` when absent, installs this manual
+(never the tool — `specs.py` always resolves through the plugin), offers to remove a legacy
+installed copy if one exists, **folds an older `backlog/` + `ready/` layout into `plans/`** and a v1
 three-file layout into single files (`specs.py migrate`), normalizes filenames and slugs, stamps
-missing frontmatter, regenerates the listing zone, and migrates a legacy `openspec/` workspace
-(§10). One plan, one OK; a rename whose blast radius reaches code confirms on its own.
+missing frontmatter, and migrates a legacy `openspec/` workspace (§10). One plan, one OK; a rename
+whose blast radius reaches code confirms on its own.
 
 **It aligns conformance and only *reports* the cycle.** An empty section, a complete spec
 awaiting approval, an unresolved discovery — each is reported with the command that owns it.
@@ -353,7 +354,9 @@ One file per spec, flat, no subfolders, the same shape in both folders.
 ---
 slug: session-tokens          # required — the identity key every command names
 title: <one line>             # required
-verification: per-task        # required — per-task | per-section | end-of-plan
+date: 2026-07-24              # required — the capture date, stamped once by `new` and never rewritten
+verification: per-task        # optional — per-task | per-section | end-of-plan; absent means
+                              #   the default (per-section), applied on read
 priority: {level: 2, criticality: high, complexity: medium, date: 2026-07-24}   # triage's ranking
 refined: {mode: premortem, date: 2026-07-25}   # once a real interrogation has run
 approved: {date: 2026-07-26}                   # a human said go — develop offers it, execute asks inline
@@ -361,17 +364,32 @@ branch: {base: main, work: plan/session-tokens} # stamped when isolation is take
 reviewed: {date: 2026-07-28}                   # a human read the whole branch diff
 merge: {strategy: merge-commit, subject: "plan/session-tokens: merge (merge-commit)"}  # + pr: on the PR route
 outcome: done                                  # stamped at archive — done | abandoned
+tags: [Vertical: Risco, Área: Crédito]         # STATE, not a record — set by `specs.py tags`
+assignee: someone                              # STATE — set by `specs.py assignee`
+start: 2026-08-01                              # STATE — set by `specs.py start`
+target: 2026-08-31                             # STATE — set by `specs.py target`
 ---
 ```
 
 **Frontmatter records human judgments; everything else is derived.** There is no `created` field
-(the filename's date prefix is that fact), no `phase` field (the folder is that fact), and no
-`ready` flag (the ten gate sections are that fact). Read top to bottom, the records narrate the
-spec's history in order: ranked, interrogated, approved, built, reviewed, merged, closed. A
+(`date:` is that fact — it left the basename because a store with no filenames cannot hold it
+there, and no external store carries an honest copy of it to project from), no `phase` field (the
+folder is that fact), and no `ready` flag (the ten gate sections are that fact). Read top to
+bottom, the records narrate the spec's history in order: ranked, interrogated, approved, built,
+reviewed, merged, closed. A
 record is written only by its owning command; `approved`, `branch`, `merge` and `outcome` are
 write-once — rewriting one would falsify a fact that already happened. A spec carries no OKF
 `type:` — it is not a concept doc, it lives outside the bundle, and `specs.py validate` is what
 checks it.
+
+**`tags`, `assignee`, `start` and `target` are STATE, never records** — first-level keys, each set
+by its own deterministic verb (`specs.py tags|assignee|start|target <slug> [value]`, read when
+`value` is omitted). Where a backend has a faithful native counterpart — issue labels/assignees on
+`github`, `System.Tags`/`System.AssignedTo`/the two scheduling dates on `azure-boards` — that
+counterpart IS the storage: the value is reassembled from it on every read, never kept in the
+document too, and a human's edit on the tracker is the spec's new value on the very next read.
+`start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
+`date:` does everywhere.
 
 Fourteen canonical headings, in this order: `## Overview`, `## Problem`, `## Proposal`,
 `## Out of Scope`, `## Impact`, `## Validation`, `## Design`, `## Alternatives Considered`,
@@ -418,7 +436,7 @@ code and the JSON, never on prose.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P]` | create in `plans/` with `## Problem` alone; stamps the date ONCE |
+| `specs.py new <slug> [--title T] [--verification P] [--subject KEY]` | create in `plans/` with `## Problem` alone; stamps the date ONCE. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
 | `specs.py list [--json]` | every spec, grouped by folder and derived stage |
 | `specs.py status --spec <slug> [--json]` | sections, stage, tasks, the frontmatter records, commits, and the gate's outstanding list |
 | `specs.py section <slug> "<Heading>[,<Heading>…]" [--write]` | read N sections in ONE call, returned in the order asked; `--write` takes exactly one and creates it in canonical position |
@@ -431,8 +449,9 @@ code and the JSON, never on prose.
 | `specs.py validate [--spec <slug>]` | the canonical heading set, the gates, filenames, the records, the `sp-*` codes |
 | `specs.py doctor` | workspace shape, v2/v1 leftovers; remedies **declared** for the command to apply |
 | `specs.py migrate [--dry-run]` | one-way fold to the current layout (v2 `backlog/`+`ready/` → `plans/`; v1 three-file → one file); **exit 2** if already current |
-| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`; exit 0 whether or not anything is declared |
+| `specs.py config [--json]` | the repo's declared `.claude/quenching.json`, as data — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog`; exit 0 whether or not anything is declared |
 | `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; unnamed fields survive, a write-once record refuses (exit 2) rather than being overwritten |
+| `specs.py tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list |
 | `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. **The post-capture writer**: `new --verification` answers at the one moment nobody has an opinion yet, and an external backend has no file to hand-edit |
 | `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document only under `--full` |
 | `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing keeps it in sync, so it is a rescue copy for an external backend and never a second store |
@@ -441,11 +460,11 @@ There is no `init` (scaffold is an asset copy), no `profiles`, no telemetry, and
 There is no `store` subcommand either: which store holds the specs is **declared** in
 `.claude/quenching.json`, never switched by a command mid-flight.
 
-`/specs:align` installs the script into `.claude/hooks/specs.py`; run it yourself any time:
+`specs.py` is never installed into this repo — run workspace health and the spec listing through
+the plugin's own command:
 
-```bash
-python3 .claude/hooks/specs.py doctor --json      # workspace health (and legacy detection)
-python3 .claude/hooks/specs.py list --json        # every spec, by folder and stage
+```
+/specs:status
 ```
 
 **`--block` requires `--reason`.** The tool refuses without one: a blocked task with no reason is
