@@ -5291,11 +5291,62 @@ def display_locator(locator: str, root: str) -> str:
     return os.path.relpath(locator, os.path.dirname(root)).replace(os.sep, "/")
 
 
+# How THIS command reached its spec, or None where it resolved no slug of its own. Written by
+# `read_one` and read by `emit`, so the receipt rides out on every payload by construction — a
+# verb added tomorrow announces an approximate match without its author knowing the rule exists.
+# The alternative, writing the two keys into each verb's payload by hand, is the shape
+# /.docs/standards/architecture/shared-mold-keys.md measured and rejected: a rule that depends on
+# the author remembering is a rule the next author forgets, and the count of verbs owing it moved
+# three times while this was being specified.
+_RESOLUTION: dict | None = None
+
+
+def read_one(backend: SpecBackend, slug: str) -> tuple[dict | None, dict]:
+    """Resolve the slug a human typed, and record HOW it was reached.
+
+    The single entry every verb takes into resolution — which is what makes the receipt a
+    property of the layer rather than an obligation on each verb. Only the human's own
+    argument comes through here: a loop already walking a listing resolves slugs it just read
+    itself, and a receipt for those would be a receipt for nothing.
+
+    `resolve_one` stays pure over the listing. That purity is what makes "every backend
+    resolves the same way and gets the same refusals" a property instead of a claim, and a
+    side effect down there would spend it to buy what this layer already gives."""
+    global _RESOLUTION
+    info, err = backend.read_spec(slug)
+    if err:
+        return None, err
+    _RESOLUTION = {"resolvedBy": info.get("resolvedBy"),
+                   "resolvedFrom": info.get("resolvedFrom")}
+    return info, {}
+
+
+def announced(obj: dict) -> dict:
+    """`obj` carrying the receipt, where this command resolved a slug at all.
+
+    Both keys, always — `resolvedBy: null` on the exact path — so a caller reads
+    `payload["resolvedBy"]` without testing for presence first. A verb that resolves no spec
+    (`config`, `doctor`, `validate`) gets neither: a null answer to a question nobody asked is
+    noise, not information."""
+    return {**obj, **_RESOLUTION} if _RESOLUTION else obj
+
+
+def receipt_line() -> str:
+    """The same receipt for a human reader — empty unless the slug was reached inexactly.
+
+    A receipt only the `--json` reader gets is half a receipt: the human running the verb by
+    hand is exactly the one who mistyped the slug."""
+    if not _RESOLUTION or _RESOLUTION["resolvedBy"] is None:
+        return ""
+    return (f"resolved by {_RESOLUTION['resolvedBy']}, "
+            f"from {_RESOLUTION['resolvedFrom']!r}\n")
+
+
 def emit(as_json: bool, obj: dict, human: str) -> None:
     if as_json:
-        print(json.dumps(obj, indent=2, ensure_ascii=False))
+        print(json.dumps(announced(obj), indent=2, ensure_ascii=False))
     else:
-        print(human)
+        print(receipt_line() + human)
 
 
 def emit_err(as_json: bool, err: dict) -> int:
@@ -5441,7 +5492,7 @@ def cmd_status(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     checked, blocked, total = task_progress(info["tasks"])
@@ -5456,11 +5507,6 @@ def cmd_status(args, root: str) -> int:
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],
-        # How the slug was reached, when it was not reached exactly. `null` on the ordinary
-        # path. A caller that acts on a spec the human did not name has to be able to see
-        # that it happened — the resolution is tolerant, and tolerance without a receipt is
-        # just a wrong answer delivered confidently.
-        "resolvedBy": info.get("resolvedBy"), "resolvedFrom": info.get("resolvedFrom"),
         # every human-judgment record in one place and in schema order, so `conclude` and
         # `continue` read state instead of re-parsing the file
         "records": records,
@@ -5478,8 +5524,9 @@ def cmd_status(args, root: str) -> int:
         "path": display_locator(info["path"], root),
     }
     if args.json:
-        print(json.dumps(obj, indent=2, ensure_ascii=False))
+        print(json.dumps(announced(obj), indent=2, ensure_ascii=False))
         return 0
+    print(receipt_line(), end="")
     print(f"{info['slug']} — {obj['title']}")
     print(f"  {info['folder']}/{info['file']}  [{info['stage']}]  "
           f"verification: {info['verification']}")
@@ -5982,7 +6029,7 @@ def cmd_section(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     if args.moment:
@@ -6226,7 +6273,7 @@ def cmd_verification(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     declared = str(info["frontmatter"].get("verification", "")).strip().lower()
@@ -6312,7 +6359,7 @@ def cmd_field(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     current = info["frontmatter"].get(key)
@@ -6372,7 +6419,7 @@ def cmd_record(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     current = info["frontmatter"].get(args.name) or None
@@ -6546,7 +6593,7 @@ def cmd_promote(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     dest = args.to or _next_phase(info["phase"])
@@ -6663,7 +6710,7 @@ def cmd_task(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block
@@ -6874,7 +6921,7 @@ def cmd_show(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
 
@@ -7737,7 +7784,7 @@ def cmd_next(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
@@ -7831,7 +7878,7 @@ def cmd_parallel(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     findings = []
@@ -7884,7 +7931,7 @@ def cmd_discover(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     entry = f"- {args.text.strip()}"
@@ -9740,6 +9787,10 @@ def main(argv: list[str]) -> int:
     lock, err = writer_lock(args, root)
     if err:
         return emit_err(args.json, err)
+    # One command, one resolution. A process that dispatches more than once — `selftest`, or a
+    # test harness — must never let one command's receipt ride out on the next one's payload.
+    global _RESOLUTION
+    _RESOLUTION = None
     try:
         return DISPATCH[args.cmd](args, root)
     except BackendRefusal as e:
