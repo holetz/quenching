@@ -4148,7 +4148,12 @@ class AzureBoardsBackend(SpecBackend):
         back as an identity object (`displayName`/`uniqueName`), never a plain string;
         `System.Tags` is `; `-joined, and the discovery tag is excluded — it is this
         backend's index, never part of a spec's own declared tags. The two scheduling fields
-        come back as a full datetime (`2026-01-01T03:00:00Z`); only the date is stored."""
+        come back as a full datetime (`2026-01-01T03:00:00Z`); only the date is stored.
+
+        `uniqueName` (the UPN/e-mail), NEVER `displayName` — measured on this org (task 6.1):
+        `--assigned-to` refuses a display name outright (`is an unknown identity`) and only
+        resolves a UPN. Reading `displayName` back would read a value this same backend could
+        never write again, failing the same-fact-read-back test `spec-backend.md` sets."""
         out: dict = {}
         tags = [t.strip() for t in self._field(item, "System.Tags").split(";") if t.strip()]
         if self.discovery_tag:
@@ -4157,7 +4162,7 @@ class AzureBoardsBackend(SpecBackend):
             out["tags"] = tags
         assigned = (item.get("fields") or {}).get("System.AssignedTo")
         if isinstance(assigned, dict):
-            name = assigned.get("displayName") or assigned.get("uniqueName")
+            name = assigned.get("uniqueName") or assigned.get("displayName")
             if name:
                 out["assignee"] = name
         elif isinstance(assigned, str) and assigned.strip():
@@ -4511,6 +4516,29 @@ class AzureBoardsBackend(SpecBackend):
         for key, value in fields.items():
             argv += [f"--{key}", value]
         return self._az(f"updating work item {item_id}", *argv)
+
+
+def azure_native_fields_read_failures() -> list[str]:
+    """`AzureBoardsBackend._native_fields`, over fake `System.AssignedTo` shapes — no
+    network. The one rule measured on this org (task 6.1): `uniqueName` (the UPN), never
+    `displayName` — `--assigned-to` refuses a display name outright, so reading one back
+    would read a value this backend could never write again."""
+    out: list[str] = []
+    az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".",
+                            discovery_tag="quenching-spec")
+    cases = (
+        ({"fields": {"System.AssignedTo": {"displayName": "Israel Holetz",
+                                           "uniqueName": "israel@x.com"}}},
+         "israel@x.com", "uniqueName wins over displayName"),
+        ({"fields": {"System.AssignedTo": {"displayName": "Israel Holetz"}}},
+         "Israel Holetz", "no uniqueName falls back to displayName"),
+        ({"fields": {}}, None, "no assignee at all reassembles nothing"),
+    )
+    for item, want, label in cases:
+        got = az._native_fields(item).get("assignee")
+        if got != want:
+            out.append(f"{label}: _native_fields()['assignee'] was {got!r}, not {want!r}")
+    return out
 
 
 # `workItemType`'s default. Measured against this org's own process guide: `User Story` is
@@ -7765,6 +7793,15 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="GitHubBackend._native_fields: every label becomes "
                                         "a tag; only the first assignee is reflected, "
                                         "because the canonical field is singular"))
+
+    # Measured on this org (task 6.1): `--assigned-to` refuses a display name outright, so
+    # `_native_fields` must read back the UPN, never the display name, or a carried-forward
+    # assignee would fail its own reaffirming write.
+    for failure in azure_native_fields_read_failures():
+        findings.append(_finding("sp-az-native-fields-read-broken", "error",
+                                 f"azure-boards assignee reassembly — {failure}",
+                                 remedy="AzureBoardsBackend._native_fields must prefer "
+                                        "uniqueName over displayName for System.AssignedTo"))
 
     # What `azure-boards` has instead of an end-to-end run, and the reason it runs before
     # the early return: a primitive left inherited reaches a human as a traceback, which is
