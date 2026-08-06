@@ -108,6 +108,10 @@ sentence, and **link out** rather than explaining in full here.
   would make permanent noise of a repo that legitimately has no `mlops/`, omitting them would hide
   a bundle passing every check while knowing nothing. A figure informs without accumulating as a
   defect to chase.
+- [**Bundle root**](../standards/architecture/bundle-root.md) — the fixed `/.docs/` location of a
+  target's OKF bundle, and `/.specs/` for a files-backend specs workspace, a convention no
+  configuration file names because an LLM executor runs command bodies literally and a root it
+  must resolve from config is a root it can resolve wrong.
 - [**Cache trap**](/plugins/quenching/assets/references/skill-new/capabilities.md) — the standing
   cost of an inline `model:`/`effort:` pin in a command's frontmatter: the pin is part of the
   session's prompt-cache key, so changing it makes the next request recompute every input token.
