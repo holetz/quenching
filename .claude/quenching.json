@@ -6,5 +6,8 @@
     "after_specs_execute_task": [
       { "command": "/my:security-review", "optional": true }
     ]
+  },
+  "profiles": {
+    "installed": ["docs", "specs", "skill"]
   }
 }

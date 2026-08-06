@@ -1066,7 +1066,7 @@ def find_specs_root(root_arg: str | None) -> str:
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
-               "integrationBranch", "releaseBranch", "hooks")
+               "integrationBranch", "releaseBranch", "hooks", "profiles")
 BACKENDS = ("files", "github", "azure-boards")
 DEFAULT_BACKEND = "files"
 DEFAULT_SPECS_BRANCH = "specs"
@@ -1091,6 +1091,11 @@ DEFAULT_RELEASE_BRANCH = "main"
 # carrying a non-empty string `command`; anything else is left out of the read. One filter
 # rides on that shape check — `enabled: false` never leaves here, per extension-points.md —
 # and `condition` is carried along untouched, never evaluated by anything in this tool.
+
+# `profiles` has NO default — an absent key declares nothing, which install-profiles.md reads
+# as "all three fronts installed", the ordinary case. Like `hooks`, its shape is checked at
+# the read (`installed` must be a list of non-empty strings) and its content is never
+# interpreted: what a front is, and what the list means, is the standard's, not the loader's.
 
 # The backends that ship without ever having run against a real target. `## Out of Scope`
 # accepts that for `azure-boards`, and the selftest's completeness and refusal checks are
@@ -1172,7 +1177,8 @@ def load_config(root: str) -> dict:
     out = {"path": path, "present": os.path.isfile(path), "unparseable": None,
            "unknownKeys": [], "backend": DEFAULT_BACKEND, "unknownBackend": None,
            "specsBranch": DEFAULT_SPECS_BRANCH, "worktreeSetup": None,
-           "azureStates": None, "hooks": {}, "integrationBranch": None, "releaseBranch": None,
+           "azureStates": None, "hooks": {}, "profiles": None,
+           "integrationBranch": None, "releaseBranch": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1245,6 +1251,13 @@ def load_config(root: str) -> dict:
             if kept:
                 parsed[event] = kept
         out["hooks"] = parsed
+
+    profiles = obj.get("profiles")
+    if isinstance(profiles, dict):
+        installed = profiles.get("installed")
+        if (isinstance(installed, list)
+                and all(isinstance(front, str) and front.strip() for front in installed)):
+            out["profiles"] = {"installed": [front.strip() for front in installed]}
     return out
 
 
@@ -7435,6 +7448,7 @@ def cmd_selftest(args, root: str) -> int:
     blank = load_config(os.path.join(os.sep, "nonexistent-specs-root", "specs"))
     for key, want in (("backend", DEFAULT_BACKEND), ("specsBranch", DEFAULT_SPECS_BRANCH),
                       ("worktreeSetup", None), ("azureStates", None), ("hooks", {}),
+                      ("profiles", None),
                       ("integrationBranch", None), ("releaseBranch", None), ("present", False)):
         if blank[key] != want:
             findings.append(_finding("sp-config-default-drift", "error",
@@ -7721,6 +7735,8 @@ def cmd_config(args, root: str) -> int:
                                   if cfg["azureStates"] else "(none declared)"),
              "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
                             if cfg["hooks"] else "(none declared)"),
+             "  profiles: " + (", ".join(cfg["profiles"]["installed"])
+                               if cfg["profiles"] else "(none declared)"),
              "  integrationBranch: " + (cfg["integrationBranch"]
                                         or f"(none declared, defaults to {DEFAULT_INTEGRATION_BRANCH})"),
              "  releaseBranch: " + (cfg["releaseBranch"]
