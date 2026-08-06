@@ -35,7 +35,7 @@ opens on why that split holds.
 
 ## Resolving the tool
 
-Resolve `specs.py` and `skills.py` (the section reader every `§X` citation above resolves through)
+Resolve `specs.py` and `skills.py` (the section reader every `§X` citation in this body resolves through)
 per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
