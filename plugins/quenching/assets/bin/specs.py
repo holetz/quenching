@@ -7509,8 +7509,7 @@ def cmd_selftest(args, root: str) -> int:
     # coincidence, not by contract.
     impact_probe = parse_impact_standards(
         "## Impact\n\n### Standards this spec will write into docs/standards/\n\n"
-        "- `docs/standards/automation/skills.md` §The two caps §The per-surface "
-        "ceiling — revisado.\n"
+        "- `docs/standards/automation/skills.md` §The verifier — revisado.\n"
         "- `docs/standards/workflows/plan-artifacts.md` — revisado, sem endereço: o executor "
         "lê inteiro.\n", DEFAULT_SCHEMA)
     want_impact = ["docs/standards/automation/skills.md",
