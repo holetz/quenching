@@ -302,6 +302,13 @@ sentence, and **link out** rather than explaining in full here.
   (braces, character classes, `?`) is classified `unknown` and never reported as a violation. It
   says what the doc *governs* — which is why it replaced the `file:line` anchor doctrine once
   named, and why it is also the input `stale-doc` needs.
+- [**Resolution receipt**](../standards/architecture/spec-backend.md) — the `resolvedBy` /
+  `resolvedFrom` pair a tolerant slug resolution puts on **every** payload of a verb that resolved a
+  spec: which rung answered (`title`, `approximate`, or `null` on the exact path) and what it
+  matched. Recorded where the human's slug is resolved and folded in where the payload is emitted,
+  so a verb added later announces without its author knowing the rule — the enumerated alternative
+  was measured going stale three times in one spec, from six verbs to ten to eleven. A verb that
+  resolves no spec carries neither key.
 - [**Retired (reserved artifact)**](../standards/architecture/retiring-a-reserved-artifact.md) — a
   reserved filename nothing produces or checks any more, but which **keeps** its slot in the
   validator's `RESERVED` set and its skip in the `PreToolUse` hard block. Deliberately not
@@ -361,6 +368,12 @@ sentence, and **link out** rather than explaining in full here.
   descrição dele. Mora dentro de um arquivo que os corpos já carregam, para não custar uma chamada
   de ferramenta a mais; o custo em caracteres é medido e declarado, nunca estimado. Distinto de
   **Shared mold**, que governa chaves de frontmatter e não saída.
+- [**Self-matching guard**](../standards/quality/self-matching-guards.md) — a structural checker
+  whose own finding text names the construct it forbids, so a substring scan reports the checker as
+  the violation. Measured here on the first run of `announcement_failures()`, which flagged
+  `selftest` for the call quoted in its own remedy string. The fix is **parsing** the construct
+  (`ast`, a real tokenizer) so prose about a call is invisible by construction — never excluding
+  the checker, and never splitting the string to hide it.
 - [**Shared mold**](../standards/architecture/shared-mold-keys.md) — a frontmatter key block owned
   once and cited by several commands, so each mints a doc from the same stamp instead of restating
   it (`docs-add/homes.md` §The frontmatter stamp, cited by four). Because a mold is a *fill-in
