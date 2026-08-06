@@ -4589,7 +4589,7 @@ def field_strip_failures() -> list[str]:
 
 # `System.Description`'s real ceiling — measured (task 6.2), not documented anywhere `az`
 # prints: writing past it answers `TF401262: … exceeds the maximum allowed length of
-# 1048576`. Checked in `_az_with_description`, before the call is made.
+# 1048576`. Checked in `_az_patch`, before the call is made.
 AZ_DESCRIPTION_MAX = 1_048_576
 
 # `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
@@ -5200,8 +5200,13 @@ class AzureBoardsBackend(SpecBackend):
             argv += ["--area", self.area_path]
         if self.iteration_path:
             argv += ["--iteration", self.iteration_path]
-        description = hybrid_wrap(filename, hybrid_split(stored, None)[0][0], fmt="div")
-        item = self._az_with_description("creating a work item", argv, description)
+        # THE DOCUMENT DOES NOT TRAVEL ON THE CREATE CALL, and that is what makes a spec
+        # born in `Markdown` rather than converted by whichever later write first happens to
+        # touch its text. The format op only rides alongside a `System.Description` op —
+        # measured: a patch carrying the format alone answers `400 The type changed without
+        # a value` — so the description has to be IN the patch for the item to ever leave
+        # `html`. It costs no extra call: the placement patch below was being sent anyway.
+        item = self._az("creating a work item", *argv)
         item_id = int((item or {}).get("id") or 0)
         # ONE PATCH for everything the creation could not carry. The item was born this
         # instant, so `current` is `{}` by construction and every op below is genuinely new —
@@ -5218,6 +5223,8 @@ class AzureBoardsBackend(SpecBackend):
         # again by slug, by `list`, by anything.
         desired, assignee = azure_native_fields(fresh["frontmatter"], self.discovery_tag,
                                                 derive_labels(fresh))
+        desired["System.Description"] = hybrid_wrap(
+            filename, hybrid_split(stored, None)[0][0], fmt="div")
         if assignee:
             desired["System.AssignedTo"] = assignee
         column = self.column_map.get(board_state_of(fresh), self.board_column)
@@ -5227,9 +5234,9 @@ class AzureBoardsBackend(SpecBackend):
             desired["System.State"] = self.states[phase]
         parent = (self.parent_id, self._work_item_url(self.parent_id)) \
             if self.parent_id else None
-        ops = azure_patch_body({}, desired, parent=parent)
+        ops = azure_patch_body({}, desired, markdown=True, parent=parent)
         if ops:
-            self._az_patch(f"placing new work item {item_id}", item_id, ops)
+            self._az_patch(f"writing the new work item {item_id}", item_id, ops)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
@@ -5326,9 +5333,9 @@ class AzureBoardsBackend(SpecBackend):
         id spelled out. `--media-type application/json-patch+json` is not optional — the work
         item PATCH endpoint rejects the default `application/json` outright.
 
-        THE CEILING IS CHECKED AT THIS CHOKE POINT, not at the caller. `_az_with_description`
-        used to be the only door a document went through; this is the other one, and the same
-        measured `System.Description` limit applies (`TF401262` above it). Naming the size
+        THE CEILING IS CHECKED HERE, and here is now the only door a document goes through —
+        `_az_with_description`, which used to be it, has no callers left. The measured
+        `System.Description` limit still applies (`TF401262` above it), and naming the size
         before the call beats surfacing that error anonymously mid-write.
 
         ONE PATCH IS ALL-OR-NOTHING, so the refusal names the op. `## Risks` accepts the
@@ -5369,38 +5376,6 @@ class AzureBoardsBackend(SpecBackend):
         finally:
             os.unlink(path)
 
-    def _az_with_description(self, action: str, argv: list[str], description: str):
-        """*argv* (a `work-item create`/`update` call, minus any description flag) plus
-        `System.Description` from a temp file, via `--fields System.Description=@<path>`.
-
-        TWO CEILINGS, AND ONLY THE SECOND ONE IS AZURE'S. A document handed to `az` as a
-        literal `--description <text>` argument hits Linux's own per-argument limit
-        (`MAX_ARG_STRLEN`, 128 KiB) long before it reaches the API — measured on this org:
-        `az` itself raises `OSError` building the argv above ~128,000 characters, nothing to
-        do with the work item at all. `--fields KEY=@path` reads the value from disk instead,
-        which has no ceiling of its own; what remains is `System.Description`'s REAL one,
-        measured the same way: `az` answers `TF401262: … exceeds the maximum allowed length
-        of 1048576` above it. Refusing here, before the call, names the size and the ceiling
-        instead of surfacing that error anonymously mid-write — the same reasoning
-        `GitHubBackend._write_api`'s body-ceiling check already carries."""
-        if len(description) > AZ_DESCRIPTION_MAX:
-            raise BackendRefusal({
-                "code": "sp-az-description-too-large", "exit": 2, "action": action,
-                "size": len(description), "max": AZ_DESCRIPTION_MAX,
-                "message": f"the document is {len(description)} characters and "
-                           f"System.Description holds {AZ_DESCRIPTION_MAX} (measured: `az` "
-                           f"answers TF401262 above it) — shorten a section while {action}; "
-                           f"nothing was written",
-            })
-        import tempfile
-        fd, path = tempfile.mkstemp(suffix=".txt")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                fh.write(description)
-            return self._az(action, *argv, "--fields", f"System.Description=@{path}")
-        finally:
-            os.unlink(path)
-
 
 def azure_restore_trailing_newline(doc: str) -> str:
     """Undo the one transport artefact `az`'s `@file` field mechanism leaves on every read:
@@ -5435,8 +5410,8 @@ def azure_description_ceiling_failures() -> list[str]:
     out: list[str] = []
     az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".")
     try:
-        az._az_with_description("testing", ["work-item", "update", "--id", "1"],
-                                "x" * (AZ_DESCRIPTION_MAX + 1))
+        az._az_patch("testing", 1, [{"op": "add", "path": "/fields/System.Description",
+                                     "value": "x" * (AZ_DESCRIPTION_MAX + 1)}])
         out.append("a description over AZ_DESCRIPTION_MAX did not refuse")
     except BackendRefusal as e:
         if e.err.get("code") != "sp-az-description-too-large":
@@ -9315,7 +9290,7 @@ def cmd_selftest(args, root: str) -> int:
     for failure in azure_description_ceiling_failures():
         findings.append(_finding("sp-az-description-ceiling-broken", "error",
                                  f"azure-boards description ceiling — {failure}",
-                                 remedy="_az_with_description must refuse "
+                                 remedy="_az_patch must refuse "
                                         "sp-az-description-too-large before making the call, "
                                         "never let az answer TF401262 anonymously"))
 
