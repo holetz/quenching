@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Write, Edit, Task
 
 **Input**: `$ARGUMENTS` (an optional home/slice to scope the sweep; omit to scan the whole bundle).
 
-Sweeps the canonical OKF bundle's **entire** `docs/` tree — every doc already sitting there,
+Sweeps the canonical OKF bundle's **entire** `/.docs/` tree — every doc already sitting there,
 written before the glossary existed, migrated in by `/quenching:docs:align`, or hand-authored — for
 repo-specific terms that were never fed into
 [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md), and backfills them in one
@@ -30,7 +30,7 @@ procedure live with `/quenching:docs:add`
   stays exclusively `/quenching:docs:learn`'s job).
 - **Bounded reconnaissance, sliced fan-out.** List doc paths cheaply first (`Glob`/`find`, no
   bodies). Slice by top-level home by default (further splitting a large home to ~15–20
-  docs/agent). One `Task` sub-agent per slice reads only its slice's docs and returns compact
+  /.docs/agent). One `Task` sub-agent per slice reads only its slice's docs and returns compact
   `{term, one-sentence definition, candidate doc path}` candidates — never full bodies back
   to the orchestrator. Apply the same caution `/quenching:docs:import-memory` applies to
   `catalog/**` and `reference/repositories/**`: list-only by default (skip body scanning),
@@ -53,13 +53,13 @@ procedure live with `/quenching:docs:add`
 ## Workflow
 
 ### 1. Locate the glossary and read the baseline
-Find `docs/knowledge/glossary.md` (the bundle root may be a variant — resolve it as the other
-skills do). If the `knowledge/` home or the glossary seed is missing, stop and offer
+Find `/.docs/knowledge/glossary.md` — the bundle root is the fixed `/.docs/` convention. If the
+`knowledge/` home or the glossary seed is missing, stop and offer
 `/quenching:docs:align` to install the skeleton, then resume. Read the current entries once — this
 is the dedupe baseline every slice's candidates get checked against.
 
 ### 2. List the bundle, bounded
-List every doc path under `docs/` (`Glob`/`find`, paths only — never read bodies here),
+List every doc path under `/.docs/` (`Glob`/`find`, paths only — never read bodies here),
 excluding `index.md`, `log.md`, and harness files (`CLAUDE.md`/`AGENTS.md`). `catalog/**` and
 `reference/repositories/**` are listed but **not** body-scanned by default — note them as
 excluded from the sweep.

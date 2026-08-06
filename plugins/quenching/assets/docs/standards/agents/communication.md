@@ -2,7 +2,7 @@
 type: standard
 title: Agent communication
 description: The language a repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds in every repo whether or not a language is declared
-resource: docs/**, specs/**
+resource: /.docs/**, /.specs/**
 tags: [agents, language, communication, harness]
 timestamp: 2026-07-30
 audience: both
@@ -26,7 +26,7 @@ A repo declares its language as **one BCP-47 tag**, on a single line of its **ro
 (`CLAUDE.md` / `AGENTS.md`):
 
 ```
-Language: pt-BR — the contract is docs/standards/agents/communication.md
+Language: pt-BR — the contract is /.docs/standards/agents/communication.md
 ```
 
 That line carries **a value and a citation, and nothing else**. It never paraphrases the rule below:
@@ -37,11 +37,11 @@ key on that line is a defect, not a feature.
 Three properties earn this form:
 
 - it is **in context at session start**, so reading it costs zero tool calls;
-- it works in a repo that has `specs/` and **no `docs/` bundle** at all;
+- it works in a repo that has `specs/` and **no `/.docs/` bundle** at all;
 - it is one line, so there is nothing to keep in sync.
 
 **Only the root harness carries the declaration.** A nested harness file
-(`docs/standards/CLAUDE.md`) loads when that folder is touched, not at session start, so it would
+(`/.docs/standards/CLAUDE.md`) loads when that folder is touched, not at session start, so it would
 give up the zero-cost property this form was chosen for. A tag found in a nested harness file is a
 mistake to report, never a second place to look.
 
@@ -113,7 +113,7 @@ drawn explicitly:
 | --- | --- | --- |
 | What one command promises, refuses and routes elsewhere | that command's own body and `description` | never restates it |
 | The mechanics of actually asking — how a question is posed, accumulated and applied | the spec tooling that drives the asking — in a quenching-managed repo, its `specs-develop/questions.md` §The four shared mechanics | cites it |
-| How commands, hooks and agent definitions are classified, authored, budgeted and swept | the repo's `docs/standards/automation/` subject | cites it |
+| How commands, hooks and agent definitions are classified, authored, budgeted and swept | the repo's `/.docs/standards/automation/` subject | cites it |
 
 What is left — and what this doc owns — is only what holds in **every** task, command or not. That
 is the band none of the three above occupies, and keeping to it is the single failure mode this
