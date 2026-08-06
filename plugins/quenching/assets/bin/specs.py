@@ -2138,16 +2138,14 @@ class SpecBackend:
         """The one lifecycle hop — `plans/` to `archive/` — returning the new locator."""
         raise NotImplementedError
 
-    def reconcile_labels(self, info: dict, schema: dict | None = None) -> None:
-        """Mirror `derive_labels(info, schema)` onto this backend's native label/tag
-        surface, if it has one — a rendering of derived state, not a sixth primitive.
-
-        No-op by default: `files` and `memory` have no native construct to reconcile
-        against, so neither overrides this. An external backend folds the reconciliation
-        into the same write its own store call already makes rather than a second round
-        trip, which is why this takes `info` and derives fresh rather than accepting a
-        precomputed label list — see docs/standards/architecture/spec-backend.md."""
-        return None
+    # There is no `reconcile_labels` hook here, and the absence is deliberate. One existed
+    # briefly — a no-op on the base class, meant for an external backend to override — and
+    # nothing ever called it or overrode it, because the reconciliation belongs INSIDE
+    # `write_spec`: it has to ride the store call's own request to satisfy the "costs zero
+    # calls beyond the write already being made" condition
+    # (docs/standards/architecture/spec-backend.md §Rendering derived state). A hook that
+    # every implementer must fold into `write_spec` anyway is a sixth primitive that does
+    # nothing, and this interface stays five.
 
 
 class FilesBackend(SpecBackend):

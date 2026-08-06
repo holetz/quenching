@@ -288,6 +288,16 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Reserved tag prefix**](../standards/architecture/spec-backend.md) — `spec:`, the half of a
+  tracker's native tag surface (`github` issue labels, `azure-boards` `System.Tags`) that belongs
+  to the TOOL rather than to the document, and the rule that lets **storage** and **rendering**
+  share one field without either reading the other's writes as the spec's own content. A write
+  hands the surface the union — the spec's declared `tags` plus the freshly derived `spec:` set —
+  and `declared_tags` filters the reserved names back out on every read, alongside the second
+  reserved name, `azurePlacement.discoveryTag`. A spec may not declare a tag under the prefix, for
+  the same reason it may not declare the discovery tag: the next write recomputes it anyway. It is
+  also what keeps `tagCatalog` honest — a catalogue that never lists a reserved name is complete,
+  not lacking.
 - [**Resource glob set**](../standards/quality/bundle-verification.md) — the format of an OKF
   doc's `resource:`, a plugin convention rather than an OKF rule: a **comma-separated** list of
   repo-root-relative paths and globs using `*`/`**` **only**, matched **segment-wise everywhere**
