@@ -14,7 +14,7 @@ target repo to hold, so nothing installs it.
 
 Two consequences follow, and both are deliberate:
 
-  * It is **outside the six-artifact lockstep** of `docs/standards/ci-cd/versioning-release.md`.
+  * It is **outside the six-artifact lockstep** of `/.docs/standards/ci-cd/versioning-release.md`.
     That lockstep exists because an align must decide whether an installed copy is stale;
     with no installed copy there is no such decision. `VERSION` below tracks the plugin for
     a legible `--version`, and no align compares it against anything.
@@ -67,7 +67,7 @@ There is no end marker in the transcript to fix this with. Inventing one would m
 findings, so this tool does the other thing: it **detects and names the misread**. A command
 entered as a stage whose caller never regained attribution is marked `closed: false`, and
 every count on it is reported as an upper bound that may include the caller's own work. That
-is `docs/standards/quality/parse-honesty.md` applied to a pointer instead of a parser — name
+is `/.docs/standards/quality/parse-honesty.md` applied to a pointer instead of a parser — name
 the *misread*, never the *consequence*.
 
 So the entry marks are read for *how a command was reached and with what arguments*, and
@@ -90,7 +90,7 @@ anomaly list. It is not a failure — the findings are printed either way.
 
 PARSE HONESTY
 -------------
-Per `docs/standards/quality/parse-honesty.md`: this tool narrows a transcript into a
+Per `/.docs/standards/quality/parse-honesty.md`: this tool narrows a transcript into a
 command model, so it must be able to say what it could not read. A line that fails to
 parse is counted and reported as an anomaly ahead of the content, because "no commands
 found" and "I could not read this file" look identical in a report and lead to opposite

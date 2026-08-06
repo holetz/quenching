@@ -5,7 +5,7 @@
 
 # Operating this knowledge base
 
-This repository's `docs/` is an **Open Knowledge Format (OKF v0.1) bundle**, installed and
+This repository's `/.docs/` is an **Open Knowledge Format (OKF v0.1) bundle**, installed and
 maintained by the [`quenching`](https://github.com/eloysekonell/quenching) Claude
 Code plugin. Every repository that adopts the plugin ends up with the **same tree in the same
 places**, so moving between repos costs you nothing.
@@ -37,7 +37,7 @@ which command to run. It is a payload file — not an OKF concept doc, and the v
 | Catch the glossary up on terms already documented | `/docs:glossary-backfill` | WHOLE bundle |
 | Slim `CLAUDE.md` / `AGENTS.md` down to pointers | `/docs:harness` | harness files |
 | Create/update the published docs **site** (mkdocs) | `/docs:documentation:build` | `documentation/` + root config |
-| Align **every** front (`docs/`, `specs/`, `.claude/`) | `/align` | whole repo |
+| Align **every** front (`/.docs/`, `/.specs/`, `.claude/`) | `/align` | whole repo |
 
 Each command is ONE file carrying both its description and its workflow; Claude can also route to
 it on its own when you describe the intent in prose ("record that we always use X"). Typing the
@@ -106,7 +106,7 @@ verbatim — anglicizing them would break the tie to the real asset.
 Unfamiliar word, acronym, or codename? The glossary is the A–Z lookup:
 
 ```bash
-grep -i '<term>' docs/knowledge/glossary.md
+grep -i '<term>' /.docs/knowledge/glossary.md
 ```
 
 No entry means it is not defined yet — add it with `/docs:define`.
@@ -169,7 +169,7 @@ asked to check), and shows the URI or the term behind each. Minted docs enter as
 ### `/docs:import-memory` — drain the agent's project memory
 
 Reads `~/.claude/projects/<this-repo>/memory/`, promotes each durable memory into a `standard`,
-a `knowledge` doc, or a spec in `specs/plans/`, and **clears each memory only after its doc
+a `knowledge` doc, or a spec in `/.specs/plans/`, and **clears each memory only after its doc
 has landed and passed the conformance check**. A `user` memory or an unroutable fact is flagged
 and **kept**, never silently deleted. One plan, one confirmation.
 
@@ -180,7 +180,7 @@ two cheap out-of-band signals (is agent memory waiting? is the harness fat?), so
 bundle with nothing waiting costs three tool calls and stops there, saying so.
 
 When there is work: scaffolds missing homes, migrates variant folder names
-(`docs/arquitetura/` → `docs/standards/`), folds prefix-clustered files into subject subfolders
+(`/.docs/arquitetura/` → `/.docs/standards/`), folds prefix-clustered files into subject subfolders
 (`nomenclatura-*.md` → `naming/`), translates non-English slugs, stamps missing frontmatter
 (**MERGE** — a filled key and any third-party key survive), regenerates every `index.md`,
 writes `okf_version`, installs this manual, then re-runs the validator. The enforcement hook needs
@@ -213,7 +213,7 @@ body-scanned by default. The bulk, retroactive counterpart of the per-capture gl
 Refactors the root `CLAUDE.md`, every subfolder `CLAUDE.md`, and `AGENTS.md` into honest
 navigation pointers over this bundle. Every unit of content is classified: **KEEP** the
 harness-operational (build/run/test commands, env vars, agent etiquette needed every turn),
-**MOVE** durable knowledge into its `docs/` home leaving a citing pointer, **DEDUPE** what the
+**MOVE** durable knowledge into its `/.docs/` home leaving a citing pointer, **DEDUPE** what the
 bundle already holds, **FLAG** contradictions, and keep-and-report the unroutable. Then it
 verifies **every pointer resolves**. Move, never copy: after the run each fact lives in exactly
 one place.
@@ -229,7 +229,7 @@ and proves the result with `mkdocs build --strict` — reporting `unverified` ra
 a build that never ran.
 
 It **never touches a page.** A section with no `index.md`, an unstamped page, or an absolute
-`/docs/<other-home>/…` link that dies in the built HTML is **reported** with the command that
+`/.docs/<other-home>/…` link that dies in the built HTML is **reported** with the command that
 fixes it (`/docs:align`, `/docs:add`). The site is rooted at `documentation/` — the other homes
 are your internal surface and stay unpublished; re-aiming `docs_dir` is its own confirmation.
 Run it after adding pages, after a section is created, or whenever the nav looks wrong.
@@ -272,19 +272,18 @@ into this repo — is a zero-dependency Python checker that keeps future edits c
 
 | Event | Behavior |
 | --- | --- |
-| `PostToolUse` (`Write`/`Edit`) | Validates the touched `docs/**` file and proposes the fix. Exit 0 — the edit stands. |
-| `Stop` | End-of-turn sweep of the whole bundle, proposing residual gaps. **Dirty-gated**: a turn that edited no `docs/**` file costs one `stat`. |
+| `PostToolUse` (`Write`/`Edit`) | Validates the touched `/.docs/**` file and proposes the fix. Exit 0 — the edit stands. |
+| `Stop` | End-of-turn sweep of the whole bundle, proposing residual gaps. **Dirty-gated**: a turn that edited no `/.docs/**` file costs one `stat`. |
 | `PreToolUse` | **Opt-in.** Denies the two hard violations before they land — an `index.md` carrying a `type`, or a concept doc with no `type`. Off by default. |
 
-`docsDir` lives in `.claude/quenching.json` — set it only if your bundle root is not `docs/`. The
-other knobs below have no home to declare in unless you hand-maintain
+The bundle root is the fixed `/.docs/` convention — no config names it. The other knobs below have
+no home to declare in unless you hand-maintain
 `.claude/hooks/hooks-config.json` yourself (block `okfValidate`; per-developer overrides in
 `hooks-config.local.json`, gitignored) — nothing installs one for you.
 
 | Knob | Default | Effect |
 | --- | --- | --- |
 | `enabled` | `true` | `false` makes the hook inert. |
-| `docsDir` | `"docs"` | The bundle root, relative to the repo root — set in `.claude/quenching.json`. |
 | `warnAsError` | `false` | Promotes recommended-field warnings to failures. |
 | `blockOnFail` | `false` | Escalates the `PostToolUse`/`Stop` proposal to `decision: block`. |
 | `hardBlock` | `false` | Turns on the `PreToolUse` deny gate (also uncomment its block in `settings.json`). |
@@ -356,14 +355,14 @@ remove it.
 
 | Front | Manual | Align |
 | --- | --- | --- |
-| `docs/` — this knowledge bundle | this file | `/docs:align` |
-| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:align` |
+| `/.docs/` — this knowledge bundle | this file | `/docs:align` |
+| `/.specs/` — the spec-driven plan workspace | `../.specs/QUENCHING.md` | `/specs:align` |
 | `.claude/` — the automation surface | `../.claude/QUENCHING.md` | `/skill:align` |
 
 Each align opens with its front's own verifier (the probe), so a clean front costs a couple of
 tool calls and says so, and each carries its front's content stages when the probe finds work.
 `/align` conducts the three in dependency order on one confirmation, because the fronts feed
-each other (a spec's distillation is glossary work; the skill front's registry is a `docs/`
+each other (a spec's distillation is glossary work; the skill front's registry is a `/.docs/`
 listing). A front this repo does not use simply has no manual.
 
 The **normative** contract — the OKF spec, the taxonomy, the migration map, the exact conformance
