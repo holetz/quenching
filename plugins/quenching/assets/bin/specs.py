@@ -214,7 +214,9 @@ DEFAULT_SCHEMA: dict = {
         "outcome": list(OUTCOMES),
         "records": {
             "priority": {"fields": ["level", "criticality", "complexity", "date"],
-                         "writtenBy": "triage", "writeOnce": False, "label": "spec:ranked"},
+                         "writtenBy": "triage", "writeOnce": False, "label": "spec:ranked",
+                         "complexity": {"levels": ["low", "medium", "high", "xhigh"],
+                                        "writtenBy": ["triage", "create", "develop"]}},
             "refined": {"fields": ["mode", "date"],
                         "writtenBy": "develop", "writeOnce": False,
                         "label": "spec:interrogated"},
@@ -4964,6 +4966,21 @@ def cmd_verification(args, root: str) -> int:
     return 0
 
 
+def record_field_value_error(rspec: dict, k: str, v: str) -> str | None:
+    """The one per-field value rule: a field declaring `levels:` admits only those.
+
+    `priority.complexity` is the first field to declare one — the scale the orchestrator
+    derives the gears plan from — but the rule is generic: a field without a `levels:`
+    block stays unrestricted, exactly as every field was before this one. `writtenBy` on
+    the block is the schema's declaration of who may write the field, read by the command
+    bodies that call `record`; the tool itself cannot know who calls it, so the value rule
+    is the only half it enforces."""
+    fspec = rspec.get(k)
+    if isinstance(fspec, dict) and fspec.get("levels") and v not in fspec["levels"]:
+        return (f"`{k}:` must be one of {', '.join(fspec['levels'])} — got '{v}'")
+    return None
+
+
 def cmd_record(args, root: str) -> int:
     """Read or merge ONE frontmatter record, through the backend.
 
@@ -5037,6 +5054,14 @@ def cmd_record(args, root: str) -> int:
                              f"{', '.join(fields)} — got '{pair}'"},
                  f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
             return 2
+        err = record_field_value_error(rspec, k, v)
+        if err:
+            emit(args.json,
+                 {"ok": False, "code": "sp-invalid-record-value", "record": args.name,
+                  "field": k, "given": v, "levels": rspec[k].get("levels", []),
+                  "message": err},
+                 f"refused: {err}")
+            return 2
         merged[k] = v
     if (args.name == "merge" and merged.get("pr")
             and merged.get("strategy") in MERGE_NO_PR_STRATEGIES):
@@ -5092,6 +5117,29 @@ def record_round_trip_failures() -> list[str]:
     if parse_frontmatter(reflowed).get("merge") != {"strategy": "rebase"}:
         failures.append("re-stamping a block record left its old fields behind: "
                         f"{parse_frontmatter(reflowed).get('merge')!r}")
+    return failures
+
+
+def record_field_failures() -> list[str]:
+    """A field declaring `levels:` admits exactly those — and a field that declares none
+    stays unrestricted. The refusal half is the point of the complexity scale: an hour
+    count that sailed through the old record would silently break every gear derivation
+    downstream, which is why the rule is proved here rather than eyeballed."""
+    failures: list[str] = []
+    rspec = {"fields": ["level", "criticality", "complexity", "date"],
+             "complexity": {"levels": ["low", "medium", "high", "xhigh"],
+                            "writtenBy": ["triage", "create", "develop"]}}
+    for good in ("low", "medium", "high", "xhigh"):
+        err = record_field_value_error(rspec, "complexity", good)
+        if err is not None:
+            failures.append(f"declared level {good!r} refused: {err}")
+    for bad in ("8", "simple", ""):
+        err = record_field_value_error(rspec, "complexity", bad)
+        if err is None:
+            failures.append(f"undeclared value {bad!r} admitted — the scale is closed")
+    err = record_field_value_error(rspec, "level", "1")
+    if err is not None:
+        failures.append(f"a field without a levels block must stay unrestricted: {err}")
     return failures
 
 
@@ -7313,6 +7361,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "trip; a comma-carrying or long value goes in the "
                                         "block form, and a re-stamp replaces the old "
                                         "field lines rather than orphaning them"))
+
+    # A field declaring `levels:` admits exactly those — the one per-field value rule the
+    # complexity scale rests on. The refusal half is the point: an hour count that sailed
+    # through the old record would silently break every gear derivation downstream.
+    for failure in record_field_failures():
+        findings.append(_finding("sp-record-field-value-broken", "error",
+                                 f"a record field value rule — {failure}",
+                                 remedy="record_field_value_error must admit exactly the "
+                                        "declared levels and nothing else; a field with "
+                                        "no levels block is unrestricted"))
 
     # The native-label projection: a foreign label must survive it untouched, and a stale
     # `spec:` one must not outlive the record that earned it.
