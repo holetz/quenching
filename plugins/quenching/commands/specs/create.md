@@ -18,7 +18,7 @@ The layout, the fourteen canonical sections, the gates, the front's on-write che
 `specs.py` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
-§The `specs.py` tool surface §The report mold, which owns the shape step 7 prints in.
+§The `specs.py` tool surface §The report mold, which owns the shape step 8 prints in.
 
 ## The one rule: effort proportional to input
 
@@ -30,6 +30,10 @@ what you were given, and nothing more.**
 | ----------------------- | ---------------------------------------- |
 | a sentence              | `## Problem`, alone                      |
 | a Claude Code plan file | every section the plan actually supports |
+
+The same richness decides the `complexity` this command computes and proposes (step 6): a
+sentence is the smallest problem a capture can hold, and a plan file is the largest — the
+levels in between are the develop pass's to re-evaluate when it closes.
 
 
 ## Doctrine
@@ -48,6 +52,9 @@ and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
 [communication.md](docs/standards/agents/communication.md) §Declaring it declares.
 - **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
 answer: sharpen the existing spec instead, or pick a different slug.
+- **Compute `complexity`, never ask for it.** The level derives from the classification (step 1),
+is proposed with the scale in front of the human, and is written only on confirmation — the
+same proposal the triage sweep makes, narrowed to the one field this command computes.
 
 ## Resolving the tool
 
@@ -61,7 +68,7 @@ Resolve `specs.py` per
 
 **Prose** → the sentence path. **A path to an existing `.md`**, or an explicit ask to convert a
 plan → the plan-file path. This is the one decision the CLI cannot make for you: `specs.py new`
-(step 5) resolves the backend, the workspace and the seed on its own, and reports a legacy
+(step 4) resolves the backend, the workspace and the seed on its own, and reports a legacy
 `backlog/`/`ready/` folder as a finding rather than writing into one.
 **Done when:** the path is chosen.
 
@@ -112,12 +119,42 @@ specs.py section <slug> Problem --write   # body on stdin
 writing others around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
-### 6. Check
+### 6. Compute and propose `complexity`
+
+The level this command writes is the orchestrator's own input — each one changes the gears
+plan the orchestrator will present for this spec:
+
+| Level | What it changes in the gears plan |
+| --- | --- |
+| `low` | the whole cycle runs in one session on a single authorization and ends opening a PR |
+| `medium` | the larger stages run isolated in sub-agents |
+| `high` | the stage-by-stage stops and confirmations are kept |
+| `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
+
+**Compute it from the classification, never by interrogating.** The sentence path yields
+`low`, the plan-file path yields `medium` — the input is all the evidence a capture is
+allowed to hold, and anything else is the interrogation this command never does. The close
+of the develop pass re-evaluates it, so a `medium` that grew stays honest.
+
+**Propose it, and let the human adjust it on the same screen.** Present the computed level
+with the table above, using **AskUserQuestion** with the four levels as the choice — the
+human's word decides, and the proposal only starts the conversation.
+
+Then stamp, **on the human's confirmation only**:
+```bash
+specs.py record <slug> priority --set complexity=<level> --set date=<today>
+```
+The tool merges — `level`, `criticality` and any earlier fields survive, and `date` is the
+record's own, never the capture `date:`. A rejection writes nothing and stops.
+**Done when:** `complexity` is on disk with the human's level, or the human declined and
+nothing was written.
+
+### 7. Check
 
 Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check.
 **Done when:** the check is clean, or the residue is reported verbatim.
 
-### 7. Report
+### 8. Report
 
 ```bash
 skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
@@ -144,3 +181,5 @@ Close on §The next-step block: `/quenching:specs:develop <slug>` to take it fur
 - Never write a heading the input did not support.
 - Never invent content a source plan lacks.
 - Never work around `specs.py new`'s exit 2 by inventing a slug variant.
+- Never interrogate the human for `complexity` — compute it from the input and propose it; a
+  rejected proposal writes nothing.
