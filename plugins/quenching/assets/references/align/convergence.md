@@ -73,14 +73,17 @@ spec whose tasks are all checked may still be waiting on a deploy.
 ## The PR route — where review lives when the run does not stop
 
 <!-- rules -->
-The two protected classes gate **individually, always** — no gear, no authorization, and no route
-waives them. What the orchestrator's minimal gear changes is not the gates but where the review
-that fires no gate lands: the whole cycle runs in one session on a single authorization and ends
-opening a pull request ([orchestration-gears.md](/docs/standards/automation/orchestration-gears.md)
-§Deriving the gears plan, the `low` row), so nothing stops mid-session for a human to review. The
-review is not lost — it moves to the PR, opened against the integration branch declared in
-`.claude/quenching.json` (`integrationBranch`), where the merge waits on human review and on the
-checks before it lands.
+The minimal gear differs from the contract in exactly one point, and pays for it outside the
+session. The contract requires a code-coupled item and an irreversible cycle action to stop the
+run, always; under the orchestrator's minimal gear
+([orchestration-gears.md](/docs/standards/automation/orchestration-gears.md) §Deriving the gears
+plan, the `low` row) neither stops — the whole cycle runs in one session on a single authorization
+and ends opening a pull request, so the human review the gates would have hosted moves to the PR
+instead: opened against the integration branch declared in `.claude/quenching.json`
+(`integrationBranch`), where the merge waits on review and on the checks before it lands. The
+trade is said out loud: if the PR is merged unread, no gate was left anywhere on the path — which
+is what the gear re-evaluation exists to bound, as a run that outgrows the minimal gear climbs
+back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` offers pull request or local
 alongside the strategy ([plan-git-record.md](/docs/standards/workflows/plan-git-record.md) §The
@@ -89,17 +92,15 @@ field names the pull request — the fact the base branch's history cannot repro
 merge went through, and where the review and the checks still live once the branch is gone
 (§Two frontmatter records carry the underivable git facts).
 
-No gear above the minimal changes any of this contract: the two classes still gate individually in
-every gear, and a run that stops stage by stage keeps its review where the contract always put it
-— at those stops, item by item, in the session. The PR route is the minimal gear's answer to a run
-that does not stop: it relocates review, never removes it.
+No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
+classes gating individually, item by item, in the session, exactly as when the stage runs
+standalone. The PR route is the minimal gear's answer — review relocated, never removed.
 
 <!-- rationale -->
-**The PR route** — the cycle-authorization contract was written for runs that stop at the gates; a
-minimal-gear run that never fires one would end with nobody having seen the work. The PR is where
-that review happens instead — before the merge, with the checks, on the branch the cycle built.
-Relocating review is the alternative to adding a stop, which is exactly what the minimal gear
-exists to avoid.
+**The PR route** — a run whose minimal gear stops for nothing would end with nobody having seen
+the work; the PR is where that review happens instead — before the merge, with the checks, on the
+branch the cycle built. Relocating review is the alternative to adding a stop, which is exactly
+what the minimal gear exists to avoid.
 
 ## The convergence contract
 
