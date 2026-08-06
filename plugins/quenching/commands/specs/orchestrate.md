@@ -62,6 +62,13 @@ human on the same screen; the human's OK is the run's authorization.
   and the jump live in the gears contract (§Re-evaluating a gear). A stage whose work reveals
   larger size than declared returns to the plan: a new gears plan and a fresh authorization — the
   run's OK does not cover the higher gear.
+- **The minimal gear runs the whole cycle on the plan's one OK, and pays for it outside the
+  session.** Under it neither protected class stops the run — code-coupled items and irreversible
+  closes included — and the cycle ends opening a pull request against the declared
+  `integrationBranch`, never with a direct merge: the human review lives in the PR
+  ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The PR route).
+  The one OK is the plan's; a run that outgrows the minimal gear climbs back into a run with
+  gates before it reaches the PR.
 - **Typed-only: a human chooses this command.** It conducts a whole lifecycle, so no spoken
   trigger reaches it and the description pays no routed budget.
 - **The trace of a small spec is identical to a big one.** The per-task commit, the `## Outcome`
@@ -97,6 +104,13 @@ contract, naming this command as the grantor:
 *"Running under /quenching:specs:orchestrate authorization granted at run start — skip your
 plan-confirmation pause; present your plan as narration and execute; code-coupled and
 irreversible items still gate individually."*
+
+Under the minimal gear the last clause changes — nothing gates mid-flow, and the review lives in
+the PR (convergence.md §The PR route). Declare the minimal-gear form to every stage:
+*"Running under /quenching:specs:orchestrate minimal-gear authorization granted at run start —
+skip your plan-confirmation pause; present your plan as narration and execute; neither
+code-coupled items nor irreversible closes stop this run — the review lives in the PR it
+opens."*
 **Done when:** the plan is approved as presented, or the run is declined (nothing written).
 
 ### 4. Run the stage the derived stage picks
@@ -110,10 +124,12 @@ The stage-to-run map:
 | every task `- [x]`, the spec still in `plans/` | `/quenching:specs:conclude` |
 
 Invoke the stage via the **Skill** tool under its registry name (`quenching:specs:create`, and so
-on), declaring the authorization as step 3's sentence. A stage whose gear is `sub-agent` runs
-isolated and returns its summary per the gears contract (§What a gear is); the contract's test
-that the summary is much smaller than the work is
-[agents.md](/docs/standards/automation/agents.md).
+on), declaring the authorization as step 3's sentence — the minimal-gear form when the plan is
+the minimal gear. Under the minimal gear, `conclude` is invoked with the **pull-request route**
+against the declared `integrationBranch`: the route was chosen and approved in the gears plan,
+never rediscussed at the stage. A stage whose gear is `sub-agent` runs isolated and returns its
+summary per the gears contract (§What a gear is); the contract's test that the summary is much
+smaller than the work is [agents.md](/docs/standards/automation/agents.md).
 **Done when:** the stage finished (or was skipped with a stated reason) and its outcome is
 recorded.
 
@@ -126,15 +142,17 @@ re-evaluate the gear per the gears contract (§Re-evaluating a gear). Two outcom
 - **The gear moved up** → return to step 3: a new gears plan and a fresh authorization — the
   run's OK does not cover the higher gear.
 
-The loop ends when the spec is archived (the conclude stage did it), the derived stage selects no
-stage this command owns, or the human stops it. Never end on a residue you could carry into the
-report — the report is where the run is accounted for.
+The loop ends when the spec is archived (the conclude stage did it) — under the minimal gear,
+archived with the pull request opened against the declared `integrationBranch`, never merged
+directly — the derived stage selects no stage this command owns, or the human stops it. Never end
+on a residue you could carry into the report — the report is where the run is accounted for.
 **Done when:** the loop has stopped for a stated reason.
 
 ### 6. Report
 One report, stage by stage: the gears plan that ran (and every re-evaluation), what each stage
-did in total, the derived stage at the end, and everything deferred, each with the command that
-closes it.
+did in total, the derived stage at the end — and, under the minimal gear, the pull request the
+cycle opened, with the merge waiting on its review — and everything deferred, each with the
+command that closes it.
 
 This command writes **nothing** of its own — not even a record that it ran. Every write belongs
 to the stage that made it, and the report is where this run is accounted for.
@@ -148,9 +166,13 @@ to the stage that made it, and the report is where this run is accounted for.
 - Never present less than the whole gears plan before the first write, and never apply an
   authorization to a gear the plan did not present.
 - Never let a stage re-gate — authorization nests one level (the cycle-authorization contract);
-  equally, never suppress the two interruptions the contract never covers: code-coupled renames
-  and irreversible closes.
+  equally, never suppress the two interruptions the contract never covers — code-coupled renames
+  and irreversible closes — outside the minimal gear, where the approved gears plan relocates
+  both to the PR (convergence.md §The PR route).
 - Never skip the per-task commit, the `## Outcome` or the archiving in any gear — a gear changes
   how a stage runs, never what it writes.
 - Never hand this command file `context: fork` — the plan gate and every nested confirmation are
-  mid-flow.
+  mid-flow, and a forked context cannot present either. The one admission is a minimal-gear run:
+  no mid-flow confirmation exists under it — neither protected class stops it, the review lives
+  in the PR it opens (§The PR route) — so it may run isolated; any gear above the minimal
+  restores the prohibition.
