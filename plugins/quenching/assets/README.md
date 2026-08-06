@@ -1,7 +1,7 @@
 # `assets/` — everything Claude Code must not surface as an entry point
 
 That sentence is the whole membership rule, and it is the standard's
-([plugin-layout.md](../../../docs/standards/architecture/plugin-layout.md)), not a local one.
+([plugin-layout.md](../../../.docs/standards/architecture/plugin-layout.md)), not a local one.
 `commands/**` is the only tree Claude Code registers — every `.md` under it *is* a command, since
 the path is the identity — so anything that is not an entry point lives here: the installable
 payload, the shared procedure the bodies cite, the measured case sets, the harnesses that grade
@@ -28,13 +28,13 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 
 | Path | What it is | Installs into the target as |
 | --- | --- | --- |
-| `docs/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `knowledge/glossary.md` term-lookup seed | the target's `docs/`, only the homes that apply |
-| `docs/QUENCHING.md` | the **operator manual** for the `docs/` front — commands, confirmation rules, the hook, recipes, finding-code troubleshooting | `docs/QUENCHING.md` |
-| `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `specs.py list` derives it from disk | `specs/plans/` |
-| `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `specs/archive/` |
-| `specs/QUENCHING.md` | the **operator manual** for the `specs/` front — the spec lifecycle, the `/specs:*` commands, the `specs.py` tool, the OKF bridge | `specs/QUENCHING.md` |
+| `docs/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `knowledge/glossary.md` term-lookup seed | the target's `/.docs/`, only the homes that apply |
+| `docs/QUENCHING.md` | the **operator manual** for the `docs` front — commands, confirmation rules, the hook, recipes, finding-code troubleshooting | `/.docs/QUENCHING.md` |
+| `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `specs.py list` derives it from disk | `/.specs/plans/` |
+| `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `/.specs/archive/` |
+| `specs/QUENCHING.md` | the **operator manual** for the `specs` front — the spec lifecycle, the `/specs:*` commands, the `specs.py` tool, the OKF bridge | `/.specs/QUENCHING.md` |
 | `claude/QUENCHING.md` | the **operator manual** for the `.claude/` front — the taxonomy axis, mirroring, the rule + registry, hook/settings hygiene | `.claude/QUENCHING.md` |
-| `mkdocs/` | the **site layer** payload — `mkdocs.yml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the `.pages` nav files ship inside `docs/documentation/**`) | the target's repo **root**, outside `docs/` |
+| `mkdocs/` | the **site layer** payload — `mkdocs.yml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the `.pages` nav files ship inside `/.docs/documentation/**`) | the target's repo **root**, outside `/.docs/` |
 
 Two files under `hooks/` used to belong to this table and no longer do — **nothing copies or
 merges them into a target any more**, since the plugin's own `hooks/hooks.json` wires the checker
@@ -42,7 +42,7 @@ and `${CLAUDE_PLUGIN_ROOT}` resolves it:
 
 | Path | What it is | Reaches a target? |
 | --- | --- | --- |
-| `hooks/hooks-config.json` | the checker's config (block `okfValidate`) — the shipped copy is the **defaults reference**; the settings the checker actually reads come from the *target's* own `.claude/hooks/hooks-config.json`, if a human writes one, plus `docsDir` from `.claude/quenching.json` | **no** |
+| `hooks/hooks-config.json` | the checker's config (block `okfValidate`) — the shipped copy is the **defaults reference**; the settings the checker actually reads come from the *target's* own `.claude/hooks/hooks-config.json`, if a human writes one | **no** |
 | `hooks/settings.snippet.json` | a **reference copy** of what `hooks/hooks.json` declares, kept for reading | **no** — zero consumers |
 
 `specs/schema.json` and `specs/templates/spec.md` sit in this tree but are a hybrid: they ship
@@ -57,7 +57,7 @@ drifted — edit both or neither.
 target; the file itself never does. Inventory and stamp discipline: [templates/README.md](templates/README.md).
 
 A mold is under a citation rule of its own — **it cites nothing it does not also install**, because
-it lands in a repo that has none of this one's `docs/`. That is why a mold and this plugin's own
+it lands in a repo that has none of this one's `/.docs/`. That is why a mold and this plugin's own
 copy of the same standard legitimately differ in wording.
 
 ### Tools the plugin executes
@@ -65,7 +65,7 @@ copy of the same standard legitimately differ in wording.
 | Path | Role | Installed into a target? |
 | --- | --- | --- |
 | `hooks/okf-validate.py` | the OKF v0.1 conformance checker — CLI **and** hook | **no** — the plugin's own `hooks/hooks.json` wires it by `${CLAUDE_PLUGIN_ROOT}` |
-| `bin/specs.py` | the `specs/` front's deterministic rails | **no** — command bodies invoke the plugin path |
+| `bin/specs.py` | the `specs` front's deterministic rails | **no** — command bodies invoke the plugin path |
 | `bin/skills.py` | the `.claude/` front's `doctor` / `lint` / `drift` | **no** — same |
 | `bin/session.py` | reads a session transcript as evidence for `/skill:retro` | **no** — its input is `~/.claude/projects/**`, the operator's machine, so a target has nothing to hold |
 
@@ -91,10 +91,10 @@ and says so in its own docstring.
 
 ## The signature
 
-The `docs/` tree is the **portable signature** — every repo the plugin aligns ends with the same
+The `/.docs/` tree is the **portable signature** — every repo the plugin aligns ends with the same
 homes, the same reserved `index.md` listings, the same `type` vocabulary. The skeleton is
-**conformant by construction**: `python3 hooks/okf-validate.py docs` over it reports **0 errors, 0
-warnings**.
+**conformant by construction**: `python3 hooks/okf-validate.py assets/docs` over it reports **0
+errors, 0 warnings**.
 
 ## How the commands use it
 
@@ -113,8 +113,8 @@ warnings**.
 - **`/specs:align`** copies the `specs/` seed; `/specs:*` drive the cycle through `bin/specs.py`.
 - **`/skill:align`** installs `bin/skills.py` and the `.claude/` manual; the `/skill:*` minters
   apply `templates/automation/`.
-- **Each of the three aligns installs its front's `QUENCHING.md`** — `/docs:align` → `docs/`,
-  `/specs:align` → `specs/`, `/skill:align` → `.claude/` — under the four-branch rule owned by
+- **Each of the three aligns installs its front's `QUENCHING.md`** — `/docs:align` → `/.docs/`,
+  `/specs:align` → `/.specs/`, `/skill:align` → `.claude/` — under the four-branch rule owned by
   `/docs:align`: absent → install · older banner → overwrite · same-or-newer → leave · **banner
   removed by a human → keep and report**. The banner's `<VERSION>` placeholder is filled from
   `VERSION` at copy time, so releases need no extra lockstep. `QUENCHING.md` is an **exempt**
