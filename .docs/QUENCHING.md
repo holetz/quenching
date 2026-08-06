@@ -256,8 +256,9 @@ Read this once and every command becomes predictable.
 
 ## 5. The enforcement hook
 
-`.claude/hooks/okf-validate.py` is a zero-dependency Python checker that keeps future edits
-conformant. It **proposes**, it does not block — unless you opt in.
+The plugin's own `okf-validate.py` — wired automatically via `hooks/hooks.json`, never installed
+into this repo — is a zero-dependency Python checker that keeps future edits conformant. It
+**proposes**, it does not block — unless you opt in.
 
 | Event | Behavior |
 | --- | --- |
@@ -265,8 +266,10 @@ conformant. It **proposes**, it does not block — unless you opt in.
 | `Stop` | End-of-turn sweep of the whole bundle, proposing residual gaps. **Dirty-gated**: a turn that edited no `/.docs/**` file costs one `stat`. |
 | `PreToolUse` | **Opt-in.** Denies the two hard violations before they land — an `index.md` carrying a `type`, or a concept doc with no `type`. Off by default. |
 
-Config lives in `.claude/hooks/hooks-config.json`, block `okfValidate`. Per-developer overrides
-go in `hooks-config.local.json` (gitignore it).
+The bundle root is the fixed `/.docs/` convention — no config names it. The other knobs below have
+no home to declare in unless you hand-maintain
+`.claude/hooks/hooks-config.json` yourself (block `okfValidate`; per-developer overrides in
+`hooks-config.local.json`, gitignored) — nothing installs one for you.
 
 | Knob | Default | Effect |
 | --- | --- | --- |
@@ -278,12 +281,10 @@ go in `hooks-config.local.json` (gitignore it).
 | `stopScan` | `"dirty"` | `"always"` restores the unconditional every-turn sweep. |
 | `ignoreGlobs` | *(none)* | Bundle-relative globs to skip — for regenerated or vendored paths. |
 
-Run it yourself any time:
+Run it yourself any time, through the plugin's own command:
 
-```bash
-python3 .claude/hooks/okf-validate.py .docs          # human report; exit 0 = conforms
-python3 .claude/hooks/okf-validate.py .docs --json   # machine-readable findings
-python3 .claude/hooks/okf-validate.py --version      # must match the plugin's version
+```
+/docs:status
 ```
 
 ---

@@ -230,19 +230,18 @@ only on your word.
 `hooks/okf-validate.py` keeps `/.docs/` conformant after every edit. Full behavior, every config
 knob, and the finding codes are in `../.docs/QUENCHING.md` §5 and §7.
 
-- `settings.json` — hook wiring and permissions. **Commit it**; it is shared configuration.
+- `settings.json` — permissions and enabled plugins. **Commit it**; it is shared configuration.
+  The OKF checker is **not** wired here: the plugin carries its own `hooks/hooks.json`.
 - `settings.local.json` — personal overrides. **Gitignore it.**
-- `hooks/hooks-config.json` — checker config. **Commit it**; per-developer overrides go in
-  `hooks-config.local.json` (gitignored).
+- `hooks/hooks-config.json` — optional, hand-maintained checker config (nothing installs one).
+  **Commit it** if you keep one; per-developer overrides go in `hooks-config.local.json`
+  (gitignored). The bundle root is the fixed `/.docs/` convention — nothing in config names it.
 
 Hook config is executable configuration with shell privileges. Review it like infrastructure.
 
-```bash
-python3 .claude/hooks/okf-validate.py --version   # must match the plugin's version
-```
-
-If it does not match, `/docs:align` offers the upgrade — overwriting only the script and
-preserving your `hooks-config.json`.
+Run `/docs:status` any time to check the checker's own version against the plugin's. A legacy
+`.claude/hooks/okf-validate.py` copy is never executed — resolution is plugin-first with no
+fallback — so `/docs:align` offers to remove one rather than upgrade it.
 
 ---
 
