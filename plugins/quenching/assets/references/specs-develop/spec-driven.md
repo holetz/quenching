@@ -499,9 +499,9 @@ One spec:
 executing · 5/9 tasks · https://github.com/o/r/issues/41
 ```
 
-**The third field is the locator the tool returned** — the `path` field from `specs.py new` or
-`list` — never a filename the body assembled. Under `backend: github` it is an issue URL, under
-`files` a repo-relative path.
+**The third field is the locator the tool returned** — the `path` field `specs.py new`, `status`,
+`list`, `next --front` and `section --write` all carry — never a filename the body assembled. Under
+`backend: github` it is an issue URL, under `files` a repo-relative path.
 
 <!-- rationale -->
 
