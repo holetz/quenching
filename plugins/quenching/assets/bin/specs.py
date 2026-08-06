@@ -77,7 +77,7 @@ OUTPUT CONTRACT (uniform across every subcommand)
 
 WORKSPACE RESOLUTION
   --root PATH, else $SPECS_ROOT, else the nearest `/.specs/` directory walking up from
-  cwd (or cwd itself if it is named `specs`). `new` creates `./specs` when none exists.
+  cwd (or cwd itself if it is named `.specs`). `new` creates `./.specs` when none exists.
 
 ASSETS
   Schema and template load from `<script>/../specs/` when present (so editing the
@@ -5561,7 +5561,7 @@ def worktree_dir_ignored(cwd: str, rel: str = SPECS_WORKTREE_DIR) -> bool:
     the question is asked BEFORE `git worktree add`, never after.
 
     Resolved against the repo top level, not against `cwd`: this tool's `cwd` is the specs
-    workspace, and `.claude/worktrees/` relative to `<repo>/specs/` is a different path that
+    workspace, and `.claude/worktrees/` relative to `<repo>/.specs/` is a different path that
     would answer the wrong question. No git and no repo answer `False` — a tree git cannot
     speak for is one where nothing can promise the worktree stays out of `git status`."""
     top = _git(cwd, "rev-parse", "--show-toplevel").strip()

@@ -505,9 +505,10 @@ def _resource_kind(entry: str) -> str:
 
 def _project_root(bundle_root: str) -> str:
     """The checkout root a `resource` entry is written relative to — the bundle's
-    parent. Every observed value is repo-root-relative (`/.docs/**`,
-    `plugins/…/SKILL.md`), including in the shipped skeleton, where the bundle sits
-    at `assets/docs` and `/.docs/**` still resolves to that bundle."""
+    parent. Observed values are repo-root-relative (`plugins/…/SKILL.md`); the
+    bundle-aggregate `/.docs/**` is absolute and never resolves as a path here —
+    the leading slash turns the join absolute — so the aggregate is exempted by
+    name (resource-self, stale-doc) rather than by resolution."""
     return os.path.dirname(os.path.abspath(bundle_root))
 
 
@@ -666,7 +667,7 @@ def check_resource(text: str, path: str, bundle_root: str) -> list[tuple[str, st
     `TYPES_WITHOUT_RESOURCE` generalized — from "types with nothing to point at" to
     "docs whose honest scope is bundle-wide" — so the front keeps ONE exemption
     mechanism rather than two. `knowledge/glossary.md` really does govern the whole
-    bundle, so `resource: docs/**` is truthful and inventing a narrower scope to
+    bundle, so `resource: /.docs/**` is truthful and inventing a narrower scope to
     silence the check would be the fabrication. The discrimination is mechanical
     and needs no hardcoded path: a scope containing the bundle root contains every
     doc in it, while a narrower scope that still contains the doc
@@ -851,8 +852,8 @@ def _resolve_link(target: str, file_dir: str, root: str):
     flagged — for anything OKF does not govern: external URLs, anchors, mailto/tel,
     non-markdown assets (`.png`/`.pdf`/…), links that escape the bundle root
     (repo files, `../..` climbs), and repo-absolute `/…` links not written in the
-    bundle's own form (`/docs/…` or `/<home>/…`). We only police the bundle's own
-    link graph, so a legitimate reference to a repo file outside `docs/` is not a
+    bundle's own form (`/.docs/…` or `/<home>/…`). We only police the bundle's own
+    link graph, so a legitimate reference to a repo file outside `/.docs/` is not a
     false "broken link".
     """
     t = target.split("#", 1)[0].strip()
@@ -873,7 +874,7 @@ def _resolve_link(target: str, file_dir: str, root: str):
     if t.startswith("/"):
         rest = t[1:]
         first, _, tail = rest.partition("/")
-        if first == os.path.basename(root):          # `/docs/…` — this plugin's bundle-absolute form
+        if first == os.path.basename(root):          # `/.docs/…` — this plugin's bundle-absolute form
             rest = tail
         elif not os.path.isdir(os.path.join(root, first)):
             return None                              # repo-absolute `/…` (e.g. `/.claude/…`) — not bundle-governed
