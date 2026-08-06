@@ -242,11 +242,12 @@ sentence, and **link out** rather than explaining in full here.
   `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
-  `worktreeSetup` and `azureStates`. It replaced `specs/config.json`, whose home stopped working once
-  a repository could have no `specs/` folder at all. Absence yields the documented defaults, never a
-  null and never a refusal — except `azureStates`, which has no default because the project's own
-  process defines the states, and whose absence refuses instead of guessing; every other way it can
-  be wrong comes back as a field for `doctor` to judge.
+  `worktreeSetup`, `azureStates`, `docsDir`, `integrationBranch`, `releaseBranch`, `azurePlacement`,
+  `azureColumns`, `subjects` and `tagCatalog`. It replaced `specs/config.json`, whose home stopped
+  working once a repository could have no `specs/` folder at all. Absence yields the documented
+  defaults, never a null and never a refusal — except `azureStates` and `azurePlacement.areaPath`,
+  neither of which has a default because the project itself defines them, and whose absence refuses
+  instead of guessing; every other way it can be wrong comes back as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
