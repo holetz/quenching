@@ -89,8 +89,10 @@ ASSETS
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime
 import difflib
+import inspect
 import json
 import os
 import pathlib
@@ -2535,6 +2537,93 @@ def resolution_failures() -> list[str]:
         out.append(f"an absent slug resolved to {spec and spec['slug']!r} instead of "
                    f"refusing with sp-unknown-slug")
     return out
+
+
+def announcement_failures() -> list[str]:
+    """The receipt of an inexact resolution reaches EVERY verb's payload — asserted over the
+    mechanism, and over the verb registry, never over a list of verb names.
+
+    A list of names is what this guard exists to replace. The count of verbs owing the receipt
+    was six when the problem was captured, ten when it was designed and eleven when it was
+    built, and each of those numbers was written down by somebody reading the file carefully.
+    So the last two cases below ask `DISPATCH` — the registry a new verb has to join to exist
+    at all — instead of asking a maintainer to remember.
+
+    The mechanism it grades lives with `emit`, where the payloads are built: `_RESOLUTION`,
+    `read_one`, `announced` and `receipt_line`. The case list sits here instead because what
+    it asserts is a property of the resolution above, not of the printing below.
+
+    Self-contained: no backend, no store, and the source it reads is its own."""
+    global _RESOLUTION
+    before = _RESOLUTION
+    out: list[str] = []
+    try:
+        _RESOLUTION = None
+        if "resolvedBy" in announced({"ok": True}) or receipt_line():
+            out.append("a command that resolved no slug still announced one")
+
+        _RESOLUTION = {"resolvedBy": None, "resolvedFrom": None}
+        exact = announced({"ok": True})
+        if exact.get("resolvedBy", "missing") is not None or "resolvedFrom" not in exact:
+            out.append("an exact resolution must carry both keys as null, not omit them — "
+                       f"got {exact!r}")
+        if receipt_line():
+            out.append("an exact resolution announced itself to a human reader")
+
+        _RESOLUTION = {"resolvedBy": "approximate", "resolvedFrom": "o titulo inteiro"}
+        payload, human = announced({"ok": True}), receipt_line()
+        if payload.get("resolvedBy") != "approximate" or \
+                payload.get("resolvedFrom") != "o titulo inteiro":
+            out.append(f"an approximate resolution reached the payload as {payload!r}")
+        if "approximate" not in human or "o titulo inteiro" not in human:
+            out.append(f"the human receipt named neither the rung nor the match: {human!r}")
+    finally:
+        _RESOLUTION = before
+
+    # Every registered verb resolves the human's own argument through `read_one`, which is
+    # what sets the receipt. A verb reaching `read_spec` directly with `args.spec` would
+    # resolve correctly and announce nothing — the exact bug this spec closed, reintroduced.
+    try:
+        sources = {name: inspect.getsource(fn) for name, fn in DISPATCH.items()}
+        sources["main"] = inspect.getsource(main)
+    except OSError as e:
+        out.append(f"this file's own source could not be read, so no verb could be checked "
+                   f"for a bypass — {e}")
+        return out
+
+    for name, src in sorted(sources.items()):
+        if name != "main" and _resolves_directly(src):
+            out.append(f"`{name}` resolves the human's slug outside `read_one`, so an "
+                       f"approximate match reaches its payload unannounced")
+    # And the receipt of one command never rides out on the next one's payload.
+    if not _clears_receipt(sources["main"]):
+        out.append("`main` no longer clears the receipt before dispatching, so a process "
+                   "running two commands can announce the first one's resolution on the "
+                   "second one's payload")
+    return out
+
+
+def _resolves_directly(src: str) -> bool:
+    """True where this function calls `<backend>.read_spec(args.spec)` itself.
+
+    PARSED, never matched as text. The finding this feeds names the very call it forbids, and
+    a substring scan reads that sentence as the violation — measured, on the first run of this
+    guard, which flagged `selftest` for its own remedy string."""
+    return any(
+        isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+        and n.func.attr == "read_spec" and n.args
+        and isinstance(n.args[0], ast.Attribute) and n.args[0].attr == "spec"
+        and isinstance(n.args[0].value, ast.Name) and n.args[0].value.id == "args"
+        for n in ast.walk(ast.parse(src)))
+
+
+def _clears_receipt(src: str) -> bool:
+    """True where this function assigns `_RESOLUTION = None`, for the same reason."""
+    return any(
+        isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant)
+        and n.value.value is None
+        and any(isinstance(t, ast.Name) and t.id == "_RESOLUTION" for t in n.targets)
+        for n in ast.walk(ast.parse(src)))
 
 
 def backend_equivalence_failures() -> list[str]:
@@ -5291,11 +5380,62 @@ def display_locator(locator: str, root: str) -> str:
     return os.path.relpath(locator, os.path.dirname(root)).replace(os.sep, "/")
 
 
+# How THIS command reached its spec, or None where it resolved no slug of its own. Written by
+# `read_one` and read by `emit`, so the receipt rides out on every payload by construction — a
+# verb added tomorrow announces an approximate match without its author knowing the rule exists.
+# The alternative, writing the two keys into each verb's payload by hand, is the shape
+# /.docs/standards/architecture/shared-mold-keys.md measured and rejected: a rule that depends on
+# the author remembering is a rule the next author forgets, and the count of verbs owing it moved
+# three times while this was being specified.
+_RESOLUTION: dict | None = None
+
+
+def read_one(backend: SpecBackend, slug: str) -> tuple[dict | None, dict]:
+    """Resolve the slug a human typed, and record HOW it was reached.
+
+    The single entry every verb takes into resolution — which is what makes the receipt a
+    property of the layer rather than an obligation on each verb. Only the human's own
+    argument comes through here: a loop already walking a listing resolves slugs it just read
+    itself, and a receipt for those would be a receipt for nothing.
+
+    `resolve_one` stays pure over the listing. That purity is what makes "every backend
+    resolves the same way and gets the same refusals" a property instead of a claim, and a
+    side effect down there would spend it to buy what this layer already gives."""
+    global _RESOLUTION
+    info, err = backend.read_spec(slug)
+    if err:
+        return None, err
+    _RESOLUTION = {"resolvedBy": info.get("resolvedBy"),
+                   "resolvedFrom": info.get("resolvedFrom")}
+    return info, {}
+
+
+def announced(obj: dict) -> dict:
+    """`obj` carrying the receipt, where this command resolved a slug at all.
+
+    Both keys, always — `resolvedBy: null` on the exact path — so a caller reads
+    `payload["resolvedBy"]` without testing for presence first. A verb that resolves no spec
+    (`config`, `doctor`, `validate`) gets neither: a null answer to a question nobody asked is
+    noise, not information."""
+    return {**obj, **_RESOLUTION} if _RESOLUTION else obj
+
+
+def receipt_line() -> str:
+    """The same receipt for a human reader — empty unless the slug was reached inexactly.
+
+    A receipt only the `--json` reader gets is half a receipt: the human running the verb by
+    hand is exactly the one who mistyped the slug."""
+    if not _RESOLUTION or _RESOLUTION["resolvedBy"] is None:
+        return ""
+    return (f"resolved by {_RESOLUTION['resolvedBy']}, "
+            f"from {_RESOLUTION['resolvedFrom']!r}\n")
+
+
 def emit(as_json: bool, obj: dict, human: str) -> None:
     if as_json:
-        print(json.dumps(obj, indent=2, ensure_ascii=False))
+        print(json.dumps(announced(obj), indent=2, ensure_ascii=False))
     else:
-        print(human)
+        print(receipt_line() + human)
 
 
 def emit_err(as_json: bool, err: dict) -> int:
@@ -5441,7 +5581,7 @@ def cmd_status(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     checked, blocked, total = task_progress(info["tasks"])
@@ -5456,11 +5596,6 @@ def cmd_status(args, root: str) -> int:
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],
-        # How the slug was reached, when it was not reached exactly. `null` on the ordinary
-        # path. A caller that acts on a spec the human did not name has to be able to see
-        # that it happened — the resolution is tolerant, and tolerance without a receipt is
-        # just a wrong answer delivered confidently.
-        "resolvedBy": info.get("resolvedBy"), "resolvedFrom": info.get("resolvedFrom"),
         # every human-judgment record in one place and in schema order, so `conclude` and
         # `continue` read state instead of re-parsing the file
         "records": records,
@@ -5478,8 +5613,9 @@ def cmd_status(args, root: str) -> int:
         "path": display_locator(info["path"], root),
     }
     if args.json:
-        print(json.dumps(obj, indent=2, ensure_ascii=False))
+        print(json.dumps(announced(obj), indent=2, ensure_ascii=False))
         return 0
+    print(receipt_line(), end="")
     print(f"{info['slug']} — {obj['title']}")
     print(f"  {info['folder']}/{info['file']}  [{info['stage']}]  "
           f"verification: {info['verification']}")
@@ -5982,7 +6118,7 @@ def cmd_section(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     if args.moment:
@@ -6226,7 +6362,7 @@ def cmd_verification(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     declared = str(info["frontmatter"].get("verification", "")).strip().lower()
@@ -6312,7 +6448,7 @@ def cmd_field(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     current = info["frontmatter"].get(key)
@@ -6372,7 +6508,7 @@ def cmd_record(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     current = info["frontmatter"].get(args.name) or None
@@ -6546,7 +6682,7 @@ def cmd_promote(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     dest = args.to or _next_phase(info["phase"])
@@ -6663,7 +6799,7 @@ def cmd_task(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block
@@ -6874,7 +7010,7 @@ def cmd_show(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
 
@@ -7737,7 +7873,7 @@ def cmd_next(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
@@ -7831,7 +7967,7 @@ def cmd_parallel(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     findings = []
@@ -7884,7 +8020,7 @@ def cmd_discover(args, root: str) -> int:
     backend, err = open_backend(root)
     if err:
         return emit_err(args.json, err)
-    info, err = backend.read_spec(args.spec)
+    info, err = read_one(backend, args.spec)
     if err:
         return emit_err(args.json, err)
     entry = f"- {args.text.strip()}"
@@ -8621,6 +8757,16 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="resolve_one tries exact slug, exact title, then one "
                                         "close match above the threshold; a tie is exit 2 and "
                                         "an approximation announces itself"))
+
+    # And that the tolerance's receipt reaches every verb, not just the one that wrote it out
+    # by hand. Self-contained, so it runs on an installed copy too.
+    for failure in announcement_failures():
+        findings.append(_finding("sp-announcement-case", "error",
+                                 f"resolution receipt — {failure}",
+                                 remedy="every verb resolves the human's slug through "
+                                        "`read_one`, and `emit` folds the receipt into the "
+                                        "payload; a verb reaching `read_spec(args.spec)` "
+                                        "itself resolves fine and announces nothing"))
 
     for failure in slug_case_failures():
         findings.append(_finding("sp-slug-case", "error", f"canonical slug case — {failure}",
@@ -9740,6 +9886,10 @@ def main(argv: list[str]) -> int:
     lock, err = writer_lock(args, root)
     if err:
         return emit_err(args.json, err)
+    # One command, one resolution. A process that dispatches more than once — `selftest`, or a
+    # test harness — must never let one command's receipt ride out on the next one's payload.
+    global _RESOLUTION
+    _RESOLUTION = None
     try:
         return DISPATCH[args.cmd](args, root)
     except BackendRefusal as e:
