@@ -4,10 +4,10 @@ title: Warning about an unproven capability
 description: Where a caveat about a capability that ships without end-to-end proof belongs — the two failure shapes that decide it, the standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a per-operation warning is a permanent context tax and silence is not the alternative, and the one edit that retires both together
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
 tags: [quality, verification, findings, warnings, unproven, context]
-timestamp: 2026-08-02
+timestamp: 2026-08-06
 audience: both
 authority: current
-source: configurable-spec-backend plan — the `azure-boards` arm of task 6.3, generalised at conclude from the decision `## Open Decisions` deferred to that task
+source: configurable-spec-backend plan — the `azure-boards` arm of task 6.3, generalised at conclude from the decision `## Open Decisions` deferred to that task; the example block updated by provar-e-posicionar-o-backend-azure-boards (task 7.2), the first real retirement the mechanism this standard describes has been through
 maintainer: quenching
 ---
 
@@ -71,13 +71,22 @@ Which capabilities are unproven is **one named collection**, kept where both hal
 than inside the implementation being warned about:
 
 ```python
-UNPROVED_BACKENDS = ("azure-boards",)
+UNPROVED_BACKENDS = ()
 ```
 
 The moment a real target exercises it end to end, the collection loses a name, and the verifier
 finding and the write-time line go quiet **together**. A caveat spelled out separately in each place
 gets retired in one place and survives in the other — which is worse than either, because a tool
 that warns about a capability it has since proved teaches its readers to ignore its warnings.
+
+**This is not the hypothetical case — `azure-boards` was the one name this tuple carried, and
+`provar-e-posicionar-o-backend-azure-boards` (task 7.1) is the edit that retired it.** §6 of that
+plan ran the backend end to end against a real Azure DevOps project (org `unicredbr`, team
+"Diretoria Risco"): `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+`show` and `promote --outcome done`, each compared against `files` for the same state and
+matching, the board's own column tracked through every transition against the declared de-para.
+The one edit — the tuple losing its one name — is what took the `doctor` finding and the
+`announce_unproved` stderr line quiet together, exactly as this section describes.
 
 The other half of that discipline is that a shipped-unproven capability is stated as such in the
 standard that governs it, not only in the tool. See

@@ -26,21 +26,26 @@ only when something is already broken.
 The facts it works against live once and are cited, never restated — the `specs/` layout, the
 fourteen canonical sections, the derived stages, the front's on-write check and the `specs.py`
 surface in
-[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md),
-whose §The report mold owns the shape step 7 prints in.
+[specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
+§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §The
+report mold, which owns the shape step 7 prints in.
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
 findings it fixes versus only reports, and the migrations — is
-[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md).
-Do not restate its code table; keep this body aligned to it.
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+§The probe — this front's two commands §The canonical workspace §Findings the sweep FIXES (inside
+the one plan → one OK) §Findings the sweep REPORTS (never auto-closes) §Migrating an older
+workspace §Migrating a legacy `openspec/` workspace (`sp-legacy-workspace`). Do not restate its
+code table; keep this body aligned to it.
 
 ## Doctrine
 
 The sweep contract every align shares — probe before the inventory, convergence over
 accommodation, one plan → one OK with code-coupled items gating individually, the cycle-authorized
 narration exception, the two-scan blast-radius procedure, MERGE-never-clobber,
-never-delete-on-a-guess, and align-conformance-report-the-cycle — lives once in
-[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md).
-Read it as this command's doctrine. What follows is only what is **specific to `specs/`**:
+never-delete-on-a-guess, and align-conformance-report-the-cycle — lives once, self-contained, in
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
+§Contents (its own index of the eight numbered principles). Read it whole, as this command's
+doctrine. What follows is only what is **specific to `specs/`**:
 
 - **This front's probe is `specs.py doctor` + `specs.py validate`.** Both exit 0 with no findings
   → say so and stop, before any inventory
@@ -69,8 +74,9 @@ Read it as this command's doctrine. What follows is only what is **specific to `
 - **Authoring is reported, never supplied.** A present-but-empty heading (`sp-empty-section`), a
   missing gate section, a stray heading: all are **content**, and writing even `- none — <reason>`
   would be authoring an answer only the human can give. They join the cycle findings in
-  [conformance](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md) §Findings the
-  sweep REPORTS — a complete spec awaiting close-out, a blocked one, a stale one. Never archive,
+  [conformance](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+  §Findings the sweep REPORTS — a complete spec awaiting close-out, a blocked one, a stale one.
+  Never archive,
   never author, never abandon, never rank.
 
 ## Workflow (probe → force-with-1-confirmation)
@@ -125,9 +131,10 @@ same bytes at full cost.
 
 ### 3. Classify every finding
 Map the inventory onto the codes in
-[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md),
-splitting the two tables: what the sweep **fixes** (structure, the migrations, filenames and slugs,
-frontmatter stamps, shadow copies) and what it only **reports**.
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+§Findings the sweep FIXES (inside the one plan → one OK) §Findings the sweep REPORTS (never
+auto-closes), splitting the two tables: what the sweep **fixes** (structure, the migrations,
+filenames and slugs, frontmatter stamps, shadow copies) and what it only **reports**.
 **`sp-v2-layout` and `sp-v1-leftover` are classified before anything else** — until the fold runs,
 every other reading of the workspace is about files that are not where they will be. A legacy
 `openspec/` fold requires an OKF bundle for its main-spec cut: if `docs/index.md` with
@@ -137,9 +144,9 @@ removal candidate, divergent → `sp-shadow-diverged`, keep-and-report.
 **Done when:** every finding carries a code and lands in exactly one table.
 
 ### 4. Sweep the blast radius of every rename
-Run the shared procedure in
-[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
-§4. The blast-radius sweep — two repo scans total for the whole set, never two per rename — over every planned
+Run the shared blast-radius-sweep procedure — step 4 of
+[align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)'s
+doctrine — two repo scans total for the whole set, never two per rename — over every planned
 filename change and every `sp-duplicate-slug` rename. **This front's delta:** a **slug** leaks
 further than any other name the plugin renames, because identity here *is* the slug — every
 command, cross-reference, branch name, PR title, CI job and script argument names it, and no phase
@@ -169,8 +176,9 @@ Copy `assets/specs/` if approved; run the legacy fold, then `specs.py migrate`, 
 update every reference site alongside its individually confirmed rename; install the operator
 manual from
 `${CLAUDE_PLUGIN_ROOT}/assets/specs/QUENCHING.md` to `specs/QUENCHING.md` under the four-branch
-manual-install rule in [/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never
-restated — same banner, same version fill, same never-clobber-a-de-bannered-copy branch); stamp the
+manual-install rule in [/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) step 4
+(cited, never restated — same banner, same version fill, same never-clobber-a-de-bannered-copy
+branch); stamp the
 missing frontmatter keys (MERGE); install the GENERATED markers without touching the fixed prose;
 delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migration.
 **Done when:** every confirmed row is applied and nothing outside the plan changed.
@@ -185,7 +193,14 @@ owns the `docs/` bundle alone, and a spec carries no OKF `type:` for it to judge
 This sweep writes nothing into the `docs/` bundle — the `specs/` front records itself, and the
 bundle log it used to append to is retired.
 
-Then §The report mold, with two body blocks:
+Then §The report mold — loaded here, in the step that emits it:
+
+```bash
+skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+  --sections "§The report mold" --rules-only
+```
+
+Two body blocks:
 
 1. **Applied** — fixed. What the sweep changed, with counts, and the probe's re-run state.
 2. **Reported, not applied** — fixed, because an empty one is the good news this sweep exists to

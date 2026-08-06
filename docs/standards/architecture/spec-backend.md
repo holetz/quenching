@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec backend interface
-description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, and the in-memory fake that turns "identical" into a checked property
+description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-03
+timestamp: 2026-08-06
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project
 maintainer: quenching
 ---
 
@@ -181,6 +181,127 @@ next one to take the native-construct permission up:
   (`sp-gh-parts-missing`, exit 2)** — returning the shorter document would let the next write
   persist that truncation as the new truth.
 
+### Rendering derived state is a third category, admitted under cumulative conditions
+
+Projection and storage, above, are not the only way a native construct earns its place.
+A native surface may also carry a RENDERING of state this document already derives —
+never a duplicate of a canonical field, never read back, and free. This is the third
+category, and admission is cumulative: all four conditions below, none optional.
+
+The `spec:` labels `github` reconciles onto its own issue's `labels` (`azure-boards`:
+`System.Tags`, on the work item) are exactly this — one per frontmatter record present,
+plus `spec:built` for the derived `executing` stage. `derive_labels` computes the desired
+set from `info` alone, wholly independent of whatever the issue already carries, and
+`reconcile_label_set` folds that set into the native surface without touching anything
+outside the `spec:` prefix. Nothing in `list_specs`, `read_spec` or `validate` ever reads
+a label back — the reassembly obligation above is untouched, because nothing here is part
+of what gets reassembled.
+
+- **It does not duplicate a canonical field.** A label names a MILESTONE — that a record
+  exists — never the record's own fields. `priority: {level, criticality, complexity,
+  date}` has no label form for the same reason it was refused a label-only encoding above:
+  a label can hold a name, not a struct.
+- **It is recalculated from the source on every write**, never edited in place and never
+  trusted to still be correct from an earlier one. `derive_labels` takes `info` and
+  nothing cached, and runs again on every `write_spec`.
+- **It costs zero calls beyond the write already being made.** GitHub's label set rides
+  inside the SAME `PATCH` `_store` already sends; Azure's `System.Tags` rides inside the
+  SAME `--fields` update `_update` already sends. MEASURED live, 2026-08-05, against this
+  repository's own issue #877: a write that changes no record and no stage costs exactly
+  the one `PATCH` it always did. The first cut did not — it compared the desired label set
+  against the issue's current one as ORDERED lists, and GitHub returns a listing's labels
+  alphabetically, never in the schema's own order, so a same-set reorder read as a change
+  on every write and cost an extra `GET` fixing colors that were already right. Comparing
+  the two as sets was the fix.
+- **It is discardable without loss.** Deleting a `spec:` label deletes nothing the document
+  does not already say; the next write recreates it. Deleting every `spec:` label in the
+  repository loses zero information — the claim `labels-historico-spec-issue`'s own
+  `## Proposal` made before this rule existed to check it against.
+
+The twin test above — whether a native value is the same fact as the canonical one —
+does not apply here: a rendering is not a claim that the label IS the record, only that
+the record's presence is visible without opening the issue.
+
+## Placement is declared, and reaffirmed on every write
+
+A work item's position in an external tracker — its area, its type, its parent, its iteration,
+its board column — is not one of the fourteen sections, and it is not derived from anything the
+canonical document carries. **It is declared**, in `.claude/quenching.json`'s `azurePlacement`
+([plugin-configuration.md](../workflows/plugin-configuration.md)), for the same reason
+`azureStates` already is: the document is identical on every backend, and an external tracker's
+own organisational scheme belongs to the project the backend writes into, never to the spec.
+
+A backend free to GUESS placement would not fail loudly. Measured on `azure-boards`'s own
+target project: the declared area covers **one** sub-area of 761 unrelated work items, and a
+guessed default would write into the wrong part of somebody else's board — silently
+indistinguishable from a right write until a human goes looking. Declaring it, with no default for
+the one field with no honest guess (`areaPath`), is what turns that failure loud — the same
+argument `azureStates` already carries, applied to WHERE a spec is born rather than WHAT state it
+reads as.
+
+**Declared placement is reaffirmed on every write, not only at creation.** A human who moves the
+work item's area or its board column between two writes sees the next one bring it back — the
+tracker is the projection, `.claude/quenching.json` is the authority, and that is the same
+one-way relationship `state` already has with `move_spec`. This costs nothing extra: the fields
+travel on the SAME create/update call the write was already making, never a round trip of their
+own.
+
+## Armazenado não é projetado
+
+`tags`, `assignee`, `start` and `target` are the frontmatter's four STATE keys — first-level,
+never a record — and each passes the same test §A native value is the same fact already applies
+to `title:`: a native mapping is valid only when the native value is the SAME FACT as the
+canonical one, and it earns its keep only once something reads it back.
+
+| Field | `files` | `azure-boards` | `github` |
+| --- | --- | --- | --- |
+| `tags` | frontmatter | `System.Tags` | issue labels |
+| `assignee` | frontmatter | `System.AssignedTo` | issue assignees (first only) |
+| `start` | frontmatter | `Microsoft.VSTS.Scheduling.StartDate` | frontmatter |
+| `target` | frontmatter | `Microsoft.VSTS.Scheduling.TargetDate` | frontmatter |
+
+**`tags` and `assignee` pass on both external backends.** A label and a spec's tag are the same
+fact — a name attached to the item — and so is an assignee: a login, an identity, one name a
+human reads as "who owns this". Both are reassembled on read and reaffirmed on every write, at no
+extra call: they ride the SAME create/update request the write was already making, exactly as
+placement does.
+
+**`start`/`target` pass ONLY on `azure-boards`.** `Microsoft.VSTS.Scheduling.StartDate`/
+`TargetDate` are the same fact a spec's own `start`/`target` name — a planned date, not a
+projection of something else. `github` has no equivalent: an issue carries no scheduling field,
+so `start`/`target` stay in the frontmatter there, unmapped, for the same reason `date:` stayed in
+the document when no backend had an honest native counterpart for IT either.
+
+**The discovery tag is the one exception `tags` carries, and it is a floor, not a ceiling.**
+`azure-boards`'s `System.Tags` also carries the discovery tag (`azurePlacement.discoveryTag`) —
+this backend's own index, never a spec's declared content. Reassembly on read EXCLUDES it, so
+`tags` reflects only what the spec itself declared; the write that reaffirms `tags` always
+re-adds it regardless, because a write that forgot it would make the spec invisible to its own
+listing on the very next read. `github` has no equivalent constant: discovery there is the body
+marker alone, never a label.
+
+**A backend with no faithful counterpart stores the document ONLY.** `write_spec` strips
+`tags`/`assignee` (and, on `azure-boards`, `start`/`target` too) from the text it stores — the
+native field is the storage, and a document that ALSO carried the value would be the same
+duplicated-truth failure `title:` was fixed for, at a smaller scale. An ORDINARY write — a
+section edit, a ticked task — never mentions these keys at all, because they are not in the
+document to begin with; reading that silence as "clear them" would wipe every stored field on
+the next unrelated save, so each backend carries forward the prior read's value for a key its
+own write's text does not explicitly declare.
+
+**The `spec:` prefix is reserved, and that is what lets storage and rendering share one field.**
+`tags` is stored in the very surface §Rendering derived state renders onto — issue `labels`, and
+`System.Tags` on the work item — so the two mechanisms would fight over it if neither yielded.
+Neither has to: **reassembly on read excludes every `spec:`-prefixed name**, exactly as it excludes
+the discovery tag, so a rendered label never becomes a tag the document claims to declare; and the
+write hands the native surface the union of both — the carried-forward `tags` plus the freshly
+derived `spec:` set — in the one call it was already making. A tag a human declares may not start
+with `spec:`, for the same reason it may not be the discovery tag: the prefix belongs to the
+rendering, and a spec claiming one would be claiming a fact the next write recomputes anyway.
+Neither the catalogue check (`tagCatalog`) nor `doctor`'s uncatalogued-tag finding sees the
+reserved names at all — they are not the spec's tags, so a catalogue that never lists them is
+complete, not lacking.
+
 ## Granular reading is about context, not I/O
 
 `show` returns an **index** by default — the fourteen headings with their state, and the task ids.
@@ -218,8 +339,20 @@ never be somewhere real work can land.
 The interface and the equality are proved for `files` and `memory`, and the reassembly obligation is
 proved offline for the hybrid serialisation both external backends share.
 
-**`azure-boards` has never been exercised end to end.** What it must satisfy is stated here, and for
-that backend the statement is a contract to meet rather than a report of one met.
+`azure-boards` has been exercised end to end once (`provar-e-posicionar-o-backend-azure-boards`,
+task 6.3), against a real Azure DevOps project (org `unicredbr`, team "Diretoria Risco") and a
+throwaway test spec: `new --subject`, every `section --write`, `record`, `task --check`, `status`,
+`show` and `promote --outcome done`, each matching `files` for the same state, the board's own
+column tracked against the declared de-para through every transition — `captured` → `Backlog`/
+`New` through `archived` → `Concluído`/`Closed`. The test spec, like `github`'s own first run, had
+no `### N.` groups — but `azure-boards` never splits a document into continuation parts at all
+(`hybrid_split` is handed no limit; the field's own measured ceiling is 1,048,576 characters, and
+this repository's largest real spec is 74,180), so the loss `github`'s split-and-join mapping once
+took does not apply the same way here. What the run did surface, live, three times: a WIQL clause
+comparing a GUID where only a name resolves, a CLI flag that does not exist on `create`, and — the
+one that changed the interface's own assumption — `System.State` and the board's `Kanban.Column`
+are not two independent fields on this process; the column is what a write actually controls, and
+the state is a resolved consequence of it.
 
 `github` has been exercised end to end once, against a throwaway test spec. That is worth less than
 it sounds, and the gap is the reason this section stays: the test spec had no `### N.` groups and no
