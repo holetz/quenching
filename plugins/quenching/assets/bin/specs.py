@@ -89,8 +89,10 @@ ASSETS
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime
 import difflib
+import inspect
 import json
 import os
 import pathlib
@@ -2535,6 +2537,89 @@ def resolution_failures() -> list[str]:
         out.append(f"an absent slug resolved to {spec and spec['slug']!r} instead of "
                    f"refusing with sp-unknown-slug")
     return out
+
+
+def announcement_failures() -> list[str]:
+    """The receipt of an inexact resolution reaches EVERY verb's payload — asserted over the
+    mechanism, and over the verb registry, never over a list of verb names.
+
+    A list of names is what this guard exists to replace. The count of verbs owing the receipt
+    was six when the problem was captured, ten when it was designed and eleven when it was
+    built, and each of those numbers was written down by somebody reading the file carefully.
+    So the last two cases below ask `DISPATCH` — the registry a new verb has to join to exist
+    at all — instead of asking a maintainer to remember.
+
+    Self-contained: no backend, no store, and the source it reads is its own."""
+    global _RESOLUTION
+    before = _RESOLUTION
+    out: list[str] = []
+    try:
+        _RESOLUTION = None
+        if "resolvedBy" in announced({"ok": True}) or receipt_line():
+            out.append("a command that resolved no slug still announced one")
+
+        _RESOLUTION = {"resolvedBy": None, "resolvedFrom": None}
+        exact = announced({"ok": True})
+        if exact.get("resolvedBy", "missing") is not None or "resolvedFrom" not in exact:
+            out.append("an exact resolution must carry both keys as null, not omit them — "
+                       f"got {exact!r}")
+        if receipt_line():
+            out.append("an exact resolution announced itself to a human reader")
+
+        _RESOLUTION = {"resolvedBy": "approximate", "resolvedFrom": "o titulo inteiro"}
+        payload, human = announced({"ok": True}), receipt_line()
+        if payload.get("resolvedBy") != "approximate" or \
+                payload.get("resolvedFrom") != "o titulo inteiro":
+            out.append(f"an approximate resolution reached the payload as {payload!r}")
+        if "approximate" not in human or "o titulo inteiro" not in human:
+            out.append(f"the human receipt named neither the rung nor the match: {human!r}")
+    finally:
+        _RESOLUTION = before
+
+    # Every registered verb resolves the human's own argument through `read_one`, which is
+    # what sets the receipt. A verb reaching `read_spec` directly with `args.spec` would
+    # resolve correctly and announce nothing — the exact bug this spec closed, reintroduced.
+    try:
+        sources = {name: inspect.getsource(fn) for name, fn in DISPATCH.items()}
+        sources["main"] = inspect.getsource(main)
+    except OSError as e:
+        out.append(f"this file's own source could not be read, so no verb could be checked "
+                   f"for a bypass — {e}")
+        return out
+
+    for name, src in sorted(sources.items()):
+        if name != "main" and _resolves_directly(src):
+            out.append(f"`{name}` resolves the human's slug outside `read_one`, so an "
+                       f"approximate match reaches its payload unannounced")
+    # And the receipt of one command never rides out on the next one's payload.
+    if not _clears_receipt(sources["main"]):
+        out.append("`main` no longer clears the receipt before dispatching, so a process "
+                   "running two commands can announce the first one's resolution on the "
+                   "second one's payload")
+    return out
+
+
+def _resolves_directly(src: str) -> bool:
+    """True where this function calls `<backend>.read_spec(args.spec)` itself.
+
+    PARSED, never matched as text. The finding this feeds names the very call it forbids, and
+    a substring scan reads that sentence as the violation — measured, on the first run of this
+    guard, which flagged `selftest` for its own remedy string."""
+    return any(
+        isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+        and n.func.attr == "read_spec" and n.args
+        and isinstance(n.args[0], ast.Attribute) and n.args[0].attr == "spec"
+        and isinstance(n.args[0].value, ast.Name) and n.args[0].value.id == "args"
+        for n in ast.walk(ast.parse(src)))
+
+
+def _clears_receipt(src: str) -> bool:
+    """True where this function assigns `_RESOLUTION = None`, for the same reason."""
+    return any(
+        isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant)
+        and n.value.value is None
+        and any(isinstance(t, ast.Name) and t.id == "_RESOLUTION" for t in n.targets)
+        for n in ast.walk(ast.parse(src)))
 
 
 def backend_equivalence_failures() -> list[str]:
@@ -8668,6 +8753,16 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="resolve_one tries exact slug, exact title, then one "
                                         "close match above the threshold; a tie is exit 2 and "
                                         "an approximation announces itself"))
+
+    # And that the tolerance's receipt reaches every verb, not just the one that wrote it out
+    # by hand. Self-contained, so it runs on an installed copy too.
+    for failure in announcement_failures():
+        findings.append(_finding("sp-announcement-case", "error",
+                                 f"resolution receipt — {failure}",
+                                 remedy="every verb resolves the human's slug through "
+                                        "`read_one`, and `emit` folds the receipt into the "
+                                        "payload; a verb reaching `read_spec(args.spec)` "
+                                        "itself resolves fine and announces nothing"))
 
     for failure in slug_case_failures():
         findings.append(_finding("sp-slug-case", "error", f"canonical slug case — {failure}",
