@@ -476,7 +476,7 @@ The plugin keeps its context and token footprint predictable on three levels:
    Both are warnings, so the budget looked clean while the routing information was absent — see
    `/.docs/standards/naming/command-surface.md` §Why there is no longer a wrapper.
 
-   **Where it stands now: 12,812 characters** (~3,203 approximate tokens) across 26 commands and
+   **Where it stands now: 12,844 characters** (~3,211 approximate tokens) across 26 commands and
    0 agent definitions, measured 2026-08-06 — 24 of those commands routed, 2 typed-only holding a
    further 1,843 characters (876 + 967) *outside* the total. Most of the difference between 2,083
    and that figure is the routing information being bought back deliberately — the triggers and
