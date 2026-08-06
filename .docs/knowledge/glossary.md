@@ -246,11 +246,12 @@ sentence, and **link out** rather than explaining in full here.
   `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
-  `worktreeSetup` and `azureStates`. It replaced `/.specs/config.json`, whose home stopped working once
-  a repository could have no `/.specs/` folder at all. Absence yields the documented defaults, never a
-  null and never a refusal — except `azureStates`, which has no default because the project's own
-  process defines the states, and whose absence refuses instead of guessing; every other way it can
-  be wrong comes back as a field for `doctor` to judge.
+  `worktreeSetup`, `azureStates`, `integrationBranch`, `releaseBranch`, `azurePlacement`,
+  `azureColumns`, `subjects` and `tagCatalog`. It replaced `/.specs/config.json`, whose home stopped
+  working once a repository could have no `/.specs/` folder at all. Absence yields the documented
+  defaults, never a null and never a refusal — except `azureStates` and `azurePlacement.areaPath`,
+  neither of which has a default because the project itself defines them, and whose absence refuses
+  instead of guessing; every other way it can be wrong comes back as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
@@ -291,6 +292,16 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Reserved tag prefix**](../standards/architecture/spec-backend.md) — `spec:`, the half of a
+  tracker's native tag surface (`github` issue labels, `azure-boards` `System.Tags`) that belongs
+  to the TOOL rather than to the document, and the rule that lets **storage** and **rendering**
+  share one field without either reading the other's writes as the spec's own content. A write
+  hands the surface the union — the spec's declared `tags` plus the freshly derived `spec:` set —
+  and `declared_tags` filters the reserved names back out on every read, alongside the second
+  reserved name, `azurePlacement.discoveryTag`. A spec may not declare a tag under the prefix, for
+  the same reason it may not declare the discovery tag: the next write recomputes it anyway. It is
+  also what keeps `tagCatalog` honest — a catalogue that never lists a reserved name is complete,
+  not lacking.
 - [**Resource glob set**](../standards/quality/bundle-verification.md) — the format of an OKF
   doc's `resource:`, a plugin convention rather than an OKF rule: a **comma-separated** list of
   repo-root-relative paths and globs using `*`/`**` **only**, matched **segment-wise everywhere**

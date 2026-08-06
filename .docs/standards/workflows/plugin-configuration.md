@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the six recognised keys and their defaults, the one key that deliberately has none and refuses instead, the two keys with two consumers each — the release verb and the base-inference chain — why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
+description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the ten recognised keys and their defaults, the two keys that deliberately have none and refuse instead, the two keys with two consumers each — the release verb and the base-inference chain — the two keys whose prose is prompt material an agent reads to decide, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, backend, plugin]
-timestamp: 2026-08-04
+timestamp: 2026-08-05
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; the bundle-root config key added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude, and removed by the docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — the bundle root became the fixed `/.docs/` convention, and the key that said where the bundle lives had nothing left to say ([bundle-root.md](../architecture/bundle-root.md)); `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md)
+source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; the bundle-root config key added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude, and removed by the docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — the bundle root became the fixed `/.docs/` convention, and the key that said where the bundle lives had nothing left to say ([bundle-root.md](../architecture/bundle-root.md)); `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md); `azurePlacement`/`azureColumns`/`subjects`/`tagCatalog` added by provar-e-posicionar-o-backend-azure-boards (task 2.8), which also measured `areaPath`'s absence against this org's own board (761 unrelated work items under the project's default area)
 maintainer: quenching
 ---
 
@@ -50,6 +50,10 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
 | `integrationBranch` | any branch name | **none** — `specs.py release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
 | `releaseBranch` | any branch name | **none** — `specs.py release` applies `main` at the point of use | the release verb only |
+| `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` | per sub-key — `areaPath` **none, deliberately**, the rest default (see below) | the `azure-boards` backend only |
+| `azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
+| `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/specs:create`'s subject proposal, and every backend's `create_spec` |
+| `tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `/specs:create`'s tag proposal — an agent reads the description to choose |
 
 **The checker's settings never lived in this file, and the bundle root is not one either.**
 `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan` and `ignoreGlobs` come from the
@@ -92,6 +96,50 @@ writes nothing.
 This is also the one key whose absence is a refusal rather than a default, and the exception is
 narrow on purpose: it refuses only for the backend that needs it. A repository on `files` or
 `github` never sees it, which is why §Absence is the normal case below still holds.
+
+## `azurePlacement`, and the one sub-key with no default
+
+Where a work item is born — its area, its type, its parent, its iteration, its board column — is
+declared here rather than derived, for the argument
+[spec-backend.md](../architecture/spec-backend.md) §Placement is declared, and reaffirmed on every
+write states in full. This standard is where each sub-key's own default, or its absence, is argued.
+
+**`areaPath` has no default, and refuses (exit 2, `sp-az-no-area`) exactly like `azureStates`
+does.** Measured against this org's own target project: the project's default area is its root,
+and the declared board covers **one** sub-area of 761 otherwise-unrelated work items. A guessed
+default would not fail loudly — it would write into the wrong part of somebody else's board,
+silently indistinguishable from a right write until a human goes looking.
+
+**`discoveryTag` defaults to `quenching-spec`.** Unlike `areaPath`, this name is the TOOL's, not
+the project's — the same argument `specsBranch` already carries — so it defaults rather than
+refuses; configurable only to resolve a collision with a tag the project already uses.
+
+**`workItemType` defaults to `User Story`.** Measured against this org's own process guide:
+`User Story` is the standard card for Story work, and `Issue` — this key's value before a real
+target existed to measure against — is documented there as OPTIONAL, for bugs of lesser severity.
+A default is what a repository that declared nothing receives, and receiving "minor bug" on a
+panel that reads the type is a silent error. A Scrum or CMMI process names its equivalent
+differently, which `workItemType` overrides.
+
+**`team`, `iterationPath`, `boardColumn` and `defaultSubject` are all optional**, and `team` is
+required in practice only once a spec write needs to resolve a board column — `azureColumns`
+consults a per-team field, so a repository that never declares `team` simply never gets a column
+applied. `boardColumn` is the de-para's fallback for a board state absent from `azureColumns`,
+never a value written on its own.
+
+## Two keys are prompt material, not documentation
+
+`subjects.<key>.description` and every `tagCatalog` value are prose an AGENT reads to decide —
+`/specs:create` proposes a subject or a tag by reading these descriptions, and a human confirms.
+That makes them closer to a prompt than to a code comment: a vague or misleading description does
+not fail loudly, it makes the agent propose the wrong subject or tag, confidently.
+
+**The same review this file already gets is what reviews them** — there is no second reviewer for
+this prose, because there is no second author. `.claude/quenching.json` belongs to the target
+repository, so whoever maintains it there is who decides what a subject or a tag means; this
+plugin only ever reads the description, never writes or grades it. A description that stops
+matching what its subject or tag is actually for is a configuration bug in the same sense a wrong
+`areaPath` is — silent, and found by a human noticing the wrong proposal rather than by a check.
 
 ## Absence is the normal case, and never a finding
 

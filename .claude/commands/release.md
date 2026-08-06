@@ -6,8 +6,9 @@ description: >-
   "ship what's on develop", "release this", "is it time to release", or "publish the
   plugin". Judges patch/minor/major from what actually accumulated and asks for
   confirmation before touching anything; when develop carries exactly one merge since the
-  last release, asks once whether this is a release or a habit. When it finishes: `main`
-  and its new tag exist locally and on origin, pointing at the same commit. Not for:
+  last release, asks once whether this is a release or a habit. When it finishes: the
+  bump and its tag live on `develop`'s tip, the deliberate `develop → main` merge that
+  carries them is on `main` and origin, and the tag's commit is contained in `main`. Not for:
   concluding or merging ONE spec into the integration branch → /specs:conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
 allowed-tools: Bash(git:*), Bash(python3:*), Read, AskUserQuestion
@@ -38,20 +39,23 @@ repository's own memory already names as the plugin cache lagging the repo sourc
 
 ## Workflow
 
-### 1. Resolve the branches and where the release branch lives
+### 1. Resolve the branches and where both branches live
 ```bash
 python3 plugins/quenching/assets/bin/specs.py config --json
 git worktree list --porcelain
 ```
 Take `integrationBranch`/`releaseBranch` from the config payload, defaulting to `develop`/`main`
-when either is absent. Find which checkout holds the release branch. **None does** → stop without
-merging, name the release branch and that nothing has it checked out, and name the fix — check it
-out, or add a worktree of it. Never manufacture a temporary checkout
+when either is absent. Find which checkout holds the release branch and which holds the
+integration branch — the bump runs on the integration branch's checkout, the merge on the release
+branch's. **No checkout holds the release branch** → stop without merging, name the release branch
+and that nothing has it checked out, and name the fix — check it out, or add a worktree of it.
+**No checkout holds the integration branch** → stop the same way: the bump needs a checkout of it.
+Never manufacture a temporary checkout
 ([plan-git-record.md](/docs/standards/workflows/plan-git-record.md) §The merge runs in the
 checkout that already holds the base is the same rule, applied here to the release branch instead
 of a spec's base).
-**Done when:** both branch names are known and a checkout holding the release branch is found, or
-the run has stopped and said why.
+**Done when:** both branch names are known and a checkout exists for each, or the run has stopped
+and said why.
 
 ### 2. Read what accumulated, and ask "release or habit?" at exactly one
 ```bash
@@ -83,35 +87,43 @@ part of this same plan, not a second confirmation, because an unpushed release r
 installs via the marketplace. **Done when:** the human has confirmed one exact `X.Y.Z`, or declined
 — a decline stops the run with nothing written.
 
-### 4. Merge, bump, tag, and push
+### 4. Bump on the integration branch, merge, and push
+The bump comes FIRST, on the integration branch's checkout — the merge that follows is what
+carries the version ([versioning-release.md](/docs/standards/ci-cd/versioning-release.md)
+§When the bump happens): a bump committed on `main` after the merge is the one thing the release
+forbids. The `cd` in the subshell is what picks the repository — `specs.py` resolves it from the
+cwd, and refuses (exit 2, `sp-release-wrong-branch`) any checkout not on the integration branch.
 ```bash
-git -C <checkout from step 1> merge --no-ff <integrationBranch> -m "release: merge <integrationBranch> into <releaseBranch>"
-git -C <checkout from step 1> log -1 --format=%H
+( cd <integration checkout from step 1> && python3 plugins/quenching/assets/bin/specs.py release <version> --json )
+git -C <release checkout from step 1> merge --no-ff <integrationBranch> -m "release: merge <integrationBranch> into <releaseBranch>"
+git -C <release checkout from step 1> log -1 --format=%H
 ```
-Then, from that **same checkout**:
+Exit **0** on `specs.py release` → the seven artifacts moved, the bump commit landed on the
+integration branch, the tag points at it. Exit **2** → nothing was bumped; report the refusal's
+`message` plainly — this is recoverable (fix what it names, typically a lockstep already drifted
+or a checkout on the wrong branch, then re-run this same `specs.py release <version>` command by
+hand from the integration branch's checkout; the merge has not happened yet, so nothing repeats)
+but it is **never retried automatically** and the checkouts are **never reset**. On exit 0, after
+the merge, push:
 ```bash
-python3 plugins/quenching/assets/bin/specs.py release <version> --json
+git -C <release checkout from step 1> push origin <releaseBranch> <version>
 ```
-Exit **0** → the seven artifacts moved, the commit landed, the tag exists at that commit. Exit
-**2** → the merge already happened but the bump did not; report the refusal's `message` plainly —
-this is recoverable (fix what it names, typically a lockstep already drifted, then re-run this same
-`specs.py release <version>` command by hand from that checkout; the merge does not need repeating)
-but it is **never retried automatically** and the checkout is **never reset**. On exit 0, push:
-```bash
-git -C <checkout from step 1> push origin <releaseBranch> <version>
-```
-**Done when:** `specs.py release` exited 0 and the push succeeded, or the run has stopped naming
-exactly which of the three steps failed.
+**Done when:** `specs.py release` exited 0, the merge landed, and the push succeeded — or the run
+has stopped naming exactly which step failed.
 
 ### 5. Self-check and report
 ```bash
-git -C <checkout from step 1> rev-parse <releaseBranch>
-git -C <checkout from step 1> rev-parse <version>
+git -C <release checkout from step 1> merge-base --is-ancestor <version>^{commit} <releaseBranch>
+git -C <release checkout from step 1> log -1 --format=%s <releaseBranch>
 ```
-The two must be equal — the release branch's tip is the tag. Report the old and new version, the
-seven artifacts that moved (from step 4's JSON `artifacts`), the tag, and that both are on origin.
-**Done when:** the two revisions match and the report names what changed, or names the mismatch as
-a finding rather than claiming success.
+The first must exit 0 — the tag's commit (the bump on the integration branch) is contained in the
+release branch; the second is the deliberate release merge. `^{commit}` is required because the
+tag is annotated — bare `rev-parse <version>` yields the tag object, never the commit. The JSON
+`commit` from step 4 must also match `git -C <release checkout> rev-parse <version>^{commit}`.
+Report the old and new version, the seven artifacts that moved (from step 4's JSON `artifacts`),
+the tag, and that both are on origin.
+**Done when:** the ancestry check passes, the JSON `commit` matches the tag's commit, and the
+report names what changed — or names the mismatch as a finding rather than claiming success.
 
 ## Not published until step 4 exits 0
 

@@ -7,7 +7,7 @@ tags: [automation, context, reading, cost, commands, references]
 timestamp: 2026-08-05
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason; the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral itself and the 344-turn run behind it come from context-budget.md §The other half, which carries the same grading for the same reason; the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute
 maintainer: quenching
 ---
 
@@ -54,6 +54,15 @@ Three rules, in descending order of what they were measured to be worth:
 
    A reference used only inside one conditional branch is read in that branch, never hoisted into
    the preamble every turn pays for regardless of which branch runs.
+
+   A citation with **no consumer** — no step of the body needs the rule, because the body already
+   states it or already executes it through an explicit tool call — **leaves**. The section stays on
+   disk, whole: what leaves is the pointer, never the knowledge. The condition that makes the
+   removal safe: the rule the citation carries is already written in the body, or executed by an
+   invocation the body writes literally — where that does not hold, the section descends, never
+   leaves. The rule itself is `authority: background`, the same grade as this file: a triage this
+   repository ran once, agreed but unproven elsewhere, that graduates when a second adopting repo
+   reproduces the shape.
 
    `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
    `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. **Only the first

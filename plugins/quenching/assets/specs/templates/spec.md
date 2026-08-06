@@ -193,6 +193,8 @@ verification: <VERIFICATION>
 
      files:    the paths this task may touch. Declaring them is what PERMITS the task to be
                handed to an executor sub-agent, and what makes a `[P]` marker checkable.
+               A trailing parenthetical is closed grammar: `(new)` is the ONLY reserved
+               annotation, and anything else is refused with `sp-files-annotation`.
      pattern:  an existing file to imitate — the cheapest context an executor can be given.
      verify:   the command that proves the task done. WHEN it runs is the `verification`
                frontmatter policy, not this section's business. With no `verify:` line the
