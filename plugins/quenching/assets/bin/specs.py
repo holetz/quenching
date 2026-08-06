@@ -98,7 +98,7 @@ import re
 import sys
 import unicodedata
 
-VERSION = "4.12.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "4.13.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "specs"))
@@ -9153,6 +9153,21 @@ def cmd_release(args, root: str) -> int:
                                     "message": "this is not the plugin's own repository — "
                                                "missing: " + ", ".join(missing)})
 
+    # The bump must land on the INTEGRATION branch: the deliberate `develop -> main` merge
+    # is the moment that carries the version (versioning-release.md), so committing the
+    # bump from any other checkout would publish a number `main` never received. The repo
+    # above came from `os.getcwd()`; this guards which branch that checkout is on.
+    integration = load_config(root)["integrationBranch"] or DEFAULT_INTEGRATION_BRANCH
+    current = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+    if current != integration:
+        return emit_err(args.json, {"code": "sp-release-wrong-branch", "exit": 2,
+                                    "branch": current, "integrationBranch": integration,
+                                    "message": f"this checkout is on '{current}', not the "
+                                               f"integration branch '{integration}' — the "
+                                               f"bump must be committed on the integration "
+                                               f"branch so the develop -> main merge "
+                                               f"carries it"})
+
     result = bump_release_artifacts(repo, new_version)
     if not result["ok"]:
         return emit_err(args.json, {"code": "sp-release-drift", "exit": 2,
@@ -9164,16 +9179,18 @@ def cmd_release(args, root: str) -> int:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "add", "message": f"git add failed: {err}"})
     subject = f"release: {result['oldVersion']} -> {new_version}"
-    code, _, err = _git_run(repo, "commit", "-m", subject)
+    code, out, err = _git_run(repo, "commit", "-m", subject)
     if code != 0:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "commit", "message": f"git commit failed: {err}"})
+    commit_hash = out.strip()
     code, _, err = _git_run(repo, "tag", "-a", new_version, "-m", subject)
     if code != 0:
         return emit_err(args.json, {"code": "sp-release-git-failed", "exit": 2,
                                     "step": "tag", "message": f"git tag failed: {err}"})
 
     emit(args.json, {"ok": True, "oldVersion": result["oldVersion"], "newVersion": new_version,
+                     "branch": integration, "commit": commit_hash,
                      "artifacts": result["artifacts"], "tag": new_version, "subject": subject},
          f"release: {result['oldVersion']} -> {new_version}, tagged {new_version}")
     return 0
