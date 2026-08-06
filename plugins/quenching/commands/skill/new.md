@@ -82,7 +82,7 @@ fork` (+ `agent`, `background`) only for a self-contained, noisy, summary-out ru
 mid-flow gate**; an `effort`/`model` pin only for genuinely mechanical work, priced against
 the cache it invalidates inline; `paths` to bind a domain-bound command's autonomous firing
 to its folder; `disable-model-invocation` only for a human-must-choose command (it also
-removes the description from the always-on budget); frontmatter `hooks:` only for a check
+removes the description from always-on context entirely); frontmatter `hooks:` only for a check
 tied to this command's own workflow. For an **edit**, re-derive the profile and flag any
 lever whose original buy no longer holds. **Done when:** each non-default lever is listed
 with its one-line reason — or the profile is stated as default.
