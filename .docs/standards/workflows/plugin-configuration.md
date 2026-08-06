@@ -50,6 +50,8 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
 | `integrationBranch` | any branch name | **none** — `specs.py release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
 | `releaseBranch` | any branch name | **none** — `specs.py release` applies `main` at the point of use | the release verb only |
+| `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event, through the config the core read |
+| `profiles` | `{"installed": ["docs", "specs", "skill"]}` | none — an absent key leaves all three fronts installed | the `/align` conductor, through the config the core read |
 | `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` | per sub-key — `areaPath` **none, deliberately**, the rest default (see below) | the `azure-boards` backend only |
 | `azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
 | `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/specs:create`'s subject proposal, and every backend's `create_spec` |
@@ -97,6 +99,24 @@ This is also the one key whose absence is a refusal rather than a default, and t
 narrow on purpose: it refuses only for the backend that needs it. A repository on `files` or
 `github` never sees it, which is why §Absence is the normal case below still holds.
 
+**`hooks` is where a repository declares the work it wants attached to an event a command
+announces** — `{"after_specs_execute_task": [{"command": "/my:security-review",
+"optional": true}]}` is the shape, and `after_specs_execute_task` is the one event this plugin
+ships. The core reads the block whole and validates its **shape** — an event must map to a list
+of hook objects each carrying a `command`; a hook with `enabled: false` is filtered out of the
+read and never announced — and interprets nothing: it does not know what the declared command is
+for, and it never evaluates a `condition`. The three-part contract and the reason the extension
+lives in config rather than in a command are [extension-points.md](../automation/extension-points.md).
+
+**`profiles` is where a repository declares which fronts it uses** —
+`{"installed": ["docs", "specs", "skill"]}` is the shape, the three names the plugin's own
+fronts ([install-profiles.md](../architecture/install-profiles.md) §The front is the unit of
+installation). The core reads the block and validates its **shape** — `installed` must be a list
+of non-empty strings — and interprets nothing: what a front is, and what the list means, is the
+standard's, not the loader's. Absent, it declares nothing and nothing changes: behaviour with no
+profile is behaviour with all three fronts installed, which is the ordinary case. What a profile
+turns on and off, and what `/align` does with an uninstalled front, are
+[install-profiles.md](../architecture/install-profiles.md).
 ## `azurePlacement`, and the one sub-key with no default
 
 Where a work item is born — its area, its type, its parent, its iteration, its board column — is

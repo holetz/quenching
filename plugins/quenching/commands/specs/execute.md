@@ -178,24 +178,10 @@ Not a git repo → no isolation and no commits; say so once and run the loop nor
 isolation, never `git init` on the human's behalf, and never rewrite history.
 
 **2b. Probe the environment before writing any code.** A hook wired in `.claude/settings.json`
-whose script no longer exists on disk fails *every* commit this loop makes, and it fails as a hook
-error rather than as a missing file — so it gets diagnosed at the first commit, ad hoc, in about
-ten calls. Ask the question once instead, in the same call as the reads above:
-
-```bash
-python3 -c "
-import json, pathlib, re
-p = pathlib.Path('.claude/settings.json')
-d = json.loads(p.read_text()) if p.exists() else {}
-cmds = [h.get('command','') for g in d.get('hooks',{}).values() for e in g for h in e.get('hooks',[])]
-gone = sorted({t for c in cmds for t in re.findall(r'[\w./\$\{\}-]+\.(?:py|sh|js|ts)', c)
-               if not pathlib.Path(re.sub(r'\\\$\{?CLAUDE_PROJECT_DIR\}?/?', '', t)).exists()})
-print('unresolved hook targets:', gone or 'none')"
-```
-
-Anything other than `none` → **report it before the first task**, name the hook and the missing
-path, and let the human decide: fix the wiring, or build knowing every commit will trip it. Never
-route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent.
+whose script no longer exists on disk fails *every* commit this loop makes — probe once, in the
+same call as the reads above, per [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
+§The hook probe. Anything other than `none` → report it before the first task, name the hook and
+the missing path, and let the human decide; never `--no-verify` past it. Silent when nothing wired.
 
 **Done when:** the tree is clean (or the override is on the record), isolation has been taken,
 found already held, or declined, and any unresolved hook has been reported.
@@ -251,9 +237,9 @@ expensive unit ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-exe
 HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
 contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
 
-A declared bullet may carry a `§`address beside its path —
-`/.docs/standards/automation/context-budget.md §The two caps §The per-surface ceiling`. With one,
-read exactly those sections (`skills.py read <path> --sections "§A" --sections "§B"`); with none,
+A declared bullet may carry a `§`address beside its path — `/.docs/standards/automation/skills.md
+§Invocation and permission are authored decisions §The admission criterion`. With one, read
+exactly those sections (`skills.py read <path> --sections "§A" --sections "§B"`); with none,
 read the file whole, exactly as today. The default never changes: reading less is an assertion the
 spec's own author wrote, never an economy the executor takes on its own.
 
@@ -354,7 +340,21 @@ f. **Read the chain's tail, and act on which link broke:**
      breaks the task→commit link: **report it as a finding and write nothing.** Editing the record
      now would put a write after the commit again, which is exactly what this ordering removed.
 
-g. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The event
+g. **Announce the declared hook for this event, and move on.** Once the task has committed,
+   `after_specs_execute_task` has fired: print what the config declared for it — the event's
+   name, the declared command, and the prompt whoever executes the hook must follow — then move
+   on. Announcing is not executing: never invoke the declared command, never wait for it, never
+   integrate its result. The step-2 read already filtered `enabled: false` hooks out, so this
+   announces exactly what the read returned, whether or not the hook was written for this repo
+   ([extension-points.md](/.docs/standards/automation/extension-points.md) §The body announces —
+   name, command and prompt — and moves on):
+
+   ```text
+   after_specs_execute_task — declared hook: /my:security-review
+     prompt: none declared
+   ```
+
+h. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The event
    is exact and needs no threshold: the last task of a `## N.` section just committed, and another
    section is still ahead. Say it in one line and continue:
 
@@ -404,7 +404,7 @@ failed;
 has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
-**The section-boundary offer (step 5g) adds no fifth event and writes no new state.** Accepted, it is a
+**The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
 pause and a last commit, which are already two of the four above; declined, nothing happened worth
 recording. The trail this step already maintains — `## Handoff` plus `git log` plus the `subjects`
 `status` returns — **is** what makes a fresh session resume from that boundary, and it is exactly

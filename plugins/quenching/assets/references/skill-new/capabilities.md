@@ -113,7 +113,7 @@ the subagent must be handed so much context that the handoff costs what the isol
 
 **The definition contract** (`.claude/agents/<name>.md`): frontmatter `name`, `description`
 (what it does **and when to invoke it** — the description is always-on context, the same
-budget discipline as a command's), `tools` scoped to the narrowest set, and `model`/`effort`
+cost discipline as a command's), `tools` scoped to the narrowest set, and `model`/`effort`
 under the pinning rules above (an agent's pin is cache-safe — it has its own context). Two
 fields default safe and are opened deliberately: `spawned-agents` (an agent that can spawn
 agents can run away — name what it may spawn), and `skills` (a preloaded skill's **full
@@ -205,17 +205,17 @@ and it does so where nobody wired it.
 
 `… || true` hides the handler's real failures alongside its absence.
 
-## Invocation-surface controls — the budget levers
+## Invocation-surface controls — what each costs
 
 The invocation/permission decision table lives in `docs/standards/automation/skills.md`. The
 price of each control:
 
 - **`disable-model-invocation: true`** makes a command human-only — and removes its
   description from always-on context entirely. A utility the human runs by name costs
-  *zero* standing budget. The price: no conductor can reach it, no spoken phrase routes to
-  it, and `budget` counts it at 0. Never on a conductor stage.
+  nothing in always-on context. The price: no conductor can reach it, no spoken phrase
+  routes to it. Never on a conductor stage.
 - **`user-invocable: false`** hides the `/` entry; the model can still fire it and its
-  description **still loads**. This is a routing control, not a budget control.
+  description **still loads**. This is a routing control, not a cost control.
 - **`paths:`** binds *autonomous* firing to glob patterns — the model reaches for the
   command only when the files in play match. The natural reinforcement for a domain-bound
   command: `/communications:teams:create` with `paths: ["communications/teams/**"]` stops

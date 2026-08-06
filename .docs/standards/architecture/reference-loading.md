@@ -3,7 +3,7 @@ type: standard
 title: Carregar é uma chamada dentro do passo; citar é prosa de preâmbulo
 description: Um corpo que precisa de uma seção de reference no passo N carrega essa seção no passo N, com a invocação literal e copiável de skills.py read — uma citação de preâmbulo diz onde a regra mora e não faz a sessão abrir o arquivo, e o oposto foi medido acontecendo nos oito corpos /quenching:specs:*
 resource: plugins/quenching/commands/**/*.md
-tags: [architecture, references, commands, context-budget, skills.py]
+tags: [architecture, references, commands, skills, skills.py]
 timestamp: 2026-08-05
 audience: both
 authority: current
@@ -73,7 +73,7 @@ memória.
 - [report-mold.md](report-mold.md) é o caso que revelou esta regra: um mold citado por oito corpos,
   onde carregar dentro do passo — em vez de confiar na citação de preâmbulo — é o que faz a forma
   realmente convergir.
-- [../automation/context-budget.md](../automation/context-budget.md) governa o outro lado da mesma
+- [../automation/skills.md](../automation/skills.md) governa o outro lado da mesma
   balança: por que uma reference vive fora do preâmbulo em primeiro lugar, e o teto que um `§`-
   endereço evita estourar.
 - [plugin-layout.md](plugin-layout.md) estabelece que `commands/**` é a única árvore registrada e

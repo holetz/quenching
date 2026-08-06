@@ -128,7 +128,7 @@ chose, and no description states which adjacent command owns the neighbouring jo
 structural risk the three probes cannot rule out — they show the common phrasings work, not that
 every phrasing does. Restoring triggers and boundaries is **available headroom, not a defect to
 repair**: it would cost characters the collapse just freed, and it should be decided on measured
-should-trigger / should-not-trigger rates, per [../automation/context-budget.md](../automation/context-budget.md).
+should-trigger / should-not-trigger rates, per [../automation/skills.md](../automation/skills.md).
 
 ## Canonical English surface
 

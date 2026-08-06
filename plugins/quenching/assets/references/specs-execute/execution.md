@@ -31,6 +31,30 @@ report must say so.
 Not a git repo → no isolation, no commits. Say that once, run the rest of the loop normally, and
 never `git init` a repo on the human's behalf.
 
+## The hook probe
+
+<!-- rules -->
+
+**Probe the environment before writing any code.** A hook wired in `.claude/settings.json` whose
+script no longer exists on disk fails *every* commit the loop makes, and it fails as a hook error
+rather than as a missing file — so it gets diagnosed at the first commit, ad hoc, in about ten
+calls. Ask the question once instead, in the same call as the tree and state reads:
+
+```bash
+python3 -c "
+import json, pathlib, re
+p = pathlib.Path('.claude/settings.json')
+d = json.loads(p.read_text()) if p.exists() else {}
+cmds = [h.get('command','') for g in d.get('hooks',{}).values() for e in g for h in e.get('hooks',[])]
+gone = sorted({t for c in cmds for t in re.findall(r'[\w./\$\{\}-]+\.(?:py|sh|js|ts)', c)
+               if not pathlib.Path(re.sub(r'\\\$\{?CLAUDE_PROJECT_DIR\}?/?', '', t)).exists()})
+print('unresolved hook targets:', gone or 'none')"
+```
+
+Anything other than `none` → **report it before the first task**, name the hook and the missing
+path, and let the human decide: fix the wiring, or build knowing every commit will trip it. Never
+route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired → silent.
+
 ## Isolation is offered inline, and only from the base
 
 <!-- rules -->

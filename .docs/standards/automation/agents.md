@@ -29,11 +29,9 @@ and a command may invoke an agent as one step.
 
 ## The definition contract
 
-- **`description` is always-on context** — the same budget discipline and caps as a
-  command's, counted on the parsed value and **charged to the same total**: `skills.py budget`
-  reports `agents` as its own breakdown line beside `commands`, so a definition cannot hide from
-  the ceiling. It states what the agent does **and when to invoke it**; an empty one is
-  `sk-agent-no-description` (the agent can never be delegated to).
+- **`description` is always-on context** — the same cost discipline and caps as a
+  command's, counted on the parsed value. It states what the agent does **and when to invoke
+  it**; an empty one is `sk-agent-no-description` (the agent can never be delegated to).
 - **`tools` is scoped** to the narrowest set — read-only (`Read, Grep, Glob`) for a
   verifier; omitting the field grants everything, which is a choice a reader must be able to
   see was made.

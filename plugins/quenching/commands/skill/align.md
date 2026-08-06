@@ -102,29 +102,30 @@ and reported by this sweep, never by a `sk-*` code.
 
 ## Workflow (probe → ONE OK → migrate → audit → re-probe)
 
-### 1. Probe — the three calls that decide whether anything else runs
+### 1. Probe — the two calls that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
 ```bash
 skills.py doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
                           # the report-only wider surface: agents/ and wired hooks (sk-agent-*, sk-hook-*)
-skills.py lint --json     # per-command conformance, one sk-* code per gap
-skills.py budget --json   # what the surface costs before anything fires: the total against the
-                          # ceiling, and every description's own character count
+skills.py lint --json     # per-command conformance, one sk-* code per gap — including the
+                          # description codes §8 reports before → after (sk-metadata-cap,
+                          # sk-description-portable, sk-trigger-position, sk-no-boundary)
 ```
 plus one `Glob` for the legacy pairs the tool cannot see (below). Branch as
 [sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §1. Probe before the inventory prescribes:
 
 | Probe result | What happens |
 | --- | --- |
-| all three exit 0 with no findings, and no legacy pair | **STOP.** Report "`.claude/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
-| all three exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
-| the only findings are `budget` over the ceiling, or description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
+| both exit 0 with no findings, and no legacy pair | **STOP.** Report "`.claude/` conformant, N commands, nothing to align" and end. No inventory, no plan, no confirmation. |
+| both exit 0 and the only findings are the report-only wider surface (`sk-agent-*`, `sk-hook-*`) | STOP the same way, then list them with the mint that closes each. Nothing here is this sweep's to write. |
+| the only findings are description codes (`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary`) | **Skip to §8.** There is nothing to migrate, and an inventory, a plan and a confirmation for zero renames is ceremony — §8 carries its own gate. |
 | anything else exits 1 or 2, or a legacy pair exists | Continue to step 2. |
 
-**`budget` is what makes the description review reachable at all.** Descriptions can be structurally
-perfect — every trigger in place, every boundary present — while the surface pays for prose about
-*how* each command works, and `doctor` and `lint` both exit 0 on that surface forever. `budget` is
-the only subcommand that measures it, and it costs one call.
+**`lint` carries §8's before-image.** Descriptions can be structurally perfect — every trigger in
+place, every boundary present — while the surface pays for prose about *how* each command works, and
+`doctor` exits 0 on that surface forever. What `lint` names is the description codes —
+`sk-metadata-cap`, `sk-description-portable`, `sk-trigger-position`, `sk-no-boundary` — the half of
+§8's review a parser can decide, for one call; the prose no parser names, §8 cuts by the read.
 
 An **empty** surface (no commands, no skills) also stops: scaffolding a taxonomy for zero commands
 is ceremony. Note whether an OKF bundle exists (`/.docs/index.md` with `okf_version`) and say so once
@@ -275,18 +276,19 @@ whether a spoken request reaches it at all. Review the whole surface in **one pa
 
 Read **frontmatter only** — never a body, whether or not §7 ran. A description is judged against the
 other descriptions, and no body changes that verdict. The read is self-limiting and its size is
-known *before* it starts: `budget`'s `classes` block, already printed in §1, gives both halves —
-`routed.characters` plus `typedOnly.characters`, since the `total` charges a typed-only description
-0 and would understate what this stage actually opens. Say that sum when opening the stage, so the
-human authorizes a cost rather than an open-ended sweep.
+known *before* it starts: §1's `doctor` payload counts the surface, and its `lint` payload names
+the description codes it carries — `sk-metadata-cap`, `sk-description-portable`,
+`sk-trigger-position`, `sk-no-boundary` — the mechanically decided half of this stage. Say the count
+and the code total when opening the stage, so the human authorizes a cost rather than an open-ended
+sweep.
 
 **Which class a description is in decides which verdicts apply.** A typed-only command
 (`disable-model-invocation: true`) has left the routing surface: `lint` reports neither routing code
-against it, nothing routes from its prose, and it is charged 0 — so there is nothing to buy by
+against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-([context-budget.md](/.docs/standards/automation/context-budget.md) §The tier for a description that
-is not in context). Read `budget`'s `classes` for the split; never re-derive it.
+([skills.md](../../../../.docs/standards/automation/skills.md) §The admission criterion). The split is
+read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in
 [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md)
@@ -308,8 +310,8 @@ from the descriptions this stage just read. It needs nothing §2 collected, whic
 enter this stage directly on a surface with nothing to migrate.
 
 Present ONE table — command · class · current chars → proposed chars · what changed · the slot that
-earned it — with the **routed** total before and after against `budget`'s ceiling, since that is
-the half the ceiling measures. **Gate on its own
+earned it — with the description-code count before → after from §1's `lint` payload, the
+mechanically decided half of what this stage changes. **Gate on its own
 OK**, separately from §4's: that plan was confirmed before any description had been read, and an
 edit nobody saw is not an edit anybody authorized. Declined → nothing is written here and the run
 continues to §9 reporting the review as proposed-and-declined.
@@ -322,8 +324,7 @@ Regenerate the zone, then let the tool judge the surface the migration produced:
 ```bash
 skills.py registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
 skills.py doctor --json             # the surface invariant the migration just changed
-skills.py lint --json               # the gaps the migration was supposed to close
-skills.py budget --json             # what §8 changed: the total against the ceiling
+skills.py lint --json               # the gaps the migration was supposed to close — §8's codes
 skills.py registry reindex --json   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
@@ -348,11 +349,11 @@ counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every `sk-*` finding that survived the run, by code; §7's doctrine findings, listed
 apart, each with its `/quenching:skill:new`; and §8's line — descriptions reviewed, edited,
-declined; the surface total before → after against the ceiling; every waived boundary with the
+declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
 `/quenching:skill:eval`. Say plainly when the front converged in one pass — that is the
 expected outcome here, not a shortfall. **Done when:** `doctor` and `lint` exit 0 or each surviving
-finding is named with its code, `budget`'s total is reported against its ceiling, the second
+finding is named with its code, the second
 `registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
 are reported.
 

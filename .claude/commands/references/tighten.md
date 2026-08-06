@@ -124,8 +124,8 @@ plus the file total, as measured numbers. A pass that moved little says so; an e
 not a result.
 
 If a command body under `plugins/quenching/commands/**` was touched at all, also run
-`python3 "plugins/quenching/assets/bin/skills.py" --root plugins/quenching doctor --json`, `lint`
-and `budget` before reporting.
+`python3 "plugins/quenching/assets/bin/skills.py" --root plugins/quenching doctor --json` and
+`lint` before reporting.
 
 **Done when:** every addressed `§` resolves, and the report carries measured before/after numbers.
 

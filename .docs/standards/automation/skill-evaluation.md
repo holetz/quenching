@@ -13,7 +13,7 @@ maintainer: quenching
 
 # Skill evaluation
 
-Every rule in [skills.md](skills.md) and [context-budget.md](context-budget.md) is a claim about
+Every rule in [skills.md](skills.md) is a claim about
 how an agent behaves — that triggers in the second sentence get found, that a step with a
 criterion does not end early, that a body under the cap still teaches. `skills.py lint` checks
 that a skill is *shaped* correctly. Nothing checks that the shape *works*. This standard is what

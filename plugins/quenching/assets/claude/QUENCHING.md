@@ -166,7 +166,6 @@ knowledge about this repo, so it is recorded where knowledge lives. Each standar
 | **The rule** | `/.docs/standards/automation/skills.md` | `type: standard`. The taxonomy this repo binds itself to. |
 | **The agent rule** | `/.docs/standards/automation/agents.md` | `type: standard`. Installed by `/skill:agent:new`: when work becomes a subagent, the definition contract, the verifier shape. |
 | **The hook rule** | `/.docs/standards/automation/hooks.md` | `type: standard`. Installed by `/skill:hook:new`: the scope ladder, the handler ladder, the policy defaults. |
-| **The budget rule** | `/.docs/standards/automation/context-budget.md` | `type: standard`. What the surface costs before anything fires, and the per-surface ceiling `budget` compares against. |
 | **The registry** | `/.docs/documentation/reference/automation.md` | `type: documentation`. The authoritative listing of the local surface. |
 
 The registry's `<!-- GENERATED:BEGIN -->` … `<!-- GENERATED:END -->` zone holds one table —

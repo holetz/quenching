@@ -117,10 +117,10 @@ is the field and not a bad skill name or a broken method.
 the field does to that same path. Together they say: a command is reachable by name *unless* it
 declares itself typed-only.
 
-The consequence for anyone weighing the field as a context-budget lever: **a command carrying it
+The consequence for anyone weighing the field as a description-cost lever: **a command carrying it
 cannot be a conductor stage.** A conductor that names it does not fail loudly — it invokes, is
-refused, and continues. Nothing in a plugin's own instruments sees this: the description costs 0, so
-a budget report shows an improvement, and a surface doctor still counts the command as present.
+refused, and continues. Nothing in a plugin's own instruments sees this: the description costs 0,
+and a surface doctor still counts the command as present.
 
 **Not measured here, and worth not assuming:** `hide-from-slash-command-tool` (row 5) is a
 *different* key that has never been probed at all. Whether it is the mirror of this one — hiding the
