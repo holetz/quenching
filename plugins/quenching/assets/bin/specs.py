@@ -1537,6 +1537,22 @@ def _split_files(val: str) -> list[str]:
     return out
 
 
+FILES_ANNOTATION_RE = re.compile(r"\s*\(([^()]*)\)\s*$")
+
+
+def _files_bad_annotation(entry: str) -> str | None:
+    """The single reserved `files:` annotation is `(new)` — a path about to be created,
+    which `_norm_file` strips for comparisons. Any OTHER trailing parenthetical is a
+    human comment; kept inside the entry, the executor receives a path that exists
+    nowhere with the same confidence as a real one — the silent failure this rule
+    closes. Return the annotation text so the caller can refuse the entry."""
+    m = FILES_ANNOTATION_RE.search(entry)
+    if not m:
+        return None
+    note = m.group(1)
+    return None if note == "new" else note
+
+
 def parse_tasks(text: str) -> list[dict]:
     """Every checkbox under `## Tasks`, in order: index, explicit id, state, text, line
     number, the `[P]` marker, the optional indented metadata (`files`/`pattern`/`verify`),
@@ -4713,17 +4729,40 @@ FILES_PARSE_CASES = [
 ]
 
 
+FILES_ANNOTATION_CASES = [
+    {"entry": "a.md (x, y)", "why": "a comma-carrying comment is an annotation, not a path"},
+    {"entry": "plugins/quenching/commands/zzprobe.md (descartável, revertido ao fim)",
+     "why": "the original repro's comment is refused whole — never split, never kept as "
+            "part of the path"},
+    {"entry": "src/(old)/x.py", "bad": False,
+     "why": "parentheses in the MIDDLE of a path are not an annotation — only a "
+            "trailing parenthetical is"},
+    {"entry": "src/a.py (new)", "bad": False,
+     "why": "`(new)` is the one reserved annotation — the path it names is about to be "
+            "created"},
+    {"entry": "c/dir/", "bad": False, "why": "a plain path is never an annotation"},
+]
+
+
 def files_parse_failures() -> list[str]:
-    """Run `FILES_PARSE_CASES` against `parse_tasks`, asserting `files:` reads back
-    entry-for-entry. A comma inside parentheses must never split a path — the executor
-    that receives the list cannot tell an invented piece from a path the task will
-    create, which is the exact silence this rule exists to close."""
+    """Run `FILES_PARSE_CASES` against `parse_tasks` and `FILES_ANNOTATION_CASES`
+    against `_files_bad_annotation`, asserting `files:` reads back entry-for-entry and
+    refuses what it must not interpret. A comma inside parentheses must never split a
+    path, and a trailing parenthetical that is not `(new)` must never reach an executor
+    as if it were a path — both are the same silence, closed at the parse."""
     out: list[str] = []
     for case in FILES_PARSE_CASES:
         got = parse_tasks(case["text"])
         files = got[0]["files"] if got else []
         if files != case["want"]:
             out.append(f"{case['why']}: got {files!r}, expected {case['want']!r}")
+    for case in FILES_ANNOTATION_CASES:
+        note = _files_bad_annotation(case["entry"])
+        want_bad = case.get("bad", True)
+        if want_bad and note is None:
+            out.append(f"{case['why']}: {case['entry']!r} was not refused")
+        elif not want_bad and note is not None:
+            out.append(f"{case['why']}: {case['entry']!r} refused with `({note})`")
     return out
 
 
@@ -6419,6 +6458,16 @@ def cmd_next(args, root: str) -> int:
         openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
         if openable:
             t = openable[0]
+            bad = [e for e in t["files"] if _files_bad_annotation(e)]
+            if bad:
+                # The consumer of `files:` is an executor who cannot tell an invented
+                # piece from a path the task will create — refuse HERE, at the door,
+                # never hand the list over.
+                return emit_err(args.json, {
+                    "code": "sp-files-annotation",
+                    "message": f"task {t['id']} declares files entries that are not "
+                               f"paths: {', '.join(repr(b) for b in bad)} — remove the "
+                               f"comment; `(new)` is the only reserved `files:` annotation"})
             obj = {"ok": True, "action": "implement_task", "task": t["id"], "text": t["text"],
                    "verify": t["verify"], "files": t["files"], "pattern": t["pattern"],
                    "cwd": t["cwd"],
@@ -6485,6 +6534,12 @@ def cmd_parallel(args, root: str) -> int:
     findings = []
     for gi, group in enumerate(parallel_groups(info["tasks"]), 1):
         undeclared = [t["id"] for t in group if not t["files"]]
+        annotations = []
+        for t in group:
+            for e in t["files"]:
+                note = _files_bad_annotation(e)
+                if note:
+                    annotations.append({"task": t["id"], "entry": e, "note": note})
         clashes = []
         for i, a in enumerate(group):
             for b in group[i + 1:]:
@@ -6493,10 +6548,10 @@ def cmd_parallel(args, root: str) -> int:
                         if _overlaps(fa, fb):
                             clashes.append({"a": a["id"], "b": b["id"],
                                             "file": _norm_file(fa)})
-        eligible = not undeclared and not clashes
+        eligible = not undeclared and not clashes and not annotations
         findings.append({"group": gi, "tasks": [t["id"] for t in group],
                          "eligible": eligible, "undeclared": undeclared,
-                         "clashes": clashes})
+                         "annotations": annotations, "clashes": clashes})
     ok = all(f["eligible"] for f in findings)
     if args.json:
         print(json.dumps({"ok": ok, "slug": info["slug"], "groups": findings},
@@ -6509,6 +6564,9 @@ def cmd_parallel(args, root: str) -> int:
                   f"{'eligible' if f['eligible'] else 'NOT eligible'}")
             for c in f["clashes"]:
                 print(f"    {c['a']} and {c['b']} both touch {c['file']}")
+            for a in f["annotations"]:
+                print(f"    {a['task']} declares non-path files entry {a['entry']!r} — "
+                      f"remove the comment; `(new)` is the only reserved annotation")
             if f["undeclared"]:
                 print(f"    no files: declared by {', '.join(f['undeclared'])}")
     return 0 if ok else 1
@@ -7019,6 +7077,22 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                                     f"{where}: `{p}` is declared under ## Impact but no task "
                                     f"names it", spec=s["slug"], path=where, standard=p,
                                     remedy="add a task that writes it, or drop the declaration"))
+
+    # A `files:` entry carrying a parenthetical that is not the reserved `(new)` is a
+    # human comment the parser must not interpret — kept whole it would reach an
+    # executor as a path that exists nowhere, which is the exact silence `_split_files`
+    # exists to stop. Refuse it at the points that hand paths out and report it here.
+    for t in tasks:
+        for entry in t["files"]:
+            note = _files_bad_annotation(entry)
+            if note:
+                out.append(_finding("sp-files-annotation", "error",
+                                    f"{where}: task {t['id'] or t['index']} declares files "
+                                    f"entry {entry!r} with annotation `({note})` — only "
+                                    f"`(new)` is reserved", spec=s["slug"], path=where,
+                                    task=t["id"] or t["index"], entry=entry,
+                                    remedy="remove the comment — `(new)` is the only "
+                                           "reserved `files:` annotation"))
 
     # Judged against the READY gate: a spec is "unrefined" once it could be built, not the
     # moment it is captured. Warning on every fresh capture would train the reader to
@@ -7661,13 +7735,15 @@ def cmd_selftest(args, root: str) -> int:
     if args.json:
         print(json.dumps({"ok": not errors, "assetDir": ASSET_DIR,
                           "cases": len(CANONICAL_CASES) + len(SECTION_CASES["cases"]) + 1
-                                   + len(HANDOFF_BLOCK_CASES) + len(FILES_PARSE_CASES),
+                                   + len(HANDOFF_BLOCK_CASES)
+                                   + len(FILES_PARSE_CASES) + len(FILES_ANNOTATION_CASES),
                           "findings": findings},
                          indent=2, ensure_ascii=False))
         return 1 if errors else 0
     print(f"specs selftest — {ASSET_DIR} ({len(CANONICAL_CASES)} frontmatter + "
           f"{len(SECTION_CASES['cases']) + 1} section + {len(HANDOFF_BLOCK_CASES)} "
-          f"Handoff-block + {len(FILES_PARSE_CASES)} files-parse canonical case(s), "
+          f"Handoff-block + {len(FILES_PARSE_CASES)} split + "
+          f"{len(FILES_ANNOTATION_CASES)} annotation canonical case(s), "
           f"{len(errors)} error(s))")
     for f in findings:
         print(f"  [{f['severity']:<5}] {f['message']}  ({f['code']})")
