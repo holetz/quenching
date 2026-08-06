@@ -49,8 +49,8 @@ descreviam o report em prosa produziram seis formas diferentes.
 
 Um formato de saída é um fato que o corpo do comando *reescreve*. É o fan-out que
 [../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) descreve:
-muda no primeiro corpo, envelhece nos outros sete, e `skills.py doctor`, `skills.py lint`,
-`skills.py budget` e `okf-validate.py` ficam todos verdes — nenhum deles enxerga prosa que descreve
+muda no primeiro corpo, envelhece nos outros sete, e `skills.py doctor`, `skills.py lint` e
+`okf-validate.py` ficam todos verdes — nenhum deles enxerga prosa que descreve
 uma forma.
 
 **A medição, antes.** Dos oito corpos, dois renderizavam bloco literal e seis descreviam o report em

@@ -38,17 +38,9 @@ sentence, and **link out** rather than explaining in full here.
   `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
   `resource-self`). The category has to stay small — a check that cannot tell "wrong" from "worth a
   look" belongs here or nowhere, and folding one into must-fix makes that set unusable.
-- [**Always-on ceiling**](../standards/automation/skills.md) — the per-surface character
-  total `skills.py budget` compares the summed descriptions against, commands **and** agent
-  definitions alike; set from a measurement and never guessed, and deliberately kept EQUAL to the
-  current total so it has no headroom and the next **always-on** command crosses it the day it is
-  minted. A `disable-model-invocation: true` command counts 0 and crosses nothing, so the ratchet
-  has two exits — re-measure, or make the command typed-only where that is the honest design.
-  `budget` reports and never refuses — crossing it prompts a re-measure, not a block.
 - [**Always-on metadata**](../standards/automation/skills.md) — the frontmatter
   `description` of every command, resident in every session's context before anything fires and
-  therefore the only surface cost paid whether or not a command runs; measured by
-  `skills.py budget` from the parsed value, never the YAML source.
+  therefore the only surface cost paid whether or not a command runs.
 - [**Anchorless strategy**](../standards/workflows/plan-git-record.md) — a merge strategy that
   produces **no merge commit** — `fast-forward` and `rebase` — so the **Merge record** has nothing
   to name and carries an explicit none instead of a fabricated pointer. Under both, the per-task
@@ -146,8 +138,7 @@ sentence, and **link out** rather than explaining in full here.
   loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
   exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
   neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
-  beats shortening the reads. [skills.md](../standards/automation/skills.md)
-  §The other half owns the integral itself and the 344-turn run it was measured on.
+  beats shortening the reads.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -365,7 +356,7 @@ sentence, and **link out** rather than explaining in full here.
   back to `files`.
 - [**Typed-only command**](../standards/automation/skills.md) — a command carrying
   `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
-  every session's context and `skills.py budget` charges it **0**. Residency and content are
+  every session's context. Residency and content are
   independent axes, so the description **keeps all three parts at full length** — the human picking
   it out of the `/` menu is now its only reader, and has no routing to fall back on. Measured, not
   assumed: the field also makes the command unreachable **by name** through the Skill tool, so
