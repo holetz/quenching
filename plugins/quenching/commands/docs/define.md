@@ -32,7 +32,7 @@ backfill instead of one term, see `/quenching:docs:glossary-backfill`.
   define the term as **this repo** uses it.
 - **Alphabetical, always sorted.** Insert the entry in its alphabetical position by **Term**;
   leave the list sorted. A glossary that is not sorted is as much drift as a lying index.
-- **Link derived, never invented.** The link targets a doc that actually exists (`/docs/<path>.md`,
+- **Link derived, never invented.** The link targets a doc that actually exists (`/.docs/<path>.md`,
   absolute across homes) — the concept doc that defines the term, or no link at all if none exists
   yet. Never fabricate a link to a doc that is not there. An unlinked entry is a **valid,
   permanent** state, not a defect to chase.
@@ -45,8 +45,8 @@ backfill instead of one term, see `/quenching:docs:glossary-backfill`.
 ## Workflow
 
 ### 1. Locate the glossary
-Find `docs/knowledge/glossary.md` (the bundle root may be a variant — resolve it as the other
-skills do). If the `knowledge/` home or the glossary seed is **missing**, stop and offer
+Find `/.docs/knowledge/glossary.md` — the bundle root is the fixed `/.docs/` convention. If the
+`knowledge/` home or the glossary seed is **missing**, stop and offer
 `/quenching:docs:align` to install the skeleton (it ships the fixed glossary), then resume. Read the
 current list so you can place the entry and detect an existing one.
 
@@ -57,8 +57,8 @@ than a one-liner, say so and hand off to `/quenching:docs:learn` for the concept
 entry here pointing at it.
 
 ### 3. Derive the link
-Look for the concept doc that defines the term (`Grep`/`Glob` `docs/**`). If one exists, link it
-(`/docs/<path>.md`). If none exists, leave the entry unlinked — never invent a target; optionally
+Look for the concept doc that defines the term (`Grep`/`Glob` `/.docs/**`). If one exists, link it
+(`/.docs/<path>.md`). If none exists, leave the entry unlinked — never invent a target; optionally
 note that a `/quenching:docs:learn` capture would give the term a home.
 
 ### 4. Write the entry (MERGE, alphabetical)

@@ -50,7 +50,7 @@ Chosen at mint, never defaulted into:
   invocation. With no wrapper left to hide behind, it now hides the entry point itself.
 - `disable-model-invocation: true` is the **only** field that blocks programmatic invocation.
   It also stops a conductor reaching the command by name and a spoken trigger routing to it —
-  and removes the description from always-on context, so `budget` counts the command at 0.
+  and removes the description from always-on context entirely.
 - Both at once leaves **no caller** — reported as `sk-unreachable`, an error.
 - `context: fork` is forbidden on any command that gates on a mid-flow confirmation: a forked
   context cannot present the plan whose OK the run depends on (`sk-fork-gate` beside an
@@ -90,8 +90,7 @@ coherence, and the profile's decidable slice — `sk-fork-gate`, `sk-profile-val
 (a non-empty description on every command, no two resolving to the same `/` path, kebab-case
 segments — plus the **report-only** wider surface: `agents/*.md` and wired hooks, as
 `sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`,
-`sk-hook-unparseable`), `registry reindex`, and `budget` (what the surface costs before
-anything fires). Uniform `--json`; exit **0** ok · **1** findings ·
+`sk-hook-unparseable`), and `registry reindex`. Uniform `--json`; exit **0** ok · **1** findings ·
 **2** refusal, with errors setting the exit code and warnings never doing so. Findings are named
 by their `sk-*` code.
 

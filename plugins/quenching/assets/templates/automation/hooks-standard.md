@@ -3,7 +3,7 @@ type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: <the surfaces this rule governs — .claude/settings.json hooks + command frontmatter hooks + .claude/hooks/>
-tags: [automation, hooks, performance, budget]
+tags: [automation, hooks, performance]
 timestamp: <ISO 8601 — e.g. 2026-07-20>
 audience: both
 authority: background   # born background; graduates to current once the surface follows it

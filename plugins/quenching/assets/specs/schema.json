@@ -21,7 +21,12 @@
         "writtenBy": "triage",
         "writeOnce": false,
         "label": "spec:ranked",
-        "why": "a human's ranking of this spec against every other one — nothing in the file, the filesystem or git can compute it"
+        "why": "a human's ranking of this spec against every other one — nothing in the file, the filesystem or git can compute it",
+        "complexity": {
+          "levels": ["low", "medium", "high", "xhigh"],
+          "writtenBy": ["triage", "create", "develop"],
+          "why": "the discrete scale the orchestrator derives the gears plan from: low runs the whole cycle in one session on a single authorization and ends opening a PR, medium isolates the larger stages in sub-agents, high keeps the stage-by-stage stops and confirmations, and xhigh adds at least one judgment stage (adversarial review, premortem) to the plan. Each level must change some gear, or it is vocabulary without effect. Computed by create and by the close of develop, and proposed by triage — no longer a value reserved to human judgment, so the field carries its own writtenBy list under a record whose writtenBy stays triage."
+        }
       },
       "refined": {
         "fields": ["mode", "date"],
@@ -66,7 +71,7 @@
         "writeOnce": true,
         "why": "a human's verdict on whether the work was completed or dropped"
       },
-      "note": "Every record here is a human judgment no derivation can reproduce — that is the whole admission test, and it is why there is no `created`, no `phase`, no `ready` and no attempt counter. Read top to bottom in `optional` order, the records narrate the spec's history: ranked, interrogated, approved, isolated, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition, where rewriting the value would falsify a fact that already happened. `writeOnce: false` marks a standing judgment its OWNING command may restamp — a triage sweep re-ranks, a second interrogation records a new mode, a re-read diff is reviewed again — which is why those three carry their own `date`. In neither case may a command other than `writtenBy` touch the record. `label` names the `spec:` label a GitHub or Azure Boards backend mirrors onto the tracker's own issue/work item whenever this record is present — a derived projection recalculated from the document on every write, never read back (see `docs/standards/architecture/spec-backend.md`). `branch` and `outcome` carry none: `branch` narrates `isolated`, which the derived `executing` stage's own `spec:built` label already covers, and there is no closing label — the issue's own open/closed state is the phase."
+      "note": "Every record here is a human judgment no derivation can reproduce — that is the whole admission test, and it is why there is no `created`, no `phase`, no `ready` and no attempt counter. Read top to bottom in `optional` order, the records narrate the spec's history: ranked, interrogated, approved, isolated, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition, where rewriting the value would falsify a fact that already happened. `writeOnce: false` marks a standing judgment its OWNING command may restamp — a triage sweep re-ranks, a second interrogation records a new mode, a re-read diff is reviewed again — which is why those three carry their own `date`. In neither case may a command other than `writtenBy` touch the record. `label` names the `spec:` label a GitHub or Azure Boards backend mirrors onto the tracker's own issue/work item whenever this record is present — a derived projection recalculated from the document on every write, never read back (see `/.docs/standards/architecture/spec-backend.md`). `branch` and `outcome` carry none: `branch` narrates `isolated`, which the derived `executing` stage's own `spec:built` label already covers, and there is no closing label — the issue's own open/closed state is the phase."
     },
 
     "note": "Frontmatter records human judgments; the filesystem, git and section presence record everything else. `date` is the exception that proves it: it is a fact about the spec rather than a judgment, but no store carries an honest copy of it — the basename stopped holding it, and an issue's created_at is when the issue was made — so it is declared here. No `phase` field: the folder is that fact. No `ready` field: the ten gate sections are that fact (stages.derived.ready). `verification` is OPTIONAL, and absent means the default applied on read — never stamped into a document to make it explicit, because a one-sentence capture has nobody to decide it yet. See `records` for what each optional key holds. `tags`, `assignee`, `start` and `target` are STATE, never records: each is written by its own deterministic verb (`specs.py tags|assignee|start|target`), and a backend with a faithful native counterpart stores it there — reassembled into these same keys on read, never reprojected on every write. See docs/standards/architecture/spec-backend.md §A native value is the same fact, or it is not a mapping at all for the test that decides which fields may be mapped this way."
@@ -90,11 +95,11 @@
   ],
 
   "impact": {
-    "parsedSubheading": "Standards this spec will write into docs/standards/",
+    "parsedSubheading": "Standards this spec will write into /.docs/standards/",
     "acceptedAliases": [
-      "Standards this plan will write into docs/standards/"
+      "Standards this plan will write into /.docs/standards/"
     ],
-    "pathPrefix": "docs/standards/",
+    "pathPrefix": "/.docs/standards/",
     "note": "Only this sub-heading is parsed. The siblings name paths the spec never promised to write."
   },
 

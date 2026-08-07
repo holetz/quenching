@@ -1,5 +1,5 @@
 ---
-description: Read the whole specs/ front and report where it stands — writes nothing, ever. Triggers on "specs status", "how is the specs front", "what is in plans", "show me the specs workspace", "is specs conformant", "what would align fix", "dry run the specs sweep". Reports every finding in the sweep's own sp- vocabulary, split into what /specs:align would fix on one OK, what a cycle command closes, and what neither closes because it needs a human. Shows each spec's frontmatter records as the history they narrate — ranked, interrogated, approved, isolated, reviewed, merged, closed. Near-free by construction, no sub-agents and no per-spec fan-out, so it doubles as an honest dry run before a sweep is authorized. Not for: fixing anything → /specs:align; being handed the single next action → /specs:continue; ranking the front → /specs:triage; sharpening a spec → /specs:develop.
+description: Read the whole `specs` front and report where it stands — writes nothing, ever. Triggers on "specs status", "how is the specs front", "what is in plans", "show me the specs workspace", "is specs conformant", "what would align fix", "dry run the specs sweep". Reports every finding in the sweep's own sp- vocabulary, split into what /specs:align would fix on one OK, what a cycle command closes, and what neither closes because it needs a human. Shows each spec's frontmatter records as the history they narrate — ranked, interrogated, approved, isolated, reviewed, merged, closed. Near-free by construction, no sub-agents and no per-spec fan-out, so it doubles as an honest dry run before a sweep is authorized. Not for: fixing anything → /specs:align; being handed the single next action → /specs:continue; ranking the front → /specs:triage; sharpening a spec → /specs:develop.
 argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 
 **Input**: `$ARGUMENTS` (optionally a spec slug to detail; omit to read the whole front).
 
-The **read-only** view of the `specs/` front. Every other command here either fixes something
+The **read-only** view of the `specs` front. Every other command here either fixes something
 (`/quenching:specs:align`), advances one spec a human named, or hands you the next action
 (`/quenching:specs:continue`). This one only looks — and because it looks at exactly what the sweep looks at,
 it is also the sweep's honest preview: the plan you would be authorizing, before you authorize it.
@@ -63,7 +63,7 @@ point.
 ### 1. Resolve the tool + workspace
 Resolve `specs.py` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool, invoked via `python3`/`py`. Resolve the `specs/` root at the repo root.
+§Resolving the tool, invoked via `python3`/`py`. Resolve the `/.specs/` root at the repo root.
 
 **No root at all** is a complete, valid answer: report `sp-no-workspace` and that `/quenching:specs:align`
 would scaffold it. A legacy `openspec/` present instead is `sp-legacy-workspace` — report it and
@@ -78,7 +78,7 @@ specs.py list --json
 ```
 `list --json` carries each spec's seven `records` already, so **there is no per-spec file to
 open** — asking the tool is also the only form that survives a backend where the specs are issues
-and `specs/plans/*.md` does not exist. Then read `docs/index.md` for `okf_version`, and — only
+and `/.specs/plans/*.md` does not exist. Then read `/.docs/index.md` for `okf_version`, and — only
 under a suspected legacy migration — `Glob` the `openspec/` tree and the shadow copies
 (`.claude/skills/openspec-*/SKILL.md`, `.claude/commands/opsx/*.md`).
 
