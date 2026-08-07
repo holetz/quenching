@@ -1073,7 +1073,8 @@ CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "integrationBranch", "releaseBranch", "hooks", "profiles",
-               "azurePlacement", "azureColumns", "subjects", "tagCatalog")
+               "azurePlacement", "azureColumns", "subjects", "tagCatalog",
+               "workItemTypes")
 BACKENDS = ("files", "github", "azure-boards")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
@@ -1200,6 +1201,7 @@ def load_config(root: str) -> dict:
            "azureStates": None, "hooks": {}, "profiles": None,
            "integrationBranch": None, "releaseBranch": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
+           "workItemTypes": {},
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1335,6 +1337,30 @@ def load_config(root: str) -> dict:
         out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
                              if isinstance(tag, str) and tag.strip()
                              and isinstance(desc, str) and desc.strip()}
+
+    # The abstract key a spec's `workItemType:` and `--type` carry — `{description, azure,
+    # github, default}`. `description` is prompt material exactly like a `tagCatalog` value,
+    # so an entry without one cannot be proposed and is dropped at the read, same as there.
+    # `azure`/`github` are each independently optional: an entry may name only one backend
+    # without breaking the other. `default` marks the repo's fallback entry.
+    types_raw = obj.get("workItemTypes")
+    if isinstance(types_raw, dict):
+        types: dict[str, dict] = {}
+        for key, val in types_raw.items():
+            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
+                continue
+            description = val.get("description")
+            if not (isinstance(description, str) and description.strip()):
+                continue
+            entry = {"description": description.strip()}
+            for backend_key in ("azure", "github"):
+                name = val.get(backend_key)
+                if isinstance(name, str) and name.strip():
+                    entry[backend_key] = name.strip()
+            if val.get("default") is True:
+                entry["default"] = True
+            types[key.strip()] = entry
+        out["workItemTypes"] = types
     return out
 
 
