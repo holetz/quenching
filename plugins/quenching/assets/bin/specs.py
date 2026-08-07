@@ -1470,6 +1470,49 @@ def subject_resolution_failures() -> list[str]:
     return out
 
 
+def resolve_work_item_type(cfg: dict, frontmatter_type: str | None) -> str:
+    """The `azure-boards` create's `--type`, first link that answers: the frontmatter's own
+    `workItemType:` key, the catalog's `default` entry, or `AZ_SPEC_TYPE` as the floor. Never
+    `azurePlacement.workItemType` — that key is the same fact said worse (§Design), retired
+    from this chain and read only by its own aposentada-key finding.
+
+    An entry that exists but names no `azure` type is treated exactly like an unresolved
+    key — a repository that only translated a key for `github` still reaches the floor,
+    because `azure-boards`'s create REQUIRES a `--type` and has nowhere else to fall."""
+    types = cfg.get("workItemTypes") or {}
+    entry = types.get(frontmatter_type) if frontmatter_type else None
+    if entry and entry.get("azure"):
+        return entry["azure"]
+    for candidate in types.values():
+        if candidate.get("default") and candidate.get("azure"):
+            return candidate["azure"]
+    return AZ_SPEC_TYPE
+
+
+def work_item_type_resolution_failures() -> list[str]:
+    """`resolve_work_item_type` against one case per link in its own chain."""
+    out: list[str] = []
+    incidente = {"description": "d", "azure": "Bug"}
+    tarefa = {"description": "d", "azure": "Task", "default": True}
+    github_only = {"description": "d", "github": "Incident"}
+    cases = (
+        ({"workItemTypes": {"incidente": incidente}}, "incidente",
+         "an explicit key with an azure name resolves it", "Bug"),
+        ({"workItemTypes": {"incidente": incidente, "tarefa": tarefa}}, None,
+         "no explicit key falls back to the default entry", "Task"),
+        ({"workItemTypes": {"incidente": github_only}}, "incidente",
+         "an explicit key with no azure name falls through to the floor", AZ_SPEC_TYPE),
+        ({"workItemTypes": {"tarefa": github_only}}, None,
+         "a default entry with no azure name falls through to the floor", AZ_SPEC_TYPE),
+        ({}, None, "nothing declared falls through to the floor", AZ_SPEC_TYPE),
+    )
+    for cfg, key, label, want in cases:
+        got = resolve_work_item_type(cfg, key)
+        if got != want:
+            out.append(f"{label}: resolve_work_item_type returned {got!r}, not {want!r}")
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of /.docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
@@ -9565,6 +9608,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "refusal; an unresolved key or a key naming an "
                                         "undeclared subject both are"))
 
+    # The azure-boards `--type` chain: frontmatter key, then the catalog's `default` entry,
+    # then `AZ_SPEC_TYPE` as the floor a create can never leave unset.
+    for failure in work_item_type_resolution_failures():
+        findings.append(_finding("sp-work-item-type-resolution-broken", "error",
+                                 f"work-item-type resolution — {failure}",
+                                 remedy="resolve_work_item_type must fall through an entry "
+                                        "with no `azure` name exactly like an unresolved "
+                                        "key, down to AZ_SPEC_TYPE"))
+
     # The board-state precedence `azure-boards`'s column write consults — core logic, never
     # a backend's own derivation, per `spec-backend.md` §The interface is the document.
     for failure in board_state_failures():
@@ -9824,6 +9876,9 @@ def cmd_selftest(args, root: str) -> int:
               f"refuses without making the call, the azure-boards WIQL never carries "
               f"`@project`, subject resolution refuses only once `subjects` is declared, the "
               f"board-state precedence puts archived over reviewed over the derived stage, "
+              f"work-item-type resolution falls through the frontmatter key, the catalog's "
+              f"default entry and AZ_SPEC_TYPE in that order, treating an entry with no "
+              f"azure name as unresolved, "
               f"an undeclared tag catalog flags nothing while a declared one flags what is "
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
               f"tag survives every azure-boards write whether or not a spec declares tags of "
