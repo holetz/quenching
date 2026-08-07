@@ -2924,6 +2924,18 @@ HYBRID_MARKER_RE = re.compile(r"\A<!--\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+
 # A `display:none` div is the nearest equivalent that does: invisible once the field renders,
 # present in the raw value every read gets. `hybrid_wrap`'s `fmt='div'` writes it; this is what
 # reads it back.
+#
+# THAT INVISIBILITY HOLDS UNDER `Markdown` TOO, and it was not obvious that it would: the
+# original measurement was taken while `System.Description` was `html`, where a div is
+# unremarkable. Once the field carries `multilineFieldsFormat: Markdown` the renderer could
+# just as well have escaped the tag and printed the marker as the first visible line of every
+# card. Verified by inspection of WI 961489 on 2026-08-06, ten sections in and already
+# converted: the div stays invisible and the frontmatter's `---` renders as a rule nobody
+# minded. So the storage format does NOT change, and the `[//]: # (…)` comment form
+# `## Alternatives Considered` holds in reserve stays unbuilt.
+#
+# The `;?` below is not decoration: Azure normalises `display:none` to `display:none;`, so a
+# marker written by this tool and a marker read back from the API differ by one character.
 HYBRID_DIV_MARKER_RE = re.compile(
     r'\A<div style="display:\s*none;?"\s*>\s*quenching-spec:\s*(\S+)(?:\s+parts=(\d+))?'
     r"\s*</div>[ \t]*\r?\n")
@@ -2944,7 +2956,16 @@ def hybrid_wrap(filename: str, text: str, parts: int = 1, fmt: str = "comment") 
     round-trips there, in 69 real specs, and changing it would mean migrating every one."""
     count = f" parts={parts}" if parts > 1 else ""
     if fmt == "div":
-        return f'<div style="display:none">quenching-spec: {filename}{count}</div>\n{text}'
+        # WRITTEN IN THE FORM AZURE STORES, character for character: `display:none;` with
+        # the semicolon and a space before `</div>`, both of which its HTML normaliser adds
+        # on write. A marker written any other way comes back different from what went out,
+        # and `System.Description` then differs on every diff — so the one field a write
+        # always carries could never be elided. Measured live 2026-08-06; the round-trip case
+        # in `hybrid_split_failures` has carried this exact shape since task 6.1 of the
+        # previous plan. The reader stays tolerant (`;?`, `\s*`) for documents written before
+        # this.
+        return (f'<div style="display:none;">quenching-spec: {filename}{count} </div>\n'
+                f'{text}')
     return f"<!-- quenching-spec: {filename}{count} -->\n{text}"
 
 
@@ -4051,6 +4072,10 @@ def hybrid_serialization_failures() -> list[str]:
 # number and same meaning as `GH_MISSING`, kept separate so neither constant becomes the
 # other's by accident.
 AZ_MISSING = 127
+# Azure DevOps' own application id. `az rest` issues a token for whatever `--resource` names,
+# and the default (ARM) is rejected by dev.azure.com — this is the audience the API accepts,
+# and it is a constant of the service rather than of any organisation.
+AZ_DEVOPS_RESOURCE_ID = "499b84ac-1321-427f-aa17-267ca6975798"
 
 # `az` does NOT have gh's exit 4 — it answers almost everything with exit 1 and says why in
 # stderr, so the split into remedies is made on what it SAID rather than on the code. Each
@@ -4074,7 +4099,63 @@ AZ_STDERR_SIGNALS = (
     ("must be specified", "sp-az-no-project",
      "run `az devops configure --defaults organization=https://dev.azure.com/<org> "
      "project=<project>`"),
+    # The PATCH endpoint's own vocabulary. A consolidated write is all-or-nothing, so these
+    # two take the document edit down with them — which is exactly why each carries the
+    # remedy for ITS cause instead of arriving as one anonymous `sp-az-api-error`.
+    ("the type changed without a value", "sp-az-format-uncoupled",
+     "the multilineFieldsFormat op travelled without its own System.Description value — "
+     "`azure_patch_body` couples them, so reaching this means the coupling broke"),
+    ("rule error", "sp-az-rule-error",
+     "the process rejected a field value — check `azureColumns`/`azureStates` against what "
+     "this project's board actually allows; nothing was written"),
 )
+
+
+def azure_cache_path(org: str, project: str) -> str:
+    """Where this org+project's resolutions are remembered, BETWEEN processes.
+
+    OUTSIDE THE REPOSITORY, always. A cache in the tree is committed, travels to another
+    machine and to another checkout, and a stale entry there points at a work item that was
+    recreated — writing somebody else's card while looking exactly like a hit. The user cache
+    directory is per-machine by construction, which is the property that matters.
+
+    IT IS NOT A STORE. `spec-backend.md` §Granular reading already admits a cache inside
+    `specs.py` on three conditions — it is not authoritative, nothing outside the CLI reads
+    it, and the backend stays the source of truth. Crossing processes changes none of those;
+    what it changes is that a wrong entry now survives the process that wrote it, which is
+    why every reader here re-validates against what came back rather than trusting the hit.
+
+    Keyed by org and project so two projects in one org never see each other's answers."""
+    import hashlib
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(
+        os.path.expanduser("~"), ".cache")
+    key = hashlib.sha256(f"{org}\n{project}".encode()).hexdigest()[:16]
+    return os.path.join(base, "quenching", "azure", f"{key}.json")
+
+
+def azure_cache_read(org: str, project: str) -> dict:
+    """What was remembered, or `{}` — an unreadable or corrupt cache is a miss, never a
+    failure. Nothing here is authoritative, so there is nothing to refuse over."""
+    try:
+        with open(azure_cache_path(org, project), encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def azure_cache_write(org: str, project: str, **entries) -> None:
+    """Merge `entries` into the cache. A write that cannot happen is silently nothing: the
+    cache only ever saves a call, so failing to save one is not worth a refusal."""
+    path = azure_cache_path(org, project)
+    data = azure_cache_read(org, project)
+    data.update(entries)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh)
+    except OSError:
+        pass
 
 
 def _az_run(cwd: str, *argv: str, stdin: str | None = None) -> tuple[int, str, str]:
@@ -4202,9 +4283,17 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
     # Measured (task 6.3): a human's default is legitimately a project GUID — `--project`
     # routing accepts either — but `azure_query_wiql`'s `[System.TeamProject] = '<value>'`
     # compares against the field's own text value, which is always the NAME; a GUID there
-    # answers `sp-az-api-error` ("not found in hierarchy") on every listing. `az devops
-    # project show` accepts either shape as input and always returns the name, so this is a
-    # no-op for a repo whose default was already a name.
+    # answers `sp-az-api-error` ("not found in hierarchy") on every listing.
+    #
+    # CACHED, because this answer does not change. A project is renamed about as often as it
+    # is created, and the call to ask cost 0,5s of `az` startup on EVERY process — measured
+    # 2026-08-06 on `unicredbr`, whose configured default is itself a GUID, which is exactly
+    # the case a local shape test cannot shortcut. The cache is keyed on the RAW default, so
+    # a human who runs `az devops configure --defaults project=…` is followed rather than
+    # ignored: a changed default is a different key and resolves again.
+    cached = azure_cache_read(org, project).get("projectName")
+    if cached:
+        return (org, cached), {}
     code, out, err = _az_run(cwd, "devops", "project", "show", "--project", project,
                              "--org", org, "--output", "json")
     if code != 0:
@@ -4213,6 +4302,7 @@ def resolve_azure_project(cwd: str) -> tuple[tuple[str, str], dict]:
         name = json.loads(out or "null").get("name") or project
     except json.JSONDecodeError:
         name = project
+    azure_cache_write(org, project, projectName=name)
     return (org, name), {}
 
 
@@ -4249,6 +4339,16 @@ AZ_REFUSAL_CASES = (
     # only the single-item calls (`_az`'s `expect='object'`, the default) and never the
     # WIQL query (`expect='array'`).
     ("az exits 0 with empty stdout on a single-item call", 0, "", "", "sp-az-empty-response"),
+    # The PATCH endpoint's own two, which `az boards work-item update` never produced: the
+    # consolidated write is the first caller that can send a format op or a board column in
+    # the same body as the document, and all-or-nothing makes naming the cause the whole
+    # mitigation `## Risks` accepted the atomicity on.
+    ("a format op sent without its own value", 1, "",
+     "ERROR: VS403319: The type changed without a value for field System.Description.\n",
+     "sp-az-format-uncoupled"),
+    ("a column value the process refuses", 1, "",
+     "ERROR: TF401320: Rule Error for field WEF_a_Kanban.Column. Error code: "
+     "AllowedValues.\n", "sp-az-rule-error"),
 )
 
 
@@ -4387,21 +4487,27 @@ def azure_query_wiql_failures() -> list[str]:
     return out
 
 
-def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
-                             rendered: list[str] | None = None) -> tuple[list[str], str | None]:
-    """`(the "field=value" pairs for --fields, the --assigned-to value)` — the pure half of
-    `_apply_native_fields`, so the one rule that matters most is checked without a live `az`:
-    the discovery tag is ALWAYS in the `System.Tags` pair, even where `fm` declares no tags
-    at all, because `_native_fields` excludes it on read and a write that forgot it would
-    silently drop the one thing that makes a spec findable again.
+def azure_native_fields(fm: dict, discovery_tag: str | None,
+                        rendered: list[str] | None = None) -> tuple[dict, str | None]:
+    """`(the stored fields keyed by reference name, the assignee)` — the pure half of the
+    consolidated write, so the one rule that matters most is checked without a live `az`: the
+    discovery tag is ALWAYS in `System.Tags`, even where `fm` declares no tags at all, because
+    `_native_fields` excludes it on read and a write that forgot it would silently drop the
+    one thing that makes a spec findable again.
 
     `System.Tags` is ONE field carrying three classes, joined here and separated on read by
     `declared_tags`: what the spec declared (`fm['tags']`, storage), this backend's index
     (the discovery tag), and `rendered` — the `spec:` set `derive_labels` recomputes on every
     write. `fm['tags']` is filtered through `declared_tags` on the way in as well, so a
     reserved name that somehow reached the document cannot be written back as if the spec had
-    declared it."""
-    pairs: list[str] = []
+    declared it.
+
+    THE DICT IS THE ONLY FORM. A sibling rendering these as `--fields KEY=VALUE` pairs
+    survived this file for one task after `_apply_native_fields` was deleted, exercised by
+    nothing but its own selftest — the spelling of a transport with no callers left. The
+    values themselves are what the PATCH diffs against the item as read, so the dict is what
+    both the builder and the check see."""
+    fields: dict = {}
     all_tags = declared_tags(list(fm.get("tags") or []), discovery_tag)
     if discovery_tag and discovery_tag not in all_tags:
         all_tags.append(discovery_tag)
@@ -4409,14 +4515,44 @@ def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
         if name not in all_tags:
             all_tags.append(name)
     if all_tags:
-        pairs.append(f"System.Tags={'; '.join(all_tags)}")
+        # SORTED, because the comparison is a set. Azure returns `System.Tags` in its own
+        # order, so joining in insertion order made every write see a difference that was
+        # only a permutation — measured live 2026-08-06.
+        fields["System.Tags"] = "; ".join(sorted(all_tags))
     for key, ref in (("start", "Microsoft.VSTS.Scheduling.StartDate"),
                      ("target", "Microsoft.VSTS.Scheduling.TargetDate")):
         value = fm.get(key)
         if value:
-            pairs.append(f"{ref}={value}")
+            fields[ref] = value
     assignee = fm.get("assignee")
-    return pairs, (str(assignee) if assignee else None)
+    return fields, (str(assignee) if assignee else None)
+
+
+def azure_comparable_fields(fields: dict) -> dict:
+    """The item as READ, rewritten into the shapes this backend WRITES — the only form a
+    diff may compare against.
+
+    TWO FIELDS COME BACK IN A SHAPE THAT CAN NEVER BE WRITTEN, both already measured and
+    documented in `_native_fields`: `System.AssignedTo` arrives as an identity object and
+    goes out as a UPN, and the two scheduling dates arrive as a full datetime
+    (`2026-01-01T03:00:00Z`) and go out as a date. Diffing the raw read against what a write
+    produces would find those three always different, so the patch would carry them on every
+    single write — the exact no-op op the diff exists to remove, reintroduced as a silent
+    default."""
+    out = dict(fields)
+    tags = out.get("System.Tags")
+    if isinstance(tags, str):
+        out["System.Tags"] = "; ".join(sorted(t.strip() for t in tags.split(";")
+                                              if t.strip()))
+    assigned = out.get("System.AssignedTo")
+    if isinstance(assigned, dict):
+        out["System.AssignedTo"] = assigned.get("uniqueName") or assigned.get("displayName")
+    for ref in ("Microsoft.VSTS.Scheduling.StartDate",
+                "Microsoft.VSTS.Scheduling.TargetDate"):
+        value = out.get(ref)
+        if isinstance(value, str) and len(value) > 10:
+            out[ref] = value[:10]
+    return out
 
 
 def azure_native_field_failures() -> list[str]:
@@ -4425,26 +4561,26 @@ def azure_native_field_failures() -> list[str]:
     breaking the boring ones."""
     out: list[str] = []
     cases = (
-        ({}, "quenching-spec", ["System.Tags=quenching-spec"], None,
+        ({}, "quenching-spec", {"System.Tags": "quenching-spec"}, None,
          "no tags at all still writes the discovery tag alone"),
         ({"tags": ["Vertical: Risco"]}, "quenching-spec",
-         ["System.Tags=Vertical: Risco; quenching-spec"], None,
+         {"System.Tags": "Vertical: Risco; quenching-spec"}, None,
          "a declared tag is joined with the discovery tag, never instead of it"),
         ({"tags": ["quenching-spec"]}, "quenching-spec",
-         ["System.Tags=quenching-spec"], None,
+         {"System.Tags": "quenching-spec"}, None,
          "the discovery tag is never duplicated when already declared"),
         ({"start": "2026-01-01", "target": "2026-02-01"}, "quenching-spec",
-         ["System.Tags=quenching-spec",
-          "Microsoft.VSTS.Scheduling.StartDate=2026-01-01",
-          "Microsoft.VSTS.Scheduling.TargetDate=2026-02-01"], None,
-         "both scheduling dates become their own pair"),
-        ({"assignee": "Someone"}, None, [], "Someone",
-         "no discovery tag declared writes no System.Tags pair at all"),
+         {"System.Tags": "quenching-spec",
+          "Microsoft.VSTS.Scheduling.StartDate": "2026-01-01",
+          "Microsoft.VSTS.Scheduling.TargetDate": "2026-02-01"}, None,
+         "both scheduling dates become their own field"),
+        ({"assignee": "Someone"}, None, {}, "Someone",
+         "no discovery tag declared writes no System.Tags at all"),
     )
-    for fm, tag, want_pairs, want_assignee, label in cases:
-        pairs, assignee = azure_native_field_pairs(fm, tag)
-        if pairs != want_pairs:
-            out.append(f"{label}: pairs were {pairs!r}, not {want_pairs!r}")
+    for fm, tag, want_fields, want_assignee, label in cases:
+        fields, assignee = azure_native_fields(fm, tag)
+        if fields != want_fields:
+            out.append(f"{label}: fields were {fields!r}, not {want_fields!r}")
         if assignee != want_assignee:
             out.append(f"{label}: assignee was {assignee!r}, not {want_assignee!r}")
     return out
@@ -4479,7 +4615,7 @@ def field_strip_failures() -> list[str]:
 
 # `System.Description`'s real ceiling — measured (task 6.2), not documented anywhere `az`
 # prints: writing past it answers `TF401262: … exceeds the maximum allowed length of
-# 1048576`. Checked in `_az_with_description`, before the call is made.
+# 1048576`. Checked in `_az_patch`, before the call is made.
 AZ_DESCRIPTION_MAX = 1_048_576
 
 # `workitemsbatch`'s own ceiling — measured against Microsoft's documented limit for the
@@ -4491,7 +4627,156 @@ AZ_BATCH_SIZE = 200
 AZ_BATCH_FIELDS = ("System.Id", "System.Title", "System.State", "System.Description",
                    "System.Tags", "System.AssignedTo",
                    "Microsoft.VSTS.Scheduling.StartDate",
-                   "Microsoft.VSTS.Scheduling.TargetDate")
+                   "Microsoft.VSTS.Scheduling.TargetDate",
+                   # Task 1.1, measured: asking for it costs +198 bytes on a 6-item batch
+                   # (+0,8%) and removes `_apply_parent`'s whole `work-item show`. `$expand`
+                   # would have brought it for free along with the board's column field, but
+                   # it was rejected — the items come back carrying TWO
+                   # `WEF_<guid>_Kanban.Column`, one per board, and picking between them by
+                   # value is the guess §Placement forbids.
+                   "System.Parent",
+                   # Reaffirmed on every write, so read on every write too — measured live
+                   # 2026-08-06: absent from this list, `current` answers None for both and
+                   # the diff emits them on EVERY write, which is the no-op op it exists to
+                   # remove.
+                   "System.AreaPath", "System.IterationPath")
+
+
+def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
+                     parent: tuple[int, str] | None = None) -> list[dict]:
+    """The JSON patch ops one write sends, diffed against the item as it was READ.
+
+    THE DIFF DOES NOT WEAKEN THE REAFFIRMATION `spec-backend.md` §Placement declares — it
+    removes the ops that change nothing. A human who moved the card leaves `current` and
+    `desired` disagreeing, the op is emitted, and the card comes back. What disappears is the
+    revision an unchanged field used to bump on every `record` write.
+
+    THE FORMAT OP IS COUPLED TO THE VALUE, never diffed on its own. Measured against the org:
+    a patch carrying only `/multilineFieldsFormat/System.Description` answers `400 The type
+    changed without a value`, and one whose value equals the stored text changes neither the
+    revision nor the format. So `markdown` emits its op ONLY where the description itself is
+    an op — which is exactly the case the diff can rule out.
+
+    The parent travels as a relation rather than a field, and `parent` carries BOTH halves
+    because they are not interchangeable: the id is what `System.Parent` is diffed against,
+    the url is what the op must carry — a relation whose `url` is a bare id is rejected. That
+    `System.Parent` is read back with the document is what spares this a `work-item show` of
+    its own."""
+    ops = [{"op": "add", "path": f"/fields/{key}", "value": value}
+           for key, value in desired.items() if current.get(key) != value]
+    if markdown and any(o["path"] == "/fields/System.Description" for o in ops):
+        ops.append({"op": "add", "path": "/multilineFieldsFormat/System.Description",
+                    "value": "Markdown"})
+    if parent and int(current.get("System.Parent") or 0) != parent[0]:
+        ops.append({"op": "add", "path": "/relations/-",
+                    "value": {"rel": "System.LinkTypes.Hierarchy-Reverse",
+                              "url": parent[1]}})
+    return ops
+
+
+# The exact shape `_work_item_url` builds — org AND project, then the API's own spelling of
+# a work item. Written out here rather than derived, so a fixture that stops matching what
+# the code produces is visible in the diff.
+AZ_PATCH_PARENT = (788243, "https://dev.azure.com/o/proj/_apis/wit/workItems/788243")
+
+# (label, current, desired, markdown, parent, expected op paths in order). Self-contained:
+# no network and no `az`. The assembly is what a write's whole cost now rests on, so it is
+# asserted here rather than discovered against a real board.
+AZ_PATCH_CASES = (
+    ("nothing changed emits nothing",
+     {"System.Title": "t", "System.Description": "d"},
+     {"System.Title": "t", "System.Description": "d"}, False, None, ()),
+    ("one changed field is one op",
+     {"System.Title": "t", "System.Description": "d"},
+     {"System.Title": "t2", "System.Description": "d"}, False, None,
+     ("/fields/System.Title",)),
+    ("a field the item does not carry yet is an op",
+     {"System.Title": "t"}, {"System.Title": "t", "System.Tags": "spec"}, False, None,
+     ("/fields/System.Tags",)),
+    ("markdown rides with the description it needs",
+     {"System.Description": "d"}, {"System.Description": "d2"}, True, None,
+     ("/fields/System.Description", "/multilineFieldsFormat/System.Description")),
+    ("markdown is never emitted alone",
+     {"System.Title": "t", "System.Description": "d"},
+     {"System.Title": "t2", "System.Description": "d"}, True, None,
+     ("/fields/System.Title",)),
+    ("an unlinked parent is a relation op",
+     {"System.Title": "t"}, {"System.Title": "t"}, False, AZ_PATCH_PARENT, ("/relations/-",)),
+    ("a parent already linked emits nothing",
+     {"System.Title": "t", "System.Parent": 788243}, {"System.Title": "t"}, False,
+     AZ_PATCH_PARENT, ()),
+    # The two fields whose read shape is not their write shape. Fed through
+    # `azure_comparable_fields` first, an unchanged assignee and an unchanged date must
+    # vanish from the patch exactly like any other unchanged field.
+    ("an identity object equals the UPN it was written from",
+     azure_comparable_fields({"System.AssignedTo": {"uniqueName": "a@b.c",
+                                                    "displayName": "A B"}}),
+     {"System.AssignedTo": "a@b.c"}, False, None, ()),
+    ("a datetime equals the date it was written from",
+     azure_comparable_fields({"Microsoft.VSTS.Scheduling.StartDate":
+                              "2026-01-01T03:00:00Z"}),
+     {"Microsoft.VSTS.Scheduling.StartDate": "2026-01-01"}, False, None, ()),
+)
+
+
+AZ_PATCH_TYPE_ERROR = "The type changed without a value"
+
+
+def azure_patch_culprit(ops: list[dict], said: str) -> str | None:
+    """Which op azure devops rejected, read off what it said — or None where it named none.
+
+    ONLY VALUE-BEARING PATHS ARE CANDIDATES. `/relations/-` ends in `-`, which occurs in
+    almost every sentence an API writes, so admitting every op here would attribute a field's
+    rejection to the parent link at random.
+
+    The type error is special-cased because it names no field at all, and it has exactly one
+    cause: the format op travelled without its own value — the coupling `azure_patch_body`
+    exists to hold. Seeing it means that coupling broke, and saying so beats a generic
+    refusal that sends a human looking at the field."""
+    if AZ_PATCH_TYPE_ERROR.lower() in said.lower():
+        return next((o["path"] for o in ops
+                     if o["path"].startswith("/multilineFieldsFormat/")), None)
+    for op in ops:
+        if not op["path"].startswith(("/fields/", "/multilineFieldsFormat/")):
+            continue
+        if op["path"].rsplit("/", 1)[-1] in said:
+            return op["path"]
+    return None
+
+
+# (label, ops' paths, what az said, the op expected to be named).
+AZ_CULPRIT_CASES = (
+    ("a rejected column value names its own field",
+     ("/fields/System.Title", "/fields/WEF_a_Kanban.Column"),
+     "TF401320: Rule Error for field WEF_a_Kanban.Column: value not allowed",
+     "/fields/WEF_a_Kanban.Column"),
+    ("the type error names the format op, never a field",
+     ("/fields/System.Title", "/multilineFieldsFormat/System.Description"),
+     "400 The type changed without a value",
+     "/multilineFieldsFormat/System.Description"),
+    ("a relation op is never guessed at from a hyphen",
+     ("/relations/-",), "VS402323: some-rule-failed for this work item", None),
+    ("a message naming nothing names no op",
+     ("/fields/System.Title",), "TF400813: the user is not authorized", None),
+)
+
+
+def azure_patch_failures() -> list[str]:
+    failures: list[str] = []
+    for label, paths, said, want in AZ_CULPRIT_CASES:
+        got = azure_patch_culprit([{"op": "add", "path": p, "value": "v"} for p in paths],
+                                  said)
+        if got != want:
+            failures.append(f"{label}: named {got!r}, expected {want!r}")
+    for label, current, desired, markdown, parent, want in AZ_PATCH_CASES:
+        ops = azure_patch_body(current, desired, markdown=markdown, parent=parent)
+        got = tuple(o["path"] for o in ops)
+        if got != want:
+            failures.append(f"{label}: emitted {got}, expected {want}")
+        for op in ops:
+            if op["path"] == "/relations/-" and op["value"]["url"].isdigit():
+                failures.append(f"{label}: the relation carries a bare id, not a work-item url")
+    return failures
 
 
 class AzureBoardsBackend(SpecBackend):
@@ -4572,6 +4857,13 @@ class AzureBoardsBackend(SpecBackend):
         # System.Tags the tag reconciliation in `write_spec` diffs against — the last costs
         # no call of its own, and is the one place tags are seen before `declared_tags`.
         self._rows: list[tuple[dict, int, str, str, dict, list[str]]] | None = None
+        # item id -> its fields, already in the shapes THIS backend writes. Filled by
+        # `_load`, read by `write_spec`'s diff, cleared by `_invalidate` with the rows
+        # it belongs to — a stale entry would diff a write against the item as it was
+        # two writes ago and elide an op that was still needed.
+        self._raw: dict[int, dict] = {}
+        # slug -> its row, for the narrowed read. Same lifetime as `_rows`, same reset.
+        self._one: dict[str, tuple | None] = {}
 
     # -- transport ---------------------------------------------------------- #
     def _az_raw(self, action: str, *argv: str, expect: str = "object"):
@@ -4663,28 +4955,66 @@ class AzureBoardsBackend(SpecBackend):
                          expect="array") or []
         ids = [int(r.get("id") or (r.get("fields") or {}).get("System.Id") or 0)
                for r in found]
-        rows: list[tuple[dict, int, str, str, dict, list[str]]] = []
-        for item in self._show_many([i for i in ids if i]):
-            filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
-            doc = azure_restore_trailing_newline(doc)
-            m = SPEC_FILE_RE.match(filename)
-            if not m:
-                # An ordinary work item a human created. The marker is what tells a spec
-                # apart from the project's real backlog, which this backend must never
-                # list and must never write over.
-                continue
-            phase = self._phase_of(item)
-            rows.append(({
-                # The SAME key set `spec_files` returns and nothing more.
-                "phase": phase, "folder": phase, "legacy": False, "file": filename,
-                "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/"
-                        f"{item.get('id')}",
-                "slug": m.group(1),
-            }, int(item.get("id") or 0), doc,
-                self._field(item, "System.Title"), self._native_fields(item),
-                self._raw_tags(item)))
+        rows = [row for row in (self._row_of(item)
+                                for item in self._show_many([i for i in ids if i])) if row]
         self._rows = rows
+        azure_cache_write(self.org, self.project,
+                          slugs={d["slug"]: item_id for d, item_id, *_ in rows})
         return rows
+
+    def _row_of(self, item: dict) -> tuple[dict, int, str, str, dict, list[str]] | None:
+        """One work item as a listing row, or None where the marker says it is not a spec.
+
+        The marker is what tells a spec apart from the project's real backlog, which this
+        backend must never list and must never write over — so an ordinary work item a human
+        created answers None here rather than being carried any further."""
+        filename, doc, _ = hybrid_unwrap(self._field(item, "System.Description"))
+        m = SPEC_FILE_RE.match(filename)
+        if not m:
+            return None
+        item_id = int(item.get("id") or 0)
+        # KEYED BY ID, never a seventh slot on the row. The tuple is already six wide and its
+        # last widening shipped a `list_specs` that unpacked five — every operation under this
+        # backend died on it. One writer here, readers ask by id, and the unpack sites stay
+        # exactly as they are.
+        self._raw[item_id] = azure_comparable_fields(item.get("fields") or {})
+        phase = self._phase_of(item)
+        return ({
+            # The SAME key set `spec_files` returns and nothing more.
+            "phase": phase, "folder": phase, "legacy": False, "file": filename,
+            "path": f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}",
+            "slug": m.group(1),
+        }, item_id, azure_restore_trailing_newline(doc),
+            self._field(item, "System.Title"), self._native_fields(item),
+            self._raw_tags(item))
+
+    def _row_for(self, slug: str) -> tuple[dict, int, str, str, dict, list[str]] | None:
+        """One spec's row from a remembered id — the WIQL and the whole-front batch skipped —
+        or None, which means "ask the listing", never "it is not there".
+
+        THE CACHE ONLY EVER NARROWS THE READ. The item is still fetched and still unwrapped,
+        and the marker that comes back is compared against the slug that was asked for: a
+        remembered id pointing at a recreated, retitled or deleted work item answers None and
+        falls through to `_load`. Nothing is written on the strength of the cache alone,
+        which is the whole reason it is allowed to cross processes at all.
+
+        A slug the cache never saw is also None — no fuzzy resolution happens here, so a typo
+        keeps reaching `read_spec`'s `resolve_one` exactly as before."""
+        if self._rows is not None:
+            return next((r for r in self._rows if r[0]["slug"] == slug), None)
+        if slug in self._one:
+            return self._one[slug]
+        item_id = (azure_cache_read(self.org, self.project).get("slugs") or {}).get(slug)
+        if not item_id:
+            return None
+        items = self._show_many([int(item_id)])
+        row = self._row_of(items[0]) if items else None
+        row = row if row and row[0]["slug"] == slug else None
+        # MEMOISED FOR THE PROCESS, like `_rows` beside it: one command reads the spec and
+        # then writes it, and without this the narrowed read happens twice — measured live,
+        # two `workitemsbatch` calls for one `section --write`.
+        self._one[slug] = row
+        return row
 
     def _show_many(self, ids: list[int]) -> list[dict]:
         """Every work item's fields, `AZ_BATCH_SIZE` ids per call via
@@ -4701,7 +5031,11 @@ class AzureBoardsBackend(SpecBackend):
             fd, path = tempfile.mkstemp(suffix=".json")
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                    json.dump({"ids": chunk, "fields": list(AZ_BATCH_FIELDS)}, fh)
+                    fields = list(AZ_BATCH_FIELDS)
+                    known = self._board_field_for_read()
+                    if known:
+                        fields.append(known)
+                    json.dump({"ids": chunk, "fields": fields}, fh)
                 result = self._az_raw(
                     f"reading {len(chunk)} work item(s) in batch", "devops", "invoke",
                     "--area", "wit", "--resource", "workitemsbatch",
@@ -4712,8 +5046,43 @@ class AzureBoardsBackend(SpecBackend):
             items.extend((result or {}).get("value") or [])
         return items
 
+    def _board_field_for_read(self) -> str | None:
+        """The board's column field to ASK FOR in the batch — resolving it if that is what it
+        takes, and answering None rather than refusing when it cannot be had.
+
+        THE FIELD MUST BE IN THE READ OR THE COLUMN CANNOT BE DIFFED, and a column that
+        cannot be diffed is written blind. Measured 2026-08-07 against the real org: on a
+        cold cache the item came back without the column, `current` answered None for it, and
+        the write went out carrying one op that set the column to the value it already
+        held — a seventh `az` call, and a REQUEST rather than a read. Resolving here instead
+        makes it six, and the pointless write disappears.
+
+        THE TWO CALLS ARE NOT NEW SPEND FOR A WRITE — `write_spec` resolves the same field a
+        moment later either way; this only moves them ahead of the batch, which is the one
+        ordering where their answer is still useful. A read that never writes does pay them,
+        once ever: the answer is cached across processes, so the whole cost is one cold run
+        per organisation, project, team and work item type.
+
+        ONLY WHERE A COLUMN IS DECLARED. With neither `azureColumns` nor `boardColumn` no
+        column op is ever emitted, so there is nothing to diff and nothing worth resolving.
+
+        AND IT NEVER REFUSES. `sp-az-no-team` and `sp-az-no-board` belong to the write, which
+        calls `_resolve_board_field` for real and raises there with the same message. An
+        optimisation that turned a listing into a refusal would be a behaviour change wearing
+        a performance fix's clothes."""
+        if self._board_field is not None:
+            return self._board_field
+        if not (self.column_map or self.board_column):
+            return None
+        try:
+            return self._resolve_board_field()
+        except BackendRefusal:
+            return None
+
     def _invalidate(self) -> None:
         self._rows = None
+        self._raw = {}
+        self._one = {}
 
     def _item_id(self, slug: str) -> int:
         return self._item_tags(slug)[0]
@@ -4723,7 +5092,9 @@ class AzureBoardsBackend(SpecBackend):
         hand, so knowing which tags a write must reconcile against costs no call of its
         own. The tags come back RAW, discovery tag and `spec:` rendering included: this is
         the write path's view, and the only one that wants them unfiltered."""
-        for descriptor, item_id, _, _title, _native, tags in self._load():
+        row = self._row_for(slug)
+        for descriptor, item_id, _, _title, _native, tags in ([row] if row
+                                                              else self._load()):
             if descriptor["slug"] == slug:
                 return item_id, tags
         raise BackendRefusal({
@@ -4801,14 +5172,22 @@ class AzureBoardsBackend(SpecBackend):
         return sorted(rows, key=lambda r: (PHASES.index(r["phase"]), r["file"]))
 
     def read_spec(self, slug: str) -> tuple[dict | None, dict]:
-        rows = self._load()
-        spec, err = resolve_one(self.list_specs(), slug,
-                                {d["slug"]: t for d, _, _, t, _, _ in rows})
-        if err:
-            return None, err
-        _, full_text, native_title, native_fields = next(
-            (i, d, t, f) for descriptor, i, d, t, f, _tags in rows
-            if descriptor["slug"] == spec["slug"])
+        # The remembered id first: an exact slug answers with ONE work item fetched and no
+        # WIQL at all, and anything else — a typo, a slug the cache never saw, an id that no
+        # longer holds this spec — falls through to the listing, where `resolve_one` still
+        # does the fuzzy matching it always did.
+        hit = self._row_for(slug)
+        if hit:
+            spec, full_text, native_title, native_fields = dict(hit[0]), hit[2], hit[3], hit[4]
+        else:
+            rows = self._load()
+            spec, err = resolve_one(self.list_specs(), slug,
+                                    {d["slug"]: t for d, _, _, t, _, _ in rows})
+            if err:
+                return None, err
+            _, full_text, native_title, native_fields = next(
+                (i, d, t, f) for descriptor, i, d, t, f, _tags in rows
+                if descriptor["slug"] == spec["slug"])
         info = derive_info(spec, hybrid_title_join(full_text, native_title))
         # REASSEMBLED, not re-parsed: the stored document never carries these four keys
         # (`write_spec` strips them — §Armazenado não é projetado), so the native fields ARE
@@ -4822,7 +5201,7 @@ class AzureBoardsBackend(SpecBackend):
         # FRESH, off the text THIS write is putting in place — every caller (`cmd_record`,
         # `cmd_field`, `cmd_promote`...) hands `write_spec` the OLD `info` beside the NEW
         # `text`, so trusting `info["frontmatter"]` here would read the state a write is
-        # REPLACING rather than the one it is creating. `_apply_column` (§2.11) had exactly
+        # REPLACING rather than the one it is creating. The board column (§2.11) had exactly
         # this bug from §2.5 until this task — the derivation was cheap and nothing forced
         # it to be re-run. It is also what `derive_labels` renders from, the SAME shared
         # calculation `github` reconciles its labels with.
@@ -4836,17 +5215,14 @@ class AzureBoardsBackend(SpecBackend):
         chunks = hybrid_split(stored, None)
         # Placement is REAFFIRMED here, not just declared at creation — a human moving the
         # work item to another area between writes sees the next one bring it back, the same
-        # way `move_spec` already owns the state. `_update` only ever adds the fields given
-        # it, so an unset `iteration_path` is simply not one of them.
-        fields = {"title": title,
-                  "description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
+        # way `move_spec` already owns the state. Only declared fields reach `desired`, so
+        # an unset `iteration_path` is simply not one of them.
+        desired = {"System.Title": title,
+                   "System.Description": hybrid_wrap(info["file"], chunks[0][0], fmt="div")}
         if self.area_path:
-            fields["area"] = self.area_path
+            desired["System.AreaPath"] = self.area_path
         if self.iteration_path:
-            fields["iteration"] = self.iteration_path
-        self._update(item_id, **fields)
-        self._apply_parent(item_id, self.parent_id)
-        self._apply_column(item_id, fresh)
+            desired["System.IterationPath"] = self.iteration_path
         # CARRIED FORWARD, not read off `fresh` alone: `strip_frontmatter_keys` means an
         # ORDINARY write — a section edit, a ticked task — hands this method text that never
         # mentions `tags`/`assignee`/`start`/`target` at all, because they were never in the
@@ -4855,13 +5231,33 @@ class AzureBoardsBackend(SpecBackend):
         # (the pre-write read's) values unless THIS write's own text set one explicitly.
         #
         # The RENDERED half rides the same call: `derive_labels` off the fresh document, into
-        # the one `System.Tags` pair `_apply_native_fields` already builds. It is not carried
+        # the one `System.Tags` value `azure_native_fields` already builds. It is not carried
         # forward and never diffed against what the item holds — a rendering is recomputed
         # from the source on every write by definition.
-        self._apply_native_fields(
-            item_id, carry_forward_fields(info["frontmatter"], fresh["frontmatter"],
-                                          FIELD_KEYS),
-            derive_labels(fresh))
+        native, assignee = azure_native_fields(
+            carry_forward_fields(info["frontmatter"], fresh["frontmatter"], FIELD_KEYS),
+            self.discovery_tag, derive_labels(fresh))
+        desired.update(native)
+        if assignee:
+            desired["System.AssignedTo"] = assignee
+        # The column rides the SAME body, which is what kept `azureStates` and `azureColumns`
+        # from undoing each other before: the board resolves `System.State` from the column,
+        # and one patch cannot race itself.
+        column = self.column_map.get(board_state_of(fresh), self.board_column)
+        if column:
+            desired[self._resolve_board_field()] = column
+        # `markdown=True` on every write, not once at creation: the format op only travels
+        # where the description is itself an op, so an item already in `Markdown` pays
+        # nothing and one still in `html` is converted by the first write that touches it.
+        # The parent rides the same body: `System.Parent` comes back with the document, so
+        # the link is REAFFIRMED by diff — already linked emits nothing, unlinked emits one
+        # relation op — where it used to cost a `work-item show` of its own on every write.
+        parent = (self.parent_id, self._work_item_url(self.parent_id)) \
+            if self.parent_id else None
+        ops = azure_patch_body(self._raw.get(item_id, {}), desired, markdown=True,
+                               parent=parent)
+        if ops:
+            self._az_patch(f"updating work item {item_id}", item_id, ops)
         self._invalidate()
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
@@ -4875,7 +5271,7 @@ class AzureBoardsBackend(SpecBackend):
         stored, title = hybrid_project(m.group(1) if m else filename, stripped)
         # NO `--state`: measured (task 6.3), `az boards work-item create` has no such flag —
         # only `update` does. A new item is born in whatever state its TYPE defaults to
-        # ("New", typically) — left alone, because `_apply_column` below is what actually
+        # ("New", typically) — left alone, because the column op below is what actually
         # decides it (§task 6.3: column and state are not independent on this process; the
         # board resolves state FROM the column, and a direct `--state` write the column
         # write follows would just be undone).
@@ -4885,74 +5281,54 @@ class AzureBoardsBackend(SpecBackend):
             argv += ["--area", self.area_path]
         if self.iteration_path:
             argv += ["--iteration", self.iteration_path]
-        description = hybrid_wrap(filename, hybrid_split(stored, None)[0][0], fmt="div")
-        item = self._az_with_description("creating a work item", argv, description)
+        # THE DOCUMENT DOES NOT TRAVEL ON THE CREATE CALL, and that is what makes a spec
+        # born in `Markdown` rather than converted by whichever later write first happens to
+        # touch its text. The format op only rides alongside a `System.Description` op —
+        # measured: a patch carrying the format alone answers `400 The type changed without
+        # a value` — so the description has to be IN the patch for the item to ever leave
+        # `html`. It costs no extra call: the placement patch below was being sent anyway.
+        item = self._az("creating a work item", *argv)
         item_id = int((item or {}).get("id") or 0)
-        self._apply_parent(item_id, self.parent_id)
-        # No column applicable (`azureColumns`/`boardColumn` both absent) is the one case
-        # left where the state has to be forced directly — nothing else will ever set it.
-        if not self._apply_column(item_id, fresh):
-            self._update(item_id, state=self.states[phase])
-        # ALWAYS, even with no fixed tags: this is the ONE call that puts the discovery tag
-        # on a freshly created item. Skip it and the spec is invisible to `_load()`'s own
-        # tag-scoped listing the instant it exists — never found again by slug, by `list`,
-        # by anything. The rendering rides along, from the same fresh document — usually
-        # empty on a capture form, which has no records and sits at `captured`.
-        self._apply_native_fields(item_id, fresh["frontmatter"], derive_labels(fresh))
+        # ONE PATCH for everything the creation could not carry. The item was born this
+        # instant, so `current` is `{}` by construction and every op below is genuinely new —
+        # and the parent needs no read to know it is unlinked, which is the one place
+        # `_apply_parent`'s round trip is provably unnecessary rather than merely cached.
+        #
+        # THE STATE FALLBACK IS DECIDED BEFORE SENDING, never as a second write. No column
+        # applicable (`azureColumns` AND `boardColumn` both absent) is the one case where the
+        # state has to be forced directly; with a column, forcing it too would be undone by
+        # the board resolving state FROM the column (§task 6.3).
+        #
+        # The discovery tag rides here, and it is not optional: skip it and the spec is
+        # invisible to `_load()`'s tag-scoped listing the instant it exists — never found
+        # again by slug, by `list`, by anything.
+        desired, assignee = azure_native_fields(fresh["frontmatter"], self.discovery_tag,
+                                                derive_labels(fresh))
+        desired["System.Description"] = hybrid_wrap(
+            filename, hybrid_split(stored, None)[0][0], fmt="div")
+        if assignee:
+            desired["System.AssignedTo"] = assignee
+        column = self.column_map.get(board_state_of(fresh), self.board_column)
+        if column:
+            desired[self._resolve_board_field()] = column
+        else:
+            desired["System.State"] = self.states[phase]
+        parent = (self.parent_id, self._work_item_url(self.parent_id)) \
+            if self.parent_id else None
+        ops = azure_patch_body({}, desired, markdown=True, parent=parent)
+        if ops:
+            self._az_patch(f"writing the new work item {item_id}", item_id, ops)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
-    def _apply_native_fields(self, item_id: int, fm: dict,
-                             rendered: list[str] | None = None) -> None:
-        """Reaffirm `tags`/`assignee`/`start`/`target`'s native counterparts, on every write.
-        `tags` and the two scheduling dates go through `--fields` — `az boards work-item
-        update` has no dedicated flag for any of the three; `assignee` does (`--assigned-to`).
+    def _work_item_url(self, item_id: int) -> str:
+        """The REST identity of one work item — what a `/relations/-` op must carry.
 
-        THE DISCOVERY TAG IS ALWAYS INCLUDED, even where `fm` carries no `tags` at all — it
-        is `System.Tags`'s one non-optional member. `_native_fields` excludes it on READ
-        (§A descoberta: it is this backend's index, never a spec's own declared tag), so
-        writing back only `fm['tags']` would silently drop it from the item on the very next
-        write, making the spec unfindable by every later listing.
-
-        `rendered` is the `spec:` set `derive_labels` computed for THIS write — a rendering of
-        derived state, not storage. It rides in the same `System.Tags` pair rather than a
-        second call, which is the third of the four conditions `spec-backend.md` §Rendering
-        derived state admits the category under.
-
-        An absent `start`/`target`/`assignee` is left alone, never cleared — the same
-        asymmetry `_update` already has for every other optional field: this backend adds
-        what is declared and never erases what a human set directly on the board."""
-        pairs, assignee = azure_native_field_pairs(fm, self.discovery_tag, rendered)
-        argv = ["work-item", "update", "--id", str(item_id)]
-        if pairs:
-            argv += ["--fields", *pairs]
-        if assignee:
-            argv += ["--assigned-to", assignee]
-        if len(argv) > 4:
-            self._az(f"updating work item {item_id}'s stored fields", *argv)
-
-    def _apply_parent(self, item_id: int, parent_id: int | None) -> None:
-        """Reaffirm the declared parent on every write, resolved BY ID and never by title —
-        `## Open Decisions` settles this task 2.4: the id (e.g. `788243`) is stable, and a
-        title is one rename away from breaking the link. `subjects.<key>.parent` is what
-        supplies it; unset where no subject resolved one.
-
-        RESOLUTION IS THE READ BELOW, not a bespoke check — a parent id with no work item
-        behind it fails through the same `sp-az-api-error` refusal `_az` already raises for
-        any id `az` cannot find (`AZ_REFUSAL_CASES` covers it), so nothing new is needed to
-        say no; `## Out of Scope` already rules out this tool ever CREATING the parent.
-
-        Idempotent: the read is what lets every write call this safely — without it, ADDING
-        the same parent relation on every save would duplicate it rather than reaffirm it."""
-        if not parent_id:
-            return
-        current = self._az(f"reading work item {item_id}'s parent",
-                           "work-item", "show", "--id", str(item_id))
-        if int((current.get("fields") or {}).get("System.Parent") or 0) == parent_id:
-            return
-        self._az(f"linking work item {item_id} to its parent {parent_id}",
-                 "work-item", "relation", "add", "--id", str(item_id),
-                 "--relation-type", "parent", "--target-id", str(parent_id))
+        NOT THE LOCATOR. `_apis/wit/workItems/<id>` is the API's spelling and is rejected by
+        a browser; `_workitems/edit/<id>` is what `_load` puts in `path` and what every
+        report prints. A relation handed the browser form is refused, so the two are built
+        separately rather than one being derived from the other."""
+        return f"{self.org.rstrip('/')}/{self.project}/_apis/wit/workItems/{item_id}"
 
     def _resolve_board_field(self) -> str:
         """The team's Kanban column field — `WEF_<guid>_Kanban.Column` — resolved once per
@@ -4967,6 +5343,16 @@ class AzureBoardsBackend(SpecBackend):
         and 'User Story' resolves to 'Stories'."""
         if self._board_field is not None:
             return self._board_field
+        # BETWEEN PROCESSES, not just within one. The guid is per-team and per-process
+        # caching meant paying 1 + N calls on every `specs.py` invocation — measured 2,8s on
+        # a team with six boards. Task 1.1 ruled out reading it off the item itself, so the
+        # resolution stays authoritative and only its ANSWER is remembered, keyed by the team
+        # and work item type it was resolved for.
+        cache_key = f"boardField:{self.team}:{self.work_item_type}"
+        cached = azure_cache_read(self.org, self.project).get(cache_key)
+        if cached:
+            self._board_field = cached
+            return cached
         if not self.team:
             raise BackendRefusal({
                 "code": "sp-az-no-team", "exit": 2,
@@ -4993,6 +5379,7 @@ class AzureBoardsBackend(SpecBackend):
                     "referenceName")
                 if field:
                     self._board_field = field
+                    azure_cache_write(self.org, self.project, **{cache_key: field})
                     return field
         raise BackendRefusal({
             "code": "sp-az-no-board", "exit": 2,
@@ -5000,29 +5387,6 @@ class AzureBoardsBackend(SpecBackend):
                        f"'{self.work_item_type}' — check azurePlacement.team and "
                        f"workItemType; no spec was read or written",
         })
-
-    def _apply_column(self, item_id: int, info: dict) -> bool:
-        """Reaffirm the board column on every write, from the de-para (`azureColumns`),
-        falling back to `boardColumn` for a state absent from the table. A human who moved
-        the card sees the next write bring it back — the board is the projection, per
-        `## Design` §O de-para de coluna. `board_state_of` is the CORE half — this backend
-        only ever consults the table, never derives the key itself.
-
-        COLUMN AND STATE ARE NOT INDEPENDENT — measured (task 6.3): setting the board column
-        silently rewrites `System.State` to whatever this process's `allowedMappings` names
-        for it (`Backlog`, the `incoming` column, only ever resolves to `New`; `Concluído`,
-        `outgoing`, only ever to `Closed`). Applying `azureStates` and `azureColumns` as two
-        independent writes was the design before this task — the second call was silently
-        undoing the first. Returns whether a column was actually applied, so a caller with
-        nothing declared here (`azureColumns` AND `boardColumn` both absent) knows to fall
-        back to forcing `System.State` directly — the only case left where that is correct."""
-        column = self.column_map.get(board_state_of(info), self.board_column)
-        if not column:
-            return False
-        field = self._resolve_board_field()
-        self._az(f"setting work item {item_id}'s board column", "work-item", "update",
-                 "--id", str(item_id), "--fields", f"{field}={column}")
-        return True
 
     def move_spec(self, info: dict, dest_phase: str) -> str:
         announce_unproved(self.name)
@@ -5033,51 +5397,81 @@ class AzureBoardsBackend(SpecBackend):
         # `azureColumns`/`boardColumn` cannot answer for this phase at all.
         dest_info = dict(info)
         dest_info["phase"] = dest_phase
-        if not self._apply_column(item_id, dest_info):
-            self._update(item_id, state=self.states[dest_phase])
+        column = self.column_map.get(board_state_of(dest_info), self.board_column)
+        desired = {self._resolve_board_field(): column} if column \
+            else {"System.State": self.states[dest_phase]}
+        ops = azure_patch_body(self._raw.get(item_id, {}), desired)
+        if ops:
+            self._az_patch(f"moving work item {item_id} to {dest_phase}", item_id, ops)
         self._invalidate()
         return f"{self.org.rstrip('/')}/{self.project}/_workitems/edit/{item_id}"
 
-    def _update(self, item_id: int, **fields: str):
-        # `description` is pulled out and routed through `_az_with_description` — see there
-        # for why a document cannot travel as an ordinary `--description` argument.
-        description = fields.pop("description", None)
-        argv: list[str] = ["work-item", "update", "--id", str(item_id)]
-        for key, value in fields.items():
-            argv += [f"--{key}", value]
-        if description is None:
-            return self._az(f"updating work item {item_id}", *argv)
-        return self._az_with_description(f"updating work item {item_id}", argv, description)
+    def _az_patch(self, action: str, item_id: int, ops: list[dict]):
+        """One work item, one JSON patch — the whole write in a single `az` process.
 
-    def _az_with_description(self, action: str, argv: list[str], description: str):
-        """*argv* (a `work-item create`/`update` call, minus any description flag) plus
-        `System.Description` from a temp file, via `--fields System.Description=@<path>`.
+        `az rest`, and NOT `az devops invoke` — measured, not preferred. The extension routes
+        by resource NAME, and `workitems` resolves to the CREATE route (`/workitems/${type}`);
+        asked to PATCH an id it dies inside msrest with `KeyError: 'type'`, a traceback rather
+        than a refusal. `az rest` addresses the endpoint directly, at the price of naming
+        Azure DevOps' resource id so the token is issued for the right audience.
 
-        TWO CEILINGS, AND ONLY THE SECOND ONE IS AZURE'S. A document handed to `az` as a
-        literal `--description <text>` argument hits Linux's own per-argument limit
-        (`MAX_ARG_STRLEN`, 128 KiB) long before it reaches the API — measured on this org:
-        `az` itself raises `OSError` building the argv above ~128,000 characters, nothing to
-        do with the work item at all. `--fields KEY=@path` reads the value from disk instead,
-        which has no ceiling of its own; what remains is `System.Description`'s REAL one,
-        measured the same way: `az` answers `TF401262: … exceeds the maximum allowed length
-        of 1048576` above it. Refusing here, before the call, names the size and the ceiling
-        instead of surfacing that error anonymously mid-write — the same reasoning
-        `GitHubBackend._write_api`'s body-ceiling check already carries."""
-        if len(description) > AZ_DESCRIPTION_MAX:
-            raise BackendRefusal({
-                "code": "sp-az-description-too-large", "exit": 2, "action": action,
-                "size": len(description), "max": AZ_DESCRIPTION_MAX,
-                "message": f"the document is {len(description)} characters and "
-                           f"System.Description holds {AZ_DESCRIPTION_MAX} (measured: `az` "
-                           f"answers TF401262 above it) — shorten a section while {action}; "
-                           f"nothing was written",
-            })
+        `Content-Type: application/json-patch+json` is not optional — the work item PATCH
+        endpoint rejects the default `application/json` outright.
+
+        THE CEILING IS CHECKED HERE, and here is now the only door a document goes through.
+        The `--fields System.Description=@<path>` mechanism that used to be that door was
+        deleted with this method's arrival, along with the two ceilings it had to explain —
+        Linux's own `MAX_ARG_STRLEN` no longer applies to a body that travels as a file. The
+        measured `System.Description` limit still does (`TF401262` above it), and naming the
+        size before the call beats surfacing that error anonymously mid-write.
+
+        ONE PATCH IS ALL-OR-NOTHING, so the refusal names the op. `## Risks` accepts the
+        atomicity — a rejected op takes the document edit down with it — on the condition
+        that a human is told WHICH one; a patch of eight ops that fails without saying is
+        worse to diagnose than the four separate writes it replaced."""
+        for op in ops:
+            value = op.get("value")
+            if isinstance(value, str) and len(value) > AZ_DESCRIPTION_MAX:
+                raise BackendRefusal({
+                    "code": "sp-az-description-too-large", "exit": 2, "action": action,
+                    "size": len(value), "max": AZ_DESCRIPTION_MAX, "op": op["path"],
+                    "message": f"the value for {op['path']} is {len(value)} characters and "
+                               f"the field holds {AZ_DESCRIPTION_MAX} (measured: `az` "
+                               f"answers TF401262 above it) — shorten a section while "
+                               f"{action}; nothing was written",
+                })
         import tempfile
-        fd, path = tempfile.mkstemp(suffix=".txt")
+        fd, path = tempfile.mkstemp(suffix=".json")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                fh.write(description)
-            return self._az(action, *argv, "--fields", f"System.Description=@{path}")
+                json.dump(ops, fh)
+            from urllib.parse import quote
+            uri = (f"{self.org.rstrip('/')}/{quote(self.project)}/_apis/wit/workitems/"
+                   f"{item_id}?api-version=7.1")
+            code, out, err = _az_run(
+                self.cwd, "rest", "--method", "PATCH", "--uri", uri,
+                "--resource", AZ_DEVOPS_RESOURCE_ID,
+                "--headers", "Content-Type=application/json-patch+json",
+                "--body", f"@{path}")
+            if code != 0:
+                raise BackendRefusal(az_refusal(action, code, out, err))
+            try:
+                return json.loads(out or "null")
+            except json.JSONDecodeError as e:
+                raise BackendRefusal({
+                    "code": "sp-az-bad-response", "exit": 2, "action": action,
+                    "message": f"`az rest` exited 0 while {action} but its output is not "
+                               f"JSON: {e}",
+                }) from e
+        except BackendRefusal as e:
+            e.err["ops"] = [op["path"] for op in ops]
+            culprit = azure_patch_culprit(ops, str(e.err.get("az") or ""))
+            if culprit:
+                e.err["op"] = culprit
+                e.err["message"] = (f"{e.err.get('message', '')} — the op azure devops "
+                                    f"rejected is {culprit}; the whole patch was refused, so "
+                                    f"nothing was written")
+            raise
         finally:
             os.unlink(path)
 
@@ -5089,7 +5483,17 @@ def azure_restore_trailing_newline(doc: str) -> str:
     newline cannot survive the round trip in either direction. Every document this tool ever
     writes ends in exactly one (`TEMPLATE_SPEC`, `capture_form`, every section writer) —
     restoring it here is not a guess, it is undoing a transport artefact, on the one backend
-    whose transport has it."""
+    whose transport has it.
+
+    THAT ARTEFACT IS HISTORY, AND THIS IS NOW COMPATIBILITY RATHER THAN A LIVE CORRECTION.
+    `@file` was the WRITE mechanism, deleted with `_az_patch`'s arrival; a document now
+    leaves as JSON in an `az rest` body and comes back as JSON from `workitemsbatch`, and
+    neither touches the trailing newline. Measured 2026-08-07 against the real org: the same
+    section written back verbatim twice sent a patch the FIRST time — `System.Description`
+    still stored in the stripped form the old transport left — and, the second time, no
+    patch at all. So the stored value converges after one write, and this function's job is
+    documents written before that change. It stays because it is a no-op on an
+    already-terminated document, and because nothing migrates the ones already stored."""
     if doc and not doc.endswith("\n"):
         return doc + "\n"
     return doc
@@ -5115,8 +5519,8 @@ def azure_description_ceiling_failures() -> list[str]:
     out: list[str] = []
     az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".")
     try:
-        az._az_with_description("testing", ["work-item", "update", "--id", "1"],
-                                "x" * (AZ_DESCRIPTION_MAX + 1))
+        az._az_patch("testing", 1, [{"op": "add", "path": "/fields/System.Description",
+                                     "value": "x" * (AZ_DESCRIPTION_MAX + 1)}])
         out.append("a description over AZ_DESCRIPTION_MAX did not refuse")
     except BackendRefusal as e:
         if e.err.get("code") != "sp-az-description-too-large":
@@ -8995,7 +9399,7 @@ def cmd_selftest(args, root: str) -> int:
     for failure in azure_description_ceiling_failures():
         findings.append(_finding("sp-az-description-ceiling-broken", "error",
                                  f"azure-boards description ceiling — {failure}",
-                                 remedy="_az_with_description must refuse "
+                                 remedy="_az_patch must refuse "
                                         "sp-az-description-too-large before making the call, "
                                         "never let az answer TF401262 anonymously"))
 
@@ -9029,6 +9433,17 @@ def cmd_selftest(args, root: str) -> int:
                                         "extension, an unauthenticated identity and an API "
                                         "error are four refusals with four remedies; all "
                                         "exit 2 and none is a traceback"))
+
+    # The assembly a consolidated write rests on, asserted offline. The format op is the
+    # case worth having a check for: coupled to its value it works, emitted alone the API
+    # answers `400 The type changed without a value`, and only a diff can tell them apart.
+    for failure in azure_patch_failures():
+        findings.append(_finding("sp-az-patch-broken", "error",
+                                 f"the azure-boards PATCH body is misassembled — {failure}",
+                                 remedy="one op per field that actually differs from the "
+                                        "item as read, the multilineFieldsFormat op only "
+                                        "alongside its own value, and no op at all where "
+                                        "nothing changed"))
 
     # The literal-project-name fix, checked against the exact macro that resolves to nothing
     # on this org's `az` — a reworded query must break this check rather than reintroduce
@@ -9167,9 +9582,9 @@ def cmd_selftest(args, root: str) -> int:
     for failure in azure_native_field_failures():
         findings.append(_finding("sp-az-native-fields-broken", "error",
                                  f"azure-boards stored-field write — {failure}",
-                                 remedy="azure_native_field_pairs must always include the "
-                                        "discovery tag in the System.Tags pair, declared "
-                                        "tags or not"))
+                                 remedy="azure_native_fields must always include the "
+                                        "discovery tag in System.Tags, declared tags or "
+                                        "not"))
 
     # The read side's mirror: the stored document must never carry a second, unread copy of
     # a field the native store already owns.
@@ -9366,7 +9781,12 @@ def cmd_selftest(args, root: str) -> int:
               f"reaches for no specs worktree where there must not be one, the worktree lock "
               f"admits one writer and reclaims nothing it cannot prove dead, the "
               f"{len(GH_REFUSAL_CASES)} gh and {len(AZ_REFUSAL_CASES)} az transport failures "
-              f"each refuse with their own remedy, no backend warns as unproved "
+              f"each refuse with their own remedy, the {len(AZ_PATCH_CASES)} AZ_PATCH_CASES "
+              f"put one op on every field that differs and none on one that does not, with "
+              f"the multilineFieldsFormat op never travelling without its own value and the "
+              f"{len(AZ_CULPRIT_CASES)} culprit cases naming the rejected op without "
+              f"ever guessing at a relation, "
+              f"no backend warns as unproved "
               f"({', '.join(UNPROVED_BACKENDS) or 'none declared'}), every record reads "
               f"back as it was "
               f"written, a foreign label survives label reconciliation while a stale "
