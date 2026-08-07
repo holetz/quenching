@@ -4100,7 +4100,7 @@ AZ_STDERR_SIGNALS = (
      "run `az devops configure --defaults organization=https://dev.azure.com/<org> "
      "project=<project>`"),
     # The PATCH endpoint's own vocabulary. A consolidated write is all-or-nothing, so these
-    # three take the document edit down with them — which is exactly why each carries the
+    # two take the document edit down with them — which is exactly why each carries the
     # remedy for ITS cause instead of arriving as one anonymous `sp-az-api-error`.
     ("the type changed without a value", "sp-az-format-uncoupled",
      "the multilineFieldsFormat op travelled without its own System.Description value — "
@@ -4487,32 +4487,26 @@ def azure_query_wiql_failures() -> list[str]:
     return out
 
 
-def azure_native_field_pairs(fm: dict, discovery_tag: str | None,
-                             rendered: list[str] | None = None) -> tuple[list[str], str | None]:
-    """`(the "field=value" pairs for --fields, the --assigned-to value)` — the pure half of
-    `azure_native_fields`, so the one rule that matters most is checked without a live `az`:
-    the discovery tag is ALWAYS in the `System.Tags` pair, even where `fm` declares no tags
-    at all, because `_native_fields` excludes it on read and a write that forgot it would
-    silently drop the one thing that makes a spec findable again.
+def azure_native_fields(fm: dict, discovery_tag: str | None,
+                        rendered: list[str] | None = None) -> tuple[dict, str | None]:
+    """`(the stored fields keyed by reference name, the assignee)` — the pure half of the
+    consolidated write, so the one rule that matters most is checked without a live `az`: the
+    discovery tag is ALWAYS in `System.Tags`, even where `fm` declares no tags at all, because
+    `_native_fields` excludes it on read and a write that forgot it would silently drop the
+    one thing that makes a spec findable again.
 
     `System.Tags` is ONE field carrying three classes, joined here and separated on read by
     `declared_tags`: what the spec declared (`fm['tags']`, storage), this backend's index
     (the discovery tag), and `rendered` — the `spec:` set `derive_labels` recomputes on every
     write. `fm['tags']` is filtered through `declared_tags` on the way in as well, so a
     reserved name that somehow reached the document cannot be written back as if the spec had
-    declared it."""
-    fields, assignee = azure_native_fields(fm, discovery_tag, rendered)
-    return [f"{ref}={value}" for ref, value in fields.items()], assignee
+    declared it.
 
-
-def azure_native_fields(fm: dict, discovery_tag: str | None,
-                        rendered: list[str] | None = None) -> tuple[dict, str | None]:
-    """The same answer as `azure_native_field_pairs`, keyed by reference name.
-
-    THE DICT IS THE PRIMARY FORM and the pairs are rendered from it, not the other way
-    round: `--fields KEY=VALUE` is one transport's spelling, and the consolidated PATCH needs
-    the values themselves to diff them against the item as read. Two builders would be two
-    places for the discovery-tag rule to be forgotten in."""
+    THE DICT IS THE ONLY FORM. A sibling rendering these as `--fields KEY=VALUE` pairs
+    survived this file for one task after `_apply_native_fields` was deleted, exercised by
+    nothing but its own selftest — the spelling of a transport with no callers left. The
+    values themselves are what the PATCH diffs against the item as read, so the dict is what
+    both the builder and the check see."""
     fields: dict = {}
     all_tags = declared_tags(list(fm.get("tags") or []), discovery_tag)
     if discovery_tag and discovery_tag not in all_tags:
@@ -4567,26 +4561,26 @@ def azure_native_field_failures() -> list[str]:
     breaking the boring ones."""
     out: list[str] = []
     cases = (
-        ({}, "quenching-spec", ["System.Tags=quenching-spec"], None,
+        ({}, "quenching-spec", {"System.Tags": "quenching-spec"}, None,
          "no tags at all still writes the discovery tag alone"),
         ({"tags": ["Vertical: Risco"]}, "quenching-spec",
-         ["System.Tags=Vertical: Risco; quenching-spec"], None,
+         {"System.Tags": "Vertical: Risco; quenching-spec"}, None,
          "a declared tag is joined with the discovery tag, never instead of it"),
         ({"tags": ["quenching-spec"]}, "quenching-spec",
-         ["System.Tags=quenching-spec"], None,
+         {"System.Tags": "quenching-spec"}, None,
          "the discovery tag is never duplicated when already declared"),
         ({"start": "2026-01-01", "target": "2026-02-01"}, "quenching-spec",
-         ["System.Tags=quenching-spec",
-          "Microsoft.VSTS.Scheduling.StartDate=2026-01-01",
-          "Microsoft.VSTS.Scheduling.TargetDate=2026-02-01"], None,
-         "both scheduling dates become their own pair"),
-        ({"assignee": "Someone"}, None, [], "Someone",
-         "no discovery tag declared writes no System.Tags pair at all"),
+         {"System.Tags": "quenching-spec",
+          "Microsoft.VSTS.Scheduling.StartDate": "2026-01-01",
+          "Microsoft.VSTS.Scheduling.TargetDate": "2026-02-01"}, None,
+         "both scheduling dates become their own field"),
+        ({"assignee": "Someone"}, None, {}, "Someone",
+         "no discovery tag declared writes no System.Tags at all"),
     )
-    for fm, tag, want_pairs, want_assignee, label in cases:
-        pairs, assignee = azure_native_field_pairs(fm, tag)
-        if pairs != want_pairs:
-            out.append(f"{label}: pairs were {pairs!r}, not {want_pairs!r}")
+    for fm, tag, want_fields, want_assignee, label in cases:
+        fields, assignee = azure_native_fields(fm, tag)
+        if fields != want_fields:
+            out.append(f"{label}: fields were {fields!r}, not {want_fields!r}")
         if assignee != want_assignee:
             out.append(f"{label}: assignee was {assignee!r}, not {want_assignee!r}")
     return out
@@ -4680,7 +4674,10 @@ def azure_patch_body(current: dict, desired: dict, *, markdown: bool = False,
     return ops
 
 
-AZ_PATCH_PARENT = (788243, "https://dev.azure.com/o/_apis/wit/workItems/788243")
+# The exact shape `_work_item_url` builds — org AND project, then the API's own spelling of
+# a work item. Written out here rather than derived, so a fixture that stops matching what
+# the code produces is visible in the diff.
+AZ_PATCH_PARENT = (788243, "https://dev.azure.com/o/proj/_apis/wit/workItems/788243")
 
 # (label, current, desired, markdown, parent, expected op paths in order). Self-contained:
 # no network and no `az`. The assembly is what a write's whole cost now rests on, so it is
@@ -5393,10 +5390,12 @@ class AzureBoardsBackend(SpecBackend):
         `Content-Type: application/json-patch+json` is not optional — the work item PATCH
         endpoint rejects the default `application/json` outright.
 
-        THE CEILING IS CHECKED HERE, and here is now the only door a document goes through —
-        `_az_with_description`, which used to be it, has no callers left. The measured
-        `System.Description` limit still applies (`TF401262` above it), and naming the size
-        before the call beats surfacing that error anonymously mid-write.
+        THE CEILING IS CHECKED HERE, and here is now the only door a document goes through.
+        The `--fields System.Description=@<path>` mechanism that used to be that door was
+        deleted with this method's arrival, along with the two ceilings it had to explain —
+        Linux's own `MAX_ARG_STRLEN` no longer applies to a body that travels as a file. The
+        measured `System.Description` limit still does (`TF401262` above it), and naming the
+        size before the call beats surfacing that error anonymously mid-write.
 
         ONE PATCH IS ALL-OR-NOTHING, so the refusal names the op. `## Risks` accepts the
         atomicity — a rejected op takes the document edit down with it — on the condition
@@ -5456,7 +5455,18 @@ def azure_restore_trailing_newline(doc: str) -> str:
     newline cannot survive the round trip in either direction. Every document this tool ever
     writes ends in exactly one (`TEMPLATE_SPEC`, `capture_form`, every section writer) —
     restoring it here is not a guess, it is undoing a transport artefact, on the one backend
-    whose transport has it."""
+    whose transport has it.
+
+    THAT ARTEFACT IS PROBABLY HISTORY NOW, AND THIS WAS NOT RE-MEASURED. `@file` was the
+    WRITE mechanism, deleted with `_az_patch`'s arrival; a document now leaves as JSON in an
+    `az rest` body and comes back as JSON from `workitemsbatch`, and neither has a reason to
+    touch a trailing newline. If so, this function is compatibility with documents stored
+    before that change rather than a live correction — harmless either way, since it is a
+    no-op on an already-terminated document. What it costs while unresolved is one op: `_raw`
+    holds the RAW stored description, so an item written under the old transport differs from
+    the locally-terminated text on its next write, `System.Description` is emitted, and
+    `write_spec`'s `if ops:` guard cannot fire for it. One write converges it. Measure the
+    stored value against the written one on a real item to settle whether this stays."""
     if doc and not doc.endswith("\n"):
         return doc + "\n"
     return doc
@@ -9545,9 +9555,9 @@ def cmd_selftest(args, root: str) -> int:
     for failure in azure_native_field_failures():
         findings.append(_finding("sp-az-native-fields-broken", "error",
                                  f"azure-boards stored-field write — {failure}",
-                                 remedy="azure_native_field_pairs must always include the "
-                                        "discovery tag in the System.Tags pair, declared "
-                                        "tags or not"))
+                                 remedy="azure_native_fields must always include the "
+                                        "discovery tag in System.Tags, declared tags or "
+                                        "not"))
 
     # The read side's mirror: the stored document must never carry a second, unread copy of
     # a field the native store already owns.
