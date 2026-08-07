@@ -1513,6 +1513,48 @@ def work_item_type_resolution_failures() -> list[str]:
     return out
 
 
+def resolve_type_key(cfg: dict, key: str | None) -> tuple[str | None, dict]:
+    """`--type <key>` against `workItemTypes` — the same two refusals `resolve_subject`
+    already carries for `--subject`: an explicit key against an entry the catalog does not
+    have, declared or not. Omitted is never a refusal — a spec born with no `workItemType:`
+    still resolves one at build time, through `resolve_work_item_type`'s own default/floor
+    chain, so there is no `defaultSubject`-shaped fallback to ask for here."""
+    types = cfg.get("workItemTypes") or {}
+    if key is None:
+        return None, {}
+    if key not in types:
+        return None, {
+            "code": "sp-type-unknown", "exit": 2, "type": key,
+            "message": f"type '{key}' is not declared in {CONFIG_FILE}'s `workItemTypes`" + (
+                f" — declared: {', '.join(sorted(types))}" if types
+                else " — nothing is declared there"),
+        }
+    return key, {}
+
+
+def type_key_resolution_failures() -> list[str]:
+    """`resolve_type_key` against the two refusals `## Design` shares with `--subject`, and
+    the one non-refusal that keeps `--type` optional."""
+    out: list[str] = []
+    incidente = {"description": "d", "azure": "Bug"}
+    cases = (
+        ({"workItemTypes": {}}, None, "no key asked is not a refusal", None, None),
+        ({"workItemTypes": {}}, "incidente",
+         "an explicit key against nothing declared refuses", None, "sp-type-unknown"),
+        ({"workItemTypes": {"incidente": incidente}}, "incidente",
+         "an explicit key that exists resolves it", "incidente", None),
+        ({"workItemTypes": {"incidente": incidente}}, "ghost",
+         "a declared key that does not exist refuses", None, "sp-type-unknown"),
+    )
+    for cfg, key, label, want_key, want_code in cases:
+        got, err = resolve_type_key(cfg, key)
+        if got != want_key:
+            out.append(f"{label}: type was {got!r}, not {want_key!r}")
+        if err.get("code") != want_code:
+            out.append(f"{label}: refusal code was {err.get('code')!r}, not {want_code!r}")
+    return out
+
+
 def azure_workitemtype_retirement(cfg: dict, frontmatter_type: str | None) -> dict | None:
     """`azurePlacement.workItemType` is retired from `resolve_work_item_type`'s chain but
     stays recognised in `AZURE_PLACEMENT_KEYS`, so a repository that declared it gets a
@@ -6005,8 +6047,11 @@ def cmd_new(args, root: str) -> int:
     subject, serr = resolve_subject(cfg, args.subject)
     if serr:
         return emit_err(args.json, serr)
+    type_key, terr = resolve_type_key(cfg, args.type)
+    if terr:
+        return emit_err(args.json, terr)
     if cfg["backend"] == "azure-boards":
-        retirement = azure_workitemtype_retirement(cfg, None)
+        retirement = azure_workitemtype_retirement(cfg, type_key)
         if retirement and retirement["severity"] == "error":
             return emit_err(args.json, retirement)
         if retirement:
@@ -6028,6 +6073,11 @@ def cmd_new(args, root: str) -> int:
                                     for t in subject["tags"]) + "]"
         close = body.index("\n---\n")
         body = body[:close] + f"\ntags: {tags_repr}" + body[close:]
+    # The abstract catalogue key, never the backend's native name — `create_spec` reads it
+    # off `fresh["frontmatter"]` and projects the native name at write time (§Design).
+    if type_key:
+        close = body.index("\n---\n")
+        body = body[:close] + f"\nworkItemType: {type_key}" + body[close:]
     # The parent, by contrast, has no canonical-document counterpart to carry it in — it is
     # `azure-boards`-only, applied through the SAME `self.parent_id` the backend already
     # reaffirms on every write (§2.4); a resolved subject here simply overrides the
@@ -6037,6 +6087,7 @@ def cmd_new(args, root: str) -> int:
     path = backend.create_spec("plans", name, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
+          "workItemType": type_key,
           "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
           "path": display_locator(path, root)},
          f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
@@ -9679,6 +9730,13 @@ def cmd_selftest(args, root: str) -> int:
                                         "with no `azure` name exactly like an unresolved "
                                         "key, down to AZ_SPEC_TYPE"))
 
+    # `--type <key>`'s own refusal chain, the same shape `--subject` already has.
+    for failure in type_key_resolution_failures():
+        findings.append(_finding("sp-type-key-resolution-broken", "error",
+                                 f"--type resolution — {failure}",
+                                 remedy="resolve_type_key: no key asked is not a refusal; "
+                                        "an explicit key naming an undeclared entry is"))
+
     # `azurePlacement.workItemType`'s retirement: dead configuration beside a resolving
     # catalog, a refusal where it was the only declared answer.
     for failure in azure_workitemtype_retirement_failures():
@@ -9949,7 +10007,8 @@ def cmd_selftest(args, root: str) -> int:
               f"board-state precedence puts archived over reviewed over the derived stage, "
               f"work-item-type resolution falls through the frontmatter key, the catalog's "
               f"default entry and AZ_SPEC_TYPE in that order, treating an entry with no "
-              f"azure name as unresolved, the retired azurePlacement.workItemType warns "
+              f"azure name as unresolved, --type resolution refuses only against an "
+              f"undeclared entry, the retired azurePlacement.workItemType warns "
               f"beside a resolving catalog and refuses where it was the only answer, "
               f"an undeclared tag catalog flags nothing while a declared one flags what is "
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
@@ -10294,6 +10353,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="a key from `azurePlacement.subjects` — applies its parent (where "
                          "the backend has one) and its fixed tags; omit to fall back to "
                          "`defaultSubject`")
+    sp.add_argument("--type",
+                    help="a key from `workItemTypes` — recorded as `workItemType:` in the "
+                         "new spec's frontmatter; omit to resolve one later, at build time")
 
     add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
 
