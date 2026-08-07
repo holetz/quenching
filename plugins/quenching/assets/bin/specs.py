@@ -2516,6 +2516,7 @@ BACKEND_CASES = (
     # AFTER the five cases that author the document, never on the fresh capture form. See
     # `_case_front`: on a capture form the case passes with the reader broken.
     ("rank the front", lambda b: _case_front(b)),
+    ("create with workItemType, then re-read", lambda b: _case_type(b)),
     ("move to archive", lambda b: _case_move(b)),
     ("list after the move", lambda b: _listing(b)),
 )
@@ -2593,6 +2594,21 @@ def _case_front(b: "SpecBackend") -> dict:
     trusting."""
     c = _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None, "")
     return {k: v for k, v in c.items() if k != "path"}
+
+
+def _case_type(b: "SpecBackend") -> str | None:
+    """`workItemType:`, inserted into a fresh capture form exactly the way `cmd_new --type`
+    inserts it — never `set_frontmatter_key`, which would misrepresent a key FIXED at
+    creation (§Design) as one of the four mutable STATE fields `_case_field` already covers.
+
+    A second spec (`beta`), never `alpha`: the key is resolved once at `new` and never
+    rewritten, so there is no round trip to prove beyond create-then-read."""
+    doc = _case_doc("beta")
+    close = doc.index("\n---\n")
+    doc = doc[:close] + "\nworkItemType: incidente" + doc[close:]
+    b.create_spec("plans", "beta.md", doc)
+    info, _ = b.read_spec("beta")
+    return (info or {}).get("frontmatter", {}).get("workItemType")
 
 
 def _case_write(b: "SpecBackend") -> dict:
