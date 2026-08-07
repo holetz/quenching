@@ -3362,9 +3362,12 @@ class GitHubBackend(SpecBackend):
 
     name = "github"
 
-    def __init__(self, repo: str, cwd: str) -> None:
+    def __init__(self, repo: str, cwd: str, types: dict[str, str] | None = None) -> None:
         self.repo = repo
         self.cwd = cwd
+        # `workItemTypes.<key>.github`, pre-filtered to the entries this backend can name —
+        # never the whole catalogue entry, since `create_spec` needs only the native name.
+        self.types = types or {}
         # descriptor, issue number, first chunk, how many parts the marker declares,
         # issue title, and the issue's own labels as of this listing — what the label
         # reconciliation in `_store` diffs against, so it costs no call of its own
@@ -3673,6 +3676,13 @@ class GitHubBackend(SpecBackend):
             payload["labels"] = labels
         if fresh["frontmatter"].get("assignee"):
             payload["assignees"] = [fresh["frontmatter"]["assignee"]]
+        # The abstract `workItemType:` key, projected to GitHub's own Issue Type name — a
+        # write-only projection exactly like the title once was before it became storage
+        # (§Design), never read back: `workItemType:` itself stays in the stored document.
+        type_key = fresh["frontmatter"].get("workItemType")
+        type_name = self.types.get(type_key) if type_key else None
+        if type_name:
+            payload["type"] = type_name
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
                                 payload)
         number = int((issue or {}).get("number") or 0)
@@ -3869,7 +3879,9 @@ def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
     repo, err = resolve_github_repo(cwd)
     if err:
         return None, err
-    return GitHubBackend(repo, cwd), {}
+    types = {k: v["github"] for k, v in load_config(root)["workItemTypes"].items()
+             if v.get("github")}
+    return GitHubBackend(repo, cwd, types=types), {}
 
 
 GH_REFUSAL_CASES = (
@@ -3981,6 +3993,29 @@ def github_native_field_failures() -> list[str]:
 # names WHICH task drifted when the stricter check has already said the document did.
 HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
                          "files", "pattern", "verify", "subject", "commit")
+
+
+def github_create_type_failures() -> list[str]:
+    """`create_spec`'s `type` projection — the payload GitHub actually receives, never read
+    back: `workItemType:` itself stays in the stored document (§Design), so there is no twin
+    test to pass here, only that a resolved name reaches the create and an unresolved one
+    sends no `type` at all."""
+    out: list[str] = []
+    gh = GitHubBackend("owner/repo", ".", types={"incidente": "Bug"})
+    payloads: list[dict] = []
+    gh._api = lambda action, *argv, stdin=None: (payloads.append(json.loads(stdin))
+                                                 or {"number": 1, "html_url": "x"})
+    doc = _case_doc("alpha")
+    close = doc.index("\n---\n")
+    typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
+    gh.create_spec("plans", "alpha.md", typed)
+    if payloads[-1].get("type") != "Bug":
+        out.append(f"a resolved workItemType did not reach the create payload as `type`: "
+                   f"{payloads[-1].get('type')!r}")
+    gh.create_spec("plans", "beta.md", doc)
+    if "type" in payloads[-1]:
+        out.append("no workItemType declared still sent a `type` field")
+    return out
 
 
 def gh_body_ceiling_failures() -> list[str]:
@@ -9583,6 +9618,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "a tag; only the first assignee is reflected, "
                                         "because the canonical field is singular"))
 
+    # `create_spec`'s own `type` projection: a resolved `workItemType:` reaches the payload
+    # as GitHub's native name, and an unresolved one sends no `type` at all.
+    for failure in github_create_type_failures():
+        findings.append(_finding("sp-gh-create-type-broken", "error",
+                                 f"github create's type projection — {failure}",
+                                 remedy="create_spec must set payload['type'] from "
+                                        "self.types[workItemType] and omit it entirely "
+                                        "when the key does not resolve"))
+
     # Measured on this org (task 6.1): `--assigned-to` refuses a display name outright, so
     # `_native_fields` must read back the UPN, never the display name, or a carried-forward
     # assignee would fail its own reaffirming write.
@@ -10030,7 +10074,9 @@ def cmd_selftest(args, root: str) -> int:
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
               f"tag survives every azure-boards write whether or not a spec declares tags of "
               f"its own, the stored document never carries a second copy of a native field, "
-              f"github reassembles every label into a tag and only its first assignee, the "
+              f"github reassembles every label into a tag and only its first assignee, "
+              f"github's create sends a resolved workItemType as its native `type` and "
+              f"omits the field otherwise, the "
               f"azure-boards div marker and comment marker both round-trip, its description "
               f"ceiling refuses before the call and its stripped trailing newline is "
               f"restored, and the embedded schema and template match their asset files.")
