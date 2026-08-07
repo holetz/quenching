@@ -12,8 +12,8 @@ kept on a single taxonomy by the
 `/skill:new`, `/skill:agent:new`, `/skill:hook:new`, `/skill:eval`, `/skill:retro`, and the
 sweep `/skill:align`.
 
-Its siblings: `../docs/QUENCHING.md` (the knowledge bundle) and
-`../specs/QUENCHING.md` (the plan workspace).
+Its siblings: `../.docs/QUENCHING.md` (the knowledge bundle) and
+`../.specs/QUENCHING.md` (the plan workspace).
 
 ---
 
@@ -30,7 +30,7 @@ Its siblings: `../docs/QUENCHING.md` (the knowledge bundle) and
   references/<name>/    # shared procedure — outside commands/, cited by path
   evals/<path>/         # measured case sets — outside commands/ too
   hooks/
-    okf-validate.py     # the OKF conformance checker (see ../docs/QUENCHING.md §5)
+    okf-validate.py     # the OKF conformance checker (see ../.docs/QUENCHING.md §5)
     hooks-config.json   # its config — commit it
 ```
 
@@ -93,7 +93,7 @@ and presents **ONE plan**: classification, path, files, and the OKF tail. On a s
 writes, then self-checks: the registry's generated zone matches `commands/` on disk and the
 description fits the listing cap.
 
-Without an OKF `docs/` bundle the mint still proceeds — the command file only — the OKF tail is
+Without an OKF `/.docs/` bundle the mint still proceeds — the command file only — the OKF tail is
 skipped, and `/docs:align` is suggested once.
 
 ### `/skill:align` — migrate the WHOLE surface, then audit every body
@@ -157,17 +157,16 @@ finding ends with the `/skill:new` invocation that would close it.
 
 ## 4. The OKF artifacts
 
-The commands maintain these documents inside the `docs/` bundle — the automation surface is
+The commands maintain these documents inside the `/.docs/` bundle — the automation surface is
 knowledge about this repo, so it is recorded where knowledge lives. Each standard is born
 `authority: background` and becomes `current` once the surface actually follows it:
 
 | Artifact | Path | Role |
 | --- | --- | --- |
-| **The rule** | `docs/standards/automation/skills.md` | `type: standard`. The taxonomy this repo binds itself to. |
-| **The agent rule** | `docs/standards/automation/agents.md` | `type: standard`. Installed by `/skill:agent:new`: when work becomes a subagent, the definition contract, the verifier shape. |
-| **The hook rule** | `docs/standards/automation/hooks.md` | `type: standard`. Installed by `/skill:hook:new`: the scope ladder, the handler ladder, the policy defaults. |
-| **The budget rule** | `docs/standards/automation/context-budget.md` | `type: standard`. What the surface costs before anything fires, and the per-surface ceiling `budget` compares against. |
-| **The registry** | `docs/documentation/reference/automation.md` | `type: documentation`. The authoritative listing of the local surface. |
+| **The rule** | `/.docs/standards/automation/skills.md` | `type: standard`. The taxonomy this repo binds itself to. |
+| **The agent rule** | `/.docs/standards/automation/agents.md` | `type: standard`. Installed by `/skill:agent:new`: when work becomes a subagent, the definition contract, the verifier shape. |
+| **The hook rule** | `/.docs/standards/automation/hooks.md` | `type: standard`. Installed by `/skill:hook:new`: the scope ladder, the handler ladder, the policy defaults. |
+| **The registry** | `/.docs/documentation/reference/automation.md` | `type: documentation`. The authoritative listing of the local surface. |
 
 The registry's `<!-- GENERATED:BEGIN -->` … `<!-- GENERATED:END -->` zone holds one table —
 `Command | Serves | Typical trigger` — derived **exclusively** from the local
@@ -176,7 +175,7 @@ surface, never a plugin's.
 
 **Never hand-edit inside those markers.** Curated prose lives outside them and is never touched
 by regeneration. Only `/skill:new` and `/skill:align` write the zone. This zone earns its keep
-because nothing else derives the registry; `specs/plans/` went the other way — its listing
+because nothing else derives the registry; `/.specs/plans/` went the other way — its listing
 duplicated what `specs.py list` already read from disk, so the artifact was retired rather than
 guarded.
 
@@ -228,16 +227,16 @@ Handlers ladder the same way — a deterministic `command` script costs zero tok
 event is an LLM toll booth on every operation (`sk-hook-llm-frequent`). Warn by default; block
 only on your word.
 
-The plugin's own `okf-validate.py` keeps `docs/` conformant after every edit — wired automatically
+The plugin's own `okf-validate.py` keeps `/.docs/` conformant after every edit — wired automatically
 via the plugin's `hooks/hooks.json`, never installed into this repo. Full behavior, every config
-knob, and the finding codes are in `../docs/QUENCHING.md` §5 and §7.
+knob, and the finding codes are in `../.docs/QUENCHING.md` §5 and §7.
 
 - `settings.json` — this repo's own hook wiring and permissions, if any. **Commit it**; it is
   shared configuration.
 - `settings.local.json` — personal overrides. **Gitignore it.**
 - `hooks/hooks-config.json` — optional, hand-maintained checker config (nothing installs one).
   **Commit it** if you keep one; per-developer overrides go in `hooks-config.local.json`
-  (gitignored). `docsDir` lives in `.claude/quenching.json` instead.
+  (gitignored). The bundle root is the fixed `/.docs/` convention — nothing in config names it.
 
 Hook config is executable configuration with shell privileges. Review it like infrastructure.
 
@@ -264,13 +263,13 @@ fallback — so `/docs:align` offers to remove one rather than upgrade it.
 
 | Front | Manual | Status (read-only) | Align |
 | --- | --- | --- | --- |
-| `docs/` — the OKF knowledge bundle | `../docs/QUENCHING.md` | `/docs:status` | `/docs:align` |
-| `specs/` — the spec-driven plan workspace | `../specs/QUENCHING.md` | `/specs:status` | `/specs:align` |
+| `/.docs/` — the OKF knowledge bundle | `../.docs/QUENCHING.md` | `/docs:status` | `/docs:align` |
+| `/.specs/` — the spec-driven plan workspace | `../.specs/QUENCHING.md` | `/specs:status` | `/specs:align` |
 | `.claude/` — this surface | this file | — | `/skill:align` |
 
 **One align per front**, each probe-first, each carrying its front's content stages when the
-probe finds work. `/align` conducts the three in dependency order on one confirmation: `docs/`
-first (the other two write artifacts into it), then `specs/` (it clears the shadow copies the
+probe finds work. `/align` conducts the three in dependency order on one confirmation: `/.docs/`
+first (the other two write artifacts into it), then `/.specs/` (it clears the shadow copies the
 skill sweep would otherwise inventory), then `.claude/`. A front this repo does not use simply
 has no manual — the paths above are references, not promises.
 

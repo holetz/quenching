@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""okf-validate.py — self-contained OKF v0.1 conformance checker for a docs/ bundle.
+"""okf-validate.py — self-contained OKF v0.1 conformance checker for a `/.docs/` bundle.
 
 Payload of the `quenching` plugin. Generic, portable, ZERO dependencies
 (a minimal frontmatter parser — no PyYAML). It is the **executable enforcement**
-that keeps a target repo's `docs/` bundle aligned to the Open Knowledge Format
+that keeps a target repo's `/.docs/` bundle aligned to the Open Knowledge Format
 after `quenching-docs-align` has installed it: the skills call it, the verification step calls
 it, and it wires into the target's `.claude/settings.json` as a hook so future edits
 stay conformant.
@@ -24,13 +24,13 @@ TWO ENTRY MODES
 2. **HOOK**  (no path arg → reads the hook JSON on stdin)
    Dispatches on `hook_event_name`:
    - **PostToolUse** (matcher `Write|Edit`): validates the single touched
-     `docs/**` file and, on a finding, **PROPOSES** the fix via
+     `/.docs/**` file and, on a finding, **PROPOSES** the fix via
      `additionalContext` (exit 0). With `blockOnFail: true` it escalates to
      `decision: block` (the reason is fed back to Claude). It also touches the
      **dirty marker** (a stamp file in the system temp dir) so the Stop sweep
      knows the bundle changed this session.
    - **Stop**: with `stopScan: "dirty"` (the default), exits immediately when
-     the dirty marker is absent — a turn that touched no `docs/**` file costs
+     the dirty marker is absent — a turn that touched no `/.docs/**` file costs
      one stat, not a full-bundle scan. When the marker is present (or
      `stopScan: "always"`), validates the whole bundle in a SINGLE read pass
      and PROPOSES residual gaps (`additionalContext`, exit 0); the marker is
@@ -67,7 +67,7 @@ PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
   continuation read as empty, or a duplicate top-level key that silently last-wins. It
   reports a suspicion it cannot resolve rather than letting the consequence surface as a
   content finding (`missing-type`, a missing recommended field). The YAML subset, the
-  comment rule and the canonical case list are `docs/standards/code/frontmatter-parsing.md`;
+  comment rule and the canonical case list are `/.docs/standards/code/frontmatter-parsing.md`;
   `selftest` runs that list.
 
 RESOURCE INTEGRITY (per-doc; WARN — a doc that is provably lying about itself)
@@ -100,9 +100,8 @@ STALENESS (CLI only — advisory, never blocking)
   shells out once per doc, and a tree that is not a git checkout skips it silently.
 
 Config (target repo's `.claude/hooks/hooks-config.json` + `hooks-config.local.json`, block
-  `okfValidate`): enabled, docsDir, warnAsError, blockOnFail, hardBlock, deadlineMs, stopScan.
-`docsDir` alone has a second, preferred home: `.claude/quenching.json`'s own `docsDir` key,
-  read whether or not either hooks-config file exists — the plugin's config, not a hook-only one.
+  `okfValidate`): enabled, warnAsError, blockOnFail, hardBlock, deadlineMs, stopScan.
+The bundle root is the fixed `/.docs/` convention — no knob names it, and no config moves it.
 An empty/absent config uses the defaults below; `enabled: false` makes the hook inert.
 
 Trust note: hook config is executable code with shell privileges. This script reads
@@ -125,7 +124,7 @@ import sys
 import tempfile
 import time
 
-VERSION = "4.13.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
+VERSION = "5.0.0"  # kept in lockstep with the plugin VERSION file (and specs.py)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TAG = "okf"
@@ -171,13 +170,12 @@ LINK_RE = re.compile(r"\]\(([^)]+)\)")
 
 DEFAULTS: dict = {
     "enabled": True,
-    "docsDir": "docs",          # bundle root, relative to the project root
     "warnAsError": False,       # CLI: treat warnings as failures (exit 1)
     "blockOnFail": False,       # PostToolUse/Stop: escalate proposal to decision:block
     "hardBlock": False,         # PreToolUse: enable the hard deny gate (off = propose-only)
     "deadlineMs": 4000,
     "stopScan": "dirty",        # Stop: "dirty" = scan only after a docs/** edit; "always" = every turn
-    "ignoreGlobs": [],          # docsDir-relative dir-prefix/fnmatch globs pruned from every scan
+    "ignoreGlobs": [],          # bundle-relative dir-prefix/fnmatch globs pruned from every scan
 }
 
 
@@ -196,18 +194,6 @@ def _load_config(project_dir: str) -> dict:
         except (OSError, json.JSONDecodeError):
             continue
         cfg.update(data.get("okfValidate") or {})
-    # docsDir's own home: HERE is the plugin's own assets/hooks/ when this script runs
-    # wired by the plugin path, never the target repo, so it cannot anchor a per-repo
-    # override — .claude/quenching.json can, since it is read relative to project_dir.
-    qpath = os.path.join(project_dir, ".claude", "quenching.json")
-    if pathlib.Path(qpath).exists():
-        try:
-            with pathlib.Path(qpath).open(encoding="utf-8") as fh:
-                qcfg = json.load(fh)
-        except (OSError, json.JSONDecodeError):
-            qcfg = {}
-        if "docsDir" in qcfg:
-            cfg["docsDir"] = qcfg["docsDir"]
     return cfg
 
 
@@ -250,7 +236,7 @@ def _clear_marker(project: str) -> None:
 # --------------------------------------------------------------------------- #
 # The YAML comment rule — one rule, three copies
 #
-# `docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
+# `/.docs/standards/code/frontmatter-parsing.md` owns the rule, the canonical case
 # list and the lockstep obligation. `skills.py` and `specs.py` carry the same
 # functions; each installs standalone into a target's `.claude/hooks/`, so none may
 # import the others. EDIT ALL THREE, OR NONE — `CANONICAL_CASES` below is what makes
@@ -258,7 +244,7 @@ def _clear_marker(project: str) -> None:
 #
 # This checker stripped no comment at all until now, which made it the one tool that
 # could not truncate. It gains the rule ONLY together with the diagnostic below:
-# adding prose loss to a hook that fires on every `docs/**` write in every target
+# adding prose loss to a hook that fires on every `/.docs/**` write in every target
 # repo, without the means to say when it happened, is the one shape ruled out.
 # --------------------------------------------------------------------------- #
 def _frontmatter_body(text: str) -> list[str] | None:
@@ -344,7 +330,7 @@ def frontmatter_anomalies(text: str) -> list[dict]:
     Every entry is a suspicion this checker cannot resolve, never a proven violation:
     a stripped comment and lost prose are byte-identical, and nothing here guarantees
     Claude Code's own loader resolves a duplicate key the way this one does. Reported
-    at WARN — see `docs/standards/quality/parse-honesty.md`.
+    at WARN — see `/.docs/standards/quality/parse-honesty.md`.
 
     This parser reads top-level scalars ONLY, so ANY indented run under an empty value
     is `indented-continuation` here — a block list is as unreadable to it as prose. The
@@ -402,7 +388,7 @@ def _anomaly(key: str, kind: str, detail: str) -> dict:
     return {"key": key, "kind": kind, "detail": detail}
 
 
-# The canonical case list from `docs/standards/code/frontmatter-parsing.md`. It is
+# The canonical case list from `/.docs/standards/code/frontmatter-parsing.md`. It is
 # duplicated VERBATIM in skills.py and specs.py and is the lockstep unit for all
 # three: adding a row means adding it in three places, and a parser that drifts fails
 # here on a row the other two still pass.
@@ -490,7 +476,7 @@ def parse_resource(value: str) -> list[tuple[str, str]]:
     A comma-separated list of globs and paths is a *plugin convention*, not an OKF
     rule — three of the five real values in this repo's own bundle are lists and
     nothing documented the format, so it is parsed here and stated in
-    `docs/standards/quality/bundle-verification.md`.
+    `/.docs/standards/quality/bundle-verification.md`.
 
     kind is one of:
       `path`    a plain repo-root-relative path.
@@ -519,9 +505,10 @@ def _resource_kind(entry: str) -> str:
 
 def _project_root(bundle_root: str) -> str:
     """The checkout root a `resource` entry is written relative to — the bundle's
-    parent. Every observed value is repo-root-relative (`docs/**`,
-    `plugins/…/SKILL.md`), including in the shipped skeleton, where the bundle sits
-    at `assets/docs` and `docs/**` still resolves to that bundle."""
+    parent. Observed values are repo-root-relative (`plugins/…/SKILL.md`); the
+    bundle-aggregate `/.docs/**` is absolute and never resolves as a path here —
+    the leading slash turns the join absolute — so the aggregate is exempted by
+    name (resource-self, stale-doc) rather than by resolution."""
     return os.path.dirname(os.path.abspath(bundle_root))
 
 
@@ -530,7 +517,7 @@ def _resource_resolves(entry: str, kind: str, project_root: str) -> bool:
 
     Stops at the FIRST hit (`iglob`, not `glob`): answering "does this resolve?"
     runs on every concept doc in the hook path, and materializing every match of a
-    `docs/**` would walk the whole tree once per doc under the Stop deadline.
+    `/.docs/**` would walk the whole tree once per doc under the Stop deadline.
     `glob.escape` covers a checkout whose own path contains a glob metacharacter.
     """
     if kind == "glob":
@@ -622,7 +609,7 @@ def _glob_contains(pattern: str, rel_path: str) -> bool:
     """Segment-wise match of a `*`/`**` glob against a forward-slash relative path.
 
     `fnmatch` is deliberately NOT used for this: its `*` also matches `/`, so
-    `docs/*` would claim to contain `docs/standards/x.md` and raise a false
+    `/.docs/*` would claim to contain `/.docs/standards/x.md` and raise a false
     `resource-self` — and since the skills treat every WARN as must-fix, a false
     positive here costs more than a missed one. `*` matches inside one segment;
     `**` matches any number of segments, including none.
@@ -680,11 +667,11 @@ def check_resource(text: str, path: str, bundle_root: str) -> list[tuple[str, st
     `TYPES_WITHOUT_RESOURCE` generalized — from "types with nothing to point at" to
     "docs whose honest scope is bundle-wide" — so the front keeps ONE exemption
     mechanism rather than two. `knowledge/glossary.md` really does govern the whole
-    bundle, so `resource: docs/**` is truthful and inventing a narrower scope to
+    bundle, so `resource: /.docs/**` is truthful and inventing a narrower scope to
     silence the check would be the fabrication. The discrimination is mechanical
     and needs no hardcoded path: a scope containing the bundle root contains every
     doc in it, while a narrower scope that still contains the doc
-    (`docs/standards/**` on a standards doc) stays a real finding.
+    (`/.docs/standards/**` on a standards doc) stays a real finding.
     """
     fm, _, _ = parse_frontmatter(text)
     if not _nonempty(fm, "resource"):
@@ -865,8 +852,8 @@ def _resolve_link(target: str, file_dir: str, root: str):
     flagged — for anything OKF does not govern: external URLs, anchors, mailto/tel,
     non-markdown assets (`.png`/`.pdf`/…), links that escape the bundle root
     (repo files, `../..` climbs), and repo-absolute `/…` links not written in the
-    bundle's own form (`/docs/…` or `/<home>/…`). We only police the bundle's own
-    link graph, so a legitimate reference to a repo file outside `docs/` is not a
+    bundle's own form (`/.docs/…` or `/<home>/…`). We only police the bundle's own
+    link graph, so a legitimate reference to a repo file outside `/.docs/` is not a
     false "broken link".
     """
     t = target.split("#", 1)[0].strip()
@@ -887,7 +874,7 @@ def _resolve_link(target: str, file_dir: str, root: str):
     if t.startswith("/"):
         rest = t[1:]
         first, _, tail = rest.partition("/")
-        if first == os.path.basename(root):          # `/docs/…` — this plugin's bundle-absolute form
+        if first == os.path.basename(root):          # `/.docs/…` — this plugin's bundle-absolute form
             rest = tail
         elif not os.path.isdir(os.path.join(root, first)):
             return None                              # repo-absolute `/…` (e.g. `/.claude/…`) — not bundle-governed
@@ -1239,7 +1226,7 @@ def run_selftest(as_json: bool) -> int:
     checker's own parser and its own tree walk.
 
     The other two tools already had a `selftest`; this one had none, and it is the
-    tool with the widest blast radius — a hook firing on every `docs/**` write in
+    tool with the widest blast radius — a hook firing on every `/.docs/**` write in
     every target repo. A rule it cannot prove it implements is a rule it should not
     have been given."""
     failures = (canonical_case_failures() + retired_log_failures()
@@ -1268,7 +1255,7 @@ def run_cli(argv: list[str]) -> int:
     # a directory, so a bare subcommand would otherwise be scanned as a path
     if paths and paths[0] == "selftest":
         return run_selftest(as_json)
-    target = paths[0] if paths else cfg.get("docsDir", "docs")
+    target = paths[0] if paths else ".docs"
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # no deadline in CLI mode — always a full scan
     # `with_stale` only here: CLI is the one mode that may shell out to git per doc
@@ -1297,7 +1284,7 @@ def run_hook() -> int:
     if cfg.get("enabled") is False:
         return 0
     event = data.get("hook_event_name") or ""
-    docs_dir = str(cfg.get("docsDir", "docs")).replace("\\", "/").strip("/")
+    docs_dir = ".docs"
     bundle_root = os.path.join(project, docs_dir)
     started = time.monotonic()
     deadline = float(cfg.get("deadlineMs", DEFAULTS["deadlineMs"])) / 1000.0

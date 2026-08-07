@@ -1,7 +1,7 @@
 ---
 name: <kebab-case identity — what it is, not "helper"/"assistant">
 description: <What this agent does and WHEN to invoke it, in one sentence — the description
-  is always-on context, same budget discipline as a command's. State the timing explicitly
+  is always-on context, same cost discipline as a command's. State the timing explicitly
   ("after X has been created or modified", "when asked to audit Y"). Not for: <adjacent job>
   → <owning agent or command>.>
 tools: <the NARROWEST set the work needs — Read, Grep, Glob for a verifier; add Write/Edit

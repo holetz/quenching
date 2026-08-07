@@ -52,7 +52,7 @@ per
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
 code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**No deltas.** A spec writes its durable rules **directly** into `docs/standards/` while it is
+**No deltas.** A spec writes its durable rules **directly** into `/.docs/standards/` while it is
 built, isolated on a branch. Whichever backend holds the spec is the only one that holds it, so
 there is no second store to bridge to: nothing here writes a delta and nothing later syncs one.
 
@@ -69,15 +69,20 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
   own gate is legal — stated once in
   [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §The gates, applied here on every write.
-- **Read `docs/` before writing — in the branch that needs it.** The relevant `docs/standards/` and
+- **Read `/.docs/` before writing — in the branch that needs it.** The relevant `/.docs/standards/` and
   `knowledge/glossary.md` are binding on wording, so a spec does not contradict a rule the repo
   already agreed on or invent a second name for a thing that already has one. Only the
   **adversarial** and **gate** banks ask questions that reading answers, so it is step 3b's and
   never the preamble's; shape, discoveries and approval skip it. No OKF bundle in the repo
-  (`docs/index.md` with `okf_version`) → skip silently.
+  (`/.docs/index.md` with `okf_version`) → skip silently.
 - **Never edit code.** If the work implies code changes, that is `/quenching:specs:execute`. If a request
   changes the spec's *intent* rather than sharpening it, say so and offer a fresh
   `/quenching:specs:create` instead of quietly rewriting what was already agreed.
+- **`complexity` is re-evaluated when a pass closes, never mid-bank.** The level
+  `/quenching:specs:create` computed from the input is stale the moment this pass writes what the
+  input could not support. The re-evaluation rides the consolidated plan (step 5): the evidence
+  that moved it is named, the new level recommended, and the human's one OK applies it. A pass
+  that changed no size proposes nothing — the level on disk is still the latest word on it.
 
 ## Workflow
 
@@ -126,9 +131,9 @@ specs.py section <slug> "<Heading1>,<Heading2>,…"     # only the sections this
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
 | approval | `## Proposal` `## Impact` `## Risks` | none — this bank writes nothing into the body |
 
-**The adversarial and gate banks also read `docs/`** (Doctrine): the `docs/standards/` this spec's
+**The adversarial and gate banks also read `/.docs/`** (Doctrine): the `/.docs/standards/` this spec's
 `## Impact` declares — the declared files, never the folders they sit in — and
-`docs/knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
+`/.docs/knowledge/glossary.md`. Those two banks **may** delegate that reading to a read-only
 sub-agent under
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §Gathering the
 evidence, which returns one compact table and keeps the file reads out of the context every later
@@ -166,6 +171,21 @@ turned out to belong outside the spec is shown here as well: a durable rule or a
 **routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
 this edit will park** — a line, not an offer, because parking creates nothing to consent to
 (§Invariants).
+
+**A pass that changed the spec's size re-evaluates `complexity` in this same plan.** The
+evidence that moved it — the `## Tasks` a gate bank just wrote, a scope the adversarial bank
+widened — is named, and the level it recommends is proposed with the scale in front of the
+human:
+
+| Level | What it changes in the gears plan |
+| --- | --- |
+| `low` | the whole cycle runs in one session on a single authorization and ends opening a PR |
+| `medium` | the larger stages run isolated in sub-agents |
+| `high` | the stage-by-stage stops and confirmations are kept |
+| `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
+
+A pass that changed no size proposes nothing — the level on disk is still the latest word on
+it.
 
 Wait. Declined → nothing is written, and the questions and answers are still reported so the
 thinking is not lost.
@@ -205,6 +225,7 @@ editing the frontmatter**, which merges nothing and works only while the backend
 | `refined: {mode, date}` | the adversarial or gate bank ran | `specs.py record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
 | `approved: {date}` | the human said go in the approval bank | `specs.py record <slug> approved --set date=<today>` |
 | `verification` | the gate bank settled the policy | `specs.py verification <slug> <per-task\|per-section\|end-of-plan>` |
+| `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `specs.py record <slug> priority --set complexity=<level> --set date=<today>` |
 
 `verification` is a plain frontmatter key rather than a record, which is why it has a verb of its
 own instead of a `--set`. **It is written through that verb and never by editing the frontmatter**
@@ -215,6 +236,9 @@ made.
 
 `approved` is write-once: a spec that already carries it refuses (exit 2) with the date it holds,
 which is the answer, not an obstacle.
+
+`complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
+a re-stamp that touches only the size, and `date` is the ranking's own.
 
 Re-run `specs.py validate --spec <slug>` and report what it says. **When this pass touched
 `## Tasks`, run `specs.py parallel --spec <slug>` in the same call** — exit 1 names the `[P]` group
@@ -259,7 +283,7 @@ is friction for everyone.
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
   `/quenching:specs:execute`.
-- **Never write into `docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
+- **Never write into `/.docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
   understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
@@ -292,6 +316,9 @@ is friction for everyone.
 - **Never fabricate a record.** `refined` is stamped only after real questions got real answers;
   `approved` only after a human actually said go. Neither can be inferred from the sections — that
   is the entire reason they exist.
+- **Never restamp `complexity` without the human's OK.** The re-evaluation rides the consolidated
+  plan — evidence named, level recommended — and a level a pass did not move is the latest word
+  on it, not a value to re-propose.
 - Never gate on refinement. A spec may always be built unrefined; `sp-unrefined` is a warning by
   design.
 - Never rename a spec, and never rewrite its `date:` — the capture date is stamped once, at

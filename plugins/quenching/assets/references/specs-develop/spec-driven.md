@@ -284,7 +284,7 @@ write), and an unfilled `<placeholder>` declares nothing. A spec with no such su
 nothing and is never flagged — **the check is opt-in by writing the heading**.
 
 A bullet may carry a `§`address beside its path —
-`docs/standards/automation/context-budget.md §The two caps` — naming exactly which sections of that
+`docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
 only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
 address, `/quenching:specs:execute` step 4 reads the file whole — the address is an
@@ -317,7 +317,7 @@ A blocked task is a **visible marker, not a hidden counter**:
 ```
 
 Written by the orchestrator when it decides to stop retrying; `next` skips it. **There is no
-attempt budget.**
+attempt limit.**
 
 `[P]` marks a parallel-eligible group, honoured only when the group's `files:` sets are provably
 disjoint (`specs.py parallel`). Serial by default.
