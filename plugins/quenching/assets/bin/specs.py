@@ -3683,6 +3683,13 @@ class GitHubBackend(SpecBackend):
         type_name = self.types.get(type_key) if type_key else None
         if type_name:
             payload["type"] = type_name
+        elif type_key:
+            # The entry exists — `resolve_type_key` already gated `--type` at `new` — but
+            # names no `github` translation. Never a refusal: an entry may exist for one
+            # backend only without breaking the other (§Design), so the create proceeds
+            # untyped and only says why.
+            print(f"note: workItemType '{type_key}' has no `github` name declared in "
+                  f"{CONFIG_FILE} — no type applied to this issue", file=sys.stderr)
         issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
                                 payload)
         number = int((issue or {}).get("number") or 0)
@@ -3998,8 +4005,12 @@ HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "tex
 def github_create_type_failures() -> list[str]:
     """`create_spec`'s `type` projection — the payload GitHub actually receives, never read
     back: `workItemType:` itself stays in the stored document (§Design), so there is no twin
-    test to pass here, only that a resolved name reaches the create and an unresolved one
-    sends no `type` at all."""
+    test to pass here. Three branches: a resolved name reaches the create, no key declared
+    sends no `type` at all, and a key with no `github` translation applies none either but
+    says why on stderr — never a refusal, exactly as §Design admits an entry for one backend
+    only."""
+    import contextlib
+    import io
     out: list[str] = []
     gh = GitHubBackend("owner/repo", ".", types={"incidente": "Bug"})
     payloads: list[dict] = []
@@ -4015,6 +4026,14 @@ def github_create_type_failures() -> list[str]:
     gh.create_spec("plans", "beta.md", doc)
     if "type" in payloads[-1]:
         out.append("no workItemType declared still sent a `type` field")
+    untranslated = doc[:close] + "\nworkItemType: tarefa" + doc[close:]
+    stderr = io.StringIO()
+    with contextlib.redirect_stderr(stderr):
+        gh.create_spec("plans", "gamma.md", untranslated)
+    if "type" in payloads[-1]:
+        out.append("an entry with no `github` name still sent a `type` field")
+    if "tarefa" not in stderr.getvalue():
+        out.append("an entry with no `github` name printed no advisory line on stderr")
     return out
 
 
