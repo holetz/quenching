@@ -5031,13 +5031,8 @@ class AzureBoardsBackend(SpecBackend):
             fd, path = tempfile.mkstemp(suffix=".json")
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                    # The board's column field is per-team and its name is only known once
-                    # resolved; asked for here when it already is, so the column diffs like
-                    # every other reaffirmed field instead of being written blind.
                     fields = list(AZ_BATCH_FIELDS)
-                    known = self._board_field or azure_cache_read(
-                        self.org, self.project).get(
-                            f"boardField:{self.team}:{self.work_item_type}")
+                    known = self._board_field_for_read()
                     if known:
                         fields.append(known)
                     json.dump({"ids": chunk, "fields": fields}, fh)
@@ -5050,6 +5045,39 @@ class AzureBoardsBackend(SpecBackend):
                 os.unlink(path)
             items.extend((result or {}).get("value") or [])
         return items
+
+    def _board_field_for_read(self) -> str | None:
+        """The board's column field to ASK FOR in the batch — resolving it if that is what it
+        takes, and answering None rather than refusing when it cannot be had.
+
+        THE FIELD MUST BE IN THE READ OR THE COLUMN CANNOT BE DIFFED, and a column that
+        cannot be diffed is written blind. Measured 2026-08-07 against the real org: on a
+        cold cache the item came back without the column, `current` answered None for it, and
+        the write went out carrying one op that set the column to the value it already
+        held — a seventh `az` call, and a REQUEST rather than a read. Resolving here instead
+        makes it six, and the pointless write disappears.
+
+        THE TWO CALLS ARE NOT NEW SPEND FOR A WRITE — `write_spec` resolves the same field a
+        moment later either way; this only moves them ahead of the batch, which is the one
+        ordering where their answer is still useful. A read that never writes does pay them,
+        once ever: the answer is cached across processes, so the whole cost is one cold run
+        per organisation, project, team and work item type.
+
+        ONLY WHERE A COLUMN IS DECLARED. With neither `azureColumns` nor `boardColumn` no
+        column op is ever emitted, so there is nothing to diff and nothing worth resolving.
+
+        AND IT NEVER REFUSES. `sp-az-no-team` and `sp-az-no-board` belong to the write, which
+        calls `_resolve_board_field` for real and raises there with the same message. An
+        optimisation that turned a listing into a refusal would be a behaviour change wearing
+        a performance fix's clothes."""
+        if self._board_field is not None:
+            return self._board_field
+        if not (self.column_map or self.board_column):
+            return None
+        try:
+            return self._resolve_board_field()
+        except BackendRefusal:
+            return None
 
     def _invalidate(self) -> None:
         self._rows = None
@@ -5457,16 +5485,15 @@ def azure_restore_trailing_newline(doc: str) -> str:
     restoring it here is not a guess, it is undoing a transport artefact, on the one backend
     whose transport has it.
 
-    THAT ARTEFACT IS PROBABLY HISTORY NOW, AND THIS WAS NOT RE-MEASURED. `@file` was the
-    WRITE mechanism, deleted with `_az_patch`'s arrival; a document now leaves as JSON in an
-    `az rest` body and comes back as JSON from `workitemsbatch`, and neither has a reason to
-    touch a trailing newline. If so, this function is compatibility with documents stored
-    before that change rather than a live correction — harmless either way, since it is a
-    no-op on an already-terminated document. What it costs while unresolved is one op: `_raw`
-    holds the RAW stored description, so an item written under the old transport differs from
-    the locally-terminated text on its next write, `System.Description` is emitted, and
-    `write_spec`'s `if ops:` guard cannot fire for it. One write converges it. Measure the
-    stored value against the written one on a real item to settle whether this stays."""
+    THAT ARTEFACT IS HISTORY, AND THIS IS NOW COMPATIBILITY RATHER THAN A LIVE CORRECTION.
+    `@file` was the WRITE mechanism, deleted with `_az_patch`'s arrival; a document now
+    leaves as JSON in an `az rest` body and comes back as JSON from `workitemsbatch`, and
+    neither touches the trailing newline. Measured 2026-08-07 against the real org: the same
+    section written back verbatim twice sent a patch the FIRST time — `System.Description`
+    still stored in the stripped form the old transport left — and, the second time, no
+    patch at all. So the stored value converges after one write, and this function's job is
+    documents written before that change. It stays because it is a no-op on an
+    already-terminated document, and because nothing migrates the ones already stored."""
     if doc and not doc.endswith("\n"):
         return doc + "\n"
     return doc
