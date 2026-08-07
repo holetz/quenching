@@ -1513,6 +1513,61 @@ def work_item_type_resolution_failures() -> list[str]:
     return out
 
 
+def azure_workitemtype_retirement(cfg: dict, frontmatter_type: str | None) -> dict | None:
+    """`azurePlacement.workItemType` is retired from `resolve_work_item_type`'s chain but
+    stays recognised in `AZURE_PLACEMENT_KEYS`, so a repository that declared it gets a
+    graduated signal rather than the generic unknown-key finding.
+
+    Declared beside a catalog that already resolves a type, the old key is dead
+    configuration — the same fact said better now lives in `workItemTypes`, and ignoring
+    the old key changes nothing a create would write. Declared as the only entry that WOULD
+    have answered, ignoring it changes the item a create writes, so this refuses instead of
+    silently substituting `AZ_SPEC_TYPE` for what a human actually declared."""
+    old = (cfg.get("azurePlacement") or {}).get("workItemType")
+    if not old:
+        return None
+    resolved = resolve_work_item_type(cfg, frontmatter_type)
+    types = cfg.get("workItemTypes") or {}
+    entry = types.get(frontmatter_type) if frontmatter_type else None
+    answered_by_catalog = bool(entry and entry.get("azure")) or any(
+        c.get("default") and c.get("azure") for c in types.values())
+    if answered_by_catalog:
+        return {
+            "code": "sp-az-workitemtype-retired-unused", "severity": "warn", "exit": 0,
+            "message": f"{CONFIG_FILE}'s `azurePlacement.workItemType` ('{old}') is retired "
+                       f"and unread — `workItemTypes` already resolves '{resolved}' for this "
+                       f"create; dead configuration, changing nothing",
+        }
+    return {
+        "code": "sp-az-workitemtype-only-answer", "severity": "error", "exit": 2,
+        "message": f"{CONFIG_FILE}'s `azurePlacement.workItemType` ('{old}') is retired and "
+                   f"was the only declared answer for this create's type — migrate it into "
+                   f"a `workItemTypes` entry (`default: true`, or matching `--type`); "
+                   f"writing '{AZ_SPEC_TYPE}' in its place would not be what was declared",
+    }
+
+
+def azure_workitemtype_retirement_failures() -> list[str]:
+    """One case per branch: nothing declared, declared beside a catalog that already
+    resolves, and declared as the only entry that would have answered."""
+    out: list[str] = []
+    tarefa = {"description": "d", "azure": "Task", "default": True}
+    cases = (
+        ({"azurePlacement": {}}, None, "nothing declared is not a finding"),
+        ({"azurePlacement": {"workItemType": "Issue"}, "workItemTypes": {"tarefa": tarefa}},
+         "sp-az-workitemtype-retired-unused",
+         "declared beside a catalog that resolves is dead configuration"),
+        ({"azurePlacement": {"workItemType": "Issue"}}, "sp-az-workitemtype-only-answer",
+         "declared as the only answer refuses"),
+    )
+    for cfg, want_code, label in cases:
+        got = azure_workitemtype_retirement(cfg, None)
+        code = got["code"] if got else None
+        if code != want_code:
+            out.append(f"{label}: code was {code!r}, not {want_code!r}")
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of /.docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
@@ -5946,9 +6001,16 @@ def cmd_new(args, root: str) -> int:
                          "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
              f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
         return 2
-    subject, serr = resolve_subject(load_config(root), args.subject)
+    cfg = load_config(root)
+    subject, serr = resolve_subject(cfg, args.subject)
     if serr:
         return emit_err(args.json, serr)
+    if cfg["backend"] == "azure-boards":
+        retirement = azure_workitemtype_retirement(cfg, None)
+        if retirement and retirement["severity"] == "error":
+            return emit_err(args.json, retirement)
+        if retirement:
+            print(f"note: {retirement['message']}", file=sys.stderr)
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{slug}.md"
@@ -9617,6 +9679,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "with no `azure` name exactly like an unresolved "
                                         "key, down to AZ_SPEC_TYPE"))
 
+    # `azurePlacement.workItemType`'s retirement: dead configuration beside a resolving
+    # catalog, a refusal where it was the only declared answer.
+    for failure in azure_workitemtype_retirement_failures():
+        findings.append(_finding("sp-workitemtype-retirement-broken", "error",
+                                 f"azurePlacement.workItemType retirement — {failure}",
+                                 remedy="azure_workitemtype_retirement must warn once a "
+                                        "catalog default resolves and refuse once the "
+                                        "retired key was the only answer"))
+
     # The board-state precedence `azure-boards`'s column write consults — core logic, never
     # a backend's own derivation, per `spec-backend.md` §The interface is the document.
     for failure in board_state_failures():
@@ -9878,7 +9949,8 @@ def cmd_selftest(args, root: str) -> int:
               f"board-state precedence puts archived over reviewed over the derived stage, "
               f"work-item-type resolution falls through the frontmatter key, the catalog's "
               f"default entry and AZ_SPEC_TYPE in that order, treating an entry with no "
-              f"azure name as unresolved, "
+              f"azure name as unresolved, the retired azurePlacement.workItemType warns "
+              f"beside a resolving catalog and refuses where it was the only answer, "
               f"an undeclared tag catalog flags nothing while a declared one flags what is "
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
               f"tag survives every azure-boards write whether or not a spec declares tags of "
@@ -10058,6 +10130,11 @@ def cmd_doctor(args, root: str) -> int:
     # workspace on `files` or `github` — or on `azure-boards` with nothing declared yet —
     # never pays for it.
     if cfg["backend"] == "azure-boards":
+        retirement = azure_workitemtype_retirement(cfg, None)
+        if retirement:
+            findings.append(_finding(retirement["code"], retirement["severity"],
+                                     retirement["message"], path=CONFIG_FILE,
+                                     remedy="migrate the type into a `workItemTypes` entry"))
         az, az_err = open_azure_backend(root)
         if not az_err:
             for row in az.marker_without_discovery_tag():
