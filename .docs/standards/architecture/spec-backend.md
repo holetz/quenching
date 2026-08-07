@@ -4,10 +4,10 @@ title: Spec backend interface
 description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-06
+timestamp: 2026-08-07
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass; §Placement is declared, and reaffirmed on every write and §Granular reading is about context, not I/O both rewritten by reduzir-as-chamadas-az-por-escrita-no-azure-boards (task 5.1), after one `azure-boards` section edit was measured spending nine `az` calls and 8,5s — four of them writes to the same work item — and the sentence claiming those fields cost 'never a round trip of their own' turned out to be a description that had been false for a year; §What this standard does not yet cover updated by the same plan (task 6.1), whose live run found four ways a write was not idempotent that no offline check could have seen; §What is declared stops at placement — never at the connection distilled from the same plan's §Alternatives Considered at its conclude, where declaring the organisation and project in `azurePlacement` was rejected as a second source of truth that fails silently by writing into somebody else's board
 maintainer: quenching
 ---
 
@@ -283,9 +283,43 @@ reads as.
 **Declared placement is reaffirmed on every write, not only at creation.** A human who moves the
 work item's area or its board column between two writes sees the next one bring it back — the
 tracker is the projection, `.claude/quenching.json` is the authority, and that is the same
-one-way relationship `state` already has with `move_spec`. This costs nothing extra: the fields
-travel on the SAME create/update call the write was already making, never a round trip of their
-own.
+one-way relationship `state` already has with `move_spec`.
+
+**What is declared stops at placement — never at the connection.** `azurePlacement` says where
+*in* the project a spec is born; it does not say which organisation or which project, and it must
+not. Those come from the CLI's own configured defaults, because a second declaration of them
+would not fail loudly either: diverging from what the tool actually authenticates against, it
+writes a real work item into a real board belonging to somebody else. The line between the two:
+**declare what the tracker cannot tell you, resolve what it already knows.** An area path has no
+honest default, so it is declared. The organisation and project the CLI is already pointed at
+have exactly one honest answer, so asking is safer than being told twice — and that answer is
+cached rather than duplicated (§Granular reading).
+
+**And it must cost nothing extra: every reaffirmed field travels in the SAME request the write
+was already making, never a round trip of its own.** That sentence was written as a description
+and was false for a year — measured on `azure-boards`, one section edit spent nine `az` calls and
+8,5s, of which four writes went to the same work item: the document, then the parent, then the
+board column, then the tags. The cost was never the reaffirmation. It was spending one process per
+field, on a CLI whose startup is the floor (0,45s for `az rest` against 0,9s for `az boards
+work-item update`, measured on the same org).
+
+An external tracker pays **per request, not per byte**, so the rule is: assemble one body, send it
+once. Two consequences follow, and both are load-bearing rather than incidental:
+
+- **Ops are diffed against the item as it was read, and an unchanged field emits none.** This does
+  not weaken the reaffirmation — a card a human moved has a column that disagrees with the derived
+  one, so the op is emitted and the card comes back. What it removes is the tracker revision an
+  unchanged field used to bump on every write.
+- **A field whose read shape is not its write shape must be normalised before it is diffed**, or
+  it is "changed" on every write forever. Two are known on `azure-boards`: an identity field comes
+  back as an object and goes out as a UPN, and a scheduling field comes back as a datetime and
+  goes out as a date.
+
+One request is **all-or-nothing**, which is the trade this rule accepts: a rejected op takes the
+document edit down with it, where four separate writes would have left the document saved and the
+column stale. That is the better failure — but only on one condition, which is part of the rule:
+**the refusal must name the op the tracker rejected.** A body of eight ops that fails without
+saying which is worse to diagnose than the four writes it replaced.
 
 ## Armazenado não é projetado
 
@@ -357,6 +391,25 @@ fetch the whole document to answer is an implementation detail — a local cache
 free to exist and is **not** a store: it is not authoritative, nothing outside the CLI reads it, and
 the backend remains the source of truth.
 
+**A cache may cross processes, under one added condition: it may only ever narrow a read, never
+authorise a write.** Every CLI invocation is a new process, so a cache that lives only in memory is
+paid for again on every command — measured on `azure-boards`, resolving the organisation, the
+project name and the team's board column field cost 3,8s of an 8,5s write, all of it re-derivation
+of answers the previous process already had. The three conditions above still hold when the answer
+outlives the process; what changes is that a wrong entry now survives the process that wrote it.
+
+So the reader re-validates rather than trusting the hit: a remembered id is used to fetch **one**
+item instead of the whole front, and the identity that comes back — the marker, the slug — is
+compared against what was asked for. A mismatch falls through to the full listing. Nothing is ever
+written on the strength of a cached answer alone, which is what keeps the backend the source of
+truth rather than the cache.
+
+Two placement rules follow. The cache lives **outside the repository**, because one in the tree is
+committed, travels to another machine and to another checkout, and a stale entry there points at a
+recreated work item while looking exactly like a hit. And it is **keyed by the identity it answers
+for** — organisation, project, and whatever else scopes the answer — so two projects never read
+each other's.
+
 ## The fake is how "identical" stays true
 
 A second backend holding specs in a dict — no disk, no network, no fixture — is not a convenience.
@@ -406,6 +459,30 @@ the 65,536-character body ceiling, and two of this repository's 69 real specs ar
 retirement was paid for the way the sentence asks — **all 69 real documents were run through the new
 serialisation offline**, split, wrapped, put through the CRLF round trip a tracker performs,
 unwrapped and joined, and every one came back byte for byte, the two that spill included.
+
+`azure-boards` has now been exercised a **second** time end to end, by
+reduzir-as-chamadas-az-por-escrita-no-azure-boards (task 6.1), against the same real project — and
+that run is the reason §Placement and §Granular reading above changed. What it surfaced, live, was
+not the transport but the **idempotence** of a write, and every one of the four was invisible to an
+offline check that asserted the request body against a fixture:
+
+- a field that is reaffirmed but not read back can never be diffed, so it is written on every
+  request forever — `System.AreaPath`, `System.IterationPath` and the board's own column field were
+  all in that state;
+- a set-valued field returned in the tracker's order and written in the tool's differs by
+  permutation alone, which a string comparison reads as a change;
+- a tracker that **normalises** what it stores — an HTML attribute given its semicolon, a tag given
+  a space before its closing angle — hands back something other than what went out, so the one
+  field every write carries could never be elided until the writer produced that exact form;
+- and `az devops invoke` cannot address a single work item at all: it routes by resource name, and
+  `workitems` resolves to the create route, so a PATCH by id dies inside the SDK with
+  `KeyError: 'type'` — a traceback rather than a refusal, and the one failure mode the interface
+  promises never to have.
+
+The rule that generalises them: **a write is idempotent only if the value the tool produces is
+byte-identical to the value the tracker stores.** Anything less is not a cosmetic difference; it is
+a diff that never converges, and it silently defeats every optimisation built on comparing the two.
+That property cannot be established offline. It is what an end-to-end run is for.
 
 A finding that an external implementation cannot satisfy some rule above is a reason to revisit this
 document, not to work around it quietly.
