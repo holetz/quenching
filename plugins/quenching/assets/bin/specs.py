@@ -3676,13 +3676,21 @@ class GitHubBackend(SpecBackend):
             payload["labels"] = labels
         if fresh["frontmatter"].get("assignee"):
             payload["assignees"] = [fresh["frontmatter"]["assignee"]]
-        # The abstract `workItemType:` key, projected to GitHub's own Issue Type name — a
-        # write-only projection exactly like the title once was before it became storage
-        # (§Design), never read back: `workItemType:` itself stays in the stored document.
+        issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
+                                payload)
+        number = int((issue or {}).get("number") or 0)
+        url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        # The abstract `workItemType:` key, projected to GitHub's own Issue Type — through
+        # `_set_type` (`gh issue edit --type`), NEVER a `type` field on the create payload
+        # above. MEASURED live (2026-08-07, holetz/claude-quenching#898): the REST create
+        # silently drops an invalid name — `ok: true`, `issueType: null`, no error at all —
+        # while `gh issue edit --type` validates against the repository's own types and
+        # refuses loudly. A second call rather than free, but only once, and only when a
+        # type actually resolves.
         type_key = fresh["frontmatter"].get("workItemType")
         type_name = self.types.get(type_key) if type_key else None
         if type_name:
-            payload["type"] = type_name
+            self._set_type(number, type_name)
         elif type_key:
             # The entry exists — `resolve_type_key` already gated `--type` at `new` — but
             # names no `github` translation. Never a refusal: an entry may exist for one
@@ -3690,10 +3698,6 @@ class GitHubBackend(SpecBackend):
             # untyped and only says why.
             print(f"note: workItemType '{type_key}' has no `github` name declared in "
                   f"{CONFIG_FILE} — no type applied to this issue", file=sys.stderr)
-        issue = self._write_api("creating an issue", "POST", f"repos/{self.repo}/issues",
-                                payload)
-        number = int((issue or {}).get("number") or 0)
-        url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
         self._sync_parts(number, chunks)
         if phase == "archive":
             # Created open and then closed, because "closed" is not a state an issue can be
@@ -3712,6 +3716,22 @@ class GitHubBackend(SpecBackend):
     def _set_state(self, number: int, state: str):
         return self._write_api(f"setting issue #{number} to {state}", "PATCH",
                                f"repos/{self.repo}/issues/{number}", {"state": state})
+
+    def _set_type(self, number: int, type_name: str) -> None:
+        """`gh issue edit --type`, the one PORCELAIN call this backend makes — never `gh api`.
+
+        The REST `POST .../issues` this backend otherwise uses for everything silently drops
+        an invalid `type` field: MEASURED live against `holetz/claude-quenching#898`, a create
+        with a nonexistent type name came back `ok: true` with `issueType: null`, no error at
+        all. `gh issue edit --type` is the one mechanism proven to validate against the
+        repository's own issue types and refuse loudly for the same name — the same shape
+        `gh_refusal` already reports for `gh api`, reused here because `gh`'s three failure
+        modes (missing binary, unauthenticated, said no) are the same across both."""
+        action = f"setting issue #{number}'s type to '{type_name}'"
+        code, out, err = _gh_run(self.cwd, "issue", "edit", str(number),
+                                 "--repo", self.repo, "--type", type_name)
+        if code != 0:
+            raise BackendRefusal(gh_refusal(action, code, out, err))
 
     # -- the continuation comments a spilled document uses --------------------- #
     def _comments(self, number: int) -> list[dict]:
@@ -4003,37 +4023,49 @@ HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "tex
 
 
 def github_create_type_failures() -> list[str]:
-    """`create_spec`'s `type` projection — the payload GitHub actually receives, never read
-    back: `workItemType:` itself stays in the stored document (§Design), so there is no twin
-    test to pass here. Three branches: a resolved name reaches the create, no key declared
-    sends no `type` at all, and a key with no `github` translation applies none either but
-    says why on stderr — never a refusal, exactly as §Design admits an entry for one backend
-    only."""
+    """`create_spec`'s `type` projection — `_set_type` (`gh issue edit`), never a field on
+    the create payload: MEASURED live (task 3.3) that the REST create silently drops an
+    invalid `type` instead of refusing, which is why `_set_type` is its own porcelain call
+    rather than a JSON key. Three branches: a resolved name reaches `_set_type`, no key
+    declared calls it not at all, and a key with no `github` translation calls it not at
+    all either but says why on stderr — never a refusal, exactly as §Design admits an entry
+    for one backend only."""
     import contextlib
     import io
     out: list[str] = []
     gh = GitHubBackend("owner/repo", ".", types={"incidente": "Bug"})
-    payloads: list[dict] = []
-    gh._api = lambda action, *argv, stdin=None: (payloads.append(json.loads(stdin))
-                                                 or {"number": 1, "html_url": "x"})
+    gh._api = lambda action, *argv, stdin=None: {"number": 1, "html_url": "x"}
+    applied: list[tuple[int, str]] = []
+    gh._set_type = lambda number, name: applied.append((number, name))
     doc = _case_doc("alpha")
     close = doc.index("\n---\n")
     typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
     gh.create_spec("plans", "alpha.md", typed)
-    if payloads[-1].get("type") != "Bug":
-        out.append(f"a resolved workItemType did not reach the create payload as `type`: "
-                   f"{payloads[-1].get('type')!r}")
+    if applied != [(1, "Bug")]:
+        out.append(f"a resolved workItemType did not reach _set_type: {applied!r}")
+    applied.clear()
     gh.create_spec("plans", "beta.md", doc)
-    if "type" in payloads[-1]:
-        out.append("no workItemType declared still sent a `type` field")
+    if applied:
+        out.append("no workItemType declared still called _set_type")
     untranslated = doc[:close] + "\nworkItemType: tarefa" + doc[close:]
     stderr = io.StringIO()
     with contextlib.redirect_stderr(stderr):
         gh.create_spec("plans", "gamma.md", untranslated)
-    if "type" in payloads[-1]:
-        out.append("an entry with no `github` name still sent a `type` field")
+    if applied:
+        out.append("an entry with no `github` name still called _set_type")
     if "tarefa" not in stderr.getvalue():
         out.append("an entry with no `github` name printed no advisory line on stderr")
+    # `_set_type` itself, unmocked: a `cwd` that cannot exist makes `_gh_run` fail exactly
+    # as a real `gh` refusal would, self-contained and with no network — proving the raise
+    # reaches the caller as `BackendRefusal`, classified by the same `gh_refusal` every
+    # other transport failure already is.
+    broken = GitHubBackend("owner/repo", "/does/not/exist")
+    try:
+        broken._set_type(1, "Bug")
+        out.append("_set_type on an impossible cwd did not raise")
+    except BackendRefusal as e:
+        if e.err.get("exit") != 2:
+            out.append("_set_type's refusal did not exit 2")
     return out
 
 
@@ -9637,14 +9669,15 @@ def cmd_selftest(args, root: str) -> int:
                                         "a tag; only the first assignee is reflected, "
                                         "because the canonical field is singular"))
 
-    # `create_spec`'s own `type` projection: a resolved `workItemType:` reaches the payload
-    # as GitHub's native name, and an unresolved one sends no `type` at all.
+    # `create_spec`'s own `type` projection: a resolved `workItemType:` reaches `_set_type`,
+    # and an unresolved one calls it not at all.
     for failure in github_create_type_failures():
         findings.append(_finding("sp-gh-create-type-broken", "error",
                                  f"github create's type projection — {failure}",
-                                 remedy="create_spec must set payload['type'] from "
-                                        "self.types[workItemType] and omit it entirely "
-                                        "when the key does not resolve"))
+                                 remedy="create_spec must call self._set_type(number, "
+                                        "self.types[workItemType]) — never a `type` field "
+                                        "on the create payload, which silently drops an "
+                                        "invalid name instead of refusing"))
 
     # Measured on this org (task 6.1): `--assigned-to` refuses a display name outright, so
     # `_native_fields` must read back the UPN, never the display name, or a carried-forward
@@ -10094,8 +10127,8 @@ def cmd_selftest(args, root: str) -> int:
               f"tag survives every azure-boards write whether or not a spec declares tags of "
               f"its own, the stored document never carries a second copy of a native field, "
               f"github reassembles every label into a tag and only its first assignee, "
-              f"github's create sends a resolved workItemType as its native `type` and "
-              f"omits the field otherwise, the "
+              f"github's create applies a resolved workItemType through `gh issue edit "
+              f"--type`, never the REST payload, and calls it not at all otherwise, the "
               f"azure-boards div marker and comment marker both round-trip, its description "
               f"ceiling refuses before the call and its stripped trailing newline is "
               f"restored, and the embedded schema and template match their asset files.")
