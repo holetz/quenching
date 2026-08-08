@@ -5125,7 +5125,9 @@ class AzureBoardsBackend(SpecBackend):
         self.board_column = board_column
         self.column_map = column_map or {}
         self.tag_catalog = tag_catalog or {}
-        self._board_field: str | None = None   # WEF_<guid>_Kanban.Column — resolved once
+        # WEF_<guid>_Kanban.Column, per work-item-type — a process resolving specs of more
+        # than one type (§4.1) must not let one type's field answer for another's.
+        self._board_field: dict[str, str] = {}
         # descriptor, id, shell doc, native title, the four stored fields, and the RAW
         # System.Tags the tag reconciliation in `write_spec` diffs against — the last costs
         # no call of its own, and is the one place tags are seen before `declared_tags`.
@@ -5342,13 +5344,21 @@ class AzureBoardsBackend(SpecBackend):
         AND IT NEVER REFUSES. `sp-az-no-team` and `sp-az-no-board` belong to the write, which
         calls `_resolve_board_field` for real and raises there with the same message. An
         optimisation that turned a listing into a refusal would be a behaviour change wearing
-        a performance fix's clothes."""
-        if self._board_field is not None:
-            return self._board_field
+        a performance fix's clothes.
+
+        RESOLVED AGAINST `self.work_item_type` — the repo's own default, never one spec's
+        own resolved type: a batch covers every spec the listing returns, of whatever type
+        each was born under, and this is a read-ahead guess for the FIELD NAME to request,
+        not an authoritative per-item answer. A guess that misses for an item born under a
+        different type costs one write-time resolution later; it never writes anything
+        wrong, because `write_spec`/`create_spec`/`move_spec` resolve their own field for
+        their own spec regardless of what this returned."""
+        if self.work_item_type in self._board_field:
+            return self._board_field[self.work_item_type]
         if not (self.column_map or self.board_column):
             return None
         try:
-            return self._resolve_board_field()
+            return self._resolve_board_field(self.work_item_type)
         except BackendRefusal:
             return None
 
@@ -5420,7 +5430,9 @@ class AzureBoardsBackend(SpecBackend):
             state = board_state_of(info)
             expected = self.column_map.get(state, self.board_column)
             if expected:
-                actual = self._field(item, self._resolve_board_field())
+                type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                                   info["frontmatter"].get("workItemType"))
+                actual = self._field(item, self._resolve_board_field(type_name))
                 if actual and actual != expected:
                     out.append({"kind": "column", "id": item_id, "slug": row["slug"],
                                "actual": actual, "expected": expected})
@@ -5518,7 +5530,9 @@ class AzureBoardsBackend(SpecBackend):
         # and one patch cannot race itself.
         column = self.column_map.get(board_state_of(fresh), self.board_column)
         if column:
-            desired[self._resolve_board_field()] = column
+            type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                               fresh["frontmatter"].get("workItemType"))
+            desired[self._resolve_board_field(type_name)] = column
         # `markdown=True` on every write, not once at creation: the format op only travels
         # where the description is itself an op, so an item already in `Markdown` pays
         # nothing and one still in `html` is converted by the first write that touches it.
@@ -5549,10 +5563,10 @@ class AzureBoardsBackend(SpecBackend):
         # board resolves state FROM the column, and a direct `--state` write the column
         # write follows would just be undone).
         # The chain a spec's own `workItemType:` resolves through — never `self.work_item_type`,
-        # the single per-repo default `_resolve_board_field` still reads (§4.2 threads the
-        # resolved type through there too). `workItemTypes` describes the PROJECT, not one
-        # backend, so `self.types` carries the whole catalogue and this asks the same pure
-        # function `create_spec`'s own `github` sibling type-checks against.
+        # the single per-repo default only `_board_field_for_read`'s read-ahead optimisation
+        # still uses. `workItemTypes` describes the PROJECT, not one backend, so `self.types`
+        # carries the whole catalogue and this asks the same pure function `create_spec`'s
+        # own `github` sibling type-checks against.
         type_name = resolve_work_item_type({"workItemTypes": self.types},
                                            fresh["frontmatter"].get("workItemType"))
         argv = ["work-item", "create", "--project", self.project,
@@ -5590,7 +5604,9 @@ class AzureBoardsBackend(SpecBackend):
             desired["System.AssignedTo"] = assignee
         column = self.column_map.get(board_state_of(fresh), self.board_column)
         if column:
-            desired[self._resolve_board_field()] = column
+            # The same `type_name` already resolved above for `--type` — one spec, one type,
+            # asked once.
+            desired[self._resolve_board_field(type_name)] = column
         else:
             desired["System.State"] = self.states[phase]
         parent = (self.parent_id, self._work_item_url(self.parent_id)) \
@@ -5610,28 +5626,33 @@ class AzureBoardsBackend(SpecBackend):
         separately rather than one being derived from the other."""
         return f"{self.org.rstrip('/')}/{self.project}/_apis/wit/workItems/{item_id}"
 
-    def _resolve_board_field(self) -> str:
+    def _resolve_board_field(self, type_name: str) -> str:
         """The team's Kanban column field — `WEF_<guid>_Kanban.Column` — resolved once per
         process and cached on `self`. `spec-backend.md` §Granular reading already allows a
         process-local cache that is not a store: it is not authoritative and nothing outside
         this object reads it.
 
+        `type_name` IS THE SPEC'S OWN RESOLVED TYPE, never `self.work_item_type` — a board's
+        allowed mappings are per work-item-type, so a spec born under a different type from
+        the repo's own default must resolve against its OWN, not the one every caller used
+        to share (§4.1's `create_spec` is why one can differ at all).
+
         FOUND, NEVER GUESSED: the guid is per-TEAM, so a second team's board carries a
         different one. This asks the team for every board it has and keeps the one whose
-        `allowedMappings` names `self.work_item_type` — measured on this org, team 'Diretoria
+        `allowedMappings` names `type_name` — measured on this org, team 'Diretoria
         Risco' has six boards (Stories, OKR, Releases, Funcionalidades, Iniciativas, Épicos)
         and 'User Story' resolves to 'Stories'."""
-        if self._board_field is not None:
-            return self._board_field
+        if type_name in self._board_field:
+            return self._board_field[type_name]
         # BETWEEN PROCESSES, not just within one. The guid is per-team and per-process
         # caching meant paying 1 + N calls on every `specs.py` invocation — measured 2,8s on
         # a team with six boards. Task 1.1 ruled out reading it off the item itself, so the
         # resolution stays authoritative and only its ANSWER is remembered, keyed by the team
         # and work item type it was resolved for.
-        cache_key = f"boardField:{self.team}:{self.work_item_type}"
+        cache_key = f"boardField:{self.team}:{type_name}"
         cached = azure_cache_read(self.org, self.project).get(cache_key)
         if cached:
-            self._board_field = cached
+            self._board_field[type_name] = cached
             return cached
         if not self.team:
             raise BackendRefusal({
@@ -5654,17 +5675,17 @@ class AzureBoardsBackend(SpecBackend):
                                   "--route-parameters", f"project={self.project}",
                                   f"team={self.team}", f"id={board_id}")
             mappings = (detail or {}).get("allowedMappings") or {}
-            if any(self.work_item_type in m for m in mappings.values()):
+            if any(type_name in m for m in mappings.values()):
                 field = ((detail.get("fields") or {}).get("columnField") or {}).get(
                     "referenceName")
                 if field:
-                    self._board_field = field
+                    self._board_field[type_name] = field
                     azure_cache_write(self.org, self.project, **{cache_key: field})
                     return field
         raise BackendRefusal({
             "code": "sp-az-no-board", "exit": 2,
             "message": f"no board for team '{self.team}' accepts work item type "
-                       f"'{self.work_item_type}' — check azurePlacement.team and "
+                       f"'{type_name}' — check azurePlacement.team and "
                        f"workItemType; no spec was read or written",
         })
 
@@ -5678,8 +5699,12 @@ class AzureBoardsBackend(SpecBackend):
         dest_info = dict(info)
         dest_info["phase"] = dest_phase
         column = self.column_map.get(board_state_of(dest_info), self.board_column)
-        desired = {self._resolve_board_field(): column} if column \
-            else {"System.State": self.states[dest_phase]}
+        if column:
+            type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                               info["frontmatter"].get("workItemType"))
+            desired = {self._resolve_board_field(type_name): column}
+        else:
+            desired = {"System.State": self.states[dest_phase]}
         ops = azure_patch_body(self._raw.get(item_id, {}), desired)
         if ops:
             self._az_patch(f"moving work item {item_id} to {dest_phase}", item_id, ops)
@@ -5834,10 +5859,52 @@ def azure_native_fields_read_failures() -> list[str]:
     return out
 
 
+def azure_board_field_type_failures() -> list[str]:
+    """`_resolve_board_field`'s process-local cache, keyed by TYPE — `board_findings` loops
+    the whole listing in one process, and a spec born under a different type from the last
+    one resolved must never answer with the other's field, which a single `self._board_field`
+    string (rather than a dict) once did.
+
+    `XDG_CACHE_HOME` redirected to a throwaway directory for the call: `_resolve_board_field`
+    also writes the CROSS-process cache (`azure_cache_write`), and this proves the per-type
+    key without ever touching the real one at `~/.cache/quenching/azure/`."""
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        old_xdg = os.environ.get("XDG_CACHE_HOME")
+        os.environ["XDG_CACHE_HOME"] = tmp
+        try:
+            az = AzureBoardsBackend("test-org-4-2", "test-proj-4-2",
+                                    {"plans": "Active", "archive": "Closed"}, ".",
+                                    team="Diretoria Risco")
+            boards = {
+                "1": {"allowedMappings": {"x": ["Bug"]},
+                     "fields": {"columnField": {"referenceName": "WEF_bugs_Kanban.Column"}}},
+                "2": {"allowedMappings": {"x": ["User Story"]},
+                     "fields": {"columnField": {"referenceName": "WEF_stories_Kanban.Column"}}},
+            }
+            az._az_raw = lambda action, *argv, expect="object": (
+                boards[next(a for a in argv if a.startswith("id="))[3:]]
+                if any(a.startswith("id=") for a in argv)
+                else {"value": [{"id": "1", "name": "Bugs"}, {"id": "2", "name": "Stories"}]})
+            bug_field = az._resolve_board_field("Bug")
+            story_field = az._resolve_board_field("User Story")
+            if bug_field == story_field:
+                out.append("two different types resolved to the same board field")
+            if az._resolve_board_field("Bug") != bug_field:
+                out.append("re-resolving the same type did not hit the process cache")
+        finally:
+            if old_xdg is None:
+                os.environ.pop("XDG_CACHE_HOME", None)
+            else:
+                os.environ["XDG_CACHE_HOME"] = old_xdg
+    return out
+
+
 def azure_create_type_failures() -> list[str]:
     """`create_spec`'s `--type` argv — the resolved chain, never `self.work_item_type`, the
-    single per-repo default `_resolve_board_field` still reads until §4.2 threads the
-    resolved type through there too."""
+    single per-repo default that only `_board_field_for_read`'s optimisation still reads
+    (§4.2)."""
     out: list[str] = []
     incidente = {"description": "d", "azure": "Bug"}
     az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".",
@@ -9729,6 +9796,15 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="AzureBoardsBackend._native_fields must prefer "
                                         "uniqueName over displayName for System.AssignedTo"))
 
+    # `_resolve_board_field`'s process-local cache, keyed by type: two types in one process
+    # must resolve to two different fields, never one clobbering the other.
+    for failure in azure_board_field_type_failures():
+        findings.append(_finding("sp-az-board-field-type-broken", "error",
+                                 f"azure-boards board-field cache — {failure}",
+                                 remedy="self._board_field must be a dict keyed by type, "
+                                        "never a single string shared across every type a "
+                                        "process resolves"))
+
     # `create_spec`'s own `--type` argv: the resolved chain, never the single per-repo
     # `self.work_item_type` default.
     for failure in azure_create_type_failures():
@@ -10179,7 +10255,8 @@ def cmd_selftest(args, root: str) -> int:
               f"github's create applies a resolved workItemType through `gh issue edit "
               f"--type`, never the REST payload, and calls it not at all otherwise, "
               f"azure-boards' create passes the resolved chain's answer to --type rather "
-              f"than the single per-repo default, the "
+              f"than the single per-repo default, its board-field cache is keyed by type so "
+              f"two types in one process never share a field, the "
               f"azure-boards div marker and comment marker both round-trip, its description "
               f"ceiling refuses before the call and its stripped trailing newline is "
               f"restored, and the embedded schema and template match their asset files.")
