@@ -38,6 +38,10 @@ sentence, and **link out** rather than explaining in full here.
   `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
   `resource-self`). The category has to stay small — a check that cannot tell "wrong" from "worth a
   look" belongs here or nowhere, and folding one into must-fix makes that set unusable.
+- [**Agent-choice catalogue**](../standards/workflows/agent-choice-catalogues.md) — the shared
+  shape `subjects`, `tagCatalog` and `workItemTypes` all follow in `.claude/quenching.json`: an
+  abstract key mapping to a `description` an agent reads to PROPOSE a choice, which a human then
+  CONFIRMS — never silently picked.
 - [**Always-on metadata**](../standards/automation/skills.md) — the frontmatter
   `description` of every command, resident in every session's context before anything fires and
   therefore the only surface cost paid whether or not a command runs.
