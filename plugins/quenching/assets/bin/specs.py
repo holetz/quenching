@@ -5099,11 +5099,16 @@ class AzureBoardsBackend(SpecBackend):
                 parent_id: int | None = None, team: str | None = None,
                 board_column: str | None = None,
                 column_map: dict[str, str] | None = None,
-                tag_catalog: dict[str, str] | None = None) -> None:
+                tag_catalog: dict[str, str] | None = None,
+                types: dict[str, dict] | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
         self.cwd = cwd
+        # `workItemTypes`, raw — `resolve_work_item_type` reads the whole entry shape
+        # (`{description, azure, github, default}`), never a pre-filtered name-only map the
+        # way `GitHubBackend.types` is, because the chain itself decides which entry wins.
+        self.types = types or {}
         # `open_azure_backend` is the sole caller — it reads `azurePlacement`, refuses for the
         # one sub-key with no default (`areaPath`), and applies `AZ_DEFAULT_DISCOVERY_TAG` /
         # `AZ_SPEC_TYPE` for the two that have one. Optional here only so the fake and the
@@ -5543,8 +5548,15 @@ class AzureBoardsBackend(SpecBackend):
         # decides it (§task 6.3: column and state are not independent on this process; the
         # board resolves state FROM the column, and a direct `--state` write the column
         # write follows would just be undone).
+        # The chain a spec's own `workItemType:` resolves through — never `self.work_item_type`,
+        # the single per-repo default `_resolve_board_field` still reads (§4.2 threads the
+        # resolved type through there too). `workItemTypes` describes the PROJECT, not one
+        # backend, so `self.types` carries the whole catalogue and this asks the same pure
+        # function `create_spec`'s own `github` sibling type-checks against.
+        type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                           fresh["frontmatter"].get("workItemType"))
         argv = ["work-item", "create", "--project", self.project,
-               "--type", self.work_item_type, "--title", title]
+               "--type", type_name, "--title", title]
         if self.area_path:
             argv += ["--area", self.area_path]
         if self.iteration_path:
@@ -5822,6 +5834,34 @@ def azure_native_fields_read_failures() -> list[str]:
     return out
 
 
+def azure_create_type_failures() -> list[str]:
+    """`create_spec`'s `--type` argv — the resolved chain, never `self.work_item_type`, the
+    single per-repo default `_resolve_board_field` still reads until §4.2 threads the
+    resolved type through there too."""
+    out: list[str] = []
+    incidente = {"description": "d", "azure": "Bug"}
+    az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".",
+                            area_path="Proj\\Area", types={"incidente": incidente})
+    calls: list[list[str]] = []
+    az._az = lambda action, *argv, expect="object": (calls.append(list(argv)) or {"id": 1})
+    az._az_patch = lambda action, item_id, ops: None
+    doc = _case_doc("alpha")
+    close = doc.index("\n---\n")
+    typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
+    az.create_spec("plans", "alpha.md", typed)
+    argv = calls[-1]
+    got = argv[argv.index("--type") + 1] if "--type" in argv else None
+    if got != "Bug":
+        out.append(f"a resolved workItemType did not reach --type: {got!r}")
+    calls.clear()
+    az.create_spec("plans", "beta.md", doc)
+    argv = calls[-1]
+    got = argv[argv.index("--type") + 1] if "--type" in argv else None
+    if got != AZ_SPEC_TYPE:
+        out.append(f"no workItemType declared did not fall through to AZ_SPEC_TYPE: {got!r}")
+    return out
+
+
 # `workItemType`'s default. Measured against this org's own process guide: `User Story` is
 # the standard card for Story work, and `Issue` — the type this constant named before — is
 # documented there as OPTIONAL, for bugs of lesser severity. A default is what a repo that
@@ -5885,7 +5925,8 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                               team=placement.get("team"),
                               board_column=placement.get("boardColumn"),
                               column_map=cfg["azureColumns"],
-                              tag_catalog=cfg["tagCatalog"]), {}
+                              tag_catalog=cfg["tagCatalog"],
+                              types=cfg["workItemTypes"]), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -9688,6 +9729,14 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="AzureBoardsBackend._native_fields must prefer "
                                         "uniqueName over displayName for System.AssignedTo"))
 
+    # `create_spec`'s own `--type` argv: the resolved chain, never the single per-repo
+    # `self.work_item_type` default.
+    for failure in azure_create_type_failures():
+        findings.append(_finding("sp-az-create-type-broken", "error",
+                                 f"azure-boards create's type resolution — {failure}",
+                                 remedy="create_spec must pass resolve_work_item_type's "
+                                        "answer to --type, never self.work_item_type"))
+
     # Measured on this org (task 6.2): `TF401262` above 1,048,576 characters — checked before
     # the call, the same way the github body ceiling is.
     for failure in azure_description_ceiling_failures():
@@ -10128,7 +10177,9 @@ def cmd_selftest(args, root: str) -> int:
               f"its own, the stored document never carries a second copy of a native field, "
               f"github reassembles every label into a tag and only its first assignee, "
               f"github's create applies a resolved workItemType through `gh issue edit "
-              f"--type`, never the REST payload, and calls it not at all otherwise, the "
+              f"--type`, never the REST payload, and calls it not at all otherwise, "
+              f"azure-boards' create passes the resolved chain's answer to --type rather "
+              f"than the single per-repo default, the "
               f"azure-boards div marker and comment marker both round-trip, its description "
               f"ceiling refuses before the call and its stripped trailing newline is "
               f"restored, and the embedded schema and template match their asset files.")
