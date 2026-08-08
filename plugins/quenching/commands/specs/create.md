@@ -92,15 +92,16 @@ Read the whole plan file, then read
 exactly the cost this command exists to avoid.
 **Done when:** the plan's parts are classified, or the sentence path skipped this.
 
-### 4. Propose a subject and tags, where the target declares them
+### 4. Propose a subject, a type and tags, where the target declares them
 
 ```bash
 specs.py config --json
 ```
 
-Read `subjects` and `tagCatalog`. **Both absent or empty → skip this step whole** — most
-repositories declare neither, and proposing from nothing is not a lighter version of this step,
-it is the wrong step.
+Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip this step
+whole** — most repositories declare none of them, and proposing from nothing is not a lighter
+version of this step, it is the wrong step. Where only one or two are declared, propose only
+those — this is per-key, never all-or-nothing.
 
 **A declared `subjects`:** read each key's `name`/`description`, judge which one the input best
 fits, and confirm with **one** `AskUserQuestion` naming the candidate and its description —
@@ -108,32 +109,43 @@ never silently pick one, and never skip the confirmation because a `defaultSubje
 `specs.py new` falls back to it on its own where nothing was resolved, but a human still chose
 this spec's content and gets the same say over where it is filed.
 
+**A declared `workItemTypes`:** read each key's `description` — the same prompt material a
+`tagCatalog` value already is — judge which entry the input best fits, and confirm with **one**
+`AskUserQuestion` naming the candidate and its description, in the SAME question as the subject
+where both apply. Never skip the confirmation because a `default` entry exists: `specs.py new`
+falls back to it on its own where nothing was resolved, but a human still chose what kind of
+work this is and gets the same say `subjects` already gets.
+
 **A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
 documentation, written for exactly this judgment
 ([plugin-configuration.md](docs/standards/workflows/plugin-configuration.md) §Two keys are
 prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
-question as the subject where both apply, or its own `AskUserQuestion` otherwise. A tag outside
-the declared catalog is never proposed: `tagCatalog` is the closed set this judgment draws from.
+question as the subject and the type where all apply, or its own `AskUserQuestion` otherwise. A
+tag outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment
+draws from.
 
 **The write is always the deterministic verb, never this command inventing its own.** The chosen
-subject's key is carried to step 5's `--subject`; any confirmed catalog tag beyond the subject's
-own fixed ones is carried to step 5's follow-up `specs.py tags` call — nothing is written here,
-only decided.
-**Done when:** a subject (or none) and zero or more tags are confirmed, or the step was skipped
-whole.
+subject's key is carried to step 5's `--subject`, the chosen type's key to step 5's `--type`; any
+confirmed catalog tag beyond the subject's own fixed ones is carried to step 5's follow-up
+`specs.py tags` call — nothing is written here, only decided.
+**Done when:** a subject (or none), a type (or none) and zero or more tags are confirmed, or the
+step was skipped whole.
 
 ### 5. Create the plan
 
 ```bash
-specs.py new <slug> --title "<title>" [--subject <key>]
+specs.py new <slug> --title "<title>" [--subject <key>] [--type <key>]
 ```
 
-`--subject` only where step 4 resolved one. Exit 2 means the slug already exists — say so and
-stop, never invent a variant to get past it. `sp-no-subject`/`sp-subject-unknown` means step 4's
-own resolution disagrees with the target's declared config RIGHT NOW (a race, or a stale read) —
-re-run `specs.py config --json` and redo step 4 rather than retrying blind. Any other backend
-failure (`sp-backend-unavailable`, `sp-worktree-unusable`, `sp-worktree-failed`) is reported
-verbatim, naming `/quenching:specs:align`.
+`--subject`/`--type` only where step 4 resolved one. Exit 2 means the slug already exists — say
+so and stop, never invent a variant to get past it. `sp-no-subject`/`sp-subject-unknown`/
+`sp-type-unknown` means step 4's own resolution disagrees with the target's declared config RIGHT
+NOW (a race, or a stale read) — re-run `specs.py config --json` and redo step 4 rather than
+retrying blind. `sp-az-workitemtype-only-answer` means the target still declares the retired
+`azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding
+and its remedy verbatim, and stop; migrating the target's config is not this command's call to
+make. Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable`,
+`sp-worktree-failed`) is reported verbatim, naming `/quenching:specs:align`.
 
 **Where step 4 confirmed a catalog tag beyond the subject's own fixed ones**, one follow-up call,
 right after this one succeeds:
