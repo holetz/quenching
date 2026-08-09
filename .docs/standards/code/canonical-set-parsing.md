@@ -127,8 +127,8 @@ Two things are worth checking by grep rather than by memory, because both were m
 time this happened:
 
 1. **Prose that counts the set.** "the thirteen canonical sections" is a fact with a number in
-   it, and it appears in tool docstrings, user-facing error messages, the operator manual that
-   installs into every adopting repo, and the command bodies that cite the contract. A rename
+   it, and it appears in tool docstrings, user-facing error messages, and the command bodies that
+   cite the contract. A rename
    that stops at the schema leaves the tool telling users a number it no longer implements.
 2. **Positional readers.** Every ordinal index into the set, per §Slice by membership above.
 3. **The dispatch, not just the grammar.** Admitting a member is half the work; placing it is the

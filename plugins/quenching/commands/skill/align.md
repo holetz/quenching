@@ -1,7 +1,7 @@
 ---
 description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the `docs` or `specs` front → /docs:align, /specs:align.
 argument-hint: [optional-scope]
-allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
+allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
 
 # /quenching:skill:align — force the automation surface onto the taxonomy
@@ -86,7 +86,7 @@ tool always resolves via the plugin path.
 **Every shell grant is scoped**, per
 [`/.docs/standards/automation/skills.md`](../../../../.docs/standards/automation/skills.md)
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
-blast-radius sweep (§3), `mkdir`/`mv`/`cp` for the renames and the manual install, `rm` for a
+blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
 unscoped `Bash`.
 
@@ -174,8 +174,7 @@ the skill name being retired), renames (old → canonical new, coupled ones mark
 create or rewrite (and wrongly nested generic commands to flatten), rule + registry creations
 from the molds when missing (rule born `authority: background`), a **legacy copy of the tool**
 `.claude/hooks/skills.py`
-(removal offered — §5, never installed or refreshed), the operator manual
-`.claude/QUENCHING.md` (install / refresh / leave), unroutables kept-and-reported
+(removal offered — §5, never installed or refreshed), unroutables kept-and-reported
 with reasons, obsolete-suspect flags (no deletion proposed without the human's word), and —
 labelled **"reported, not applied"** — the wider-surface findings (`sk-agent-*`, `sk-hook-*`),
 each with the mint that closes it.
@@ -204,10 +203,6 @@ legacy copy present → offer **removal**; absent → nothing to do. The same on
 `/quenching:specs:align` reads for `specs.py` and `/quenching:docs:align` for `okf-validate.py`, so a run of any one of
 them can report the other two fronts' drift without a second probe.
 
-Then install the operator manual from
-`${CLAUDE_PLUGIN_ROOT}/assets/claude/QUENCHING.md` to `.claude/QUENCHING.md` under the
-four-branch manual-install rule in
-[/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never restated).
 **Done when:** every confirmed row is applied, and no stale `.claude/hooks/skills.py` copy
 remains (or its being ahead of the plugin is reported and left alone).
 
@@ -385,6 +380,4 @@ are reported.
   folder moved there would register every file in it as a phantom command.
 - Never leave the GENERATED zone stale, and never write inside its markers by hand — the run
   ends on a `registry reindex` that reports `changed: false`.
-- Never overwrite a `.claude/QUENCHING.md` whose `quenching` banner a human removed —
-  keep it and report it.
 - Never hand this command file `context: fork` — both gates are mid-flow.

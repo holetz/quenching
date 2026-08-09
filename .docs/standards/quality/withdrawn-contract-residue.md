@@ -4,10 +4,10 @@ title: A withdrawn contract's prose residue
 description: When a change removes a contract rather than changing a computed value, its prose residue has no canonical spelling to grep for — the sites assert it in their own words — so `## Impact` must name the CLASS of documents that assert it and derive the file list mechanically; the five misses measured on one branch, why naming the file is not enough either, and why the reviewer's question is "what did this make false?" rather than "which files changed?"
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [quality, sweeps, documentation, specs, impact]
-timestamp: 2026-08-03
+timestamp: 2026-08-08
 audience: both
 authority: current
-source: enxugar-create-e-eliminar-o-rung-hooks plan (2026-08-03) — five misses on one branch withdrawing the installed-tool contract: three caught during execution and recorded as `## Discoveries`, two more only at the branch review, one of them in a file `## Impact` had named and half-covered
+source: enxugar-create-e-eliminar-o-rung-hooks plan (2026-08-03) — five misses on one branch withdrawing the installed-tool contract: three caught during execution and recorded as `## Discoveries`, two more only at the branch review, one of them in a file `## Impact` had named and half-covered; measured a second time by the remover-a-capability-quenching-md spec (2026-08-08), where a literal grep for the artefact's own name missed four sites that called it "the operator manual"
 maintainer: quenching
 ---
 
@@ -38,6 +38,15 @@ the withdrawn contract, in five different wordings:
 None of the five shared a substring with any other. A grep for the class would have had to guess
 "install", "installed", "copies", "merges", "offers the overwrite", "beside the config it loads" —
 which is not a grep, it is the reading the reviewer ends up doing anyway.
+
+**Measured a second time, on a different branch (2026-08-08).** A removal of a whole capability ran
+a literal grep for the artefact's own filename and came back empty — while four sites still cited
+it by what it *was*, an operator manual, a phrase its filename does not contain. Three of
+the four were live instructions pointing at a file that would no longer exist; the fourth was a
+historical mention, correct as written. The grep found the uses that spelled the name and none of
+the ones that described the thing, which is this standard's claim restated in the one register it
+had not yet been measured in: **a name is not a spelling of the class either.** The four sites were
+recorded as `## Discoveries` during execution and closed before the review.
 
 ## `## Impact` must name the class, not its instances
 

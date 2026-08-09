@@ -98,7 +98,6 @@ derives, and which a human then has to delete.
 
 ```
 specs/
-  QUENCHING.md                 # the operator manual (payload — not a spec)
   plans/                       # a spec's whole active life: captured → … → ready → executing
     <slug>.md                  # ONE spec per file — no listing file; `specs.py list` derives it
   archive/                     # done or abandoned (`outcome:` tells them apart)
@@ -124,13 +123,13 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 
 | Code | Fires when | Fix |
 | --- | --- | --- |
-| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + the operator manual + template + schema). Declining ends the run. **`files` backend only** — §Where the front is configured. |
+| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + template + schema). Declining ends the run. **`files` backend only** — §Where the front is configured. |
 | `sp-v2-layout` **(tool)** | `backlog/` or `ready/` still holds specs | Run **`specs.py migrate`** (§Migrating an older workspace). It moves every file into `plans/` unrenamed. |
 | `sp-v1-leftover` **(tool)** | A three-file plan folder sits at the specs root | Run **`specs.py migrate`** — the same command folds it into one file. |
 | `sp-stray-dir` **(tool)** | A directory sits inside `plans/` | Unmigrated v1 work. Same remedy: `specs.py migrate`. Never fires inside `archive/`. |
 | `sp-legacy-workspace` | A legacy `openspec/` tree is present | The one-way `openspec/` fold (§below). The only place `openspec/` is touched. |
 | `sp-missing-phase` **(tool)** | `plans/` or `archive/` is absent | Create it. The folder IS the phase, so a missing one makes its specs unfindable. **`files` backend only** — §Where the front is configured. |
-| `sp-stray-file` **(tool)** | A file at the specs root other than `QUENCHING.md` / `schema.json` | Move it into a phase folder, or report it. |
+| `sp-stray-file` **(tool)** | A file at the specs root other than `schema.json` | Move it into a phase folder, or report it. |
 | `sp-bad-filename` | A file in a phase folder is not `<slug>.md` | Rename to the bare slug. A basename still carrying a `YYYY-MM-DD-` prefix is folded by `specs.py migrate`, which moves that date into `date:` in the same step — the prefix is the only copy, so dropping it without moving it loses the capture date. |
 | `sp-slug-mismatch` **(tool)** | Frontmatter `slug` disagrees with the basename | Make the frontmatter match the basename — the basename is the identity a human reads in a listing. |
 | `sp-missing-frontmatter` **(tool)** | `slug`, `title`, or `date` absent | Stamp it (MERGE — fill what is missing, preserve what is filled, including third-party keys). **Never invent a `date`**: it is the one required key no derivation reproduces, so take it from a dated basename via `specs.py migrate`, or report it and let the human answer. |

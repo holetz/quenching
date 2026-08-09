@@ -183,11 +183,6 @@ state (validator findings · `doctor`/`validate` · registry-vs-disk), and — e
 `/quenching:specs:develop`, `/quenching:specs:conclude`, `/quenching:skill:new`). Name the cross-front edges that actually fired,
 so the loop's value is visible.
 
-State which **operator manuals** each front installed, refreshed, or left alone
-(`/.docs/QUENCHING.md`, `/.specs/QUENCHING.md`, `.claude/QUENCHING.md`) — each front writes its own;
-this command only reports them, and points a first-time adopter at `/.docs/QUENCHING.md` as the place
-to start.
-
 This command writes **nothing** of its own — not even a record that it ran. Every write belongs
 to the front align that made it, and the report is where this run is accounted for.
 **Done when:** every front's outcome and every deferral is stated.

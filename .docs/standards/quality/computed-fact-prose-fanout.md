@@ -26,7 +26,7 @@ Each verifier is doing its job correctly, and none of them can see this:
 | the schema's own selftest | that the new key behaves — accepted, refused, defaulted | the key works; that was never in doubt |
 | `specs.py validate` | records **as written** in a document | prose that *describes* the record is not a record |
 | `okf-validate.py` | a doc's shape — frontmatter, links, index membership | the sentence is well-formed and links fine; it is merely wrong |
-| `okf-validate.py` `stale-doc` | a doc whose `timestamp` predates a commit under its `resource` | fires only where the doc's `resource` happens to name the schema file — the README, the operator manual and the glossary do not |
+| `okf-validate.py` `stale-doc` | a doc whose `timestamp` predates a commit under its `resource` | fires only where the doc's `resource` happens to name the schema file — the README and the glossary do not |
 
 So the gate is green in every dimension the repo measures, and the product ships documentation that
 teaches a record shape that no longer exists.

@@ -18,11 +18,6 @@ Commands, env vars, ports, and etiquette the agent needs on **every** task — k
 Knowledge is **NOT** in this file — it lives in the OKF bundle at [docs/](docs/index.md).
 Point, never paraphrase; each bullet lists a home THAT EXISTS with its boundary one-liner.
 
-**How this repo is operated.** Which command adds a doc, what the enforcement hook checks, how
-to read a validator finding → [docs/QUENCHING.md](docs/QUENCHING.md) (drop this line if the file
-is absent). Same for [specs/QUENCHING.md](specs/QUENCHING.md) and
-[.claude/QUENCHING.md](.claude/QUENCHING.md) when those fronts exist.
-
 **Resolving a term.** Hit an unfamiliar repo word, acronym, or codename? Look it up in the
 **glossary first** → [docs/knowledge/glossary.md](docs/knowledge/glossary.md): the A–Z lookup,
 one entry per term with a link to its full doc when one exists. `grep -i '<term>' docs/knowledge/glossary.md`.
@@ -69,8 +64,6 @@ Anything that is durable knowledge belongs in a docs/ home above, cited here, ne
        pointer that CITES the doc — never a paraphrase (a restated rule is drift, like a lying index).
      • List ONLY homes that exist in this repo — drop the bullets for absent homes; do not invent
        a home. Structure/links are canonical English; prose MAY follow the repo's language.
-     • KEEP the "How this repo is operated" pointer for each QUENCHING.md that EXISTS; drop the
-       line for a front the repo does not have. Never paraphrase the manual here — point at it.
      • KEEP the "Resolving a term" pointer + the HOW-TO-FIND-A-TERM comment when the repo has a
        `knowledge/glossary.md` — term resolution via the glossary is a habit worth one line every
        turn. Drop both only if the repo has no glossary.
