@@ -174,8 +174,7 @@ the skill name being retired), renames (old → canonical new, coupled ones mark
 create or rewrite (and wrongly nested generic commands to flatten), rule + registry creations
 from the molds when missing (rule born `authority: background`), a **legacy copy of the tool**
 `.claude/hooks/skills.py`
-(removal offered — §5, never installed or refreshed), the operator manual
-`.claude/QUENCHING.md` (install / refresh / leave), unroutables kept-and-reported
+(removal offered — §5, never installed or refreshed), unroutables kept-and-reported
 with reasons, obsolete-suspect flags (no deletion proposed without the human's word), and —
 labelled **"reported, not applied"** — the wider-surface findings (`sk-agent-*`, `sk-hook-*`),
 each with the mint that closes it.
@@ -204,10 +203,6 @@ legacy copy present → offer **removal**; absent → nothing to do. The same on
 `/quenching:specs:align` reads for `specs.py` and `/quenching:docs:align` for `okf-validate.py`, so a run of any one of
 them can report the other two fronts' drift without a second probe.
 
-Then install the operator manual from
-`${CLAUDE_PLUGIN_ROOT}/assets/claude/QUENCHING.md` to `.claude/QUENCHING.md` under the
-four-branch manual-install rule in
-[/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) §4 (cited, never restated).
 **Done when:** every confirmed row is applied, and no stale `.claude/hooks/skills.py` copy
 remains (or its being ahead of the plugin is reported and left alone).
 
@@ -385,6 +380,4 @@ are reported.
   folder moved there would register every file in it as a phantom command.
 - Never leave the GENERATED zone stale, and never write inside its markers by hand — the run
   ends on a `registry reindex` that reports `changed: false`.
-- Never overwrite a `.claude/QUENCHING.md` whose `quenching` banner a human removed —
-  keep it and report it.
 - Never hand this command file `context: fork` — both gates are mid-flow.
