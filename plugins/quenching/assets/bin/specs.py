@@ -211,7 +211,7 @@ DEFAULT_SCHEMA: dict = {
     "frontmatter": {
         "required": ["slug", "title", "date"],
         "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed",
-                     "merge", "outcome", "tags", "assignee", "start", "target"],
+                     "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
         "records": {
@@ -1073,7 +1073,8 @@ CONFIG_FILE = os.path.join(".claude", "quenching.json")
 LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "integrationBranch", "releaseBranch", "hooks", "profiles",
-               "azurePlacement", "azureColumns", "subjects", "tagCatalog")
+               "azurePlacement", "azureColumns", "subjects", "tagCatalog",
+               "workItemTypes")
 BACKENDS = ("files", "github", "azure-boards")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
@@ -1200,6 +1201,7 @@ def load_config(root: str) -> dict:
            "azureStates": None, "hooks": {}, "profiles": None,
            "integrationBranch": None, "releaseBranch": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
+           "workItemTypes": {},
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -1335,6 +1337,30 @@ def load_config(root: str) -> dict:
         out["tagCatalog"] = {tag.strip(): desc.strip() for tag, desc in catalog_raw.items()
                              if isinstance(tag, str) and tag.strip()
                              and isinstance(desc, str) and desc.strip()}
+
+    # The abstract key a spec's `workItemType:` and `--type` carry — `{description, azure,
+    # github, default}`. `description` is prompt material exactly like a `tagCatalog` value,
+    # so an entry without one cannot be proposed and is dropped at the read, same as there.
+    # `azure`/`github` are each independently optional: an entry may name only one backend
+    # without breaking the other. `default` marks the repo's fallback entry.
+    types_raw = obj.get("workItemTypes")
+    if isinstance(types_raw, dict):
+        types: dict[str, dict] = {}
+        for key, val in types_raw.items():
+            if not (isinstance(key, str) and key.strip() and isinstance(val, dict)):
+                continue
+            description = val.get("description")
+            if not (isinstance(description, str) and description.strip()):
+                continue
+            entry = {"description": description.strip()}
+            for backend_key in ("azure", "github"):
+                name = val.get(backend_key)
+                if isinstance(name, str) and name.strip():
+                    entry[backend_key] = name.strip()
+            if val.get("default") is True:
+                entry["default"] = True
+            types[key.strip()] = entry
+        out["workItemTypes"] = types
     return out
 
 
@@ -1441,6 +1467,146 @@ def subject_resolution_failures() -> list[str]:
             out.append(f"{label}: subject was {subject!r}, not {want_subject!r}")
         if err.get("code") != want_code:
             out.append(f"{label}: refusal code was {err.get('code')!r}, not {want_code!r}")
+    return out
+
+
+def resolve_work_item_type(cfg: dict, frontmatter_type: str | None) -> str:
+    """The `azure-boards` create's `--type`, first link that answers: the frontmatter's own
+    `workItemType:` key, the catalog's `default` entry, or `AZ_SPEC_TYPE` as the floor. Never
+    `azurePlacement.workItemType` — that key is the same fact said worse (§Design), retired
+    from this chain and read only by its own aposentada-key finding.
+
+    An entry that exists but names no `azure` type is treated exactly like an unresolved
+    key — a repository that only translated a key for `github` still reaches the floor,
+    because `azure-boards`'s create REQUIRES a `--type` and has nowhere else to fall."""
+    types = cfg.get("workItemTypes") or {}
+    entry = types.get(frontmatter_type) if frontmatter_type else None
+    if entry and entry.get("azure"):
+        return entry["azure"]
+    for candidate in types.values():
+        if candidate.get("default") and candidate.get("azure"):
+            return candidate["azure"]
+    return AZ_SPEC_TYPE
+
+
+def work_item_type_resolution_failures() -> list[str]:
+    """`resolve_work_item_type` against one case per link in its own chain."""
+    out: list[str] = []
+    incidente = {"description": "d", "azure": "Bug"}
+    tarefa = {"description": "d", "azure": "Task", "default": True}
+    github_only = {"description": "d", "github": "Incident"}
+    cases = (
+        ({"workItemTypes": {"incidente": incidente}}, "incidente",
+         "an explicit key with an azure name resolves it", "Bug"),
+        ({"workItemTypes": {"incidente": incidente, "tarefa": tarefa}}, None,
+         "no explicit key falls back to the default entry", "Task"),
+        ({"workItemTypes": {"incidente": github_only}}, "incidente",
+         "an explicit key with no azure name falls through to the floor", AZ_SPEC_TYPE),
+        ({"workItemTypes": {"tarefa": github_only}}, None,
+         "a default entry with no azure name falls through to the floor", AZ_SPEC_TYPE),
+        ({}, None, "nothing declared falls through to the floor", AZ_SPEC_TYPE),
+    )
+    for cfg, key, label, want in cases:
+        got = resolve_work_item_type(cfg, key)
+        if got != want:
+            out.append(f"{label}: resolve_work_item_type returned {got!r}, not {want!r}")
+    return out
+
+
+def resolve_type_key(cfg: dict, key: str | None) -> tuple[str | None, dict]:
+    """`--type <key>` against `workItemTypes` — the same two refusals `resolve_subject`
+    already carries for `--subject`: an explicit key against an entry the catalog does not
+    have, declared or not. Omitted is never a refusal — a spec born with no `workItemType:`
+    still resolves one at build time, through `resolve_work_item_type`'s own default/floor
+    chain, so there is no `defaultSubject`-shaped fallback to ask for here."""
+    types = cfg.get("workItemTypes") or {}
+    if key is None:
+        return None, {}
+    if key not in types:
+        return None, {
+            "code": "sp-type-unknown", "exit": 2, "type": key,
+            "message": f"type '{key}' is not declared in {CONFIG_FILE}'s `workItemTypes`" + (
+                f" — declared: {', '.join(sorted(types))}" if types
+                else " — nothing is declared there"),
+        }
+    return key, {}
+
+
+def type_key_resolution_failures() -> list[str]:
+    """`resolve_type_key` against the two refusals `## Design` shares with `--subject`, and
+    the one non-refusal that keeps `--type` optional."""
+    out: list[str] = []
+    incidente = {"description": "d", "azure": "Bug"}
+    cases = (
+        ({"workItemTypes": {}}, None, "no key asked is not a refusal", None, None),
+        ({"workItemTypes": {}}, "incidente",
+         "an explicit key against nothing declared refuses", None, "sp-type-unknown"),
+        ({"workItemTypes": {"incidente": incidente}}, "incidente",
+         "an explicit key that exists resolves it", "incidente", None),
+        ({"workItemTypes": {"incidente": incidente}}, "ghost",
+         "a declared key that does not exist refuses", None, "sp-type-unknown"),
+    )
+    for cfg, key, label, want_key, want_code in cases:
+        got, err = resolve_type_key(cfg, key)
+        if got != want_key:
+            out.append(f"{label}: type was {got!r}, not {want_key!r}")
+        if err.get("code") != want_code:
+            out.append(f"{label}: refusal code was {err.get('code')!r}, not {want_code!r}")
+    return out
+
+
+def azure_workitemtype_retirement(cfg: dict, frontmatter_type: str | None) -> dict | None:
+    """`azurePlacement.workItemType` is retired from `resolve_work_item_type`'s chain but
+    stays recognised in `AZURE_PLACEMENT_KEYS`, so a repository that declared it gets a
+    graduated signal rather than the generic unknown-key finding.
+
+    Declared beside a catalog that already resolves a type, the old key is dead
+    configuration — the same fact said better now lives in `workItemTypes`, and ignoring
+    the old key changes nothing a create would write. Declared as the only entry that WOULD
+    have answered, ignoring it changes the item a create writes, so this refuses instead of
+    silently substituting `AZ_SPEC_TYPE` for what a human actually declared."""
+    old = (cfg.get("azurePlacement") or {}).get("workItemType")
+    if not old:
+        return None
+    resolved = resolve_work_item_type(cfg, frontmatter_type)
+    types = cfg.get("workItemTypes") or {}
+    entry = types.get(frontmatter_type) if frontmatter_type else None
+    answered_by_catalog = bool(entry and entry.get("azure")) or any(
+        c.get("default") and c.get("azure") for c in types.values())
+    if answered_by_catalog:
+        return {
+            "code": "sp-az-workitemtype-retired-unused", "severity": "warn", "exit": 0,
+            "message": f"{CONFIG_FILE}'s `azurePlacement.workItemType` ('{old}') is retired "
+                       f"and unread — `workItemTypes` already resolves '{resolved}' for this "
+                       f"create; dead configuration, changing nothing",
+        }
+    return {
+        "code": "sp-az-workitemtype-only-answer", "severity": "error", "exit": 2,
+        "message": f"{CONFIG_FILE}'s `azurePlacement.workItemType` ('{old}') is retired and "
+                   f"was the only declared answer for this create's type — migrate it into "
+                   f"a `workItemTypes` entry (`default: true`, or matching `--type`); "
+                   f"writing '{AZ_SPEC_TYPE}' in its place would not be what was declared",
+    }
+
+
+def azure_workitemtype_retirement_failures() -> list[str]:
+    """One case per branch: nothing declared, declared beside a catalog that already
+    resolves, and declared as the only entry that would have answered."""
+    out: list[str] = []
+    tarefa = {"description": "d", "azure": "Task", "default": True}
+    cases = (
+        ({"azurePlacement": {}}, None, "nothing declared is not a finding"),
+        ({"azurePlacement": {"workItemType": "Issue"}, "workItemTypes": {"tarefa": tarefa}},
+         "sp-az-workitemtype-retired-unused",
+         "declared beside a catalog that resolves is dead configuration"),
+        ({"azurePlacement": {"workItemType": "Issue"}}, "sp-az-workitemtype-only-answer",
+         "declared as the only answer refuses"),
+    )
+    for cfg, want_code, label in cases:
+        got = azure_workitemtype_retirement(cfg, None)
+        code = got["code"] if got else None
+        if code != want_code:
+            out.append(f"{label}: code was {code!r}, not {want_code!r}")
     return out
 
 
@@ -2350,6 +2516,7 @@ BACKEND_CASES = (
     # AFTER the five cases that author the document, never on the fresh capture form. See
     # `_case_front`: on a capture form the case passes with the reader broken.
     ("rank the front", lambda b: _case_front(b)),
+    ("create with workItemType, then re-read", lambda b: _case_type(b)),
     ("move to archive", lambda b: _case_move(b)),
     ("list after the move", lambda b: _listing(b)),
 )
@@ -2427,6 +2594,21 @@ def _case_front(b: "SpecBackend") -> dict:
     trusting."""
     c = _candidate(b, b.list_specs("plans")[0], load_schema(), set(), None, "")
     return {k: v for k, v in c.items() if k != "path"}
+
+
+def _case_type(b: "SpecBackend") -> str | None:
+    """`workItemType:`, inserted into a fresh capture form exactly the way `cmd_new --type`
+    inserts it — never `set_frontmatter_key`, which would misrepresent a key FIXED at
+    creation (§Design) as one of the four mutable STATE fields `_case_field` already covers.
+
+    A second spec (`beta`), never `alpha`: the key is resolved once at `new` and never
+    rewritten, so there is no round trip to prove beyond create-then-read."""
+    doc = _case_doc("beta")
+    close = doc.index("\n---\n")
+    doc = doc[:close] + "\nworkItemType: incidente" + doc[close:]
+    b.create_spec("plans", "beta.md", doc)
+    info, _ = b.read_spec("beta")
+    return (info or {}).get("frontmatter", {}).get("workItemType")
 
 
 def _case_write(b: "SpecBackend") -> dict:
@@ -3180,9 +3362,12 @@ class GitHubBackend(SpecBackend):
 
     name = "github"
 
-    def __init__(self, repo: str, cwd: str) -> None:
+    def __init__(self, repo: str, cwd: str, types: dict[str, str] | None = None) -> None:
         self.repo = repo
         self.cwd = cwd
+        # `workItemTypes.<key>.github`, pre-filtered to the entries this backend can name —
+        # never the whole catalogue entry, since `create_spec` needs only the native name.
+        self.types = types or {}
         # descriptor, issue number, first chunk, how many parts the marker declares,
         # issue title, and the issue's own labels as of this listing — what the label
         # reconciliation in `_store` diffs against, so it costs no call of its own
@@ -3495,6 +3680,24 @@ class GitHubBackend(SpecBackend):
                                 payload)
         number = int((issue or {}).get("number") or 0)
         url = (issue or {}).get("html_url") or f"https://github.com/{self.repo}/issues/{number}"
+        # The abstract `workItemType:` key, projected to GitHub's own Issue Type — through
+        # `_set_type` (`gh issue edit --type`), NEVER a `type` field on the create payload
+        # above. MEASURED live (2026-08-07, holetz/claude-quenching#898): the REST create
+        # silently drops an invalid name — `ok: true`, `issueType: null`, no error at all —
+        # while `gh issue edit --type` validates against the repository's own types and
+        # refuses loudly. A second call rather than free, but only once, and only when a
+        # type actually resolves.
+        type_key = fresh["frontmatter"].get("workItemType")
+        type_name = self.types.get(type_key) if type_key else None
+        if type_name:
+            self._set_type(number, type_name)
+        elif type_key:
+            # The entry exists — `resolve_type_key` already gated `--type` at `new` — but
+            # names no `github` translation. Never a refusal: an entry may exist for one
+            # backend only without breaking the other (§Design), so the create proceeds
+            # untyped and only says why.
+            print(f"note: workItemType '{type_key}' has no `github` name declared in "
+                  f"{CONFIG_FILE} — no type applied to this issue", file=sys.stderr)
         self._sync_parts(number, chunks)
         if phase == "archive":
             # Created open and then closed, because "closed" is not a state an issue can be
@@ -3513,6 +3716,22 @@ class GitHubBackend(SpecBackend):
     def _set_state(self, number: int, state: str):
         return self._write_api(f"setting issue #{number} to {state}", "PATCH",
                                f"repos/{self.repo}/issues/{number}", {"state": state})
+
+    def _set_type(self, number: int, type_name: str) -> None:
+        """`gh issue edit --type`, the one PORCELAIN call this backend makes — never `gh api`.
+
+        The REST `POST .../issues` this backend otherwise uses for everything silently drops
+        an invalid `type` field: MEASURED live against `holetz/claude-quenching#898`, a create
+        with a nonexistent type name came back `ok: true` with `issueType: null`, no error at
+        all. `gh issue edit --type` is the one mechanism proven to validate against the
+        repository's own issue types and refuse loudly for the same name — the same shape
+        `gh_refusal` already reports for `gh api`, reused here because `gh`'s three failure
+        modes (missing binary, unauthenticated, said no) are the same across both."""
+        action = f"setting issue #{number}'s type to '{type_name}'"
+        code, out, err = _gh_run(self.cwd, "issue", "edit", str(number),
+                                 "--repo", self.repo, "--type", type_name)
+        if code != 0:
+            raise BackendRefusal(gh_refusal(action, code, out, err))
 
     # -- the continuation comments a spilled document uses --------------------- #
     def _comments(self, number: int) -> list[dict]:
@@ -3687,7 +3906,9 @@ def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
     repo, err = resolve_github_repo(cwd)
     if err:
         return None, err
-    return GitHubBackend(repo, cwd), {}
+    types = {k: v["github"] for k, v in load_config(root)["workItemTypes"].items()
+             if v.get("github")}
+    return GitHubBackend(repo, cwd, types=types), {}
 
 
 GH_REFUSAL_CASES = (
@@ -3799,6 +4020,53 @@ def github_native_field_failures() -> list[str]:
 # names WHICH task drifted when the stricter check has already said the document did.
 HYBRID_TASK_SEMANTIC_KEYS = ("id", "state", "checked", "blocked", "reason", "text", "parallel",
                          "files", "pattern", "verify", "subject", "commit")
+
+
+def github_create_type_failures() -> list[str]:
+    """`create_spec`'s `type` projection — `_set_type` (`gh issue edit`), never a field on
+    the create payload: MEASURED live (task 3.3) that the REST create silently drops an
+    invalid `type` instead of refusing, which is why `_set_type` is its own porcelain call
+    rather than a JSON key. Three branches: a resolved name reaches `_set_type`, no key
+    declared calls it not at all, and a key with no `github` translation calls it not at
+    all either but says why on stderr — never a refusal, exactly as §Design admits an entry
+    for one backend only."""
+    import contextlib
+    import io
+    out: list[str] = []
+    gh = GitHubBackend("owner/repo", ".", types={"incidente": "Bug"})
+    gh._api = lambda action, *argv, stdin=None: {"number": 1, "html_url": "x"}
+    applied: list[tuple[int, str]] = []
+    gh._set_type = lambda number, name: applied.append((number, name))
+    doc = _case_doc("alpha")
+    close = doc.index("\n---\n")
+    typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
+    gh.create_spec("plans", "alpha.md", typed)
+    if applied != [(1, "Bug")]:
+        out.append(f"a resolved workItemType did not reach _set_type: {applied!r}")
+    applied.clear()
+    gh.create_spec("plans", "beta.md", doc)
+    if applied:
+        out.append("no workItemType declared still called _set_type")
+    untranslated = doc[:close] + "\nworkItemType: tarefa" + doc[close:]
+    stderr = io.StringIO()
+    with contextlib.redirect_stderr(stderr):
+        gh.create_spec("plans", "gamma.md", untranslated)
+    if applied:
+        out.append("an entry with no `github` name still called _set_type")
+    if "tarefa" not in stderr.getvalue():
+        out.append("an entry with no `github` name printed no advisory line on stderr")
+    # `_set_type` itself, unmocked: a `cwd` that cannot exist makes `_gh_run` fail exactly
+    # as a real `gh` refusal would, self-contained and with no network — proving the raise
+    # reaches the caller as `BackendRefusal`, classified by the same `gh_refusal` every
+    # other transport failure already is.
+    broken = GitHubBackend("owner/repo", "/does/not/exist")
+    try:
+        broken._set_type(1, "Bug")
+        out.append("_set_type on an impossible cwd did not raise")
+    except BackendRefusal as e:
+        if e.err.get("exit") != 2:
+            out.append("_set_type's refusal did not exit 2")
+    return out
 
 
 def gh_body_ceiling_failures() -> list[str]:
@@ -4831,11 +5099,16 @@ class AzureBoardsBackend(SpecBackend):
                 parent_id: int | None = None, team: str | None = None,
                 board_column: str | None = None,
                 column_map: dict[str, str] | None = None,
-                tag_catalog: dict[str, str] | None = None) -> None:
+                tag_catalog: dict[str, str] | None = None,
+                types: dict[str, dict] | None = None) -> None:
         self.org = org
         self.project = project
         self.states = states
         self.cwd = cwd
+        # `workItemTypes`, raw — `resolve_work_item_type` reads the whole entry shape
+        # (`{description, azure, github, default}`), never a pre-filtered name-only map the
+        # way `GitHubBackend.types` is, because the chain itself decides which entry wins.
+        self.types = types or {}
         # `open_azure_backend` is the sole caller — it reads `azurePlacement`, refuses for the
         # one sub-key with no default (`areaPath`), and applies `AZ_DEFAULT_DISCOVERY_TAG` /
         # `AZ_SPEC_TYPE` for the two that have one. Optional here only so the fake and the
@@ -4852,7 +5125,9 @@ class AzureBoardsBackend(SpecBackend):
         self.board_column = board_column
         self.column_map = column_map or {}
         self.tag_catalog = tag_catalog or {}
-        self._board_field: str | None = None   # WEF_<guid>_Kanban.Column — resolved once
+        # WEF_<guid>_Kanban.Column, per work-item-type — a process resolving specs of more
+        # than one type (§4.1) must not let one type's field answer for another's.
+        self._board_field: dict[str, str] = {}
         # descriptor, id, shell doc, native title, the four stored fields, and the RAW
         # System.Tags the tag reconciliation in `write_spec` diffs against — the last costs
         # no call of its own, and is the one place tags are seen before `declared_tags`.
@@ -5069,13 +5344,21 @@ class AzureBoardsBackend(SpecBackend):
         AND IT NEVER REFUSES. `sp-az-no-team` and `sp-az-no-board` belong to the write, which
         calls `_resolve_board_field` for real and raises there with the same message. An
         optimisation that turned a listing into a refusal would be a behaviour change wearing
-        a performance fix's clothes."""
-        if self._board_field is not None:
-            return self._board_field
+        a performance fix's clothes.
+
+        RESOLVED AGAINST `self.work_item_type` — the repo's own default, never one spec's
+        own resolved type: a batch covers every spec the listing returns, of whatever type
+        each was born under, and this is a read-ahead guess for the FIELD NAME to request,
+        not an authoritative per-item answer. A guess that misses for an item born under a
+        different type costs one write-time resolution later; it never writes anything
+        wrong, because `write_spec`/`create_spec`/`move_spec` resolve their own field for
+        their own spec regardless of what this returned."""
+        if self.work_item_type in self._board_field:
+            return self._board_field[self.work_item_type]
         if not (self.column_map or self.board_column):
             return None
         try:
-            return self._resolve_board_field()
+            return self._resolve_board_field(self.work_item_type)
         except BackendRefusal:
             return None
 
@@ -5147,7 +5430,9 @@ class AzureBoardsBackend(SpecBackend):
             state = board_state_of(info)
             expected = self.column_map.get(state, self.board_column)
             if expected:
-                actual = self._field(item, self._resolve_board_field())
+                type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                                   info["frontmatter"].get("workItemType"))
+                actual = self._field(item, self._resolve_board_field(type_name))
                 if actual and actual != expected:
                     out.append({"kind": "column", "id": item_id, "slug": row["slug"],
                                "actual": actual, "expected": expected})
@@ -5245,7 +5530,9 @@ class AzureBoardsBackend(SpecBackend):
         # and one patch cannot race itself.
         column = self.column_map.get(board_state_of(fresh), self.board_column)
         if column:
-            desired[self._resolve_board_field()] = column
+            type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                               fresh["frontmatter"].get("workItemType"))
+            desired[self._resolve_board_field(type_name)] = column
         # `markdown=True` on every write, not once at creation: the format op only travels
         # where the description is itself an op, so an item already in `Markdown` pays
         # nothing and one still in `html` is converted by the first write that touches it.
@@ -5275,8 +5562,15 @@ class AzureBoardsBackend(SpecBackend):
         # decides it (§task 6.3: column and state are not independent on this process; the
         # board resolves state FROM the column, and a direct `--state` write the column
         # write follows would just be undone).
+        # The chain a spec's own `workItemType:` resolves through — never `self.work_item_type`,
+        # the single per-repo default only `_board_field_for_read`'s read-ahead optimisation
+        # still uses. `workItemTypes` describes the PROJECT, not one backend, so `self.types`
+        # carries the whole catalogue and this asks the same pure function `create_spec`'s
+        # own `github` sibling type-checks against.
+        type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                           fresh["frontmatter"].get("workItemType"))
         argv = ["work-item", "create", "--project", self.project,
-               "--type", self.work_item_type, "--title", title]
+               "--type", type_name, "--title", title]
         if self.area_path:
             argv += ["--area", self.area_path]
         if self.iteration_path:
@@ -5310,7 +5604,9 @@ class AzureBoardsBackend(SpecBackend):
             desired["System.AssignedTo"] = assignee
         column = self.column_map.get(board_state_of(fresh), self.board_column)
         if column:
-            desired[self._resolve_board_field()] = column
+            # The same `type_name` already resolved above for `--type` — one spec, one type,
+            # asked once.
+            desired[self._resolve_board_field(type_name)] = column
         else:
             desired["System.State"] = self.states[phase]
         parent = (self.parent_id, self._work_item_url(self.parent_id)) \
@@ -5330,28 +5626,33 @@ class AzureBoardsBackend(SpecBackend):
         separately rather than one being derived from the other."""
         return f"{self.org.rstrip('/')}/{self.project}/_apis/wit/workItems/{item_id}"
 
-    def _resolve_board_field(self) -> str:
+    def _resolve_board_field(self, type_name: str) -> str:
         """The team's Kanban column field — `WEF_<guid>_Kanban.Column` — resolved once per
         process and cached on `self`. `spec-backend.md` §Granular reading already allows a
         process-local cache that is not a store: it is not authoritative and nothing outside
         this object reads it.
 
+        `type_name` IS THE SPEC'S OWN RESOLVED TYPE, never `self.work_item_type` — a board's
+        allowed mappings are per work-item-type, so a spec born under a different type from
+        the repo's own default must resolve against its OWN, not the one every caller used
+        to share (§4.1's `create_spec` is why one can differ at all).
+
         FOUND, NEVER GUESSED: the guid is per-TEAM, so a second team's board carries a
         different one. This asks the team for every board it has and keeps the one whose
-        `allowedMappings` names `self.work_item_type` — measured on this org, team 'Diretoria
+        `allowedMappings` names `type_name` — measured on this org, team 'Diretoria
         Risco' has six boards (Stories, OKR, Releases, Funcionalidades, Iniciativas, Épicos)
         and 'User Story' resolves to 'Stories'."""
-        if self._board_field is not None:
-            return self._board_field
+        if type_name in self._board_field:
+            return self._board_field[type_name]
         # BETWEEN PROCESSES, not just within one. The guid is per-team and per-process
         # caching meant paying 1 + N calls on every `specs.py` invocation — measured 2,8s on
         # a team with six boards. Task 1.1 ruled out reading it off the item itself, so the
         # resolution stays authoritative and only its ANSWER is remembered, keyed by the team
         # and work item type it was resolved for.
-        cache_key = f"boardField:{self.team}:{self.work_item_type}"
+        cache_key = f"boardField:{self.team}:{type_name}"
         cached = azure_cache_read(self.org, self.project).get(cache_key)
         if cached:
-            self._board_field = cached
+            self._board_field[type_name] = cached
             return cached
         if not self.team:
             raise BackendRefusal({
@@ -5374,17 +5675,17 @@ class AzureBoardsBackend(SpecBackend):
                                   "--route-parameters", f"project={self.project}",
                                   f"team={self.team}", f"id={board_id}")
             mappings = (detail or {}).get("allowedMappings") or {}
-            if any(self.work_item_type in m for m in mappings.values()):
+            if any(type_name in m for m in mappings.values()):
                 field = ((detail.get("fields") or {}).get("columnField") or {}).get(
                     "referenceName")
                 if field:
-                    self._board_field = field
+                    self._board_field[type_name] = field
                     azure_cache_write(self.org, self.project, **{cache_key: field})
                     return field
         raise BackendRefusal({
             "code": "sp-az-no-board", "exit": 2,
             "message": f"no board for team '{self.team}' accepts work item type "
-                       f"'{self.work_item_type}' — check azurePlacement.team and "
+                       f"'{type_name}' — check azurePlacement.team and "
                        f"workItemType; no spec was read or written",
         })
 
@@ -5398,8 +5699,12 @@ class AzureBoardsBackend(SpecBackend):
         dest_info = dict(info)
         dest_info["phase"] = dest_phase
         column = self.column_map.get(board_state_of(dest_info), self.board_column)
-        desired = {self._resolve_board_field(): column} if column \
-            else {"System.State": self.states[dest_phase]}
+        if column:
+            type_name = resolve_work_item_type({"workItemTypes": self.types},
+                                               info["frontmatter"].get("workItemType"))
+            desired = {self._resolve_board_field(type_name): column}
+        else:
+            desired = {"System.State": self.states[dest_phase]}
         ops = azure_patch_body(self._raw.get(item_id, {}), desired)
         if ops:
             self._az_patch(f"moving work item {item_id} to {dest_phase}", item_id, ops)
@@ -5554,6 +5859,76 @@ def azure_native_fields_read_failures() -> list[str]:
     return out
 
 
+def azure_board_field_type_failures() -> list[str]:
+    """`_resolve_board_field`'s process-local cache, keyed by TYPE — `board_findings` loops
+    the whole listing in one process, and a spec born under a different type from the last
+    one resolved must never answer with the other's field, which a single `self._board_field`
+    string (rather than a dict) once did.
+
+    `XDG_CACHE_HOME` redirected to a throwaway directory for the call: `_resolve_board_field`
+    also writes the CROSS-process cache (`azure_cache_write`), and this proves the per-type
+    key without ever touching the real one at `~/.cache/quenching/azure/`."""
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        old_xdg = os.environ.get("XDG_CACHE_HOME")
+        os.environ["XDG_CACHE_HOME"] = tmp
+        try:
+            az = AzureBoardsBackend("test-org-4-2", "test-proj-4-2",
+                                    {"plans": "Active", "archive": "Closed"}, ".",
+                                    team="Diretoria Risco")
+            boards = {
+                "1": {"allowedMappings": {"x": ["Bug"]},
+                     "fields": {"columnField": {"referenceName": "WEF_bugs_Kanban.Column"}}},
+                "2": {"allowedMappings": {"x": ["User Story"]},
+                     "fields": {"columnField": {"referenceName": "WEF_stories_Kanban.Column"}}},
+            }
+            az._az_raw = lambda action, *argv, expect="object": (
+                boards[next(a for a in argv if a.startswith("id="))[3:]]
+                if any(a.startswith("id=") for a in argv)
+                else {"value": [{"id": "1", "name": "Bugs"}, {"id": "2", "name": "Stories"}]})
+            bug_field = az._resolve_board_field("Bug")
+            story_field = az._resolve_board_field("User Story")
+            if bug_field == story_field:
+                out.append("two different types resolved to the same board field")
+            if az._resolve_board_field("Bug") != bug_field:
+                out.append("re-resolving the same type did not hit the process cache")
+        finally:
+            if old_xdg is None:
+                os.environ.pop("XDG_CACHE_HOME", None)
+            else:
+                os.environ["XDG_CACHE_HOME"] = old_xdg
+    return out
+
+
+def azure_create_type_failures() -> list[str]:
+    """`create_spec`'s `--type` argv — the resolved chain, never `self.work_item_type`, the
+    single per-repo default that only `_board_field_for_read`'s optimisation still reads
+    (§4.2)."""
+    out: list[str] = []
+    incidente = {"description": "d", "azure": "Bug"}
+    az = AzureBoardsBackend("org", "proj", {"plans": "Active", "archive": "Closed"}, ".",
+                            area_path="Proj\\Area", types={"incidente": incidente})
+    calls: list[list[str]] = []
+    az._az = lambda action, *argv, expect="object": (calls.append(list(argv)) or {"id": 1})
+    az._az_patch = lambda action, item_id, ops: None
+    doc = _case_doc("alpha")
+    close = doc.index("\n---\n")
+    typed = doc[:close] + "\nworkItemType: incidente" + doc[close:]
+    az.create_spec("plans", "alpha.md", typed)
+    argv = calls[-1]
+    got = argv[argv.index("--type") + 1] if "--type" in argv else None
+    if got != "Bug":
+        out.append(f"a resolved workItemType did not reach --type: {got!r}")
+    calls.clear()
+    az.create_spec("plans", "beta.md", doc)
+    argv = calls[-1]
+    got = argv[argv.index("--type") + 1] if "--type" in argv else None
+    if got != AZ_SPEC_TYPE:
+        out.append(f"no workItemType declared did not fall through to AZ_SPEC_TYPE: {got!r}")
+    return out
+
+
 # `workItemType`'s default. Measured against this org's own process guide: `User Story` is
 # the standard card for Story work, and `Issue` — the type this constant named before — is
 # documented there as OPTIONAL, for bugs of lesser severity. A default is what a repo that
@@ -5617,7 +5992,8 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                               team=placement.get("team"),
                               board_column=placement.get("boardColumn"),
                               column_map=cfg["azureColumns"],
-                              tag_catalog=cfg["tagCatalog"]), {}
+                              tag_catalog=cfg["tagCatalog"],
+                              types=cfg["workItemTypes"]), {}
 
 
 def record_keys(schema: dict | None = None) -> list[str]:
@@ -5877,9 +6253,19 @@ def cmd_new(args, root: str) -> int:
                          "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
              f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
         return 2
-    subject, serr = resolve_subject(load_config(root), args.subject)
+    cfg = load_config(root)
+    subject, serr = resolve_subject(cfg, args.subject)
     if serr:
         return emit_err(args.json, serr)
+    type_key, terr = resolve_type_key(cfg, args.type)
+    if terr:
+        return emit_err(args.json, terr)
+    if cfg["backend"] == "azure-boards":
+        retirement = azure_workitemtype_retirement(cfg, type_key)
+        if retirement and retirement["severity"] == "error":
+            return emit_err(args.json, retirement)
+        if retirement:
+            print(f"note: {retirement['message']}", file=sys.stderr)
     policy = args.verification or DEFAULT_VERIFICATION
     title = args.title or titleize(slug)
     name = f"{slug}.md"
@@ -5897,6 +6283,11 @@ def cmd_new(args, root: str) -> int:
                                     for t in subject["tags"]) + "]"
         close = body.index("\n---\n")
         body = body[:close] + f"\ntags: {tags_repr}" + body[close:]
+    # The abstract catalogue key, never the backend's native name — `create_spec` reads it
+    # off `fresh["frontmatter"]` and projects the native name at write time (§Design).
+    if type_key:
+        close = body.index("\n---\n")
+        body = body[:close] + f"\nworkItemType: {type_key}" + body[close:]
     # The parent, by contrast, has no canonical-document counterpart to carry it in — it is
     # `azure-boards`-only, applied through the SAME `self.parent_id` the backend already
     # reaffirms on every write (§2.4); a resolved subject here simply overrides the
@@ -5906,6 +6297,7 @@ def cmd_new(args, root: str) -> int:
     path = backend.create_spec("plans", name, body)
     emit(args.json,
          {"ok": True, "slug": slug, "title": title, "verification": policy,
+          "workItemType": type_key,
           "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
           "path": display_locator(path, root)},
          f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
@@ -9385,6 +9777,16 @@ def cmd_selftest(args, root: str) -> int:
                                         "a tag; only the first assignee is reflected, "
                                         "because the canonical field is singular"))
 
+    # `create_spec`'s own `type` projection: a resolved `workItemType:` reaches `_set_type`,
+    # and an unresolved one calls it not at all.
+    for failure in github_create_type_failures():
+        findings.append(_finding("sp-gh-create-type-broken", "error",
+                                 f"github create's type projection — {failure}",
+                                 remedy="create_spec must call self._set_type(number, "
+                                        "self.types[workItemType]) — never a `type` field "
+                                        "on the create payload, which silently drops an "
+                                        "invalid name instead of refusing"))
+
     # Measured on this org (task 6.1): `--assigned-to` refuses a display name outright, so
     # `_native_fields` must read back the UPN, never the display name, or a carried-forward
     # assignee would fail its own reaffirming write.
@@ -9393,6 +9795,23 @@ def cmd_selftest(args, root: str) -> int:
                                  f"azure-boards assignee reassembly — {failure}",
                                  remedy="AzureBoardsBackend._native_fields must prefer "
                                         "uniqueName over displayName for System.AssignedTo"))
+
+    # `_resolve_board_field`'s process-local cache, keyed by type: two types in one process
+    # must resolve to two different fields, never one clobbering the other.
+    for failure in azure_board_field_type_failures():
+        findings.append(_finding("sp-az-board-field-type-broken", "error",
+                                 f"azure-boards board-field cache — {failure}",
+                                 remedy="self._board_field must be a dict keyed by type, "
+                                        "never a single string shared across every type a "
+                                        "process resolves"))
+
+    # `create_spec`'s own `--type` argv: the resolved chain, never the single per-repo
+    # `self.work_item_type` default.
+    for failure in azure_create_type_failures():
+        findings.append(_finding("sp-az-create-type-broken", "error",
+                                 f"azure-boards create's type resolution — {failure}",
+                                 remedy="create_spec must pass resolve_work_item_type's "
+                                        "answer to --type, never self.work_item_type"))
 
     # Measured on this org (task 6.2): `TF401262` above 1,048,576 characters — checked before
     # the call, the same way the github body ceiling is.
@@ -9538,6 +9957,31 @@ def cmd_selftest(args, root: str) -> int:
                                  remedy="resolve_subject: no `subjects` declared is not a "
                                         "refusal; an unresolved key or a key naming an "
                                         "undeclared subject both are"))
+
+    # The azure-boards `--type` chain: frontmatter key, then the catalog's `default` entry,
+    # then `AZ_SPEC_TYPE` as the floor a create can never leave unset.
+    for failure in work_item_type_resolution_failures():
+        findings.append(_finding("sp-work-item-type-resolution-broken", "error",
+                                 f"work-item-type resolution — {failure}",
+                                 remedy="resolve_work_item_type must fall through an entry "
+                                        "with no `azure` name exactly like an unresolved "
+                                        "key, down to AZ_SPEC_TYPE"))
+
+    # `--type <key>`'s own refusal chain, the same shape `--subject` already has.
+    for failure in type_key_resolution_failures():
+        findings.append(_finding("sp-type-key-resolution-broken", "error",
+                                 f"--type resolution — {failure}",
+                                 remedy="resolve_type_key: no key asked is not a refusal; "
+                                        "an explicit key naming an undeclared entry is"))
+
+    # `azurePlacement.workItemType`'s retirement: dead configuration beside a resolving
+    # catalog, a refusal where it was the only declared answer.
+    for failure in azure_workitemtype_retirement_failures():
+        findings.append(_finding("sp-workitemtype-retirement-broken", "error",
+                                 f"azurePlacement.workItemType retirement — {failure}",
+                                 remedy="azure_workitemtype_retirement must warn once a "
+                                        "catalog default resolves and refuse once the "
+                                        "retired key was the only answer"))
 
     # The board-state precedence `azure-boards`'s column write consults — core logic, never
     # a backend's own derivation, per `spec-backend.md` §The interface is the document.
@@ -9798,11 +10242,21 @@ def cmd_selftest(args, root: str) -> int:
               f"refuses without making the call, the azure-boards WIQL never carries "
               f"`@project`, subject resolution refuses only once `subjects` is declared, the "
               f"board-state precedence puts archived over reviewed over the derived stage, "
+              f"work-item-type resolution falls through the frontmatter key, the catalog's "
+              f"default entry and AZ_SPEC_TYPE in that order, treating an entry with no "
+              f"azure name as unresolved, --type resolution refuses only against an "
+              f"undeclared entry, the retired azurePlacement.workItemType warns "
+              f"beside a resolving catalog and refuses where it was the only answer, "
               f"an undeclared tag catalog flags nothing while a declared one flags what is "
               f"outside it, a digit-shaped non-date refuses `start`/`target`, the discovery "
               f"tag survives every azure-boards write whether or not a spec declares tags of "
               f"its own, the stored document never carries a second copy of a native field, "
-              f"github reassembles every label into a tag and only its first assignee, the "
+              f"github reassembles every label into a tag and only its first assignee, "
+              f"github's create applies a resolved workItemType through `gh issue edit "
+              f"--type`, never the REST payload, and calls it not at all otherwise, "
+              f"azure-boards' create passes the resolved chain's answer to --type rather "
+              f"than the single per-repo default, its board-field cache is keyed by type so "
+              f"two types in one process never share a field, the "
               f"azure-boards div marker and comment marker both round-trip, its description "
               f"ceiling refuses before the call and its stripped trailing newline is "
               f"restored, and the embedded schema and template match their asset files.")
@@ -9977,6 +10431,11 @@ def cmd_doctor(args, root: str) -> int:
     # workspace on `files` or `github` — or on `azure-boards` with nothing declared yet —
     # never pays for it.
     if cfg["backend"] == "azure-boards":
+        retirement = azure_workitemtype_retirement(cfg, None)
+        if retirement:
+            findings.append(_finding(retirement["code"], retirement["severity"],
+                                     retirement["message"], path=CONFIG_FILE,
+                                     remedy="migrate the type into a `workItemTypes` entry"))
         az, az_err = open_azure_backend(root)
         if not az_err:
             for row in az.marker_without_discovery_tag():
@@ -10136,6 +10595,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="a key from `azurePlacement.subjects` — applies its parent (where "
                          "the backend has one) and its fixed tags; omit to fall back to "
                          "`defaultSubject`")
+    sp.add_argument("--type",
+                    help="a key from `workItemTypes` — recorded as `workItemType:` in the "
+                         "new spec's frontmatter; omit to resolve one later, at build time")
 
     add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
 
