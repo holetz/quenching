@@ -162,9 +162,6 @@ plan was rejected and nothing was written.
   lines to the repo). When scaffolding `knowledge/`, also copy
   its **fixed `glossary.md` seed** — the repo's A–Z term lookup — and list it in
   `knowledge/index.md` (it is the only pre-seeded concept doc the skeleton ships).
-  The manual is **exempt** from OKF ([docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)) —
-  never stamp it, never convert it to `index.md`. List it in the root `index.md` (this step's
-  regeneration) so it is reachable from the bundle's front door.
 - **Migrate** variants: move the folder, update every cross-ref found in step 3 (relative
   within a home, absolute `/.docs/...` across homes).
 - **Stamp/merge** frontmatter with the molds in `${CLAUDE_PLUGIN_ROOT}/assets/templates/`
