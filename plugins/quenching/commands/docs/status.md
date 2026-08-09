@@ -135,7 +135,7 @@ Report it as one table, and give **no row a finding code**:
 
 | Figure | How it is counted |
 | --- | --- |
-| Concept docs, total | `.md` files that are not `index.md`, `log.md`, or an EXEMPT basename (`CLAUDE.md`, `AGENTS.md`, `QUENCHING.md`) |
+| Concept docs, total | `.md` files that are not `index.md`, `log.md`, or an EXEMPT basename (`CLAUDE.md`, `AGENTS.md`) |
 | Concept docs **per home** | the same count, grouped by top-level home, with **installed-but-empty homes shown as `0`** — never omitted, since the zero is the signal |
 | Glossary terms | entries under `## Terms` in `knowledge/glossary.md`; note separately when the shipped **seed placeholder** is still the only one |
 | Unlinked glossary entries | terms with no concept doc yet — a **valid permanent state**, reported as a figure and never as a defect |
