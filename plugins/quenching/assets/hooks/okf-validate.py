@@ -45,9 +45,7 @@ TWO ENTRY MODES
 THE CONFORMANCE CORE (single source — mirrored in the skills' `references/conformance.md`)
 -----------------------------------------------------------------------------------------
 Reserved filenames: `index.md` (a listing), `log.md` (a retired change history).
-Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts) and
-`QUENCHING.md` (the operator manual the aligns install beside each front — a payload
-file, not authored knowledge).
+Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts).
 `README.md` in the bundle → WARN (OKF-strict converts it to `index.md`).
 - Every **non-reserved** `.md`  → MUST have parseable YAML frontmatter (ERROR if
   absent/broken) with a **non-empty `type`** (ERROR if missing/empty). Recommended
@@ -137,10 +135,8 @@ RESERVED = ("index.md", "log.md")
 # its content, so it is link-checked alongside the reserved listings.
 GLOSSARY_REL = "knowledge/glossary.md"
 # Navigation/payload files — never OKF concepts, never required to carry a `type`.
-# `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness; `QUENCHING.md`
-# is the operator manual the `quenching` aligns install beside each front they
-# own (`docs/`, `specs/`, `.claude/`). Skip all three.
-EXEMPT = ("CLAUDE.md", "AGENTS.md", "QUENCHING.md")
+# `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness. Skip both.
+EXEMPT = ("CLAUDE.md", "AGENTS.md")
 RECOMMENDED = ("title", "description", "resource", "timestamp")
 # Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
 # A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
