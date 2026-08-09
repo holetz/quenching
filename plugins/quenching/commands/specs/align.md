@@ -156,7 +156,7 @@ worth the scan even when the file looks internal.
 
 ### 5. Present ONE plan → gate
 One plan, in sections: scaffold (copy `${CLAUDE_PLUGIN_ROOT}/assets/specs/` into `/.specs/` when
-`sp-no-workspace`, plus the operator manual `/.specs/QUENCHING.md` — install / refresh / leave; a
+`sp-no-workspace`; a
 legacy `.claude/hooks/specs.py` copy offered for **removal**, never refreshed); **migrations** (the
 legacy `openspec/` fold with
 each main-spec→`/.docs/standards/` cut shown and interop-lost stated; then the fold, shown as
@@ -173,12 +173,7 @@ single confirmation; each code-coupled rename awaits its own.
 Copy `assets/specs/` if approved; run the legacy fold, then `specs.py migrate`, if approved —
 **never hand-fold**, and report every folder the tool kept; remove a confirmed legacy
 `.claude/hooks/specs.py` copy; apply each tool-stated repair; rename the confirmed files and
-update every reference site alongside its individually confirmed rename; install the operator
-manual from
-`${CLAUDE_PLUGIN_ROOT}/assets/specs/QUENCHING.md` to `/.specs/QUENCHING.md` under the four-branch
-manual-install rule in [/quenching:docs:align](${CLAUDE_PLUGIN_ROOT}/commands/docs/align.md) step 4
-(cited, never restated — same banner, same version fill, same never-clobber-a-de-bannered-copy
-branch); stamp the
+update every reference site alongside its individually confirmed rename; stamp the
 missing frontmatter keys (MERGE); install the GENERATED markers without touching the fixed prose;
 delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migration.
 **Done when:** every confirmed row is applied and nothing outside the plan changed.
@@ -236,7 +231,5 @@ verdict **is** the whole report.
   surviving in a target repo is left exactly as found — neither refreshed nor deleted.
 - Never stamp an OKF `type:` on a spec file to quiet the bundle validator — that validator owns the
   `/.docs/` bundle, and is never pointed at `/.specs/`.
-- Never overwrite a `/.specs/QUENCHING.md` whose `quenching` banner a human removed — keep it and
-  report it.
 - Never invent a repair the tool did not state.
 - Never hand this command file `context: fork` — both gates are mid-flow.
