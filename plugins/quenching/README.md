@@ -640,6 +640,7 @@ why each half of the lockstep matters, and
   wrappers. Six skills instructed tools their `allowed-tools` did not grant (`AskUserQuestion`,
   `TodoWrite`, `Task`/`Skill` in archive, `Bash` in both backlog skills). The two backlog
   descriptions said "OKF backlog", contradicting every other statement that the inbox is outside
+  the bundle.
   **The documentation site got an owner.** New **`quenching-docs-documentation-build`**
   (`/docs:documentation:build`) owns the mkdocs-material **site layer** over the `documentation/`
   home end to end: install, config **merge** (missing required keys only, shown as a diff),

@@ -1,7 +1,7 @@
 ---
 description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the `docs` or `specs` front → /docs:align, /specs:align.
 argument-hint: [optional-scope]
-allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(cp:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
+allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
 
 # /quenching:skill:align — force the automation surface onto the taxonomy
@@ -86,7 +86,7 @@ tool always resolves via the plugin path.
 **Every shell grant is scoped**, per
 [`/.docs/standards/automation/skills.md`](../../../../.docs/standards/automation/skills.md)
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
-blast-radius sweep (§3), `mkdir`/`mv`/`cp` for the renames and the manual install, `rm` for a
+blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
 unscoped `Bash`.
 
