@@ -79,10 +79,6 @@ version claim with it. A bump committed to `main` after that merge would be the 
 release forbids outright, the same way a post-merge commit to the base is forbidden everywhere else
 in this front.
 
-The [operator-manual rider](#the-operator-manual-rider) below is settled at the same moment and for
-the same reason: a command rename or a new command is only fully known once everything `develop`
-is publishing has landed.
-
 ## The seventh file — a version nothing reads
 
 `plugins/quenching/assets/bin/session.py` also carries a `VERSION` constant
@@ -156,16 +152,6 @@ Severity follows from there: all three findings are **warnings**. A leftover cop
 it is unread weight, and the repo is already running the current tool — so none of them is an
 error. What was once `sk-tool-unwired` is gone entirely: the plugin's own `hooks/hooks.json` wires
 `okf-validate.py`, so an installed copy's wiring is no longer a question anyone can be wrong about.
-
-## The operator-manual rider
-
-A release on its own adds no manual work: each `QUENCHING.md` banner carries a `<VERSION>`
-placeholder filled at copy time, so the manuals re-stamp themselves.
-
-But a **command rename or a new command** is a different change, and it *does* mean editing the
-`QUENCHING.md` of **that command's own front** — each manual enumerates only its own front's
-surface. Adding `/specs:isolate` needed `assets/specs/QUENCHING.md` alone; touching the other two
-would have been churn.
 
 ## Verifying
 
