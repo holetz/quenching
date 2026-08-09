@@ -10519,7 +10519,7 @@ def cmd_doctor(args, root: str) -> int:
             # finding above, which says where it went. Reporting it as a stray would offer
             # "move it into a phase folder", which is the one thing that must not happen to it.
             if os.path.isfile(full) \
-                    and entry not in ("QUENCHING.md", "schema.json", LEGACY_CONFIG_FILE) \
+                    and entry not in ("schema.json", LEGACY_CONFIG_FILE) \
                     and not entry.startswith("."):
                 findings.append(_finding("sp-stray-file", "warn",
                                          f"stray file at the specs root: {entry}", path=entry,

@@ -7,7 +7,7 @@ tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-08-03
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the QUENCHING.md bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed
 maintainer: quenching
 ---
 
@@ -162,14 +162,12 @@ load path does not hold — **even in a repo that has this very plugin installed
 installed-elsewhere is not the same fact as loaded-from-here.
 
 **The test is "is whoever reads this inside the plugin's own file-load path?", not "does a copy
-leave the plugin?"** The narrower test missed a case the wider one catches: the three
-`QUENCHING.md` operator manuals are meant to be pasted by a human into a raw terminal, so a
-`${CLAUDE_PLUGIN_ROOT}` citation inside one of *their* `bash` blocks dangles the moment a human
-reads that block verbatim — before the file is copied anywhere, and regardless of whether the
-plugin is loaded in the session doing the reading. Three trees still answer the wider test today —
-`assets/templates/**` (the harness and front-matter molds),
-`assets/docs/**` (the OKF skeleton and the operator manual, both copied by `/docs:align`) and
-`assets/specs/templates/**` — plus every `QUENCHING.md`'s own `bash` blocks, copied or not; a
+leave the plugin?"** The narrower test missed a case the wider one catches: a payload meant to be
+pasted by a human into a raw terminal dangles a `${CLAUDE_PLUGIN_ROOT}` citation inside its `bash`
+blocks the moment a human reads that block verbatim — before the file is copied anywhere, and
+regardless of whether the plugin is loaded in the session doing the reading. Three trees still
+answer the wider test today — `assets/templates/**` (the harness and front-matter molds),
+`assets/docs/**` (the OKF skeleton, copied by `/docs:align`) and `assets/specs/templates/**`; a
 fourth surface added later inherits the rule without amending this list. Naming one folder was how
 a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
 wording did not, and nothing else checks. **No validator catches this** — a path that fails to

@@ -115,8 +115,7 @@ top-level (`arquitetura/`→`standards/`) and subfolder (`codigo/`→`code/`). R
 route every probe finding to its owner via
 [docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s table. Produce
 the plan — enumerate:
-  - **(a)** homes to scaffold (only those that apply), **plus the operator manual**
-    `/.docs/QUENCHING.md` — install / refresh / leave, per the rule in step 4;
+  - **(a)** homes to scaffold (only those that apply);
   - **(b)** variants to migrate/rename (with per-item destination);
   - **(b2)** **prefix-clusters to fold into subfolders** (`nomenclatura-*` siblings → a
     `symbol-naming/` folder, prefix stripped) — one folder per coherent cluster; note the ones
@@ -163,19 +162,6 @@ plan was rejected and nothing was written.
   lines to the repo). When scaffolding `knowledge/`, also copy
   its **fixed `glossary.md` seed** — the repo's A–Z term lookup — and list it in
   `knowledge/index.md` (it is the only pre-seeded concept doc the skeleton ships).
-- **Install the operator manual** — copy `${CLAUDE_PLUGIN_ROOT}/assets/docs/QUENCHING.md` to
-  `/.docs/QUENCHING.md`, replacing the banner's `<VERSION>` placeholder with the plugin's
-  `VERSION` file. **This is the manual-install rule the other two fronts cite** (`/quenching:specs:align`,
-  `/quenching:skill:align`) — same four branches, their own asset and destination:
-  - **absent** → install;
-  - **present, banner stamp older than the plugin** → overwrite (nothing repo-specific is lost —
-    the manual is static payload);
-  - **present, banner stamp same or newer** → leave it, silently;
-  - **present, no `quenching` banner** → a human took it over: **keep it verbatim** and
-    report it. Never clobber.
-  The manual is **exempt** from OKF ([docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)) —
-  never stamp it, never convert it to `index.md`. List it in the root `index.md` (this step's
-  regeneration) so it is reachable from the bundle's front door.
 - **Migrate** variants: move the folder, update every cross-ref found in step 3 (relative
   within a home, absolute `/.docs/...` across homes).
 - **Stamp/merge** frontmatter with the molds in `${CLAUDE_PLUGIN_ROOT}/assets/templates/`
@@ -321,8 +307,6 @@ entry added nothing a reader could not already see, and cost a write on every ru
 - Never leave a directory that holds concept docs without an `index.md`, and never leave a
   listing that links to a nonexistent file (a lying index).
 - Never hand-edit a `<!-- BEGIN/END GENERATED -->` zone — regenerate it from disk.
-- Never stamp, rename, or OKF-validate `QUENCHING.md`, and never overwrite one whose
-  `quenching` banner a human removed — keep it and report it.
 - Never reimplement a content stage's logic here — **invoke** it, and never let two stages write
   `/.docs/` concurrently.
 - Never author content to close a gap that needs human input — **surface** it with its per-item

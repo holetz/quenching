@@ -29,11 +29,8 @@ because a relative path encodes the depth of the *citing* file and `commands/ali
 | Path | What it is | Installs into the target as |
 | --- | --- | --- |
 | `docs/` | the canonical **OKF bundle skeleton** — 23 reserved `index.md` listings (only the root carries frontmatter, and only `okf_version`), `standards/CLAUDE.md`, the 5 `.pages` nav files inside `documentation/**`, and the fixed `knowledge/glossary.md` term-lookup seed | the target's `/.docs/`, only the homes that apply |
-| `docs/QUENCHING.md` | the **operator manual** for the `docs` front — commands, confirmation rules, the hook, recipes, finding-code troubleshooting | `/.docs/QUENCHING.md` |
 | `specs/plans/.gitkeep` | keeps the active-spec folder in git while empty — the folder IS the listing, and `specs.py list` derives it from disk | `/.specs/plans/` |
 | `specs/archive/.gitkeep` | keeps the closed-spec folder in git while empty | `/.specs/archive/` |
-| `specs/QUENCHING.md` | the **operator manual** for the `specs` front — the spec lifecycle, the `/specs:*` commands, the `specs.py` tool, the OKF bridge | `/.specs/QUENCHING.md` |
-| `claude/QUENCHING.md` | the **operator manual** for the `.claude/` front — the taxonomy axis, mirroring, the rule + registry, hook/settings hygiene | `.claude/QUENCHING.md` |
 | `mkdocs/` | the **site layer** payload — `mkdocs.yml.tmpl`, `requirements.txt`, opt-in `ci-github-pages.yml` (the `.pages` nav files ship inside `/.docs/documentation/**`) | the target's repo **root**, outside `/.docs/` |
 
 Two files under `hooks/` used to belong to this table and no longer do — **nothing copies or
@@ -111,14 +108,8 @@ errors, 0 warnings**.
 - **`/docs:harness`** applies the `templates/harness/` molds to rewrite a repo's `CLAUDE.md` /
   `AGENTS.md` as thin pointers over the bundle, moving inlined knowledge into its home.
 - **`/specs:align`** copies the `specs/` seed; `/specs:*` drive the cycle through `bin/specs.py`.
-- **`/skill:align`** installs `bin/skills.py` and the `.claude/` manual; the `/skill:*` minters
-  apply `templates/automation/`.
-- **Each of the three aligns installs its front's `QUENCHING.md`** — `/docs:align` → `/.docs/`,
-  `/specs:align` → `/.specs/`, `/skill:align` → `.claude/` — under the four-branch rule owned by
-  `/docs:align`: absent → install · older banner → overwrite · same-or-newer → leave · **banner
-  removed by a human → keep and report**. The banner's `<VERSION>` placeholder is filled from
-  `VERSION` at copy time, so releases need no extra lockstep. `QUENCHING.md` is an **exempt**
-  basename in the validator — never stamped, never converted to `index.md`.
+- **`/skill:align`** installs `bin/skills.py`; the `/skill:*` minters apply
+  `templates/automation/`.
 
 ## Install discipline
 

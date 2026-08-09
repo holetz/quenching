@@ -14,7 +14,6 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
 | `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/quenching:docs:harness`, not the validator) |
-| `QUENCHING.md` | operator manual (plugin payload) | **exempt** (skipped; installed and refreshed by the front's align — `/quenching:docs:align` for `/.docs/`, not authored knowledge) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
