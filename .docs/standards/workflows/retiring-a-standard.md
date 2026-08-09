@@ -47,7 +47,7 @@ O procedimento abaixo foi executado uma vez nesta casa — `context-budget.md`, 
    regra viva — o mesmo julgamento menção/uso que [prose-sweeps.md](../quality/prose-sweeps.md)
    declara invisível a regex. O `stale-doc` do herdeiro conta como aviso, nunca como falha do
    gate; quem aposenta assume que o review do concluir vai achar um ou dois sites órfãos — na
-   primeira execução foram quatro (glossário ×2, `.claude/QUENCHING.md`, o corpo de um comando).
+   primeira execução foram quatro (glossário ×2, um payload instalado, o corpo de um comando).
 
 ## O que a aposentadoria não é
 
