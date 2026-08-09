@@ -439,27 +439,6 @@ The full contract lives in the skills' `references/` (`okf-spec.md`, `taxonomy.m
 `migration.md`, `conformance.md`, `homes.md`) and the installable payload in
 [`assets/`](assets/README.md).
 
-## What a target repo gets to *read*
-
-Structure without explanation is a puzzle. Each of the three aligns therefore installs a
-**`QUENCHING.md` operator manual** beside the front it owns — static, repo-agnostic, English,
-and identical in every adopting repo:
-
-| Manual | Installed by | Covers |
-| --- | --- | --- |
-| `/.docs/QUENCHING.md` | `/docs:align` | the "I want to → run this" table, the homes and `type` vocabulary, the ten `/docs:*` commands, the shared operating model (probe first, one plan → one OK, MERGE, generated zones), the enforcement hook and every config knob, recipes, and a finding-code → fix troubleshooting table |
-| `/.specs/QUENCHING.md` | `/specs:align` | the single-folder layout, the create → develop → approve → execute → conclude lifecycle, the eight `/specs:*` commands, the frontmatter record vocabulary, the `specs.py` tool, the `/.specs/` ↔ `standards/` boundary, the OKF bridge, and the older-workspace migrations |
-| `.claude/QUENCHING.md` | `/skill:align` | the single taxonomy axis, one file per entry point, the six `/skill:*` commands, the rule + registry artifacts, hook/settings hygiene |
-
-They complement, never duplicate, the reserved listings: `/.docs/index.md` says **what** is in the
-bundle, `QUENCHING.md` says **how** it is worked. `QUENCHING.md` is an **exempt** basename in
-`okf-validate.py` (alongside `CLAUDE.md`/`AGENTS.md`) — a payload file, never an OKF concept.
-The refresh rule is owned once, by
-[`commands/docs/align.md`](commands/docs/align.md) §4, and cited by the other two:
-absent → install · older banner → overwrite · same-or-newer → leave · **banner removed by a
-human → keep and report**. The banner's version is filled from `VERSION` at copy time, so a
-release adds no new lockstep item.
-
 ## Model policy
 
 The command registry is built at **session start**, so a change under `commands/**` is not testable
@@ -661,8 +640,6 @@ why each half of the lockstep matters, and
   wrappers. Six skills instructed tools their `allowed-tools` did not grant (`AskUserQuestion`,
   `TodoWrite`, `Task`/`Skill` in archive, `Bash` in both backlog skills). The two backlog
   descriptions said "OKF backlog", contradicting every other statement that the inbox is outside
-  the bundle. The `/docs:*` command count in the `/.docs/QUENCHING.md` row said nine while the
-  skill count beside it said ten — both now read the same number.
   **The documentation site got an owner.** New **`quenching-docs-documentation-build`**
   (`/docs:documentation:build`) owns the mkdocs-material **site layer** over the `documentation/`
   home end to end: install, config **merge** (missing required keys only, shown as a diff),
@@ -713,16 +690,6 @@ why each half of the lockstep matters, and
   `quenching-docs-align-and-update/references/cycle.md` is now the shared normative home for **both**
   conductors. Nineteen skills → **twenty-one** (twelve `quenching-*` + nine `openspec-*`), and
   the skill↔wrapper bijection is preserved.
-  Same release: **each front now installs a `QUENCHING.md` operator manual** — the answer to
-  "how is this repo operated?" finally ships *into* the target instead of living only in this
-  README. New payload files `assets/docs/QUENCHING.md`, `assets/openspec/QUENCHING.md`, and
-  `assets/claude/QUENCHING.md` are copied by their front's align under a four-branch refresh
-  rule owned once by `quenching-docs-align/SKILL.md` §4 (absent → install · older banner → overwrite
-  · same-or-newer → leave · **banner removed by a human → keep and report**), with the version
-  filled from `VERSION` at copy time. `QUENCHING.md` joins `CLAUDE.md`/`AGENTS.md` as an
-  **exempt** basename in `okf-validate.py`, so the manual is never stamped, never converted to
-  `index.md`, and never counted as an orphan; the `README.md` → `index.md` migration rule is
-  untouched. The root `/.docs/index.md` and the root-harness mold now point at the manual.
 - **0.16.0:** **verb-first command surface, honest namespaces.** Renamed the command wrappers
   so each names its action, and split the `quenching-*` surface by the artifact it touches.
   `opsx:` keeps its namespace and every `openspec-*` skill name (upstream alignment); only the
