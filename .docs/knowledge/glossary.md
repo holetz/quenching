@@ -38,6 +38,10 @@ sentence, and **link out** rather than explaining in full here.
   `index-broken-link`, `index-orphan`, `glossary-broken-link`, `resource-unresolved`,
   `resource-self`). The category has to stay small — a check that cannot tell "wrong" from "worth a
   look" belongs here or nowhere, and folding one into must-fix makes that set unusable.
+- [**Agent-choice catalogue**](../standards/workflows/agent-choice-catalogues.md) — the shared
+  shape `subjects`, `tagCatalog` and `workItemTypes` all follow in `.claude/quenching.json`: an
+  abstract key mapping to a `description` an agent reads to PROPOSE a choice, which a human then
+  CONFIRMS — never silently picked.
 - [**Always-on metadata**](../standards/automation/skills.md) — the frontmatter
   `description` of every command, resident in every session's context before anything fires and
   therefore the only surface cost paid whether or not a command runs.
@@ -239,11 +243,12 @@ sentence, and **link out** rather than explaining in full here.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
   `worktreeSetup`, `azureStates`, `integrationBranch`, `releaseBranch`, `azurePlacement`,
-  `azureColumns`, `subjects` and `tagCatalog`. It replaced `/.specs/config.json`, whose home stopped
-  working once a repository could have no `/.specs/` folder at all. Absence yields the documented
-  defaults, never a null and never a refusal — except `azureStates` and `azurePlacement.areaPath`,
-  neither of which has a default because the project itself defines them, and whose absence refuses
-  instead of guessing; every other way it can be wrong comes back as a field for `doctor` to judge.
+  `azureColumns`, `subjects`, `tagCatalog` and `workItemTypes`. It replaced `/.specs/config.json`,
+  whose home stopped working once a repository could have no `/.specs/` folder at all. Absence
+  yields the documented defaults, never a null and never a refusal — except `azureStates` and
+  `azurePlacement.areaPath`, neither of which has a default because the project itself defines
+  them, and whose absence refuses instead of guessing; every other way it can be wrong comes back
+  as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
   whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
