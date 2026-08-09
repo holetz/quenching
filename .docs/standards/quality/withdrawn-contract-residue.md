@@ -39,6 +39,15 @@ None of the five shared a substring with any other. A grep for the class would h
 "install", "installed", "copies", "merges", "offers the overwrite", "beside the config it loads" —
 which is not a grep, it is the reading the reviewer ends up doing anyway.
 
+**Measured a second time, on a different branch (2026-08-08).** A removal of a whole capability ran
+a literal grep for the artefact's own name, `QUENCHING.md`, and came back empty — while four sites
+still cited it as *"the operator manual"*, a phrase the artefact's name does not contain. Three of
+the four were live instructions pointing at a file that would no longer exist; the fourth was a
+historical mention, correct as written. The grep found the uses that spelled the name and none of
+the ones that described the thing, which is this standard's claim restated in the one register it
+had not yet been measured in: **a name is not a spelling of the class either.** The four sites were
+recorded as `## Discoveries` during execution and closed before the review.
+
 ## `## Impact` must name the class, not its instances
 
 Every one of the first three misses has the same shape: `## Impact` enumerated **instances of a

@@ -29,6 +29,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
   computes the fact: a *removed* contract's residue has no canonical spelling to grep, so `## Impact`
   must name the class of documents asserting it and derive the list mechanically — the five misses
   measured on one branch, why naming the file is not enough either, and the reviewer's question.
+* [prose-deletion-seams.md](prose-deletion-seams.md) — the complement to both: a deletion damages
+  the text it leaves behind, not only the text it never opened — the hard wrap makes the line a unit
+  the sentence does not respect, an orphaned continuation is promoted under the neighbouring bullet,
+  and a grant's justification outlives the use that earned it.
 * [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
   an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
   prove, and the gate the three shipped selftests have not yet cleared.
