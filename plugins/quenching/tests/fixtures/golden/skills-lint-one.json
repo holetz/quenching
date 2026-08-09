@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "root": "<REPO>/plugins/quenching/commands/docs",
+  "commandCount": 1,
+  "referenceCount": 0,
+  "findings": [
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "7 of 7 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 7,
+      "covered": 0,
+      "command": "/add",
+      "path": "add.md"
+    }
+  ]
+}

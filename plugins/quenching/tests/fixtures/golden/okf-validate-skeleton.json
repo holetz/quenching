@@ -1,0 +1,14 @@
+[
+  {
+    "severity": "WARN",
+    "path": "standards/agents/communication.md",
+    "code": "resource-unresolved",
+    "message": "`resource` entry `/.docs/**` matches nothing on disk"
+  },
+  {
+    "severity": "WARN",
+    "path": "standards/agents/communication.md",
+    "code": "resource-unresolved",
+    "message": "`resource` entry `/.specs/**` matches nothing on disk"
+  }
+]
