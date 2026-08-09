@@ -112,7 +112,7 @@ nothing in this front can:
 
 What was done instead is the cut the corollary demands. The rule that an imported doc records where
 it came from used to be written in **four** places — `sources.md`, `/docs:import` twice over, and
-the operator manual. It now has one owner, `sources.md` §Attribution, and the other three cite it.
+an installed payload. It now has one owner, `sources.md` §Attribution, and the other three cite it.
 Removing three restatements is worth more than a fifth would have been, and this entry is what
 makes the remaining hole *known* rather than merely unfilled.
 
