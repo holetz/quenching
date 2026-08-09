@@ -85,9 +85,6 @@ Knowledge is **NOT** in this file — it lives in the OKF bundle at [/.docs/](/.
 **Resolving a term.** Hit an unfamiliar repo word or codename? The glossary first →
 [/.docs/knowledge/glossary.md](/.docs/knowledge/glossary.md) (`grep -i '<term>' /.docs/knowledge/glossary.md`).
 
-**How this repo is operated** — which command adds a doc, what the hook checks, how to read a
-validator finding → [/.docs/QUENCHING.md](/.docs/QUENCHING.md).
-
 - [/.docs/standards/](/.docs/standards/index.md) — how WE build: the proven contracts. Start here for
   the [command surface's naming](/.docs/standards/naming/command-surface.md) (one file per entry
   point, the path is the identity), the [align surface](/.docs/standards/architecture/align-surface.md)
