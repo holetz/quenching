@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "slug": "beta-gizmo",
+  "entry": "the upstream store answers 200 on a cold cache",
+  "resolvedBy": null,
+  "resolvedFrom": null
+}

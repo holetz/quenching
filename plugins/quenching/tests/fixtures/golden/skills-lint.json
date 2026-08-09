@@ -1,0 +1,121 @@
+{
+  "ok": true,
+  "root": "<REPO>/plugins/quenching",
+  "commandCount": 26,
+  "referenceCount": 24,
+  "findings": [
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "7 of 7 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 7,
+      "covered": 0,
+      "command": "/docs:add",
+      "path": "commands/docs/add.md"
+    },
+    {
+      "code": "sk-unscoped-bash",
+      "severity": "warn",
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/docs:align",
+      "path": "commands/docs/align.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "5 of 5 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 5,
+      "covered": 0,
+      "command": "/docs:define",
+      "path": "commands/docs/define.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "8 of 8 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 8,
+      "covered": 0,
+      "command": "/docs:documentation:build",
+      "path": "commands/docs/documentation/build.md"
+    },
+    {
+      "code": "sk-unscoped-bash",
+      "severity": "warn",
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/docs:documentation:build",
+      "path": "commands/docs/documentation/build.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "7 of 7 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 7,
+      "covered": 0,
+      "command": "/docs:glossary-backfill",
+      "path": "commands/docs/glossary-backfill.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "8 of 8 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 8,
+      "covered": 0,
+      "command": "/docs:harness",
+      "path": "commands/docs/harness.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "5 of 5 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 5,
+      "covered": 0,
+      "command": "/docs:import",
+      "path": "commands/docs/import.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "6 of 6 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 6,
+      "covered": 0,
+      "command": "/docs:import-memory",
+      "path": "commands/docs/import-memory.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "7 of 7 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 7,
+      "covered": 0,
+      "command": "/docs:learn",
+      "path": "commands/docs/learn.md"
+    },
+    {
+      "code": "sk-step-criterion",
+      "severity": "warn",
+      "message": "2 of 8 numbered steps carry no `**Done when:**` criterion — a step with no observable end state can be claimed done early",
+      "steps": 8,
+      "covered": 6,
+      "command": "/skill:hook:new",
+      "path": "commands/skill/hook/new.md"
+    },
+    {
+      "code": "sk-unscoped-bash",
+      "severity": "warn",
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/specs:conclude",
+      "path": "commands/specs/conclude.md"
+    },
+    {
+      "code": "sk-unscoped-bash",
+      "severity": "warn",
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/specs:execute",
+      "path": "commands/specs/execute.md"
+    }
+  ]
+}

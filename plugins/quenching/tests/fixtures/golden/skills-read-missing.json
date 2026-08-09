@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "code": "sk-read-no-section",
+  "path": "assets/references/align/convergence.md",
+  "missing": [
+    "cycle-authorization"
+  ],
+  "available": [
+    "The convergence contract — shared by every align",
+    "Contents",
+    "The cycle-authorization contract",
+    "The PR route — where review lives when the run does not stop",
+    "The convergence contract",
+    "Per-item commands are stage tools, not stages"
+  ],
+  "message": "assets/references/align/convergence.md has no section named: cycle-authorization"
+}
