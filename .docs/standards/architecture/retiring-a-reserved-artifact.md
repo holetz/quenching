@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Retiring a reserved artifact — drop the checker, keep the reservation
-description: A reserved filename that is retired keeps its slot in RESERVED and its skip in the hard block; only its checker goes, because unreserving it silently converts every surviving file into a malformed concept doc
+description: A reserved filename that is retired keeps its slot in RESERVED and its skip in the hard block; only its checker goes, because unreserving it silently converts every surviving file into a malformed concept doc — plus the one departure this house made knowingly, and the three things that made it payable
 resource: plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/assets/references/docs-align/okf-spec.md
 tags: [architecture, okf, validator, reserved-names, deprecation]
-timestamp: 2026-07-28
+timestamp: 2026-08-08
 audience: both
 authority: current
-source: retire-docs-log spec (task 6.1)
+source: retire-docs-log spec (task 6.1); §The one time this was deliberately not followed added at the close of the remover-a-capability-quenching-md spec (2026-08-08), which removed `"QUENCHING.md"` from `EXEMPT` outright and accepted the blast radius this standard tabulates — recorded here so a reader of the rule learns of its one measured exception from the rule itself
 maintainer: quenching
 ---
 
@@ -49,6 +49,26 @@ So the blast radius is not this repo — it is **every already-aligned target re
 has the file on disk. They did nothing, upgraded the plugin, and their bundle went red. That
 is the whole difference between the two words: **retired means nobody produces it; unreserved
 means everybody who still has it is now broken.**
+
+## The one time this was deliberately not followed
+
+The rule above is the default, and it has been departed from **once**, knowingly: the
+`remover-a-capability-quenching-md` spec (2026-08-08) removed `"QUENCHING.md"` from `EXEMPT`
+entirely, along with everything else that named it. The condition the human set was *nothing may
+be left referencing it — not even a code constant*, which the rule's third change cannot satisfy
+by construction.
+
+What made the departure payable, and what a future one has to match:
+
+- **The blast radius was named before the fact, not discovered after.** The consequence this
+  standard tabulates — an already-aligned target repo with a surviving `QUENCHING.md` starts
+  reporting `no-frontmatter`, and denies writes to that file under `hardBlock` — was recorded as
+  `ACCEPTED` in that spec's `## Risks`, with the reasoning in its `## Design`.
+- **It rode a major bump.** Breaking already-aligned targets is exactly what a major release is
+  for; the same departure inside a patch would not have been payable.
+- **The rule was not amended.** Its scope — any reserved-or-exempt name — is unchanged, and the
+  next retirement starts from *keep the reservation* again. What that spec removed was one name
+  under one stated condition, not the reason the reservation is load-bearing.
 
 ## The consequence for disposition
 

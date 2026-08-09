@@ -4,10 +4,10 @@ title: A withdrawn contract's prose residue
 description: When a change removes a contract rather than changing a computed value, its prose residue has no canonical spelling to grep for — the sites assert it in their own words — so `## Impact` must name the CLASS of documents that assert it and derive the file list mechanically; the five misses measured on one branch, why naming the file is not enough either, and why the reviewer's question is "what did this make false?" rather than "which files changed?"
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [quality, sweeps, documentation, specs, impact]
-timestamp: 2026-08-03
+timestamp: 2026-08-08
 audience: both
 authority: current
-source: enxugar-create-e-eliminar-o-rung-hooks plan (2026-08-03) — five misses on one branch withdrawing the installed-tool contract: three caught during execution and recorded as `## Discoveries`, two more only at the branch review, one of them in a file `## Impact` had named and half-covered
+source: enxugar-create-e-eliminar-o-rung-hooks plan (2026-08-03) — five misses on one branch withdrawing the installed-tool contract: three caught during execution and recorded as `## Discoveries`, two more only at the branch review, one of them in a file `## Impact` had named and half-covered; measured a second time by the remover-a-capability-quenching-md spec (2026-08-08), where a literal grep for the artefact's own name missed four sites that called it "the operator manual"
 maintainer: quenching
 ---
 
