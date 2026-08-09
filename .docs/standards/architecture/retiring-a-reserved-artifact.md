@@ -7,7 +7,7 @@ tags: [architecture, okf, validator, reserved-names, deprecation]
 timestamp: 2026-08-08
 audience: both
 authority: current
-source: retire-docs-log spec (task 6.1); §The one time this was deliberately not followed added at the close of the remover-a-capability-quenching-md spec (2026-08-08), which removed `"QUENCHING.md"` from `EXEMPT` outright and accepted the blast radius this standard tabulates — recorded here so a reader of the rule learns of its one measured exception from the rule itself
+source: retire-docs-log spec (task 6.1); §The one time this was deliberately not followed added at the close of the remover-a-capability-quenching-md spec (2026-08-08), which removed that payload's basename from `EXEMPT` outright and accepted the blast radius this standard tabulates — recorded here so a reader of the rule learns of its one measured exception from the rule itself
 maintainer: quenching
 ---
 
@@ -53,15 +53,16 @@ means everybody who still has it is now broken.**
 ## The one time this was deliberately not followed
 
 The rule above is the default, and it has been departed from **once**, knowingly: the
-`remover-a-capability-quenching-md` spec (2026-08-08) removed `"QUENCHING.md"` from `EXEMPT`
-entirely, along with everything else that named it. The condition the human set was *nothing may
-be left referencing it — not even a code constant*, which the rule's third change cannot satisfy
-by construction.
+`remover-a-capability-quenching-md` spec (2026-08-08) retired a whole installed payload — the
+per-front operator manual the three aligns used to write into a target — and removed its basename
+from `EXEMPT` entirely, along with everything else that named it. The condition the human set was
+*nothing may be left referencing it — not even a code constant*, which the rule's third change
+cannot satisfy by construction.
 
 What made the departure payable, and what a future one has to match:
 
 - **The blast radius was named before the fact, not discovered after.** The consequence this
-  standard tabulates — an already-aligned target repo with a surviving `QUENCHING.md` starts
+  standard tabulates — an already-aligned target repo with a surviving copy of that payload starts
   reporting `no-frontmatter`, and denies writes to that file under `hardBlock` — was recorded as
   `ACCEPTED` in that spec's `## Risks`, with the reasoning in its `## Design`.
 - **It rode a major bump.** Breaking already-aligned targets is exactly what a major release is

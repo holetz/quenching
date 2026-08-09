@@ -40,8 +40,8 @@ None of the five shared a substring with any other. A grep for the class would h
 which is not a grep, it is the reading the reviewer ends up doing anyway.
 
 **Measured a second time, on a different branch (2026-08-08).** A removal of a whole capability ran
-a literal grep for the artefact's own name, `QUENCHING.md`, and came back empty — while four sites
-still cited it as *"the operator manual"*, a phrase the artefact's name does not contain. Three of
+a literal grep for the artefact's own filename and came back empty — while four sites still cited
+it by what it *was*, an operator manual, a phrase its filename does not contain. Three of
 the four were live instructions pointing at a file that would no longer exist; the fourth was a
 historical mention, correct as written. The grep found the uses that spelled the name and none of
 the ones that described the thing, which is this standard's claim restated in the one register it
