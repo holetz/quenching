@@ -249,9 +249,9 @@ sentence, and **link out** rather than explaining in full here.
   them, and whose absence refuses instead of guessing; every other way it can be wrong comes back
   as a field for `doctor` to judge.
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
-  verifier (`okf-validate.py`, `specs.py doctor`, `skills.py doctor`) whose exit code decides
-  whether an align inventories anything at all, making a no-op align cost a couple of tool calls;
-  the same programs run again as the closing verification.
+  verifier (`cq knowledge validate`, `cq specs doctor`, `cq components doctor`) whose exit code
+  decides whether an align inventories anything at all, making a no-op align cost a couple of tool
+  calls; the same programs run again as the closing verification.
 - [**Projection / storage**](../standards/architecture/spec-backend.md) — the pair that decides
   whether a backend may map a canonical field onto a native construct. A **projection** is written
   from the document on every write and never read back, which makes it duplicated truth however
