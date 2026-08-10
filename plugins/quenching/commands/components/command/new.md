@@ -4,7 +4,7 @@ argument-hint: [skill-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
 
-# /quenching:skill:new — mint ONE conformant command, registry included
+# /quenching:components:command:new — mint ONE conformant command, registry included
 
 **Input**: `$ARGUMENTS` (the command to create or edit — a name or a description of what it should do).
 
