@@ -11,11 +11,11 @@ allowed-tools: Read, Grep, Glob, WebFetch, Write, Edit, Task
 A Claude-native analogue of the OKF reference implementation's `enrich` command — **without**
 BigQuery or heavy dependencies. It reads an external source (local files/folders, or URLs)
 and mints **multiple** conformant OKF concept docs from it. It is a **batch fan-out of
-`/quenching:knowledge:add`**: [`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+`/quenching:knowledge:add`**: [`knowledge-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 is the **single owner** of the per-doc procedure (classify → stamp → index → log → glossary →
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
-[docs-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md). Requires an existing OKF bundle — run
+[knowledge-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md). Requires an existing OKF bundle — run
 `/quenching:knowledge:align` first if `/.docs/` is not one.
 
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
@@ -45,14 +45,14 @@ scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 ### 1. Scope the source (read-only)
 Identify the inputs: local files/folders (`Read`/`Glob`/`Grep`) or URLs (`WebFetch`). For a
 web source, fix the **seed list**, **page cap**, and **host allowlist** *before* fetching
-anything, and fetch nothing outside them ([docs-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)).
+anything, and fetch nothing outside them ([knowledge-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md)).
 Read the source; write nothing yet.
 
 ### 2. Extract → classify → dedup
 Break the source into **knowledge units** (one concept each). Classify every unit into
 home + `type` + mold via homes.md §Classification.
 
-Then **dedup** exactly as [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)
+Then **dedup** exactly as [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md)
 §Dedup fixes it — within the source, then against the bundle, and against the bundle **by exact
 `source_uri` before resemblance**. What this step owes step 3 is the verdict that ordering
 produces: every unit leaves here labelled **new**, **already imported** (an exact URI hit — the
@@ -91,13 +91,13 @@ each `index.md` honest and resolves cross-slice dedup.
 Stamp `source_uri:` on every doc this run **creates** — the unit's exact URI, the one key
 homes.md's mold deliberately leaves out — and, when the source is a stable URL, write the body
 line naming it **with the date it was read**, exactly as
-[sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) specifies. A doc
+[sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md) specifies. A doc
 being **enriched** already carries the `source_uri:` that found it; MERGE never rewrites it.
 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md),
-then run `python3 "${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py" /.docs` over the
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
+then run `python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate /.docs` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Report residue — units deferred, sources left unfetched, MERGE
 targets skipped.

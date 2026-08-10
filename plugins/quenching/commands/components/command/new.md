@@ -13,11 +13,11 @@ Creates or edits **ONE FILE** in the **target repo's own** automation surface �
 runs. Claude Code merged commands into skills, so there is no `SKILL.md` half and no wrapper to
 mirror: the command's path IS its identity, and the surface stays predictable because that path
 tells where the command acts. The axis, naming, and registry format live in
-[skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md); how the
-body itself is written lives in [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md);
+[components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md); how the
+body itself is written lives in [components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md);
 what a command may strategically use — fork, pins, hooks, the invocation controls — and what
 each lever costs lives in
-[skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md) —
+[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md) —
 this skill owns all three, and `/quenching:components:align` cites them. Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
 
@@ -30,20 +30,20 @@ this skill owns all three, and `/quenching:components:align` cites them. Molds l
   never created without the OK.
 - **No bundle, no tail — but the mint proceeds.** `/.docs/index.md` without `okf_version`
   (or absent) means: write the command file only, skip registry/glossary/log silently, and
-  suggest `/quenching:docs:align` **once**.
+  suggest `/quenching:knowledge:align` **once**.
 - **One plan, one OK, nothing before.** Classification, names, every file to be written,
   and the OKF tail appear in ONE plan; no file is created or modified before the single
   confirmation. A declined plan writes nothing.
 - **MERGE, never clobber.** An edit preserves the skill's body and any hand-written
   content; only the gap being fixed changes. This skill never deletes a skill.
-- **The registry zone is regenerated, never composed.** `skills.py registry reindex` owns the
+- **The registry zone is regenerated, never composed.** `cq components registry reindex` owns the
   zone's format; this skill and `/quenching:components:align` are the two that invoke it, and neither
   writes between the markers by hand. Composing a derived table and then diffing it against its
   own source is one reader checking its own arithmetic.
 
 ## Resolving the tool
 
-Resolve `skills.py` per
+Resolve `cq components` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose. Findings carry
@@ -55,11 +55,11 @@ Resolve `skills.py` per
 Read `/.docs/standards/automation/skills.md` and confirm the bundle
 (`/.docs/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
 present → add "create the rule from `automation/skills-standard.md`" to the plan. No
-bundle → note the tail as skipped and plan the `/quenching:docs:align` suggestion.
+bundle → note the tail as skipped and plan the `/quenching:knowledge:align` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
 ### 2. Classify on the axis
-Apply the classification test ([skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §The single axis):
+Apply the classification test ([components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis):
 name the one folder the skill acts on — one folder → domain-bound; "the repo" → generic;
 several unrelated folders → stop and ask the user which folder it serves (or whether it is
 generic) instead of forcing a value. For an **edit**, re-derive the classification and diff
@@ -76,7 +76,7 @@ as a phantom command (`sk-no-description`). **Done when:** the path to be writte
 collision-free or resolved as an edit.
 
 ### 4. Choose the execution profile
-Walk [skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md):
+Walk [components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md):
 the default profile is **all levers off**, and each departure needs a stated buy — `context:
 fork` (+ `agent`, `background`) only for a self-contained, noisy, summary-out run with **no
 mid-flow gate**; an `effort`/`model` pin only for genuinely mechanical work, priced against
@@ -89,7 +89,7 @@ with its one-line reason — or the profile is stated as default.
 
 ### 5. Draft under the doctrine
 Fill `automation/command.md` per
-[skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md): description front-loads the leading
+[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md): description front-loads the leading
 concept, one verbatim trigger per branch in the second sentence, `Not for:` boundary;
 steps end in checkable **Done when** criteria; every line passes the no-op test;
 prescriptions positive; body well under 500 lines; the description within the 1,536-char cap.
@@ -114,19 +114,19 @@ absent (it was in the plan) — `registry reindex` refuses a missing doc (`sk-no
 doc with no markers (`sk-no-zone`) rather than placing a table at a guessed anchor in curated
 prose. Then regenerate the zone:
 ```bash
-skills.py registry reindex --json
+cq components registry reindex --json
 ```
 Update `documentation/reference/`'s `index.md` per the procedure in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). If the
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). If the
 command coined a new repo-specific term, **offer** ONE `knowledge/glossary.md` entry — the user
 decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 
 ### 9. Self-check
 Ask the tool, do not read for it:
 ```bash
-skills.py lint <command-file> --json   # this command's conformance
-skills.py doctor --json                # the surface invariant it just changed
-skills.py registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 8
+cq components lint <command-file> --json   # this command's conformance
+cq components doctor --json                # the surface invariant it just changed
+cq components registry reindex --json      # `changed: false` — nothing wrote inside the markers after step 8
 ```
 `lint` decides the description caps, trigger position, the `Not for:` boundary, body length, the
 per-step criteria, unscoped `Bash`, and invocation coherence; `doctor` decides that every command
@@ -134,8 +134,8 @@ carries a description, that no two resolve to the same `/` path, and that every 
 kebab-case. Fix every `error`; report every `warn`
 with its `sk-*` code rather than silently accepting it. What no parser can decide — the no-op
 test, sediment, sprawl, positive prescription — is still read by eye against
-[skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md). Any OKF doc touched passes
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md).
+[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md). Any OKF doc touched passes
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
 **None of that proves the command LOADS.** `lint` and `doctor` read frontmatter off disk, and disk
 is not the registry — which is built at **session start**, so the command just written is not
 invocable until a new process. Every mechanical check above can be green while the body is

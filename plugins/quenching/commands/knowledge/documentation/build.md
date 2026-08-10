@@ -17,8 +17,8 @@ absent, merges it forward when present, regenerates the nav after pages come and
 verifies the site actually builds. The payload it stamps from is
 [`${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/`](${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/README.md); the home's own
 boundaries and the `documentation` type live with `/quenching:knowledge:align`
-([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md)) and
-`/quenching:knowledge:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)).
+([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)) and
+`/quenching:knowledge:add` ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)).
 
 `/quenching:knowledge:align` step 7 offers the **first** install of this layer as part of scaffolding the
 bundle; every install, update, and re-verification after that is **this** skill.

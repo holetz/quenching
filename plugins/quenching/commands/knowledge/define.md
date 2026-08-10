@@ -15,10 +15,10 @@ same syntax every `index.md` uses (`* [<Term>](<path>.md) — <definition>`, or 
 <definition>` when no doc exists yet): an *index* of vocabulary, the one deliberate exception to
 "one concept per file" (a glossary is inherently a multi-term aggregate). The home boundaries, the
 glossary format, and the shared **Enriching the glossary** procedure live with `/quenching:knowledge:add`
-([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)); the `type`
+([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)); the `type`
 vocabulary and conformance rules with `/quenching:knowledge:align`
-([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)). For a whole-bundle bulk
+([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)). For a whole-bundle bulk
 backfill instead of one term, see `/quenching:knowledge:glossary-backfill`.
 
 ## Doctrine
@@ -70,7 +70,7 @@ follow the repo's language; the term itself is verbatim as the repo writes it.
 
 ### 5. Self-check against the conformance core
 Verify every file you touched against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
 plus this skill's own gate: the list is still sorted and its links resolve.
 
 ## Invariants to never violate

@@ -14,10 +14,10 @@ quadrant raised to a home: domain concepts, glossaries, mental models, explanati
 Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The mold lives at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/concept-front.md`; the home boundaries and the
 index/log procedure are shared with `/quenching:knowledge:add`
-([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)); the `type` vocabulary
+([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)); the `type` vocabulary
 and conformance rules with `/quenching:knowledge:align`
-([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)).
+([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)).
 
 ## Doctrine
 
@@ -80,14 +80,14 @@ add frontmatter to an `index.md`.
 ### 6. Enrich the glossary
 If the concept introduced a **repo-specific term**, add or sharpen its entry in
 `knowledge/glossary.md` per **Enriching the glossary** in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) (the tail step
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) (the tail step
 every capture runs; on-demand counterpart `/quenching:knowledge:define`, bulk counterpart
 `/quenching:knowledge:glossary-backfill`).
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) —
-the same checks the installed `okf-validate.py` hook (if wired) machine-verifies on write.
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) —
+the same checks the installed `cq knowledge hook` (if wired) machine-verifies on write.
 
 ## Invariants to never violate
 

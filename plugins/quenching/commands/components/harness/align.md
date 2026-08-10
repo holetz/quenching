@@ -17,12 +17,12 @@ is invisible to anyone browsing `/.docs/`, and drifts. Assumes the bundle alread
 `/quenching:knowledge:align` first if not). It also **creates** a thin subfolder `CLAUDE.md` where discovery
 finds a folder with a local operational surface but no harness — evidence-gated, never one per
 directory (routing §6). The unit → verdict → home routing and the pointer-honesty gate are
-in [docs-harness/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-harness/harness-routing.md); the home boundaries, `type`
+in [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md); the home boundaries, `type`
 vocabulary, molds, and index/log procedure are shared with `/quenching:knowledge:add`
-([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) and
-`/quenching:knowledge:align` ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md),
-[docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md)). Harness
+([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)) and
+`/quenching:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
+[knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)). Harness
 molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 
 ## Doctrine
@@ -53,7 +53,7 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
 - **Never silently drop a unit.** Unroutable content **stays** and is reported; a contradiction
   with `/.docs/` is a **FLAG** resolved per item; secrets and personal notes are flagged and **NEVER**
   filed into shared `/.docs/` (`CLAUDE.local.md` is treated like a `user` memory).
-- **This skill is the validator for harness files.** `okf-validate.py` skips `CLAUDE.md`/`AGENTS.md`
+- **This skill is the validator for harness files.** `cq knowledge validate` skips `CLAUDE.md`/`AGENTS.md`
   by design — pointer honesty (every link resolves, every pointer describes what its target really
   holds) is verified **HERE**, in step 8.
 
@@ -79,7 +79,7 @@ dirs (`.build/`, `dist/`, `build/`, `target/`, `node_modules/`, `**/__pycache__/
 `assets/`, `.venv/`, any nested `site-packages`/vendored dependency tree) and anything gitignored
 as a build artifact — check each hit with `git check-ignore`, don't assume from the path alone.
 Each survivor is a **proposed** subfolder `CLAUDE.md`, carried into the plan (step 5) as its own
-gated item — never auto-created. See [docs-harness/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-harness/harness-routing.md) §6.
+gated item — never auto-created. See [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) §6.
 
 On a large repo, delegate this repo-wide `find`/`grep` sweep to **one read-only `Task`
 sub-agent** (`model: haiku`, `effort: low`) that only **collects** — harness paths, candidate
@@ -93,9 +93,9 @@ each unit's text, its anchor, and its links. **One verdict per unit**; split a m
 build command paired with an architecture note becomes two).
 
 ### 3. Classify every unit
-Apply the [docs-harness/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-harness/harness-routing.md) table →
+Apply the [components-harness-align/harness-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-harness-align/harness-routing.md) table →
 **KEEP / MOVE / DEDUPE / FLAG / UNROUTABLE**. A **MOVE** derives its home + `type` + mold via
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md); a **DEDUPE**
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md); a **DEDUPE**
 cites the existing doc (`Grep /.docs/` to confirm coverage); a **FLAG** quotes both sides of the
 contradiction.
 
@@ -110,7 +110,7 @@ onto it.
 
 ### 4. Sweep the blast radius
 Per `/quenching:knowledge:align`'s migration doctrine
-([docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md) §3 §4):
+([knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §3 §4):
 `git grep` + `grep -rn --no-ignore` for anything that reads or links the harness files or their
 anchors. As in step 1, a large sweep goes to one read-only `Task` collector (`model: haiku`,
 `effort: low`) returning `anchor → [file:line, …]`; the orchestrator judges each hit. Any hit in
@@ -126,9 +126,9 @@ confirmation** before writing anything.
 
 ### 6. Per MOVE unit: insert, verify, then cut
 For each MOVE row, run the full insert procedure exactly as
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) specifies it —
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) specifies it —
 stamp → index → log → glossary → self-check (against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)) —
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)) —
 with this skill's deltas kept inline:
 - `source:` = the harness file the unit came from; an unproven rule enters
   `authority: background`; the log line is
@@ -146,7 +146,7 @@ FLAG-pending units stay under a clearly marked residue section. **No frontmatter
 
 ### 8. Verify and report
 **Resolve EVERY link** in every rewritten harness file (the validator won't). Confirm no moved fact
-is still restated inline; run `okf-validate.py` over `/.docs/` → 0 errors and the structural WARNs
+is still restated inline; run `cq knowledge validate` over `/.docs/` → 0 errors and the structural WARNs
 clean; confirm each moved doc is indexed and logged. Report counts: **moved** (by home) /
 **deduped** / **kept** / **flagged** / **unroutable** / **harness created** (subfolder pointers).
 

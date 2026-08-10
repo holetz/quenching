@@ -11,10 +11,10 @@ allowed-tools: Read, Grep, Glob, Write, Edit
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
 with a complete stamp. Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The
 molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/`; the routing table and the index/log
-procedure are in [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The home boundaries, `type`
+procedure are in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The home boundaries, `type`
 vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
-(`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`,
-`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`).
+(`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md`,
+`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md`).
 
 ## Doctrine
 
@@ -47,7 +47,7 @@ vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
 ## Workflow
 
 ### 1. Classify → home + `type` + mold
-Apply the boundary rules ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)):
+Apply the boundary rules ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)):
 `standards` = "how **we** do it" (an agreed-but-unproven rule is a `standard` with
 `authority: background`) · `reference` = "what we **consume**" · `catalog` = "our
 **data**". Pick the home, its `type`, and the matching mold.
@@ -77,14 +77,14 @@ hand-edit inside the markers. Never add frontmatter to an `index.md`.
 
 ### 6. Enrich the glossary
 If the new concept introduced a **repo-specific term**, add or sharpen its entry in
-`knowledge/glossary.md` per **Enriching the glossary** in [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+`knowledge/glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 (the tail step every capture runs; on-demand counterpart `/quenching:knowledge:define`, bulk counterpart
 `/quenching:knowledge:glossary-backfill`).
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) —
-the same checks the installed `okf-validate.py` hook (if wired) machine-verifies on write;
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) —
+the same checks the installed `cq knowledge hook` (if wired) machine-verifies on write;
 `/quenching:knowledge:align` re-validates the whole bundle on demand.
 
 ## Special cases

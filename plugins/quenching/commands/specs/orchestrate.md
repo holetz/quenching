@@ -42,13 +42,13 @@ human on the same screen; the human's OK is the run's authorization.
   stage runs, how `complexity` derives the plan, and the signals that move a gear up. A repo that
   does not carry it has no gears to derive: say so and stop before the plan.
 - [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-  §Derived stages §Frontmatter §The `specs.py` tool surface — the derived stage is the dispatch,
+  §Derived stages §Frontmatter §The `cq specs` tool surface — the derived stage is the dispatch,
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface
   this command reads.
 
 ## Doctrine
 
-- **The derived stage picks the stage; never read the sections to dispatch.** `specs.py status
+- **The derived stage picks the stage; never read the sections to dispatch.** `cq specs status
   --spec <slug> --json` is the dispatch. The conductor enters the cycle where the spec is; a
   stage the derived stage has passed is skipped, never re-run.
 - **ONE gears plan before any write.** The plan derives from the gears contract (§Deriving the
@@ -78,7 +78,7 @@ human on the same screen; the human's OK is the run's authorization.
 ## Workflow (stage → gears plan → one OK → stages → re-evaluate → report)
 
 ### 1. Resolve the spec
-Take the slug from the input, infer it from the conversation, or run `specs.py list --json` and
+Take the slug from the input, infer it from the conversation, or run `cq specs list --json` and
 ask with **AskUserQuestion** (most recently modified marked "(Recommended)"). Two matches for one
 slug is exit 2 — report both paths and stop, never guess which was meant. An archived spec has
 nothing to conduct: say so and stop.
@@ -86,8 +86,8 @@ nothing to conduct: say so and stop.
 
 ### 2. Read the state in one call
 ```bash
-specs.py status --spec <slug> --json    # derived stage, records, tasks, gate, verification
-specs.py config --json                  # backend, integrationBranch
+cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
+cq specs config --json                  # backend, integrationBranch
 ```
 The derived stage is the dispatch (Doctrine). Nothing else is read here — each stage reads what it
 needs when it runs.
@@ -134,7 +134,7 @@ smaller than the work is [agents.md](/docs/standards/automation/agents.md).
 recorded.
 
 ### 5. Re-evaluate the gear, and re-derive the stage
-At the end of every stage, read the state again (`specs.py status --spec <slug> --json`) and
+At the end of every stage, read the state again (`cq specs status --spec <slug> --json`) and
 re-evaluate the gear per the gears contract (§Re-evaluating a gear). Two outcomes:
 
 - **The gear held, and the stage moved** → return to step 4 for the stage the new derived stage
