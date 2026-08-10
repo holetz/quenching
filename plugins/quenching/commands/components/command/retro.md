@@ -24,7 +24,7 @@ A command body is otherwise only ever revised from taste. The session that ran i
 evidence of what it cost, what it repeated, where it misfired and what the human had to fix —
 and that evidence is discarded when the session ends. This command reads it back.
 
-**Counting is the extractor's job, never yours.** `${CLAUDE_PLUGIN_ROOT}/assets/bin/session.py`
+**Counting is the extractor's job, never yours.** `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session`
 reads the transcript JSONL and returns a bounded digest; you read the digest and judge it. It
 resolves the transcript itself (explicit path, bare session id, or the newest session for this
 cwd), so this body never globs `~/.claude/projects/**`. Invoke it by its literal resolved path
@@ -42,7 +42,7 @@ any remainder names the command to analyse. Pass **only** the transcript token b
 carry the rest to step 2; nothing given → pass nothing and let the tool resolve this session.
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/session.py list --json <transcript-or-nothing>
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session list --json <transcript-or-nothing>
 ```
 Exit 2 is a refusal carrying its reason — an absent transcript, an empty one, or a non-empty
 one that yielded no command. Show the reason and stop; a session that proved nothing is never
@@ -58,7 +58,7 @@ to the session opener.
 
 ### 3. Get its evidence
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/session.py digest --command "<chosen>" --json <transcript-or-nothing>
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session digest --command "<chosen>" --json <transcript-or-nothing>
 ```
 An unknown `--command` refuses with exit 2 and lists what the session did hold — reach step 2's
 question rather than repeating the call.
@@ -104,21 +104,21 @@ did not count is offered as an observation in plain words, never dressed as a fi
 ### 6. Hand each finding to the command that closes it
 End every finding with the `/quenching:components:command:new` invocation that would fix the body, phrased so it can
 be run as-is. Where a finding is about the target repo's contracts rather than the command's
-wording, name `/quenching:docs:add` instead.
+wording, name `/quenching:knowledge:add` instead.
 **Done when:** each finding names the one command that closes it.
 
 ### 7. Self-check
 Confirm the report matches what ran: the transcript and command analysed are named, the
-evidence arm is stated (`session.py` on the transcript, or in-context reflection when the
+evidence arm is stated (`cq components session` on the transcript, or in-context reflection when the
 transcript was unreachable), every count is marked exact or upper-bound, and no command body
-was edited. State the `session.py` exit code.
+was edited. State the `cq components session` exit code.
 **Done when:** the report names its source, its arm, and its exit code, and the surface is
 unchanged.
 
 ## Invariants
 
 - Analyse ONE command per run, chosen by the human when the session held several.
-- Take every count from `session.py`. Never count tool calls by recalling the session, and
+- Take every count from `cq components session`. Never count tool calls by recalling the session, and
   never state a number the digest did not produce.
 - Speak an unclosed command's counts as an upper bound, always naming the conductor whose
   turns they may include.

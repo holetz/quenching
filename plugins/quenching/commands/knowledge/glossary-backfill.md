@@ -16,10 +16,10 @@ consolidated pass. This is a **retroactive, whole-bundle** sweep, not a capture:
 writes a `knowledge/` concept doc and never asks the human what a term means — those stay
 `/quenching:knowledge:learn`'s job. The glossary format and the shared **Enriching the glossary**
 procedure live with `/quenching:knowledge:add`
-([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)); the
+([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)); the
 `type` vocabulary and conformance rules with `/quenching:knowledge:align`
-([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)). The fan-out convention
+([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)). The fan-out convention
 (bounded recon, sliced `Task` agents, compact partials, one merged plan) follows
 `/quenching:knowledge:import-memory`, the only other skill in this plugin that uses `Task`.
 
@@ -97,7 +97,7 @@ command writes; the count of terms added and refined belongs in the report, not 
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
 plus this skill's own gate: the list is still sorted and its links resolve.
 
 ## Invariants to never violate

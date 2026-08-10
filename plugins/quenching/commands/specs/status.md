@@ -17,10 +17,10 @@ it is also the sweep's honest preview: the plan you would be authorizing, before
 reads the same two payloads `/quenching:specs:align`'s probe reads, which is what lets the two agree: a
 status view that disagreed with the sweep would be worse than none.
 
-The workspace facts (layout, the fourteen sections, the derived stages, the `specs.py` surface)
+The workspace facts (layout, the fourteen sections, the derived stages, the `cq specs` surface)
 live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §The
+§The `specs/` layout §The fourteen sections §Derived stages §The `cq specs` tool surface §The
 report mold, which owns the shape step 4 prints in;
 every `sp-*` code and what the sweep would do about it, plus where the front is configured and what
 the declared backend decides, in
@@ -51,7 +51,7 @@ point.
   defect — most specs carry two or three, and that is normal.
 - **Cheap by construction, and never through a path.** One `doctor`, one `validate`, one
   `list --json` — which carries the records, so no spec file is opened at all. Reach for
-  `specs.py status --spec <slug> --json` **only** for a spec the user named. A dozen active specs
+  `cq specs status --spec <slug> --json` **only** for a spec the user named. A dozen active specs
   must not cost a dozen payloads. Never fan out sub-agents: there is nothing here a sub-agent could
   parallelize that the tool does not already answer in one call.
 - **Never infer completion, never rank, never judge.** A spec whose tasks are all checked is *ready
@@ -61,7 +61,7 @@ point.
 ## Workflow (one read, one report)
 
 ### 1. Resolve the tool + workspace
-Resolve `specs.py` per
+Resolve `cq specs` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool, invoked via `python3`/`py`. Resolve the `/.specs/` root at the repo root.
 
@@ -72,9 +72,9 @@ that `/quenching:specs:align` would migrate it.
 
 ### 2. Collect (read-only)
 ```bash
-specs.py doctor --json
-specs.py validate --json
-specs.py list --json
+cq specs doctor --json
+cq specs validate --json
+cq specs list --json
 ```
 `list --json` carries each spec's seven `records` already, so **there is no per-spec file to
 open** — asking the tool is also the only form that survives a backend where the specs are issues
@@ -82,7 +82,7 @@ and `/.specs/plans/*.md` does not exist. Then read `/.docs/index.md` for `okf_ve
 under a suspected legacy migration — `Glob` the `openspec/` tree and the shadow copies
 (`.claude/skills/openspec-*/SKILL.md`, `.claude/commands/opsx/*.md`).
 
-Add `specs.py status --spec <slug> --json` **only** when the user named a spec. Every one of these
+Add `cq specs status --spec <slug> --json` **only** when the user named a spec. Every one of these
 writes nothing.
 **Done when:** every source is read and nothing has been written.
 
@@ -93,13 +93,13 @@ Map each observation onto a code from
 auto-closes), keeping its two tables intact — what the sweep **fixes** versus what it only
 **reports**. Every code is the
 sweep's; this command contributes none of its own. Without an OKF bundle, note once that a legacy
-`openspec/` fold could not complete (main specs have nowhere to land) and mention `/quenching:docs:align`.
+`openspec/` fold could not complete (main specs have nowhere to land) and mention `/quenching:knowledge:align`.
 **Done when:** every observation carries a code and lands in exactly one table.
 
 ### 4. Report
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -139,7 +139,7 @@ suggestion and never an offer, which is the mold's rule for this command.
 
 - Never write, anywhere, for any reason — not a stamp, not a zone, not a log line, not a marker. If
   something looks wrong enough to fix, name the command that fixes it and stop.
-- Never run `specs.py status --spec <slug>` per active spec by default — only for one the user
+- Never run `cq specs status --spec <slug>` per active spec by default — only for one the user
   named.
 - Never open a spec file to read its records. `list --json` carries them, and a path read answers
   only while the backend happens to be `files`.

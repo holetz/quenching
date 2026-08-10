@@ -14,16 +14,16 @@ item a human named. This one only looks — and because it looks at exactly what
 at, it is also their honest preview: the plan you would be authorizing, before you authorize it.
 
 It exists because structural conformance is compatible with a knowledge base that knows nothing.
-`okf-validate.py` can return exit 0 on a bundle of empty homes and a placeholder glossary, and
+`cq knowledge validate` can return exit 0 on a bundle of empty homes and a placeholder glossary, and
 until this skill there was no way to learn what `/quenching:knowledge:align` would do except to invoke the
 invasive skill and read the plan from inside it.
 
 The conformance codes and their severities live in
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md);
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md);
 the finding → owning-command routing in
-[docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md);
+[knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md);
 the homes and the insert procedure in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
 All three are **cited, never restated** — this skill owns no contract of its own, which is the
 point: a status view that disagreed with the sweep would be worse than none.
 
@@ -33,7 +33,7 @@ point: a status view that disagreed with the sweep would be worse than none.
   status read that changed the thing it read would break its own contract and make the preview
   a lie.
 - **Report in the validator's vocabulary.** Every finding carries the code
-  [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) defines and the command that
+  [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) defines and the command that
   closes it. Never invent a code, never soften one, and never report a finding the sweep would not
   raise — the value is that the two agree.
 - **Density is reported, never coded as a finding.** Empty homes, thin homes, and a one-entry
@@ -44,7 +44,7 @@ point: a status view that disagreed with the sweep would be worse than none.
   it: what `/quenching:knowledge:align` fixes on one OK, what its later stages then drive, and what neither
   closes because it needs a human. A reader must be able to tell what a sweep would
   actually do to their repo.
-- **Cheap by construction.** One `okf-validate.py --json` over the bundle, one glob, and reads of
+- **Cheap by construction.** One `cq knowledge validate --json` over the bundle, one glob, and reads of
   the few files the report names. Never fan out sub-agents: the validator already answers in one
   call what a sub-agent would be sent to re-derive.
 - **Never judge, never rank, never infer.** An empty home is not a defect, an unlinked glossary
@@ -55,7 +55,7 @@ point: a status view that disagreed with the sweep would be worse than none.
 
 ### 1. Resolve the bundle
 Resolve the bundle at its fixed root `/.docs/` at the repo root — the root is never read from
-config. Resolve `okf-validate.py` per
+config. Resolve `cq knowledge` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Invoke via `python3`/`py`; branch on the **exit code** and the `--json`,
 never on prose.
@@ -66,8 +66,8 @@ never on prose.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `okf-validate.py /.docs --json` — every conformance finding, with `stale-doc` included, since
-  this is CLI mode (per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
+- `cq knowledge validate /.docs --json` — every conformance finding, with `stale-doc` included, since
+  this is CLI mode (per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
   §Staleness, it never runs in the hook path).
 - `Glob` `/.docs/**/*.md` for the density counts, and read `/.docs/index.md`, each home's `index.md`,
   and `/.docs/knowledge/glossary.md`.
@@ -82,8 +82,8 @@ every conformance row as unverified rather than reporting a clean bundle.
 
 ### 3. Classify against the sweeps' own codes
 Map each finding onto a code from
-[conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md), and route it with
-[cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s routing table — which
+[conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md), and route it with
+[cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md)'s routing table — which
 already says, per row, whether the align auto-closes it. Contribute no code and no routing of your
 own: a row the table does not cover is reported under "closed by neither" with the reason, never
 invented into a fix.
@@ -102,7 +102,7 @@ One report, in this order:
 2. **Density** — the table §5 defines. It comes *before* the findings, because a bundle with no
    findings and no content is the case this skill exists to make visible.
 3. **Would be fixed by `/quenching:knowledge:align`** — the codes
-   [cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s table marks auto-closed by
+   [cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md)'s table marks auto-closed by
    stage 1 (`dir-no-index`, `index-broken-link`, `index-orphan`, un-stamped or mis-stamped
    frontmatter, variant folder names, prefix-clusters, non-English slugs), with counts. Name which
    would be **code-coupled** — a rename whose blast radius reaches product code — and so would

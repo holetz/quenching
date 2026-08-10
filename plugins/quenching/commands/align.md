@@ -14,7 +14,7 @@ one that spans all three.
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `/.docs/` — the OKF bundle | `/quenching:docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
+| 1 | `/.docs/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `/.specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
 | 3 | `.claude/` — the automation surface | `/quenching:components:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
@@ -62,7 +62,7 @@ here, not three edits that must stay in agreement.
     front's glossary stage must now index those terms.
   - `/quenching:components:align` **creates** the rule and registry in `/.docs/` → the `docs` front's `index.md`
     must list them.
-  - `/quenching:docs:align`'s **harness** stage moves a fact into `/.docs/` that a `/.specs/` spec should now
+  - `/quenching:knowledge:align`'s **harness** stage moves a fact into `/.docs/` that a `/.specs/` spec should now
     cite instead of restating.
   A single cross-front pass would leave every one of those half-done.
 - **One OK for the whole repo; authorization nests one level.** The gate fires **once**, before
@@ -89,18 +89,18 @@ here, not three edits that must stay in agreement.
 Presence and rough scale only — **not** a full inventory, which each align does for itself, and
 each already probes before paying for one:
 - **`/.docs/`** — does the bundle root exist (`/.docs/index.md` with `okf_version`)? Run
-  `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py /.docs --json` and keep
+  `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate /.docs --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
-- **`/.specs/`** — does a `/.specs/` root exist? If yes, `specs.py doctor --json` and
-  `specs.py list --json` for the spec count and how many read complete.
-- **.claude/** — `skills.py doctor --json` for the command count and its findings; `Glob`
+- **`/.specs/`** — does a `/.specs/` root exist? If yes, `cq specs doctor --json` and
+  `cq specs list --json` for the spec count and how many read complete.
+- **.claude/** — `cq components doctor --json` for the command count and its findings; `Glob`
   `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
   noting how many are legacy CLI-generated `openspec-*` shadow copies (front 2 clears those when
   migrating a legacy `openspec/` workspace).
 - **the legacy tool copies** — one call, spanning all three fronts:
   ```bash
-  python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+  python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
   ```
   It reports any copy still sitting under `.claude/hooks/` from before resolution went
   plugin-first. Run it from the **plugin path**, never from `.claude/hooks/skills.py`: a legacy
@@ -130,8 +130,8 @@ inherits this OK and will not ask again; only a rename touching product code and
 close-out still confirm on their own."* Wait for **one** OK.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
-### 3. Front 1 — `/quenching:docs:align` (the `/.docs/` bundle)
-Invoke via the **Skill** tool under its registry name **`quenching:docs:align`** — the command path
+### 3. Front 1 — `/quenching:knowledge:align` (the `/.docs/` bundle)
+Invoke via the **Skill** tool under its registry name **`quenching:knowledge:align`** — the command path
 prefixed by the plugin. Every front below is named the same way; the three forms and the condition
 on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
 §7. Citing a command.
@@ -179,7 +179,7 @@ are **not** progress and never justify another cross-front pass.
 ### 7. Consolidated report
 One report, front by front: passes run, what each front's stages did in total, its ending verify
 state (validator findings · `doctor`/`validate` · registry-vs-disk), and — explicitly — everything
-**deferred**, each with the command that closes it (`/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`,
+**deferred**, each with the command that closes it (`/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:knowledge:define`,
 `/quenching:specs:develop`, `/quenching:specs:conclude`, `/quenching:components:command:new`). Name the cross-front edges that actually fired,
 so the loop's value is visible.
 

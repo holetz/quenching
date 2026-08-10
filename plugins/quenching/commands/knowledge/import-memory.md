@@ -12,11 +12,11 @@ Promotes the durable facts the user has accumulated in **project memory** into t
 OKF `/.docs/` bundle, then clears them from memory — so knowledge that was living in
 `~/.claude/projects/<cwd>/memory/` becomes conformant docs anyone browsing the repo can find.
 Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The memory-type → home routing
-and the deletion contract are in [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md);
+and the deletion contract are in [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md);
 the home boundaries, `type` vocabulary, molds, and index/log procedure are shared with
-`/quenching:knowledge:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) and
-`/quenching:knowledge:align` ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)). Molds live at
+`/quenching:knowledge:add` ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)) and
+`/quenching:knowledge:align` ([knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md),
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)). Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/`.
 
 ## Doctrine
@@ -32,7 +32,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   and `knowledge/` — plus `/.specs/plans/` for a **unit of work** (a quenching-managed folder
   outside the OKF bundle). A memory whose natural fit is a
   `vision`, `documentation`, or `reference` doc is **re-routed to the nearest of the three** per the routing
-  table ([docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md)); a memory that fits none of
+  table ([knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)); a memory that fits none of
   them **stays** in memory and is flagged (like a `user`/unroutable fact). Never create a
   `vision/`, `documentation/`, `reference/`, or `catalog/` doc from a
   memory.
@@ -54,7 +54,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   a single pass, you **MAY** split the memory dir into disjoint slices (by count, ~10–15 memories
   per agent, or by the filename type-prefix `feedback_*` / `project_*` / `reference_*`) and dispatch
   a sub-agent per slice (via `Task`) to read the full bodies for its slice and classify against
-  [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md), each returning a partial table. The
+  [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md), each returning a partial table. The
   orchestrator stays metadata-first — it only reads `MEMORY.md` + frontmatter to draw the slice
   boundaries and merge partials; the sub-agents are the only readers of full bodies. Dispatch
   **classification** sub-agents with `model: sonnet`, `effort: low` — routing a fact to its home is
@@ -73,7 +73,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   with no documentary home **stays** in memory and is reported. Deletion is only ever the tail of
   a successful migration.
 - **Content decides the home; `metadata.type` is a hint.** Route by what the fact IS
-  ([docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md)), reusing `/quenching:knowledge:add`'s home
+  ([knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md)), reusing `/quenching:knowledge:add`'s home
   boundaries. Split a memory that carries several facts into one concept per file.
 - **Salvage, don't transcribe.** A memory is terse; the doc is structured. Keep the
   `**Why:**`/`**How to apply:**` prose in the body, derive `resource` honestly (never invent),
@@ -94,7 +94,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   case is not stable.
 
 **Why `Bash` is scoped here.** `python3`/`py` runs the Step 1 resolver and the two checkers
-(`specs.py`, `okf-validate.py`); `rm` deletes a memory file once its doc has landed and
+(`cq specs`, `cq knowledge validate`); `rm` deletes a memory file once its doc has landed and
 self-checked. Nothing else in this command needs a shell — the reconnaissance is `Read`/`Glob`
 and the edits are `Write`/`Edit`.
 
@@ -166,12 +166,12 @@ every platform. Never enumerate the whole tree (`catalog/` and `reference/reposi
 overflow the session):
 
 - `Read` — `/.docs/standards/index.md` and `/.docs/knowledge/index.md` (the honest listings; a missing
-  file just means that home is empty). For what `/.specs/plans/` already holds, `specs.py list --json`
+  file just means that home is empty). For what `/.specs/plans/` already holds, `cq specs list --json`
   derives it from disk — there is no listing file to read.
 - `Glob` — `/.docs/standards/*/index.md` and `/.docs/knowledge/*/index.md` for the existing subject
   folders, so a new concept path does not collide. One level only, and never a recursive file dump.
 
-Then apply [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md): map by content (type is a
+Then apply [knowledge-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import-memory/memory-routing.md): map by content (type is a
 hint) to its destination, `type`, and mold. This skill writes to **only** `standards/` and
 `knowledge/` (in `/.docs/`) plus `/.specs/plans/` (a spec); a memory whose natural fit is `vision`,
 `documentation`, or `reference` is **re-routed to the nearest of the three** per the routing table, and a
@@ -186,14 +186,14 @@ will dangle. **Wait for a single confirmation** before writing anything.
 ### 5. Per memory: write, verify, then delete
 For each **migrate** row that lands in `/.docs/` (`standards/` / `knowledge/`), run the full insert
 procedure exactly as
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) specifies it —
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) specifies it —
 stamp → index → log → glossary → self-check (against
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)) —
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)) —
 with this skill's deltas kept inline:
 - `source` defaults to "project memory"; salvage the terse body into a structured doc; the log
   line is `**Creation**: [<title>](/.docs/<path>.md) — migrated from project memory`.
-- A **unit of work** row instead follows the `/quenching:specs:create` path: run `specs.py new <slug>` and
-  write the memory's content into `## Problem` and nothing else, then `specs.py validate --spec
+- A **unit of work** row instead follows the `/quenching:specs:create` path: run `cq specs new <slug>` and
+  write the memory's content into `## Problem` and nothing else, then `cq specs validate --spec
   <slug>` as the self-check per
   [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   (the OKF hook does not cover `/.specs/`); the bundle-log line is
@@ -210,7 +210,7 @@ with this skill's deltas kept inline:
 ### 6. Report
 Summarize: docs created (by home), memories deleted, and memories **kept** (with the reason —
 `user`/unroutable/failed insert) so the user can decide on those. Leave `MEMORY.md` in place even
-if it ends empty. If the `okf-validate.py` hook is wired, it machine-verifies each write.
+if it ends empty. If the `cq knowledge hook` is wired, it machine-verifies each write.
 
 ## Invariants to never violate
 

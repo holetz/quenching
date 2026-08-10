@@ -1,5 +1,5 @@
 ---
-description: Force /.docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.docs/", "converge the knowledge base". Probes okf-validate.py plus two cheap out-of-band signals before reading anything, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them. Not for: adding ONE doc → /quenching:knowledge:add; capturing ONE fact a human just stated → /quenching:knowledge:learn; ONE glossary term → /quenching:knowledge:define; importing an external source → /quenching:knowledge:import; reading the bundle without changing it → /quenching:knowledge:status; the mkdocs site layer → /quenching:knowledge:documentation:build.
+description: Force /.docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.docs/", "converge the knowledge base". Probes cq knowledge validate plus two cheap out-of-band signals before reading anything, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them. Not for: adding ONE doc → /quenching:knowledge:add; capturing ONE fact a human just stated → /quenching:knowledge:learn; ONE glossary term → /quenching:knowledge:define; importing an external source → /quenching:knowledge:import; reading the bundle without changing it → /quenching:knowledge:status; the mkdocs site layer → /quenching:knowledge:documentation:build.
 argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
@@ -18,16 +18,16 @@ into a tree that is not there, and a glossary swept before the content lands mis
 them cost an entry point and bought a second thing to remember to run.
 
 The payload (skeleton, molds, validator) lives at `${CLAUDE_PLUGIN_ROOT}/assets/`; the contract at
-`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/`:
+`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/`:
 
-- [docs-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/okf-spec.md) — the normative OKF v0.1 rules (MUST/SHOULD/MAY).
-- [docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md) — the canonical tree, homes, `type` vocabulary, boundaries.
-- [docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md) — variant→canonical map + blast-radius doctrine.
-- [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) — the exact checks the validator applies.
-- [docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md) — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
+- [knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md) — the normative OKF v0.1 rules (MUST/SHOULD/MAY).
+- [knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) — the canonical tree, homes, `type` vocabulary, boundaries.
+- [knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) — variant→canonical map + blast-radius doctrine.
+- [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) — the exact checks the validator applies.
+- [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) — the stage pipeline, the parallel-prep flow, and the finding → owning-command routing table.
 
-The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`
-(`python3 okf-validate.py /.docs` → exit 0 = conforms). Invoke it by its **literal quoted
+The executable checker is `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`
+(`python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate /.docs` → exit 0 = conforms). Invoke it by its **literal quoted
 path** on every call, never through a shell variable holding the interpreter plus the path —
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Write the resolved path literally on every invocation.
@@ -87,7 +87,7 @@ Read it as this command's doctrine. What follows is only what is **specific to `
 Resolve the bundle at its fixed root `/.docs/`, then read all three signals and nothing
 else:
 ```bash
-okf-validate.py /.docs --json          # structure: exit 0 = conformant
+cq knowledge validate /.docs --json          # structure: exit 0 = conformant
 ls ~/.claude/projects/<cwd>/memory/    # out-of-band store 1: any undrained memory?
 ```
 plus one `Read` of each harness file that exists (`CLAUDE.md`, `AGENTS.md`) — a fat one inlines
@@ -109,11 +109,11 @@ install case, and step 4 scaffolds it.
 ### 2. Inventory + map → the alignment plan (read-only)
 Detect the existing sections, which docs carry frontmatter, and match each section to a canonical
 home via the variant→canonical map
-([docs-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md)) —
+([knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)) —
 top-level (`arquitetura/`→`standards/`) and subfolder (`codigo/`→`code/`). Read
-[docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) and
+[knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) and
 route every probe finding to its owner via
-[docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s table. Produce
+[knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md)'s table. Produce
 the plan — enumerate:
   - **(a)** homes to scaffold (only those that apply);
   - **(b)** variants to migrate/rename (with per-item destination);
@@ -183,7 +183,7 @@ plan was rejected and nothing was written.
 All three are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
 **The enforcement hook needs no install.** The plugin's own `hooks/hooks.json` wires
-`okf-validate.py` on `PostToolUse`/`Stop` automatically, from the plugin path — nothing is copied
+`cq knowledge hook` on `PostToolUse`/`Stop` automatically, from the plugin path — nothing is copied
 into the target's `.claude/hooks/` and nothing is merged into its `.claude/settings.json`. Set
 The bundle root is the fixed `/.docs/` convention — no config names it.
 
@@ -192,10 +192,10 @@ The bundle root is the fixed `/.docs/` convention — no config names it.
 one call answers whether either is still there:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
 ```
 
-Read this front's row (`okf-validate.py`) and act on it: a legacy copy present → offer
+Read this front's row (`cq knowledge`) and act on it: a legacy copy present → offer
 **removal**; absent → nothing to do. Never offer to install, overwrite or refresh one — the
 plugin path is the only wiring now.
 
@@ -243,7 +243,7 @@ is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctr
 2. `quenching:components:harness:align` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
 
 The order and the reason for it are
-[docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md) §The stage
+[knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md) §The stage
 pipeline's, not this body's. When **both** have work this pass, follow its §Parallel prep —
 harness's read-only discovery runs in a background `Task` agent while the drain executes inline.
 **Writes to `/.docs/` are one stage at a time, always.**
@@ -264,7 +264,7 @@ run. Never run the sweep to discover whether it had work.
 the offer was deliberately not made.
 
 ### 8. Verify, then decide: loop or stop
-Re-run `okf-validate.py /.docs --json` and confirm: every non-reserved doc has frontmatter and a
+Re-run `cq knowledge validate /.docs --json` and confirm: every non-reserved doc has frontmatter and a
 non-empty `type`; every `index.md` is frontmatter-free (root only `okf_version`); and the
 **structural-integrity WARNs are cleared — zero `dir-no-index`, `index-broken-link`,
 `index-orphan`** (these are WARN, so exit 0 alone does not prove them clean — inspect the

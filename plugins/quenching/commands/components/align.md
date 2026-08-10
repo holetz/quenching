@@ -18,11 +18,11 @@ Structure and content are one command because both audits only become possible o
 has run: a body still sitting in `skills/<name>/SKILL.md` is not yet at the path that will be
 judged, and a collapsed pair's surviving description is the wrapper's, which §6 decides. The axis,
 naming, placement, and registry format live in
-[skill-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md);
+[components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md);
 the writing doctrine judged against is
-[skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md);
+[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md);
 the capability levers the wider inventory reads against are
-[skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md) —
+[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md) —
 all owned by the sibling and cited here, never restated. Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
 
@@ -69,13 +69,13 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
   that owns it (`/quenching:components:agent:new`, `/quenching:components:hook:new`) — no rename, no move, no write, so
   the confirmed plan's write set stays exactly the command surface's.
-- **The registry ends the run honest.** `skills.py registry reindex` regenerates the GENERATED
+- **The registry ends the run honest.** `cq components registry reindex` regenerates the GENERATED
   zone from the post-migration surface, and a second run reporting `changed: false` is what
   proves it matches disk; residue is reported, never silently dropped.
 
 ## Resolving the tool
 
-Resolve `skills.py` per
+Resolve `cq components` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
@@ -96,7 +96,7 @@ segments, the caps, trigger position, the `Not for:` boundary, body length, step
 unscoped `Bash`. Neither decides the **axis**: naming the one folder a command acts on is a claim
 about what it is *for*, which no parser makes. Classification stays a read.
 
-**Neither does the tool see a legacy pair.** `skills.py` reads `commands/**` and nothing else, so
+**Neither does the tool see a legacy pair.** `cq components` reads `commands/**` and nothing else, so
 a leftover `skills/<name>/SKILL.md` is invisible to it — the collapse in §6 is found by `Glob`
 and reported by this sweep, never by a `sk-*` code.
 
@@ -105,9 +105,9 @@ and reported by this sweep, never by a `sk-*` code.
 ### 1. Probe — the two calls that decide whether anything else runs
 Before any inventory, ask the tool whether there is work at all:
 ```bash
-skills.py doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
+cq components doctor --json   # descriptions, duplicate / paths, non-canonical segments — plus
                           # the report-only wider surface: agents/ and wired hooks (sk-agent-*, sk-hook-*)
-skills.py lint --json     # per-command conformance, one sk-* code per gap — including the
+cq components lint --json     # per-command conformance, one sk-* code per gap — including the
                           # description codes §8 reports before → after (sk-metadata-cap,
                           # sk-description-portable, sk-trigger-position, sk-no-boundary)
 ```
@@ -149,7 +149,7 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 `/quenching:specs:align`* and drop them from the working set, including from the tool's findings.
 
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
-test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md) §The single axis — several unrelated folders
+test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `/.docs/standards/automation/skills.md` if present — it governs; note whether
 the rule and the registry (`/.docs/documentation/reference/automation.md`) exist, and whether
 the rule and the registry (`/.docs/documentation/reference/automation.md`) exist.
@@ -188,19 +188,19 @@ the cap, triggers second sentence — bodies untouched), write rule and registry
 when planned, update each code-coupled reference site alongside its individually confirmed
 rename.
 
-**Offer to remove a legacy copy of the front's tool.** `skills.py` always resolves via the plugin
+**Offer to remove a legacy copy of the front's tool.** `cq components` always resolves via the plugin
 path now, so a copy under the target's `.claude/hooks/` does nothing but drift — never install or
 refresh one. **Ask the tool rather than comparing by hand** — one call covers all three fronts'
 copies:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
+python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
 ```
 
 Run it from the **plugin path**: an installed copy would answer from the same stale `VERSION` it
-is being asked about, and refuses (exit 2) instead. Act on this front's row (`skills.py`): a
+is being asked about, and refuses (exit 2) instead. Act on this front's row (`cq components`): a
 legacy copy present → offer **removal**; absent → nothing to do. The same one call is what
-`/quenching:specs:align` reads for `specs.py` and `/quenching:docs:align` for `okf-validate.py`, so a run of any one of
+`/quenching:specs:align` reads for `cq specs` and `/quenching:knowledge:align` for `cq knowledge validate`, so a run of any one of
 them can report the other two fronts' drift without a second probe.
 
 **Done when:** every confirmed row is applied, and no stale `.claude/hooks/skills.py` copy
@@ -248,7 +248,7 @@ Two kinds of evidence, kept apart in the report because they are not the same cl
   `sk-description-portable`, `sk-metadata-cap`. A code names a **threshold crossed**.
 - **What only a read can judge.** For each remaining body: the no-op test, sediment, sprawl,
   positive prescription, and whether shared procedure is **cited rather than restated**
-  ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md)). A read names a
+  ([doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)). A read names a
   **claim about behaviour**, and no parser makes one.
 
 **Collection may be delegated; judgment may not.** On a surface large enough that reading every
@@ -286,7 +286,7 @@ human picking it out of the `/` menu, who has no routing to fall back on
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in
-[skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/doctrine.md)
+[components-command-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/doctrine.md)
 §The three slots — owned there, never restated here. What this stage does with each verdict:
 
 | Verdict | Action |
@@ -317,10 +317,10 @@ deleted.
 ### 9. Verify, decide, report
 Regenerate the zone, then let the tool judge the surface the migration produced:
 ```bash
-skills.py registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
-skills.py doctor --json             # the surface invariant the migration just changed
-skills.py lint --json               # the gaps the migration was supposed to close — §8's codes
-skills.py registry reindex --json   # `changed: false` — the zone now matches disk
+cq components registry reindex --json   # the zone, from the post-migration surface and §8's descriptions
+cq components doctor --json             # the surface invariant the migration just changed
+cq components lint --json               # the gaps the migration was supposed to close — §8's codes
+cq components registry reindex --json   # `changed: false` — the zone now matches disk
 ```
 Every renamed reference site greps clean, and no citation still points into a deleted
 `skills/` tree. `reindex` runs **after** §8, never before: the zone's `Typical trigger` column is
@@ -339,7 +339,7 @@ three slots proposes nothing on a second reading — so a second pass runs §8 o
 nothing left to say, and never to re-open a table the human already answered.
 
 In an OKF repo, confirm the registry is indexed, per
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The migration
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). The migration
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every `sk-*` finding that survived the run, by code; §7's doctrine findings, listed

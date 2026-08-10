@@ -1,5 +1,5 @@
 ---
-description: Wire ONE scoped hook — the narrowest scope and the cheapest handler that still catch what it must. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Walks the scope ladder, states the hook's cost claim, and applies on one OK — warn by default, block only by the human's word. Not for: a command → /quenching:components:command:new; a subagent → /quenching:components:agent:new; the /.docs/ conformance hook → /quenching:knowledge:align (it installs and upgrades okf-validate.py).
+description: Wire ONE scoped hook — the narrowest scope and the cheapest handler that still catch what it must. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Walks the scope ladder, states the hook's cost claim, and applies on one OK — warn by default, block only by the human's word. Not for: a command → /quenching:components:command:new; a subagent → /quenching:components:agent:new; the /.docs/ conformance hook → /quenching:knowledge:align (it installs and upgrades cq).
 argument-hint: [what-the-hook-should-catch]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
@@ -12,7 +12,7 @@ failure).
 Installs or edits **ONE hook** in the target repo: a wiring (which decides its scope) plus,
 for a `command` handler, a script under `.claude/hooks/`. The scope ladder, the handler
 ladder, and the policy defaults live in
-[skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md)
+[components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
 §Hooks — applied here, never restated. The mold is
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/hook.md`.
 
@@ -23,7 +23,7 @@ ladder, and the policy defaults live in
 - **The rule governs; the plan proposes.** In a target repo the rule is
   `/.docs/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
-  write the hook only, suggest `/quenching:docs:align` once.
+  write the hook only, suggest `/quenching:knowledge:align` once.
 - **One plan, one OK, nothing before.** The check, the rung, the handler, the cost claim,
   the action, and every file appear in ONE plan; a declined plan writes nothing.
 - **MERGE, never clobber.** A `settings.json` block is merged into the existing file; a
@@ -39,7 +39,7 @@ ladder, and the policy defaults live in
 Read `/.docs/standards/automation/hooks.md` and confirm the bundle (`/.docs/index.md` carries
 `okf_version`). Rule present → it governs (a repo delta there beats the plugin default).
 Absent + bundle → plan its creation from the mold. No bundle → note the tail as skipped and
-plan the `/quenching:docs:align` suggestion. **Done when:** the governing rule (or its planned
+plan the `/quenching:knowledge:align` suggestion. **Done when:** the governing rule (or its planned
 creation, or the no-bundle note) is fixed.
 
 ### 2. Name what the hook catches
@@ -49,7 +49,7 @@ stated this way is not a hook yet — it is a doctrine question for the human. *
 the one-sentence check is fixed.
 
 ### 3. Choose the rung and the handler
-Walk [capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md)
+Walk [capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
 §Hooks top-down. Scope: a check tied to ONE command's workflow → its frontmatter `hooks:`; an
 operation → event + `matcher` (+ `if`); a wide event → dirty-gated or `once: true`; unmatched
 session-wide only with the stated reason nothing narrower suffices. Handler: `command` first
@@ -83,13 +83,13 @@ python3 -m json.tool .claude/settings.json          # the merge left valid JSON
 echo '{"hook_event_name":"<other>"}' | python3 .claude/hooks/<name>.py   # fast path → {}
 ```
 Then feed one **matching** synthetic payload and confirm the finding fires with the chosen
-action. A frontmatter wiring is checked with `skills.py lint <owning-command> --json`
+action. A frontmatter wiring is checked with `cq components lint <owning-command> --json`
 instead. **Done when:** the fast path prints `{}`, the matching payload fires, and the wiring
 parses.
 
 ### 8. OKF tail and report
 Bundle present: write the rule if planned, per
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). Report: the
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). Report: the
 check, the installed scope, the cost claim **as installed**, and — for a born-disabled rule —
 the exact line that enables it. **Done when:** the report states the cost claim.
 

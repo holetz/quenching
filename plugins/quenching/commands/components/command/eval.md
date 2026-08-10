@@ -17,7 +17,7 @@ task the model could already do.
 
 The artifact shapes — `evals.json`, `grading.json`, `benchmark.json` — the assertion-quality
 rules, and the description-tuning loop live in
-[skill-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-eval/evaluation.md), adopted from Anthropic's `skill-creator` so
+[components-command-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-eval/evaluation.md), adopted from Anthropic's `skill-creator` so
 this plugin's evals stay readable by the tool most adopting repos already have. This body owns
 the workflow; that file owns the formats and never gets restated here.
 
@@ -34,7 +34,7 @@ the workflow; that file owns the formats and never gets restated here.
   skill taught nothing on those cases — which is information about the skill or about the cases,
   and the report says which it cannot distinguish.
 - **This never duplicates `lint`.** The caps, trigger position, the boundary, body length, step
-  criteria, tool scoping are `skills.py lint`'s and are reported by code. This skill measures
+  criteria, tool scoping are `cq components lint`'s and are reported by code. This skill measures
   **behaviour**; a clean lint is its precondition, not its subject.
 - **Never rewrites the body.** Authoring is `/quenching:components:command:new`'s. A finding here is reported
   with the `/quenching:components:command:new <name>` invocation that acts on it — except the description, which step 7
@@ -43,7 +43,7 @@ the workflow; that file owns the formats and never gets restated here.
 
 ## Resolving the tool
 
-Resolve `skills.py` per
+Resolve `cq components` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`.
@@ -54,7 +54,7 @@ ask with **AskUserQuestion** — never guess which skill is being measured.
 ## Workflow
 
 ### 1. Select the skill and check its floor
-Resolve the skill folder. Run `skills.py lint <skill-folder> --json`: an **error** means the skill
+Resolve the skill folder. Run `cq components lint <skill-folder> --json`: an **error** means the skill
 does not load as intended and any measurement would describe a broken skill — report it and stop.
 A **warn** is noted in the report and does not block.
 **Done when:** one skill is named back to the user and `lint` has run.
@@ -66,7 +66,7 @@ distinct branch the workflow can take; a branch with no case is untested surface
 **Done when:** every branch and every promise is listed.
 
 ### 3. Derive the cases
-Per [skill-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-eval/evaluation.md) §Writing cases: one case per branch, each
+Per [components-command-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-eval/evaluation.md) §Writing cases: one case per branch, each
 a realistic user prompt plus assertions about the **observable outcome** — a file that exists, a
 zone regenerated, a command reported as run — never about the wording of the reply. Include at
 least one case the skill should **decline** (its `Not for:` boundary), and the should-trigger /
@@ -82,7 +82,7 @@ that spawns subagents per run, and the human is authorizing that spend.
 ### 5. Write the case set, then run both arms
 Write `evals.json` into the tree mirroring the command's path — `.claude/evals/<path>/` in a
 target repo, `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/` in this plugin
-([skill-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-eval/evaluation.md)
+([components-command-eval/evaluation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-eval/evaluation.md)
 §Where the artifacts live). Then, per case, dispatch **two** `Task` subagents — one told the
 skill is available, one given the same prompt with no reference to it. Pin both to the session
 model; **never `haiku`** (a cheaper judge changes what the delta measures). Record each arm's
@@ -103,7 +103,7 @@ evidence or an explicit `unknown`.
 Run the should-trigger and should-not-trigger prompts and count how often the description routes
 correctly. A trigger no should-trigger prompt reaches is **sediment**; a should-not-trigger prompt
 that fires is a boundary the description fails to state. Propose the edit, show the measured rates
-behind it, and apply on its own OK — then re-run `skills.py lint` so the caps still hold.
+behind it, and apply on its own OK — then re-run `cq components lint` so the caps still hold.
 **Done when:** the rates are reported and the edit is applied or declined.
 
 ### 8. Report
@@ -120,5 +120,5 @@ it makes the whole run decorative.
 - Never downgrade an arm's model to `haiku`; the delta is only comparable between equal arms.
 - Never rewrite a skill body here — report it with its `/quenching:components:command:new` invocation. The description is
   the single exception, and only under step 7's own confirmation.
-- Never duplicate a `skills.py lint` check; report its findings by code and move on.
+- Never duplicate a `cq components lint` check; report its findings by code and move on.
 - Never hand this command file `context: fork` — steps 4 and 7 gate mid-flow.
