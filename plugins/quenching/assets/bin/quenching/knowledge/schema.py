@@ -1,0 +1,72 @@
+"""The OKF conformance vocabulary — the reserved names, the exempt ones, the recommended
+fields, and the two glob tables every check agrees on.
+
+Moved verbatim out of `assets/hooks/okf-validate.py`, with TWO adjustments: `VERSION` is
+imported from `quenching.common.version` rather than declared a second time, and `HERE`
+is gone — it was dead in the original, computed at import and read by nothing.
+
+THE CONFORMANCE CORE (single source — mirrored in the skills' `references/conformance.md`)
+-----------------------------------------------------------------------------------------
+Reserved filenames: `index.md` (a listing), `log.md` (a retired change history).
+Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts).
+`README.md` in the bundle → WARN (OKF-strict converts it to `index.md`).
+- Every **non-reserved** `.md`  → MUST have parseable YAML frontmatter (ERROR if
+  absent/broken) with a **non-empty `type`** (ERROR if missing/empty). Recommended
+  fields (`title`/`description`/`resource`/`timestamp`) missing → WARN.
+- Every **`index.md`**          → MUST NOT carry a concept `type` (ERROR). A
+  **non-root** `index.md` MUST carry no frontmatter at all (ERROR). The **root**
+  `index.md` (at the bundle root) MAY carry frontmatter but only `okf_version`
+  (other keys → WARN); it SHOULD declare `okf_version: "0.1"` (missing/other value → WARN).
+- Every **`log.md`**            → **retired**. Nothing produces it and nothing checks
+  it, but the name stays reserved and stays out of the hard block, so a log surviving
+  in an already-aligned bundle is recognized rather than read as a malformed concept
+  doc. Retired is not unknown.
+
+The bundle root is the fixed `/.docs/` convention — no knob names it, and no config moves it.
+"""
+from __future__ import annotations
+
+import re
+
+TAG = "okf"
+# `log.md` is RETIRED, not unreserved: it keeps its slot here (and its skip in the
+# PreToolUse hard block) so a log surviving in an already-aligned bundle stays
+# recognized. Drop it from this tuple and every such file falls through to the
+# concept-doc path — `missing-type` at ERROR, and denied writes under `hardBlock`.
+RESERVED = ("index.md", "log.md")
+# The bundle's one fixed concept doc, at a path the OKF contract pins. Its links are
+# its content, so it is link-checked alongside the reserved listings.
+GLOSSARY_REL = "knowledge/glossary.md"
+# Navigation/payload files — never OKF concepts, never required to carry a `type`.
+# `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness. Skip both.
+EXEMPT = ("CLAUDE.md", "AGENTS.md")
+RECOMMENDED = ("title", "description", "resource", "timestamp")
+# Types for which `resource` is deliberately absent, so its WARN would be permanent noise.
+# A `task` is parked work — nothing is built yet to point at (the backlog task mold omits
+# the key on purpose). Every other type anchors to code, an asset, or a URI.
+# The sibling case — a doc that HAS a resource whose honest scope is the whole bundle — is
+# handled by the bundle-aggregate exemption in `check_resource`, the same mechanism
+# generalized rather than a second one.
+TYPES_WITHOUT_RESOURCE = ("task",)
+# Glob metacharacters `parse_resource` does not implement. An entry carrying one is
+# classified `unknown` and never reported as a violation — see `parse_resource`.
+UNSUPPORTED_GLOB_CHARS = ("{", "}", "[", "]", "?")
+# `resource` kinds resolved against the checkout. `uri` points outside it and `unknown`
+# carries syntax this validator does not implement, so neither is ever judged. Defined
+# ONCE: every consumer must agree on which kinds it may judge, or a kind added later is
+# silently in-scope for one check and out-of-scope for another.
+RESOLVABLE_KINDS = ("path", "glob")
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# Seconds `stale-doc` waits on one `git log`. CLI-only, but a pathological repo must
+# not hang an operator's sweep; a timeout yields no finding rather than a wrong one.
+GIT_TIMEOUT_S = 10
+# Directories that never need an `index.md` and hold no OKF concepts: `_`-prefixed
+# private/raw sidecar folders (`_curadoria/`, `_azimutt/`), dotfolders, and common
+# asset dirs. Pruned from the structural walk (dir-index / broken-link / orphan).
+ASSET_DIRS = ("img", "imgs", "images", "assets", "static", "media", "node_modules", "__pycache__")
+# Markdown inline-link target: capture what sits between `](` and the closing `)`.
+LINK_RE = re.compile(r"\]\(([^)]+)\)")
+
+
+def _nonempty(fm: dict, key: str) -> bool:
+    return bool(str(fm.get(key, "")).strip())
