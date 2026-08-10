@@ -1,5 +1,5 @@
 {
-  "skill": "/skill:agent:new",
+  "skill": "/quenching:components:agent:new",
   "cases": [
     {
       "id": "verifier-happy-path",
@@ -25,7 +25,7 @@
     },
     {
       "id": "declines-hook-request",
-      "branch": "Not for: — an always-on, event-triggered rule is a hook, routed to /skill:hook:new",
+      "branch": "Not for: — an always-on, event-triggered rule is a hook, routed to /quenching:components:hook:new",
       "prompt": "Create an agent that runs automatically after every file edit and blocks the edit when it touches a generated file.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
       "assertions": [
         "no file is created under .claude/agents/",
