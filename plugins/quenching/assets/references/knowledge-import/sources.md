@@ -2,7 +2,7 @@
 
 The **per-doc** procedure (classify → stamp → index → log → glossary → self-check) is **not**
 here — it lives once in
-[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md), which this
+[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md), which this
 skill cites.
 
 ## What a source can be
@@ -86,7 +86,7 @@ must not overload one key with two meanings.
 
 Inventing a `source_uri:` where there is no external origin fabricates a provenance that never
 existed. The shared frontmatter mold in
-[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) deliberately
+[`docs-add/homes.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) deliberately
 does not carry it, so the commands citing that mold are never invited to fill it in.
 
 A URI with no age ages badly: a reader deciding whether a dead link matters needs to know how old

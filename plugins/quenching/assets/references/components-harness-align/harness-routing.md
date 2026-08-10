@@ -3,9 +3,9 @@
 How `/quenching:docs:harness` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
 is filed exactly as `/quenching:docs:add` would — see
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) for the
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md) for the
+[docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
 home boundaries.
 
 ## Contents
@@ -17,7 +17,7 @@ home boundaries.
 <!-- rules -->
 `CLAUDE.md` and `AGENTS.md` are **navigation pointers** the Claude Code / agent harness
 auto-loads — `CLAUDE.md` repo-wide, a subfolder `CLAUDE.md` only when working under its folder.
-OKF-strict point 7 ([docs-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/okf-spec.md))
+OKF-strict point 7 ([docs-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`okf-validate.py`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
 shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/docs/standards/CLAUDE.md)
@@ -67,7 +67,7 @@ units.
 | no documentary home | **UNROUTABLE** | stays + reported |
 
 **Tie-breakers** are `/quenching:docs:add`'s — see
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md).
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
 

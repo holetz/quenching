@@ -2,9 +2,9 @@
 
 **Content decides the home**; the memory's `metadata.type` is only a hint. Once the home is
 chosen, the concept is filed exactly as `/quenching:docs:add` would — see
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) for the
+[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md) for the
+[docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
 boundaries.
 
 This skill writes to **only three destinations** — two `docs/` homes, `standards/` and

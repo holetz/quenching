@@ -108,7 +108,7 @@ sentence, and **link out** rather than explaining in full here.
   target's OKF bundle, and `/.specs/` for a files-backend specs workspace, a convention no
   configuration file names because an LLM executor runs command bodies literally and a root it
   must resolve from config is a root it can resolve wrong.
-- [**Cache trap**](/plugins/quenching/assets/references/skill-new/capabilities.md) — the standing
+- [**Cache trap**](/plugins/quenching/assets/references/components-command-new/capabilities.md) — the standing
   cost of an inline `model:`/`effort:` pin in a command's frontmatter: the pin is part of the
   session's prompt-cache key, so changing it makes the next request recompute every input token.
   A sub-agent's pin is cache-safe because it carries its own context; an orchestrator's is not,
