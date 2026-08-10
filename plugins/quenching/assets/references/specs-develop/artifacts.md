@@ -1,7 +1,7 @@
 # Authoring a spec's sections
 
 The per-section authoring doctrine every `/specs:*` command applies when it writes into a spec. The
-**layout, the fourteen sections, the gates, the derived stages and the `specs.py` surface** live
+**layout, the fourteen sections, the gates, the derived stages and the `cq specs` surface** live
 once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are
 cited, never restated here.
@@ -13,7 +13,7 @@ in a spec are machine contracts — the `## Tasks` checkboxes and the one parsed
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The explicit-none rule
 
@@ -30,9 +30,9 @@ gave is worse than leaving the heading absent, because it looks decided. And nev
 of them at creation: a spec that did would derive as `designed` and clear the whole ready gate
 without anyone having thought anything.
 
-`specs.py new <slug>` stamps the frontmatter and `## Problem` alone, from
+`cq specs new <slug>` stamps the frontmatter and `## Problem` alone, from
 `assets/specs/templates/spec.md`. Every other heading is created on first write by
-`specs.py section <slug> "<Heading>" --write`, in canonical position. Do not invent new top-level
+`cq specs section <slug> "<Heading>" --write`, in canonical position. Do not invent new top-level
 headings — one outside the canonical fourteen is a stray and `validate` flags it — and never paste
 this doctrine into the spec.
 
@@ -107,7 +107,7 @@ Three sub-headings, and exactly one is machine-checked:
 - `src/auth/session.ts` — the mint/revoke path
 ```
 
-`specs.py validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
+`cq specs validate` parses **only the first sub-heading** (`parse_impact_standards`) and emits
 `sp-impact-uncovered` (warn) for any `docs/standards/**.md` path bulleted there that no `## Tasks`
 item names. Keep the heading text verbatim — it is the anchor.
 
@@ -115,7 +115,7 @@ A spec with no such sub-heading declares nothing and is never flagged — **the 
 writing the heading**. An unfilled `<placeholder>` declares nothing either.
 
 This sub-heading is also the **declared/emergent line**: a `docs/standards/` doc named here *and*
-by a task is written during execution; anything the work merely reveals is one `specs.py discover`
+by a task is written during execution; anything the work merely reveals is one `cq specs discover`
 line and is written at conclude
 ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §Declared
 versus emergent `docs/`).
@@ -136,7 +136,7 @@ closed section's block and never the whole `## Handoff`.
 It is warned on (not gated) once the ready gate is met, and it is rewritten on **four events** —
 the run pauses · a task is written blocked · a discovery is recorded · the run's last commit lands
 — rather than when someone judges it stale. What changed is what a rewrite touches, not when one
-happens: `specs.py section <slug> Handoff --write --scope global` for the evergreen block,
+happens: `cq specs section <slug> Handoff --write --scope global` for the evergreen block,
 `--scope current` for the block of whichever section still has open work — never both, and never a
 closed section's.
 
@@ -151,7 +151,7 @@ tasks all land between two rewrite events never gets a block of its own at all, 
 Each of those four is a moment the executor *just finished doing something*, never one where it
 appraises something: that is the property that makes the rule survivable unattended, and it is what
 any future edit has to preserve. What a resumed run can derive on its own — which tasks are done,
-which commit carried each — lives in `git log` and in the `subjects` `specs.py status` returns;
+which commit carried each — lives in `git log` and in the `subjects` `cq specs status` returns;
 this section carries only what nothing derives.
 
 <!-- rationale -->
@@ -169,8 +169,8 @@ less often already fixed *when* the resend happened; this fixes *how much* each 
 
 ## `## Tasks`
 
-The implementation checklist `specs.py` parses: checkboxes `- [ ] <id> <text>` grouped under
-`### N. <Section>` headings. `specs.py task --spec <slug> --check <id>` flips a box mechanically —
+The implementation checklist `cq specs` parses: checkboxes `- [ ] <id> <text>` grouped under
+`### N. <Section>` headings. `cq specs task --spec <slug> --check <id>` flips a box mechanically —
 never hand-edit the checkbox character.
 
 Shape it so `/quenching:specs:execute` can walk it top to bottom:
@@ -196,8 +196,8 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
   is written and self-checks clean" is a task, not an implicit hope.
 
 Do not put `docs/knowledge/` captures or glossary terms in `## Tasks` as durable content — those
-route through `/quenching:docs:learn` / `/quenching:docs:define`; a task may *name* the capture
-(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching:docs:learn`) but the knowledge itself lives in its
+route through `/quenching:knowledge:learn` / `/quenching:knowledge:define`; a task may *name* the capture
+(`- [ ] 5.2 Capture the retry-budget gotcha via /quenching:knowledge:learn`) but the knowledge itself lives in its
 OKF home, never in the checklist.
 
 ## Execution metadata — optional, indented, additive
@@ -217,7 +217,7 @@ A checkbox MAY carry indented metadata lines directly beneath it:
 | --- | --- | --- |
 | `files:` | comma-separated paths this task may touch; a comma inside parentheses never separates — a trailing `(…)` that is not the reserved `(new)` is refused with `sp-files-annotation` | bounds the work; **declaring it is what permits the task to be handed to an executor sub-agent**, and it is what makes a `[P]` marker checkable |
 | `pattern:` | an existing file to imitate | the cheapest context an executor can be given — one path beats three paragraphs of description |
-| `cwd:` | the directory, relative to the repo root, `verify:` runs from | **absent means exactly today's behaviour** — the session's or worktree's root. Write it only when the task's own `verify:` cannot resolve from there (a plugin-internal tool like `specs.py selftest`, which only resolves from `plugins/quenching/`) |
+| `cwd:` | the directory, relative to the repo root, `verify:` runs from | **absent means exactly today's behaviour** — the session's or worktree's root. Write it only when the task's own `verify:` cannot resolve from there (a plugin-internal tool like `cq specs selftest`, which only resolves from `plugins/quenching/`) |
 | `verify:` | the command that proves the task done | run under the spec's `verification` policy; a task with no `verify:` falls back to `## Validation`. Runs from the task's declared `cwd:`, or the default when absent |
 | `constraint:` | a bound on HOW this task may be done — a file it must not touch, an approach already ruled out | **nothing reads it yet.** Admitted by the grammar and handed through untouched; its only plausible consumer is an executor sub-agent briefing itself, and the decision to dispatch one belongs elsewhere. Write it where an executor would otherwise have to guess; it costs nothing when unread |
 | `subject:` | the SUBJECT of the commit that implements this task | **written by the tool, never by hand** (`task --check --subject`), so code and spec stay linked without a trailer inside the commit message. Known before the commit exists, which is what lets the box travel inside it |
@@ -249,7 +249,7 @@ matching.
 
 Set it **here, at definition time** — execution never infers it. It is honoured only when the
 marked tasks' `files:` sets are provably disjoint and none writes into `docs/`, which
-`specs.py parallel` checks mechanically. Serial is the default and needs no marker: without proven
+`cq specs parallel` checks mechanically. Serial is the default and needs no marker: without proven
 disjunction, parallel execution trades wall-clock for merge conflicts and loses on both.
 
 **A blocked task is a visible marker, not a hidden counter** —
@@ -276,7 +276,7 @@ checks run; `verify:` answers *what* runs. Declaring it during definition is wha
 ## `## Discoveries` and `## Outcome`
 
 **`## Discoveries`** has no gate — it is appended to during execution, one line per finding, by
-`specs.py discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
+`cq specs discover`. Captured **indiscriminately**: whether a discovery is worth acting on is a
 later judgment, and asking the executor to make it mid-task is how a finding gets dropped for being
 inconvenient. Each line is resolved **in place** by `/quenching:specs:develop`'s discoveries bank, so
 provenance is never lost:

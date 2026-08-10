@@ -2,8 +2,8 @@
 
 <!-- rules -->
 
-The plugin has **three** aligns, one per front: `/quenching:docs:align` (`docs/`), `/quenching:specs:align`
-(`specs/`), and `/quenching:skill:align` (`.claude/`) — plus `/align`, which conducts all three.
+The plugin has **three** aligns, one per front: `/quenching:knowledge:align` (`docs/`), `/quenching:specs:align`
+(`specs/`), and `/quenching:components:align` (`.claude/`) — plus `/align`, which conducts all three.
 Everything about **how** the operation behaves is identical across them and lives here; only a
 front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
 its command body and its own `references/`.
@@ -21,7 +21,7 @@ opposite of what the loading hierarchy is for.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. Probe before the inventory
 
@@ -161,8 +161,8 @@ resolves nowhere.
 | Plugin-prefixed slash | `/<plugin>:<front>:<verb>` | a human types it wherever the plugin is installed **as a plugin** |
 | Bare slash | `/<front>:<verb>` | **only** where that command's file lives in the target repo's own `.claude/commands/` |
 
-So an align invokes its stage as `quenching:docs:import-memory` and tells a human to run
-`/quenching:docs:import-memory`. An align that cannot see the target's `.claude/commands/` has no
+So an align invokes its stage as `quenching:knowledge:import-memory` and tells a human to run
+`/quenching:knowledge:import-memory`. An align that cannot see the target's `.claude/commands/` has no
 grounds to emit the bare form.
 
 **Write the shapes, not instances, whenever the sentence is *about* the forms.**
@@ -184,9 +184,9 @@ it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `docs/` | `/quenching:docs:align` | `okf-validate.py <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
-| `specs/` | `/quenching:specs:align` | `specs.py doctor` + `specs.py validate` — the whole condition; the OKF validator is never pointed at `specs/` |
-| `.claude/` | `/quenching:skill:align` | `skills.py lint` + `skills.py doctor`, plus `skills.py registry reindex` reporting `changed: false` for the zone |
+| `docs/` | `/quenching:knowledge:align` | `cq knowledge validate <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `specs/` | `/quenching:specs:align` | `cq specs doctor` + `cq specs validate` — the whole condition; the OKF validator is never pointed at `specs/` |
+| `.claude/` | `/quenching:components:align` | `cq components lint` + `cq components doctor`, plus `cq components registry reindex` reporting `changed: false` for the zone |
 
 All three verifiers read the same contract — `--json` on every subcommand and exit **0** ok · **1**
 findings · **2** refusal — so an align branches on data it did not have to interpret. Warnings are

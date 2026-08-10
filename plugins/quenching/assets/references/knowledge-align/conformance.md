@@ -1,6 +1,6 @@
 # Conformance — the exact checks
 
-The executable `${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py` implements **exactly** these
+The executable `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate` implements **exactly** these
 checks; the skills apply the same rules by hand when they cannot shell out, and their self-check
 steps **cite this file** rather than restating the rules. Severities: **ERROR** fails conformance
 (validator exit 1); **WARN** is a recommendation (exit 0 unless `warnAsError`).
@@ -13,7 +13,7 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 | --- | --- | --- |
 | `index.md` | reserved listing | `check_index` |
 | `log.md` | reserved, **retired** | nothing — recognized, never judged (see below) |
-| `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/quenching:docs:harness`, not the validator) |
+| `CLAUDE.md`, `AGENTS.md` | harness pointer | **exempt** (skipped; honesty checked by `/quenching:components:harness:align`, not the validator) |
 | `README.md` | migration nudge | WARN "convert to index.md" |
 | any other `*.md` | concept doc | `check_concept` |
 
@@ -51,7 +51,7 @@ write to it under `hardBlock`. Retired is not unreserved.
 **The reservation is what makes that true**, and it is load-bearing in a way the silence hides:
 drop `log.md` from the validator's `RESERVED` tuple and every log surviving in an already-aligned
 bundle falls through to `check_concept` — `missing-type` at ERROR, and denied writes under the hard
-gate. `okf-validate.py selftest` holds the line with a fixture bundle carrying two surviving logs.
+gate. `cq knowledge validate selftest` holds the line with a fixture bundle carrying two surviving logs.
 
 ## Bundle level
 
@@ -128,8 +128,8 @@ deadline.
 <!-- rules -->
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/.docs        # human report; exit 0/1
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py <repo>/.docs --json # machine-readable findings
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.docs        # human report; exit 0/1
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.docs --json # machine-readable findings
 ```
 
 As a hook (stdin JSON): **PostToolUse**/**Stop** PROPOSE fixes via `additionalContext`;
@@ -137,11 +137,11 @@ opt-in **PreToolUse** (`hardBlock: true`) denies writing an `index.md` with a `t
 concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
 (`warnAsError`/`blockOnFail`/`hardBlock`/`deadlineMs`).
 
-## Verify gate (Step 5 of /quenching:docs:align)
+## Verify gate (Step 5 of /quenching:knowledge:align)
 
 <!-- rules -->
 
-A bundle is **aligned** when `okf-validate.py /.docs` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `cq knowledge validate /.docs` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `resource-unresolved`, `resource-self`. (These are WARN,
 so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)

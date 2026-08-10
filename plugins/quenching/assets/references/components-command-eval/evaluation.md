@@ -1,7 +1,7 @@
 # The evaluation contract — cases, grading, and the benchmark
 
 <!-- rules -->
-The owner of **what an evaluation produces**. `/quenching:skill:eval`'s body owns the workflow;
+The owner of **what an evaluation produces**. `/quenching:components:command:eval`'s body owns the workflow;
 this file owns the three artifact shapes, what makes an assertion worth grading, and the
 description-tuning loop.
 
@@ -12,7 +12,7 @@ have installed.
 
 ## Contents
 
-`skills.py read assets/references/components-command-eval/evaluation.md` returns the heading index;
+`cq components read assets/references/components-command-eval/evaluation.md` returns the heading index;
 `--sections` addresses one.
 
 ## Where the artifacts live
@@ -26,7 +26,7 @@ have installed.
     benchmark.json                  # the run's aggregate and its delta
 ```
 
-`<path>` **mirrors the command path**: `/quenching:docs:add` is measured by
+`<path>` **mirrors the command path**: `/quenching:knowledge:add` is measured by
 `.claude/evals/docs/add/evals.json`. In this plugin the same tree lives at
 `${CLAUDE_PLUGIN_ROOT}/assets/evals/<path>/`.
 
@@ -221,6 +221,6 @@ record whether it routes to this skill:
 
 **A trigger is only removed on a measured miss**, never because a
 description needs to be shorter — that is how a skill quietly stops firing for the user who
-worded it differently. And after any edit, re-run `skills.py lint`: the caps
+worded it differently. And after any edit, re-run `cq components lint`: the caps
 (`sk-metadata-cap`, `sk-description-portable`) and the trigger position
 (`sk-trigger-position`) still hold.

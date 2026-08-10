@@ -2,7 +2,7 @@
 
 How `/quenching:specs:conclude` offers to carry the **durable** knowledge a spec produced into the
 repo's OKF `docs/` bundle: this file decides **what crosses**; the insert mechanics live with
-`/quenching:docs:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)).
+`/quenching:knowledge:add` ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)).
 
 ## What crosses, what stays
 
@@ -68,7 +68,7 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    else durable, is normal; say so and skip to done.
 2. **One plan, one OK.** Present the candidate list as a single distillation plan and ask one
    confirmation. The user may strike items. If the OKF bundle is missing (no `docs/index.md` with
-   `okf_version`), offer `/quenching:docs:align` first, or skip distillation entirely — never scaffold ad hoc.
+   `okf_version`), offer `/quenching:knowledge:align` first, or skip distillation entirely — never scaffold ad hoc.
 3. **Mint each approved doc** under the insert procedure
    ([homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)): fill the home's mold, stamp the
    frontmatter (`resource` may cite the archived spec path — it exists, so the link is derived, not
@@ -78,7 +78,7 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    `distilled: [<title>](/docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
    already written at the archive gate. An empty harvest writes nothing.
 5. **Self-check** every touched file against
-   [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
+   [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
 
 <!-- rationale -->
 **Why there, and why this is a second edit to an archived file.** The bundle's `log.md` is

@@ -1,10 +1,10 @@
 # Memory routing — from a memory file to an OKF home
 
 **Content decides the home**; the memory's `metadata.type` is only a hint. Once the home is
-chosen, the concept is filed exactly as `/quenching:docs:add` would — see
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
+chosen, the concept is filed exactly as `/quenching:knowledge:add` would — see
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
+[knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
 boundaries.
 
 This skill writes to **only three destinations** — two `docs/` homes, `standards/` and
@@ -44,7 +44,7 @@ metadata:
 The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable. This
 is why the path is resolved in Python rather than from `pwd`, which under Windows Git Bash reports
 `/c/Users/…` and encodes to a directory that does not exist —
-`/quenching:docs:import-memory` §1 owns the resolver.
+`/quenching:knowledge:import-memory` §1 owns the resolver.
 
 ## Routing table — memory `type` → likely home (content overrides)
 

@@ -1,11 +1,11 @@
 # Migration — variant → canonical, with blast-radius safety
 
-In an existing repo with variant names, `/quenching:docs:align` **proposes convergence to the canonical
+In an existing repo with variant names, `/quenching:knowledge:align` **proposes convergence to the canonical
 name**.
 
 ## Contents
 
-`skills.py read assets/references/knowledge-align/migration.md` returns the heading index;
+`cq components read assets/references/knowledge-align/migration.md` returns the heading index;
 `--sections` addresses one.
 
 ## 1. Map variant → canonical
@@ -37,7 +37,7 @@ is written in is owned by the bundle's `docs/standards/agents/communication.md`.
 ### 1b. File-slug translation + prefix-cluster folding
 
 Convergence reaches the **filename** too — a non-English concept-doc slug and a prefix-cluster
-are both smells `/quenching:docs:align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
+are both smells `/quenching:knowledge:align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
 
 - **Translate non-English slugs** on the technical homes (`standards/`, `vision/`,
   `documentation/`, `reference/` non-identifier) to canonical English describing the concept:
@@ -88,23 +88,23 @@ in it.** A legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. Th
 
 <!-- rationale -->
 §1e moves this folder into the `specs/` front, which carries no listing file at all
-(`specs.py list` derives what `plans/` holds from disk), so a zone written here would be a
+(`cq specs list` derives what `plans/` holds from disk), so a zone written here would be a
 listing nobody produces and nobody reads.
 
 ### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → the `specs/` front
 
 OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `specs/` front as
-**specs**, not as OKF docs — `okf-validate.py` no longer scans it, and a spec carries no OKF
+**specs**, not as OKF docs — `cq knowledge validate` no longer scans it, and a spec carries no OKF
 `type:` at all.
 
 The move is two hops, and this sweep performs only the first:
 
-1. **`/quenching:docs:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
+1. **`/quenching:knowledge:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
    then every `docs/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
    not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
    every cross-link into `docs/backlog/`.
-2. **`specs.py migrate` converts them.** That legacy folder is exactly the tool's input: each task
+2. **`cq specs migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
    `complexity` preserved as a line in `## Problem`. Name that second hop in the report and let
    `/quenching:specs:align` run it — **never hand-convert a task into a spec here**, which would be this
@@ -159,7 +159,7 @@ A migration whose blast radius reaches **product code**, or is otherwise irrever
 **distinct confirmation item** with its scope shown — never folded into a bulk "align all"
 opt-in. A rename that resolves to a code constant is a **refactor of the target's product**, not
 a docs move: alert the user, never perform it silently. **Exception — cycle-authorized runs:** a run invoked as a stage of
-`/quenching:docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+`/quenching:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
 ([convergence.md §contract](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)) replaces only the batch gate
 with narration — a code-coupled rename still confirms on its own, always.
 

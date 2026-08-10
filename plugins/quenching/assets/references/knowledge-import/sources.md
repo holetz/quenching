@@ -66,7 +66,7 @@ questions** — one written to be searched, one written to be read:
 - **`source:`** — unchanged, and still prose: which spec, person, or body of work originated the
   rule.
 
-**Only `/quenching:docs:import` writes `source_uri:`.** No other command mints it, infers it, or backfills
+**Only `/quenching:knowledge:import` writes `source_uri:`.** No other command mints it, infers it, or backfills
 it, and a doc with no external origin simply has no such key.
 
 The body keeps its attribution line when the source is a stable URL, and that line carries **the
@@ -138,5 +138,5 @@ See the model policy in [README.md §cost-model](${CLAUDE_PLUGIN_ROOT}/README.md
 <!-- rationale -->
 
 A cheap model is safe here because enrich deletes nothing, so a misclassification only misfiles a
-doc (a correctable move), unlike `/quenching:docs:import-memory` where a misclassification deletes
+doc (a correctable move), unlike `/quenching:knowledge:import-memory` where a misclassification deletes
 a memory.
