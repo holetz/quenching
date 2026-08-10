@@ -15,7 +15,7 @@ allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true
 ---
 
-# /quenching:skill:retro — what one session proves about the command that drove it
+# /quenching:components:command:retro — what one session proves about the command that drove it
 
 **Input**: `$ARGUMENTS` — optionally a session id or transcript path, and optionally the
 command to analyse. Omitted → this session, and the command that opened it.

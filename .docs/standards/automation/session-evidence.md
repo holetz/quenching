@@ -15,7 +15,7 @@ maintainer: quenching
 
 A command body is normally revised from taste alone — nobody reads back the session the command
 actually drove. This standard is the contract for the one tool that does:
-`plugins/quenching/assets/bin/session.py` (driven by `/skill:retro`,
+`plugins/quenching/assets/bin/session.py` (driven by `/quenching:components:command:retro`,
 `plugins/quenching/commands/skill/retro.md`) turns a session transcript into evidence about the
 command that ran in it, so a finding can carry a count and a quoted turn instead of an impression.
 
@@ -103,5 +103,5 @@ across repeated independent use. It graduates to `current` on the same criterion
 counted finding no participant stated during the session**, checked against a real conducted
 session and not merely a rereading of the same transcript. That criterion has been met **once**
 (task 1.3, session 94120e96, `## Discoveries`); graduation is a separate, later judgment for
-whether `/skill:retro` keeps clearing that bar in independent use, not an automatic consequence of
+whether `/quenching:components:command:retro` keeps clearing that bar in independent use, not an automatic consequence of
 this one internal test.
