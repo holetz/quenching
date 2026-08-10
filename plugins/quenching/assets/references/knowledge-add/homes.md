@@ -3,11 +3,11 @@
 **This file is the single owner of the insert procedure** — stamp (§The frontmatter stamp) →
 index (§Updating `index.md`) → glossary (§Enriching the glossary) → self-check (§Self-check).
 The full home boundaries and tree live in
-`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`.
+`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md`.
 
 ## Contents
 
-`skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md` returns the heading
+`skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md` returns the heading
 index; `--sections <name>` addresses one.
 
 ## Classification — one question decides the home
@@ -85,7 +85,7 @@ maintainer: <owner>
 
 **Not in the mold, deliberately:** `source_uri:` — written by `/quenching:docs:import` alone, never invented
 by the commands citing this block, and simply absent on a doc with no external origin. Its
-contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md)
+contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md)
 §Attribution.
 
 ## Updating `index.md` (the listing)
@@ -130,7 +130,7 @@ term that belongs in the glossary** and, if so, enrich it:
 
 <!-- rules -->
 
-Apply `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`: the new concept has parseable frontmatter +
+Apply `${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md`: the new concept has parseable frontmatter +
 a non-empty `type`; every `index.md` you touched is still frontmatter-free; the new doc's folder
 has an `index.md` that **links** it (no `dir-no-index`, no `index-orphan`, no
 `index-broken-link`).

@@ -3,7 +3,7 @@
 The **Open Knowledge Format** models a body of knowledge as a **bundle**: a directory tree
 of markdown **concept documents**, plus reserved listing/history files. Source:
 `GoogleCloudPlatform/knowledge-catalog/okf/SPEC.md`. This file condenses the normative rules
-the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) turns them into checks.
+the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) turns them into checks.
 
 ## Contents
 
@@ -28,7 +28,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/do
   `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/quenching:docs:import`
   alone; its contract — the exact-URI value, and why it is separate from
   the authorial prose in `source` — is owned by
-  [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import/sources.md) §Attribution.
+  [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md) §Attribution.
 
 ## Concept `type`
 
@@ -87,7 +87,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
 1. **`index.md` carries no frontmatter** — except the **root** `docs/index.md`, which carries
    **only** `okf_version: "0.1"`.
 2. **`type` is mandatory and drawn from the fixed vocabulary** per home (see
-   [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md)).
+   [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)).
 3. **`resource` is derived, never invented** — for standards a comma-separated **glob set** of
    what the doc governs (`*`/`**` only, repo-root-relative); for catalog/reference the asset URI.
    Empty is disallowed, and so is self-pointing (`resource-self`) — except a **bundle-level

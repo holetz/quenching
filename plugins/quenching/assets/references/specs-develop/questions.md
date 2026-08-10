@@ -379,7 +379,7 @@ orchestrator still asks itself, under §1 — never answers substituted for them
 
 Two things that look like this and are not available. **`context: fork` cannot ask a question** —
 `sk-fork-gate` is an error, and a fork beside an `AskUserQuestion` grant is incoherent by
-construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md)
+construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
 §`context: fork`); a bank is nothing but questions. And a sub-agent **does not share the session's
 prompt cache** — it runs on a cold context and pays the full first read of every file it touches
 ([context-discipline.md](/docs/standards/automation/context-discipline.md) §What a delegated

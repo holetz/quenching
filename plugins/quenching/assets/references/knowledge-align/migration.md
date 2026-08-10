@@ -5,7 +5,7 @@ name**.
 
 ## Contents
 
-`skills.py read assets/references/docs-align/migration.md` returns the heading index;
+`skills.py read assets/references/knowledge-align/migration.md` returns the heading index;
 `--sections` addresses one.
 
 ## 1. Map variant → canonical
@@ -169,7 +169,7 @@ While aligning legacy docs, migrate field names to OKF (MERGE, never clobber):
 
 - `summary:` → `description:`
 - `updated:` → `timestamp:`
-- add non-empty `type:` (from the home's vocabulary in [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md))
+- add non-empty `type:` (from the home's vocabulary in [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md))
 - rename the retired type `type: guide` → `type: documentation` (§1c)
 - rename the retired type `type: idea` → `type: task` (§1d; the files then leave the bundle per §1e)
 - rename the retired type `type: decision` → `type: standard` (§1f; stamp `authority: background`, or `current` if implemented)

@@ -12,7 +12,7 @@ have installed.
 
 ## Contents
 
-`skills.py read assets/references/skill-eval/evaluation.md` returns the heading index;
+`skills.py read assets/references/components-command-eval/evaluation.md` returns the heading index;
 `--sections` addresses one.
 
 ## Where the artifacts live

@@ -2,7 +2,7 @@
 
 The single source of the tree `/quenching:docs:align` installs and `/quenching:docs:add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
-(→ [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/migration.md)).
+(→ [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)).
 
 ## Contents
 
