@@ -2,8 +2,12 @@
 
 `build_parser` declares every argument, `DISPATCH` maps a subcommand name to the function that
 answers it, and `main` is the pillar's whole entry: the UTF-8 reconfiguration, the writer lock,
-the one-command-one-resolution reset, and the single place a `BackendRefusal` becomes an exit
-code. `cq specs …` mounts on these three.
+the invocation's `Emitter`, and the single place a `BackendRefusal` becomes an exit code.
+`cq specs …` mounts on these three.
+
+Every dispatched verb takes `(args, root, out)`. The third is the invocation's output layer,
+carrying the resolution receipt: an object with this call's lifetime, handed down rather than a
+module global reached for.
 
 `selftest` is NOT here. `cmd_selftest` is a test and migrates to `tests/`; whether the verb
 survives is task 6.3's to decide, and re-adding it is one subparser and one `DISPATCH` row."""
@@ -20,7 +24,7 @@ from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_verificat
 from quenching.specs.commands.granular import cmd_section, cmd_show
 from quenching.specs.commands.migrate import cmd_migrate
 from quenching.specs.commands.next import cmd_next
-from quenching.specs.commands.output import emit_err, reset_resolution
+from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.parallel import cmd_parallel
 from quenching.specs.commands.promote import cmd_promote
 from quenching.specs.commands.read import cmd_export, cmd_list, cmd_status
@@ -231,6 +235,10 @@ def main(argv: list[str]) -> int:
     if not hasattr(args, "json"):
         args.json = False
     root = find_specs_root(args.root)
+    # One command, one resolution — held by the emitter's lifetime. It is built here, handed to
+    # the verb, and dropped when the call returns, so a process that dispatches more than once
+    # cannot let one command's receipt ride out on the next one's payload.
+    out = Emitter()
     # The lock is taken HERE and not inside the backend, because the unit it protects is the
     # whole command: every writing subcommand reads a document, edits it and writes it back,
     # and a lock that only spanned the write would let two of them read the same text and each
@@ -238,18 +246,15 @@ def main(argv: list[str]) -> int:
     # the time the process reports its exit code, so whatever runs next sees a free worktree.
     lock, err = writer_lock(args, root)
     if err:
-        return emit_err(args.json, err)
-    # One command, one resolution. A process that dispatches more than once — `selftest`, or a
-    # test harness — must never let one command's receipt ride out on the next one's payload.
-    reset_resolution()
+        return out.emit_err(args.json, err)
     try:
-        return DISPATCH[args.cmd](args, root)
+        return DISPATCH[args.cmd](args, root, out)
     except BackendRefusal as e:
         # THE ONE PLACE A TRANSPORT FAILURE BECOMES AN EXIT CODE. An external backend can
         # fail in the middle of a primitive that has no error channel, and the contract is
         # a legible refusal and never a traceback — so the failure is raised where it
         # happens, carrying the message already built, and converted exactly once here.
-        return emit_err(args.json, e.err)
+        return out.emit_err(args.json, e.err)
     finally:
         if lock is not None:
             lock.release()

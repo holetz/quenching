@@ -7,7 +7,7 @@ import sys
 from quenching.common.dates import today
 from quenching.common.text import slugify
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import display_locator, emit, emit_err
+from quenching.specs.commands.output import Emitter, display_locator
 from quenching.specs.config import (azure_workitemtype_retirement, load_config,
                                     resolve_subject, resolve_type_key)
 from quenching.specs.parse import titleize
@@ -15,7 +15,7 @@ from quenching.specs.parse.spec import SLUG_RE
 from quenching.specs.schema import DEFAULT_VERIFICATION, capture_form
 
 
-def cmd_new(args, root: str) -> int:
+def cmd_new(args, root: str, out: Emitter) -> int:
     """Scaffold `plans/<slug>.md` carrying `## Problem` and nothing else.
 
     THE DATE IS STAMPED HERE AND NEVER AGAIN, now into the frontmatter's `date:` rather than
@@ -24,34 +24,35 @@ def cmd_new(args, root: str) -> int:
     document carries instead of a fact its name encodes."""
     slug = slugify(args.name)
     if not SLUG_RE.match(slug):
-        emit(args.json, {"ok": False, "code": "sp-bad-slug", "slug": args.name,
-                         "message": f"'{args.name}' does not reduce to a kebab-case slug"},
-             f"error: '{args.name}' does not reduce to a kebab-case slug")
+        out.emit(args.json, {"ok": False, "code": "sp-bad-slug", "slug": args.name,
+                             "message": f"'{args.name}' does not reduce to a kebab-case slug"},
+                 f"error: '{args.name}' does not reduce to a kebab-case slug")
         return 2
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     # Asked of the backend, not of the filesystem: a slug already taken in GitHub must
     # refuse here exactly as one already taken on disk does.
     matches = [s for s in backend.list_specs() if s["slug"] == slug]
     if matches:
         m = matches[0]
-        emit(args.json, {"ok": False, "code": "sp-slug-exists", "slug": slug,
-                         "existing": f"{m['folder']}/{m['file']}",
-                         "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
-             f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-slug-exists", "slug": slug,
+                  "existing": f"{m['folder']}/{m['file']}",
+                  "message": f"slug '{slug}' already exists at {m['folder']}/{m['file']}"},
+                 f"refused: slug '{slug}' already exists at {m['folder']}/{m['file']}")
         return 2
     cfg = load_config(root)
     subject, serr = resolve_subject(cfg, args.subject)
     if serr:
-        return emit_err(args.json, serr)
+        return out.emit_err(args.json, serr)
     type_key, terr = resolve_type_key(cfg, args.type)
     if terr:
-        return emit_err(args.json, terr)
+        return out.emit_err(args.json, terr)
     if cfg["backend"] == "azure-boards":
         retirement = azure_workitemtype_retirement(cfg, type_key)
         if retirement and retirement["severity"] == "error":
-            return emit_err(args.json, retirement)
+            return out.emit_err(args.json, retirement)
         if retirement:
             print(f"note: {retirement['message']}", file=sys.stderr)
     policy = args.verification or DEFAULT_VERIFICATION
@@ -83,11 +84,11 @@ def cmd_new(args, root: str) -> int:
     if subject and subject.get("parent") and hasattr(backend, "parent_id"):
         backend.parent_id = subject["parent"]
     path = backend.create_spec("plans", name, body)
-    emit(args.json,
-         {"ok": True, "slug": slug, "title": title, "verification": policy,
-          "workItemType": type_key,
-          "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
-          "path": display_locator(path, root)},
-         f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
-         f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
+    out.emit(args.json,
+             {"ok": True, "slug": slug, "title": title, "verification": policy,
+              "workItemType": type_key,
+              "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
+              "path": display_locator(path, root)},
+             f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
+             f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
     return 0

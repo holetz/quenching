@@ -7,7 +7,7 @@ import os
 from quenching.common.frontmatter import frontmatter_anomalies
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.commands.output import emit, emit_err
+from quenching.specs.commands.output import Emitter
 from quenching.specs.parse import LEGACY_DATED_FILE_RE, PHASES, SPEC_FILE_RE
 from quenching.specs.parse.sections import (gate_report, parse_impact_standards, ready_report,
                                             section_state, stray_headings)
@@ -212,10 +212,10 @@ def merge_record_finding(fm: dict, where: str, slug: str) -> dict | None:
     return None
 
 
-def cmd_validate(args, root: str) -> int:
+def cmd_validate(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     specs = backend.list_specs()
     findings: list[dict] = []
 
@@ -260,9 +260,9 @@ def cmd_validate(args, root: str) -> int:
 
     target = [s for s in specs if s["slug"] == args.spec] if args.spec else specs
     if args.spec and not target:
-        emit(args.json, {"ok": False, "code": "sp-unknown-slug", "slug": args.spec,
-                         "message": f"no spec with slug '{args.spec}'"},
-             f"error: no spec with slug '{args.spec}'")
+        out.emit(args.json, {"ok": False, "code": "sp-unknown-slug", "slug": args.spec,
+                             "message": f"no spec with slug '{args.spec}'"},
+                 f"error: no spec with slug '{args.spec}'")
         return 1
     for s in target:
         findings.extend(validate_spec(backend, s))

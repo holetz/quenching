@@ -9,8 +9,7 @@ import json
 import os
 
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import (announced, display_locator, emit, emit_err,
-                                             read_one, receipt_line)
+from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.parse import PHASES, derive_info, titleize
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import (gate_report, ready_report, section_state,
@@ -20,10 +19,10 @@ from quenching.specs.parse.tasks import task_progress
 from quenching.specs.schema import canonical_headings, load_schema
 
 
-def cmd_list(args, root: str) -> int:
+def cmd_list(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     specs = backend.list_specs()
     rows = []
     for s in specs:
@@ -88,13 +87,13 @@ def _next_phase(phase: str, schema: dict | None = None) -> str | None:
     return seq[seq.index(phase) + 1] if phase in seq and seq.index(phase) + 1 < len(seq) else None
 
 
-def cmd_status(args, root: str) -> int:
+def cmd_status(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     checked, blocked, total = task_progress(info["tasks"])
     dest = _next_phase(info["phase"])
     gates = gate_report(info, dest) if dest else None
@@ -124,9 +123,9 @@ def cmd_status(args, root: str) -> int:
         "path": display_locator(info["path"], root),
     }
     if args.json:
-        print(json.dumps(announced(obj), indent=2, ensure_ascii=False))
+        print(json.dumps(out.announced(obj), indent=2, ensure_ascii=False))
         return 0
-    print(receipt_line(), end="")
+    print(out.receipt_line(), end="")
     print(f"{info['slug']} — {obj['title']}")
     print(f"  {info['folder']}/{info['file']}  [{info['stage']}]  "
           f"verification: {info['verification']}")
@@ -167,7 +166,7 @@ def cmd_status(args, root: str) -> int:
     return 0
 
 
-def cmd_export(args, root: str) -> int:
+def cmd_export(args, root: str, out: Emitter) -> int:
     """Dump the canonical markdown of one spec, or every spec, to disk — write-only.
 
     THE MITIGATION `## Risks` NAMES FOR LOSING AN EXTERNAL BACKEND, AND NOTHING MORE. Nothing
@@ -177,13 +176,13 @@ def cmd_export(args, root: str) -> int:
     from and shows under `show --full`; this command only adds the write to disk."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     slugs = [s["slug"] for s in backend.list_specs()] if args.all else [args.spec]
     written = []
     for slug in slugs:
         info, rerr = backend.read_spec(slug)
         if rerr:
-            return emit_err(args.json, rerr)
+            return out.emit_err(args.json, rerr)
         dest = os.path.join(args.out, info["folder"], info["file"])
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "w", encoding="utf-8") as f:
@@ -192,5 +191,5 @@ def cmd_export(args, root: str) -> int:
     obj = {"ok": True, "out": args.out, "count": len(written), "files": written}
     human = f"exported {len(written)} spec(s) to {args.out}/\n" + \
             "\n".join(f"  {w}" for w in written)
-    emit(args.json, obj, human)
+    out.emit(args.json, obj, human)
     return 0

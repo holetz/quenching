@@ -5,7 +5,7 @@ import json
 import re
 
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import emit_err, read_one
+from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.tasks import _files_bad_annotation
 
 
@@ -36,16 +36,16 @@ def parallel_groups(tasks: list[dict]) -> list[list[dict]]:
     return groups
 
 
-def cmd_parallel(args, root: str) -> int:
+def cmd_parallel(args, root: str, out: Emitter) -> int:
     """Prove a `[P]` group's `files:` sets are disjoint — MECHANICALLY, never judged in
     prose. A group with an undeclared `files:` is ineligible: nothing can be proven about
     a task that never said what it touches."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     findings = []
     for gi, group in enumerate(parallel_groups(info["tasks"]), 1):
         undeclared = [t["id"] for t in group if not t["files"]]
