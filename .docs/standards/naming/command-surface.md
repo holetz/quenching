@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-07-31
+timestamp: 2026-08-10
 audience: both
 authority: current
-source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31)
+source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact
 maintainer: quenching
 ---
 
@@ -50,13 +50,13 @@ with it the bijection rule, the mirroring requirement, and the two root exceptio
 `sk-path-mismatch` recorded as intended. Nothing derives a name that could disagree with the path,
 so nothing checks that they agree.
 
-## Namespaces are honest by artifact
+## Namespaces are honest by front
 
-The surface is partitioned by the artifact each command touches:
+The surface is partitioned by the artifact each front's commands touch:
 
-- **`/docs:`** — the OKF `/.docs/` bundle.
+- **`/quenching:knowledge:`** — the OKF `/.docs/` bundle.
 - **`/specs:`** — the native spec-driven workspace.
-- **`/skill:`** — the target repo's `.claude/` automation surface.
+- **`/quenching:components:`** — the target repo's `.claude/` automation surface.
 - **root `/align`** — deliberately outside the three namespaces, because it is the one command that
   spans all three fronts. Under the old rule it was an exception the linter had to be told about;
   now it is simply a command at the top of the tree.
@@ -69,7 +69,40 @@ either being merely out of date, which is why a rename's blast-radius sweep belo
 standards and not only the code.
 
 A command's namespace MUST match what it touches: a command that mints commands lives under
-`/skill:`, never `/docs:`; a command that reads or writes the bundle lives under `/docs:`.
+`/quenching:components:`, never `/quenching:knowledge:`; a command that reads or writes the bundle
+lives under `/quenching:knowledge:`.
+
+## `components` — four contexts, each named for the artifact it mints
+
+The `.claude/` front used to be named `skill`, and that name carried a defect independent of the
+namespace rename: `skill` was simultaneously the front's own name and the name of one artifact
+*inside* it, so `/skill:new` minted a command while `/skill:agent:new` minted a subagent — two
+artifact levels, one of them wearing the front's own name, treated as if one were a sub-type of
+the other.
+
+`components` does not have that defect: no artifact under this front is called "a component". It
+holds **four sibling contexts, each named for the artifact it mints, none a sub-type of another**:
+
+| Context | Mints | Front-level verb | Artifact-level verbs |
+| --- | --- | --- | --- |
+| *(front root)* | — | `/quenching:components:align` | — |
+| `command/` | a command | — | `/quenching:components:command:new`, `/quenching:components:command:eval`, `/quenching:components:command:retro` |
+| `agent/` | a subagent | — | `/quenching:components:agent:new` |
+| `hook/` | a hook | — | `/quenching:components:hook:new` |
+| `harness/` | — | — | `/quenching:components:harness:align` |
+
+**The rule: a front-level verb sits at the front's own root; an artifact-level verb sits under its
+context.** `/quenching:components:align` is the front's own sweep — it has no artifact of its own
+to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` and `/specs:align`
+do for their fronts. `command:new`, `command:eval` and `command:retro` are three verbs that all act
+on the same artifact (a command), so they share the `command/` context rather than each claiming a
+piece of the front root the way `/skill:new`/`/skill:eval` used to.
+
+`/quenching:components:harness:align` is the one entry that **changed front**, not merely name:
+`CLAUDE.md` and `AGENTS.md` are files Claude Code reads as instruction, which makes the harness an
+artifact of `components` — the front that owns everything Claude Code loads as automation — never
+a `knowledge` document, even though refactoring them moves durable knowledge *into* the bundle as a
+side effect. The move is the front boundary stated correctly, not an exception to it.
 
 ## Verb-first names that reveal the action
 
@@ -85,7 +118,7 @@ holding no skills: a name that lies is forbidden of the surface this standard go
 ## The surface invariant, and clean renames
 
 - **Every command carries a non-empty `description`, and no two resolve to the same `/` path.**
-  That is the whole invariant, and it is what replaced the bijection. `skills.py doctor --json`
+  That is the whole invariant, and it is what replaced the bijection. `cq components doctor --json`
   decides it; the **count is not written down here**, because a number transcribed into prose goes
   stale the first time a command is minted. This standard once said "27 skills, 27 wrappers" while
   the surface carried 28, which is the whole argument.
@@ -94,7 +127,8 @@ holding no skills: a name that lies is forbidden of the surface this standard go
 - A rename is **clean** — no compatibility aliases, no dual-registered names. A blast-radius sweep
   updates every reference (branch names, CI, scripts) and a rename reaching product code gets its
   own confirmation. The collapse took this literally at the largest scale the repo has seen: no
-  `skills/` shim, no dual registration, no transitional period.
+  `skills/` shim, no dual registration, no transitional period — the same discipline the `docs`/
+  `skill` → `knowledge`/`components` rename applied to itself.
 
 ## Why there is no longer a wrapper
 
@@ -118,9 +152,9 @@ Both are warnings, so no gate catches it — which is why it is recorded here in
 **Spoken routing was measured, not assumed, and it survived.** On 2026-07-26, three natural
 phrases with no `/` typed each reached their command by description alone in a fresh `claude -p`:
 *"park a spec for later…"* and *"capture this for the backlog…"* both reached `/specs:capture`,
-and *"add a standard: we always use snake_case…"* reached `/docs:add`. So a description naming
-only the action **does** still route — the claim that it would not is contradicted by the
-measurement.
+and *"add a standard: we always use snake_case…"* reached `/quenching:knowledge:add`. So a
+description naming only the action **does** still route — the claim that it would not is
+contradicted by the measurement.
 
 What remains is a **thinner margin**, not a broken surface: routing now rests on the model
 inferring intent from a short action label rather than matching a verbatim trigger the author
