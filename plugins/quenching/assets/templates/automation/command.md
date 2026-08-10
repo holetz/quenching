@@ -24,7 +24,7 @@ allowed-tools: <only the tools the steps actually use, each SCOPED — e.g. Read
 # paths: <glob patterns binding AUTONOMOUS firing to matching files — the natural
 #   reinforcement for a domain-bound command; typed invocation is unaffected.>
 # hooks: <a check tied to THIS command's own workflow, scoped to its lifecycle — the
-#   narrowest rung of the hook ladder. Wired by /skill:hook:new from the hook mold.>
+#   narrowest rung of the hook ladder. Wired by /quenching:components:hook:new from the hook mold.>
 ---
 
 # /<front>:<verb> — <one-line role>
@@ -51,7 +51,7 @@ exist, exists; every step's criterion held. Report what was written.>
 <!-- MOLD (quenching · automation command) → becomes
      `.claude/commands/<folder-path>/<verb>.md` in a target repo, invocable as
      `/<folder>:<subfolder>:<verb>` — native `:` separator, one per path segment — and minted
-     by `/skill:new` under the taxonomy rule (`docs/standards/automation/skills.md`) and the
+     by `/quenching:components:command:new` under the taxonomy rule (`docs/standards/automation/skills.md`) and the
      writing doctrine (predictability as the root virtue).
 
      ONE FILE PER ENTRY POINT. Claude Code merged custom commands into skills, so this file
@@ -62,7 +62,7 @@ exist, exists; every step's criterion held. Report what was written.>
      THE PATH IS THE ONLY THING UNDER `commands/`. That tree is the only one Claude Code
      registers, so anything that is not an entry point — shared procedure, references,
      fixtures, eval cases — lives OUTSIDE it. A `references/` folder beside this file would
-     register every reference as a phantom command like `/docs:align:references:conformance`.
+     register every reference as a phantom command like `/quenching:knowledge:align:references:conformance`.
      Cite shared procedure by absolute path instead; in a plugin that is
      `${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md`, which substitutes inside a
      command body.
@@ -95,5 +95,5 @@ exist, exists; every step's criterion held. Report what was written.>
          context cannot present the plan whose OK the run depends on.
        • THE EXECUTION PROFILE IS BOUGHT, NEVER COLLECTED. The default is every lever off;
          each commented field above is opened only with a stated buy, priced in
-         `${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md` and shown in
+         `${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md` and shown in
          the mint's plan. -->
