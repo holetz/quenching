@@ -10,7 +10,7 @@ carries `type: standard` + a derived `resource:`; add each to [../index.md](../i
 
 ## Current docs
 
-* [versioning-release.md](versioning-release.md) — the six version strings a release bumps
+* [versioning-release.md](versioning-release.md) — the four version strings a release bumps
   together, and why two independent consumers (Claude Code's upgrade detection, and each align
   comparing an installed tool's `--version`) make a partial bump fail in two different ways.
 
@@ -28,10 +28,10 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 
 - `versioning-release` — **present**: [versioning-release.md](versioning-release.md).
 - `build` — **deferred, not applicable.** There is no build step: the plugin ships markdown
-  command bodies and three dependency-free stdlib Python scripts, copied as-is.
+  command bodies and one dependency-free stdlib Python package, copied as-is.
 - `deploy` — **deferred, not applicable.** Distribution is the marketplace manifest plus Claude
   Code's own plugin upgrade; nothing is deployed to a running environment.
 - `manifest-generation` — **deferred.** Both manifests (`plugin.json`, `marketplace.json`) are
   hand-edited and small; nothing generates them today.
 - `pipeline-stages` — **deferred, not applicable.** There is no CI pipeline for the plugin itself;
-  the verification gates are the three selftests and `functional-checks.sh`, run locally.
+  the verification gates are the test suite and `functional-checks.sh`, run locally.
