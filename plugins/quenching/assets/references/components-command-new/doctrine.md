@@ -11,7 +11,7 @@ be. A description written as a `/`-menu label routes nothing.
 
 **This file owns the judgement; the tool owns the thresholds.** Every number a rule below depends
 on — the two description caps, the body line limit, trigger position, the `Not for:` boundary —
-lives in `docs/standards/automation/skills.md`, and is checked by `skills.py lint` under a
+lives in `docs/standards/automation/skills.md`, and is checked by `cq components lint` under a
 stable `sk-*` code. This file names the code and never restates the number, so the rule and its
 checker cannot drift apart.
 
@@ -55,8 +55,8 @@ silently swallowed.
 
 <!-- rationale -->
 
-`/quenching:skill:new` applies this doctrine to every command it mints or edits;
-`/quenching:skill:align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
+`/quenching:components:command:new` applies this doctrine to every command it mints or edits;
+`/quenching:components:align` cites it when judging conformance gaps. Adapted from mattpocock/skills'
 `writing-great-skills`, folded into this plugin's own constraints (the description caps, the
 bundled-reference pattern, the plan → OK gate).
 
@@ -115,10 +115,10 @@ with this" is a claim about the whole surface and only a reader holding all of i
 
 **A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
 a command quietly stops firing for the user who worded it differently, and only a measured miss
-retires one — `/quenching:skill:eval`'s, per
+retires one — `/quenching:components:command:eval`'s, per
 [skill-evaluation.md](/docs/standards/automation/skill-evaluation.md) §Description tuning
 is the one edit measurement authorizes. A trigger that looks like sediment is **reported** with the
-`/quenching:skill:eval <command>` that decides it.
+`/quenching:components:command:eval <command>` that decides it.
 
 ## The loading hierarchy
 
@@ -142,7 +142,7 @@ level that still reaches it in time:
 
 A step is done when a stated condition is observable — a file exists, a diff is empty, a
 command exits 0, a table matches disk. "Handle the edge cases" is not a step;
-"`skills.py registry reindex` reports `changed: false`" is. Write the criterion as
+"`cq components registry reindex` reports `changed: false`" is. Write the criterion as
 `**Done when:** …` — that literal marker is what `lint` counts (`sk-step-criterion`).
 
 <!-- rationale -->
@@ -171,7 +171,7 @@ write), stated once, with the consequence attached.
 The writing rules above govern what a command **says**; which capabilities it **uses** —
 `context: fork`, a model or effort pin, a subagent, a hook, the invocation-surface controls,
 dynamic context — is a second authored decision set with its own doctrine, owned by
-[skill-new/capabilities.md](capabilities.md). The default profile is empty; every departure
+[components-command-new/capabilities.md](capabilities.md). The default profile is empty; every departure
 is priced there and enters the mint's plan with its stated reason.
 
 ## Named failure modes

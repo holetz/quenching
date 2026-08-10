@@ -7,7 +7,7 @@ The full home boundaries and tree live in
 
 ## Contents
 
-`skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md` returns the heading
+`cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md` returns the heading
 index; `--sections <name>` addresses one.
 
 ## Classification — one question decides the home
@@ -83,7 +83,7 @@ source: <origin/author>
 maintainer: <owner>
 ```
 
-**Not in the mold, deliberately:** `source_uri:` — written by `/quenching:docs:import` alone, never invented
+**Not in the mold, deliberately:** `source_uri:` — written by `/quenching:knowledge:import` alone, never invented
 by the commands citing this block, and simply absent on a doc with no external origin. Its
 contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md)
 §Attribution.
@@ -98,7 +98,7 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-impor
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
 - **Never** add frontmatter to an `index.md` (the root's `okf_version` is the only exception,
-  and `/quenching:docs:align` owns it).
+  and `/quenching:knowledge:align` owns it).
 - **`standards/index.md`** has a DERIVED zone: rebuild only what is between
   `<!-- BEGIN GENERATED -->` / `<!-- END GENERATED -->` by scanning `standards/**/*.md`
   (`title`/`description`/`timestamp`/`type`), grouped by subject subfolder. Never hand-edit

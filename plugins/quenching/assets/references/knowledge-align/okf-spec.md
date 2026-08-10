@@ -7,7 +7,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/kn
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## Reserved filenames
 
@@ -25,7 +25,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/kn
   summary) · `resource` (URI uniquely identifying the underlying asset) · `tags` (YAML list)
   · `timestamp` (ISO 8601 of last change).
 - Producers **MAY** add any additional keys (this plugin's `audience`/`authority`/`source`/
-  `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/quenching:docs:import`
+  `maintainer`/`source_uri` are such extra keys). `source_uri` is written by `/quenching:knowledge:import`
   alone; its contract — the exact-URI value, and why it is separate from
   the authorial prose in `source` — is owned by
   [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md) §Attribution.
@@ -113,7 +113,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    against, and one that defers to a doc living inside a particular repo's bundle stops being
    self-describing.)*
 7. **Harness files** `CLAUDE.md`/`AGENTS.md` are navigation pointers, **not** OKF concepts —
-   exempt from the `type` requirement. The validator skips them entirely; the `/quenching:docs:harness`
+   exempt from the `type` requirement. The validator skips them entirely; the `/quenching:components:harness:align`
    skill keeps them thin and honest.
 8. **Every knowledge-holding folder has an `index.md`, and listings do not lie.** The validator
    flags (WARN) a folder of concept docs with no `index.md`, a listing link to a nonexistent

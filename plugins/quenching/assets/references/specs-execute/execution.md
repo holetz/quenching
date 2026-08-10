@@ -16,7 +16,7 @@ reaches past the loop.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The precondition: a clean tree
 
@@ -87,7 +87,7 @@ without moving anything.
 <!-- rules -->
 
 Declared per spec in the frontmatter (`verification`), written by `/quenching:specs:develop`, read by
-`specs.py status --spec <slug> --json`. **Execute never decides when to test.**
+`cq specs status --spec <slug> --json`. **Execute never decides when to test.**
 
 | Policy | Run the `verify:` command |
 | --- | --- |
@@ -107,7 +107,7 @@ say so and run the narrowest scope the tool offers rather than the whole suite b
 report the substitution, because a narrowed check is a narrowed claim.
 
 **A harness that proves the *command surface* loads belongs to neither.** It is owned by the
-command that edits the surface — `/quenching:skill:new`, or `/quenching:skill:eval` for a description.
+command that edits the surface — `/quenching:components:command:new`, or `/quenching:components:command:eval` for a description.
 
 ## The validation loop
 
@@ -128,16 +128,16 @@ Two rules bound the loop:
   When the orchestrator judges that further attempts are repeating rather than converging, it
   writes the task blocked, with the reason:
   ```bash
-  specs.py task --spec "<slug>" --block <id> --reason "<why, one line>"
+  cq specs task --spec "<slug>" --block <id> --reason "<why, one line>"
   ```
   That writes a **visible marker into `## Tasks`** — `- [!] <id> <title> — blocked: <reason>` —
-  and `specs.py next` then skips it and offers the following task, so one bad task never stalls
+  and `cq specs next` then skips it and offers the following task, so one bad task never stalls
   the whole spec.
 
 **`--block` requires `--reason`** (the tool refuses without one).
 
 A human resumes a blocked task by fixing the cause and un-blocking it —
-`specs.py task --spec <slug> --uncheck <id>` returns it to `- [ ]` — after changing something,
+`cq specs task --spec <slug> --uncheck <id>` returns it to `- [ ]` — after changing something,
 never merely to try the same approach again.
 
 ## The diff self-review — four items, before every commit
@@ -167,7 +167,7 @@ Run it as **one chained call**, gate included:
 
 ```bash
 <the task's verify:> \
-  && specs.py task --check <id> --spec "<slug>" --subject "<subject>" \
+  && cq specs task --check <id> --spec "<slug>" --subject "<subject>" \
   && git add <the task's files> <the spec file> \
   && git commit -m "<subject>" \
   && git log -1 --format=%s
@@ -175,14 +175,14 @@ Run it as **one chained call**, gate included:
 
 **The `&&` is the ordering:** verify before the tick, the tick before the commit, and a broken link
 short-circuits every link after it. When the spec's declared policy says this task is not a gate,
-the chain simply starts at `specs.py task`.
+the chain simply starts at `cq specs task`.
 
 Stage the task's declared `files:` **and the spec file**, never the whole tree — `git add -A` also
 picks up whatever an editor or a tool wrote while the task ran, which is the same contamination
 §The precondition refuses at the start.
 
 If the commit **fails** — a rejecting hook, nothing staged — undo the tick
-(`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist, and
+(`cq specs task --spec "<slug>" --uncheck <id>`) so no box claims a commit that does not exist, and
 report the failure.
 
 The **subject line format** is the target repo's to declare. Read
@@ -228,7 +228,7 @@ Everything else the work reveals — a gotcha, a second-order consequence, a rul
 of — costs **one line and no authoring**:
 
 ```bash
-specs.py discover "<slug>" "<what was found, one line>"
+cq specs discover "<slug>" "<what was found, one line>"
 ```
 
 It is captured **indiscriminately**. The lines are resolved by `/quenching:specs:develop`'s
@@ -247,11 +247,11 @@ A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 - the task writes nothing under `docs/`.
 
 Pin it to the session model. **Never `haiku`** — it is writing production code, and the model
-policy for that is the same one that protects `/quenching:docs:import-memory`'s classifiers.
+policy for that is the same one that protects `/quenching:knowledge:import-memory`'s classifiers.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation offer, every
-confirmation, every `specs.py task --check` flip, every `specs.py task --block` marker, every
-`docs/standards/` write, every `specs.py discover` line, the commit, and the decision to pause. The
+confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every
+`docs/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
@@ -278,7 +278,7 @@ The delegation is a `Task`, not `context: fork` — §Tooling asides.
 Two tasks run concurrently **only** when all three hold:
 
 1. a `[P]` marker was set on both **at definition time** — never inferred while executing;
-2. their declared `files:` sets are **provably disjoint** (`specs.py` checks this mechanically —
+2. their declared `files:` sets are **provably disjoint** (`cq specs` checks this mechanically —
    see §The `[P]` check);
 3. neither writes into `docs/`.
 
@@ -290,7 +290,7 @@ trades wall-clock for merge conflicts and loses on both.
 <!-- rules -->
 
 ```bash
-specs.py parallel --spec "<slug>" [--json]
+cq specs parallel --spec "<slug>" [--json]
 ```
 
 Reports each `[P]` group and whether it is `eligible`. Exit **0** when every marked group is
@@ -308,7 +308,7 @@ The four events are the command body's. Why four events rather than a threshold 
 **The four events say when a rewrite happens; they do not say how much it touches.** Since
 `## Handoff` gained per-section blocks — a small global block plus one `### N.` block per `## Tasks`
 section — a rewrite at any of the four events targets ONE of the two:
-`specs.py section <slug> Handoff --write --scope global` for the evergreen block, or `--scope
+`cq specs section <slug> Handoff --write --scope global` for the evergreen block, or `--scope
 current` for the block of whichever `### N.` still has open work. A section's block closes — stops
 being targeted — the moment its last task commits, but that close adds no fifth event: `--scope
 current` always resolves to whichever section still has an open task, so once `### N.` has none
@@ -326,7 +326,7 @@ the loop offers to stop there, names the command that resumes, and continues unl
 
 - **The trigger is that event, never a window size.** No threshold, no token count, no "this is
   getting long".
-- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `specs.py status`
+- **Nothing extra is written.** `## Handoff`, `git log`, and the `subjects` `cq specs status`
   returns already carry everything a fresh session needs; the boundary adds no record and no fifth
   Handoff event. Accepted, the stop is a pause and a last commit — two events the cadence already
   has.
@@ -344,7 +344,7 @@ the loop offers to stop there, names the command that resumes, and continues unl
 
 `/quenching:specs:execute` is the one `/specs:*` command that runs the target repo's own toolchain
 — build, tests, linters, migrations, and `git` — as part of implementing a task. Its siblings are
-scoped to `python3`/`py` because they only ever talk to `specs.py`.
+scoped to `python3`/`py` because they only ever talk to `cq specs`.
 
 ### Why the resolved-whole notice matters
 
@@ -366,7 +366,7 @@ one, where every later turn re-sends it.
 
 <!-- rationale -->
 
-The mirror image of the line above. `specs.py validate` already warns when a declared standard has
+The mirror image of the line above. `cq specs validate` already warns when a declared standard has
 no task (`sp-impact-uncovered`); the inverse — a binding standard nobody declared — is not
 derivable, because deciding a standard governs a task is reading, not parsing. Every approximation
 of it has to re-read the folder to have something to warn about, which is the cost
@@ -483,7 +483,8 @@ The account is **declared arithmetic over files on disk, not a measurement of an
 distinction `docs/standards/automation/session-evidence.md` §The rule a counted claim must obey
 imposes, and it is stated as an estimate here because that is what it is. On this repo's
 `configurable-spec-backend`, 18 of 29 tasks are delegation-eligible and 13 of them declare the same
-file: `specs.py`, ~37k tokens. Task-by-task that is ~13 × 37k ≈ 480k against roughly 150k for an
+file: `specs.py` (as it stood then, before this repo split it into a package), ~37k tokens.
+Task-by-task that is ~13 × 37k ≈ 480k against roughly 150k for an
 orchestrator reading it once and re-reading from cache — a delegation that reads as a saving and
 is not one. Measured across the whole transcript archive, this permission had never once been
 exercised, so nothing here revokes it; what was missing was the arithmetic that says when it pays.
@@ -497,8 +498,8 @@ cannot present the mid-flow confirmations every sweep depends on — the convers
 human's OK would be out of reach.
 
 Dispatching a `Task` for a bounded, file-scoped unit of work does the opposite: **the orchestrator
-stays in the live conversation**, exactly where `/quenching:docs:glossary-backfill` and
-`/quenching:docs:import` already dispatch from. One moves the decision-maker out of reach; the
+stays in the live conversation**, exactly where `/quenching:knowledge:glossary-backfill` and
+`/quenching:knowledge:import` already dispatch from. One moves the decision-maker out of reach; the
 other sends a worker out and keeps the decision-maker in place. They are different mechanisms
 about different things, and no future sweep should "fix" one into the other.
 

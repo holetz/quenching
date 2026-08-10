@@ -4,16 +4,16 @@ The owner of **what** `/quenching:specs:develop` asks and **when it stops**. The
 (resolve → derive → ask → one edit → re-derive); this file owns the banks and the mechanics they
 share, and the body never restates it.
 
-The bank is **derived** from the same stage `specs.py status` reports, never chosen by the human, so
+The bank is **derived** from the same stage `cq specs status` reports, never chosen by the human, so
 the interrogation a spec gets is the one its content earns.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## Choosing the bank
 
-One lookup on the derived stage, taken from `specs.py status --spec <slug> --json`:
+One lookup on the derived stage, taken from `cq specs status --spec <slug> --json`:
 
 | Derived stage | Bank | The question it is really asking |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ Which shape a bank takes is a property of the bank, stated with it:
 | Bank | Shape | Why |
 | --- | --- | --- |
 | [discoveries](#bank-discoveries) | grouped | every line is independent, and all of them take the same fixed set of three resolutions |
-| [gate](#bank-gate) | grouped | `specs.py next` returns the missing headings, and a heading's answer does not move another's |
+| [gate](#bank-gate) | grouped | `cq specs next` returns the missing headings, and a heading's answer does not move another's |
 | [shape](#bank-shape) | sequential | what is actually wrong decides which shapes are worth tabling at all |
 | [adversarial](#bank-adversarial) | sequential | a criticism once answered rewrites the next one |
 
@@ -241,14 +241,14 @@ explicitly accepted.
 
 ## Bank: gate
 
-**Stage.** `designed` or `refined`, with `specs.py next` still reporting `write_section`.
+**Stage.** `designed` or `refined`, with `cq specs next` still reporting `write_section`.
 
 **Goal.** Close the ten-section ready set, honestly. This is the bank that most easily degrades
 into filling headings to make a check pass, and the explicit-none rule is the whole defence.
 
 **Shape.** Grouped (§1) — the headings `next` reports are independent of one another.
 
-**Drive it off the tool, never off a reading of the file.** `specs.py next --spec <slug> --json`
+**Drive it off the tool, never off a reading of the file.** `cq specs next --spec <slug> --json`
 returns the first `missing` or `malformed` heading and the full list behind it. Ask about that
 list, four headings to a call.
 
@@ -284,9 +284,9 @@ the three values in [spec-driven.md](spec-driven.md) §Frontmatter, asked once a
 frontmatter, so `execute` never has to guess mid-build) and the parsed `### Standards this spec will
 write into docs/standards/` sub-heading under `## Impact`.
 
-**Stop when** `specs.py next` stops reporting `write_section` — every gate section answered with
+**Stop when** `cq specs next` stops reporting `write_section` — every gate section answered with
 content or a reasoned `- none`, every task with a judgeable completion, no `## Impact` path
-uncovered. A `[P]` this bank set is **proved** when the edit lands, by `specs.py parallel`, never
+uncovered. A `[P]` this bank set is **proved** when the edit lands, by `cq specs parallel`, never
 argued about here: the tool checks disjunction mechanically and names the group it refuses.
 
 ## Bank: discoveries
@@ -312,7 +312,7 @@ Three resolutions and nothing else:
 
 | Resolution | When | What it costs |
 | --- | --- | --- |
-| `promoted: <slug>` | it is work someone will do, and the front does not already hold it | one `specs.py list --json` to check, then one `specs.py new` — offer it, and write the slug back |
+| `promoted: <slug>` | it is work someone will do, and the front does not already hold it | one `cq specs list --json` to check, then one `cq specs new` — offer it, and write the slug back |
 | `folded: <section>` | it changes THIS spec | the answer lands in that section in the same edit |
 | `dismissed: <reason>` | it is real but not worth acting on, or another spec already covers it | one line, and the reason is the whole value |
 
@@ -338,7 +338,7 @@ This bank asks a single question, and it is the only bank that adds nothing to t
 the spec now commits to — the proposal in one line, the task count, the `verification` policy, the
 declared `docs/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
 
-On yes, stamp it with `specs.py record "<slug>" approved --set date=<today>` — never by editing the
+On yes, stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing the
 frontmatter, which works only while the backend is `files`. On no, ask what would have to change
 and route it back to the bank that owns it.
 

@@ -1,7 +1,7 @@
 # The execution profile — strategic capability use, priced
 
 Every Claude Code lever a command, agent, or hook may use, each stated three ways: what it
-buys, what it costs, and the default. Thresholds and finding codes live in `skills.py` and
+buys, what it costs, and the default. Thresholds and finding codes live in `cq components` and
 `docs/standards/automation/skills.md` — this file names the code, never the number.
 
 **The premise: a lever is bought, never collected.** A lever whose buy nobody can state is
@@ -9,7 +9,7 @@ bloat wearing a feature's name.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The cost model — where each byte lands
 
@@ -149,7 +149,7 @@ only with evidence.
    to an *operation* ("every edit under `db/migrations/` is checked") rather than a workflow.
 3. **A gated wide event** — `Stop`/`UserPromptSubmit` hooks made cheap by construction:
    dirty-gated by a marker file so a turn that touched nothing relevant costs one stat (the
-   `okf-validate.py stopScan: "dirty"` precedent), or `once: true` for a per-session check.
+   `cq knowledge validate stopScan: "dirty"` precedent), or `once: true` for a per-session check.
 4. **An unmatched session-wide hook** — the top of the ladder, and a finding
    (`sk-hook-unmatched`) unless its body states why nothing narrower catches its cases.
 
@@ -226,7 +226,7 @@ price of each control:
 
 A `` !`command` `` line in a command body runs **at render time**, before the model reads the
 body, and its output lands inline. Used well, it converts turns into text: a workflow whose
-step 1 is "run `git status`" or "run `specs.py list --json`" can carry the answer into the
+step 1 is "run `git status`" or "run `cq specs list --json`" can carry the answer into the
 body instead of spending a tool round-trip on it — deterministic state, fetched once, at
 exactly the moment it is fresh.
 
@@ -247,9 +247,9 @@ identical costs a note, not the body again — one more reason to keep dynamic o
 
 The mint's ONE plan shows the chosen profile — each non-default lever with its stated
 reason — so the human confirms the capability spend along with the files. The sweeps read
-the same page in reverse: `skills.py` reports the mechanically decidable slice
+the same page in reverse: `cq components` reports the mechanically decidable slice
 (`sk-fork-gate`, `sk-profile-value`, `sk-hook-unmatched`, `sk-hook-llm-frequent`,
 `sk-agent-no-description`), and the doctrine audit reads what no parser can — a fork that
 forks away its own context, a hook whose cost claim no longer holds, an agent whose
 description routes nothing — each reported with the command that fixes it
-(`/quenching:skill:new`, `/quenching:skill:hook:new`, `/quenching:skill:agent:new`), never rewritten in place.
+(`/quenching:components:command:new`, `/quenching:components:hook:new`, `/quenching:components:agent:new`), never rewritten in place.

@@ -1,24 +1,24 @@
 # Harness routing — from a CLAUDE.md/AGENTS.md unit to its OKF home
 
-How `/quenching:docs:harness` decides, for each unit of a harness file, whether it **stays** (harness-
+How `/quenching:components:harness:align` decides, for each unit of a harness file, whether it **stays** (harness-
 operational) or **moves** into an OKF home (durable knowledge). Once a unit is routed to a home it
-is filed exactly as `/quenching:docs:add` would — see
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
+is filed exactly as `/quenching:knowledge:add` would — see
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) for the
 `type`/mold/path shape and the index/log procedure, and
-[docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
+[knowledge-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md) for the
 home boundaries.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## 1. What a harness file is
 
 <!-- rules -->
 `CLAUDE.md` and `AGENTS.md` are **navigation pointers** the Claude Code / agent harness
 auto-loads — `CLAUDE.md` repo-wide, a subfolder `CLAUDE.md` only when working under its folder.
-OKF-strict point 7 ([docs-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
-says they are **not** OKF concepts, and the validator (`okf-validate.py`) **skips them entirely**
+OKF-strict point 7 ([knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
+says they are **not** OKF concepts, and the validator (`cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
 shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/docs/standards/CLAUDE.md)
 ("thin pointer, never a copy").
@@ -66,8 +66,8 @@ units.
 | secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `docs/` |
 | no documentary home | **UNROUTABLE** | stays + reported |
 
-**Tie-breakers** are `/quenching:docs:add`'s — see
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
+**Tie-breakers** are `/quenching:knowledge:add`'s — see
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md).
 
 ## 5. Pointer-honesty checklist (the step-8 verify gate)
 
@@ -107,7 +107,7 @@ The validator won't check harness files, so this skill does:
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching:docs:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
+- `/quenching:knowledge:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
 
 ## 7. AGENTS.md
 

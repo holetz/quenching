@@ -1,12 +1,12 @@
 # Canonical taxonomy — the tree, homes, `type` vocabulary, boundaries
 
-The single source of the tree `/quenching:docs:align` installs and `/quenching:docs:add` files into. Every repo
+The single source of the tree `/quenching:knowledge:align` installs and `/quenching:knowledge:add` files into. Every repo
 **converges to this same tree of identical names**; a variant name is a non-convergence smell
 (→ [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)).
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The canonical tree (locked)
 
@@ -79,7 +79,7 @@ survived an earlier alignment.
   `standards/` and leaves. Ships **one fixed file** — `knowledge/glossary.md`, the repo's A–Z
   term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
-  unlinked entry is a valid permanent state). `/quenching:docs:align` installs the seed.
+  unlinked entry is a valid permanent state). `/quenching:knowledge:align` installs the seed.
 - **`reference/`** — external facts we consume (`type: reference`, usually
   `authority: background`); a regulation's PDF lives here via a **sidecar**, while *our*
   implementation of it lives in `standards/`.

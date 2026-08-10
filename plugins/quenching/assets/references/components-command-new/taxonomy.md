@@ -6,7 +6,7 @@ In a target repo this rule is stamped to `docs/standards/automation/skills.md` f
 **Owned elsewhere — cite, never restate.** The
 invocation/permission decision table, the scoped-`allowed-tools` rule, and the description
 caps all live in `docs/standards/automation/skills.md`; the registry zone's row format in
-`skills.py registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
+`cq components registry reindex`. Findings arrive as `sk-*` codes and are named by code, never by
 restated threshold.
 
 ## The single axis
@@ -74,7 +74,7 @@ The registry at `docs/documentation/reference/automation.md` (`type: documentati
 stamped from `assets/templates/automation/registry.md`) is the bundle's authoritative
 listing of the local automation surface.
 
-**`skills.py registry reindex` owns the zone's format.** The row shape, the column
+**`cq components registry reindex` owns the zone's format.** The row shape, the column
 order, the sort, and the placeholders are the tool's. To see the current shape, run the
 tool; to change it, change the tool.
 
@@ -89,14 +89,14 @@ This file owns, because no tool decides it:
   and only that: the zone lists the repo's **own** surface. Commands contributed by
   installed plugins (`/specs:*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
-- **Who may run the regeneration.** `/quenching:skill:new` (in its OKF tail) and
-  `/quenching:skill:align` (in its verify step). Neither writes between the markers by
+- **Who may run the regeneration.** `/quenching:components:command:new` (in its OKF tail) and
+  `/quenching:components:align` (in its verify step). Neither writes between the markers by
   hand, and neither composes the table itself. Both end their run on a second
   `registry reindex` reporting `changed: false`.
 
 <!-- rationale -->
 The format is stated in one place that executes, not in prose two skills reproduce by hand,
-exactly as `specs.py backlog reindex` owns the backlog listing's. On `sk-no-zone` the tool
+exactly as `cq specs backlog reindex` owns the backlog listing's. On `sk-no-zone` the tool
 refuses rather than placing a table at a guessed anchor inside prose a human wrote. A skill
 that generates a derived table and then diffs it against its own source is one reader
 checking its own arithmetic, which is the failure this tool exists to remove; a hand edit
