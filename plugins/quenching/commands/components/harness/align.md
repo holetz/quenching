@@ -4,7 +4,7 @@ argument-hint: [optional-harness-file]
 allowed-tools: Read, Grep, Glob, Bash(git grep:*), Bash(git check-ignore:*), Bash(grep:*), Bash(python3:*), Bash(py:*), Write, Edit, Task
 ---
 
-# /quenching:knowledge:harness — make CLAUDE.md a thin, honest pointer into the bundle
+# /quenching:components:harness:align — make CLAUDE.md a thin, honest pointer into the bundle
 
 **Input**: `$ARGUMENTS` (an optional specific harness file; omit to sweep every CLAUDE.md/AGENTS.md).
 

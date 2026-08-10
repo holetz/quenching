@@ -109,7 +109,7 @@ One report, in this order:
    confirm on its own. State plainly that this list is what a single OK would authorize.
 4. **Would then be pulled in by `/quenching:knowledge:align`'s later stages** — the content they carry: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
    and terms in the bundle absent from the glossary. These are the rows the table marks auto-closed
-   by `/quenching:knowledge:import-memory`, `/quenching:knowledge:harness` and
+   by `/quenching:knowledge:import-memory`, `/quenching:components:harness:align` and
    `/quenching:knowledge:glossary-backfill`.
 5. **Closed by neither** — every row the table marks **No**, each with the command that closes it:
    `resource-unresolved` and `resource-self` (→ `/quenching:knowledge:add` to restamp, because only a
