@@ -2,12 +2,12 @@
 type: standard
 title: Reading a canonical set
 description: How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
+resource: plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
 tags: [code, parsing, contracts, schema, lockstep, selftest]
-timestamp: 2026-08-03
+timestamp: 2026-08-10
 audience: both
 authority: current
-source: add-eli5-section-to-specs spec — the branch review found `specs.py new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `specs.py`'s own selftest while `_match_heading` refused it; the duplication's justification rewritten from installed-copy to self-containment (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
+source: add-eli5-section-to-specs spec — the branch review found `cq specs new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `cq specs`'s own selftest while `_match_heading` refused it; the duplication's justification rewritten from installed-copy to self-containment (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
 maintainer: quenching
 ---
 
@@ -34,7 +34,7 @@ The failure is silent by construction. Adding a heading is a legal, declared cha
 the positional reader keeps running, keeps returning a plausible slice, and simply means
 something else than it did. Nothing errors, because nothing was ever asserted.
 
-Read the declaration instead. When `specs.py` needs the headings that capture stamps, it asks
+Read the declaration instead. When `cq specs` needs the headings that capture stamps, it asks
 `phase_spec("plans")["entryGate"]` rather than counting to two:
 
 ```python
@@ -56,9 +56,9 @@ answer a question about *membership*.
 
 ## A lockstep check does not cover the code over it
 
-Several artifacts here are duplicated on purpose: `specs.py` embeds `schema.json` and
-`templates/spec.md` as constants, so the tool stays one self-contained file that can be read and
-asserted without its asset directory. `selftest` compares each pair byte-for-byte.
+Several artifacts here are duplicated on purpose: `cq specs` embeds `schema.json` and
+`templates/spec.md` as constants, so the tool stays readable and auditable without its asset
+directory. `tests/test_specs_assets.py` compares each pair byte-for-byte.
 
 **That check proves the copies agree. It cannot prove the code reading them still means the same
 thing** — and the two failures look identical from outside, which is what makes this worth
@@ -79,10 +79,11 @@ assert the derived behaviour against the declaration, not just the declaration a
   byte-for-byte comparison — so it is asserted against the embedded constants themselves rather
   than against whatever the asset directory happens to hold.
 
-`specs.py selftest` now carries that assertion as `sp-capture-gate-missing` and
+The retired `specs.py` carried that assertion as `sp-capture-gate-missing` and
 `sp-capture-extra-heading`: the capture form must contain every entry-gate heading and no other.
 Neither code belongs to the `/specs:align` sweep vocabulary — like `sp-template-drift`, they are
-selftest findings about the tool, not findings about a workspace.
+findings about the tool, not findings about a workspace, so they run as a test rather than a
+subcommand a workspace scan could reach.
 
 ## A case must exercise the production function, not a copy of its rule
 
@@ -90,13 +91,13 @@ The step after the one above. Once a tool derives behaviour from a canonical set
 its own case list, the list has to run against **the function that ships** — not against a second
 implementation of the same rule written inside the selftest.
 
-`SECTION_CASES` is a shared list: `skills.py` and `specs.py` carry it verbatim and each proves the
+`SECTION_CASES` is a shared list: `cq components` and `cq specs` carry it verbatim and each proves the
 sectioning rule against its own reader. Two of its seven cases are about **name resolution** — that
-`§Gamma` and `## Alpha` are the same request, and that a unique prefix resolves. In `skills.py`
-they ran through `select_sections`, which is what `read` calls. In `specs.py` they ran through a
+`§Gamma` and `## Alpha` are the same request, and that a unique prefix resolves. In `cq components`
+they ran through `select_sections`, which is what `read` calls. In `cq specs` they ran through a
 resolver written in the selftest body, ten lines that did the `§`-strip and the prefix walk
 themselves. It passed. Meanwhile the shipped path, `_match_heading`, did neither:
-`specs.py section <slug> "§Handoff"` was **exit 2, not a canonical heading** — the exact citation
+`cq specs section <slug> "§Handoff"` was **exit 2, not a canonical heading** — the exact citation
 form every command body writes.
 
 Both halves were green and they were reporting on different functions.
@@ -136,7 +137,7 @@ time this happened:
    holds — silently, and only for the member that was just added, so every existing case still
    passes.
 
-   Measured: `constraint:` was admitted into `specs.py`'s task-metadata grammar while the dispatch
+   Measured: `constraint:` was admitted into `cq specs`'s task-metadata grammar while the dispatch
    still ended `else: verify = val`. A task carrying `constraint:` after `verify:` came back with
    the constraint's prose *as its verify command*, which the execution loop would have run as
    shell. Nothing in the grammar was wrong; the set grew and the dispatch did not.

@@ -2,9 +2,9 @@
 type: standard
 title: Spec backend interface
 description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, and the in-memory fake that turns "identical" into a checked property
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-develop/spec-driven.md
+resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-07
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass; §Placement is declared, and reaffirmed on every write and §Granular reading is about context, not I/O both rewritten by reduzir-as-chamadas-az-por-escrita-no-azure-boards (task 5.1), after one `azure-boards` section edit was measured spending nine `az` calls and 8,5s — four of them writes to the same work item — and the sentence claiming those fields cost 'never a round trip of their own' turned out to be a description that had been false for a year; §What this standard does not yet cover updated by the same plan (task 6.1), whose live run found four ways a write was not idempotent that no offline check could have seen; §What is declared stops at placement — never at the connection distilled from the same plan's §Alternatives Considered at its conclude, where declaring the organisation and project in `azurePlacement` was rejected as a second source of truth that fails silently by writing into somebody else's board; §Armazenado não é projetado extended by suportar-tipo-workitem-azure-por-tags (task 6.2) for `workItemType`, a fifth first-level key that fails the twin test on purpose — the abstract catalogue key and the concrete native name differ by a translation table — and stays in the document on every backend while its native name rides a write-only, never-read-back projection at creation; §What this standard does not yet cover extended by the same plan's conclude review (task 4.3), after a live run against a board that does not accept a spec's type measured `create_spec` leaving an unfiled item behind before `_resolve_board_field` refuses — a pre-existing gap, made reachable per spec rather than per repository once the type varies by create
@@ -73,9 +73,11 @@ Three properties this shape has and the enumerated one does not:
   never inside the resolution — the purity over the listing is what makes "every backend resolves
   the same way and gets the same refusals" a property instead of a claim, and a side effect there
   would spend it to buy what the layer above already gives.
-- **The guard is structural.** `specs.py selftest` walks `DISPATCH` — the registry a verb must join
-  to exist — and refuses any verb whose own source resolves `args.spec` directly. It parses rather
-  than matches text, because the finding it emits names the very call it forbids.
+- **The guard is structural.** `tests/test_specs_parse.py`'s
+  `EveryVerbAnnouncesThroughTheEmitter` walks `DISPATCH` — the registry a verb must join to exist —
+  and fails any verb whose own source resolves a spec directly, bypassing `read_one` and the
+  emitter's receipt. It parses rather than matches text, because the failure it reports names the
+  very call it forbids.
 
 Both keys ride on every payload from a verb that resolved a spec at all, `null` on the exact path,
 so a caller reads `payload["resolvedBy"]` without testing for presence. A verb that resolves no spec
@@ -89,11 +91,11 @@ just read itself, and a receipt for those would be a receipt for nothing.
 
 There is no canonical local store shadowing an external one. When a repository declares `github`,
 its specs live in GitHub, with no authoritative local copy — losing access to the tool is losing the
-specs, which is the accepted cost of choosing it. `specs.py export` dumps the canonical markdown on
+specs, which is the accepted cost of choosing it. `cq specs export` dumps the canonical markdown on
 demand; nothing reads it back and nothing keeps it in sync, which is exactly what keeps it from
 being a second store.
 
-A backend named in the configuration but not implemented by the running copy of `specs.py`
+A backend named in the configuration but not implemented by the running copy of `cq specs`
 **refuses with exit 2** and neither reads nor writes. It never falls back to `files`: silently
 writing to the local filesystem for a repository that asked for GitHub loses work instead of
 reporting it.
@@ -203,9 +205,10 @@ next one to take the native-construct permission up:
   keeps only the parts with a native counterpart is a lossy projection wearing a serialisation's
   name.
 - **The check is equality on the document, never an assertion about the pieces.** "The headings are
-  still there" passes with them reordered and the prose gone. `specs.py selftest` runs a grouped
-  fixture through store-and-reload — including the CRLF round trip a tracker really performs — and
-  compares the result to the original with `==`.
+  still there" passes with them reordered and the prose gone.
+  `tests/test_specs_backends.py`'s `HybridSerialization` runs a grouped fixture through
+  store-and-reload — including the CRLF round trip a tracker really performs — and compares the
+  result to the original with `==`.
 - **A store's own ceilings are the backend's problem, not the caller's.** A title over the
   tracker's limit used to be cut, because a title was a projection and cutting one lost nothing.
   **That stopped being true the moment the title became storage**: a cut title read back is a
@@ -406,7 +409,7 @@ the same measured answer, and they would drift.
 
 The cost this addresses is the **agent's context**, not disk or network. An agent handed all fourteen
 sections in order to edit one pays for the other thirteen on every call. Whether the backend had to
-fetch the whole document to answer is an implementation detail — a local cache inside `specs.py` is
+fetch the whole document to answer is an implementation detail — a local cache inside `cq specs` is
 free to exist and is **not** a store: it is not authoritative, nothing outside the CLI reads it, and
 the backend remains the source of truth.
 
@@ -432,7 +435,7 @@ each other's.
 ## The fake is how "identical" stays true
 
 A second backend holding specs in a dict — no disk, no network, no fixture — is not a convenience.
-It is the other side of an equality the selftest asserts: a canonical case list runs against `files`
+It is the other side of an equality the test suite asserts: a canonical case list runs against `files`
 and against `memory`, and every field must match except the locator (`path`) and the document text
 echoed back.
 
