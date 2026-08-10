@@ -70,8 +70,8 @@ folder meaning three things is a folder meaning nothing.
 ### The revisit happened, and the answer was a name rather than a split
 
 That trigger fired (2026-07-29). The inventory had drifted past three reasons without anyone
-counting: `bin/` alone held four lifecycles — two tools installed into target repos (`specs.py`,
-`skills.py`), one the plugin runs but never installs (`session.py`, which says so in its own
+counting: `bin/` alone held four lifecycles — two tools installed into target repos (the specs
+and components tools), one the plugin runs but never installs (the session tool, which says so in its own
 docstring), and two bash harnesses that grade *this checkout* and are payload of nothing
 (`functional-checks.sh`, `conclude-order-check.sh`). `mkdocs/` was missing from the inventory
 line above entirely.
@@ -82,8 +82,8 @@ folder needed was the fourth reason **named and given its own subtree**, which i
 
 The rule that decides where an executable sits, made explicit by the same move: **by how it is
 invoked, not by whether it ships.** It placed by invocation only as long as each invocation kind
-had its own file: `okf-validate.py` sat in `hooks/` because it was the one tool a **hook event**
-fired rather than a command body, and `specs.py`/`skills.py` sat in `bin/` because commands were
+had its own file: the knowledge checker sat in `hooks/` because it was the one tool a **hook event**
+fired rather than a command body, and the specs/components tools sat in `bin/` because commands were
 what invoked them. One entry point serving both kinds is the case that rule did not anticipate.
 
 **The rule as amended: `hooks/` holds a handler dedicated to a hook event; an entry that serves
@@ -94,7 +94,7 @@ hook path wins the placement, and `hooks/` is left to hold what actually is hook
 `hooks/hooks.json` itself, which is wiring, not a handler, and does not move.
 
 **The adjacency that used to justify a hook handler sitting beside its config is gone too.** The
-original reasoning was that `okf-validate.py` had to sit beside the `hooks-config.json` it loaded
+original reasoning was that the knowledge checker had to sit beside the `hooks-config.json` it loaded
 *from its own directory*, so separating the pair would break config loading in every installed
 copy. Both halves are now false: the knowledge pillar reads the **target's**
 `.claude/hooks/hooks-config.json` and nothing else — the bundle root it validates is the fixed
