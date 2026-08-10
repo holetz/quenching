@@ -10,7 +10,7 @@ description: >-
   archiving are never skipped in any gear. Typed-only: a whole lifecycle is a human's choice, so
   this description pays no routed budget. Not for: one stage only → /specs:create,
   /specs:develop, /specs:execute, /specs:conclude; the next action on one spec → /specs:continue;
-  aligning one front → /quenching:knowledge:align, /specs:align, /skill:align.
+  aligning one front → /quenching:knowledge:align, /specs:align, /quenching:components:align.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 disable-model-invocation: true

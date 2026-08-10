@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — /.docs/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a /.docs/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: one front only → /quenching:knowledge:align, /specs:align, /skill:align; reading without changing → /quenching:knowledge:status, /specs:status; the next action on one spec → /specs:continue.
+description: Align the whole repository — /.docs/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a /.docs/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: one front only → /quenching:knowledge:align, /specs:align, /quenching:components:align; reading without changing → /quenching:knowledge:status, /specs:status; the next action on one spec → /specs:continue.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -16,7 +16,7 @@ one that spans all three.
 | --- | --- | --- | --- |
 | 1 | `/.docs/` — the OKF bundle | `/quenching:docs:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `/.specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
-| 3 | `.claude/` — the automation surface | `/quenching:skill:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
+| 3 | `.claude/` — the automation surface | `/quenching:components:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
 The surface is **one column, not a matrix**: there is no separate "align-and-update" anywhere. An
 align probes first, so a conformant front costs a couple of tool calls and says so
@@ -52,7 +52,7 @@ here, not three edits that must stay in agreement.
     distillation mints). None can land in a tree that is not there.
   - **specs before skills** — when migrating a legacy `openspec/` workspace, `/quenching:specs:align`
     removes the CLI-generated `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow
-    copies, so `/quenching:skill:align` inventories an already-clean surface instead of classifying plugin
+    copies, so `/quenching:components:align` inventories an already-clean surface instead of classifying plugin
     duplicates onto the taxonomy axis (a native `/.specs/` repo has no such copies, so the order is
     harmless there and still holds).
   Never run a later front before an earlier one.
@@ -60,7 +60,7 @@ here, not three edits that must stay in agreement.
   not three invocations typed in a row. The concrete edges:
   - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `/.docs/` → the `/.docs/`
     front's glossary stage must now index those terms.
-  - `/quenching:skill:align` **creates** the rule and registry in `/.docs/` → the `docs` front's `index.md`
+  - `/quenching:components:align` **creates** the rule and registry in `/.docs/` → the `docs` front's `index.md`
     must list them.
   - `/quenching:docs:align`'s **harness** stage moves a fact into `/.docs/` that a `/.specs/` spec should now
     cite instead of restating.
@@ -155,8 +155,8 @@ here. A failure in this front is **reported, not fatal**: front 3 still runs, an
 the command surface was inventoried with legacy shadow copies possibly still present.
 **Done when:** the align has finished or been skipped with a stated reason.
 
-### 5. Front 3 — `/quenching:skill:align` (the `.claude/` surface)
-Skip if the surface is empty (nothing to migrate). Otherwise invoke **`quenching:skill:align`**
+### 5. Front 3 — `/quenching:components:align` (the `.claude/` surface)
+Skip if the surface is empty (nothing to migrate). Otherwise invoke **`quenching:components:align`**
 with the same declaration. Its rule + registry creation lands in the bundle front 1 just aligned —
 verify the front order held before invoking. Record its counts and its **doctrine findings**
 (read-only, routed to `/quenching:skill:new`).

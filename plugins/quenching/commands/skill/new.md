@@ -18,7 +18,7 @@ body itself is written lives in [skill-new/doctrine.md](${CLAUDE_PLUGIN_ROOT}/as
 what a command may strategically use — fork, pins, hooks, the invocation controls — and what
 each lever costs lives in
 [skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md) —
-this skill owns all three, and `/quenching:skill:align` cites them. Molds live at
+this skill owns all three, and `/quenching:components:align` cites them. Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/`.
 
 ## Doctrine
@@ -37,7 +37,7 @@ this skill owns all three, and `/quenching:skill:align` cites them. Molds live a
 - **MERGE, never clobber.** An edit preserves the skill's body and any hand-written
   content; only the gap being fixed changes. This skill never deletes a skill.
 - **The registry zone is regenerated, never composed.** `skills.py registry reindex` owns the
-  zone's format; this skill and `/quenching:skill:align` are the two that invoke it, and neither
+  zone's format; this skill and `/quenching:components:align` are the two that invoke it, and neither
   writes between the markers by hand. Composing a derived table and then diffing it against its
   own source is one reader checking its own arithmetic.
 
