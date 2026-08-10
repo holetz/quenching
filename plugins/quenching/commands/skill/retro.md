@@ -9,7 +9,7 @@ description: >-
   evidences it. Each finding lands with the `/skill:new` invocation that would close it, and
   nothing is applied. Typed-only by design: a retro reads your transcripts, so a human chooses
   it. Not for: measuring a command against a control arm → /skill:eval; minting or editing a
-  command → /skill:new; auditing every body on the surface → /skill:align.
+  command → /skill:new; auditing every body on the surface → /quenching:components:align.
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
 allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true

@@ -9,7 +9,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bas
 **Input**: `$ARGUMENTS` (optionally a `/.specs/` path or a scope; omit to align the whole workspace).
 
 One of the plugin's three aligns. Where `/quenching:docs:align` converges a repo's `/.docs/` bundle and
-`/quenching:skill:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
+`/quenching:components:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
 so every repo that adopts the plugin carries the same `/.specs/` too. Quenching-native: this front is
 **entirely plugin-owned** — no Node runtime, no `config.yaml`, no second spec store shadowing the
 declared one, no delta format. It is what installs the front (there is no `init` step — scaffolding
@@ -226,7 +226,7 @@ verdict **is** the whole report.
 - Never derive a spec's date from filesystem mtime while a truer source exists — frontmatter, then
   the path's first commit; otherwise report and leave the name alone.
 - Never delete a **diverged** shadow copy, and never touch any `.claude/` skill or command outside
-  `openspec-*` / `opsx/` under a legacy migration — that surface is `/quenching:skill:align`'s.
+  `openspec-*` / `opsx/` under a legacy migration — that surface is `/quenching:components:align`'s.
 - Never recreate `plans/index.md`. The artifact is retired: no command produces it, and one
   surviving in a target repo is left exactly as found — neither refreshed nor deleted.
 - Never stamp an OKF `type:` on a spec file to quiet the bundle validator — that validator owns the
