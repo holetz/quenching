@@ -1,21 +1,21 @@
 ---
-description: Read the whole `docs` front and report where the OKF bundle stands — writes nothing. Triggers on "what's the status of the docs", "how healthy is the knowledge base", "is the bundle conformant". Not for: forcing the bundle into canonical shape → /docs:align.
+description: Read the whole `docs` front and report where the OKF bundle stands — writes nothing. Triggers on "what's the status of the docs", "how healthy is the knowledge base", "is the bundle conformant". Not for: forcing the bundle into canonical shape → /quenching:knowledge:align.
 argument-hint: [optional-home-or-path]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
 
-# /quenching:docs:status — read the bundle, change nothing
+# /quenching:knowledge:status — read the bundle, change nothing
 
 **Input**: `$ARGUMENTS` (optionally a home or path to focus; omit to read the whole bundle).
 
 The **read-only** view of the `docs` front. Every other skill here either fixes something
-(`/quenching:docs:align`) or acts on one
+(`/quenching:knowledge:align`) or acts on one
 item a human named. This one only looks — and because it looks at exactly what those sweeps look
 at, it is also their honest preview: the plan you would be authorizing, before you authorize it.
 
 It exists because structural conformance is compatible with a knowledge base that knows nothing.
 `okf-validate.py` can return exit 0 on a bundle of empty homes and a placeholder glossary, and
-until this skill there was no way to learn what `/quenching:docs:align` would do except to invoke the
+until this skill there was no way to learn what `/quenching:knowledge:align` would do except to invoke the
 invasive skill and read the plan from inside it.
 
 The conformance codes and their severities live in
@@ -41,7 +41,7 @@ point: a status view that disagreed with the sweep would be worse than none.
   is permanent noise in a repo that legitimately has no `mlops/`; not reporting it loses the
   signal that motivated the skill. Figures inform; codes accumulate.
 - **Distinguish "would fix" from "would only report".** Split the output the way the sweeps split
-  it: what `/quenching:docs:align` fixes on one OK, what its later stages then drive, and what neither
+  it: what `/quenching:knowledge:align` fixes on one OK, what its later stages then drive, and what neither
   closes because it needs a human. A reader must be able to tell what a sweep would
   actually do to their repo.
 - **Cheap by construction.** One `okf-validate.py --json` over the bundle, one glob, and reads of
@@ -61,7 +61,7 @@ config. Resolve `okf-validate.py` per
 never on prose.
 
 **No bundle at all** is a complete, valid answer: report that `/.docs/` is absent and that
-`/quenching:docs:align` would install it, then stop. A `/.docs/` that exists without an `okf_version` root
+`/quenching:knowledge:align` would install it, then stop. A `/.docs/` that exists without an `okf_version` root
 `index.md` is an un-installed tree, not a broken bundle — say which.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
@@ -101,19 +101,19 @@ One report, in this order:
    the root `index.md`), and the checker's version and exit code verbatim.
 2. **Density** — the table §5 defines. It comes *before* the findings, because a bundle with no
    findings and no content is the case this skill exists to make visible.
-3. **Would be fixed by `/quenching:docs:align`** — the codes
+3. **Would be fixed by `/quenching:knowledge:align`** — the codes
    [cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md)'s table marks auto-closed by
    stage 1 (`dir-no-index`, `index-broken-link`, `index-orphan`, un-stamped or mis-stamped
    frontmatter, variant folder names, prefix-clusters, non-English slugs), with counts. Name which
    would be **code-coupled** — a rename whose blast radius reaches product code — and so would
    confirm on its own. State plainly that this list is what a single OK would authorize.
-4. **Would then be pulled in by `/quenching:docs:align`'s later stages** — the content they carry: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
+4. **Would then be pulled in by `/quenching:knowledge:align`'s later stages** — the content they carry: undrained `~/.claude` memory files (count), durable knowledge still inlined in the harness,
    and terms in the bundle absent from the glossary. These are the rows the table marks auto-closed
-   by `/quenching:docs:import-memory`, `/quenching:docs:harness` and
-   `/quenching:docs:glossary-backfill`.
+   by `/quenching:knowledge:import-memory`, `/quenching:knowledge:harness` and
+   `/quenching:knowledge:glossary-backfill`.
 5. **Closed by neither** — every row the table marks **No**, each with the command that closes it:
-   `resource-unresolved` and `resource-self` (→ `/quenching:docs:add` to restamp, because only a
-   human knows what a doc now governs), `glossary-broken-link` (→ `/quenching:docs:define`, since
+   `resource-unresolved` and `resource-self` (→ `/quenching:knowledge:add` to restamp, because only a
+   human knows what a doc now governs), `glossary-broken-link` (→ `/quenching:knowledge:define`, since
    the backfill stage adds missing terms and never prunes a dead one), `stale-doc` (advisory, with
    its age), coverage-ledger deferrals, and anything a human has not yet stated. Say plainly that
    `stale-doc` gates nothing, so a reader never mistakes an advisory for a blocker.
@@ -121,7 +121,7 @@ One report, in this order:
 Close with the single most useful next command for this repo's actual state, and nothing else — no
 plan, no offer to fix, no "shall I". A status read ends by handing control back.
 
-**A section with nothing in it is reported as empty, never omitted** — "`/quenching:docs:align` would change
+**A section with nothing in it is reported as empty, never omitted** — "`/quenching:knowledge:align` would change
 nothing" is the most valuable line this skill can print, and dropping the heading hides it.
 **Done when:** all five sections are reported and no file has changed.
 
@@ -144,7 +144,7 @@ Report it as one table, and give **no row a finding code**:
 | Retired `log.md` | how many survive, and where — see below |
 
 **A surviving `log.md` is a figure, not a defect.** The artifact is retired: nothing writes one,
-the validator emits no code for one, and `/quenching:docs:align` neither creates nor deletes one. Report
+the validator emits no code for one, and `/quenching:knowledge:align` neither creates nor deletes one. Report
 that it is there, say it is retired and that keeping or deleting it is the repo's call, and stop
 — inventing a code for it here would make this command disagree with the sweep, which is the one
 thing it must never do. It has no owning command to name, because none of them want it.

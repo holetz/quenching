@@ -1,21 +1,21 @@
 ---
-description: Drain the project's Claude Code memory into the OKF bundle, then clear it. Triggers on "convert the memory into docs", "move project memory into the knowledge base", "flush the memory into docs". Not for: importing an external source of files/URLs → /docs:import.
+description: Drain the project's Claude Code memory into the OKF bundle, then clear it. Triggers on "convert the memory into docs", "move project memory into the knowledge base", "flush the memory into docs". Not for: importing an external source of files/URLs → /quenching:knowledge:import.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(rm:*), Write, Edit, Task
 ---
 
-# /quenching:docs:import-memory — drain project memory into the OKF bundle
+# /quenching:knowledge:import-memory — drain project memory into the OKF bundle
 
 **Input**: `$ARGUMENTS` (an optional subset or scope; omit to drain all project memory).
 
 Promotes the durable facts the user has accumulated in **project memory** into the canonical
 OKF `/.docs/` bundle, then clears them from memory — so knowledge that was living in
 `~/.claude/projects/<cwd>/memory/` becomes conformant docs anyone browsing the repo can find.
-Assumes the bundle already exists (run `/quenching:docs:align` first if not). The memory-type → home routing
+Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The memory-type → home routing
 and the deletion contract are in [docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md);
 the home boundaries, `type` vocabulary, molds, and index/log procedure are shared with
-`/quenching:docs:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) and
-`/quenching:docs:align` ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
+`/quenching:knowledge:add` ([docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)) and
+`/quenching:knowledge:align` ([docs-align/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md),
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)). Molds live at
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/`.
 
@@ -25,7 +25,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   ONE table — every memory → its target home + doc path + whether it will be deleted. Execute the
   whole batch on a single OK. This is invasive (it writes docs **and** deletes memory); the user
   sees the full blast radius before anything moves. **Exception — cycle-authorized runs:**
-  invoked as a stage of `/quenching:docs:align`'s cycle (or of `/align`) under the cycle-authorization contract
+  invoked as a stage of `/quenching:knowledge:align`'s cycle (or of `/align`) under the cycle-authorization contract
   ([align/convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)), the plan is
   presented as narration, not a gate — the write-then-verify-then-delete contract is unchanged.
 - **Three destinations only.** This skill writes into exactly two `/.docs/` homes — `standards/`
@@ -73,7 +73,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   with no documentary home **stays** in memory and is reported. Deletion is only ever the tail of
   a successful migration.
 - **Content decides the home; `metadata.type` is a hint.** Route by what the fact IS
-  ([docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md)), reusing `/quenching:docs:add`'s home
+  ([docs-import-memory/memory-routing.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-import-memory/memory-routing.md)), reusing `/quenching:knowledge:add`'s home
   boundaries. Split a memory that carries several facts into one concept per file.
 - **Salvage, don't transcribe.** A memory is terse; the doc is structured. Keep the
   `**Why:**`/`**How to apply:**` prose in the body, derive `resource` honestly (never invent),
@@ -83,7 +83,7 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
   `authority: background`.
 - **Feed the glossary.** When a migrated memory introduces a repo-specific term, add its entry to
   `knowledge/glossary.md` (the fixed A–Z lookup) as the tail of that memory's insert — the same
-  step `/quenching:docs:add`/`/quenching:docs:learn` run — so the term is resolvable once the doc lands.
+  step `/quenching:knowledge:add`/`/quenching:knowledge:learn` run — so the term is resolvable once the doc lands.
 - **One resolver, both platforms.** The memory directory is derived from the **native** working
   directory, so it is resolved in Python — the runtime this plugin already requires — and never
   from shell string-munging. `pwd` under Windows Git Bash reports the MSYS form (`/c/Users/…`),
