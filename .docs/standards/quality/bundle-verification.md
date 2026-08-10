@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Bundle verification
-description: What the docs front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
-resource: plugins/quenching/assets/hooks/okf-validate.py, plugins/quenching/assets/references/docs-align/conformance.md, plugins/quenching/commands/docs/status.md
+description: What the knowledge front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
+resource: plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/knowledge-align/conformance.md, plugins/quenching/commands/knowledge/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-07-31
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19
@@ -13,17 +13,17 @@ maintainer: quenching
 
 # Bundle verification
 
-What the `docs` front proves mechanically, what it leaves to a skill reading its own work, and
-how to tell which a given invariant deserves. `assets/hooks/okf-validate.py` is the
-implementation; `quenching-docs-align/references/conformance.md` is the code-by-code contract.
+What the `knowledge` front proves mechanically, what it leaves to a skill reading its own work, and
+how to tell which a given invariant deserves. `assets/bin/cq knowledge` is the
+implementation; `quenching-knowledge-align/references/conformance.md` is the code-by-code contract.
 This standard is the rule *behind* both.
 
 ## An invariant restated in more than two skills is owed a deterministic check
 
 The rule this front learned the hard way. The glossary tail step — "after a capture, check whether
 the new concept introduced a term that belongs in `knowledge/glossary.md`" — is specified in **six**
-places: `homes.md` §Enriching the glossary, `quenching-docs-add`, `quenching-docs-learn`,
-`quenching-docs-import-memory`, `quenching-docs-define`, and `quenching-specs-archive`'s
+places: `homes.md` §Enriching the glossary, `quenching-knowledge-add`, `quenching-knowledge-learn`,
+`quenching-knowledge-import-memory`, `quenching-knowledge-define`, and `quenching-specs-archive`'s
 `distill.md`. Across two real distillation runs it produced **zero** entries.
 
 An invariant written six times and executed zero times is not under-specified. It is evidence that
@@ -82,7 +82,7 @@ The other honest option above, and the one that needs a home — an accepted gap
 no deterministic check can reach it, and when the reason is **structural rather than unfinished
 work**.
 
-**Import provenance is an identity, not a derivation anything here can verify.** `/docs:import`
+**Import provenance is an identity, not a derivation anything here can verify.** `/quenching:knowledge:import`
 stamps `source_uri:` — the exact URI of the source unit — on every doc it creates, and that key is
 what a later run greps to find the doc it already minted for that unit. Nothing checks it, and
 nothing in this front can:
@@ -111,7 +111,7 @@ nothing in this front can:
   depends on.
 
 What was done instead is the cut the corollary demands. The rule that an imported doc records where
-it came from used to be written in **four** places — `sources.md`, `/docs:import` twice over, and
+it came from used to be written in **four** places — `sources.md`, `/quenching:knowledge:import` twice over, and
 an installed payload. It now has one owner, `sources.md` §Attribution, and the other three cite it.
 Removing three restatements is worth more than a fifth would have been, and this entry is what
 makes the remaining hole *known* rather than merely unfilled.
@@ -161,7 +161,7 @@ Machine checks answer *shape*. They cannot answer:
   actually does.
 
 These stay with the skills, and the front reports them as **figures rather than findings** where it
-can: bundle density (concept docs per home, glossary size, empty homes) appears in `/docs:status`
+can: bundle density (concept docs per home, glossary size, empty homes) appears in `/quenching:knowledge:status`
 as a table with **no finding code**. Coding it would make permanent noise of a repo that
 legitimately has no `mlops/`; omitting it would hide a bundle that passes every check while knowing
 nothing. A figure informs without accumulating as a defect to chase.
@@ -194,7 +194,7 @@ repo's own bundle are lists.
 
 | Mode | Runs | Notes |
 | --- | --- | --- |
-| CLI | everything, including `stale-doc` | the on-demand sweep; `/docs:status` reads it |
+| CLI | everything, including `stale-doc` | the on-demand sweep; `/quenching:knowledge:status` reads it |
 | `PostToolUse` | one file's per-doc checks | never structural, never `stale-doc` |
 | `Stop` | whole tree, dirty-gated | never `stale-doc` |
 | `PreToolUse` | the two hard violations, opt-in | `hardBlock: true` only |

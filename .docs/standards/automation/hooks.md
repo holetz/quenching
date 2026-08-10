@@ -2,12 +2,12 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
+resource: .claude/settings.json, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, hooks, performance, budget]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface, and skills.py enforces both rungs from one implementation (8 selftest cases). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
+source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the knowledge checker's dirty-gate precedent. Graduated to current on an adopting surface, and the components pillar enforces both rungs from one implementation (8 selftest cases, since ported to the test suite). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
 maintainer: quenching
 ---
 
@@ -82,7 +82,7 @@ the same `Write|Edit` hook against payload that is deliberately a template rathe
 bundle.
 
 **A target that once accepted the old install offer carries a second, dead rung.** Its
-`.claude/settings.json` still names `${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py`, so the
+`.claude/settings.json` still names its installed copy under `${CLAUDE_PROJECT_DIR}/.claude/hooks/`, so the
 same checker fires twice — once from the plugin at the current version, once from a copy frozen at
 whatever it was installed at. That is legacy debris, reported by `cq components drift` and removed by
 `/quenching:knowledge:align`, not a second opinion worth keeping.

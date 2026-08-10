@@ -2,9 +2,9 @@
 type: standard
 title: A computed fact's prose fan-out
 description: Any fact a tool computes and prose restates — a schema's fields, a surface's command count — fans out the moment it changes, and no checker sees it: why the validators are blind by construction, the two independent measurements this rule was set from, the grep on the fact's spelled-out form that finds the sites while the change is still cheap, and why it belongs to the task that makes the change rather than to a later sweep
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/**
+resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/**
 tags: [quality, schema, records, documentation, sweeps]
-timestamp: 2026-08-03
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: rework-specs-isolate-flow plan (2026-08-03), from two independent measurements on one branch — `merge:` gained one field, `pr`, and four prose sites still spelled the record as `{strategy, subject}` in four homes; the same branch retired one command, and ten sites across four files still counted twenty-six. Every checker green in both cases
@@ -24,16 +24,16 @@ Each verifier is doing its job correctly, and none of them can see this:
 | Checker | What it validates | Why it is silent here |
 | --- | --- | --- |
 | the schema's own selftest | that the new key behaves — accepted, refused, defaulted | the key works; that was never in doubt |
-| `specs.py validate` | records **as written** in a document | prose that *describes* the record is not a record |
-| `okf-validate.py` | a doc's shape — frontmatter, links, index membership | the sentence is well-formed and links fine; it is merely wrong |
-| `okf-validate.py` `stale-doc` | a doc whose `timestamp` predates a commit under its `resource` | fires only where the doc's `resource` happens to name the schema file — the README and the glossary do not |
+| `cq specs validate` | records **as written** in a document | prose that *describes* the record is not a record |
+| `cq knowledge` | a doc's shape — frontmatter, links, index membership | the sentence is well-formed and links fine; it is merely wrong |
+| `cq knowledge` `stale-doc` | a doc whose `timestamp` predates a commit under its `resource` | fires only where the doc's `resource` happens to name the schema file — the README and the glossary do not |
 
 So the gate is green in every dimension the repo measures, and the product ships documentation that
 teaches a record shape that no longer exists.
 
 **The count is the point.** Measured on the change this standard came from: **one** field added to
 `merge:` left **four** prose sites stale, in four different homes — a `standards/` doc, the operator
-manual `specs.py` embeds in every adopting repo (plus its generated copy), the product README, and
+manual `cq specs` embeds in every adopting repo (plus its generated copy), the product README, and
 the glossary. Three of the four were never named by the spec's `## Impact`; one was named there and
 written only halfway, because the field arrived in a later section than the task that owned the
 file.
@@ -41,7 +41,7 @@ file.
 **A second, independent measurement on the same branch, from a different trigger.** The same change
 **retired a command**, and the count of commands is the same kind of fact as the shape of a record —
 written once in code, described many times in prose. Ten sites still said *twenty-six commands* and
-*nine `/specs:*` commands*, across four files, while `skills.py doctor` reported the true figure of
+*nine `/specs:*` commands*, across four files, while `cq components doctor` reported the true figure of
 25 with no findings and every grep the spec's own gate ran came back empty. The trigger differs; the
 failure and the mitigation do not.
 

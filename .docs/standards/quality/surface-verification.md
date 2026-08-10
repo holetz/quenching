@@ -168,8 +168,8 @@ fixed.
 **Rules 2 and 3 pull against each other, and the tension is real.** A routing probe needs a
 populated repo to satisfy rule 3; a command that *writes* then writes there for real. Check 3's
 capture probes ran against the live repo and left two captured specs behind, committed in
-`5f31d19` — and in the v1 shape, because at the time a stale `.claude/hooks/specs.py` resolved
-ahead of the plugin's copy. That second half can no longer happen: resolution is plugin-first with
+`5f31d19` — and in the v1 shape, because at the time a stale installed copy under `.claude/hooks/`
+resolved ahead of the plugin's own. That second half can no longer happen: resolution is plugin-first with
 no fallback and no manual rung. The residue half is untouched by that, and is the rule here. **A probe that reaches a writing command produces real artifacts. Either sandbox it
 with the preconditions reproduced, or expect residue and clean it up in the same commit.**
 

@@ -7,7 +7,7 @@ tags: [quality, testing, mutation, verification]
 timestamp: 2026-08-10
 audience: both
 authority: background
-source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against skills.py's selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over skills.py's `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; reframed by modularizar-specs-knowledge-components task 9.3 once tests/ replaced the four `selftest` subcommands this file used to govern (its own §Testes closed the loop the historical passes below could only gesture at — the `-k backend`/`-k parse`/`-k command`/`-k config` verify: lines of that spec's sections 3–5 collected ZERO tests and exited 0, the exact failure mode `test_discovery_is_not_empty` now asserts against)
+source: improve-command-from-session plan — the mutation pass was run against the session tool's (pre-refactor) selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against the components tool's (pre-refactor) selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over its `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; reframed by modularizar-specs-knowledge-components task 9.3 once tests/ replaced the four `selftest` subcommands this file used to govern (its own §Testes closed the loop the historical passes below could only gesture at — the `-k backend`/`-k parse`/`-k command`/`-k config` verify: lines of that spec's sections 3–5 collected ZERO tests and exited 0, the exact failure mode `test_discovery_is_not_empty` now asserts against)
 maintainer: quenching
 ---
 
@@ -40,7 +40,7 @@ A mutation earns its place when it is **a rule the fixture exists to prove**, no
 Deleting a whole function proves nothing: everything fails, and a selftest that catches a deleted
 function may still miss every subtle case. The useful mutation inverts one decision.
 
-The pass over `session.py`'s selftest (`session.py:selftest`, 15 fixture records) ran four:
+The pass over the pre-refactor session tool's selftest (its `selftest` subcommand, 15 fixture records) ran four:
 
 | Mutation | Rule it attacks | Result |
 | --- | --- | --- |
@@ -64,7 +64,7 @@ reported something it had not measured:
 
 **Run every mutation in every mode the check will be trusted in.** A tool with a `--json` arm and a
 human arm has two code paths, and a pass that exercises one grades one. Measured on
-`skills.py`'s `--sections` ladder (2026-08-05, three mutations): the new case shadowed an outer
+the pre-refactor components tool's `--sections` ladder (2026-08-05, three mutations): the new case shadowed an outer
 variable inside `cmd_selftest`, and `selftest --json` exited **0** while plain `selftest` — the form
 this repo's own `CLAUDE.md` verification block runs — raised `TypeError` after printing its case
 count. Only the mutation pass, run in both modes, separated them. The same shape governs any
@@ -83,7 +83,7 @@ under `/tmp`, and got 12 against 20 — pure artefact: `find_surface_root` resol
 `schema.json` from outside the plugin tree. A shipped tool run outside its own tree silently grades
 something else.
 
-## The second pass — `skills.py`, and why it counts as partial
+## The second pass — the pre-refactor components tool, and why it counts as partial
 
 Run 2026-08-02 for `route-commands-without-always-on-descriptions`, against the rules that spec
 added: the residency predicate `budget` and `lint` both read from, and the set of commands a
@@ -106,7 +106,7 @@ corpus. A crash proves the mutated path is reached; it does not prove the fixtur
 the same mutation in a tool that tolerated the bad value would have survived silently. Read
 strictly, this is six mutations that earned the claim and one that only looks like it did.
 
-**And it covers the new rules only.** `skills.py`'s selftest also carries fixtures for the two
+**And it covers the new rules only.** That selftest also carried fixtures for the two
 description caps, body length, step criteria, tool scoping, the hook codes and the citation form,
 and none of those was mutated. Adding a rule with a mutation beside it is the practice working; it
 is not the same as having checked the tool.
@@ -142,10 +142,10 @@ failure mode above is now asserted against. Individual test files carry their ow
 negative controls where a false-green was found — `test_specs_assets.py`'s `ASSET_DIR`-pointed-at-
 nothing case (1 failure + 3 errors, zero skips), the golden suite's `declock()` neutralising a
 time-derived field — but no systematic mutation pass has been run **rule by rule** across the
-whole suite the way the historical passes below covered `session.py`'s and `skills.py`'s selftests.
+whole suite the way the historical passes below covered the pre-refactor session and components tools' selftests.
 
-Three passes exist, against the retired selftests: `session.py`'s whole selftest (four mutations,
-2026-07-29), `skills.py`'s **newest rules only** (seven, 2026-08-02), and `skills.py`'s
+Three passes exist, against the retired selftests: the pre-refactor session tool's whole selftest (four mutations,
+2026-07-29), the pre-refactor components tool's **newest rules only** (seven, 2026-08-02), and its
 `--sections` ladder (three, 2026-08-05 — two killed, one equivalent). They remain here as the
 record of the practice and as fixtures the new suite's own `tests/test_*.py` equivalents should be
 held to the same way, not as coverage of code that no longer ships.
