@@ -8,6 +8,6 @@
     ]
   },
   "profiles": {
-    "installed": ["docs", "specs", "skill"]
+    "installed": ["knowledge", "specs", "components"]
   }
 }
