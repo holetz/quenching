@@ -64,7 +64,7 @@ copy of the same standard legitimately differ in wording.
 | `hooks/okf-validate.py` | the OKF v0.1 conformance checker — CLI **and** hook | **no** — the plugin's own `hooks/hooks.json` wires it by `${CLAUDE_PLUGIN_ROOT}` |
 | `bin/specs.py` | the `specs` front's deterministic rails | **no** — command bodies invoke the plugin path |
 | `bin/skills.py` | the `.claude/` front's `doctor` / `lint` / `drift` | **no** — same |
-| `bin/session.py` | reads a session transcript as evidence for `/skill:retro` | **no** — its input is `~/.claude/projects/**`, the operator's machine, so a target has nothing to hold |
+| `bin/session.py` | reads a session transcript as evidence for `/quenching:components:command:retro` | **no** — its input is `~/.claude/projects/**`, the operator's machine, so a target has nothing to hold |
 
 **None of the four is installed anywhere.** Resolution is plugin-first with no fallback and no
 manual rung ([references/align/tool-resolution.md](references/align/tool-resolution.md)), so a copy
