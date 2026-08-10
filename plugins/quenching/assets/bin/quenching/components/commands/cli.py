@@ -29,6 +29,7 @@ from quenching.components.commands.read import cmd_read
 from quenching.components.commands.registry import REGISTRY_RELPATH, cmd_registry
 from quenching.components.sections import RULES_MARKER
 from quenching.components.surface import find_surface_root
+from quenching.session.commands.cli import add_subcommands as add_session_subcommands
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,7 +77,24 @@ def build_parser() -> argparse.ArgumentParser:
                          f"says so")
     add_json(sp)
 
+    sp = sub.add_parser("session",
+                        help="read a Claude Code session transcript as evidence")
+    add_session_subcommands(sp.add_subparsers(dest="session_cmd", required=True))
+
     return p
+
+
+def cmd_session(args, root: str) -> int:
+    """The session pillar, mounted here rather than at the root of `cq`.
+
+    The spec's `## Open Decisions` asked whether `session` survives as a first-level
+    pillar and answered it by count: one command body invokes the tool, and it is a
+    components command. So the tool follows its caller into this front.
+
+    `root` is this front's surface root and the session verbs have no use for it — their
+    input is `~/.claude/projects/**`, the operator's machine, not a repo. It is accepted
+    and dropped so the row keeps `DISPATCH`'s one signature."""
+    return args.func(args)
 
 
 DISPATCH: dict = {
@@ -85,6 +103,7 @@ DISPATCH: dict = {
     "registry": cmd_registry,
     "drift": cmd_drift,
     "read": cmd_read,
+    "session": cmd_session,
 }
 
 
