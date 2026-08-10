@@ -1,5 +1,5 @@
 ---
-description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /quenching:components:command:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /quenching:components:command:eval; the `knowledge` or `specs` front → /quenching:knowledge:align, /specs:align.
+description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /quenching:components:command:new; an agent or a hook → /quenching:components:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /quenching:components:command:eval; the `knowledge` or `specs` front → /quenching:knowledge:align, /specs:align.
 argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
@@ -67,7 +67,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 - **The wider `.claude/` is inventoried, never migrated.** `.claude/agents/*.md` and the
   hooks wired in `settings.json` and in command frontmatter are **report-only** surfaces:
   the tool names their findings (`sk-agent-*`, `sk-hook-*`) and each is routed to the mint
-  that owns it (`/quenching:skill:agent:new`, `/quenching:skill:hook:new`) — no rename, no move, no write, so
+  that owns it (`/quenching:components:agent:new`, `/quenching:skill:hook:new`) — no rename, no move, no write, so
   the confirmed plan's write set stays exactly the command surface's.
 - **The registry ends the run honest.** `skills.py registry reindex` regenerates the GENERATED
   zone from the post-migration surface, and a second run reporting `changed: false` is what
