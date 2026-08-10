@@ -1,36 +1,38 @@
 ---
 type: standard
-title: Mutation-checking a selftest
-description: A selftest that has never been observed to fail is an untested test — the mutation pass that earns the claim, one mutation per rule the fixture exists to prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate this repo's three shipped selftests have not yet cleared
-resource: plugins/quenching/assets/bin/session.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
-tags: [quality, testing, selftest, mutation, verification]
-timestamp: 2026-08-05
+title: Mutation-checking a test
+description: A test that has never been observed to fail is untested — the mutation pass that earns the claim, one mutation per rule the fixture exists to prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate the repo's new tests/ suite has not yet cleared
+resource: plugins/quenching/tests/**
+tags: [quality, testing, mutation, verification]
+timestamp: 2026-08-10
 audience: both
 authority: background
-source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against skills.py's selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over skills.py's `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; the rest of that tool's corpus and the whole of specs.py's and okf-validate.py's still have not had it
+source: improve-command-from-session plan — the mutation pass was run against session.py's selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against skills.py's selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over skills.py's `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; reframed by modularizar-specs-knowledge-components task 9.3 once tests/ replaced the four `selftest` subcommands this file used to govern (its own §Testes closed the loop the historical passes below could only gesture at — the `-k backend`/`-k parse`/`-k command`/`-k config` verify: lines of that spec's sections 3–5 collected ZERO tests and exited 0, the exact failure mode `test_discovery_is_not_empty` now asserts against)
 maintainer: quenching
 ---
 
-# Mutation-checking a selftest
+# Mutation-checking a test
 
-Every stdlib tool in this repo carries a `selftest` subcommand, and CLAUDE.md's verification block
-leans on all four of them. A selftest is the cheapest verification the repo has — and the easiest
-to write so that it can never fail.
+Every module `tests/` covers is exercised by `python3 -m unittest discover -s tests`, which
+CLAUDE.md's verification block leans on. A test is the cheapest verification the repo has — and
+the easiest to write so that it can never fail.
 
-**A selftest that passed the first time it was run has proved nothing yet.** It has demonstrated
-that some code returns some value; it has not demonstrated that the value is *checked*. A fixture
-list that is iterated but never compared, an assertion on a field the parser always populates, a
-case appended to the corpus but never reached — each passes exactly as loudly as a real check.
+**A test that passed the first time it was run has proved nothing yet.** It has demonstrated that
+some code returns some value; it has not demonstrated that the value is *checked*. A fixture list
+that is iterated but never compared, an assertion on a field the parser always populates, a case
+appended to the corpus but never reached, a `-k` selector that collects zero cases and exits 0 —
+each passes exactly as loudly as a real check.
 
 ## The rule
 
-Before a selftest is claimed as verification, **break the thing it exists to prove and watch it
+Before a test is claimed as verification, **break the thing it exists to prove and watch it
 fail.** One mutation per rule, applied to the code under test, reverted after.
 
-The pass is done **once, at authoring**, by the human or agent writing the selftest. It is not
-wired into CI and there is no mutation-testing dependency — this repo has no build step and no test
-framework, and adding one to prove four `selftest` subcommands would cost more than the tools do.
-What survives the pass is not tooling but a claim in the commit that wrote it.
+The pass is done **once, at authoring**, by the human or agent writing the test. It is not wired
+into CI and there is no mutation-testing dependency — the suite is `unittest`, stdlib-only, and
+adding a mutation-testing tool to prove tests that already assert against the interpreter would
+cost more than the tests do. What survives the pass is not tooling but a claim in the commit that
+wrote it.
 
 ## What a mutation is worth
 
@@ -119,21 +121,35 @@ whether a check that exists is load-bearing.
 
 It shares a premise with [parse-honesty.md](parse-honesty.md): both refuse to let a tool's silence
 read as a clean result. There, a parse failure is named rather than reported as a content gap; here,
-a selftest that cannot fail is named rather than counted as coverage.
+a test that cannot fail is named rather than counted as coverage.
+
+**The repo now has a test framework, and the failure mode this standard names already found it
+once.** `python3 -m unittest discover -s tests` replaced the four `selftest` subcommands the
+passes below were run against; `test_suite.py`'s `test_discovery_is_not_empty` exists specifically
+because a `-k` selector that collects zero cases exits 0 and reads exactly like a pass — which is
+what this repo's own `-k backend` / `-k parse` / `-k command` / `-k config` `verify:` lines did
+across several tasks before the suite existed to catch it, discovered only by comparing against an
+independent proof (a byte-identical move, a side-by-side comparison against the tool being
+extracted). The failure this standard exists to name is not hypothetical here — it already
+happened, more than once, in this repo's own build.
 
 ## Graduation gate
 
-`authority: background`, and the gate is explicit. Three passes exist: `session.py`'s whole selftest
-(four mutations, 2026-07-29), `skills.py`'s **newest rules only** (seven, 2026-08-02), and
-`skills.py`'s `--sections` ladder (three, 2026-08-05 — two killed, one equivalent). What is
-still unchecked is the rest of `skills.py`'s corpus and the whole of `specs.py`'s and
-`okf-validate.py`'s — selftests CLAUDE.md's verification block treats as the repo's primary gate,
-and which **have never been observed to fail.** They may well be sound; nobody has checked.
+`authority: background`, and the gate is explicit. Two properties of the suite itself are
+mutation-proved by construction: `test_no_external_imports` is checked with a negative control (a
+planted `import requests` fails it), and `test_discovery_is_not_empty` is what the empty-collection
+failure mode above is now asserted against. Individual test files carry their own measured
+negative controls where a false-green was found — `test_specs_assets.py`'s `ASSET_DIR`-pointed-at-
+nothing case (1 failure + 3 errors, zero skips), the golden suite's `declock()` neutralising a
+time-derived field — but no systematic mutation pass has been run **rule by rule** across the
+whole suite the way the historical passes below covered `session.py`'s and `skills.py`'s selftests.
 
-This becomes `authority: current` when a pass of the shape above has been run against all three
-shipped tools and the result recorded — not before. A pass over one tool's newest rules does not
-clear it, and a third pass over that same tool's newest rule clears it even less: the tally grows
-while the gap — `specs.py` and `okf-validate.py`, untouched — does not move at all. Booking that as
-partial rather than as progress is the same honesty the standard asks of the mutations themselves.
-Until then this describes a practice the repo has adopted three times on two tools and not
-generalised, which is what the `background` stamp is for.
+Three passes exist, against the retired selftests: `session.py`'s whole selftest (four mutations,
+2026-07-29), `skills.py`'s **newest rules only** (seven, 2026-08-02), and `skills.py`'s
+`--sections` ladder (three, 2026-08-05 — two killed, one equivalent). They remain here as the
+record of the practice and as fixtures the new suite's own `tests/test_*.py` equivalents should be
+held to the same way, not as coverage of code that no longer ships.
+
+This becomes `authority: current` when a pass of the shape above has been run, rule by rule,
+against `tests/`'s own corpus and the result recorded — not before. Booking partial coverage as
+though it closes the gap is the same dishonesty the standard asks its own mutations to refuse.
