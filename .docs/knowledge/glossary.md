@@ -402,15 +402,15 @@ sentence, and **link out** rather than explaining in full here.
 - [**Verification policy**](../standards/workflows/task-execution.md) — the per-spec declaration
   (`per-task`, `per-section`, `end-of-plan`) written at creation that decides when a task's
   `verify:` command runs, so execution never guesses and never asks mid-task.
-- [**Version lockstep**](../standards/ci-cd/versioning-release.md) — the six version strings a
+- [**Version lockstep**](../standards/ci-cd/versioning-release.md) — the four version strings a
   release must bump together, split into two halves read by two independent consumers: the
   `plugin.json` `version` + `VERSION` pair Claude Code compares to decide an upgrade fires, and the
-  `VERSION` constant in each of the three shipped tools, which answers `--version` and identifies
-  any **legacy copy** a target still carries under `.claude/hooks/` from before resolution went
-  plugin-first. Since nothing installs a tool any more, **no automated check asserts the six
+  one shared `VERSION` constant every pillar's `--version` reads, which also identifies any
+  **legacy copy** a target still carries under `.claude/hooks/` from before resolution went
+  plugin-first. Since nothing installs a tool any more, **no automated check asserts the four
   agree** — the whole lockstep is discipline, read back by hand at conclude. Distinct from the
-  **Canonical case list**, which is the lockstep unit for the
-  three tools' *parser behaviour* rather than their version strings.
+  **Canonical case list**, which is the lockstep unit for the parser's *behaviour* rather than a
+  version string.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
   in `.claude/quenching.json`, holding a command `/specs:execute` runs once inside a newly created
   worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at
