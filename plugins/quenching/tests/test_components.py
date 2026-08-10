@@ -30,45 +30,10 @@ from quenching.components.sections import (
     split_rule_and_rationale,
 )
 
-# The same text both scripts embed as `SECTION_FIXTURE`; kept local here because only the
-# every-level index and the `###` resolution below are this pillar's own — the level-2 table
-# built on top of it (`SECTION_CASES`) is 6.4's to place.
-FREE_MARKDOWN = '''---
-type: standard
-title: the section reader's fixture
----
-
-# Top
-
-Preamble under a level-1 heading.
-
-## Alpha
-
-Alpha body.
-
-### Alpha sub
-
-Sub body that belongs to Alpha.
-
-## Beta
-
-Beta opens with a fenced block whose lines look like headings:
-
-```bash
-## not a heading
-### also not a heading
-```
-
-Beta continues after the fence.
-
-## Gamma
-
-~~~
-## fenced by tildes
-~~~
-
-Gamma ends the file.
-'''
+# The fixture lives in `test_sections.py`, which owns it for BOTH readers (task 6.4 collapsed
+# the `EDIT BOTH, OR NEITHER` pair). What stays here is only what this pillar answers alone:
+# the every-level index and the `###` resolution, neither of which the specs reader has.
+from test_sections import SECTION_FIXTURE
 
 
 class EveryLevelIndex(unittest.TestCase):
@@ -76,14 +41,14 @@ class EveryLevelIndex(unittest.TestCase):
     is a `###`. A reader that only resolved `##` would refuse half the citations in the repo."""
 
     def test_every_heading_resolves_at_its_own_level_fences_included(self):
-        got = [(h["level"], h["heading"]) for h in markdown_sections(FREE_MARKDOWN)]
+        got = [(h["level"], h["heading"]) for h in markdown_sections(SECTION_FIXTURE)]
         self.assertEqual(got, [(1, "Top"), (2, "Alpha"), (3, "Alpha sub"),
                                (2, "Beta"), (2, "Gamma")])
 
 
 class SubHeadingResolution(unittest.TestCase):
     def test_a_level_3_heading_resolves_on_its_own_and_stops_at_the_next_same_or_shallower(self):
-        sub, missing = select_sections(markdown_sections(FREE_MARKDOWN), ["Alpha sub"])
+        sub, missing = select_sections(markdown_sections(SECTION_FIXTURE), ["Alpha sub"])
         self.assertEqual(missing, [])
         self.assertNotIn("Beta", sub[0]["body"])
 
