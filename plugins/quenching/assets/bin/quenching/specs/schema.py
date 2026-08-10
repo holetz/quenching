@@ -134,6 +134,23 @@ DEFAULT_SCHEMA: dict = {
     },
 }
 
+
+def _behavioral(node):
+    """A schema with the prose stripped. `note`/`why` exist for a human reading
+    schema.json; the embedded fallback has never carried them, and they are not what the
+    tool branches on.
+
+    Moved verbatim out of `specs.py`. Left behind when `DEFAULT_SCHEMA` moved here — without
+    it, the selftest's schema-drift check falls back to a raw `==` between `schema.json` (which
+    carries `note`/`why`) and `DEFAULT_SCHEMA` (which never has), a comparison that is `False`
+    by construction and reports drift on every conformant pair."""
+    if isinstance(node, dict):
+        return {k: _behavioral(v) for k, v in node.items() if k not in ("note", "why")}
+    if isinstance(node, list):
+        return [_behavioral(v) for v in node]
+    return node
+
+
 # The FULL template, embedded VERBATIM so an installed copy with no adjacent assets can
 # still stamp a capture AND pull any heading's guidance for `section --write`. It is a
 # byte-for-byte copy of assets/specs/templates/spec.md — `specs.py selftest` proves it, and

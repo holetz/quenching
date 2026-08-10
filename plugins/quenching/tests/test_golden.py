@@ -45,14 +45,17 @@ def declock(text: str) -> str:
 # set only when a later task mounts the route it is missing — never by loosening the
 # comparison that proves it is still missing.
 UNROUTED = {
-    "specs-selftest": "`selftest` is not in the specs pillar's DISPATCH; task 6.3 decides "
-                       "whether the verb returns.",
-    "skills-selftest": "`selftest` is not in the components pillar's DISPATCH; task 6.3 "
-                        "decides whether the verb returns.",
-    "session-selftest": "`selftest` is not in session's DISPATCH, mounted under "
-                         "`components session`; task 6.3 decides whether the verb returns.",
-    "okf-selftest": "the knowledge pillar's `main` routes only the `hook` and `validate` "
-                     "tokens; task 6.3 decides whether `selftest` becomes a third.",
+    "specs-selftest": "`selftest` is in no pillar's DISPATCH and is not coming back: task 6.3 "
+                       "measured every suite behind it into `tests/`, including the embedded "
+                       "asset lockstep that was its last non-unit-test reason to exist "
+                       "(`test_specs_assets.py`).",
+    "skills-selftest": "same decision as `specs-selftest`: the verb is retired, and what it "
+                        "proved lives in `tests/test_components.py`.",
+    "session-selftest": "same decision as `specs-selftest`: the verb is retired, and what it "
+                         "proved lives in `tests/test_session.py`.",
+    "okf-selftest": "same decision as `specs-selftest`: the knowledge pillar routes `hook` and "
+                     "`validate` only, and what `selftest` proved lives in "
+                     "`tests/test_knowledge.py`.",
     "session-version": "`cq components session --version` never reaches session.py's own "
                         "`--version` flag: the components pillar's `main` answers any argv "
                         "containing `--version` before the `session` subparser runs, so it "
