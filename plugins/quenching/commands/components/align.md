@@ -1,5 +1,5 @@
 ---
-description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /skill:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /skill:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the `knowledge` or `specs` front → /quenching:knowledge:align, /specs:align.
+description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /quenching:components:command:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the `knowledge` or `specs` front → /quenching:knowledge:align, /specs:align.
 argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
@@ -8,7 +8,7 @@ allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash
 
 **Input**: `$ARGUMENTS` (an optional scope; omit to sweep the whole automation surface).
 
-The sweep counterpart of `/quenching:skill:new`: where the mint keeps each **new** command
+The sweep counterpart of `/quenching:components:command:new`: where the mint keeps each **new** command
 conformant, this one converges everything that **already exists** — including a surface still
 built as `skills/<name>/SKILL.md` + a mirrored wrapper, which it **collapses to one file per
 entry point** (§6 below) — then **reads every surviving body against the writing doctrine** (§7)
@@ -46,7 +46,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
 - **A body is audited, never rewritten.** The shared MERGE rule says bodies are preserved; on this
   front that is the whole point — the migration changes only names, placement, and
   description/frontmatter conformance. §7 then **reads** each body and reports what it finds with
-  the `/quenching:skill:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
+  the `/quenching:components:command:new` invocation that opens the edit. Rewriting one is **authoring**, and authoring
   needs the human whose intent the command encodes — the same anti-fabrication boundary every
   align holds ([sweep-doctrine](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
   §6. Align conformance; report the cycle).
@@ -56,7 +56,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   whole, and its central question — does anything else on this surface answer to the same
   request? — is unanswerable one command at a time. This sweep is the only place holding all of
   them at once, so it is the only place that can waive a boundary honestly. Reviewing them one per
-  `/quenching:skill:new` run would cost N sessions to reach a verdict none of them can reach.
+  `/quenching:components:command:new` run would cost N sessions to reach a verdict none of them can reach.
   The edit still gates on its own OK, and a **trigger phrase is never deleted here** — that is
   `/quenching:skill:eval`'s, on a measured miss.
 - **This front is honestly short, and says so.** `/.docs/` and `/.specs/` each have an out-of-band
@@ -258,7 +258,7 @@ numbered steps end) and nothing else. Every verdict above stays with the orchest
 collector reports text, never a doctrine finding, because "this body has no positive prescription"
 is a claim about behaviour and the same read that makes it must also weigh the fix.
 
-Report each finding as `command · violated rule · one-line evidence · the /quenching:skill:new invocation
+Report each finding as `command · violated rule · one-line evidence · the /quenching:components:command:new invocation
 that opens the edit`, labelled **"reported, not applied"**. Skip every legacy `openspec-*` body —
 that surface is `/quenching:specs:align`'s here as everywhere. Never rewrite a body to close a finding.
 **Done when:** every surviving body carries a verdict — a finding with its fix invocation, or
@@ -343,7 +343,7 @@ In an OKF repo, confirm the registry is indexed, per
 counts go in the report below, not into the bundle.
 Report: passes run; collapsed / renamed / created / flattened / rule+registry created / unroutable /
 flagged; every `sk-*` finding that survived the run, by code; §7's doctrine findings, listed
-apart, each with its `/quenching:skill:new`; and §8's line — descriptions reviewed, edited,
+apart, each with its `/quenching:components:command:new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
 `/quenching:skill:eval`. Say plainly when the front converged in one pass — that is the

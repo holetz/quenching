@@ -1,5 +1,5 @@
 ---
-description: Measure whether a skill/command teaches anything — with/without runs, graded on evidence. Triggers on "measure whether this command teaches anything", "run the with/without eval on this skill", "tune this command's description on the hit rates". Not for: minting or editing ONE command's body → /skill:new.
+description: Measure whether a skill/command teaches anything — with/without runs, graded on evidence. Triggers on "measure whether this command teaches anything", "run the with/without eval on this skill", "tune this command's description on the hit rates". Not for: minting or editing ONE command's body → /quenching:components:command:new.
 argument-hint: [skill-name]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
@@ -36,8 +36,8 @@ the workflow; that file owns the formats and never gets restated here.
 - **This never duplicates `lint`.** The caps, trigger position, the boundary, body length, step
   criteria, tool scoping are `skills.py lint`'s and are reported by code. This skill measures
   **behaviour**; a clean lint is its precondition, not its subject.
-- **Never rewrites the body.** Authoring is `/quenching:skill:new`'s. A finding here is reported
-  with the `/quenching:skill:new <name>` invocation that acts on it — except the description, which step 7
+- **Never rewrites the body.** Authoring is `/quenching:components:command:new`'s. A finding here is reported
+  with the `/quenching:components:command:new <name>` invocation that acts on it — except the description, which step 7
   may edit under its own confirmation, because a trigger's fate is decided by the hit rates this
   skill just measured.
 
@@ -118,7 +118,7 @@ it makes the whole run decorative.
 - Never run only the with-skill arm, and never reuse this context as an arm.
 - Never grade without evidence — `unknown` is an honest grade, an unquoted pass is not.
 - Never downgrade an arm's model to `haiku`; the delta is only comparable between equal arms.
-- Never rewrite a skill body here — report it with its `/quenching:skill:new` invocation. The description is
+- Never rewrite a skill body here — report it with its `/quenching:components:command:new` invocation. The description is
   the single exception, and only under step 7's own confirmation.
 - Never duplicate a `skills.py lint` check; report its findings by code and move on.
 - Never hand this command file `context: fork` — steps 4 and 7 gate mid-flow.

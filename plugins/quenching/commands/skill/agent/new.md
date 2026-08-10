@@ -1,5 +1,5 @@
 ---
-description: Mint or edit ONE subagent definition in this repo's .claude/agents/ — a delegation that returns a summary, not a trail. Use when the user asks to "create an agent", "add a subagent", "make a verifier agent", "delegate this to an agent", or "set up something that audits our migrations and reports back". Applies the delegation test, scopes tools to the narrowest set, prices the definition's always-on cost, and lands the OKF tail on one OK. Not for: a command → /skill:new; a hook → /skill:hook:new; isolating one command's own run → that command's `context: fork` profile via /skill:new.
+description: Mint or edit ONE subagent definition in this repo's .claude/agents/ — a delegation that returns a summary, not a trail. Use when the user asks to "create an agent", "add a subagent", "make a verifier agent", "delegate this to an agent", or "set up something that audits our migrations and reports back". Applies the delegation test, scopes tools to the narrowest set, prices the definition's always-on cost, and lands the OKF tail on one OK. Not for: a command → /quenching:components:command:new; a hook → /skill:hook:new; isolating one command's own run → that command's `context: fork` profile via /quenching:components:command:new.
 argument-hint: [agent-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
@@ -13,7 +13,7 @@ Creates or edits **ONE FILE** in the target repo's agent surface — `.claude/ag
 a definition whose description routes delegation to it and whose body is its system prompt.
 The delegation economics and the definition contract live in
 [skill-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md)
-§Subagents — owned by `/quenching:skill:new`'s doctrine set and applied here. The mold is
+§Subagents — owned by `/quenching:components:command:new`'s doctrine set and applied here. The mold is
 `${CLAUDE_PLUGIN_ROOT}/assets/templates/automation/agent.md`.
 
 ## Doctrine
@@ -46,7 +46,7 @@ Per [capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabili
 §Subagents: the work qualifies when its returned summary is much smaller than the work
 itself, when slices run in parallel, or when its tool set must be narrower than the
 conversation's. Work that fails the test is a command or an inline step — say so and route
-to `/quenching:skill:new` instead of minting a wrapper around nothing. **Done when:** the delegation
+to `/quenching:components:command:new` instead of minting a wrapper around nothing. **Done when:** the delegation
 buy is stated in one line, or the request is rerouted.
 
 ### 3. Derive the name, check collisions

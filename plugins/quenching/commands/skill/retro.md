@@ -6,10 +6,10 @@ description: >-
   "improve the command that started this session", or "what should this command do
   differently". Counts come from code reading the session transcript, never from a model
   recalling its own run, and every counted claim is reported with its count and the turn that
-  evidences it. Each finding lands with the `/skill:new` invocation that would close it, and
+  evidences it. Each finding lands with the `/quenching:components:command:new` invocation that would close it, and
   nothing is applied. Typed-only by design: a retro reads your transcripts, so a human chooses
   it. Not for: measuring a command against a control arm → /skill:eval; minting or editing a
-  command → /skill:new; auditing every body on the surface → /quenching:components:align.
+  command → /quenching:components:command:new; auditing every body on the surface → /quenching:components:align.
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
 allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
 disable-model-invocation: true
@@ -50,7 +50,7 @@ reported as a session with nothing to improve.
 **Done when:** the transcript is resolved and its commands are in hand, or the refusal is shown.
 
 ### 2. Choose ONE command
-One command per run keeps the output actionable by a single `/quenching:skill:new`. A command named in
+One command per run keeps the output actionable by a single `/quenching:components:command:new`. A command named in
 `$ARGUMENTS` → take it. Otherwise one command found → take it; several → **AskUserQuestion**,
 one option per command showing its `attributedRun` line range and its `toolCalls`, defaulting
 to the session opener.
@@ -102,7 +102,7 @@ did not count is offered as an observation in plain words, never dressed as a fi
 **Done when:** each finding carries either a count with its quoted turn, or no number at all.
 
 ### 6. Hand each finding to the command that closes it
-End every finding with the `/quenching:skill:new` invocation that would fix the body, phrased so it can
+End every finding with the `/quenching:components:command:new` invocation that would fix the body, phrased so it can
 be run as-is. Where a finding is about the target repo's contracts rather than the command's
 wording, name `/quenching:docs:add` instead.
 **Done when:** each finding names the one command that closes it.
@@ -123,5 +123,5 @@ unchanged.
 - Speak an unclosed command's counts as an upper bound, always naming the conductor whose
   turns they may include.
 - Report a refusal with its reason. An empty run is never presented as a clean one.
-- Report findings; apply none. Editing a command body is `/quenching:skill:new`'s, and a measured
+- Report findings; apply none. Editing a command body is `/quenching:components:command:new`'s, and a measured
   with/without delta is `/quenching:skill:eval`'s.

@@ -159,7 +159,7 @@ the command surface was inventoried with legacy shadow copies possibly still pre
 Skip if the surface is empty (nothing to migrate). Otherwise invoke **`quenching:components:align`**
 with the same declaration. Its rule + registry creation lands in the bundle front 1 just aligned —
 verify the front order held before invoking. Record its counts and its **doctrine findings**
-(read-only, routed to `/quenching:skill:new`).
+(read-only, routed to `/quenching:components:command:new`).
 **Done when:** the align has finished or been skipped with a stated reason.
 
 ### 6. Re-probe across fronts → decide (loop or stop)
@@ -180,7 +180,7 @@ are **not** progress and never justify another cross-front pass.
 One report, front by front: passes run, what each front's stages did in total, its ending verify
 state (validator findings · `doctor`/`validate` · registry-vs-disk), and — explicitly — everything
 **deferred**, each with the command that closes it (`/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`,
-`/quenching:specs:develop`, `/quenching:specs:conclude`, `/quenching:skill:new`). Name the cross-front edges that actually fired,
+`/quenching:specs:develop`, `/quenching:specs:conclude`, `/quenching:components:command:new`). Name the cross-front edges that actually fired,
 so the loop's value is visible.
 
 This command writes **nothing** of its own — not even a record that it ran. Every write belongs
