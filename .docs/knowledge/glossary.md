@@ -49,7 +49,7 @@ sentence, and **link out** rather than explaining in full here.
   produces **no merge commit** — `fast-forward` and `rebase` — so the **Merge record** has nothing
   to name and carries an explicit none instead of a fabricated pointer. Under both, the per-task
   commits land on the base directly and their subjects resolve there, which is why a merge pointer
-  would add nothing rather than being merely unavailable. `specs.py validate` reports the mismatch
+  would add nothing rather than being merely unavailable. `cq specs validate` reports the mismatch
   in **both** directions (`sp-bad-merge`): an anchorless strategy carrying a real subject, and a
   merge-producing strategy carrying an explicit none.
 - [**Anomaly sidecar**](../standards/quality/parse-honesty.md) — a *second* function reporting what
@@ -67,10 +67,10 @@ sentence, and **link out** rather than explaining in full here.
   refusing an unapproved spec.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
-  earlier hidden attempt counter; `specs.py next` skips it and the reason stays legible to whoever
+  earlier hidden attempt counter; `cq specs next` skips it and the reason stays legible to whoever
   unblocks it.
 - [**Boundary reminder**](../standards/architecture/plugin-layout.md) — a one-clause line that
-  states the *edge* of a rule the citing place already owns, seen from the other side (`/docs:add`
+  states the *edge* of a rule the citing place already owns, seen from the other side (`/quenching:knowledge:add`
   saying the slug is canonical English while the body prose follows whatever language the repo
   declared), as opposed to a restatement, which repeats a fact the citing place neither owns nor
   can change. Note the paraphrase: writing the clause verbatim here would make this entry one more
@@ -98,7 +98,7 @@ sentence, and **link out** rather than explaining in full here.
   spec is in flight asks git whether the ref is alive — the record's `work`, falling back to
   `plan/<slug>` — since a human may cut a branch with no record and a record outlives the branch
   it names.
-- [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/docs:status`
+- [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/quenching:knowledge:status`
   prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
   which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
   would make permanent noise of a repo that legitimately has no `mlops/`, omitting them would hide
@@ -130,7 +130,7 @@ sentence, and **link out** rather than explaining in full here.
   [Canonical case list](../standards/code/frontmatter-parser.md), which is one specific lockstep
   unit rather than the general shape.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
-  completed task line, written mechanically by `specs.py task --check --subject`, that links the
+  completed task line, written mechanically by `cq specs task --check --subject`, that links the
   checkbox to the commit implementing it by naming that commit's **subject** and resolving with
   `git log --grep --fixed-strings`. Because a subject is known *before* the commit exists, the box
   is ticked into the commit it describes and no bookkeeping commit follows it — the same inversion
@@ -139,12 +139,22 @@ sentence, and **link out** rather than explaining in full here.
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
   backfilled.
+- [**Context (components)**](../standards/naming/command-surface.md) — one of the four sibling
+  contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
+  for the artifact it mints, none a sub-type of another. A front-level verb sits at the front's own
+  root (`/quenching:components:align`); an artifact-level verb sits under its context
+  (`/quenching:components:command:new`).
 - [**Context integral**](../standards/automation/context-discipline.md) — a run's true cost,
   `tokens × turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block
   loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
   exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
   neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
   beats shortening the reads.
+- [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
+  point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the four self-contained scripts each
+  front used to ship separately. Invoked as `cq <pilar> <subcomando>…`; the plugin's own
+  `hooks/hooks.json` resolves through it exactly like every command body does — `cq knowledge hook`
+  for the hook event, `cq specs …` / `cq components …` for a command's own front.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -163,7 +173,7 @@ sentence, and **link out** rather than explaining in full here.
   same question on demand? Yes → the listing is duplication and its checker is pure cost; no → the
   listing IS the source and a checker is mandatory. The `/.docs/` bundle's `index.md` files are the
   bounding counterexample: nothing else enumerates the bundle, so they keep their checks; the
-  retired `/.specs/plans/index.md` duplicated `specs.py list` and went with its four `sp-*` codes.
+  retired `/.specs/plans/index.md` duplicated `cq specs list` and went with its four `sp-*` codes.
 - [**Handler ladder**](../standards/automation/hooks.md) — the ordering a hook's handler is chosen
   from, cheapest first: a deterministic `command` script (zero tokens on no-match), then a `prompt`
   handler (one cheap judgment per firing), then an `agent` handler — which on a per-tool-call event
@@ -175,7 +185,7 @@ sentence, and **link out** rather than explaining in full here.
   and nothing else: never a paraphrase of the rule it cites, and never a second configuration key.
   Only the root file counts, because only that one is in context at session start — the property the
   form was chosen for. **Silence is not a default of `en`**; a repo that declares nothing is under no
-  constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/docs:harness` classing
+  constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/quenching:components:harness:align` classing
   the line **KEEP** is the only thing between it and a silent deletion.
 - [**Merge record**](../standards/workflows/plan-git-record.md) — the
   `merge: {strategy, subject, pr}` frontmatter entry stamped by `/specs:conclude`, write-once,
@@ -190,7 +200,7 @@ sentence, and **link out** rather than explaining in full here.
   section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
   human, weighing whether to build), `build` (the executor, at step 4 of `/specs:execute`), `close`
   (`/specs:conclude`, at archive time). One value per section, declared in `schema.json` and in
-  `specs.py`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `specs.py section <slug>
+  `cq specs`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `cq specs section <slug>
   --moment build` returns the six an executor needs, so a command body names the moment instead of
   repeating a heading list that can drift from the schema. `## Discoveries` carries no moment at
   all: captured indiscriminately while building, it is resolved by `/specs:develop`'s triage sweep
@@ -200,17 +210,22 @@ sentence, and **link out** rather than explaining in full here.
 - [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, one value per section: `decision` (the human, weighing whether to build),
   `build` (the executor), `close` (`/specs:conclude`). Declared in `schema.json` and `DEFAULT_SCHEMA`
-  and **resolved rather than enumerated** — `specs.py section <slug> --moment build` returns the six
+  and **resolved rather than enumerated** — `cq specs section <slug> --moment build` returns the six
   an executor needs, so a body names the moment instead of a heading list that can drift. Replaced
   an `audience` field nobody read; `## Discoveries` carries no moment at all.
 - [**Origin key** (`source_uri`)](../standards/quality/bundle-verification.md) — the frontmatter key
   holding the **exact** URI or path of the source unit an imported doc was minted from, written by
-  `/docs:import` and by no other command; a doc with no external origin simply does not have it.
+  `/quenching:knowledge:import` and by no other command; a doc with no external origin simply does not have it.
   Single-valued, one line, no prose — that is what makes finding the doc that already covers a unit
   an equality test (`grep -rn 'source_uri: <uri>'`) instead of the model recognising prose it wrote
   itself. Distinct from `source:`, which stays prose about who originated a rule. Nothing checks the
   value: truthfulness is decidable only against the source at the instant it was read, and a unit
   collapsed from several seeds carries only one origin — both recorded as **accepted gaps**.
+- [**Pacote**](../standards/architecture/plugin-layout.md) — the Python package under
+  `plugins/quenching/assets/bin/quenching/`, o diretório que substituiu os quatro scripts
+  autocontidos que o plugin costumava distribuir. Dividido em `common/`, `specs/`, `knowledge/` e
+  `components/`, sem nenhum arquivo grande demais para ser lido inteiro numa chamada de ferramenta;
+  `cq` é o único ponto de entrada que o expõe.
 - [**Parked follow-up**](../standards/workflows/plan-lifecycle.md) — an out-of-scope finding a
   definition pass records as ONE line of `## Discoveries` on the spec it is developing, instead of
   minting a spec for it. Parking is free by construction: `## Discoveries` appears in no stage rule,
@@ -238,7 +253,11 @@ sentence, and **link out** rather than explaining in full here.
   `promote` and `validate`.
 - [**`[P]` marker**](../standards/workflows/task-execution.md) — the opt-in flag set on a task when
   the tasks are written, declaring it may run concurrently with its group; honoured only when
-  `specs.py parallel` proves the group's `files:` sets disjoint, and never inferred while building.
+  `cq specs parallel` proves the group's `files:` sets disjoint, and never inferred while building.
+- [**Pilar**](../standards/naming/command-surface.md) — um dos três eixos que `cq` roteia:
+  `specs`, `knowledge` e `components`, passado como primeiro argumento (`cq <pilar>
+  <subcomando>…`). É o vocabulário único do eixo dos fronts, substituindo os nomes `docs` /
+  `specs` / `skill` que competiam antes da fusão em um só pacote.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
   `worktreeSetup`, `azureStates`, `integrationBranch`, `releaseBranch`, `azurePlacement`,
@@ -270,7 +289,7 @@ sentence, and **link out** rather than explaining in full here.
   present, plus one for the derived `executing` stage — are the example this repository has.
 - [**Prose fan-out**](../standards/quality/computed-fact-prose-fanout.md) — the set of prose sites
   a fact a tool computes ages the moment it changes — a schema key, a surface's command count — and
-  which every checker in this repo is blind to by construction: the selftest proves the key *works*, `specs.py validate` reads records rather
+  which every checker in this repo is blind to by construction: the selftest proves the key *works*, `cq specs validate` reads records rather
   than descriptions of them, and `stale-doc` only fires where a doc's `resource:` happens to name
   the schema file. Measured twice on one branch: **one field added → four sites stale** across four homes, and **one
   command retired → ten sites stale** across four files, with every checker green in both. Found by
@@ -328,12 +347,12 @@ sentence, and **link out** rather than explaining in full here.
   human typing its name**, whether by a spoken trigger or by another command's body naming it; its
   `description` stays resident in every session's context and is charged against the
   **Always-on ceiling**. The half of the test that is mechanical is not a judgement call:
-  `skills.py lint` derives the name-reachable set from the command bodies, so classify against the
+  `cq components lint` derives the name-reachable set from the command bodies, so classify against the
   instrument. The complement is a **Typed-only command**, and the criterion is a floor rather than a
   quota — on a small surface it may admit nobody.
 - [**Rules/rationale markers**](../standards/automation/context-discipline.md) — the pair of HTML
   comments, `<!-- rules -->` and `<!-- rationale -->`, that split a normative section's binding half
-  from the measurement and history behind it, so `skills.py read --rules-only` can return the first
+  from the measurement and history behind it, so `cq components read --rules-only` can return the first
   without the second. **A marker, never a heuristic**: a model deciding per read which sentences
   bind is non-deterministic and fails *silently*. Compaction here is **relocation, never deletion**
   — the rationale stays on disk and stays contract, only its position moves. A missing marker
@@ -343,7 +362,7 @@ sentence, and **link out** rather than explaining in full here.
   narrowest first: a command's own frontmatter `hooks:` block (fires only while that command runs),
   a `settings.json` hook with an event + `matcher`, a gated wide event, and an unmatched
   session-wide hook — the top rung, and a finding (`sk-hook-unmatched`) unless the reason nothing
-  narrower suffices is stated where it is wired. `skills.py` holds rung 1 and rung 2 to the same
+  narrower suffices is stated where it is wired. `cq components` holds rung 1 and rung 2 to the same
   checks from one implementation.
 - [**Section boundary**](../standards/automation/context-discipline.md) — the moment a `## N.`
   section's last task commits with another section still ahead: a clean point for a build to
@@ -352,17 +371,17 @@ sentence, and **link out** rather than explaining in full here.
   trigger is **that event, never a window size** — a threshold invented before it is measured fixes
   the answer. It offers and never imposes, never ends a run itself, and writes no new state.
 - [**Section reader**](../standards/automation/context-discipline.md) — the verb that resolves the
-  `§X` address the prose was already writing: `skills.py read <path> --sections "§A"` over free
-  markdown, `specs.py section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
+  `§X` address the prose was already writing: `cq components read <path> --sections "§A"` over free
+  markdown, `cq specs section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
   **list**, because turns are the other factor of the **Context integral** and N sections fetched
   over N turns can lose to reading the whole file. A section runs to the next heading of the same
   level or shallower, a fenced block is never read as a heading, and a name that resolves to
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
   same **Canonical set**, `SECTION_CASES` — which pins the *sectioning* rule the two answer
   identically, and therefore not the ladder below, a CLI-argument rule only the first has.
-  **They take that list differently, deliberately.** `skills.py` resolves each value whole before
+  **They take that list differently, deliberately.** `cq components` resolves each value whole before
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
-  cited by its full title; `specs.py` splits unconditionally, which is unreachable there because
+  cited by its full title; `cq specs` splits unconditionally, which is unreachable there because
   the fourteen canonical headings carry no comma and it refuses any name outside them.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
@@ -415,7 +434,7 @@ sentence, and **link out** rather than explaining in full here.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
   in `.claude/quenching.json`, holding a command `/specs:execute` runs once inside a newly created
   worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at
-  the first `verify:`. `specs.py` reads it and never executes it. Declaring nothing is the normal
+  the first `verify:`. `cq specs` reads it and never executes it. Declaring nothing is the normal
   case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`
   — exist only so a mistyped key cannot fail silently. Its consent is the isolation offer itself:
   the command is shown verbatim in the plan block, and choosing Worktree is the OK for it.
