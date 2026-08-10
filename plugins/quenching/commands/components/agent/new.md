@@ -4,7 +4,7 @@ argument-hint: [agent-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
 
-# /quenching:skill:agent:new — mint ONE subagent definition
+# /quenching:components:agent:new — mint ONE subagent definition
 
 **Input**: `$ARGUMENTS` (the agent to create or edit — a name or a description of the work
 to delegate).
