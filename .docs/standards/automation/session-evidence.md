@@ -2,9 +2,9 @@
 type: standard
 title: Session evidence
 description: How a session transcript is read as evidence for the command that drove it — where transcripts live, the two entry forms, the JSONL-first arm ladder with the arm declared in the output, and the rule that a counted claim comes from code, never from a model recalling its own run
-resource: plugins/quenching/assets/bin/session.py, plugins/quenching/commands/skill/retro.md
+resource: plugins/quenching/assets/bin/session.py, plugins/quenching/commands/components/command/retro.md
 tags: [automation, transcript, evidence, session, retro]
-timestamp: 2026-07-29
+timestamp: 2026-08-10
 audience: both
 authority: background
 source: improve-command-from-session plan — the go/no-go this standard's gate restates was answered PASS at task 1.3, against a real /specs:develop session (94120e96) that conducted /specs:isolate as a stage
@@ -22,7 +22,7 @@ command that ran in it, so a finding can carry a count and a quoted turn instead
 ## Where a transcript lives
 
 One JSONL file per session, at `~/.claude/projects/<cwd-slug>/<session-id>.jsonl` — the same tree
-`/docs:import-memory` already drains `memory/` from. `resolve_transcript`
+`/quenching:knowledge:import-memory` already drains `memory/` from. `resolve_transcript`
 (`session.py:148`) takes an explicit path, a bare session id, or resolves the newest file for the
 current `cwd` by encoding it with the same `encode_cwd` charset (`session.py:122`) that convention
 already uses. The file is readable while its own session is still running; only the in-flight

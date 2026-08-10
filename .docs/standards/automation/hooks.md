@@ -4,7 +4,7 @@ title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: .claude/settings.json, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/skills.py
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-08-06
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the okf-validate.py dirty-gate precedent. Graduated to current on an adopting surface, and skills.py enforces both rungs from one implementation (8 selftest cases). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
@@ -16,8 +16,8 @@ maintainer: quenching
 A hook charges **other people's operations**: it fires on events the command that installed
 it does not own, so a session-wide hook taxes every iteration in the repo — including every
 one it never helps. This repo therefore installs every hook at the **narrowest scope that
-still catches what it exists to catch**, minted by `/skill:hook:new` under one plan → one
-OK, inventoried (report-only) by `/skill:align`.
+still catches what it exists to catch**, minted by `/quenching:components:hook:new` under one plan → one
+OK, inventoried (report-only) by `/quenching:components:align`.
 
 ## The scope ladder — narrowest first
 
@@ -27,7 +27,7 @@ OK, inventoried (report-only) by `/skill:align`.
    fires only on matched tool calls.
 3. **Gated wide event** — a `Stop`/`UserPromptSubmit` hook made cheap by construction:
    dirty-gated by a marker file (an untouched turn costs one stat) or `once: true`. The
-   shipped `okf-validate.py` `stopScan: "dirty"` gate is this repo's standing example.
+   shipped checker's `stopScan: "dirty"` gate (`cq knowledge hook`) is this repo's standing example.
 4. **Unmatched session-wide** — a finding (`sk-hook-unmatched`) unless the reason nothing
    narrower suffices is stated where the hook is wired.
 
@@ -68,10 +68,10 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 `plugins/quenching/hooks/hooks.json` — loaded from the plugin's own tree, never merged into a
 target's `.claude/settings.json` — carries a `PostToolUse` hook matched to `Write|Edit` (rung 2,
 operation-scoped, `timeout` 10) and an unmatched `Stop` hook (rung 3, `timeout` 15), both invoking
-`python3 "${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py"`. Nothing is installed and nothing is
+`python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge hook`. Nothing is installed and nothing is
 offered: the wiring travels with the plugin, which is why no command needs a rung-1 frontmatter
-`hooks:` block of its own any more — the three that carried one (`/docs:add`, `/docs:learn`,
-`/docs:define`) had it removed as redundant.
+`hooks:` block of its own any more — the three that carried one (`/quenching:knowledge:add`, `/quenching:knowledge:learn`,
+`/quenching:knowledge:define`) had it removed as redundant.
 
 The `Stop` hook is the rung-3 example in the flesh rather than in the abstract — it is only
 affordable because the shipped `stopScan: "dirty"` gate makes a turn that touched no `/.docs/**` file
@@ -84,8 +84,8 @@ bundle.
 **A target that once accepted the old install offer carries a second, dead rung.** Its
 `.claude/settings.json` still names `${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py`, so the
 same checker fires twice — once from the plugin at the current version, once from a copy frozen at
-whatever it was installed at. That is legacy debris, reported by `skills.py drift` and removed by
-`/docs:align`, not a second opinion worth keeping.
+whatever it was installed at. That is legacy debris, reported by `cq components drift` and removed by
+`/quenching:knowledge:align`, not a second opinion worth keeping.
 
 **This repository carried that dead rung until 2026-08-06, and it was not silent.** The frozen copy
 was 4.4.5 against a shipped 4.13.0, and 4.4.5 still resolved its bundle root from a `docsDir`
@@ -98,6 +98,6 @@ it, and then it reports **failures of its own staleness as findings about your r
 plugin's own wiring as the only rung, which is what the paragraph above already prescribed.
 
 The full pricing doctrine lives once, in
-[capabilities.md](/plugins/quenching/assets/references/skill-new/capabilities.md) §Hooks;
+[capabilities.md](/plugins/quenching/assets/references/components-command-new/capabilities.md) §Hooks;
 this standard is the repo-side projection of it. An unparseable `settings*.json` is
 `sk-hook-unparseable` — every hook wired in it is dead.
