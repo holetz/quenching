@@ -2,7 +2,7 @@
 
 Moved verbatim out of `assets/hooks/okf-validate.py`, with two changes stated below.
 
-CLI  `<bundle-or-docs-dir> [--json]`
+CLI  `validate [<bundle-or-docs-dir>] [--json]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
    This is what `quenching-docs-align`/`quenching-docs-add` invoke and what the plugin's own
@@ -18,23 +18,22 @@ THE MODE IS A VERB, NOT A HEURISTIC — the one behaviour change
 `okf-validate.py` decided its mode by looking at the world: no `argv` **and** a non-tty
 stdin meant "hook". That test does not survive a pillar prefix, and it should not: it
 misfires under CI, under a subprocess, and under any redirection, silently and with no
-way to override it. `main` here routes the DECLARED token `hook` to `quenching.knowledge.hook.run_hook`
-and everything else to `run_cli`. Nothing in this pillar calls `isatty`.
-
-Task 5.3 mounts `cq knowledge …` on the two functions this module exposes — `run_cli(argv)`
-and, re-exported for it, `run_hook()` — or on `main(argv)` directly, which already spells the
-routing as one token.
+way to override it. `main` routes the DECLARED token — `hook` to
+`quenching.knowledge.hook.run_hook`, `validate` to `run_cli` — and nothing in this pillar
+calls `isatty`. `cq knowledge …` mounts straight onto `main`, which spells the whole routing
+as one token.
 
 `selftest` IS NOT HERE. The canonical frontmatter cases and the two retirement fixtures are
 tests and migrate to `tests/` in task 6.3, which is also where the intercept that kept a bare
 subcommand from being scanned as a path went; whether the verb survives is 6.3's to decide,
-and re-adding it is one branch in `run_cli`.
+and re-adding it is one branch in `main`.
 """
 from __future__ import annotations
 
 import json
+import sys
 
-from quenching.common.output import FINDINGS, OK
+from quenching.common.output import FINDINGS, OK, REFUSAL
 from quenching.common.version import VERSION
 from quenching.knowledge.config import _load_config, _project_dir
 from quenching.knowledge.hook import run_hook
@@ -42,10 +41,13 @@ from quenching.knowledge.render import _render_text, _split
 from quenching.knowledge.validate import validate_tree
 
 
+USAGE = ("usage: cq knowledge validate [<bundle-dir>] [--json]   "
+         "(default bundle-dir: .docs)\n"
+         "       cq knowledge hook                               "
+         "(reads the hook JSON on stdin)")
+
+
 def run_cli(argv: list[str]) -> int:
-    if "--version" in argv:
-        print(f"okf-validate {VERSION}")
-        return OK
     cfg = _load_config(_project_dir({}))
     as_json = "--json" in argv
     paths = [a for a in argv if not a.startswith("-")]
@@ -71,10 +73,24 @@ def run_cli(argv: list[str]) -> int:
 def main(argv: list[str]) -> int:
     """The pillar's whole entry: one declared token chooses the mode.
 
-    There is no REFUSAL step. `okf-validate.py` never had one — not one `return 2` in its
-    1,372 lines — and inventing one here would be a behaviour change dressed as a move. A
-    bundle root that is not a directory is a `no-bundle` ERROR finding and exits `FINDINGS`,
-    exactly as it always did."""
-    if argv and argv[0] == "hook":
+    BOTH modes are verbs, and neither is the default. `okf-validate.py` reached CLI mode by
+    falling through — any argv that was not the hook shape was read as a bundle path, so a
+    mistyped verb came back as `no-bundle` against a directory nobody named. Under a prefix
+    that fallback is an unannounced alias for `validate`, which the spec's `## Out of Scope`
+    rules out by name, so a token that is not a verb is a usage refusal.
+
+    THE VALIDATOR STILL HAS NO REFUSAL STEP. `okf-validate.py` never had one — not one
+    `return 2` in its 1,372 lines — and inventing one would be a behaviour change dressed as
+    a move. A bundle root that is not a directory is still a `no-bundle` ERROR finding
+    exiting `FINDINGS`, exactly as it always did. The `REFUSAL` below is the ROUTER's, on a
+    word that names no verb, and it can only be reached before any bundle is read."""
+    if "--version" in argv:
+        print(f"okf-validate {VERSION}")
+        return OK
+    verb = argv[0] if argv else ""
+    if verb == "hook":
         return run_hook()
-    return run_cli(argv)
+    if verb == "validate":
+        return run_cli(argv[1:])
+    print(USAGE, file=sys.stderr)
+    return REFUSAL
