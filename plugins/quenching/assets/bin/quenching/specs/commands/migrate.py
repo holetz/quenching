@@ -22,7 +22,7 @@ from quenching.specs.backends import open_backend
 from quenching.specs.backends.hybrid import (GH_PART_MAX, hybrid_join, hybrid_project,
                                              hybrid_split, hybrid_title_join,
                                              hybrid_title_split)
-from quenching.specs.commands.output import emit
+from quenching.specs.commands.output import Emitter
 from quenching.specs.parse import LEGACY_DATED_FILE_RE, SPEC_FILE_RE, titleize
 from quenching.specs.parse.derive import _policy
 from quenching.specs.parse.fields import legacy_marker_fold, set_frontmatter_key
@@ -283,7 +283,7 @@ def _migrate_markers(backend, dry: bool) -> list[dict]:
     return out
 
 
-def cmd_migrate(args, root: str) -> int:
+def cmd_migrate(args, root: str, out: Emitter) -> int:
     """One-way, to the CURRENT layout. `/.specs/archive/**` is NEVER touched — it is
     historical and read-only, and churning it would break every link into it for no gain.
 
@@ -319,23 +319,23 @@ def cmd_migrate(args, root: str) -> int:
         markers = _migrate_markers(backend, args.dry_run)
         if markers:
             broken = [r for r in markers if not r["roundTrip"]]
-            emit(args.json,
-                 {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
-                  "kind": "markers", "count": len(markers),
-                  "projected": sum(1 for r in markers if r["projectedTitle"]),
-                  "spilled": sum(1 for r in markers if r["parts"] > 1),
-                  "skipped": broken, "specs": markers},
-                 f"{'would fold' if args.dry_run else 'folded'} {len(markers)} spec(s) out of "
-                 f"the dated basename" + (f" — {len(broken)} SKIPPED, see --json" if broken
-                                          else ", all byte-for-byte"))
+            out.emit(args.json,
+                     {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
+                      "kind": "markers", "count": len(markers),
+                      "projected": sum(1 for r in markers if r["projectedTitle"]),
+                      "spilled": sum(1 for r in markers if r["parts"] > 1),
+                      "skipped": broken, "specs": markers},
+                     f"{'would fold' if args.dry_run else 'folded'} {len(markers)} spec(s) out of "
+                     f"the dated basename" + (f" — {len(broken)} SKIPPED, see --json" if broken
+                                              else ", all byte-for-byte"))
             return 1 if broken else 0
 
     if not plans and not tasks and not v2:
-        emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
-                         "message": "no v1 plan folders, no v1 backlog tasks, no specs in "
-                                    "backlog/ or ready/ and no dated markers — this workspace "
-                                    "is already current"},
-             "refused: nothing to migrate — this workspace is already current")
+        out.emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
+                             "message": "no v1 plan folders, no v1 backlog tasks, no specs in "
+                                        "backlog/ or ready/ and no dated markers — this workspace "
+                                        "is already current"},
+                 "refused: nothing to migrate — this workspace is already current")
         return 2
 
     # A name collision is the one way this could destroy work, so it is checked for the
@@ -351,11 +351,12 @@ def cmd_migrate(args, root: str) -> int:
                            f"{seen[it['file']]}/{it['file']}")
         seen[it["file"]] = it["folder"]
     if clashes:
-        emit(args.json, {"ok": False, "code": "sp-migrate-collision", "root": root,
-                         "collisions": clashes,
-                         "message": f"{len(clashes)} destination collision(s) — nothing moved"},
-             f"refused: {len(clashes)} destination collision(s) — nothing moved\n" +
-             "\n".join(f"  {c}" for c in clashes))
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-migrate-collision", "root": root,
+                  "collisions": clashes,
+                  "message": f"{len(clashes)} destination collision(s) — nothing moved"},
+                 f"refused: {len(clashes)} destination collision(s) — nothing moved\n" +
+                 "\n".join(f"  {c}" for c in clashes))
         return 2
 
     migrated = [_migrate_plan(root, n, args.dry_run) for n in plans]

@@ -6,7 +6,7 @@ so nothing does string surgery on a spec from the caller's side."""
 from __future__ import annotations
 
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import emit, emit_err, read_one
+from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.tasks import (BLOCKED_REASON_RE, CHECKBOX_RE, COMMIT_SHA_RE,
                                          SUBJECT_RE)
@@ -19,7 +19,7 @@ def _find_task(tasks: list[dict], ident: str) -> dict | None:
     return None
 
 
-def cmd_task(args, root: str) -> int:
+def cmd_task(args, root: str, out: Emitter) -> int:
     """Flip a checkbox MECHANICALLY — never by string surgery on the caller's side.
 
     `--block` writes the reason into the line itself. That visibility is the whole point:
@@ -34,29 +34,29 @@ def cmd_task(args, root: str) -> int:
     `gh api` call included — is reported, never swallowed."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     ident = args.check or args.uncheck or args.block
     if not ident:
-        emit(args.json, {"ok": False, "code": "sp-no-action",
-                         "message": "pass --check, --uncheck or --block"},
-             "error: pass --check, --uncheck or --block")
+        out.emit(args.json, {"ok": False, "code": "sp-no-action",
+                             "message": "pass --check, --uncheck or --block"},
+                 "error: pass --check, --uncheck or --block")
         return 1
     # The subject names WHICH COMMIT IMPLEMENTS THIS TASK, so it is meaningful only on the
     # transition that says the task is done. On --uncheck any recorded anchor is dropped
     # rather than left behind pointing at work the checkbox no longer claims.
     if args.subject and not args.check:
-        emit(args.json, {"ok": False, "code": "sp-subject-without-check",
-                         "message": "--subject records the commit that implements a task, "
-                                    "so it goes with --check"},
-             "error: --subject goes with --check")
+        out.emit(args.json, {"ok": False, "code": "sp-subject-without-check",
+                             "message": "--subject records the commit that implements a task, "
+                                        "so it goes with --check"},
+                 "error: --subject goes with --check")
         return 1
     if args.subject is not None and not SUBJECT_RE.match(args.subject.strip()):
-        emit(args.json, {"ok": False, "code": "sp-bad-subject", "subject": args.subject,
-                         "message": "a commit subject must be one non-empty line"},
-             "error: a commit subject must be one non-empty line")
+        out.emit(args.json, {"ok": False, "code": "sp-bad-subject", "subject": args.subject,
+                             "message": "a commit subject must be one non-empty line"},
+                 "error: a commit subject must be one non-empty line")
         return 1
     # --commit is the sha form of the SAME anchor, meant to be called AFTER the commit that
     # implements the task already exists — the CLI never invents or looks up a sha, it only
@@ -64,38 +64,38 @@ def cmd_task(args, root: str) -> int:
     # transition that says the task is done, so it goes with --check too. It is additive,
     # not a replacement: a caller may still pass --subject alone, exactly as before.
     if args.commit and not args.check:
-        emit(args.json, {"ok": False, "code": "sp-commit-without-check",
-                         "message": "--commit records the sha of the commit that implements "
-                                    "a task, so it goes with --check"},
-             "error: --commit goes with --check")
+        out.emit(args.json, {"ok": False, "code": "sp-commit-without-check",
+                             "message": "--commit records the sha of the commit that implements "
+                                        "a task, so it goes with --check"},
+                 "error: --commit goes with --check")
         return 1
     if args.commit is not None and not COMMIT_SHA_RE.match(args.commit.strip()):
-        emit(args.json, {"ok": False, "code": "sp-bad-commit-sha", "commit": args.commit,
-                         "message": "--commit takes a git sha (hex, 7-40 characters), not "
-                                    "free text"},
-             "error: --commit takes a git sha (hex, 7-40 characters), not free text")
+        out.emit(args.json, {"ok": False, "code": "sp-bad-commit-sha", "commit": args.commit,
+                             "message": "--commit takes a git sha (hex, 7-40 characters), not "
+                                        "free text"},
+                 "error: --commit takes a git sha (hex, 7-40 characters), not free text")
         return 1
     if args.block and not args.reason:
-        emit(args.json, {"ok": False, "code": "sp-no-reason",
-                         "message": "--block requires --reason"},
-             "error: --block requires --reason (a blocked task without a reason is the "
-             "hidden state this replaced)")
+        out.emit(args.json, {"ok": False, "code": "sp-no-reason",
+                             "message": "--block requires --reason"},
+                 "error: --block requires --reason (a blocked task without a reason is the "
+                 "hidden state this replaced)")
         return 1
     t = _find_task(info["tasks"], ident)
     if not t:
-        emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
-                         "message": f"no task '{ident}' in {info['slug']}"},
-             f"error: no task '{ident}' in {info['slug']}")
+        out.emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
+                             "message": f"no task '{ident}' in {info['slug']}"},
+                 f"error: no task '{ident}' in {info['slug']}")
         return 1
 
     lines = info["text"].splitlines(keepends=True)
     line = lines[t["lineno"]]
     m = CHECKBOX_RE.match(line.rstrip("\n"))
     if not m:
-        emit(args.json, {"ok": False, "code": "sp-line-drift", "task": ident,
-                         "lineno": t["lineno"],
-                         "message": "the parsed line is not a checkbox — the file changed"},
-             "error: the parsed line is not a checkbox — re-read the spec")
+        out.emit(args.json, {"ok": False, "code": "sp-line-drift", "task": ident,
+                             "lineno": t["lineno"],
+                             "message": "the parsed line is not a checkbox — the file changed"},
+                 "error: the parsed line is not a checkbox — re-read the spec")
         return 1
     mark = {"check": "x", "uncheck": " ", "block": "!"}[
         "check" if args.check else "uncheck" if args.uncheck else "block"]
@@ -150,15 +150,15 @@ def cmd_task(args, root: str) -> int:
     verb = "checked" if args.check else "unchecked" if args.uncheck else "blocked"
     anchor_lines = ((f"\n  subject: {subject}" if subject else "") +
                     (f"\n  commit: {commit}" if commit else ""))
-    emit(args.json,
-         {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
-          "state": mark, "text": body, "subject": subject, "commit": commit,
-          "reason": args.reason if args.block else None},
-         f"task {ident} {verb}: {body}" + anchor_lines)
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "task": ident, "action": verb,
+              "state": mark, "text": body, "subject": subject, "commit": commit,
+              "reason": args.reason if args.block else None},
+             f"task {ident} {verb}: {body}" + anchor_lines)
     return 0
 
 
-def cmd_discover(args, root: str) -> int:
+def cmd_discover(args, root: str, out: Emitter) -> int:
     """Append one line to `## Discoveries`, creating the section when absent.
 
     Captured INDISCRIMINATELY during execution — whether a discovery is worth acting on is
@@ -166,10 +166,10 @@ def cmd_discover(args, root: str) -> int:
     interrupted for something that may not matter."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     entry = f"- {args.text.strip()}"
     sec = info["sections"].get("Discoveries")
     if sec and sec["filled"]:
@@ -178,7 +178,7 @@ def cmd_discover(args, root: str) -> int:
         block = f"## Discoveries\n\n{entry}\n"
     new_text, _ = upsert_section(info, "Discoveries", block)
     backend.write_spec(info, new_text)
-    emit(args.json,
-         {"ok": True, "slug": info["slug"], "entry": args.text.strip()},
-         f"recorded in ## Discoveries: {args.text.strip()}")
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "entry": args.text.strip()},
+             f"recorded in ## Discoveries: {args.text.strip()}")
     return 0

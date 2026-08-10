@@ -10,7 +10,7 @@ import os
 
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.commands.migrate import _v1_leftovers
-from quenching.specs.commands.output import emit
+from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import _finding
 from quenching.specs.config import (BACKENDS, CONFIG_FILE, CONFIG_KEYS,
                                     DEFAULT_INTEGRATION_BRANCH, DEFAULT_RELEASE_BRANCH,
@@ -20,7 +20,7 @@ from quenching.specs.parse import PHASES, spec_files
 from quenching.specs.parse.spec import LEGACY_PHASES
 
 
-def cmd_config(args, root: str) -> int:
+def cmd_config(args, root: str, out: Emitter) -> int:
     """The workspace's declared parameters, as data. Exit 0 even with nothing declared —
     a missing config is the normal case, and `doctor` is where a malformed one is judged."""
     cfg = load_config(root)
@@ -41,11 +41,11 @@ def cmd_config(args, root: str) -> int:
                                     or f"(none declared, defaults to {DEFAULT_RELEASE_BRANCH})")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
-    emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
+    out.emit(args.json, {"ok": True, "root": root, **cfg}, "\n".join(lines))
     return 0
 
 
-def cmd_doctor(args, root: str) -> int:
+def cmd_doctor(args, root: str, out: Emitter) -> int:
     findings: list[dict] = []
     # The config findings come first, and reading the config here also decides whether
     # the workspace-shape half below applies at all. Under an external backend there

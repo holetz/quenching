@@ -10,14 +10,14 @@ import datetime
 import json
 
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import emit, emit_err, read_one
+from quenching.specs.commands.output import Emitter, read_one
 from quenching.specs.parse.fields import set_frontmatter_key, set_frontmatter_record
 from quenching.specs.parse.records import record_keys
 from quenching.specs.schema import (DEFAULT_VERIFICATION, MERGE_NO_PR_STRATEGIES,
                                     VERIFICATION_POLICIES, load_schema)
 
 
-def cmd_verification(args, root: str) -> int:
+def cmd_verification(args, root: str, out: Emitter) -> int:
     """Read ONE spec's verification policy, or set it — through the backend, after capture.
 
     THE ONLY WRITER USED TO BE `new --verification`, and that is the one moment nobody has an
@@ -33,35 +33,35 @@ def cmd_verification(args, root: str) -> int:
     `record` would have meant inventing a one-field record and a `value=` field name for it."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     declared = str(info["frontmatter"].get("verification", "")).strip().lower()
 
     if not args.policy:
-        emit(args.json,
-             {"ok": True, "slug": info["slug"], "verification": info["verification"],
-              "declared": declared or None, "default": DEFAULT_VERIFICATION},
-             f"{info['slug']} — verification: {info['verification']}"
-             + ("" if declared else "  (the default — nothing declared)"))
+        out.emit(args.json,
+                 {"ok": True, "slug": info["slug"], "verification": info["verification"],
+                  "declared": declared or None, "default": DEFAULT_VERIFICATION},
+                 f"{info['slug']} — verification: {info['verification']}"
+                 + ("" if declared else "  (the default — nothing declared)"))
         return 0
 
     policy = args.policy.strip().lower()
     if policy not in VERIFICATION_POLICIES:
-        emit(args.json,
-             {"ok": False, "code": "sp-bad-verification", "slug": info["slug"],
-              "given": args.policy, "policies": list(VERIFICATION_POLICIES),
-              "message": f"'{args.policy}' is not one of "
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-bad-verification", "slug": info["slug"],
+                  "given": args.policy, "policies": list(VERIFICATION_POLICIES),
+                  "message": f"'{args.policy}' is not one of "
                          f"{', '.join(VERIFICATION_POLICIES)}"},
-             f"error: '{args.policy}' is not one of {', '.join(VERIFICATION_POLICIES)}")
+                 f"error: '{args.policy}' is not one of {', '.join(VERIFICATION_POLICIES)}")
         return 2
     backend.write_spec(info, set_frontmatter_key(info["text"], "verification", policy))
-    emit(args.json,
-         {"ok": True, "slug": info["slug"], "verification": policy,
-          "previous": declared or None},
-         f"{info['slug']} — verification: {policy}"
-         + (f"  (was {declared})" if declared and declared != policy else ""))
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "verification": policy,
+              "previous": declared or None},
+             f"{info['slug']} — verification: {policy}"
+             + (f"  (was {declared})" if declared and declared != policy else ""))
     return 0
 
 
@@ -89,7 +89,7 @@ def parse_field_date(value: str) -> str | None:
         return None
 
 
-def cmd_field(args, root: str) -> int:
+def cmd_field(args, root: str, out: Emitter) -> int:
     """Read or set ONE of `tags`/`assignee`/`start`/`target`, through the backend — the ONE
     deterministic verb `## Design` requires for each: an agent (or a human) may choose WHAT
     to write, a tag from `tagCatalog`, an assignee, a date, but never HOW. `args.field` is
@@ -101,15 +101,15 @@ def cmd_field(args, root: str) -> int:
     key = args.field
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     current = info["frontmatter"].get(key)
 
     if args.value is None:
-        emit(args.json, {"ok": True, "slug": info["slug"], key: current},
-             f"{info['slug']} — {key}: {current if current else '(none)'}")
+        out.emit(args.json, {"ok": True, "slug": info["slug"], key: current},
+                 f"{info['slug']} — {key}: {current if current else '(none)'}")
         return 0
 
     if key == "tags":
@@ -119,22 +119,22 @@ def cmd_field(args, root: str) -> int:
     elif key in ("start", "target"):
         value = parse_field_date(args.value.strip())
         if value is None:
-            emit(args.json, {"ok": False, "code": f"sp-bad-{key}", "given": args.value,
-                             "message": f"'{args.value}' is not a real YYYY-MM-DD date"},
-                 f"error: '{args.value}' is not a real YYYY-MM-DD date")
+            out.emit(args.json, {"ok": False, "code": f"sp-bad-{key}", "given": args.value,
+                                 "message": f"'{args.value}' is not a real YYYY-MM-DD date"},
+                     f"error: '{args.value}' is not a real YYYY-MM-DD date")
             return 2
         rendered = stored = value
     else:   # assignee
         rendered = stored = args.value.strip()
 
     backend.write_spec(info, set_frontmatter_key(info["text"], key, rendered))
-    emit(args.json, {"ok": True, "slug": info["slug"], key: stored, "previous": current},
-         f"{info['slug']} — {key}: {stored}"
-         + (f"  (was {current})" if current and current != stored else ""))
+    out.emit(args.json, {"ok": True, "slug": info["slug"], key: stored, "previous": current},
+             f"{info['slug']} — {key}: {stored}"
+             + (f"  (was {current})" if current and current != stored else ""))
     return 0
 
 
-def cmd_record(args, root: str) -> int:
+def cmd_record(args, root: str, out: Emitter) -> int:
     """Read or merge ONE frontmatter record, through the backend.
 
     The seven records were the last thing the command surface wrote by editing the file at
@@ -149,22 +149,22 @@ def cmd_record(args, root: str) -> int:
     schema = load_schema()
     declared = schema.get("frontmatter", {}).get("records", {})
     if args.name not in record_keys(schema):
-        emit(args.json,
-             {"ok": False, "code": "sp-unknown-record", "record": args.name,
-              "declared": record_keys(schema),
-              "message": f"'{args.name}' is not a declared record — the declared ones are "
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-unknown-record", "record": args.name,
+                  "declared": record_keys(schema),
+                  "message": f"'{args.name}' is not a declared record — the declared ones are "
                          f"{', '.join(record_keys(schema))}"},
-             f"error: '{args.name}' is not a declared record")
+                 f"error: '{args.name}' is not a declared record")
         return 2
     rspec = declared.get(args.name, {})
     fields = list(rspec.get("fields", []))
 
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     current = info["frontmatter"].get(args.name) or None
 
     if not args.set:
@@ -178,21 +178,21 @@ def cmd_record(args, root: str) -> int:
         return 0 if current is not None else 1
 
     if not fields:
-        emit(args.json,
-             {"ok": False, "code": "sp-record-not-writable", "record": args.name,
-              "writtenBy": rspec.get("writtenBy", ""),
-              "message": f"`{args.name}:` declares no fields — its one writer is "
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-record-not-writable", "record": args.name,
+                  "writtenBy": rspec.get("writtenBy", ""),
+                  "message": f"`{args.name}:` declares no fields — its one writer is "
                          f"{rspec.get('writtenBy', 'another command')}"},
-             f"refused: `{args.name}:` is not written through this command")
+                 f"refused: `{args.name}:` is not written through this command")
         return 2
     if rspec.get("writeOnce") and current:
-        emit(args.json,
-             {"ok": False, "code": "sp-record-write-once", "record": args.name,
-              "current": current,
-              "message": f"`{args.name}:` is write-once and already reads {current} — a "
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-record-write-once", "record": args.name,
+                  "current": current,
+                  "message": f"`{args.name}:` is write-once and already reads {current} — a "
                          f"record that disagrees with reality is a finding to report, "
                          f"never a value to overwrite"},
-             f"refused: `{args.name}:` is already set to {current}")
+                 f"refused: `{args.name}:` is already set to {current}")
         return 2
 
     merged = dict(current) if isinstance(current, dict) else {}
@@ -200,38 +200,38 @@ def cmd_record(args, root: str) -> int:
         k, sep, v = pair.partition("=")
         k, v = k.strip(), v.strip()
         if not sep or k not in fields:
-            emit(args.json,
-                 {"ok": False, "code": "sp-unknown-record-field", "record": args.name,
-                  "given": pair, "fields": fields,
-                  "message": f"expected `field=value` with field one of "
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-unknown-record-field", "record": args.name,
+                      "given": pair, "fields": fields,
+                      "message": f"expected `field=value` with field one of "
                              f"{', '.join(fields)} — got '{pair}'"},
-                 f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
+                     f"error: expected `field=value` for `{args.name}:` — got '{pair}'")
             return 2
         err = record_field_value_error(rspec, k, v)
         if err:
-            emit(args.json,
-                 {"ok": False, "code": "sp-invalid-record-value", "record": args.name,
-                  "field": k, "given": v, "levels": rspec[k].get("levels", []),
-                  "message": err},
-                 f"refused: {err}")
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-invalid-record-value", "record": args.name,
+                      "field": k, "given": v, "levels": rspec[k].get("levels", []),
+                      "message": err},
+                     f"refused: {err}")
             return 2
         merged[k] = v
     if (args.name == "merge" and merged.get("pr")
             and merged.get("strategy") in MERGE_NO_PR_STRATEGIES):
-        emit(args.json,
-             {"ok": False, "code": "sp-merge-pr-no-route", "record": args.name,
-              "strategy": merged.get("strategy"), "noPr": list(MERGE_NO_PR_STRATEGIES),
-              "message": f"`pr:` has no `gh pr merge` equivalent under "
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-merge-pr-no-route", "record": args.name,
+                  "strategy": merged.get("strategy"), "noPr": list(MERGE_NO_PR_STRATEGIES),
+                  "message": f"`pr:` has no `gh pr merge` equivalent under "
                          f"`{merged.get('strategy')}` — the PR route is never offered "
                          f"under it, so there is nothing for `pr:` to record"},
-             f"refused: `pr:` is set but `{merged.get('strategy')}` has no PR route")
+                 f"refused: `pr:` is set but `{merged.get('strategy')}` has no PR route")
         return 2
     # The schema's field order, so a record reads the same however it was assembled and a
     # re-stamp never reshuffles what a human wrote.
     ordered = {k: merged[k] for k in fields if k in merged}
     backend.write_spec(info, set_frontmatter_record(info["text"], args.name, ordered))
-    emit(args.json,
-         {"ok": True, "slug": info["slug"], "record": args.name, "value": ordered},
-         f"{info['slug']} — {args.name}: "
-         f"{{{', '.join(f'{k}: {v}' for k, v in ordered.items())}}}")
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "record": args.name, "value": ordered},
+             f"{info['slug']} — {args.name}: "
+             f"{{{', '.join(f'{k}: {v}' for k, v in ordered.items())}}}")
     return 0

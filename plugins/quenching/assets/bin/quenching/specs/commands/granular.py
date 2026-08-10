@@ -10,14 +10,14 @@ import json
 import sys
 
 from quenching.specs.backends import open_backend
-from quenching.specs.commands.output import display_locator, emit, emit_err, read_one
+from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.commands.task import _find_task
 from quenching.specs.parse.edit import _match_heading, upsert_section, write_handoff_block
 from quenching.specs.parse.sections import section_state, stray_headings
 from quenching.specs.schema import canonical_headings, headings_for_moment, section_guidance
 
 
-def cmd_section(args, root: str) -> int:
+def cmd_section(args, root: str, out: Emitter) -> int:
     """Deterministic partial read/write of N sections — what makes lean agent context real.
 
     An executor is handed a task line and `## Handoff`, never the whole spec; this is the
@@ -36,42 +36,42 @@ def cmd_section(args, root: str) -> int:
     `files`."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     if args.moment:
         wanted = headings_for_moment(args.moment)
         if not wanted:
-            emit(args.json,
-                 {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
-                  "message": f"no canonical section declares moment '{args.moment}'"},
-                 f"error: no canonical section declares moment '{args.moment}'")
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-unknown-moment", "moment": args.moment,
+                      "message": f"no canonical section declares moment '{args.moment}'"},
+                     f"error: no canonical section declares moment '{args.moment}'")
             return 2
     else:
         wanted = [h for h in (p.strip() for p in (args.heading or "").split(",")) if h]
         if not wanted:
-            emit(args.json,
-                 {"ok": False, "code": "sp-no-heading",
-                  "message": "give a heading, or --moment, to read"},
-                 "error: give a heading, or --moment, to read")
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-no-heading",
+                      "message": "give a heading, or --moment, to read"},
+                     "error: give a heading, or --moment, to read")
             return 2
     headings, stray = [], []
     for name in wanted:
         h = _match_heading(name)
         (headings.append(h) if h else stray.append(name))
     if stray:
-        emit(args.json,
-             {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
-              "stray": stray, "canonical": canonical_headings(),
-              "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
-             f"error: not a canonical heading: {', '.join(stray)}")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-stray-heading", "heading": stray[0],
+                  "stray": stray, "canonical": canonical_headings(),
+                  "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
+                 f"error: not a canonical heading: {', '.join(stray)}")
         return 2
     if args.write and len(headings) != 1:
-        emit(args.json,
-             {"ok": False, "code": "sp-write-plural", "stray": headings,
-              "message": "--write takes exactly one heading — stdin is one stream"},
-             "error: --write takes exactly one heading")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-write-plural", "stray": headings,
+                  "message": "--write takes exactly one heading — stdin is one stream"},
+                 "error: --write takes exactly one heading")
         return 2
     if not args.write:
         rows = [{"heading": h, "state": section_state(info["sections"], h),
@@ -94,11 +94,11 @@ def cmd_section(args, root: str) -> int:
     heading = headings[0]
     scope = getattr(args, "scope", None)
     if scope and heading != "Handoff":
-        emit(args.json,
-             {"ok": False, "code": "sp-scope-not-handoff", "heading": heading,
-              "message": "--scope only applies to ## Handoff — every other section is "
-                         "written whole"},
-             "error: --scope only applies to ## Handoff")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-scope-not-handoff", "heading": heading,
+                  "message": "--scope only applies to ## Handoff — every other section is "
+                             "written whole"},
+                 "error: --scope only applies to ## Handoff")
         return 2
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
@@ -109,11 +109,11 @@ def cmd_section(args, root: str) -> int:
                  if content.strip() else section_guidance(heading))
         new_text, action = upsert_section(info, heading, block)
     backend.write_spec(info, new_text)
-    emit(args.json,
-         {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
-          "scope": scope, "path": display_locator(info["path"], root)},
-         f"{action} ## {heading}{f' ({scope})' if scope else ''} in "
-         f"{info['phase']}/{info['file']}")
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
+              "scope": scope, "path": display_locator(info["path"], root)},
+             f"{action} ## {heading}{f' ({scope})' if scope else ''} in "
+             f"{info['phase']}/{info['file']}")
     return 0
 
 
@@ -181,7 +181,7 @@ def _show_human(obj: dict, info: dict) -> str:
     return "\n".join(out)
 
 
-def cmd_show(args, root: str) -> int:
+def cmd_show(args, root: str, out: Emitter) -> int:
     """Read ONE task, or the map of what is there — the whole document only when it is asked
     for by name.
 
@@ -201,30 +201,30 @@ def cmd_show(args, root: str) -> int:
     An unknown task id is a finding (exit 1), the same as an unknown slug."""
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
 
     wanted_tasks = list(args.task or [])
     if args.full and wanted_tasks:
         # Two different cost profiles in one request. Silently letting one win would hand
         # back the whole document to a caller that asked for a slice, which is the exact
         # failure this command exists to make impossible.
-        emit(args.json,
-             {"ok": False, "code": "sp-conflicting-selection",
-              "message": "--full asks for the whole document and --task for a slice of it "
-                         "— pass one or the other"},
-             "error: --full does not combine with --task")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-conflicting-selection",
+                  "message": "--full asks for the whole document and --task for a slice of it "
+                             "— pass one or the other"},
+                 "error: --full does not combine with --task")
         return 2
 
     tasks: list[dict] = []
     for ident in wanted_tasks:
         t = _find_task(info["tasks"], ident)
         if not t:
-            emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
-                             "message": f"no task '{ident}' in {info['slug']}"},
-                 f"error: no task '{ident}' in {info['slug']}")
+            out.emit(args.json, {"ok": False, "code": "sp-unknown-task", "task": ident,
+                                 "message": f"no task '{ident}' in {info['slug']}"},
+                     f"error: no task '{ident}' in {info['slug']}")
             return 1
         tasks.append(_task_view(t))
 
@@ -240,5 +240,5 @@ def cmd_show(args, root: str) -> int:
         obj["tasks"] = tasks
     else:
         obj.update(_show_index(info))
-    emit(args.json, obj, _show_human(obj, info))
+    out.emit(args.json, obj, _show_human(obj, info))
     return 0

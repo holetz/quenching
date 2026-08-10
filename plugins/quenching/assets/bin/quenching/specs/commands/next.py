@@ -11,7 +11,7 @@ from quenching.common.dates import today
 from quenching.common.git import _git
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.commands.output import display_locator, emit, emit_err, read_one
+from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.parse import derive_info, titleize
 from quenching.specs.parse.derive import derive_stage
 from quenching.specs.parse.sections import ready_report
@@ -138,7 +138,7 @@ def _rank_reason(c: dict) -> str:
     return f"{c['stage']}, {c['ageDays']}d old"
 
 
-def _next_front(args, root: str) -> int:
+def _next_front(args, root: str, out: Emitter) -> int:
     """The ranked candidate list — THE only place ranking logic lives.
 
     Four factors, lexicographic and in this order:
@@ -160,7 +160,7 @@ def _next_front(args, root: str) -> int:
     heads, current = _git_refs(root)
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     cands = [_candidate(backend, s, schema, heads, current, root)
              for s in backend.list_specs("plans")]
     cands.sort(key=lambda c: c["_key"])
@@ -200,7 +200,7 @@ def _next_front(args, root: str) -> int:
     return 0
 
 
-def cmd_next(args, root: str) -> int:
+def cmd_next(args, root: str, out: Emitter) -> int:
     """THE single next action, so a skill never infers state from prose.
 
     In `plans/` the ladder is one chain, because the folder no longer splits it: fill the
@@ -215,19 +215,19 @@ def cmd_next(args, root: str) -> int:
     With `--front` the question is the other one — WHICH spec — and that is answered by
     `_next_front`."""
     if args.front:
-        return _next_front(args, root)
+        return _next_front(args, root, out)
     if not args.spec:
-        emit(args.json, {"ok": False, "code": "sp-no-target",
-                         "message": "pass --spec <slug> for one spec's next action, "
-                                    "or --front for the ranked candidate list"},
-             "error: pass --spec <slug>, or --front")
+        out.emit(args.json, {"ok": False, "code": "sp-no-target",
+                             "message": "pass --spec <slug> for one spec's next action, "
+                                        "or --front for the ranked candidate list"},
+                 "error: pass --spec <slug>, or --front")
         return 1
     backend, err = open_backend(root)
     if err:
-        return emit_err(args.json, err)
-    info, err = read_one(backend, args.spec)
+        return out.emit_err(args.json, err)
+    info, err = read_one(backend, args.spec, out)
     if err:
-        return emit_err(args.json, err)
+        return out.emit_err(args.json, err)
     base = {"slug": info["slug"], "phase": info["phase"], "folder": info["folder"],
             "stage": info["stage"], "verification": info["verification"],
             "approved": info["frontmatter"].get("approved") or None,
@@ -244,7 +244,7 @@ def cmd_next(args, root: str) -> int:
                    "message": f"write ## {want}"
                               + (f" (then {remaining} more)" if remaining else "")
                               + " to reach the ready gate"}
-            emit(args.json, obj, obj["message"])
+            out.emit(args.json, obj, obj["message"])
             return 0
         openable = [t for t in info["tasks"] if not t["checked"] and not t["blocked"]]
         if openable:
@@ -254,7 +254,7 @@ def cmd_next(args, root: str) -> int:
                 # The consumer of `files:` is an executor who cannot tell an invented
                 # piece from a path the task will create — refuse HERE, at the door,
                 # never hand the list over.
-                return emit_err(args.json, {
+                return out.emit_err(args.json, {
                     "code": "sp-files-annotation",
                     "message": f"task {t['id']} declares files entries that are not "
                                f"paths: {', '.join(repr(b) for b in bad)} — remove the "
@@ -264,22 +264,22 @@ def cmd_next(args, root: str) -> int:
                    "cwd": t["cwd"],
                    "parallel": t["parallel"], **base,
                    "message": f"implement task {t['id']}: {t['text']}"}
-            emit(args.json, obj, obj["message"])
+            out.emit(args.json, obj, obj["message"])
             return 0
         if base["blocked"]:
             obj = {"ok": True, "action": "blocked", **base,
                    "message": f"every remaining task is blocked ({len(base['blocked'])})"}
-            emit(args.json, obj, obj["message"] + "".join(
+            out.emit(args.json, obj, obj["message"] + "".join(
                 f"\n  [!] {b['text']}" for b in base["blocked"]))
             return 0
         obj = {"ok": True, "action": "promote", "to": "archive", **base,
                "message": f"all tasks complete — write ## Outcome, then "
                           f"`specs.py promote {info['slug']} --to archive`"}
-        emit(args.json, obj, obj["message"])
+        out.emit(args.json, obj, obj["message"])
         return 0
 
     obj = {"ok": True, "action": "done", **base,
            "message": f"'{info['slug']}' is archived ("
                       f"{info['frontmatter'].get('outcome', 'done')})"}
-    emit(args.json, obj, obj["message"])
+    out.emit(args.json, obj, obj["message"])
     return 0
