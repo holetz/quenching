@@ -33,9 +33,9 @@ the checks that hold it honest. The *modeling* that defines data lives in
   the text it leaves behind, not only the text it never opened — the hard wrap makes the line a unit
   the sentence does not respect, an orphaned continuation is promoted under the neighbouring bullet,
   and a grant's justification outlives the use that earned it.
-* [selftest-mutation.md](selftest-mutation.md) — a selftest that has never been observed to fail is
-  an untested test: the authoring-time mutation pass, one mutation per rule the fixture exists to
-  prove, and the gate the three shipped selftests have not yet cleared.
+* [selftest-mutation.md](selftest-mutation.md) — a test that has never been observed to fail is
+  untested: the authoring-time mutation pass, one mutation per rule the fixture exists to prove,
+  and the gate the repo's tests/ suite has not yet cleared, rule by rule.
 * [unproven-capability-warning.md](unproven-capability-warning.md) — where a caveat about a
   capability that ships without end-to-end proof belongs: the two failure shapes that decide it, the
   standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a
