@@ -1,9 +1,9 @@
 # Hook mold — the three wiring shapes, narrowest first
 
-The mold `/skill:hook:new` copies from. A hook is not one file: it is a **wiring** (where it
+The mold `/quenching:components:hook:new` copies from. A hook is not one file: it is a **wiring** (where it
 is declared, which decides its scope) plus, for a `command` handler, a **script**. Pick the
 shape from the scope ladder
-(`${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/capabilities.md` §Hooks) — the narrowest
+(`${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md` §Hooks) — the narrowest
 rung that still catches what the hook exists to catch — and delete the other two.
 
 ## Shape 1 — skill-scoped (frontmatter `hooks:` in the owning command)
@@ -25,7 +25,7 @@ The `test -f … || exit 0` guard is **not optional** when the script is one ano
 *offers* to install: `python3 <missing-file>` exits 2, which the hook protocol reads as an error,
 so an unguarded handler reports a failure on every matched call in any repo that never installed
 it. Drop the guard only when the script ships with the hook and cannot be absent
-([capabilities.md](../../references/skill-new/capabilities.md) §Hooks).
+([capabilities.md](../../references/components-command-new/capabilities.md) §Hooks).
 
 ## Shape 2 — operation-scoped (settings.json, event + matcher)
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-<!-- MOLD (quenching · scoped hook) → wired by /skill:hook:new under
+<!-- MOLD (quenching · scoped hook) → wired by /quenching:components:hook:new under
      `docs/standards/automation/hooks.md`, one plan → one OK.
 
      THE COST CLAIM. Every hook enters its plan with one line of arithmetic: which event ×
