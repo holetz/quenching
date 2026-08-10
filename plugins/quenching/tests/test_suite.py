@@ -18,9 +18,14 @@ TESTS_DIR = pathlib.Path(__file__).resolve().parent
 PLUGIN_ROOT = TESTS_DIR.parent
 PACKAGE_DIR = PLUGIN_ROOT / "assets" / "bin" / "quenching"
 
-# `_paths` is first-party: it is how a test reaches the package, and it resolves nowhere on
-# `sys.path` until `discover` puts this directory there.
-FIRST_PARTY = {"quenching", "_paths"}
+def first_party() -> set[str]:
+    """Names that resolve only because `discover` puts this directory on `sys.path`.
+
+    Derived from disk rather than listed: a hard-coded allowlist makes every new helper in
+    `tests/` look like an external dependency, and the cheapest way out of that is to reach the
+    helper through `importlib` — evading this check instead of satisfying it.
+    """
+    return {"quenching"} | {path.stem for path in TESTS_DIR.glob("*.py")}
 
 
 def top_level_imports(source: str) -> set[str]:
@@ -39,7 +44,7 @@ class SuiteIntegrity(unittest.TestCase):
         """Every module the plugin ships, and every module this suite runs, imports stdlib only."""
         files = sorted(PACKAGE_DIR.rglob("*.py")) + sorted(TESTS_DIR.glob("*.py"))
         self.assertTrue(files, "no python files found to inspect")
-        allowed = sys.stdlib_module_names | FIRST_PARTY
+        allowed = sys.stdlib_module_names | first_party()
         for path in files:
             with self.subTest(path=str(path.relative_to(PLUGIN_ROOT))):
                 foreign = sorted(top_level_imports(path.read_text(encoding="utf-8")) - allowed)
