@@ -1,5 +1,5 @@
 {
-  "skill": "/skill:hook:new",
+  "skill": "/quenching:components:hook:new",
   "cases": [
     {
       "id": "scoped-happy-path",
