@@ -52,7 +52,7 @@ Read it as this command's doctrine. What follows is only what is **specific to `
   pass cap and a no-progress guard
   ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
-  `/quenching:knowledge:import-memory`, `/quenching:knowledge:harness` and `/quenching:knowledge:glossary-backfill` through the `Skill` tool
+  `/quenching:knowledge:import-memory`, `/quenching:components:harness:align` and `/quenching:knowledge:glossary-backfill` through the `Skill` tool
   under their registry names (`quenching:knowledge:import-memory`, …). Each runs under its own doctrine
   and its own code-coupled confirmations. If a stage's behaviour must change, change that command.
 - **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle, and
@@ -233,14 +233,14 @@ was skipped.
 
 ### 6. Run the content stages that have work, in order
 Invoke each through the `Skill` tool under its **registry name** — `quenching:knowledge:import-memory`,
-`quenching:knowledge:harness`. Which of the three citation forms is correct, and the condition on each,
+`quenching:components:harness:align`. Which of the three citation forms is correct, and the condition on each,
 is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7. Citing a command. Declare the cycle-authorization mode to each
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The cycle-authorization contract), and **skip any stage the probe found empty**:
 
 1. `quenching:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching:knowledge:harness` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
+2. `quenching:components:harness:align` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
 
 The order and the reason for it are
 [docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md) §The stage
