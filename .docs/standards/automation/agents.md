@@ -2,9 +2,9 @@
 type: standard
 title: Subagent authoring
 description: When work becomes a subagent, the definition contract for .claude/agents/, and how the surface is inventoried
-resource: .claude/agents/**, plugins/quenching/commands/skill/agent/new.md, plugins/quenching/commands/skill/align.md, plugins/quenching/assets/bin/skills.py
+resource: .claude/agents/**, plugins/quenching/commands/components/agent/new.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/bin/skills.py
 tags: [automation, agents, delegation]
-timestamp: 2026-07-28
+timestamp: 2026-08-10
 audience: both
 authority: background
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev/agent-sdk-dev + official docs; instrument-and-extend-skill-front plan §6
@@ -14,8 +14,8 @@ maintainer: quenching
 # Subagent authoring
 
 A **subagent** is a delegation: work runs in a fresh context and only its result returns.
-One definition per file at `.claude/agents/<name>.md`, minted by `/skill:agent:new` under
-one plan → one OK, inventoried (report-only) by `/skill:align`.
+One definition per file at `.claude/agents/<name>.md`, minted by `/quenching:components:agent:new` under
+one plan → one OK, inventoried (report-only) by `/quenching:components:align`.
 
 ## When work is a subagent — and when it is not
 
@@ -54,5 +54,5 @@ checks, recommendations citing the standard each applies. Fixes re-enter through
 command that owns authoring, under its own confirmation.
 
 The full pricing doctrine lives once, in
-[capabilities.md](/plugins/quenching/assets/references/skill-new/capabilities.md)
+[capabilities.md](/plugins/quenching/assets/references/components-command-new/capabilities.md)
 §Subagents; this standard is the repo-side projection of it.

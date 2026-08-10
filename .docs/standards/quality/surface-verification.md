@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Surface verification
-description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the skill front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
-resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/skill/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
+description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
+resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
-timestamp: 2026-08-03
+timestamp: 2026-08-10
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the skill front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
+source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
 maintainer: quenching
 ---
 
@@ -28,7 +28,7 @@ The command registry is built at **session start**
 §4). A file created or edited now is not invocable until a new process. Every mechanical check can
 therefore pass while the entire surface is unreachable:
 
-- `skills.py lint` and `doctor` read frontmatter off disk. Disk is not the registry.
+- `cq components lint` and `doctor` read frontmatter off disk. Disk is not the registry.
 - A citation-resolution script proves a path **exists**. It does not prove the placeholder that
   spells it ever **expands**.
 - The session that made the change cannot invoke the change. Anything it reports about the new
@@ -36,7 +36,7 @@ therefore pass while the entire surface is unreachable:
 
 **Never report a surface change as working on the strength of the session that made it.** Run
 `assets/checks/functional-checks.sh`, which spawns a fresh `claude -p` per check. Who runs it and when
-is §The harness belongs to the skill front; which subset is §Scope the run to what the change can
+is §The harness belongs to the components front; which subset is §Scope the run to what the change can
 break. Where no such harness exists, **say the command is unproven until a fresh session** rather
 than quoting a linter as if it had loaded anything.
 
@@ -44,7 +44,7 @@ than quoting a linter as if it had loaded anything.
 
 Each check reads `tool_use` events out of `--output-format stream-json --verbose` and asserts on
 their inputs — a `Read` whose path lands under `assets/references/`, a `Skill` whose name is
-`quenching:docs:align`. It never greps the assistant's prose.
+`quenching:knowledge:align`. It never greps the assistant's prose.
 
 This is the difference between a functional test and a self-report. A model asked *"did you read
 your reference file?"* will answer yes on the strength of having intended to, and a check built on
@@ -73,7 +73,7 @@ claimed:
    the plugin loads from the marketplace path — while anything the command writes lands in the
    scratch dir.
 3. **Satisfy the command's own preconditions, or you measure the precondition.** A spoken-routing
-   probe for `/docs:add` invoked nothing in an empty sandbox — correctly, because there was no OKF
+   probe for `/quenching:knowledge:add` invoked nothing in an empty sandbox — correctly, because there was no OKF
    bundle to add to. That reads as a routing failure and is not one. Re-run against a real bundle,
    it routed immediately. A check on a surface whose commands have preconditions must meet them
    before its result means anything.
@@ -104,10 +104,10 @@ apart from a real verdict. Say so in the report rather than quoting its pass cou
 inconclusive run must not exit 0 — `functional-checks.sh` exits **2** for *nothing could be
 measured*, which is neither a pass nor a failure.
 
-## The harness belongs to the skill front, not to the spec cycle
+## The harness belongs to the components front, not to the spec cycle
 
 **The command that changes the surface is the command that proves it still loads.** That is
-`/skill:new`, which mints and edits a command here, and `/quenching:components:command:eval`, which tunes a description on
+`/quenching:components:command:new`, which mints and edits a command here, and `/quenching:components:command:eval`, which tunes a description on
 measured hit rates. The harness is **not** a repo-wide post-change mandate, and it is **not** named
 in a spec's `## Validation` or a task's `verify:`.
 
@@ -116,7 +116,7 @@ the whole `/.specs/archive/` record: **every red run this harness has ever produ
 defect in the harness itself** — the cp1252 read, a hardcoded marketplace ref that made a live
 command read as `Unknown command`, a turn cap that reported working triggers as misses, a probe
 flaky enough to flip verdict on identical runs. **Not one traced to a surface regression.**
-Meanwhile the one real routing defect the repo has recorded — a `/skill:hook:new` trigger that
+Meanwhile the one real routing defect the repo has recorded — a `/quenching:components:hook:new` trigger that
 measured as a miss — was found by `/quenching:components:command:eval`, and check 3 gained a probe for it only afterwards.
 
 A check that has only ever caught itself earns a narrow trigger. Two things follow:
@@ -194,7 +194,7 @@ are the rules most likely to be quietly violated by a future edit that reads cor
 
 - **Whether the command is any good.** Evidence-graded with/without measurement is
   [../automation/skill-evaluation.md](../automation/skill-evaluation.md)'s.
-- **Frontmatter and body conformance.** Mechanical and in-process: `skills.py lint` / `doctor`.
+- **Frontmatter and body conformance.** Mechanical and in-process: `cq components lint` / `doctor`.
 - **`allowed-tools` enforcement.** Never observed to restrict anything, for commands or skills
   (`claude-code-skill-command-mechanics.md` row 6). Not verified here, and not to be claimed
   anywhere until it is measured.
