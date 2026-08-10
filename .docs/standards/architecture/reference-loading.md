@@ -1,10 +1,10 @@
 ---
 type: standard
 title: Carregar é uma chamada dentro do passo; citar é prosa de preâmbulo
-description: Um corpo que precisa de uma seção de reference no passo N carrega essa seção no passo N, com a invocação literal e copiável de skills.py read — uma citação de preâmbulo diz onde a regra mora e não faz a sessão abrir o arquivo, e o oposto foi medido acontecendo nos oito corpos /quenching:specs:*
+description: Um corpo que precisa de uma seção de reference no passo N carrega essa seção no passo N, com a invocação literal e copiável de cq components read — uma citação de preâmbulo diz onde a regra mora e não faz a sessão abrir o arquivo, e o oposto foi medido acontecendo nos oito corpos /quenching:specs:*
 resource: plugins/quenching/commands/**/*.md
-tags: [architecture, references, commands, skills, skills.py]
-timestamp: 2026-08-05
+tags: [architecture, references, commands, skills, cq]
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: spec plans/alinhar-specs-ao-report-mold.md, seção Design decisão 2 (provada em 2026-08-05) — antes das tasks 1.1-1.3 desta spec, sete dos oito corpos /quenching:specs:* citavam spec-driven.md §The report mold como prosa de preâmbulo ("owns the shape step N prints in") e nenhum dos oito continha a string --sections "§The report mold"; develop.md chegava a adiar explicitamente para o passo 8, e o passo 8 não trazia chamada nenhuma
@@ -24,7 +24,7 @@ que ele mesmo declara.
 > invocação literal e copiável:
 >
 > ```bash
-> skills.py read <arquivo> --sections "§X"
+> cq components read <arquivo> --sections "§X"
 > ```
 >
 > Uma citação de preâmbulo — "a regra vive em `arquivo.md` §X" — diz **onde** a regra mora. Ela não
@@ -42,7 +42,7 @@ Antes das tasks que este standard documenta, sete dos oito corpos `/quenching:sp
 > "whose §The report mold owns the shape step 7 prints in"
 
 e nenhum dos oito continha, em nenhum ponto do próprio corpo, a chamada
-`skills.py read ... --sections "§The report mold"`. `develop.md` ia além: adiava explicitamente para
+`cq components read ... --sections "§The report mold"`. `develop.md` ia além: adiava explicitamente para
 o passo 8 ("step 8 loads spec-driven.md's §The report mold") — e o passo 8, quando lido, não trazia
 chamada nenhuma, só a mesma frase de prosa.
 

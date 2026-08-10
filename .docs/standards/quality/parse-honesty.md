@@ -2,9 +2,9 @@
 type: standard
 title: Parse honesty
 description: A verifier names its own parse failure instead of reporting it as a content gap — the sidecar shape that adds the signal without changing a return type, why the finding is a warn rather than an error, and the rule that a checker never gains a lossy transform without the diagnostic that reports it
-resource: plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/hooks/okf-validate.py
+resource: plugins/quenching/assets/bin/quenching/common/frontmatter.py, plugins/quenching/assets/bin/cq
 tags: [quality, verification, parsing, findings, severity]
-timestamp: 2026-07-28
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: fix-skills-py-description-truncation spec (task 3.1) — proved by the three tools' selftests in tasks 2.1-2.3
@@ -24,7 +24,7 @@ standard owns the obligation those mechanics exist to satisfy.
 
 ## The failure this exists to prevent
 
-`skills.py` truncated every frontmatter value at its first `#`. A command whose `description`
+`cq components` truncated every frontmatter value at its first `#`. A command whose `description`
 mentioned a heading lost everything after it — including the trigger phrases and the `Not for:`
 boundary that live in the tail.
 
@@ -44,7 +44,7 @@ The content check is not at fault and cannot detect this — by the time it runs
 
 Three consequences, in the order they bind:
 
-1. **The diagnostic ships with the transform, never after it.** `okf-validate.py` stripped no
+1. **The diagnostic ships with the transform, never after it.** `cq knowledge` stripped no
    comments at all, which made it the one tool that could not truncate. It was given the comment
    rule and `okf-frontmatter-unparsed` in the same change — adding a prose-loss path to a hook that
    fires on every `/.docs/**` write in every target repo, without the means to say when it fired,
@@ -52,7 +52,7 @@ Three consequences, in the order they bind:
 2. **The diagnostic runs before the content checks it would otherwise be mistaken for.** In all
    three tools the anomaly finding is emitted ahead of the required-field checks, so a reader sees
    the cause above the symptom rather than below it.
-3. **A tool with no way to prove it implements the rule does not get the rule.** `okf-validate.py`
+3. **A tool with no way to prove it implements the rule does not get the rule.** `cq knowledge`
    had no `selftest`; it gained one in the same change.
 
 ## The shape: a sidecar, not a changed return type
@@ -66,7 +66,7 @@ frontmatter_anomalies(text)  -> list[dict]    # what the parse could not represe
 
 The alternative — returning `(value, understood)` from the parser — was rejected across nine call
 sites. It is not merely churn: it forces **every** caller to decide what an un-understood input
-means, including callers in the middle of a cycle (`specs.py status`, `next`, `triage`) that today
+means, including callers in the middle of a cycle (`cq specs status`, `next`, `triage`) that today
 refuse nothing and must not start. The signal is only *read* in two places, so it should only be
 *asked for* in two places.
 
@@ -87,7 +87,7 @@ Erroring would fail conformant repositories over a legitimate comment. Staying s
 produced the original defect. Warn is the only severity that fits a statement of the form *"I read
 this, and I might have read it wrong."*
 
-This matches the fail-open contract `skills.py parse_frontmatter_hooks` already stated for the
+This matches the fail-open contract `cq components parse_frontmatter_hooks` already stated for the
 `hooks:` block: a parser that silently misreads is worse than one that admits it cannot read.
 
 ## Naming the limit is not the same as removing it
@@ -97,8 +97,8 @@ the parser to read them is a **separate** decision with its own cost, and one th
 [../code/frontmatter-parsing.md](../code/frontmatter-parsing.md) rules out for these tools.
 
 So the anomaly set is a floor: each tool exempts the forms it genuinely reads and reports the rest.
-`okf-validate.py` reads top-level scalars only, so a block list is as unreadable to it as prose and
-it says so; `specs.py` reads block records and stays quiet about them. Both are honest, and they
+`cq knowledge` reads top-level scalars only, so a block list is as unreadable to it as prose and
+it says so; `cq specs` reads block records and stays quiet about them. Both are honest, and they
 disagree about nothing in the canonical list.
 
 ## Where this applies
@@ -111,6 +111,6 @@ at all, [bundle-verification.md](bundle-verification.md) about which invariants 
 deterministic check. This one is about a check that *can* observe its subject, and must not
 misdescribe what it saw.
 
-**It does not apply to a tool reading less on purpose and checking nothing about it.** `skills.py`
+**It does not apply to a tool reading less on purpose and checking nothing about it.** `cq components`
 never inspects `argument-hint`; not modelling it is a scope decision, not a misread. The obligation
 attaches the moment a value is *used* in a finding.
