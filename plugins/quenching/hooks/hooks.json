@@ -8,7 +8,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/assets/bin/cq\" knowledge hook",
             "timeout": 10
           }
         ]
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/assets/bin/cq\" knowledge hook",
             "timeout": 15
           }
         ]
