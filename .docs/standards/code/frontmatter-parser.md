@@ -41,8 +41,8 @@ The three predecessors never read the same YAML subset, and no two read the same
 | block scalar `\|` / `>` | no | yes | no — kept the bare indicator |
 
 Nobody read the union: `specs` read records and flow maps but no block scalars, `skills` the
-reverse. `common/frontmatter.py` reads **every** row — so `knowledge` (formerly `okf-validate.py`)
-gained the four forms it used to flatten, and `components` (formerly `skills.py`) gained records
+reverse. `common/frontmatter.py` reads **every** row — so `knowledge` (formerly its own dedicated checker)
+gained the four forms it used to flatten, and `components` (formerly its own dedicated tool) gained records
 and flow maps.
 
 **What that costs, deliberately.** `frontmatter_anomalies` had three divergent bodies, each a
@@ -134,7 +134,7 @@ function separates the two.
 ## Why a sidecar, and two of them
 
 Folding either signal back into `parse_frontmatter`'s own return — a `(fm, has_block, well_formed)`
-triple, which is what the retired `okf-validate.py` returned — would put a three-way unpack at
+triple, which is what the retired pre-refactor checker returned — would put a three-way unpack at
 every call site in every pillar to carry a signal only one of them reads. Two call sites read
 `frontmatter_block`; the rest read a bare dict exactly as before.
 

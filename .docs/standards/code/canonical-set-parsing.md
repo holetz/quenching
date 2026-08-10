@@ -79,7 +79,7 @@ assert the derived behaviour against the declaration, not just the declaration a
   byte-for-byte comparison — so it is asserted against the embedded constants themselves rather
   than against whatever the asset directory happens to hold.
 
-The retired `specs.py` carried that assertion as `sp-capture-gate-missing` and
+The pre-refactor tool carried that assertion as `sp-capture-gate-missing` and
 `sp-capture-extra-heading`: the capture form must contain every entry-gate heading and no other.
 Neither code belongs to the `/specs:align` sweep vocabulary — like `sp-template-drift`, they are
 findings about the tool, not findings about a workspace, so they run as a test rather than a

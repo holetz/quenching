@@ -2,7 +2,7 @@
 type: standard
 title: Read-only views are their own command
 description: A front's read-only view is a separate command holding no write tools, never a dry-run mode on the command that writes — because allowed-tools is granted per command, so a mode flag can only ever be a promise the grant does not enforce
-resource: plugins/quenching/commands/docs/status.md, plugins/quenching/commands/specs/status.md
+resource: plugins/quenching/commands/knowledge/status.md, plugins/quenching/commands/specs/status.md
 tags: [architecture, commands, read-only, status, tool-grants]
 timestamp: 2026-07-28
 audience: both
@@ -37,7 +37,7 @@ tool grants instead of to the directory tree.
 ## What the read command therefore owns, and does not
 
 - **It owns no contract.** It reports in the vocabulary of the front's own verifier
-  (`okf-validate.py`, `specs.py`, `skills.py`) and cites the references defining each code,
+  (`cq knowledge`, `cq specs`, `cq components`) and cites the references defining each code,
   restating none. Two read paths that must agree is exactly the duplication this plugin avoids
   everywhere else.
 - **It splits findings by what closes them** — what the front's align fixes, what a cycle command
@@ -53,7 +53,7 @@ tool grants instead of to the directory tree.
 
 ## The precedent
 
-`/specs:status` established the shape and `/docs:status` mirrored it exactly: both carry
+`/specs:status` established the shape and `/quenching:knowledge:status` mirrored it exactly: both carry
 `allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)`, own no contract, and cite three
 references apiece. A future front's read command copies this, and a proposal to add a read-only
 mode to an existing align is refused on this standard.
