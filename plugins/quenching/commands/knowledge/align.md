@@ -1,10 +1,10 @@
 ---
-description: Force /.docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.docs/", "converge the knowledge base". Probes okf-validate.py plus two cheap out-of-band signals before reading anything, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them. Not for: adding ONE doc → /docs:add; capturing ONE fact a human just stated → /docs:learn; ONE glossary term → /docs:define; importing an external source → /docs:import; reading the bundle without changing it → /docs:status; the mkdocs site layer → /docs:documentation:build.
+description: Force /.docs/ into the canonical OKF v0.1 bundle AND pull in the content sitting out-of-band — one command, probe first, looped to a fixpoint. Triggers on "align the docs", "align and update docs", "fix the documentation structure", "install the OKF bundle", "set up /.docs/", "converge the knowledge base". Probes okf-validate.py plus two cheap out-of-band signals before reading anything, so a conformant bundle with nothing waiting costs three calls and stops. Otherwise: one inventory, ONE plan, one OK, the structural pass, the content stages that have work (memory, harness), then the whole-bundle glossary sweep OFFERED on a cheap proxy — looping until a pass changes nothing. Conducts its stages by invoking them, never reimplements them. Not for: adding ONE doc → /quenching:knowledge:add; capturing ONE fact a human just stated → /quenching:knowledge:learn; ONE glossary term → /quenching:knowledge:define; importing an external source → /quenching:knowledge:import; reading the bundle without changing it → /quenching:knowledge:status; the mkdocs site layer → /quenching:knowledge:documentation:build.
 argument-hint: [optional-docs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Task, Skill, AskUserQuestion
 ---
 
-# /quenching:docs:align — force the knowledge base into OKF shape, and keep filling it
+# /quenching:knowledge:align — force the knowledge base into OKF shape, and keep filling it
 
 **Input**: `$ARGUMENTS` (optionally a `/.docs/` path or a scope; omit to align the whole bundle).
 
@@ -52,13 +52,13 @@ Read it as this command's doctrine. What follows is only what is **specific to `
   pass cap and a no-progress guard
   ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)).
 - **Conduct the content stages, never reimplement them.** Steps 6–7 **invoke**
-  `/quenching:docs:import-memory`, `/quenching:docs:harness` and `/quenching:docs:glossary-backfill` through the `Skill` tool
-  under their registry names (`quenching:docs:import-memory`, …). Each runs under its own doctrine
+  `/quenching:knowledge:import-memory`, `/quenching:knowledge:harness` and `/quenching:knowledge:glossary-backfill` through the `Skill` tool
+  under their registry names (`quenching:knowledge:import-memory`, …). Each runs under its own doctrine
   and its own code-coupled confirmations. If a stage's behaviour must change, change that command.
 - **The expensive stage is offered, never assumed.** The glossary sweep reads the whole bundle, and
   no cheap signal proves it has work — so it is gated on a free proxy and **offered** with its cost
   (sweep-doctrine §Probe before the inventory). Everything else this command does is probed.
-- **Per-item commands are stage tools, not stages.** `/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`
+- **Per-item commands are stage tools, not stages.** `/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:knowledge:define`
   each act on ONE item a human states, and a loop pass has no fresh human input — so they are never
   stages. They are what the stages already delegate to. A content gap only they can close is
   **surfaced** in the report, never fabricated.
@@ -223,7 +223,7 @@ one, read it and move on rather than asking again.
 `.github/workflows/docs.yml` (opt-in, platform-specific). The `.pages` nav files ship **with** the
 `documentation/` skeleton (step 4), so nav needs no separate install.
 
-This is the **first install only**. The site layer's owner is `/quenching:docs:documentation:build`: every
+This is the **first install only**. The site layer's owner is `/quenching:knowledge:documentation:build`: every
 later update, nav regeneration, config merge, and build verification is **its** job. If the install
 is anything more than stamping two absent files — a customized `mkdocs.yml` to merge, a `docs_dir`
 pointing elsewhere, `.pages` files no longer matching the tree — hand off to that command instead of
@@ -232,15 +232,15 @@ resolving it here.
 was skipped.
 
 ### 6. Run the content stages that have work, in order
-Invoke each through the `Skill` tool under its **registry name** — `quenching:docs:import-memory`,
-`quenching:docs:harness`. Which of the three citation forms is correct, and the condition on each,
+Invoke each through the `Skill` tool under its **registry name** — `quenching:knowledge:import-memory`,
+`quenching:knowledge:harness`. Which of the three citation forms is correct, and the condition on each,
 is [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7. Citing a command. Declare the cycle-authorization mode to each
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The cycle-authorization contract), and **skip any stage the probe found empty**:
 
-1. `quenching:docs:import-memory` — drain the project's memory dir into its homes, clearing each
+1. `quenching:knowledge:import-memory` — drain the project's memory dir into its homes, clearing each
    memory once its doc lands and passes conformance.
-2. `quenching:docs:harness` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
+2. `quenching:knowledge:harness` — thin `CLAUDE.md`/`AGENTS.md`, MOVEing durable knowledge into homes.
 
 The order and the reason for it are
 [docs-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/cycle.md) §The stage
@@ -256,7 +256,7 @@ Read the free proxy: the count of concept docs in the bundle against the number 
 `knowledge/glossary.md`, plus whether steps 4 and 6 created any docs this pass. A bundle that grew
 and a glossary that did not is the signal.
 
-Offer `quenching:docs:glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
+Offer `quenching:knowledge:glossary-backfill` with what it costs (a whole-bundle sweep, fanned out per
 home) and what the proxy shows. Use **AskUserQuestion** when the answer is a plain yes/no. A
 declined offer is a complete answer — record it and do not re-offer on a later pass of the same
 run. Never run the sweep to discover whether it had work.

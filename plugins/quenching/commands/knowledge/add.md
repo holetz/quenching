@@ -1,18 +1,18 @@
 ---
-description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on "insert new information into the base", "add a standard/table/announcement". Not for: capturing ONE fact a human just stated → /docs:learn; ONE glossary term → /docs:define; importing an external source in bulk → /docs:import.
+description: Insert ONE new concept doc into the OKF bundle — right home, type, and stamp. Triggers on "insert new information into the base", "add a standard/table/announcement". Not for: capturing ONE fact a human just stated → /quenching:knowledge:learn; ONE glossary term → /quenching:knowledge:define; importing an external source in bulk → /quenching:knowledge:import.
 argument-hint: [the-knowledge-to-add]
 allowed-tools: Read, Grep, Glob, Write, Edit
 ---
 
-# /quenching:docs:add — add new knowledge, OKF-conformant
+# /quenching:knowledge:add — add new knowledge, OKF-conformant
 
 **Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, reference, …).
 
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
-with a complete stamp. Assumes the bundle already exists (run `/quenching:docs:align` first if not). The
+with a complete stamp. Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The
 molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/`; the routing table and the index/log
 procedure are in [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md). The home boundaries, `type`
-vocabulary, and conformance rules are shared with `/quenching:docs:align`
+vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
 (`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/taxonomy.md`,
 `${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md`).
 
@@ -78,14 +78,14 @@ hand-edit inside the markers. Never add frontmatter to an `index.md`.
 ### 6. Enrich the glossary
 If the new concept introduced a **repo-specific term**, add or sharpen its entry in
 `knowledge/glossary.md` per **Enriching the glossary** in [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
-(the tail step every capture runs; on-demand counterpart `/quenching:docs:define`, bulk counterpart
-`/quenching:docs:glossary-backfill`).
+(the tail step every capture runs; on-demand counterpart `/quenching:knowledge:define`, bulk counterpart
+`/quenching:knowledge:glossary-backfill`).
 
 ### 7. Self-check against the conformance core
 Verify every file you touched against
 [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md) —
 the same checks the installed `okf-validate.py` hook (if wired) machine-verifies on write;
-`/quenching:docs:align` re-validates the whole bundle on demand.
+`/quenching:knowledge:align` re-validates the whole bundle on demand.
 
 ## Special cases
 - **Standard** → mold `standard-front.md`; anchor rules to the code they govern; derive
