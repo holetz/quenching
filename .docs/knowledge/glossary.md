@@ -113,23 +113,21 @@ sentence, and **link out** rather than explaining in full here.
   session's prompt-cache key, so changing it makes the next request recompute every input token.
   A sub-agent's pin is cache-safe because it carries its own context; an orchestrator's is not,
   which is why five `effort: low`/`medium` pins were dropped rather than kept for their tier.
-- [**Canonical case list**](../standards/code/frontmatter-parsing.md) — the twelve frontmatter rows
-  that `skills.py`, `specs.py` and `okf-validate.py` must all decide **identically**, duplicated
-  byte-identically as each tool's `CANONICAL_CASES` and run by each tool's own `selftest`. It is the
-  **lockstep unit** standing in for the shared module the three cannot have — each is a
-  self-contained single file and none may import the others — and it works by
-  localising a break: a parser that drifts fails its OWN selftest on a row the other two still pass.
-  A tool may read *more* than the list requires and must then not report the form it genuinely read,
-  so a form a tool does **not** read can never become a row; that asymmetry is named per-tool
-  instead, which is why a block scalar is diagnosed by two of the three and by neither the list nor
-  the third.
+- [**Canonical case list**](../standards/code/frontmatter-parser.md) — the twelve frontmatter rows
+  the one shared `common/frontmatter.py` parser must decide correctly, held in
+  `tests/test_frontmatter.py`'s `CANONICAL_CASES` and run by the test suite. It used to be the
+  **lockstep unit** standing in for a shared module three self-contained scripts could not have,
+  each duplicating the table byte-identically and running it in its own `selftest` — a parser that
+  drifted failed its OWN selftest on a row the other two still passed. One parser now reads every
+  form the table's three predecessors read between them, so the list is what its tests hold it to,
+  not what keeps three copies from disagreeing.
 - [**Canonical set**](../standards/code/canonical-set-parsing.md) — an ordered contract declared in
   one place and read in many: `schema.json`'s `sections` array, its `phases[].entryGate`, the
   frontmatter record vocabulary. Each declares **both** a membership (which members) and an order
   (in what sequence), and the two change independently — so code that consumes one must slice by
   declared membership and never by an ordinal position, which is an unchecked claim about the set's
   shape that keeps returning a plausible answer once the set grows. Distinct from the
-  [Canonical case list](../standards/code/frontmatter-parsing.md), which is one specific lockstep
+  [Canonical case list](../standards/code/frontmatter-parser.md), which is one specific lockstep
   unit rather than the general shape.
 - [**Commit record**](../standards/workflows/plan-git-record.md) — the `subject: <line>` field on a
   completed task line, written mechanically by `specs.py task --check --subject`, that links the

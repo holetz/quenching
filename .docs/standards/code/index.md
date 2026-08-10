@@ -17,10 +17,9 @@ its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standa
   agree but never that the code reading them still means the same, so a membership invariant is owed
   its own assertion, and why a case list must exercise the function that ships rather than a copy of
   its rule written inside the selftest.
-* [frontmatter-parsing.md](frontmatter-parsing.md) — the YAML subset the three shipped tools read:
-  the comment rule, the canonical case list all three must decide identically, the anomaly set each
-  must be able to name, and the three-copy lockstep obligation that stands in for the shared module
-  they cannot have.
+* [frontmatter-parser.md](frontmatter-parser.md) — the YAML subset `common/frontmatter.py` reads:
+  the comment rule, the canonical case list its tests hold it to, and the anomaly sidecar — one
+  parser now, reading the union of what the three retired scripts used to read separately.
 * [superseded-format-recognition.md](superseded-format-recognition.md) — how a recogniser is changed
   when the format it reads is superseded: the new pattern must be asserted against the OLD form,
   because one that describes the new form correctly often matches the old one whole and answers
@@ -45,5 +44,5 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 - `testing-conventions` — **deferred, covered elsewhere for now.** There is no test framework here;
   what stands in for one is each tool's own `selftest` and
   [../quality/surface-verification.md](../quality/surface-verification.md).
-- **Present:** `frontmatter-parsing` — not on the candidate list above, because it is a contract
-  *between* the three scripts rather than a convention within one.
+- **Present:** `frontmatter-parser` — not on the candidate list above, because it is the contract
+  every pillar's own `common/frontmatter.py` import holds to, rather than a convention within one.
