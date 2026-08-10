@@ -4,7 +4,7 @@ argument-hint: [what-the-hook-should-catch]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
 
-# /quenching:skill:hook:new — wire ONE scoped hook
+# /quenching:components:hook:new — wire ONE scoped hook
 
 **Input**: `$ARGUMENTS` (what the hook should catch — a behavior, a rule, an observed
 failure).
