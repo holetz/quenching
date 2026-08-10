@@ -23,7 +23,7 @@
 #
 # WHO RUNS THIS, AND WHEN. It belongs to the **skill front**: the commands that change the surface
 # are the ones that prove it still loads — `/skill:new` after minting or editing a command here,
-# and `/skill:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
+# and `/quenching:components:command:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
 # does NOT belong in a spec's `## Validation` or a task's `verify:`. Measured 2026-07-29 over the
 # whole archive: every red run this harness ever produced traced to a defect in THIS SCRIPT — a
 # cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
@@ -35,11 +35,11 @@
 #   --only 3       spoken routing — OPT-IN, see below
 #   --only 1,2,3,4 all four
 #
-# CHECK 3 IS OPT-IN, AND `/skill:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the eight
+# CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the eight
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
-# identical runs), and a strictly worse duplicate of `/skill:eval` step 7 — which measures the
+# identical runs), and a strictly worse duplicate of `/quenching:components:command:eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
-# five hardcoded phrases with no boundary arm. Reach for `/skill:eval` when a description changed;
+# five hardcoded phrases with no boundary arm. Reach for `/quenching:components:command:eval` when a description changed;
 # reach for `--only 3` only to re-guard the five phrases already tuned here.
 #
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
@@ -210,7 +210,7 @@ fi
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
 #
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
-# `/skill:eval` step 7 measures properly. See the COST note at the top.
+# `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"

@@ -4,7 +4,7 @@ argument-hint: [skill-name]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit, Task, AskUserQuestion
 ---
 
-# /quenching:skill:eval — measure whether a skill teaches anything
+# /quenching:components:command:eval — measure whether a skill teaches anything
 
 The plugin's doctrine says triggers belong in the second sentence, that a step needs a checkable
 criterion, that a body earns its context. Every one of those is a **hypothesis**. This skill is
