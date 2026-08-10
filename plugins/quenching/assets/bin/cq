@@ -2,6 +2,7 @@
 """cq — the plugin's one entry point, and the only thing that knows the pillar names.
 
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
+    python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
 Three pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
@@ -44,6 +45,9 @@ import importlib
 import sys
 from typing import NamedTuple
 
+from quenching.common.output import REFUSAL
+from quenching.common.version import VERSION
+
 
 class Pillar(NamedTuple):
     module: str  # the module whose `main(argv) -> int` IS the pillar
@@ -76,7 +80,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--root",
                    help="forwarded to the pillar as its own --root; only specs "
                         "and components declare one")
-    p.add_argument("pillar", choices=list(PILLARS), help="which pillar answers")
+    # Bare, so `cq --version` IS the lockstep probe: the whole assertion is
+    # `test "$(cq --version)" = "$(cat VERSION)"`, with nothing to strip first. A pillar
+    # named before it keeps its own prefixed line — this option only answers for the plugin.
+    p.add_argument("--version", action="version", version=VERSION,
+                   help="print the plugin version and exit")
+    p.add_argument("pillar", nargs="?", choices=list(PILLARS),
+                   help="which pillar answers")
     # REMAINDER and not a nested subparser tree: every token after the pillar name belongs
     # to the pillar's own parser, options included, and cq must not reinterpret any of them.
     p.add_argument("rest", nargs=argparse.REMAINDER,
@@ -87,6 +97,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str]) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if not args.pillar:
+        parser.print_help()
+        return REFUSAL
     pillar = PILLARS[args.pillar]
     rest = list(args.rest)
     if args.root:
