@@ -2,7 +2,7 @@
 type: standard
 title: Session evidence
 description: How a session transcript is read as evidence for the command that drove it — where transcripts live, the two entry forms, the JSONL-first arm ladder with the arm declared in the output, and the rule that a counted claim comes from code, never from a model recalling its own run
-resource: plugins/quenching/assets/bin/session.py, plugins/quenching/commands/components/command/retro.md
+resource: plugins/quenching/assets/bin/quenching/session/**, plugins/quenching/commands/components/command/retro.md
 tags: [automation, transcript, evidence, session, retro]
 timestamp: 2026-08-10
 audience: both
@@ -15,26 +15,26 @@ maintainer: quenching
 
 A command body is normally revised from taste alone — nobody reads back the session the command
 actually drove. This standard is the contract for the one tool that does:
-`plugins/quenching/assets/bin/session.py` (driven by `/quenching:components:command:retro`,
-`plugins/quenching/commands/skill/retro.md`) turns a session transcript into evidence about the
+`plugins/quenching/assets/bin/quenching/session/` (driven by `/quenching:components:command:retro`,
+`plugins/quenching/commands/components/command/retro.md`) turns a session transcript into evidence about the
 command that ran in it, so a finding can carry a count and a quoted turn instead of an impression.
 
 ## Where a transcript lives
 
 One JSONL file per session, at `~/.claude/projects/<cwd-slug>/<session-id>.jsonl` — the same tree
 `/quenching:knowledge:import-memory` already drains `memory/` from. `resolve_transcript`
-(`session.py:148`) takes an explicit path, a bare session id, or resolves the newest file for the
-current `cwd` by encoding it with the same `encode_cwd` charset (`session.py:122`) that convention
+(`session/transcript.py:40`) takes an explicit path, a bare session id, or resolves the newest file for the
+current `cwd` by encoding it with the same `encode_cwd` charset (`session/transcript.py:14`) that convention
 already uses. The file is readable while its own session is still running; only the in-flight
 turn — the one the human is already looking at — is missing.
 
 ## The two entry forms
 
 A command is reached two ways, and each leaves a different mark, both read
-(`session.py:299` reads both; `Command.invocations`, `session.py:183`, keeps them distinct):
+(`session/parse.py` reads both; `Command.invocations`, `session/model.py:21`, keeps them distinct):
 
 - **Typed**, a literal `/` invocation: a `<command-name>` block in a user turn
-  (`COMMAND_NAME_RE`, `session.py:118`).
+  (`COMMAND_NAME_RE`, `session/parse.py:74`).
 - **Conducted**, a stage a conductor reached by name: a `tool_use` named `Skill`, carrying no
   `<command-name>` at all.
 
@@ -54,7 +54,7 @@ with its conductor's own later work — concretely, `/specs:isolate` was once cr
 
 There is no end marker in the transcript that would let a tool fix this by construction —
 inventing one manufactures findings instead of reporting them. `close_attribution`
-(`session.py:267`) does the other thing: for every conducted invocation, it checks whether the
+(`session/parse.py:107`) does the other thing: for every conducted invocation, it checks whether the
 conductor reappears later in the attribution timeline. It does not → the stage is `closed: false`
 and every count on it is an **upper bound** that may include the conductor's own turns
 (`mayIncludeTurnsFrom` names it), reported as the `se-attribution-unclosed` anomaly. It does →
@@ -76,14 +76,14 @@ fallback exists so a run degrades and says so rather than refusing outright.
 
 **Every counted claim comes from code reading the transcript, never from a model recalling its
 own session**, and is reported with its count and the quoted turn that evidences it
-(`digest_command`, `session.py:507`). Two measured failures make this non-optional:
+(`digest_command`, `session/evidence.py:46`). Two measured failures make this non-optional:
 
 - Counting `Edit`/`Write` calls against a file as if they were `Read` calls reported 51 edits to
   one file as "redundant read x72" — confident, plausible, and entirely wrong. Reads and writes
-  are counted separately (`cmd.reads` vs `cmd.touches`, `Command.__init__`, `session.py:187`).
+  are counted separately (`cmd.reads` vs `cmd.touches`, `Command.__init__`, `session/model.py:18`).
 - A human turn arriving as a `text` **block** inside a list `message.content`, rather than the
   bare content string, was silently unread — a session with several visible corrections digested
-  to zero. `classify_user_turn` (`session.py:241`) is applied to both content shapes.
+  to zero. `classify_user_turn` (`session/parse.py:81`) is applied to both content shapes.
 
 Anything the digest did not count is offered as an observation in plain words, never dressed
 as a figure.
@@ -92,7 +92,7 @@ as a figure.
 
 A non-empty transcript that yields zero commands exits **2**, distinguishing `se-empty-transcript`
 (nothing to read) from `se-no-command-parsed` (read, nothing found) — `silence_refusal`
-(`session.py:447`). A session that proved nothing is never reported as a session with nothing to
+(`session/parse.py:278`). A session that proved nothing is never reported as a session with nothing to
 improve.
 
 ## The graduation gate

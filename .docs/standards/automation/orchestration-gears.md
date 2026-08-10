@@ -4,7 +4,7 @@ title: Orchestration gears
 description: The gears of the spec orchestrator — the three ways a lifecycle stage runs, the ONE gears plan derived from priority.complexity before any write, and the signals that re-evaluate a gear at the end of a stage and re-authorize the run when it moves up
 resource: plugins/quenching/commands/specs/orchestrate.md, plugins/quenching/assets/specs/schema.json, specs/**
 tags: [automation, specs, orchestration]
-timestamp: 2026-08-06
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: fluxo-rapido-para-problemas-simplorios plan (task 2.3) — the gears contract the orchestrate body cites by section name; promoted to current by the phase-3 proof run (task 3.4, 2026-08-06) — a full minimal-gear cycle on the payload-quenching-orchestrate-entry spec ran capture → archive in one session and ended with pull request 886 open against develop, 19 tool calls against the ~50 the originating session spent without writing its change
@@ -63,7 +63,7 @@ field lives in frontmatter at all.
 
 ## Re-evaluating a gear
 
-At the end of every stage, the state is read again (`specs.py status --spec <slug> --json`)
+At the end of every stage, the state is read again (`cq specs status --spec <slug> --json`)
 and the gear is re-evaluated against what the stage just revealed. Three signals move a gear
 up:
 

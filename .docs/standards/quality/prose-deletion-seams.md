@@ -4,7 +4,7 @@ title: The seams a prose deletion opens
 description: Removing prose damages the text left behind, not only the text never opened — the hard wrap makes the line a unit the sentence does not respect, an orphaned continuation is promoted under the neighbouring bullet rather than left as litter, and a grant's justification outlives the use that earned it; the three seams measured on one branch, why every checker stays green through all three, and the reading that closes them
 resource: plugins/quenching/**
 tags: [quality, deletion, prose, refactoring, review]
-timestamp: 2026-08-08
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: remover-a-capability-quenching-md spec (2026-08-08) — three defects found at the branch review of a removal that deleted 2588 lines across 27 files; all three sat in files the tasks had opened and edited, which is what distinguishes them from withdrawn-contract-residue.md's misses
@@ -86,10 +86,10 @@ found by grepping for the removed thing's name, since a grant names a capability
 Same structural blindness the two sibling standards tabulate, for the same reason. All three
 defects are well-formed prose:
 
-- `okf-validate.py` reads valid frontmatter and valid links; a truncated sentence is neither.
-- `skills.py lint` reports an **unscoped** `Bash`, not a scoped grant with nothing to do —
+- `cq knowledge` reads valid frontmatter and valid links; a truncated sentence is neither.
+- `cq components lint` reports an **unscoped** `Bash`, not a scoped grant with nothing to do —
   measuring whether a grant is used would mean reading the body, which is the thing being deferred.
-- `skills.py doctor` counts commands and their entry points; a promoted orphan is inside a body.
+- `cq components doctor` counts commands and their entry points; a promoted orphan is inside a body.
 - The per-task self-review sees one task's diff, and each of the three edits was correct **as its
   own hunk** — the damage is to the text the hunk did not touch.
 

@@ -2,9 +2,9 @@
 type: standard
 title: Warning about an unproven capability
 description: Where a caveat about a capability that ships without end-to-end proof belongs — the two failure shapes that decide it, the standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a per-operation warning is a permanent context tax and silence is not the alternative, and the one edit that retires both together
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/hooks/okf-validate.py
+resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/knowledge/**
 tags: [quality, verification, findings, warnings, unproven, context]
-timestamp: 2026-08-06
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: configurable-spec-backend plan — the `azure-boards` arm of task 6.3, generalised at conclude from the decision `## Open Decisions` deferred to that task; the example block updated by provar-e-posicionar-o-backend-azure-boards (task 7.2), the first real retirement the mechanism this standard describes has been through

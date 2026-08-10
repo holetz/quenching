@@ -12,7 +12,7 @@ the checks that hold it honest. The *modeling* that defines data lives in
 
 ## Current docs
 
-* [bundle-verification.md](bundle-verification.md) — what the `docs` front machine-checks versus
+* [bundle-verification.md](bundle-verification.md) — what the `knowledge` front machine-checks versus
   what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check,
   where an accepted gap is recorded, and the `resource` glob-set format.
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
