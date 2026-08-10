@@ -2,9 +2,9 @@
 type: standard
 title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, the append-only archive rule for facts that did not exist at the move, and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**, plugins/quenching/assets/references/specs-develop/questions.md, /.specs/**
+resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/**, plugins/quenching/assets/references/specs-develop/questions.md, /.specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
-timestamp: 2026-08-06
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5)
@@ -85,7 +85,7 @@ bend; the derivation it relied on stopped existing.
 its place as a human's guess, the triage sweep's rough size in hours, a judgment like any other.
 Then part of it became computed: `/specs:create` derives a level from its own classification of
 the input (a sentence is `low`, a plan file is `medium`), `/specs:develop` re-evaluates the level
-when a pass closes, and both write through `specs.py record` on a human's confirmation, never a
+when a pass closes, and both write through `cq specs record` on a human's confirmation, never a
 silent restamp — the judgment left in the field is the word on the proposal, not the value itself.
 What keeps it in frontmatter is the consumer: the orchestrator derives its whole gears plan from
 this level before the build, when the sections that would evidence it do not exist yet, and no
@@ -118,7 +118,7 @@ their own `date` because their owning command may legitimately re-judge. In neit
 command other than the one named in `writtenBy` touch the record — `complexity` excepted, which
 names its own list because part of it is computed (§ above), under a record whose owner stays
 `triage`. The vocabulary lives in
-`assets/specs/schema.json` (`frontmatter.records`), which `specs.py` embeds as its fallback.
+`assets/specs/schema.json` (`frontmatter.records`), which `cq specs` embeds as its fallback.
 
 ## `ready` is derived, and `approved` is a human's word
 
@@ -146,7 +146,7 @@ moment in the lifecycle, not about which command happens to be running:
 
 | Moment | What happens to an out-of-scope finding |
 | --- | --- |
-| definition — `/specs:develop`, any bank | one line of `## Discoveries` on the spec being developed, written with `specs.py discover` inside the pass's one confirmed edit |
+| definition — `/specs:develop`, any bank | one line of `## Discoveries` on the spec being developed, written with `cq specs discover` inside the pass's one confirmed edit |
 | close-out — `/specs:conclude` on a `done` outcome | the harvest turns it into a fresh spec, if it still deserves one |
 
 The asymmetry is the whole rule. At definition time nobody knows whether the parent will ship, so
@@ -155,17 +155,17 @@ hand, which is why the harvest table in `specs-conclude/distill.md` is the only 
 becomes a file.
 
 **The measurement.** One autonomous `/specs:develop` pass over 32 open specs, one agent per spec,
-raised 4–6 follow-up candidates each — well over a hundred — and the same `specs.py` defects
+raised 4–6 follow-up candidates each — well over a hundred — and the same `cq specs` defects
 surfaced independently in three or four agents that could not see one another. A definition-time
 offer scales with what the pass *imagines*, and the queue it fills is charged again to every
-`specs.py next --front` ranking, `/specs:continue` table and `/specs:triage` read that has to walk
+`cq specs next --front` ranking, `/specs:continue` table and `/specs:triage` read that has to walk
 past it. Duplicates arriving through that door are turned away at it: the discoveries bank's
 `promoted:` resolution reads the front first and resolves a line an open spec already covers as
 `dismissed: already covered by {slug}` — still three resolutions, never a fourth token.
 
 Where the rule is written: `commands/specs/develop.md` carries it as an `## Invariants` entry, with
-the guard that `specs.py new` runs inside a develop pass **only** as that `promoted:` resolution;
-its step 5 shows the parked line in the consolidated plan and its step 6 makes the `specs.py
+the guard that `cq specs new` runs inside a develop pass **only** as that `promoted:` resolution;
+its step 5 shows the parked line in the consolidated plan and its step 6 makes the `cq specs
 discover` call part of that same edit, because nothing may be written mid-bank.
 `assets/references/specs-develop/questions.md` carries the dedup step on the bank's resolution
 table.
@@ -183,7 +183,7 @@ the pass surfaced on its own.
 
 ## The v2→v3 migration
 
-`specs.py migrate` performs the fold exactly once per workspace: every file in `backlog/` and
+`cq specs migrate` performs the fold exactly once per workspace: every file in `backlog/` and
 `ready/` moves to `plans/` with its basename unchanged, `archive/**` is never touched, and an
 already-v3 workspace exits 2. Nothing is renamed, so every recorded slug, date and cross-reference
 survives; the completeness `ready/` used to imply is recomputed on the next read, and the human OK
