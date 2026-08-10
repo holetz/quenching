@@ -8,7 +8,7 @@ description: >-
   recalling its own run, and every counted claim is reported with its count and the turn that
   evidences it. Each finding lands with the `/quenching:components:command:new` invocation that would close it, and
   nothing is applied. Typed-only by design: a retro reads your transcripts, so a human chooses
-  it. Not for: measuring a command against a control arm → /skill:eval; minting or editing a
+  it. Not for: measuring a command against a control arm → /quenching:components:command:eval; minting or editing a
   command → /quenching:components:command:new; auditing every body on the surface → /quenching:components:align.
 argument-hint: "[session id or transcript path — omit for this session; optionally a command name]"
 allowed-tools: Read, AskUserQuestion, Bash(python3:*), Bash(py:*)
@@ -32,7 +32,7 @@ with `python3`/`py`, and branch on the **exit code** — 0 read clean · 1 read 
 against it · 2 refusal — never on prose.
 
 **This command reports. It never edits a command body**, and it never claims a measured delta:
-a retro has one arm and no control, which is what separates it from `/quenching:skill:eval`.
+a retro has one arm and no control, which is what separates it from `/quenching:components:command:eval`.
 
 ## Workflow
 
@@ -124,4 +124,4 @@ unchanged.
   turns they may include.
 - Report a refusal with its reason. An empty run is never presented as a clean one.
 - Report findings; apply none. Editing a command body is `/quenching:components:command:new`'s, and a measured
-  with/without delta is `/quenching:skill:eval`'s.
+  with/without delta is `/quenching:components:command:eval`'s.

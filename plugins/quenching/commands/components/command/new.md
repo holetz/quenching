@@ -1,5 +1,5 @@
 ---
-description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on "create a command", "mint a command for X", "add a new entry point to the .claude surface". Not for: a subagent definition → /skill:agent:new; a hook → /skill:hook:new; measuring a command → /skill:eval.
+description: Mint or edit ONE command in this repo's .claude surface — one file per entry point. Triggers on "create a command", "mint a command for X", "add a new entry point to the .claude surface". Not for: a subagent definition → /skill:agent:new; a hook → /skill:hook:new; measuring a command → /quenching:components:command:eval.
 argument-hint: [skill-name-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
@@ -144,7 +144,7 @@ unreachable, a `${CLAUDE_PLUGIN_ROOT}` placeholder never expands, or a citation 
 So this step, not a later one, owns the functional proof: **where the repo ships a harness that
 spawns a fresh session and asserts on captured tool calls, run it now** — scoped to what this mint
 changed, since each check is a billed session. In this plugin that is
-`assets/checks/functional-checks.sh` (default subset for a body; `/quenching:skill:eval` for a description).
+`assets/checks/functional-checks.sh` (default subset for a body; `/quenching:components:command:eval` for a description).
 **Where the repo ships none, say plainly that the command is written but unproven until a fresh
 session** — never report a linter's exit 0 as evidence that the surface loaded.
 

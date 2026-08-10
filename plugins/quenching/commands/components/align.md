@@ -1,5 +1,5 @@
 ---
-description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /quenching:components:command:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /skill:eval; the `knowledge` or `specs` front → /quenching:knowledge:align, /specs:align.
+description: Converge this repo's whole .claude command surface onto one file per entry point, then audit every body and rewrite every description against the writing doctrine. Triggers on "align the skills", "align and update the skills", "migrate my commands", "fix the .claude surface", "collapse the skill wrappers", "audit the command bodies", "review the skill descriptions", "shorten the descriptions", "converge the automation surface". A body is reported with the /quenching:components:command:new that fixes it, never rewritten; a description is rewritten in ONE surface-wide pass on its own confirmation. Not for: minting or editing ONE command → /quenching:components:command:new; an agent or a hook → /skill:agent:new, /skill:hook:new; measuring what a command teaches, or retiring a trigger on measured evidence → /quenching:components:command:eval; the `knowledge` or `specs` front → /quenching:knowledge:align, /specs:align.
 argument-hint: [optional-scope]
 allowed-tools: Bash(python3:*), Bash(py:*), Bash(git grep:*), Bash(grep:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Read, Grep, Glob, Write, Edit, Task
 ---
@@ -58,7 +58,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   them at once, so it is the only place that can waive a boundary honestly. Reviewing them one per
   `/quenching:components:command:new` run would cost N sessions to reach a verdict none of them can reach.
   The edit still gates on its own OK, and a **trigger phrase is never deleted here** — that is
-  `/quenching:skill:eval`'s, on a measured miss.
+  `/quenching:components:command:eval`'s, on a measured miss.
 - **This front is honestly short, and says so.** `/.docs/` and `/.specs/` each have an out-of-band
   store to drain; this one has none, and the migration is idempotent — so the loop reaches a
   fixpoint in **1–2 passes**, essentially always. It is not ceremony: a rename in the migration
@@ -296,7 +296,7 @@ Judge each description against the three slots and the competitor test in
 | no trigger, or a trigger after the second sentence (`sk-trigger-position`) | **add** one verbatim phrase per branch that has none; move them into the second sentence. **Routed only** — on a typed-only command an absent trigger is not a defect, and adding one buys nothing that routes |
 | `Not for:` naming a command that fails the competitor test | **cut**, and record the waiver with the competitor set checked |
 | a real competitor with no `Not for:` (`sk-no-boundary`) | **add** the one clause that routes: `Not for: <job> → <command>` |
-| a quoted trigger that looks like sediment | **report**, never cut — `/quenching:skill:eval <command>` decides it on a measured miss |
+| a quoted trigger that looks like sediment | **report**, never cut — `/quenching:components:command:eval <command>` decides it on a measured miss |
 | over a cap (`sk-metadata-cap`, `sk-description-portable`) after all of the above | **report** the residue with its code; a cap is not closed by deleting a trigger |
 
 The competitor test runs **against the surface in hand, never from memory**: the `/<namespace>:`
@@ -346,7 +346,7 @@ flagged; every `sk-*` finding that survived the run, by code; §7's doctrine fin
 apart, each with its `/quenching:components:command:new`; and §8's line — descriptions reviewed, edited,
 declined; the description-code count before → after from `lint`; every waived boundary with the
 competitor set checked (and its accepted `sk-no-boundary`); and every trigger handed to
-`/quenching:skill:eval`. Say plainly when the front converged in one pass — that is the
+`/quenching:components:command:eval`. Say plainly when the front converged in one pass — that is the
 expected outcome here, not a shortfall. **Done when:** `doctor` and `lint` exit 0 or each surviving
 finding is named with its code, the second
 `registry reindex` reports `changed: false`, and the counts, the doctrine findings and §8's line
@@ -365,7 +365,7 @@ are reported.
 - Never inventory before the probe, and never treat §7's read-only findings as progress that
   justifies another pass.
 - Never delete a quoted trigger phrase — not for length, not for looking redundant. A trigger
-  retires on a measured miss, which is `/quenching:skill:eval`'s; here it is reported with that
+  retires on a measured miss, which is `/quenching:components:command:eval`'s; here it is reported with that
   invocation. Cutting one to fit a cap trades a measurable routing loss for a character count.
 - Never write a `Not for:` clause naming a command that fails the competitor test, and never cut
   one without stating the set that was checked — an invented boundary and a silent waiver are the
