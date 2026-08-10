@@ -2,7 +2,7 @@
 type: standard
 title: Fluxo de branches — develop integra, main publica
 description: A main acumulava duas funções que este standard separa — develop como branch de integração onde as specs mergeiam, main como canal de publicação que só recebe o merge deliberado develop → main — o gatilho por demanda e sem cadência, a pergunta que empurra para o agrupamento quando develop carrega um só merge desde a última tag, a publicação sempre local, e os dois consumidores que leem os nomes das branches declarados em .claude/quenching.json
-resource: .claude/quenching.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md
+resource: .claude/quenching.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md
 tags: [git, branching, release, workflow, develop, main]
 timestamp: 2026-08-04
 audience: both
@@ -75,7 +75,7 @@ primeira release de verdade, é uma decisão humana — nenhum comando deste fro
   automatizável: ver [versioning-release.md](../ci-cd/versioning-release.md) sobre por que uma
   política de versionamento fica fora de escopo.
 - **Como a release é executada** — o lockstep dos sete artefatos e a tag, mecanicamente — é o verbo
-  `specs.py release`. Sem string surgery, coberto por selftest.
+  `cq specs release`. Sem string surgery, coberto pela suíte de testes.
 
 ## A publicação é sempre local
 
