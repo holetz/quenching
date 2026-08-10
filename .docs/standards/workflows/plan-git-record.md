@@ -2,9 +2,9 @@
 type: standard
 title: Plan git record contract
 description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
-resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-04
+timestamp: 2026-08-10
 audience: both
 authority: background
 source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture
@@ -49,12 +49,12 @@ grammar `files:` and `verify:` already use:
       commit: 4f2a9c1
 ```
 
-Written mechanically by `specs.py task --check <id> --commit <sha>` — never by string surgery —
+Written mechanically by `cq specs task --check <id> --commit <sha>` — never by string surgery —
 and only **after** the task verified, self-reviewed, and the commit exists:
 
 ```bash
 git add <the task's files> && git commit -m "<subject>"
-specs.py task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
+cq specs task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
 ```
 
 ### Why a post-commit write stopped being the thing this contract forbade
@@ -79,7 +79,7 @@ break it.
 A repository whose specs still live on the code branch — this repository's own `plans/`/`archive/`
 at the time of writing, per [spec-backend.md](../architecture/spec-backend.md) §The selected
 backend is the source of truth — still pays the cost a second commit would carry, because for that
-spec the record and the code genuinely do share a branch. `specs.py task --check <id> --subject
+spec the record and the code genuinely do share a branch. `cq specs task --check <id> --subject
 <line>` is unchanged and still the right tool there, ticked **before** the commit so the box travels
 inside it:
 
@@ -129,14 +129,15 @@ admission test — a fact no derivation can reproduce:
   nothing stamped leaves `conclude` unable to say what it merges into. `base` is then **inferred**
   rather than observed, stopping at the first that answers: the spec's own `branch.base` record,
   when one already exists; the repo's own **declared** `integrationBranch`
-  ([plugin-configuration.md](plugin-configuration.md), read via `specs.py config --json`);
+  ([plugin-configuration.md](plugin-configuration.md), read via `cq specs config --json`);
   `git symbolic-ref refs/remotes/origin/HEAD`; `git config init.defaultBranch`; then `main`.
 
   **A declared integration branch must be consulted before `origin/HEAD`, never after.** Under the
   develop/main flow ([branching.md](../git/branching.md)) `origin/HEAD` resolves to `main` — the
   publication branch — so an unstamped spec would infer `main` and merge into it by default the
-  moment `origin/HEAD` answered first. `infer_base_branch` in `specs.py`, proved by a `selftest`
-  fixture, decides only the order; the git facts `origin/HEAD` and `init.defaultBranch` resolve are
+  moment `origin/HEAD` answered first. `infer_base_branch` in `cq specs`, proved by
+  `tests/test_specs_parse.py`'s `InferBaseBranch` fixture, decides only the order; the git facts
+  `origin/HEAD` and `init.defaultBranch` resolve are
   still read by the orchestrator, exactly as before. Left undeclared, the chain is unchanged —
   most repositories have no `develop` branch at all.
 
@@ -149,7 +150,7 @@ admission test — a fact no derivation can reproduce:
 - **`merge: {strategy, subject, pr}`** — stamped by `conclude`, write-once, **on the work branch
   before the merge**. The strategy was a human choice and the subject names the merge it will
   produce. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit
-  none; `specs.py validate` reports a record that gets this backwards either way, as `sp-bad-merge`.
+  none; `cq specs validate` reports a record that gets this backwards either way, as `sp-bad-merge`.
 
   **`pr` names the pull request, and exists only on the PR route.** Most conclusions are local and
   carry no `pr:` at all — its absence is never a finding. Where it is present it records a fact the
@@ -158,7 +159,7 @@ admission test — a fact no derivation can reproduce:
 
 **The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
-live ref — which is what `specs.py next --front` does, and why `/specs:continue` demotes a spec
+live ref — which is what `cq specs next --front` does, and why `/specs:continue` demotes a spec
 whose branch is alive but checked out elsewhere.
 
 ## The route is a second choice, and it moves when `merge:` is stamped
@@ -167,7 +168,7 @@ whose branch is alive but checked out elsewhere.
 how the merge reaches the base; the strategy decides what shape it takes once it does. Three of the
 four strategies map one-to-one onto a `gh pr merge` flag (`--merge`, `--squash`, `--rebase`), so the
 route borrows the strategy vocabulary rather than inventing one. **`fast-forward` has no `gh`
-equivalent**, so the PR route is never offered under it: `specs.py record` refuses `pr:` set
+equivalent**, so the PR route is never offered under it: `cq specs record` refuses `pr:` set
 alongside that strategy (`sp-merge-pr-no-route`) and `validate` warns on one already written.
 
 The route also decides **when** the record can be stamped, and this is the one place the
