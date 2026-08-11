@@ -17,6 +17,6 @@ settings.local.json
 
 # Worktrees — including the persistent one the `files` spec backend creates on demand for
 # the dedicated specs branch. It MUST be ignored: an untracked worktree is untracked
-# content in the working tree, which breaks the clean-tree gate /specs:execute requires
+# content in the working tree, which breaks the clean-tree gate /quenching:specs:execute requires
 # before its first task. The backend would sabotage the command that drives it.
 .claude/worktrees/

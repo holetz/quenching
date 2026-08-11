@@ -13,7 +13,7 @@ Two shapes are conformant and both resolve here:
 
 ONE FILE PER ENTRY POINT. A command file carries its own description AND its own body; a
 command's path IS its invocation and its identity: `commands/specs/develop.md` is
-`/specs:develop`, one `:` per path segment. There is nothing to mirror.
+`/quenching:specs:develop`, one `:` per path segment. There is nothing to mirror.
 
 `commands/**` is the ONLY tree Claude Code registers, which is why nothing else may live
 there: a `references/` folder beside a command file would surface every reference as a
@@ -111,7 +111,7 @@ def find_surface_root(root_arg: str | None) -> str:
 # the surface model — what every subcommand reads
 # --------------------------------------------------------------------------- #
 def command_invocation(relpath: str) -> str:
-    """`specs/develop.md` -> `/specs:develop` — one `:` per path segment. The path IS
+    """`specs/develop.md` -> `/quenching:specs:develop` — one `:` per path segment. The path IS
     the identity, so this is the whole naming rule; nothing derives a second name to
     compare it against."""
     return "/" + ":".join(relpath[:-3].split("/"))

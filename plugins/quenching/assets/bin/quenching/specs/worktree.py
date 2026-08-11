@@ -51,7 +51,7 @@ def worktree_guard(ignored: bool, rel: str = SPECS_WORKTREE_DIR) -> dict:
         "code": "sp-worktree-unignored", "exit": 2, "path": rel,
         "message": f"git does not ignore '{rel}/' — add it to .gitignore before the files "
                    f"backend creates its specs worktree there; an untracked worktree breaks "
-                   f"the clean-tree gate /specs:execute requires before its first task",
+                   f"the clean-tree gate /quenching:specs:execute requires before its first task",
     }
 
 
@@ -125,7 +125,7 @@ def specs_worktree(top: str, branch: str) -> tuple[str, dict]:
 
     THE GUARD RUNS BEFORE ANYTHING IS CREATED, and only on the creation path. An unignored
     worktree is untracked content in the working tree, which breaks the clean-tree gate
-    `/specs:execute` demands before its first task — the backend would sabotage the command
+    `/quenching:specs:execute` demands before its first task — the backend would sabotage the command
     that drives it. That damage is done by the `git worktree add`, so that is what the guard
     stands in front of; the reuse path creates nothing and pays no subprocess for it.
 
@@ -470,7 +470,7 @@ def writer_lock(args, root: str) -> tuple[SpecsLock | None, dict]:
                                 unserialised knowingly — that workspace is the state this
                                 backend exists to end, and adding a second untracked artifact
                                 to it would buy safety for a layout on its way out at the price
-                                of the clean-tree gate `/specs:execute` runs under."""
+                                of the clean-tree gate `/quenching:specs:execute` runs under."""
     if not command_writes(args):
         return None, {}
     cfg = load_config(root)

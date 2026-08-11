@@ -528,7 +528,7 @@ def _case_front(b: SpecBackend) -> dict:
     """One ranked candidate — the same trap on the other disk reader.
 
     `_candidate` off the path ranks a `memory://` spec as an empty one with no tasks and no
-    priority, which is exactly what `/specs:continue` was handed against GitHub. `heads` and
+    priority, which is exactly what `/quenching:specs:continue` was handed against GitHub. `heads` and
     `current` are pinned empty so the case asserts the READ and never the repository it
     happens to run in.
 

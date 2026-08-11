@@ -1,6 +1,6 @@
 # Authoring a spec's sections
 
-The per-section authoring doctrine every `/specs:*` command applies when it writes into a spec. The
+The per-section authoring doctrine every `/quenching:specs:*` command applies when it writes into a spec. The
 **layout, the fourteen sections, the gates, the derived stages and the `cq specs` surface** live
 once in
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) and are

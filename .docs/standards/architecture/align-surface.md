@@ -24,7 +24,7 @@ architectural rule — why the surface has this shape and not the previous one.
 | Front | Command |
 | --- | --- |
 | `/.docs/` | `/quenching:knowledge:align` |
-| `/.specs/` | `/specs:align` |
+| `/.specs/` | `/quenching:specs:align` |
 | `.claude/` | `/quenching:components:align` |
 | all three | `/align` — conducts the three, in dependency order, on one nested OK |
 
@@ -103,8 +103,8 @@ nothing the tree and the git log did not already say, and cost a write on every 
 including the no-op runs the probe rule exists to make free. A sweep whose clean case costs three
 tool calls should not spend a fourth narrating that it found nothing.
 
-It also removed the one thing every align wrote **outside its own front**. `/specs:align` and
-`/specs:triage` reached into the `/.docs/` bundle for a log line and nothing else; with that gone,
+It also removed the one thing every align wrote **outside its own front**. `/quenching:specs:align` and
+`/quenching:specs:triage` reached into the `/.docs/` bundle for a log line and nothing else; with that gone,
 the `specs` front writes into `/.docs/` at exactly one point — a concluded spec's distillation,
 which mints real knowledge rather than a record of activity. The cross-front dependency in
 [§The 1×4 column](#the-14-column) is unchanged: `/.docs/` still goes first, because that

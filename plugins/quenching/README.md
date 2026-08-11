@@ -7,7 +7,7 @@ insert new knowledge, capture terms into a fixed glossary, drain the project's C
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
 taxonomy — so every repository that adopts the plugin looks the **same**. It also carries the repo's
-**spec-driven plan cycle**: the nine `/specs:*` commands over a `specs` front whose **backend is
+**spec-driven plan cycle**: the nine `/quenching:specs:*` commands over a `specs` front whose **backend is
 configurable** — `files` (a dedicated branch), `github`, or `azure-boards` — with the OKF bundle
 as its knowledge substrate, driven end to end by the bundled stdlib `cq specs`.
 
@@ -24,7 +24,7 @@ Every front has exactly ONE align, and one more spans all three:
 | Front | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
 | `/.docs/` — the OKF bundle | `/quenching:knowledge:*` | `/quenching:knowledge:align` |
-| `/.specs/` — the native spec-driven workspace | `/specs:*` | `/specs:align` |
+| `/.specs/` — the native spec-driven workspace | `/quenching:specs:*` | `/quenching:specs:align` |
 | `.claude/` — the automation surface | `/quenching:components:*` | `/quenching:components:align` |
 | **all three** | *(root)* | **`/align`** |
 
@@ -45,7 +45,7 @@ across fronts**, because they feed each other: a spec's distillation is glossary
 `docs` front must then index; the skill front creates the rule and registry that the `docs`
 listings must carry.
 
-The **cycle conductor** is the second conductor: `/specs:orchestrate` conducts the four stages of
+The **cycle conductor** is the second conductor: `/quenching:specs:orchestrate` conducts the four stages of
 ONE spec — create, develop, execute, conclude — in one run on one authorization, entering at the
 derived stage, invoking each stage as the command that owns it, and writing nothing itself. It
 shares the cycle-authorization contract with `/align`, and derives its run from the spec's
@@ -63,8 +63,8 @@ That contract lives once, in
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
 there is no `skills/` tree and no wrapper. The twenty-six split by front: `/quenching:knowledge:*` for the ten
 that act on the OKF `/.docs/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
-`/specs:*` for the nine that act on the native `/.specs/` workspace (the ninth —
-`/specs:orchestrate` — conducts the whole cycle of one spec), `/quenching:components:*` for the six that
+`/quenching:specs:*` for the nine that act on the native `/.specs/` workspace (the ninth —
+`/quenching:specs:orchestrate` — conducts the whole cycle of one spec), `/quenching:components:*` for the six that
 act on the target's `.claude/` automation surface (two nested: `/quenching:components:agent:new`,
 `/quenching:components:hook:new`), and the root `/align` for the one that spans all three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
@@ -99,7 +99,7 @@ a repo-specific term, and validates.
 Triggers: *"insert new information into the base"*, *"add a standard/table/announcement"*,
 *"record knowledge in the OKF docs"*.
 
-### `/specs:triage` — rank the whole front
+### `/quenching:specs:triage` — rank the whole front
 
 The prioritization sweep over `/.specs/plans/`: reads every spec's
 frontmatter and derived stage **directly** (no sub-agents — a front is small by nature) plus
@@ -108,7 +108,7 @@ re-ranks of already-ranked specs only with an explicit reason, staleness flags, 
 suggestions. **One OK** applies the whole plan (a rejected plan applies nothing; a human-set
 ranking is never silently clobbered), writing each spec's
 `priority: {level, criticality, complexity, date}` record and nothing else. Its output is what
-`/specs:continue` stands on. It never removes a spec, never infers completion, and never treats
+`/quenching:specs:continue` stands on. It never removes a spec, never infers completion, and never treats
 staleness as abandonment.
 
 Triggers: *"triage the specs"*, *"prioritize the front"*, *"rank the plans"*,
@@ -306,7 +306,7 @@ never acts on a front's reported residue — it names the residue and the comman
 Triggers: *"align everything"*, *"align the whole repo"*, *"run all the aligns"*, *"normalize
 this repo"*, *"install quenching in this repo"*, *"set the repo up end to end"*.
 
-## The `specs` flow — the nine `/specs:*` commands
+## The `specs` flow — the nine `/quenching:specs:*` commands
 
 The plugin's **spec-driven plan cycle**. **Where a spec is stored is declared, not fixed**: a
 target repo names its backend in `.claude/quenching.json` — `backend: "files"` (on a dedicated
@@ -337,11 +337,11 @@ labels/assignees on `github`, `System.Tags`/`System.AssignedTo`/the two scheduli
 `azure-boards`) and is reassembled from it on read rather than kept in the document, so a human's
 edit on the tracker IS the spec's new value. `.claude/quenching.json` is where a target declares
 `backend`, the per-backend placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
-project's own `subjects`/`tagCatalog` — the closed sets `/specs:create` proposes a spec's subject
+project's own `subjects`/`tagCatalog` — the closed sets `/quenching:specs:create` proposes a spec's subject
 and tags from, confirmed by a human, never picked silently. Because a spec writes its durable rule
 **directly into `/.docs/standards/`** (honestly `authority`-graded), there is no second store to
 bridge to:
-isolation-while-building is a real git **branch or worktree** (offered inline by `/specs:execute`
+isolation-while-building is a real git **branch or worktree** (offered inline by `/quenching:specs:execute`
 when it starts from the base branch, recorded as `branch: {base, work}`, each task committed alone
 with its sha on the task line). `cq specs export --spec <slug> | --all` dumps the canonical markdown to disk on demand —
 write-only, nothing reads it back, so it is never a second store — the mitigation `## Risks`
@@ -349,15 +349,15 @@ names for losing access to an external backend.
 
 | Command | Role |
 | --- | --- |
-| `/specs:continue` | The router: one `cq specs next --front` call ranks every candidate with a reason per row and hands off to the one command that fits. Never builds, edits, or closes anything itself. |
-| `/specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results — split into what `/specs:align` would fix, what a cycle command closes, and what neither closes. |
-| `/specs:create` | ONE spec in `plans/` — effort proportional to input, never an interrogation. A sentence becomes `## Problem` alone; a Claude Code plan file becomes every section it actually supports, mapped and never invented. |
-| `/specs:develop` | Questions grouped by dependency — independent ones in one `AskUserQuestion` call, sequential where an answer changes the next — each with an inline recommendation, the bank chosen by the spec's derived stage: generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
-| `/specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/.docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Stops at the last commit. |
-| `/specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/.docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Nothing is committed to the base after it. |
-| `/specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
-| `/specs:align` | The front's align + installer — see below. |
-| `/specs:orchestrate` | The **cycle conductor**: conducts the four stages of ONE spec — create, develop, execute, conclude — in one run on one authorization, entering at the derived stage, invoking each stage as the command that owns it, never reimplementing any. Presents ONE gears plan derived from `priority.complexity` before any write; re-evaluates the gear at the end of every stage and asks for a fresh authorization when it moves up. Typed-only — a whole lifecycle is a human's choice. |
+| `/quenching:specs:continue` | The router: one `cq specs next --front` call ranks every candidate with a reason per row and hands off to the one command that fits. Never builds, edits, or closes anything itself. |
+| `/quenching:specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results — split into what `/quenching:specs:align` would fix, what a cycle command closes, and what neither closes. |
+| `/quenching:specs:create` | ONE spec in `plans/` — effort proportional to input, never an interrogation. A sentence becomes `## Problem` alone; a Claude Code plan file becomes every section it actually supports, mapped and never invented. |
+| `/quenching:specs:develop` | Questions grouped by dependency — independent ones in one `AskUserQuestion` call, sequential where an answer changes the next — each with an inline recommendation, the bank chosen by the spec's derived stage: generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
+| `/quenching:specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/.docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Stops at the last commit. |
+| `/quenching:specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/.docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Nothing is committed to the base after it. |
+| `/quenching:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
+| `/quenching:specs:align` | The front's align + installer — see below. |
+| `/quenching:specs:orchestrate` | The **cycle conductor**: conducts the four stages of ONE spec — create, develop, execute, conclude — in one run on one authorization, entering at the derived stage, invoking each stage as the command that owns it, never reimplementing any. Presents ONE gears plan derived from `priority.complexity` before any write; re-evaluates the gear at the end of every stage and asks for a fresh authorization when it moves up. Typed-only — a whole lifecycle is a human's choice. |
 
 The shared facts live once — the layout, the fourteen canonical sections, the gates, the record
 vocabulary, the `cq specs` surface, and the `/.specs/`↔`/.docs/` boundary in
@@ -372,7 +372,7 @@ The per-spec commands are never conducted by any sweep, because each needs fresh
 conducted pass does not have. Every command on this front is **quenching-native** — no
 `metadata.generatedBy` anywhere.
 
-### `/specs:align` — force the `/.specs/` workspace into shape
+### `/quenching:specs:align` — force the `/.specs/` workspace into shape
 
 The front's align + installer, **probe-first**: `cq specs doctor` + `validate` run before
 anything is read, so a conformant workspace costs two tool calls and stops. Otherwise: ONE plan →
@@ -409,7 +409,7 @@ without data gets no `catalog/`):
 
 The **spec workspace** lives **outside** this bundle, at `/.specs/` (`plans/` +
 `archive/`, one `<slug>.md` per spec, and no listing file — `cq specs list` derives
-what the folder holds) — a quenching-managed sibling created by `/specs:create` and ranked by `/specs:triage`,
+what the folder holds) — a quenching-managed sibling created by `/quenching:specs:create` and ranked by `/quenching:specs:triage`,
 not scanned by the OKF validator. An
 agreed-but-unproven decision is a `standard` with `authority: background` (there is no separate
 `decisions/` home).
@@ -460,26 +460,26 @@ graded and with a should-not-trigger arm.
 | Surface | Policy |
 | --- | --- |
 | `/quenching:knowledge:define` | **no pin** — the edit is mechanical, but an inline `effort: low` is part of the session's prompt-cache key, so it recomputes every input token on the next request ([`capabilities.md`](assets/references/components-command-new/capabilities.md) §Model and effort). A single-entry edit does not buy that back. Carries a frontmatter `hooks:` block instead — `cq knowledge validate` on its own `Write`/`Edit`, the scope ladder's narrowest rung, costing nothing to any other operation |
-| `/specs:create` | **`model: sonnet`** — the capture is mechanical and effort-proportional, so the tier it does not need is the expensive one. Zero interrogation, no sub-agents. The pin is paid for once, in the **cache trap** ([`capabilities.md`](assets/references/components-command-new/capabilities.md) §Model and effort): an inline `model:` is part of the session's prompt-cache key, so **changing** it recomputes every input token on the next request. A pin left alone costs nothing after the first run, which is what makes a stable pin affordable and pin-churn expensive |
-| `/specs:triage` | **`model: opus`**, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the top tier exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
-| `/specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `cq specs status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
+| `/quenching:specs:create` | **`model: sonnet`** — the capture is mechanical and effort-proportional, so the tier it does not need is the expensive one. Zero interrogation, no sub-agents. The pin is paid for once, in the **cache trap** ([`capabilities.md`](assets/references/components-command-new/capabilities.md) §Model and effort): an inline `model:` is part of the session's prompt-cache key, so **changing** it recomputes every input token on the next request. A pin left alone costs nothing after the first run, which is what makes a stable pin affordable and pin-churn expensive |
+| `/quenching:specs:triage` | **`model: opus`**, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the top tier exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
+| `/quenching:specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `cq specs status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
 | `/quenching:knowledge:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — the `docs` counterpart of the row above, and its `effort: low` was dropped for the same reason. Both bodies also forbid `context: fork` by name: each doubles as a sweep's preview, and the report has to land in the conversation where the OK will be given |
-| `/specs:conclude` | **`model: opus`**, no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade, and the review reads a whole branch diff for coherence rather than one task's |
+| `/quenching:specs:conclude` | **`model: opus`**, no sub-agents — the branch review, the merge choice, the outcome, and the distillation are all judgment; there is nothing mechanical here to downgrade, and the review reads a whole branch diff for coherence rather than one task's |
 | `/quenching:knowledge:glossary-backfill` | **no pin** on the orchestrator (the former inline `effort: medium` charged the cache trap); slice sub-agents `model: haiku` + `effort: low` (pure extraction, cross-checked by the orchestrator) — a sub-agent's pin is cache-safe, it has its own context. `Bash` scoped to `python3`/`py`: its reading is `Grep`/`Glob`/`Task`, and the checker is the only shell it runs |
 | `/quenching:knowledge:import-memory` | classification sub-agents `model: sonnet` + `effort: low`; **executor sub-agents inherit the session model** (their self-check authorizes memory deletion). `Bash` stays unrestricted **and is now priced in the body**: step 1 derives the memory directory as one compound shell expression, which no prefix grant can match |
 | `/quenching:knowledge:align` / `/quenching:components:harness:align` | repo-wide grep/find sweeps delegable to one read-only `haiku` + `effort: low` collector; every classification stays with the orchestrator when run standalone. `/quenching:components:harness:align`'s `Bash` is scoped to `git grep` / `git check-ignore` / `grep` / `python3` / `py` — the two-scan sweep, the build-artifact check, the checker, and nothing else; `/quenching:knowledge:align` keeps the unrestricted grant its body prices. **Exception:** under `/quenching:knowledge:align`'s parallel content prep, harness's read-only discovery (steps 1–4, incl. MOVE/KEEP classification) runs in a background `Task` agent pinned `model: sonnet` — never haiku, same misclassification-risk rationale as the cycle's assessment agent |
 | `/quenching:knowledge:align` (content passes) | per-pass read-only assessment via a `sonnet` + `effort: low` sub-agent (haiku ruled out: a false "nothing to do" ends the loop early) |
 | `/align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
-| `/specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `cq specs status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `cq specs`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
+| `/quenching:specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `cq specs status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `cq specs`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
 | `/quenching:knowledge:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
 | `/quenching:knowledge:add` / `/quenching:knowledge:learn` | no pin — they inherit the session model (they classify, route, and gate operations). Both carry a frontmatter `hooks:` block running `cq knowledge validate` on their own `Write`/`Edit` — rung 1 of the scope ladder and rung 1 of the handler ladder, firing only while the command runs |
 | `/quenching:knowledge:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
 | `/quenching:components:command:new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
 | `/quenching:components:align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
-| `/specs:develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each bank's declared stop condition, not by a model tier. One **read-only** sub-agent is permitted, and only for the adversarial and gate banks: it sweeps the code and the `/.docs/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
-| `/specs:continue` | no pin, no sub-agents — one `cq specs next --front` call and a hand-off; the ranking logic lives in the tool, not the model |
-| `/specs:execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `/.docs/` — pinned to the **session model, never `haiku`**; with this command pinned, *session model* means `sonnet` for those executors (it writes production code, the same rationale that protects `/quenching:knowledge:import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `cq specs task --check`/`--block`, every `/.docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `cq specs parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
-| `/specs:orchestrate` | **no pin** — typed-only (`disable-model-invocation: true`): a whole lifecycle is a human's choice, so the description pays no routed budget; the plan gate and every nested confirmation stay in the conducting session, and each stage runs under its own policy row |
+| `/quenching:specs:develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each bank's declared stop condition, not by a model tier. One **read-only** sub-agent is permitted, and only for the adversarial and gate banks: it sweeps the code and the `/.docs/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
+| `/quenching:specs:continue` | no pin, no sub-agents — one `cq specs next --front` call and a hand-off; the ranking logic lives in the tool, not the model |
+| `/quenching:specs:execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `/.docs/` — pinned to the **session model, never `haiku`**; with this command pinned, *session model* means `sonnet` for those executors (it writes production code, the same rationale that protects `/quenching:knowledge:import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `cq specs task --check`/`--block`, every `/.docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `cq specs parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
+| `/quenching:specs:orchestrate` | **no pin** — typed-only (`disable-model-invocation: true`): a whole lifecycle is a human's choice, so the description pays no routed budget; the plan gate and every nested confirmation stay in the conducting session, and each stage runs under its own policy row |
 
 Two rules are deliberate and must survive any future "optimization":
 
@@ -541,16 +541,16 @@ why each half of the lockstep matters, and
 
 - **4.2.0:** **nothing is written after the thing it describes, so the merge is last.** The
   task→commit anchor inverted from the commit's **sha** to its **subject** — known *before* the
-  commit exists — which let two writes move ahead of the events they record. `/specs:execute` now
+  commit exists — which let two writes move ahead of the events they record. `/quenching:specs:execute` now
   ticks the box with `cq specs task --check --subject` and commits code and box together, so one
-  task is literally one commit and the per-task bookkeeping commit is gone. `/specs:conclude`
+  task is literally one commit and the per-task bookkeeping commit is gone. `/quenching:specs:conclude`
   reordered: the branch review, the emergent `/.docs/`, the archive, the distillation and the
   `merge: {strategy, subject}` stamp all land on the work branch, and **the merge is its last
   action** — one merge carries the spec's whole footprint and nothing is committed to the base
   after it. Rebase stops destroying the record, since a subject survives a rewrite; the squash
   caveat stands. A **25th command** (an isolation command, since retired) extracts the git *action* — branch or
   worktree, at **any** stage rather than only at build time — and `cq specs next --front` became
-  branch-aware, so `/specs:continue` returns the spec whose branch you are standing on and demotes
+  branch-aware, so `/quenching:specs:continue` returns the spec whose branch you are standing on and demotes
   one alive elsewhere. `parse_frontmatter` learned block mappings (indent-scoped), which is what
   lets an explicit-none merge record wrap or carry a comma. New `assets/checks/conclude-order-check.sh`
   asserts the ordering on a real history — the one claim no in-process check can see. The always-on
@@ -564,7 +564,7 @@ why each half of the lockstep matters, and
   `sk-hook-unparseable`) and serves both rungs from one implementation, and the cost report counts
   `agents/*.md` descriptions as its own breakdown line; the ceiling was re-measured and re-set to
   **11,565** from a run. The profile doctrine was then applied to its own author: five inline
-  `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on `/specs:align`,
+  `effort:` pins dropped for the prompt-cache trap, `Bash` scoped on `/quenching:specs:align`,
   `/quenching:components:harness:align` and `/quenching:knowledge:glossary-backfill` and priced in the body of the two that keep it,
   frontmatter `hooks:` blocks on `/quenching:knowledge:add`/`/quenching:knowledge:learn`/`/quenching:knowledge:define`, and a collection-only
   `Task` for `/quenching:components:align`'s doctrine audit — `sk-unscoped-bash` 8 → 5, every survivor stating
@@ -586,7 +586,7 @@ why each half of the lockstep matters, and
   is a real git **branch or worktree** (offered by `/specs:apply`), not a markdown delta. The
   `specs`-front conductor pipeline drops to **3 stages** (align → plan-archive → backlog-triage) —
   the old sync stage and `openspec-sync-specs` skill are **removed**. Commands moved from `/opsx:*`
-  to **`/specs:*`** (plan skills under `/specs:develop`, inbox under `/specs:capture`), the inbox
+  to **`/quenching:specs:*`** (plan skills under `/quenching:specs:develop`, inbox under `/specs:capture`), the inbox
   from `openspec/backlog/` to **`/.specs/backlog/`**, and every finding code from `os-*` to `sp-*`.
   All twenty-seven skills now share **one `quenching-<front>-<object>-<verb>` taxonomy** — no
   separate `openspec-*` family, no `metadata.generatedBy` anywhere. New
@@ -598,8 +598,8 @@ why each half of the lockstep matters, and
   at 27↔27.
 - **0.19.0:** **the `openspec/` front's lifecycle closed, and the sweep contract given one
   owner.** Two new quenching-native skills complete the front. **`quenching-specs-status`**
-  (`/specs:status`) is its only read-only view — changes with progress and state, the backlog by
-  priority, the three verifier results, split into what `/specs:align` would fix, what
+  (`/quenching:specs:status`) is its only read-only view — changes with progress and state, the backlog by
+  priority, the three verifier results, split into what `/quenching:specs:align` would fix, what
   `/specs:align-and-update` would drive, and what neither closes; it reports in the sweep's own
   `os-*` vocabulary, so it is an honest dry run of the sweep you are about to authorize.
   **`quenching-specs-archive`** (`/specs:archive`) is the exit `archive-change` could not give: a
@@ -673,7 +673,7 @@ why each half of the lockstep matters, and
   ten `openspec-*`); the skill↔wrapper bijection holds at 24↔24.
 - **0.17.0:** **one interface across the three fronts.** The plugin acts on three surfaces —
   `/.docs/`, `openspec/`, `.claude/` — but only two had an align sweep. New **`quenching-specs-align`**
-  (`/specs:align`, quenching-native) gives the `openspec/` workspace the same
+  (`/quenching:specs:align`, quenching-native) gives the `openspec/` workspace the same
   install-and-force-conformance entry point: scaffold via `openspec init`, doctor/validate,
   canonical change + archive names, the `backlog/` inbox and its derived zone, `config.yaml`'s
   `context:` thinned into a pointer at `/.docs/`, and removal of the CLI-generated

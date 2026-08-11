@@ -128,7 +128,7 @@ def named_by_bodies(commands: list[dict], prefix: str) -> dict[str, set[str]]:
          tool. The same name written `/prefix:docs:align` is a human-facing citation, so
          a leading slash disqualifies it;
       B. any form of the name on a line whose neighbourhood says "Skill tool" — which is
-         how a body that writes "chain into `/specs:conclude` (the `Skill` tool)"
+         how a body that writes "chain into `/quenching:specs:conclude` (the `Skill` tool)"
          says the same thing.
 
     The union is deliberately the WIDER read. The two errors are not symmetric: a false

@@ -4,7 +4,7 @@ title: Plan git record contract
 description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
 resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: background
 source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture
@@ -27,9 +27,9 @@ by whoever is about to commit.
 
 Two consequences, and they are why the anchor changed:
 
-- **`/specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
+- **`/quenching:specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
   that implements it. One task is exactly one commit, and the per-task bookkeeping commit is gone.
-- **`/specs:conclude` stamps `merge:` on the work branch**, so the merge is the last action of the
+- **`/quenching:specs:conclude` stamps `merge:` on the work branch**, so the merge is the last action of the
   run and **nothing is ever committed to the base branch after it**. One merge carries the code,
   the emergent docs, the archived spec and the distillation; reverting it reverts the spec's whole
   footprint.
@@ -104,7 +104,7 @@ anchor would falsify when the record was actually made.
 ### Where each form can fail
 
 A `commit-msg` hook that **replaces** the subject outright breaks a subject-anchored link; substring
-matching survives every hook that merely *adds*, which is nearly all of them. `/specs:execute`
+matching survives every hook that merely *adds*, which is nearly all of them. `/quenching:specs:execute`
 compares `git log -1 --format=%s` against what it recorded and **reports a mismatch as a finding,
 writing nothing** — correcting it after the commit would restore the ordering this contract removed.
 A sha-anchored link has no equivalent failure mode — the sha is read back from git itself, not
@@ -117,7 +117,7 @@ commit exists either way, and a tick that silently did not land would claim proo
 Both belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the same
 admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `/specs:execute`'s inline isolation offer, write-once, at
+- **`branch: {base, work}`** — stamped by `/quenching:specs:execute`'s inline isolation offer, write-once, at
   the moment isolation is taken. `work` is derivable while the branch is checked out; `base` is
   not — **after the merge, git cannot say what the branch was cut from**, which is the whole
   reason the record exists and why it is captured while still true. Work done in place stamps
@@ -159,7 +159,7 @@ admission test — a fact no derivation can reproduce:
 
 **The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
-live ref — which is what `cq specs next --front` does, and why `/specs:continue` demotes a spec
+live ref — which is what `cq specs next --front` does, and why `/quenching:specs:continue` demotes a spec
 whose branch is alive but checked out elsewhere.
 
 ## The route is a second choice, and it moves when `merge:` is stamped
@@ -232,7 +232,7 @@ It never manufactures a temporary checkout. This costs nothing, because `merge:`
 
 Isolation that is not cleaned up accumulates: directories beside the repo, each pointing at a
 branch already integrated, none of them obviously safe to delete. So once the merge exits 0,
-`/specs:conclude` removes the worktree — run from the base's checkout, because nothing removes the
+`/quenching:specs:conclude` removes the worktree — run from the base's checkout, because nothing removes the
 tree it is standing in:
 
 ```bash

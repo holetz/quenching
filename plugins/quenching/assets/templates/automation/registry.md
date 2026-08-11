@@ -41,7 +41,7 @@ them is overwritten by the next run, not merged.
 
      Two rules the tool cannot enforce, owned by
      `${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md` §registry: the zone lists
-     ONLY the repo's own surface — plugin-contributed commands (/specs:*, marketplace plugins)
+     ONLY the repo's own surface — plugin-contributed commands (/quenching:specs:*, marketplace plugins)
      may be pointed at from the curated prose, never listed inside the markers — and the
      markers must exist before a reindex, which refuses a doc without them (`sk-no-zone`)
      rather than placing a table at a guessed anchor in prose a human wrote.

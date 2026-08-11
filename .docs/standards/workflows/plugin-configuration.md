@@ -4,7 +4,7 @@ title: Plugin configuration contract
 description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the recognised keys and their defaults, the two keys that deliberately have none and refuse instead, the two keys with two consumers each — the release verb and the base-inference chain — the three keys whose prose is prompt material an agent reads to decide, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, backend, plugin]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; the bundle-root config key added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude, and removed by the docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — the bundle root became the fixed `/.docs/` convention, and the key that said where the bundle lives had nothing left to say ([bundle-root.md](../architecture/bundle-root.md)); `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md); `azurePlacement`/`azureColumns`/`subjects`/`tagCatalog` added by provar-e-posicionar-o-backend-azure-boards (task 2.8), which also measured `areaPath`'s absence against this org's own board (761 unrelated work items under the project's default area); `workItemTypes` added and `azurePlacement.workItemType` retired by suportar-tipo-workitem-azure-por-tags (task 6.1), which moved a spec's type from one repo-wide default to a per-spec choice resolved from a declared catalog — measured live (task 4.3) against a real Azure Boards project (org unicredbr, team "Diretoria Risco")
@@ -46,7 +46,7 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | --- | --- | --- | --- |
 | `backend` | `files` · `github` · `azure-boards` | `files` | the spec backend selection |
 | `specsBranch` | any branch name | `specs` | the `files` backend only |
-| `worktreeSetup` | a shell command, run as written | none | `/specs:execute`'s isolation offer, after `git worktree add` |
+| `worktreeSetup` | a shell command, run as written | none | `/quenching:specs:execute`'s isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
 | `integrationBranch` | any branch name | **none** — `cq specs release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
 | `releaseBranch` | any branch name | **none** — `cq specs release` applies `main` at the point of use | the release verb only |
@@ -54,9 +54,9 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | `profiles` | `{"installed": ["knowledge", "specs", "components"]}` | none — an absent key leaves all three fronts installed | the `/align` conductor, through the config the core read |
 | `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default (see below) | the `azure-boards` backend only |
 | `azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
-| `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/specs:create`'s subject proposal, and every backend's `create_spec` |
-| `tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `/specs:create`'s tag proposal — an agent reads the description to choose |
-| `workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `/specs:create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
+| `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/quenching:specs:create`'s subject proposal, and every backend's `create_spec` |
+| `tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `/quenching:specs:create`'s tag proposal — an agent reads the description to choose |
+| `workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `/quenching:specs:create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
 
 **The checker's settings never lived in this file, and the bundle root is not one either.**
 `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan` and `ignoreGlobs` come from the
@@ -154,7 +154,7 @@ never a value written on its own.
 ## Three keys are prompt material, not documentation
 
 `subjects.<key>.description`, every `tagCatalog` value and every `workItemTypes.<key>.description`
-are prose an AGENT reads to decide — `/specs:create` proposes a subject, a tag or a type by
+are prose an AGENT reads to decide — `/quenching:specs:create` proposes a subject, a tag or a type by
 reading these descriptions, and a human confirms. That makes them closer to a prompt than to a
 code comment: a vague or misleading description does not fail loudly, it makes the agent propose
 the wrong subject, tag or type, confidently.

@@ -9,7 +9,7 @@ description: >-
   last release, asks once whether this is a release or a habit. When it finishes: the
   bump and its tag live on `develop`'s tip, the deliberate `develop → main` merge that
   carries them is on `main` and origin, and the tag's commit is contained in `main`. Not for:
-  concluding or merging ONE spec into the integration branch → /specs:conclude.
+  concluding or merging ONE spec into the integration branch → /quenching:specs:conclude.
 argument-hint: [version — optional, skips the proposal and confirms this exact X.Y.Z]
 allowed-tools: Bash(git:*), Bash(python3:*), Read, AskUserQuestion
 ---

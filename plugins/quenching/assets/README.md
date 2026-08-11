@@ -104,7 +104,7 @@ errors, 0 warnings**.
   merge, `.pages` regeneration and `mkdocs build --strict` verification is its.
 - **`/quenching:components:harness:align`** applies the `templates/harness/` molds to rewrite a repo's `CLAUDE.md` /
   `AGENTS.md` as thin pointers over the bundle, moving inlined knowledge into its home.
-- **`/specs:align`** copies the `specs/` seed; `/specs:*` drive the cycle through `cq specs`.
+- **`/quenching:specs:align`** copies the `specs/` seed; `/quenching:specs:*` drive the cycle through `cq specs`.
 - **`/quenching:components:align`** offers to remove a legacy tool copy under a target's
   `.claude/hooks/`; the `/quenching:components:*` minters apply `templates/automation/`.
 

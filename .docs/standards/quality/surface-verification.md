@@ -4,7 +4,7 @@ title: Surface verification
 description: How a change to the command surface is proven — a fresh process because the registry is built at session start, assertions on captured tool_use rather than prose, the five preconditions a functional check must satisfy to measure what it claims, why the harness belongs to the components front rather than the spec cycle and how to scope its cost, and how an ordering property is verified by running a real cycle
 resource: plugins/quenching/assets/checks/functional-checks.sh, plugins/quenching/assets/checks/conclude-order-check.sh, plugins/quenching/commands/components/command/new.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/**
 tags: [quality, verification, automation, commands, functional-tests, cost]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: collapse-skills-into-commands spec (tasks 7.1-7.3); fourth precondition and the ordering-check pattern from the move-conclude-merge-last spec (2026-07-28); fifth precondition measured by the verify-allowed-tools-enforcement spec (2026-07-28), inverted into the --plugin-dir rule on 2026-07-29 by the cost review of the harness — which also measured, over the whole /.specs/archive/ record, that every red run this harness produced traced to a defect in itself and none to a surface regression, and narrowed its ownership to the components front on that evidence; the stale-installed-copy half of the check-3 residue account marked impossible once resolution went plugin-first (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
@@ -147,7 +147,7 @@ the cheap subset rather than the exhaustive one.
 ## When a process-spawning check *does* gate a merge, it gates before it
 
 Nothing above is specific to this harness: it holds for any check a repo's `## Validation` names
-that costs real resources per run. `/specs:conclude` step 6 runs that gate on the **work branch,
+that costs real resources per run. `/quenching:specs:conclude` step 6 runs that gate on the **work branch,
 before the merge**, and a red check stops the merge.
 
 - Run afterwards, a failure's only repair is a commit on the base — the exact write that command's
