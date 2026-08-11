@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "path": "assets/references/align/convergence.md",
+  "index": [
+    {
+      "heading": "The convergence contract — shared by every align",
+      "level": 1,
+      "chars": 10504
+    },
+    {
+      "heading": "Contents",
+      "level": 2,
+      "chars": 83
+    },
+    {
+      "heading": "The cycle-authorization contract",
+      "level": 2,
+      "chars": 3099
+    },
+    {
+      "heading": "The PR route — where review lives when the run does not stop",
+      "level": 2,
+      "chars": 2131
+    },
+    {
+      "heading": "The convergence contract",
+      "level": 2,
+      "chars": 2239
+    },
+    {
+      "heading": "Per-item commands are stage tools, not stages",
+      "level": 2,
+      "chars": 1932
+    }
+  ]
+}

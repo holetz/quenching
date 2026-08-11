@@ -8,9 +8,9 @@ description: >-
   sub-agent, or is skipped. The gear is re-evaluated at every stage end — larger revealed size
   moves it up and asks for a fresh authorization; the per-task commit, `## Outcome` and the
   archiving are never skipped in any gear. Typed-only: a whole lifecycle is a human's choice, so
-  this description pays no routed budget. Not for: one stage only → /specs:create,
-  /specs:develop, /specs:execute, /specs:conclude; the next action on one spec → /specs:continue;
-  aligning one front → /docs:align, /specs:align, /skill:align.
+  this description pays no routed budget. Not for: one stage only → /quenching:specs:create,
+  /quenching:specs:develop, /quenching:specs:execute, /quenching:specs:conclude; the next action on one spec → /quenching:specs:continue;
+  aligning one front → /quenching:knowledge:align, /quenching:specs:align, /quenching:components:align.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 disable-model-invocation: true
@@ -37,18 +37,18 @@ human on the same screen; the human's OK is the run's authorization.
   cycle-authorization contract — one confirmation at run start authorizes the run; narration
   replaces each stage's plan gate; code-coupled items and irreversible cycle actions still gate
   individually.
-- [orchestration-gears.md](/docs/standards/automation/orchestration-gears.md) §What a gear is
+- [orchestration-gears.md](/.docs/standards/automation/orchestration-gears.md) §What a gear is
   §Deriving the gears plan §Re-evaluating a gear — the repo's gears contract: the three ways a
   stage runs, how `complexity` derives the plan, and the signals that move a gear up. A repo that
   does not carry it has no gears to derive: say so and stop before the plan.
 - [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-  §Derived stages §Frontmatter §The `specs.py` tool surface — the derived stage is the dispatch,
+  §Derived stages §Frontmatter §The `cq specs` tool surface — the derived stage is the dispatch,
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface
   this command reads.
 
 ## Doctrine
 
-- **The derived stage picks the stage; never read the sections to dispatch.** `specs.py status
+- **The derived stage picks the stage; never read the sections to dispatch.** `cq specs status
   --spec <slug> --json` is the dispatch. The conductor enters the cycle where the spec is; a
   stage the derived stage has passed is skipped, never re-run.
 - **ONE gears plan before any write.** The plan derives from the gears contract (§Deriving the
@@ -78,7 +78,7 @@ human on the same screen; the human's OK is the run's authorization.
 ## Workflow (stage → gears plan → one OK → stages → re-evaluate → report)
 
 ### 1. Resolve the spec
-Take the slug from the input, infer it from the conversation, or run `specs.py list --json` and
+Take the slug from the input, infer it from the conversation, or run `cq specs list --json` and
 ask with **AskUserQuestion** (most recently modified marked "(Recommended)"). Two matches for one
 slug is exit 2 — report both paths and stop, never guess which was meant. An archived spec has
 nothing to conduct: say so and stop.
@@ -86,8 +86,8 @@ nothing to conduct: say so and stop.
 
 ### 2. Read the state in one call
 ```bash
-specs.py status --spec <slug> --json    # derived stage, records, tasks, gate, verification
-specs.py config --json                  # backend, integrationBranch
+cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
+cq specs config --json                  # backend, integrationBranch
 ```
 The derived stage is the dispatch (Doctrine). Nothing else is read here — each stage reads what it
 needs when it runs.
@@ -129,12 +129,12 @@ the minimal gear. Under the minimal gear, `conclude` is invoked with the **pull-
 against the declared `integrationBranch`: the route was chosen and approved in the gears plan,
 never rediscussed at the stage. A stage whose gear is `sub-agent` runs isolated and returns its
 summary per the gears contract (§What a gear is); the contract's test that the summary is much
-smaller than the work is [agents.md](/docs/standards/automation/agents.md).
+smaller than the work is [agents.md](/.docs/standards/automation/agents.md).
 **Done when:** the stage finished (or was skipped with a stated reason) and its outcome is
 recorded.
 
 ### 5. Re-evaluate the gear, and re-derive the stage
-At the end of every stage, read the state again (`specs.py status --spec <slug> --json`) and
+At the end of every stage, read the state again (`cq specs status --spec <slug> --json`) and
 re-evaluate the gear per the gears contract (§Re-evaluating a gear). Two outcomes:
 
 - **The gear held, and the stage moved** → return to step 4 for the stage the new derived stage

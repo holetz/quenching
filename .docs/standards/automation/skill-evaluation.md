@@ -2,12 +2,12 @@
 type: standard
 title: Skill evaluation
 description: What it takes to claim a skill works — with/without runs in isolated processes, assertions graded on quoted evidence, a rate reported with its fixture, and a delta reported even when it is zero
-resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/skill/eval.md
+resource: plugins/quenching/assets/evals/**, plugins/quenching/commands/components/command/eval.md
 tags: [automation, skills, evaluation, testing, benchmark]
-timestamp: 2026-07-29
+timestamp: 2026-08-10
 audience: both
 authority: current
-source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /skill:agent:new and /skill:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)
+source: instrument-and-extend-skill-front plan — formats adopted from Anthropic's skill-creator. Graduated to current on its own stated gate: /quenching:components:agent:new and /quenching:components:hook:new each carry a committed evals.json + grading.json + benchmark.json with a non-zero stated delta (2026-07-27)
 maintainer: quenching
 ---
 
@@ -15,13 +15,13 @@ maintainer: quenching
 
 Every rule in [skills.md](skills.md) is a claim about
 how an agent behaves — that triggers in the second sentence get found, that a step with a
-criterion does not end early, that a body under the cap still teaches. `skills.py lint` checks
+criterion does not end early, that a body under the cap still teaches. `cq components lint` checks
 that a skill is *shaped* correctly. Nothing checks that the shape *works*. This standard is what
 "works" has to mean before anyone says it.
 
 Born `authority: background` and **graduated to `current` on 2026-07-27**, on its own stated gate:
-`/skill:eval` implements the contract, and two commands have now been measured against it with the
-artifacts committed — `/skill:agent:new` and `/skill:hook:new`, each with a non-zero stated delta.
+`/quenching:components:command:eval` implements the contract, and two commands have now been measured against it with the
+artifacts committed — `/quenching:components:agent:new` and `/quenching:components:hook:new`, each with a non-zero stated delta.
 The gate was *at least one committed benchmark*, and every rule below was either exercised by those
 two runs or written from what they measured.
 
@@ -100,10 +100,10 @@ A routing rate is not a property of the description alone — it is a property o
 **in the repo the probe ran in**, because an intent-shaped phrase names a subject the session looks
 for before it routes.
 
-Measured while building these two evals: `/skill:agent:new`'s phrase *"set up something that audits
+Measured while building these two evals: `/quenching:components:agent:new`'s phrase *"set up something that audits
 our migrations and reports back"* routed 5/5 in a fixture that shipped
 `/.docs/standards/automation/agents.md` — and the identical phrase in a bare repo routed to
-`/skill:new` instead. Single variable, both runs healthy. The 5/5 was **fixture-assisted**: the
+`/quenching:components:command:new` instead. Single variable, both runs healthy. The 5/5 was **fixture-assisted**: the
 description was borrowing routing the target repo supplied.
 
 Two rules follow:
@@ -130,17 +130,17 @@ routes where.
   correctly. A run that ends on the cap is recorded **inconclusive** and graded as nothing — never
   as evidence in either direction.
 - A `shouldNotTrigger` prompt that fires sharpens the `Not for:` boundary, not the triggers.
-- After any edit, `skills.py lint` runs again: the caps and the trigger position still hold, and
+- After any edit, `cq components lint` runs again: the caps and the trigger position still hold, and
   tuning must not trade one finding for another.
 
-Everything else a run finds is **reported with the `/skill:new` invocation that fixes it**.
+Everything else a run finds is **reported with the `/quenching:components:command:new` invocation that fixes it**.
 Rewriting a body is authoring, and authoring needs the human whose intent the skill encodes.
 
 ## Artifacts
 
 `evals/evals.json` beside the skill, and a timestamped run directory holding `grading.json` and
 `benchmark.json`. The shapes are adopted verbatim from Anthropic's `skill-creator` and owned by
-[`skill-eval/evaluation.md`](/plugins/quenching/assets/references/skill-eval/evaluation.md); this
+[`components-command-eval/evaluation.md`](/plugins/quenching/assets/references/components-command-eval/evaluation.md); this
 standard states what they must contain, not how they are keyed.
 
 The case set is **committed and reviewed in the same diff as the body it tests** — a case set that
@@ -155,7 +155,7 @@ depends on is the one property it does not have.
 example of the failure above, and how it was settled (2026-07-29) is the rule for the next one.
 Renaming the folder to the successor command was the obvious move and the wrong one: the case set
 did not merely carry a stale *name*, it asserted a retired *model* — a task file under
-`/.specs/backlog/` with `type: task`, reindexed by a `specs.py` subcommand that no longer exists —
+`/.specs/backlog/` with `type: task`, reindexed by a `cq specs` subcommand that no longer exists —
 and its only run had already recorded itself `citable: false` over a case set it called defective.
 Re-pointing it would have made measurements of a dead command read as evidence for the live one.
 So the tree was removed. **A run measures the command it was written against; when that command

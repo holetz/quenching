@@ -5,4 +5,4 @@ contract. One tool concept per file (`type: reference`); a tool's binary manual 
 consumed via a sidecar (`type: sidecar`).
 
 **Boundary:** facts about an external tool — *how we use it* as a standard lives in
-[standards/](/docs/standards/index.md). Starts empty; the repo fills it.
+[standards/](/.docs/standards/index.md). Starts empty; the repo fills it.

@@ -2,12 +2,12 @@
 type: standard
 title: Spec file contract
 description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
-resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
+resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-08-03
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
 maintainer: quenching
 ---
 
@@ -45,7 +45,7 @@ Two consequences are load-bearing:
 - **The one thing this cost was a chronological `ls`.** The date prefix made any folder listing
   answer *how long has this sat here?* with no tool, precisely because no file listing reads
   frontmatter. That was worth its keep while a spec was always a file, and it is what the move
-  gives up. What replaces it is `specs.py next --front`, which sorts on the declared `date` and
+  gives up. What replaces it is `cq specs next --front`, which sorts on the declared `date` and
   works in a store with no folder at all — and the trade is not optional, because the alternative
   was a store minting synthetic filenames to keep a property only one backend could ever have.
 
@@ -73,7 +73,7 @@ declared. That is not duplicated truth; it is the only copy.
 record a decision nobody made. It stopped being required because it answers how long *this repo's*
 suite takes — a judgment a one-sentence capture has nobody to make yet — and requiring it forced
 `new` to invent a value at the one moment there is no opinion to record. The post-capture writer is
-`specs.py verification <slug> [<policy>]`; before it existed the policy was decidable exactly once,
+`cq specs verification <slug> [<policy>]`; before it existed the policy was decidable exactly once,
 at capture, and under an external backend it could not be changed at all.
 
 **The slug is kebab in the repo's declared language**, not in English. The language is declared
@@ -112,7 +112,7 @@ set is a stray and `validate` flags it. Which language a spec's body is written 
 
 **Moment replaces an unread `audience` field.** Each canonical section is born `moment: decision |
 build | close` in `assets/specs/schema.json` — the point on the spec's timeline it is read at, not
-who reads it. `/quenching:specs:execute` step 4 (`specs.py section <slug> --moment build`) sends an
+who reads it. `/quenching:specs:execute` step 4 (`cq specs section <slug> --moment build`) sends an
 executor exactly the `build` set; `decision` stays with the human weighing whether to build at all,
 and `close` is `/quenching:specs:conclude`'s. `## Discoveries` carries no `moment` — captured
 indiscriminately while building, it is resolved later by `/quenching:specs:develop`'s triage sweep on its own
@@ -125,7 +125,7 @@ Two are load-bearing for machinery, not only for thinking:
   check without a line of code changing.
 
 `## Overview` is warn-only, like `## Handoff` — never one of the ten sections the `ready` gate
-requires. It sits first, ahead of `## Problem`, but is authored **last**: `/specs:develop` writes
+requires. It sits first, ahead of `## Problem`, but is authored **last**: `/quenching:specs:develop` writes
 it once every other section has settled, because connecting them is only possible after they exist.
 
 ## The explicit-none rule is PHASE-SCOPED
@@ -164,6 +164,33 @@ Nothing reads as ready to build with nothing to execute. This is the surviving f
 guarantee v1 spelled `applyRequires: ["tasks"]`: under v3 the ten sections are computed rather than
 enforced by a `git mv`, so `## Tasks` is what keeps the derived `ready` stage from being a
 statement about prose alone.
+
+## What `## Tasks` does NOT carry
+
+A task is work whose result is **knowable when the task is written** and that lands in one commit
+on the spec's branch. Three classes fail that test, and each already has a command that owns it:
+
+| Not a task | Why it cannot be one | Owner |
+| --- | --- | --- |
+| A merge obligation — a version bump, a changelog entry, a manifest re-stamp, a tag, a release note | What the release *is* depends on what the last task turned out to be, so none of it is knowable at task 1; scheduled as work it also collides, two branches bumping from the same base to the same number | `/quenching:specs:conclude`, which settles them against the base actually being merged into |
+| The `/.docs/` the work **revealed** | It does not exist while the list is being written — it is an output of building, not an input to it | `/quenching:specs:conclude`, which writes it with the branch review |
+| The cycle's own closing actions — review the branch, archive, distil, merge or open the PR | They are that command's steps, not work the spec delivers | `/quenching:specs:conclude` |
+
+**One class stays a task, and stays required.** Every `/.docs/standards/**.md` path the spec
+**declares** under §`## Impact` carries one parsed sub-heading gets its own checkbox — that is the
+pairing `sp-impact-uncovered` checks, and building the spec *is* proving the rule. So the axis is
+**declared versus revealed**, never *docs versus code*: read as "no docs tasks", this rule would
+break the check the one beside it enforces.
+
+The test that separates them: **would this task exist if this branch were never merged?** Writing
+the code that performs a bump exists on its own; performing *this* cycle's bump exists only because
+there is a merge. The first is a task even in a spec whose product is the release; the second never
+is.
+
+This is the authoring half of a boundary `/quenching:specs:conclude` already states from the
+consuming side, and `/quenching:specs:execute` already refuses at build time. Written only there,
+the box had already been drafted, counted toward the ready gate and approved by a human before
+anything rejected it.
 
 ## What `promote` still refuses
 
@@ -231,21 +258,21 @@ sweep never blocks on a judgment call. **A spec may always be built unrefined.**
 
 ## The template is duplicated on purpose
 
-`assets/specs/templates/spec.md` is the source, and the identical content is embedded in `specs.py`
+`assets/specs/templates/spec.md` is the source, and the identical content is embedded in `cq specs`
 as a constant, so the tool stays one self-contained file. **Edit both or neither.**
 
 ### There is a THIRD copy, and it shadows rather than falls back
 
-`assets/specs/schema.json` holds the same record vocabulary as `specs.py`'s `DEFAULT_SCHEMA`, and
+`assets/specs/schema.json` holds the same record vocabulary as `cq specs`'s `DEFAULT_SCHEMA`, and
 `load_schema()` prefers the file when it is adjacent. So the constant is **not** the authority when
 the assets are present — the JSON silently wins, and a change made only to the constant is invisible
 in exactly the layout the plugin ships. `load_template()` resolves the same way, and since the tool
 now only ever runs from the plugin, where both assets *are* adjacent, **neither constant is what
-executes**. They survive as what `selftest` compares against and what keeps the file readable on its
+executes**. They survive as what `tests/test_specs_assets.py` compares against and what keeps the file readable on its
 own — which is precisely why a change made to one and not the other passes unnoticed at runtime.
 
 Any change to the record vocabulary is therefore a **three-file lockstep edit**: `DEFAULT_SCHEMA` in
-`specs.py`, `assets/specs/schema.json`, and the guidance in `assets/specs/templates/spec.md`. This
+`cq specs`, `assets/specs/schema.json`, and the guidance in `assets/specs/templates/spec.md`. This
 was found by a task that declared only the first under `files:` and produced a tool that reported
 the old vocabulary from the new code.
 
@@ -277,5 +304,5 @@ shape, and a reader needs its contract:
   no phase gates to scope it to.
 
 The v2 equivalents map cleanly: `## Why`→`## Problem`, `## What Changes`→`## Proposal`,
-`## Context`+`## Decisions`→`## Design`, `tasks.md`→`## Tasks`. `specs.py migrate` performs exactly
+`## Context`+`## Decisions`→`## Design`, `tasks.md`→`## Tasks`. `cq specs migrate` performs exactly
 that fold for any v1 plan still **active**; it never touches the archive.

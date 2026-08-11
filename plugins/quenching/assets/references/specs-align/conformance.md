@@ -2,12 +2,12 @@
 
 The single owner of the **specs-workspace conformance contract**. The spec-driven facts
 themselves — the phase folders, the fourteen canonical sections, the gates, the derived stages, the
-`specs.py` surface — live once in
+`cq specs` surface — live once in
 [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 and are cited here, never restated.
 
-**Two checkers cover it, both programs, and there is no third:** `specs.py doctor` and
-`specs.py validate` cover the workspace and every spec file (both `--json`, strict exit codes).
+**Two checkers cover it, both programs, and there is no third:** `cq specs doctor` and
+`cq specs validate` cover the workspace and every spec file (both `--json`, strict exit codes).
 Nothing is left for the sweep to verify by reading.
 
 The whole `specs/` front is **plugin-owned**: unlike the old `openspec/` surface (half of which
@@ -18,7 +18,7 @@ the never-delete-on-a-guess and code-coupled-renames-gate-individually rules the
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The probe — this front's two commands
 
@@ -31,8 +31,8 @@ is work, and the same program closes the run
 **Two commands, before any inventory:**
 
 ```bash
-specs.py doctor --json      # workspace shape;  exit 0 = conformant
-specs.py validate --json    # every spec file;  exit 0 = conformant
+cq specs doctor --json      # workspace shape;  exit 0 = conformant
+cq specs validate --json    # every spec file;  exit 0 = conformant
 ```
 
 Both exit **0** when nothing error-severity was found; warnings are reported and never set the exit
@@ -61,22 +61,22 @@ can produce.
 
 <!-- rules -->
 `.claude/quenching.json`, at the **repo root** — the `backend` key naming which store holds the
-specs. Read by `specs.py config --json`, which exits 0 whether or not anything is declared; the
+specs. Read by `cq specs config --json`, which exits 0 whether or not anything is declared; the
 recognised keys, their defaults, and every way the file can be wrong are owned by
-[plugin-configuration.md](/docs/standards/workflows/plugin-configuration.md) §The recognised keys.
+[plugin-configuration.md](/.docs/standards/workflows/plugin-configuration.md) §The recognised keys.
 It is **not** `specs/config.json` any more — a stranded copy is named (`sp-config-legacy-location`),
 never merged, and deliberately exempt from `sp-stray-file`.
 
 **The backend decides whether there is a workspace to align at all.** §The canonical workspace
 below, and every workspace-shape code in the FIXES table, describe the `files` backend — the
 default. Under `github` or `azure-boards` there is no folder, no filename and no listing; the specs
-live in the tracker, and the only thing that stays constant is what `specs.py` answers.
+live in the tracker, and the only thing that stays constant is what `cq specs` answers.
 
 **`doctor` is backend-blind, so a workspace-shape finding is read against the declared backend
 before it is acted on** — one call, paid only when such a finding appeared:
 
 ```bash
-specs.py config --json      # the conformant path never reaches this
+cq specs config --json      # the conformant path never reaches this
 ```
 
 Under an external backend, `sp-no-workspace` and `sp-missing-phase` are **not** offers to scaffold.
@@ -98,9 +98,8 @@ derives, and which a human then has to delete.
 
 ```
 specs/
-  QUENCHING.md                 # the operator manual (payload — not a spec)
   plans/                       # a spec's whole active life: captured → … → ready → executing
-    <slug>.md                  # ONE spec per file — no listing file; `specs.py list` derives it
+    <slug>.md                  # ONE spec per file — no listing file; `cq specs list` derives it
   archive/                     # done or abandoned (`outcome:` tells them apart)
     <slug>.md
     YYYY-MM-DD-<name>/         # v1 plan folders — HISTORICAL, never migrated
@@ -119,21 +118,21 @@ Three invariants define conformance, and every code below traces to one of them:
 ## Findings the sweep FIXES (inside the one plan → one OK)
 
 Each is mechanical: a rename, a stamp, a copy, or a tool-declared remedy. Codes
-marked **(tool)** are emitted by `specs.py doctor` or `validate` with their own declared remedy —
+marked **(tool)** are emitted by `cq specs doctor` or `validate` with their own declared remedy —
 apply *that*, never an invented one, because an invented fix can silently corrupt a spec.
 
 | Code | Fires when | Fix |
 | --- | --- | --- |
-| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + the operator manual + template + schema). Declining ends the run. **`files` backend only** — §Where the front is configured. |
-| `sp-v2-layout` **(tool)** | `backlog/` or `ready/` still holds specs | Run **`specs.py migrate`** (§Migrating an older workspace). It moves every file into `plans/` unrenamed. |
-| `sp-v1-leftover` **(tool)** | A three-file plan folder sits at the specs root | Run **`specs.py migrate`** — the same command folds it into one file. |
-| `sp-stray-dir` **(tool)** | A directory sits inside `plans/` | Unmigrated v1 work. Same remedy: `specs.py migrate`. Never fires inside `archive/`. |
+| `sp-no-workspace` **(tool)** | No `specs/`, and no legacy `openspec/` | Offer to scaffold by copying `${CLAUDE_PLUGIN_ROOT}/assets/specs/` (both phase folders + template + schema). Declining ends the run. **`files` backend only** — §Where the front is configured. |
+| `sp-v2-layout` **(tool)** | `backlog/` or `ready/` still holds specs | Run **`cq specs migrate`** (§Migrating an older workspace). It moves every file into `plans/` unrenamed. |
+| `sp-v1-leftover` **(tool)** | A three-file plan folder sits at the specs root | Run **`cq specs migrate`** — the same command folds it into one file. |
+| `sp-stray-dir` **(tool)** | A directory sits inside `plans/` | Unmigrated v1 work. Same remedy: `cq specs migrate`. Never fires inside `archive/`. |
 | `sp-legacy-workspace` | A legacy `openspec/` tree is present | The one-way `openspec/` fold (§below). The only place `openspec/` is touched. |
 | `sp-missing-phase` **(tool)** | `plans/` or `archive/` is absent | Create it. The folder IS the phase, so a missing one makes its specs unfindable. **`files` backend only** — §Where the front is configured. |
-| `sp-stray-file` **(tool)** | A file at the specs root other than `QUENCHING.md` / `schema.json` | Move it into a phase folder, or report it. |
-| `sp-bad-filename` | A file in a phase folder is not `<slug>.md` | Rename to the bare slug. A basename still carrying a `YYYY-MM-DD-` prefix is folded by `specs.py migrate`, which moves that date into `date:` in the same step — the prefix is the only copy, so dropping it without moving it loses the capture date. |
+| `sp-stray-file` **(tool)** | A file at the specs root other than `schema.json` | Move it into a phase folder, or report it. |
+| `sp-bad-filename` | A file in a phase folder is not `<slug>.md` | Rename to the bare slug. A basename still carrying a `YYYY-MM-DD-` prefix is folded by `cq specs migrate`, which moves that date into `date:` in the same step — the prefix is the only copy, so dropping it without moving it loses the capture date. |
 | `sp-slug-mismatch` **(tool)** | Frontmatter `slug` disagrees with the basename | Make the frontmatter match the basename — the basename is the identity a human reads in a listing. |
-| `sp-missing-frontmatter` **(tool)** | `slug`, `title`, or `date` absent | Stamp it (MERGE — fill what is missing, preserve what is filled, including third-party keys). **Never invent a `date`**: it is the one required key no derivation reproduces, so take it from a dated basename via `specs.py migrate`, or report it and let the human answer. |
+| `sp-missing-frontmatter` **(tool)** | `slug`, `title`, or `date` absent | Stamp it (MERGE — fill what is missing, preserve what is filled, including third-party keys). **Never invent a `date`**: it is the one required key no derivation reproduces, so take it from a dated basename via `cq specs migrate`, or report it and let the human answer. |
 | `sp-bad-verification` **(tool)** | `verification` is present and outside the three declared values | Set the default (`per-section`) and say so, or take the value the human states. **An ABSENT `verification` is not a finding** — it is optional, and absent means the default applied on read; stamping it would record a decision nobody made. |
 | `sp-duplicate-slug` **(tool)** | Two files resolve to one slug | Rename one. **Always blast-radius-swept**: a slug is what every command and cross-reference names, so it leaks into branch names, PR titles, CI, and scripts. Code-coupled → its own confirmation. |
 | `sp-shadow-skill` | `.claude/skills/openspec-<x>/SKILL.md` carries `metadata.generatedBy` **and** the plugin ships a command covering it | Propose removal in the plan; the batch OK covers it. Legacy migration only. |
@@ -145,8 +144,8 @@ apply *that*, never an invented one, because an invented fix can silently corrup
 One command folds every older layout forward, one-way, driven by the tool rather than by prose:
 
 ```bash
-specs.py migrate --dry-run --json     # what would move, where, and where each date comes from
-specs.py migrate --json               # exit 2 when there is nothing to migrate
+cq specs migrate --dry-run --json     # what would move, where, and where each date comes from
+cq specs migrate --json               # exit 2 when there is nothing to migrate
 ```
 
 It covers two shapes, and a workspace holding both is folded in one run:
@@ -193,10 +192,10 @@ Both folds share two guarantees:
 
 The only place `openspec/` is touched: `openspec/` → `specs/`; each
 `openspec/specs/<capability>/spec.md` folded into `docs/standards/` by a **human-chosen** cut (no
-OKF bundle → the fold stops and `/quenching:docs:align` is suggested first); `config.yaml` removed; the delta
+OKF bundle → the fold stops and `/quenching:knowledge:align` is suggested first); `config.yaml` removed; the delta
 folders discarded once folded or confirmed obsolete; non-diverged shadow copies and `/opsx:*`
 wrappers removed. **Interop with the external OpenSpec CLI is lost — say so before applying.** A
-legacy workspace runs this fold first, then `specs.py migrate`.
+legacy workspace runs this fold first, then `cq specs migrate`.
 
 ## Findings the sweep REPORTS (never auto-closes)
 
@@ -233,12 +232,12 @@ A spec carries `slug`/`title`/`verification` and deliberately **no OKF `type:`**
 
 `plans/index.md` is a **retired artifact**. The sweep neither creates nor deletes a surviving copy
 in a target repo
-([`retiring-a-reserved-artifact.md`](/docs/standards/architecture/retiring-a-reserved-artifact.md)
+([`retiring-a-reserved-artifact.md`](/.docs/standards/architecture/retiring-a-reserved-artifact.md)
 §The consequence for disposition).
 
 <!-- rationale -->
 There is no listing here for it to check, and there never was a spec file it could judge. A spec is
-not a concept doc, it lives outside the bundle, and `specs.py validate` (the canonical heading set,
+not a concept doc, it lives outside the bundle, and `cq specs validate` (the canonical heading set,
 the gates, filename conformance, slug identity) is a far stronger contract than type-presence.
 Stamping an OKF type on a spec purely to satisfy a validator that does not model it would be the
 second source of truth this front exists to avoid.
@@ -250,7 +249,7 @@ All four are gone, along with the `--listing-root` mode that read them.
 ## The convergence condition
 
 <!-- rules -->
-The workspace is conformant when `specs.py doctor` and `specs.py validate` both exit 0 or report
+The workspace is conformant when `cq specs doctor` and `cq specs validate` both exit 0 or report
 only codes from the REPORTS table. That is the whole condition — two programs, two exit codes.
 **A convergence condition may only name what a checker decides.**
 
@@ -259,9 +258,9 @@ an already-aligned workspace stops on two tool calls.
 
 <!-- rationale -->
 **It is stated that way on purpose.** It used to carry a clause no program could evaluate: "the
-GENERATED zone matches disk". Nothing computed it — `specs.py` never emitted a `changed` field for
+GENERATED zone matches disk". Nothing computed it — `cq specs` never emitted a `changed` field for
 a command to read — so the one clause that could actually rot was the one left to a human's eye,
 and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
-[`generated-listings.md`](/docs/standards/architecture/generated-listings.md); the narrower lesson
+[`generated-listings.md`](/.docs/standards/architecture/generated-listings.md); the narrower lesson
 belongs here. A clause a program cannot evaluate is not a stricter standard, it is an unverified
 one.
