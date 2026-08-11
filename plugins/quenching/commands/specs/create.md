@@ -236,6 +236,11 @@ Close on §The next-step block: `/quenching:specs:develop <slug>` to take it fur
 - Never interrogate — no scope, task, design, or policy questions on either path.
 - Never write a heading the input did not support.
 - Never invent content a source plan lacks.
+- **Never carry a plan's merge obligations into `## Tasks`.** On the plan-file path a native plan's
+  "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
+  converts, because what the release *is* is unknowable until the last task lands.
+  `/quenching:specs:conclude` owns them, along with the `/.docs/` the work *reveals* and the cycle's
+  own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never work around `cq specs new`'s exit 2 by inventing a slug variant.
 - Never interrogate the human for `complexity` — compute it from the input and propose it; a
   rejected proposal writes nothing.

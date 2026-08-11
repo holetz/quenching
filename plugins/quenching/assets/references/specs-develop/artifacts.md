@@ -175,9 +175,9 @@ never hand-edit the checkbox character.
 
 Shape it so `/quenching:specs:execute` can walk it top to bottom:
 
-- **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → docs).
-  Each item is one reviewable unit of work — small enough to check off honestly, large enough not
-  to be noise. Each is also **one commit**, so a section is what a `verification: per-section` spec
+- **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → the
+  standards `## Impact` declares). Each item is one reviewable unit of work — small enough to
+  check off honestly, large enough not to be noise. Each is also **one commit**, so a section is what a `verification: per-section` spec
   verifies after.
 - **Within what the dependency order allows, group by file.** A section is the unit execution
   delegates — *"delegate by file, or by section of tasks, never task by task"*
@@ -194,6 +194,13 @@ Shape it so `/quenching:specs:execute` can walk it top to bottom:
   path in the task text** so the match is findable.
 - **Verification belongs in the list** — a task whose completion is "tests pass" or "the standard
   is written and self-checks clean" is a task, not an implicit hope.
+- **What the merge owns is never written here.**
+  A version bump, a changelog entry, a manifest re-stamp; the `/.docs/` the work *revealed* rather
+  than declared; and the cycle's own closing actions — all three belong to
+  `/quenching:specs:conclude`, which settles them once the branch is written and what the release
+  *is* is finally knowable. The axis is **declared versus revealed**, not docs versus code: the
+  bullet above still requires a checkbox for every standard `## Impact` declares, and the test is
+  whether the task would exist if this branch were never merged.
 
 Do not put `docs/knowledge/` captures or glossary terms in `## Tasks` as durable content — those
 route through `/quenching:knowledge:learn` / `/quenching:knowledge:define`; a task may *name* the capture
