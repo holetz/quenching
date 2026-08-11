@@ -4,7 +4,7 @@ title: Spec file contract
 description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
@@ -125,7 +125,7 @@ Two are load-bearing for machinery, not only for thinking:
   check without a line of code changing.
 
 `## Overview` is warn-only, like `## Handoff` — never one of the ten sections the `ready` gate
-requires. It sits first, ahead of `## Problem`, but is authored **last**: `/specs:develop` writes
+requires. It sits first, ahead of `## Problem`, but is authored **last**: `/quenching:specs:develop` writes
 it once every other section has settled, because connecting them is only possible after they exist.
 
 ## The explicit-none rule is PHASE-SCOPED

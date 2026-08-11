@@ -51,7 +51,7 @@ not duplicated by it.
 
 The four move **once per release, on `develop`, immediately before the `develop → main` merge that
 publishes it** — see [branching.md](../git/branching.md). A version bump is never a task in a
-spec's `## Tasks`, `/specs:execute` never makes one, and `/specs:conclude` no longer makes one
+spec's `## Tasks`, `/quenching:specs:execute` never makes one, and `/quenching:specs:conclude` no longer makes one
 either: a spec's own conclude merges into `develop` with the lockstep untouched, and the artifacts
 move only when the release command runs `cq specs release`.
 

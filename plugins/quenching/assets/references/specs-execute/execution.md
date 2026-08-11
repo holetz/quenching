@@ -342,7 +342,7 @@ the loop offers to stop there, names the command that resumes, and continues unl
 
 <!-- rationale -->
 
-`/quenching:specs:execute` is the one `/specs:*` command that runs the target repo's own toolchain
+`/quenching:specs:execute` is the one `/quenching:specs:*` command that runs the target repo's own toolchain
 — build, tests, linters, migrations, and `git` — as part of implementing a task. Its siblings are
 scoped to `python3`/`py` because they only ever talk to `cq specs`.
 

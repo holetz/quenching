@@ -3,8 +3,8 @@
 **This file is the single owner
 of the spec-driven facts** — the `specs/` layout, the spec file's format, the gates, the
 derived stages, the executor contract, the `cq specs` tool surface, and the shape every
-`/specs:*` command reports in — and every
-`/specs:*` command cites these sections instead of restating them. The OKF bridge (what
+`/quenching:specs:*` command reports in — and every
+`/quenching:specs:*` command cites these sections instead of restating them. The OKF bridge (what
 durable knowledge crosses from a spec into `docs/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
@@ -435,7 +435,7 @@ Owned by
 this section.
 
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
-  while it is being defined and built. Owned by the `/specs:*` commands; leaves for `archive/` when
+  while it is being defined and built. Owned by the `/quenching:specs:*` commands; leaves for `archive/` when
   it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/knowledge/` — generic understanding. A spec writes its durable rule **directly** into
@@ -452,7 +452,7 @@ and proved). There is no second store for it to duplicate.
 
 <!-- rules -->
 
-**Every `/specs:*` command's terminal report is built from the blocks below**, and a command body
+**Every `/quenching:specs:*` command's terminal report is built from the blocks below**, and a command body
 declares only its own deltas: which body blocks it emits, which columns they carry, and which
 next-step candidates exist under which condition. The mold is **literal — copy a block and
 substitute**, never compose a shape per command.

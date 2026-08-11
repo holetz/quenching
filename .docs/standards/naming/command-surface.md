@@ -4,7 +4,7 @@ title: Command surface naming
 description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact
@@ -31,13 +31,20 @@ and only one of them is unconditionally correct for this repo's commands:
 | --- | --- | --- |
 | Registry name (no `/`) | `quenching:specs:develop` | the `Skill` tool resolves it — always, for a plugin command |
 | Plugin-prefixed slash | `/quenching:specs:develop` | a human types it wherever `quenching` is installed **as a plugin** |
-| Bare slash | `/specs:develop` | **only** where that command file lives in the target repo's own `.claude/commands/` |
+| Bare slash | `/docs:storyteller` | **only** where that command file lives in the target repo's own `.claude/commands/` |
 
 So `commands/specs/develop.md` is cited as `quenching:specs:develop` for the tool and
-`/quenching:specs:develop` for the human — and as `/specs:develop` **only** by a repo that vendored
-the file into its own `.claude/commands/`. Measured in this tree on 2026-07-30: there is no
-`.claude/commands/` here, so every bare citation in this repo's own prose names a form that
-resolves nowhere.
+`/quenching:specs:develop` for the human — and bare **only** by a repo that vendored the file into
+its own `.claude/commands/`. Re-measured in this tree on 2026-08-11: that directory does exist
+here, and holds four commands of this repo's own — `/release`, `/skill-map`, `/docs:storyteller`
+and `/references:tighten` — which is why the bare row's example is one of them. Not one plugin
+command is vendored there, so every bare citation of a **plugin** command in this repo's prose
+still names a form that resolves nowhere.
+
+That distinction is the reason `assets/checks/citation-check.sh` spells its dead set as each
+retired front's **verbs** rather than as a bare prefix: `/docs:storyteller` has to survive the very
+sweep that retired the plugin's ten `docs` verbs, and a bare prefix would have called this repo's
+own local command a survivor forever.
 
 This mapping is what every command body copies, which is why it states the condition rather than
 the shorthand. The prose form of the same rule used to live in `commands/docs/align.md`, declaring
@@ -55,7 +62,7 @@ so nothing checks that they agree.
 The surface is partitioned by the artifact each front's commands touch:
 
 - **`/quenching:knowledge:`** — the OKF `/.docs/` bundle.
-- **`/specs:`** — the native spec-driven workspace.
+- **`/quenching:specs:`** — the native spec-driven workspace.
 - **`/quenching:components:`** — the target repo's `.claude/` automation surface.
 - **root `/align`** — deliberately outside the three namespaces, because it is the one command that
   spans all three fronts. Under the old rule it was an exception the linter had to be told about;
@@ -93,7 +100,7 @@ holds **four sibling contexts, each named for the artifact it mints, none a sub-
 
 **The rule: a front-level verb sits at the front's own root; an artifact-level verb sits under its
 context.** `/quenching:components:align` is the front's own sweep — it has no artifact of its own
-to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` and `/specs:align`
+to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` and `/quenching:specs:align`
 do for their fronts. `command:new`, `command:eval` and `command:retro` are three verbs that all act
 on the same artifact (a command), so they share the `command/` context rather than each claiming a
 piece of the front root the way the old front's `new`/`eval` verbs used to.

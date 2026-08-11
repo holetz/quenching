@@ -4,7 +4,7 @@ title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
 resource: .claude/commands/
 tags: [automation, commands]
-timestamp: 2026-08-03
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: quenching-skill-align first run
@@ -23,7 +23,7 @@ level (`/skill-map` maps whatever it is pointed at, so no single folder claims i
 itself is [/.docs/standards/automation/skills.md](/.docs/standards/automation/skills.md).
 
 The `quenching` plugin installed from this marketplace contributes the twenty-six
-`/quenching:knowledge:*`, `/specs:*`, `/quenching:components:*` and `/align` commands. Those are the **product's** surface,
+`/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:components:*` and `/align` commands. Those are the **product's** surface,
 documented in [plugins/quenching/README.md](/plugins/quenching/README.md), and they stay out
 of the table below — the zone lists only what this repository itself ships in
 `.claude/commands/`.

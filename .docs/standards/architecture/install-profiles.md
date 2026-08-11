@@ -4,7 +4,7 @@ title: Install profiles — the front is the unit of installation
 description: A profile declares which of the three fronts a repository uses, in `.claude/quenching.json` — what it turns on and off is the residency of a front's command descriptions (`disable-model-invocation: true`), never a command or a file, and the `/align` conductor runs the installed fronts in dependency order and names an uninstalled one in its report instead of failing on it
 resource: .claude/quenching.json, plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/components/align.md
 tags: [architecture, install, profiles, fronts, configuration]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: extensible-surface-and-budget-retirement plan (task 4.1, 2026-08-06)
@@ -26,7 +26,7 @@ The plugin installs three fronts, and installation is decided per front, never p
 | Front | Commands |
 | --- | --- |
 | `knowledge` | `/quenching:knowledge:*` |
-| `specs` | `/specs:*` |
+| `specs` | `/quenching:specs:*` |
 | `components` | `/quenching:components:*` |
 
 These names are the ones the profile uses. The `components` front is the `.claude/` surface of the

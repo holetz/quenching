@@ -120,7 +120,7 @@ print(n)
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-#   - a command that reports on a workspace ("/specs:status") wants one to report on.
+#   - a command that reports on a workspace ("/quenching:specs:status") wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
 # The folder alone is the workspace — `plans/index.md` is a retired artifact, and `cq specs`
@@ -146,7 +146,7 @@ echo
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
 #
-# It also covers re-homed references for free: /specs:status cites a reference directory that
+# It also covers re-homed references for free: /quenching:specs:status cites a reference directory that
 # the specs-flow-consolidation fold renamed, so a stale citation fails here rather than silently
 # reading nothing.
 #

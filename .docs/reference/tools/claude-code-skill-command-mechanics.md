@@ -4,7 +4,7 @@ title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, the unified frontmatter schema, and what disable-model-invocation actually closes
 resource: plugins/quenching/commands/**
 tags: [claude-code, plugins, skills, commands, frontmatter, tooling]
-timestamp: 2026-08-02
+timestamp: 2026-08-11
 audience: both
 authority: background
 source: skill-description-tiering spec task 0.2 gate spike (rows 1–6, Claude Code 2.1.215); route-commands-without-always-on-descriptions task 0.1 (row 7, Claude Code 2.1.220)
@@ -147,7 +147,7 @@ migration moved its first file — see below.
 
 **Row 6 was contradicted before it was ever relied upon.** Three artifacts asserted that a scoped
 `allowed-tools` *was* the enforcement behind a read-only guarantee — the `/quenching:knowledge:status` and
-`/specs:status` doctrine bullets, and the plugin `README.md`'s `/quenching:knowledge:status` paragraph — which is
+`/quenching:specs:status` doctrine bullets, and the plugin `README.md`'s `/quenching:knowledge:status` paragraph — which is
 the contrary of what row 6 observed, claimed without measuring anything.
 `verify-allowed-tools-enforcement` (2026-07-28) deleted all three, and closed the gap that produced
 them: `standards/automation/skills.md` §`allowed-tools` is always scoped and the

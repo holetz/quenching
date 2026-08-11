@@ -87,7 +87,7 @@ This file owns, because no tool decides it:
   `sk-no-zone`.
 - **What the zone is derived from.** The local `.claude/commands/**/*.md` frontmatter,
   and only that: the zone lists the repo's **own** surface. Commands contributed by
-  installed plugins (`/specs:*`, marketplace plugins) stay out of it and may be pointed
+  installed plugins (`/quenching:specs:*`, marketplace plugins) stay out of it and may be pointed
   at from the curated prose.
 - **Who may run the regeneration.** `/quenching:components:command:new` (in its OKF tail) and
   `/quenching:components:align` (in its verify step). Neither writes between the markers by

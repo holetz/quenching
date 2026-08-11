@@ -4,7 +4,7 @@ title: Reading a canonical set
 description: How the shipped tools consume a declared set — slice it by declared membership and never by position, because an ordinal index is a claim about the set's shape that nothing re-checks when the set grows; why a byte-for-byte lockstep check proves the copies agree but never that the code reading them still means the same thing, so a membership invariant is owed its own assertion; and why a case list must exercise the function that ships rather than a copy of its rule written inside the selftest
 resource: plugins/quenching/assets/bin/quenching/specs/schema.py, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/specs/templates/spec.md
 tags: [code, parsing, contracts, schema, lockstep, selftest]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: add-eli5-section-to-specs spec — the branch review found `cq specs new` had silently stopped stamping `## Problem` after `## Overview` was added ahead of it; both halves of this rule are the fix and the assertion that now guards it; the exhaustive-dispatch rule proved by the cut-specs-execute-turns spec (2026-07-31), where admitting `constraint:` let a bare `else` capture it as the task verify command; the production-function rule from the read-by-section-not-by-file branch review (2026-08-01), where `SECTION_CASES` proved `§X` resolution against a resolver written inside `cq specs`'s own selftest while `_match_heading` refused it; the duplication's justification rewritten from installed-copy to self-containment (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
@@ -81,7 +81,7 @@ assert the derived behaviour against the declaration, not just the declaration a
 
 The pre-refactor tool carried that assertion as `sp-capture-gate-missing` and
 `sp-capture-extra-heading`: the capture form must contain every entry-gate heading and no other.
-Neither code belongs to the `/specs:align` sweep vocabulary — like `sp-template-drift`, they are
+Neither code belongs to the `/quenching:specs:align` sweep vocabulary — like `sp-template-drift`, they are
 findings about the tool, not findings about a workspace, so they run as a test rather than a
 subcommand a workspace scan could reach.
 

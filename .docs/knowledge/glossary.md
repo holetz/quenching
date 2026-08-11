@@ -4,7 +4,7 @@ title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /.docs/**
 tags: [glossary, vocabulary, terminology]
-timestamp: 2026-08-05
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: quenching skeleton
@@ -89,7 +89,7 @@ sentence, and **link out** rather than explaining in full here.
   integração** (`develop`), de onde `plan/<slug>` é cortada e para onde mergeia. O gatilho da
   publicação é a demanda do mantenedor, nunca uma cadência, e a rota é sempre um merge local.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-  frontmatter entry stamped by `/specs:execute` for **any** branch that is not the repo's base —
+  frontmatter entry stamped by `/quenching:specs:execute` for **any** branch that is not the repo's base —
   the one it cut and the one a human already had open alike — write-once. `work` is derivable
   while the branch is checked out; **`base` is not** — after the merge, git
   cannot say what the branch was cut from, which is the whole reason the record exists and why it
@@ -135,7 +135,7 @@ sentence, and **link out** rather than explaining in full here.
   `git log --grep --fixed-strings`. Because a subject is known *before* the commit exists, the box
   is ticked into the commit it describes and no bookkeeping commit follows it — the same inversion
   that lets `merge: {strategy, subject}` be stamped on the work branch and the merge be the last
-  action of `/specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
+  action of `/quenching:specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
   backfilled.
@@ -188,7 +188,7 @@ sentence, and **link out** rather than explaining in full here.
   constraint, and adoption is opt-in per repo. Nothing machine-checks it, so `/quenching:components:harness:align` classing
   the line **KEEP** is the only thing between it and a silent deletion.
 - [**Merge record**](../standards/workflows/plan-git-record.md) — the
-  `merge: {strategy, subject, pr}` frontmatter entry stamped by `/specs:conclude`, write-once,
+  `merge: {strategy, subject, pr}` frontmatter entry stamped by `/quenching:specs:conclude`, write-once,
   **on the work branch before the merge** — which is what makes the merge that command's last
   action and leaves nothing to be committed to the base after it. The strategy was a human choice
   and the subject names the merge commit it is about to produce; recording both is what tells a
@@ -198,18 +198,18 @@ sentence, and **link out** rather than explaining in full here.
   under `fast-forward`, which `gh pr merge` cannot perform (`sp-merge-pr-no-route`).
 - [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, and the axis that replaced an `audience` field nobody read: `decision` (the
-  human, weighing whether to build), `build` (the executor, at step 4 of `/specs:execute`), `close`
-  (`/specs:conclude`, at archive time). One value per section, declared in `schema.json` and in
+  human, weighing whether to build), `build` (the executor, at step 4 of `/quenching:specs:execute`), `close`
+  (`/quenching:specs:conclude`, at archive time). One value per section, declared in `schema.json` and in
   `cq specs`'s `DEFAULT_SCHEMA`, and **resolved rather than enumerated** — `cq specs section <slug>
   --moment build` returns the six an executor needs, so a command body names the moment instead of
   repeating a heading list that can drift from the schema. `## Discoveries` carries no moment at
-  all: captured indiscriminately while building, it is resolved by `/specs:develop`'s triage sweep
+  all: captured indiscriminately while building, it is resolved by `/quenching:specs:develop`'s triage sweep
   on its own schedule. The axis replaced a human/agent binary that was **prose nobody applied** —
   measured, that binary cut 14% and named the wrong sections, leaving `## Out of Scope` invisible to
   the one reader it exists to constrain.
 - [**Moment**](../standards/workflows/plan-artifacts.md) — the point on a spec's timeline a canonical
   section is read at, one value per section: `decision` (the human, weighing whether to build),
-  `build` (the executor), `close` (`/specs:conclude`). Declared in `schema.json` and `DEFAULT_SCHEMA`
+  `build` (the executor), `close` (`/quenching:specs:conclude`). Declared in `schema.json` and `DEFAULT_SCHEMA`
   and **resolved rather than enumerated** — `cq specs section <slug> --moment build` returns the six
   an executor needs, so a body names the moment instead of a heading list that can drift. Replaced
   an `audience` field nobody read; `## Discoveries` carries no moment at all.
@@ -229,7 +229,7 @@ sentence, and **link out** rather than explaining in full here.
 - [**Parked follow-up**](../standards/workflows/plan-lifecycle.md) — an out-of-scope finding a
   definition pass records as ONE line of `## Discoveries` on the spec it is developing, instead of
   minting a spec for it. Parking is free by construction: `## Discoveries` appears in no stage rule,
-  so filling it moves no derived state. Turning one into a file belongs to `/specs:conclude`'s
+  so filling it moves no derived state. Turning one into a file belongs to `/quenching:specs:conclude`'s
   harvest, which runs once the parent's fate is known — and a line another open spec already covers
   never becomes a file at all, resolving as `dismissed: already covered by {slug}`.
 - [**Parse honesty**](../standards/quality/parse-honesty.md) — the obligation that a verifier names
@@ -430,7 +430,7 @@ sentence, and **link out** rather than explaining in full here.
   by hand at conclude. Distinct from the **Canonical case list**, which is the lockstep unit for the
   parser's *behaviour* rather than a version string.
 - [**Worktree setup**](../standards/workflows/worktree-setup.md) — the single key `worktreeSetup`
-  in `.claude/quenching.json`, holding a command `/specs:execute` runs once inside a newly created
+  in `.claude/quenching.json`, holding a command `/quenching:specs:execute` runs once inside a newly created
   worktree so a repo with installed dependencies gets a usable tree rather than one that breaks at
   the first `verify:`. `cq specs` reads it and never executes it. Declaring nothing is the normal
   case and never a finding; the two that are — `sp-config-unknown-key` and `sp-config-unparseable`

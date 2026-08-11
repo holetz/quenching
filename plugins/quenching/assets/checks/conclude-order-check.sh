@@ -15,7 +15,7 @@
 # claimed shape — the merge is last, a task's box rides inside that task's own commit, and every
 # recorded subject resolves to exactly one commit.
 #
-# WHAT THIS DOES NOT PROVE: that a live `/specs:execute` or `/specs:conclude` session follows the
+# WHAT THIS DOES NOT PROVE: that a live `/quenching:specs:execute` or `/quenching:specs:conclude` session follows the
 # ordering. Nothing automated can: both bodies gate on AskUserQuestion, which `claude -p` cannot
 # answer, so an end-to-end session cannot run unattended. That gap is real and is why the command
 # bodies state the ordering as an invariant rather than relying on this script.

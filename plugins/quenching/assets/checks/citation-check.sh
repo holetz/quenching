@@ -90,6 +90,23 @@ echo
 # (`git log --diff-filter=R -- plugins/quenching/commands/` names them exactly); `\b` after each
 # stops `import` from also matching `import-memory` short — it already does, because `-` ends a
 # word — so the list needs no separate entry for it.
+#
+# THE `specs` FRONT IS HERE FOR THE OTHER HALF OF THE SAME RULE, AND IT WAS NEVER RENAMED. Its
+# front name did not move, but its citation form did: `naming/command-surface.md` §Three citation
+# forms says the bare slash is correct ONLY where the command file lives in the target repo's own
+# `.claude/commands/`, and it does not live there — so `/specs:develop` names a form that resolves
+# nowhere, exactly as `/docs:add` did. Leaving one front bare while the other two were qualified
+# is the asymmetry this pattern closes, and without it the bare form regrows silently.
+#
+# Its verb list is the NINE LIVE commands, and the boundary is `[^a-z-]` rather than `\b` — the one
+# place the two differ in consequence. Seven retired verbs (`isolate`, `capture`, `apply`,
+# `refine`, `from-claude`, `archive`, `align-and-update`) are still cited by dated measurements and
+# by the release history in `README.md`; a retirement has no new name to rewrite to, so minting a
+# `quenching:specs:` spelling for one would falsify a record rather than repair a citation. (That
+# sentence cannot carry the example spelled out: half 2 reads this file like any other, and a
+# three-segment name in a comment is a citation to a body that does not exist.) Those stay bare
+# and must not match — and `\b` would have matched `align` inside `/specs:align-and-update`, which
+# is harmless when every verb is dead and wrong here, where one is retired and its prefix is live.
 # --------------------------------------------------------------------------- #
 DEAD_PATTERNS=(
   'specs\.py'
@@ -98,6 +115,8 @@ DEAD_PATTERNS=(
   'okf-validate\.py'
   '/docs:(add|align|define|documentation|glossary-backfill|harness|import|learn|status)\b'
   '/skill:(align|new|eval|retro|agent|hook)\b'
+  '/specs:(align|conclude|continue|create|develop|execute|orchestrate|status|triage)([^a-z-]|$)'
+  '/specs:\*'
   'quenching:docs:(add|align|define|documentation|glossary-backfill|harness|import|learn|status)\b'
   'quenching:skill:(align|new|eval|retro|agent|hook)\b'
 )

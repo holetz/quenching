@@ -27,7 +27,7 @@ ASSET_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "..", "specs"))
 VERIFICATION_POLICIES = ("per-task", "per-section", "end-of-plan")
 DEFAULT_VERIFICATION = "per-section"
 OUTCOMES = ("done", "abandoned")
-# The four strategies `/specs:conclude` offers. Two of them create no merge commit, so the
+# The four strategies `/quenching:specs:conclude` offers. Two of them create no merge commit, so the
 # record has no subject to name and carries an explicit none instead — a fact about the
 # strategy, not a gap in the record.
 MERGE_STRATEGIES = ("merge-commit", "squash", "rebase", "fast-forward")
@@ -196,15 +196,15 @@ verification: <VERIFICATION>
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
      *(`standards/agents/communication.md` owns that language rule for a repo whose bundle has
-     one. This template states it self-contained rather than citing it: `/specs:align` is native
+     one. This template states it self-contained rather than citing it: `/quenching:specs:align` is native
      and installs here into repos that never adopted the bundle, where that path resolves to
      nothing.)*
 
      MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
      (the human, deciding whether to build), `build` (the executor, in step 4 of
-     `/specs:execute`), `close` (`/specs:conclude`, at archive time). `## Discoveries` belongs
+     `/quenching:specs:execute`), `close` (`/quenching:specs:conclude`, at archive time). `## Discoveries` belongs
      to none of them — captured indiscriminately while building, resolved later by
-     `/specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     `/quenching:specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
      exactly the `build` set; that is what lets one file serve every moment without bloating
      agent context. -->
 
@@ -385,7 +385,7 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
+<!-- MOMENT: none — triage, resolved by `/quenching:specs:develop`'s discoveries bank whenever it runs,
      not tied to one of the three. No gate — appended during execution.
 
      One line per discovery, appended by `cq specs discover <slug> "<text>"` while building.
@@ -495,7 +495,7 @@ def headings_for_moment(moment: str, schema: dict | None = None) -> list[str]:
     """The canonical headings declared `moment: <moment>`, in canonical order.
 
     `## Discoveries` declares no `moment` — resolved on its own schedule by
-    `/specs:develop`'s triage sweep, not one of `decision` / `build` / `close` — so it never
+    `/quenching:specs:develop`'s triage sweep, not one of `decision` / `build` / `close` — so it never
     matches here, by construction rather than by exclusion list."""
     s = schema or load_schema()
     return [x["heading"] for x in sorted(s["sections"], key=lambda d: d.get("order", 0))

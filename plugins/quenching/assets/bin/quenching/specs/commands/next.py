@@ -77,7 +77,7 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
                current: str | None, root: str) -> dict:
     # ASKED OF THE BACKEND, never of the path. Against GitHub the locator is an issue URL, so
     # every candidate derived from an EMPTY document — the whole front ranked as `captured`
-    # with no title, no tasks and nothing executing, and `/specs:continue` handed out its
+    # with no title, no tasks and nothing executing, and `/quenching:specs:continue` handed out its
     # single next action from exactly that.
     info, rerr = backend.read_spec(s["slug"])
     unreadable = (rerr or {}).get("code")
