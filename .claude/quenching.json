@@ -8,26 +8,26 @@
     ]
   },
   "profiles": {
-    "installed": ["docs", "specs", "skill"]
+    "installed": ["knowledge", "specs", "components"]
   },
   "azurePlacement": {
     "defaultSubject": "plugin"
   },
   "subjects": {
-    "docs": {
+    "knowledge": {
       "name": "Front /.docs/",
-      "description": "Trabalho no bundle OKF em /.docs/ — um standard, uma entrada de glossário, a forma do bundle, o validador okf-validate.py e os comandos /docs:*. Escolha quando o entregável é conhecimento escrito ou a estrutura que o guarda.",
-      "tags": ["front:docs"]
+      "description": "Trabalho no bundle OKF em /.docs/ — um standard, uma entrada de glossário, a forma do bundle, o validador `cq knowledge` e os comandos /quenching:knowledge:*. Escolha quando o entregável é conhecimento escrito ou a estrutura que o guarda.",
+      "tags": ["front:knowledge"]
     },
     "specs": {
       "name": "Front /.specs/",
-      "description": "Trabalho no front de specs — os comandos /specs:*, o specs.py, o ciclo de vida de uma spec (captured até archive) e os três backends (files, github, azure-boards). Escolha quando o entregável muda como uma spec nasce, é construída ou é fechada.",
+      "description": "Trabalho no front de specs — os comandos /quenching:specs:*, o `cq specs`, o ciclo de vida de uma spec (captured até archive) e os três backends (files, github, azure-boards). Escolha quando o entregável muda como uma spec nasce, é construída ou é fechada.",
       "tags": ["front:specs"]
     },
-    "skill": {
+    "components": {
       "name": "Front .claude/",
-      "description": "Trabalho na superfície de comandos — os comandos /skill:*, o skills.py, corpos de comando, descriptions, hooks e agents. Escolha quando o entregável muda o que a superfície registra, como um comando é roteado, ou o que uma description promete.",
-      "tags": ["front:skill"]
+      "description": "Trabalho na superfície de comandos — os comandos /quenching:components:*, o `cq components`, corpos de comando, descriptions, hooks e agents. Escolha quando o entregável muda o que a superfície registra, como um comando é roteado, ou o que uma description promete.",
+      "tags": ["front:components"]
     },
     "plugin": {
       "name": "Plugin (transversal)",
@@ -36,9 +36,9 @@
     }
   },
   "tagCatalog": {
-    "front:docs": "Aplicada automaticamente pelo subject `docs` — não proponha isoladamente.",
+    "front:knowledge": "Aplicada automaticamente pelo subject `knowledge` — não proponha isoladamente.",
     "front:specs": "Aplicada automaticamente pelo subject `specs` — não proponha isoladamente.",
-    "front:skill": "Aplicada automaticamente pelo subject `skill` — não proponha isoladamente.",
+    "front:components": "Aplicada automaticamente pelo subject `components` — não proponha isoladamente.",
     "front:plugin": "Aplicada automaticamente pelo subject `plugin` — não proponha isoladamente.",
     "breaking": "A mudança quebra um repositório-alvo já instalado: um comando renomeado ou removido, uma chave de configuração que deixa de ser lida, um formato de frontmatter que muda. Escolha quando fazer upgrade do plugin exigir ação humana no alvo.",
     "contract": "Altera um contrato escrito que outra coisa cita — um standard em /.docs/standards/, uma reference compartilhada, o okf-spec. Escolha quando o texto é normativo e tem citadores que precisam ser varridos.",

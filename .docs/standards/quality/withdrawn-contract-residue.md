@@ -4,7 +4,7 @@ title: A withdrawn contract's prose residue
 description: When a change removes a contract rather than changing a computed value, its prose residue has no canonical spelling to grep for — the sites assert it in their own words — so `## Impact` must name the CLASS of documents that assert it and derive the file list mechanically; the five misses measured on one branch, why naming the file is not enough either, and why the reviewer's question is "what did this make false?" rather than "which files changed?"
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [quality, sweeps, documentation, specs, impact]
-timestamp: 2026-08-08
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: enxugar-create-e-eliminar-o-rung-hooks plan (2026-08-03) — five misses on one branch withdrawing the installed-tool contract: three caught during execution and recorded as `## Discoveries`, two more only at the branch review, one of them in a file `## Impact` had named and half-covered; measured a second time by the remover-a-capability-quenching-md spec (2026-08-08), where a literal grep for the artefact's own name missed four sites that called it "the operator manual"
@@ -32,7 +32,7 @@ the withdrawn contract, in five different wordings:
 | 1 | `commands/specs/isolate.md` | a citation to the section that carried the fallback | execution |
 | 2 | `commands/align.md` | named findings the change deleted, and told the human an INSTALL offer belonged in the plan | execution |
 | 3 | embedded manuals | `${CLAUDE_PLUGIN_ROOT}` line citations | execution |
-| 4 | `assets/README.md` | "Installed into a target? **yes, by `/docs:align`**", plus four more rows | branch review |
+| 4 | `assets/README.md` | "Installed into a target? **yes, by the docs align**", plus four more rows | branch review |
 | 5 | `/.docs/standards/architecture/plugin-layout.md` | a placement justified by an adjacency the same branch removed | branch review |
 
 None of the five shared a substring with any other. A grep for the class would have had to guess
@@ -91,7 +91,7 @@ The two answers differ exactly on the files the branch never opened — which is
 its own diff.
 
 **No checker can close this.** Every verifier stayed green through all five: the tools' selftests
-pass, `okf-validate.py` reads a well-formed sentence that is merely wrong, and `stale-doc` fires
+pass, `cq knowledge` reads a well-formed sentence that is merely wrong, and `stale-doc` fires
 only where a doc's `resource:` happens to name a changed path — `assets/README.md` carries no
 frontmatter at all. Same structural blindness the sibling standard tabulates, same conclusion: the
 mitigation is authored discipline at the moment of the change, not a gate afterwards.

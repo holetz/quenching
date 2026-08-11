@@ -11,16 +11,16 @@ This repository is a **plugin marketplace**. The plugin itself lives in
 
 ## What it does
 
-Twenty-five commands acting on three fronts of a target repository — the `docs/` OKF bundle
-(`/docs:*`), the native `specs/` spec-driven workspace (`/specs:*`), and the target's own
-`.claude/` automation surface (`/skill:*`) — plus root `/align`, which spans all three on one
+Twenty-six commands acting on three fronts of a target repository — the `docs/` OKF bundle
+(`knowledge`), the native `specs/` spec-driven workspace (`specs`), and the target's own
+`.claude/` automation surface (`components`) — plus root `/align`, which spans all three on one
 confirmation. Every front has exactly one **align**: probe-first, so a
 conformant front costs a couple of tool calls and stops. The full command-by-command manual, the
 three fronts, and the cost model live in the
 [plugin README](plugins/quenching/README.md) — this file stays a thin pointer over it rather
 than a second, driftable copy.
 
-The **`okf-validate.py`** hook (self-contained, no dependencies) keeps future edits
+The **`cq knowledge hook`** hook (zero dependencies) keeps future edits
 conformant: it validates touched `docs/**` files against the OKF core on
 `Write`/`Edit` and at `Stop`, and can optionally block a non-conformant write.
 
@@ -42,10 +42,10 @@ Run from a checkout of `main` for the latest release; a checkout of `develop` ca
 has been merged since, unreleased.
 
 Then, inside a target repository, use the `/` menu — every command is
-`/quenching:<front>:<verb>` when installed as a plugin (`/quenching:docs:align`,
-`/quenching:specs:execute`, `/quenching:skill:new`, …); the bare `/<front>:<verb>` form only
-resolves in a repo that vendored the file into its own `.claude/commands/`. The full, current
-list — twenty-five commands, one file per entry point — is the
+`/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,
+`/quenching:specs:execute`, `/quenching:components:command:new`, …); the bare `/<front>:<verb>`
+form only resolves in a repo that vendored the file into its own `.claude/commands/`. The full,
+current list — twenty-six commands, one file per entry point — is the
 [plugin README](plugins/quenching/README.md), never duplicated here.
 
 Or add this marketplace and enable the plugin the usual way (see the

@@ -2,9 +2,9 @@
 type: standard
 title: A guard that names what it forbids must parse, not match
 description: A checker whose finding text quotes the pattern it prohibits will match itself — the self-accusation this repo measured on its first run, why the fix is parsing the construct rather than excluding the checker, and the narrow case where a substring scan is still honest
-resource: plugins/quenching/assets/bin/specs.py
+resource: plugins/quenching/assets/bin/quenching/specs/**
 tags: [quality, verification, selftest, parsing, false-positive]
-timestamp: 2026-08-06
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: anunciar-resolucao-aproximada-em-todos-os-verbos spec (distilled at conclude) — measured on the first run of `announcement_failures()`, which flagged `selftest` for the call quoted in its own remedy string

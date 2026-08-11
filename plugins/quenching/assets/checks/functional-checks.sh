@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# functional-checks.sh — the four checks nothing in-process can make.
+# functional-checks.sh — the three checks nothing in-process can make.
 #
 # The command registry is built at SESSION START, so no change under commands/** is testable
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
@@ -16,14 +16,14 @@
 # It is also what lets this harness see a BRANCH or a WORKTREE, and therefore gate a merge
 # before it happens rather than report on it afterwards.
 #
-#   usage:  ./functional-checks.sh [--only 1,2,4] [/path/to/plugin/repo]
+#   usage:  ./functional-checks.sh [--only 1,2] [/path/to/plugin/repo]
 #   exit :  0 every measured assertion passed
 #           1 an assertion failed
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
-# WHO RUNS THIS, AND WHEN. It belongs to the **skill front**: the commands that change the surface
-# are the ones that prove it still loads — `/skill:new` after minting or editing a command here,
-# and `/skill:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
+# WHO RUNS THIS, AND WHEN. It belongs to the **components front**: the commands that change the surface
+# are the ones that prove it still loads — `/quenching:components:command:new` after minting or editing a command here,
+# and `/quenching:components:command:eval` when it tunes a description. It is NOT a repo-wide post-change mandate and it
 # does NOT belong in a spec's `## Validation` or a task's `verify:`. Measured 2026-07-29 over the
 # whole archive: every red run this harness ever produced traced to a defect in THIS SCRIPT — a
 # cp1252 read, a hardcoded marketplace ref, a turn cap, a flaky probe — and not one to a surface
@@ -31,21 +31,21 @@
 #
 # COST — each check is a full agent session, so scope the run to what the change can break:
 #
-#   (no flag)      checks 1, 2, 4 — a command BODY, a citation path, a conductor's stage names
+#   (no flag)      checks 1, 2 — a command BODY, a citation path
 #   --only 3       spoken routing — OPT-IN, see below
-#   --only 1,2,3,4 all four
+#   --only 1,2,3   all three
 #
-# CHECK 3 IS OPT-IN, AND `/skill:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the eight
+# CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
-# identical runs), and a strictly worse duplicate of `/skill:eval` step 7 — which measures the
+# identical runs), and a strictly worse duplicate of `/quenching:components:command:eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
-# five hardcoded phrases with no boundary arm. Reach for `/skill:eval` when a description changed;
+# five hardcoded phrases with no boundary arm. Reach for `/quenching:components:command:eval` when a description changed;
 # reach for `--only 3` only to re-guard the five phrases already tuned here.
 #
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
 set -uo pipefail
 
-ONLY="1,2,4"
+ONLY="1,2"
 REPO=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -116,14 +116,14 @@ print(n)
 #   - an intent-shaped phrase names a subject ("our migrations"), and where the subject does
 #     not exist the session correctly challenges the premise instead of routing. Probe d
 #     failed in a bare box with "There are no migrations to audit", while the same phrase
-#     routed in the /skill:agent:new eval, whose fixture carried a migration.
+#     routed in the /quenching:components:agent:new eval, whose fixture carried a migration.
 #   - a phrase whose command wants an OKF bundle ("add a standard") spends its turns looking
 #     for one. That cost used to be hidden because probe c ran against REPO, which has a
 #     bundle; sandboxing removed it and pushed the probe into the turn cap.
-#   - a command that reports on a workspace ("/specs:status") wants one to report on.
+#   - a command that reports on a workspace ("/quenching:specs:status") wants one to report on.
 # So every box gets a migration, a minimal bundle and an empty `specs/plans/`: the smallest repo
 # every prompt below can be answered in without exploring to find out its subject is missing.
-# The folder alone is the workspace — `plans/index.md` is a retired artifact, and `specs.py`
+# The folder alone is the workspace — `plans/index.md` is a retired artifact, and `cq specs`
 # derives the listing from disk, so seeding one would only re-create what was withdrawn.
 newbox () {
   mkdir -p "$1/.claude" "$1/db/migrations" "$1/docs/standards" "$1/specs/plans"
@@ -146,7 +146,7 @@ echo
 # The prompt never names a path: the command must report the citations IT was given, so a
 # Read landing under assets/references/ proves the placeholder resolved in production.
 #
-# It also covers re-homed references for free: /specs:status cites a reference directory that
+# It also covers re-homed references for free: /quenching:specs:status cites a reference directory that
 # the specs-flow-consolidation fold renamed, so a stale citation fails here rather than silently
 # reading nothing.
 #
@@ -188,12 +188,12 @@ You have my authorization for the whole run — treat the plan gate as granted a
 need you to reach and INVOKE Front 1 via the Skill tool; stop right after that stage is invoked." \
   --max-turns 12 --output-format stream-json --verbose < /dev/null > "$WORK/2.jsonl" 2>&1 )
 if evidence "$WORK/2.jsonl"; then
-  if grep -q '"quenching:docs:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "invoked quenching:docs:align by name"
-  if grep -qE '"skill": *"[^"]*quenching-docs-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
+  if grep -q '"quenching:knowledge:align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=yes; else r=no; fi
+  check "$r" "invoked quenching:knowledge:align by name"
+  if grep -qE '"skill": *"[^"]*quenching-knowledge-align"' <<<"$(tools Skill "$WORK/2.jsonl")"; then r=no; else r=yes; fi
   check "$r" "invoked no retired quenching-* skill name"
 else
-  inconc "invoked quenching:docs:align by name" "no tool_use in the capture"
+  inconc "invoked quenching:knowledge:align by name" "no tool_use in the capture"
   inconc "invoked no retired quenching-* skill name" "no tool_use in the capture"
 fi
 fi
@@ -210,7 +210,7 @@ fi
 # verifying is not a check, and the mess it leaves is indistinguishable from real work.
 #
 # OPT-IN, AND NOT THE FIRST CHOICE: five sessions, non-deterministic, and duplicating what
-# `/skill:eval` step 7 measures properly. See the COST note at the top.
+# `/quenching:components:command:eval` step 7 measures properly. See the COST note at the top.
 # --------------------------------------------------------------------------- #
 if want 3; then
 echo "3. a spoken trigger routes with no / typed"
@@ -218,7 +218,7 @@ echo "3. a spoken trigger routes with no / typed"
 # --max-turns is 14, not 4. A probe whose phrase needs any orientation first (a Glob, a Read)
 # spends turns before it routes, and a low cap cuts it off mid-orientation — which reports a
 # FALSE miss, and a false miss here argues for deleting a trigger that works. Measured while
-# building the /skill:agent:new eval: at 3 turns two working triggers reported as misses. 8 was
+# building the /quenching:components:agent:new eval: at 3 turns two working triggers reported as misses. 8 was
 # then enough in a rich fixture but not in these boxes, where two probes hit the cap while still
 # orienting. A probe that still hits the cap is reported INCONCLUSIVE rather than graded, so
 # a cap that is one day too low again can never masquerade as a routing failure.
@@ -241,50 +241,14 @@ probe () {
 }
 probe a "park a spec for later: the export CSV endpoint times out on large accounts" "quenching:specs:create"
 probe b "capture this for the backlog — we should look at retry logic on the webhook sender"  "quenching:specs:create"
-probe c "add a standard: we always use snake_case for database columns"                       "quenching:docs:add"
+probe c "add a standard: we always use snake_case for database columns"                       "quenching:knowledge:add"
 
 # One probe per mint added by the capability layer. Both phrases are intent-shaped — they name
 # no artifact and type no `/` — because that is the routing the descriptions have to earn.
-# Probe e also guards the trigger the /skill:hook:new eval added: it is the exact phrase that
+# Probe e also guards the trigger the /quenching:components:hook:new eval added: it is the exact phrase that
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
-probe d "set up something that audits our migrations and reports back"                        "quenching:skill:agent:new"
-probe e "I want something to catch it automatically whenever a migration lands"               "quenching:skill:hook:new"
-fi
-
-# --------------------------------------------------------------------------- #
-# 4. the conductor's probe checks for a legacy tool copy, from the plugin's own copy
-#
-# The drift check is only worth having if it actually RUNS, and its whole subject —
-# whether a legacy copy still sits under `.claude/hooks/`, dead weight since resolution
-# is plugin-first with no fallback — is invisible to every in-process check: `doctor`
-# and `lint` read the surface, not what a session decides to invoke.
-#
-# The prompt names the STEP (which the body defines) and never the tool, the subcommand
-# or the path, so a matching `Bash` call can only have come from the body being loaded.
-# The negative half is the rule that makes the answer trustworthy: run from the plugin's
-# own copy, because an installed copy answers from the same stale VERSION it is being
-# asked about.
-# --------------------------------------------------------------------------- #
-if want 4; then
-echo "4. the conductor's probe checks for a legacy tool copy"
-newbox "$WORK/sandbox4"
-( cd "$WORK/sandbox4" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
-
-Run ONLY step 1, the read-only probe. Report what every call in it returned, then stop —
-write nothing and do not present the plan." \
-  --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/4.jsonl" 2>&1 )
-# `tools` prints each input as JSON, so a quoted path arrives escaped —
-# `python3 \"/…/skills.py\" drift`. Match across the escape rather than assuming a bare
-# space, or a correct call reads as a miss (it did, on the first run of this check).
-if evidence "$WORK/4.jsonl"; then
-  if grep -qE 'skills\.py[\\"[:space:]]+drift' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "ran skills.py drift during the probe"
-  if grep -q 'hooks/skills.py' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=no; else r=yes; fi
-  check "$r" "ran it from the plugin's copy, never from .claude/hooks/"
-else
-  inconc "ran skills.py drift during the probe" "no tool_use in the capture"
-  inconc "ran it from the plugin's copy, never from .claude/hooks/" "no tool_use in the capture"
-fi
+probe d "set up something that audits our migrations and reports back"                        "quenching:components:agent:new"
+probe e "I want something to catch it automatically whenever a migration lands"               "quenching:components:hook:new"
 fi
 
 echo

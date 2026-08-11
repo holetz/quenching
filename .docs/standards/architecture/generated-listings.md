@@ -2,9 +2,9 @@
 type: standard
 title: Generated listings — a derived listing only pays for itself when a program can prove it is fresh
 description: A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /.docs/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides
-resource: plugins/quenching/assets/docs/**/index.md, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
+resource: plugins/quenching/assets/docs/**/index.md, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
 tags: [architecture, listings, derived-state, verification, convergence]
-timestamp: 2026-07-30
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it
@@ -46,7 +46,7 @@ the contrast is exact:
 
 | | `/.docs/**/index.md` | the retired `/.specs/plans/index.md` |
 | --- | --- | --- |
-| Does a command derive the same fact on demand? | **No.** Nothing enumerates the bundle. | **Yes** — `specs.py list` and `specs.py status` read `plans/` directly. |
+| Does a command derive the same fact on demand? | **No.** Nothing enumerates the bundle. | **Yes** — `cq specs list` and `cq specs status` read `plans/` directly. |
 | What the listing is | the bundle's **only** navigation — a doc no index reaches is invisible | a table duplicating what the tool already returned |
 | Checker | `index-orphan` / `dir-no-index` / `index-broken-link`, structural contract | four `sp-*` codes guarding a copy |
 | Verdict | keeps its checker | artifact and checker both retired |
@@ -60,8 +60,8 @@ A sweep's convergence condition is where this fails most expensively, because th
 rigour.
 
 The `specs` front's condition once required that the generated zone "matches disk". **Nothing
-computed that.** `specs.py` emitted no `changed` field for any command to read — while
-`skills.py` did emit one, which is why the identical clause was sound for the `.claude/` front and
+computed that.** The specs pillar emitted no `changed` field for any command to read — while
+the components pillar did emit one, which is why the identical clause was sound for the `.claude/` front and
 hollow here. Two references and a command body instructed the reader to branch on a field the tool
 had never produced.
 

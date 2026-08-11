@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "slug": "alpha-widget",
+  "title": "Alpha Widget",
+  "stage": "executing",
+  "phase": "plans",
+  "folder": "plans",
+  "file": "alpha-widget.md",
+  "view": "slice",
+  "tasks": [
+    {
+      "index": 2,
+      "id": "1.2",
+      "state": " ",
+      "checked": false,
+      "blocked": false,
+      "reason": null,
+      "text": "1.2 Point the loader at the registry",
+      "section": 1,
+      "parallel": false,
+      "files": [
+        "src/widgets/loader.py"
+      ],
+      "pattern": "src/widgets/registry.py",
+      "verify": "python3 -m unittest tests.widgets.test_loader",
+      "subject": null,
+      "commit": null,
+      "lineno": 81
+    }
+  ],
+  "resolvedBy": null,
+  "resolvedFrom": null
+}

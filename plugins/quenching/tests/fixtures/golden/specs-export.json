@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "out": "<WS>/export",
+  "count": 3,
+  "files": [
+    "<WS>/export/plans/alpha-widget.md",
+    "<WS>/export/plans/beta-gizmo.md",
+    "<WS>/export/archive/legacy-knob.md"
+  ]
+}

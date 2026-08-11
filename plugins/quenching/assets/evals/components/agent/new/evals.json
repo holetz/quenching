@@ -1,0 +1,51 @@
+{
+  "skill": "/quenching:components:agent:new",
+  "cases": [
+    {
+      "id": "verifier-happy-path",
+      "branch": "delegation test passes, bundle + rule present — the verifier shape is minted (steps 2, 4, 6)",
+      "prompt": "Set up a subagent that reviews our database migration diffs against our migration rules and reports what is wrong. I will hand it a diff when I need it.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "a file is created under .claude/agents/ with a kebab-case name",
+        "the definition's frontmatter carries a non-empty description",
+        "the definition's frontmatter declares a tools list that excludes Write and Edit",
+        "the body states the agent reports and never edits",
+        "no file is created under .claude/commands/"
+      ]
+    },
+    {
+      "id": "delegation-test-reroute",
+      "branch": "step 2 — the work fails the delegation test (a full-repo rewrite returns as much as it consumed), so it is rerouted rather than minted",
+      "prompt": "Create an agent that renames the config key \"billing_acct\" to \"account_id\" across this whole repo and rewrites every file where it appears.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "no file is created under .claude/agents/",
+        "the reply states the work does not qualify for delegation, and gives the reason",
+        "the reply routes the request to the command-minting entry point by name"
+      ]
+    },
+    {
+      "id": "declines-hook-request",
+      "branch": "Not for: — an always-on, event-triggered rule is a hook, routed to /quenching:components:hook:new",
+      "prompt": "Create an agent that runs automatically after every file edit and blocks the edit when it touches a generated file.\n\nYou have my authorization for the whole run — treat any confirmation gate as already granted and proceed to the end.",
+      "assertions": [
+        "no file is created under .claude/agents/",
+        "the reply identifies the request as a hook rather than an agent",
+        "the reply routes the request to the hook-minting entry point by name"
+      ]
+    }
+  ],
+  "triggers": {
+    "shouldTrigger": [
+      "create an agent",
+      "add a subagent",
+      "make a verifier agent",
+      "delegate this to an agent",
+      "set up something that audits our migrations and reports back"
+    ],
+    "shouldNotTrigger": [
+      "create a slash command for drafting release notes",
+      "add a hook that runs after every edit",
+      "make this command run in its own isolated context"
+    ]
+  }
+}

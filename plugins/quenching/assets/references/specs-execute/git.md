@@ -10,7 +10,7 @@ somebody else's history.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The read-if-present rule
 
@@ -32,7 +32,7 @@ State in the report which one governed.
 
 **Never install a git standard into a target.** Not as a fixup, not as a suggestion applied, not
 "so the next run has something to read". If a human wants their conventions written down, that is
-`/quenching:docs:add`, on their word.
+`/quenching:knowledge:add`, on their word.
 
 An `authority: background` git standard in the target still wins over these defaults. It is an
 agreed-but-unproven rule someone wrote on purpose; that beats a plugin's opinion either way.
@@ -78,7 +78,7 @@ archived, and would have to duplicate every refusal `conclude` already owns.
 
 <!-- rationale -->
 
-**On `plan/<slug>` as the default name.** A branch named to it is greppable against `specs.py list`,
+**On `plan/<slug>` as the default name.** A branch named to it is greppable against `cq specs list`,
 and `git branch --list 'plan/*'` is the list of work cut by the default. A human who already checked
 out `fix/isolate-flow` or `123-my-branch` before running `execute` gets that branch recorded, not a
 second one cut beside it.
@@ -96,7 +96,7 @@ the specs workspace — which only had a place to live while every repo was guar
 folder. A repo that declares an external backend may hold no `specs/` at all, so the plugin's
 configuration lives in one neutral home shared by all three fronts, and `worktreeSetup` moved there
 with the rest of it. Whether the command resolves can only be judged against the new worktree's
-path, which `specs.py` is never told.
+path, which `cq specs` is never told.
 
 **On stamping `branch:` for a branch this plugin never cut.** A human may have checked one out by
 hand before running `execute`, and a spec built there with nothing stamped leaves
@@ -115,7 +115,7 @@ plan/<slug>
 ```
 
 The **suggested default** when the inline offer cuts a new branch or worktree — kebab-case, no
-date prefix, no id. `specs.py next --front` ranks on whether
+date prefix, no id. `cq specs next --front` ranks on whether
 `plan/<slug>` is **alive**, so a branch named to the default is what tells `/quenching:specs:continue` this
 spec is already under way without a stamped `branch` record.
 
@@ -151,15 +151,15 @@ tracks — no installed dependencies, no `.env`, no venv, no build output.
 ```
 
 See
-[plugin-configuration.md](../../../../../docs/standards/workflows/plugin-configuration.md).
+[plugin-configuration.md](../../../../../.docs/standards/workflows/plugin-configuration.md).
 
-Read by `specs.py config --json` (exit 0 whether or not anything is declared) and run **once** by
+Read by `cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
 the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
-tree lacking the dependencies is the tree that must install them. `specs.py` reads the value and
+tree lacking the dependencies is the tree that must install them. `cq specs` reads the value and
 never executes it.
 
 No file, no key, or a command that does not resolve all mean **no setup**, and none of them is a
-finding — most repos declare nothing, and declaring nothing must cost nothing. `specs.py doctor`
+finding — most repos declare nothing, and declaring nothing must cost nothing. `cq specs doctor`
 reports only the two ways it can be *wrong*, both `warn`: `sp-config-unknown-key` and
 `sp-config-unparseable`. They exist for the one real failure mode of a machine-read config —
 `worktree_setup` written where `worktreeSetup` was expected, and silence afterwards.
@@ -173,7 +173,7 @@ authorisation. A failing setup is reported and **never undoes the worktree**.
 <!-- rules -->
 
 ```bash
-specs.py record <slug> branch --set base=main --set work=plan/<slug>
+cq specs record <slug> branch --set base=main --set work=plan/<slug>
 ```
 
 `base` is whatever was checked out when the branch was cut. It is **not** assumed to be `main`.
@@ -200,7 +200,7 @@ write-once and that is the only moment disagreeing with it is cheap. Never deriv
 `git merge-base` or `--fork-point`: both answer a **commit**, not a branch name, and a commit
 ancestral to three branches identifies none of them.
 
-The record is `writeOnce: true`, and `specs.py record` enforces it: a second stamp refuses (exit 2)
+The record is `writeOnce: true`, and `cq specs record` enforces it: a second stamp refuses (exit 2)
 naming the value already held. A later run **reads** it rather than rewriting it, and a current
 branch that disagrees with `work` is a finding to report, never a value to correct. Never edit the
 frontmatter to get past that refusal — the refusal is the rule, working.
@@ -238,7 +238,7 @@ plan/<slug>: record <what>
 <!-- rules -->
 
 The task→commit link is the **subject line of the commit**, written onto the task line by
-`specs.py task --check --subject`:
+`cq specs task --check --subject`:
 
 ```markdown
 - [x] 3.2 Validate the token
@@ -287,7 +287,7 @@ strictly worse rather than merely narrower.
 on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
 Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
-[plan-git-record.md](../../../../../docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+[plan-git-record.md](../../../../../.docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
 written before the merge and says what the run **delivered** — an open, unmerged PR archived as
 `done` would assert something that has not happened yet. And `merge:` is stamped before the merge
 so that it is the run's last action; a run that ends before the merge leaves the record stamped and
@@ -347,7 +347,7 @@ merge:
     base branch's history
 ```
 
-`specs.py validate` reports the mismatched cases both ways — an
+`cq specs validate` reports the mismatched cases both ways — an
 anchorless strategy carrying a real subject, and a merge-producing strategy carrying an explicit
 none (`sp-bad-merge`).
 
@@ -421,7 +421,7 @@ gh pr create --base <base> --title "<title>" --body "<body>"
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
 default branch, and in a repo running the develop/main flow
-([docs/standards/git/branching.md](/docs/standards/git/branching.md)) that default deliberately
+([docs/standards/git/branching.md](/.docs/standards/git/branching.md)) that default deliberately
 stays the publication branch — see that standard's own reasoning for why. `<base>` is this spec's
 own resolved base, the same value the local route's merge targets.
 
@@ -467,7 +467,7 @@ ones in this file.
 <!-- rationale -->
 
 Writing `docs/standards/git/**` into a repository that
-never asked for it is `/specs:*` reaching into `/quenching:docs:align`'s territory, and it converts a default
+never asked for it is `/quenching:specs:*` reaching into `/quenching:knowledge:align`'s territory, and it converts a default
 this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
 without anyone having agreed to it.
 

@@ -1,5 +1,5 @@
 {
-  "$comment": "Hook wiring for the quenching OKF validator. MERGE these blocks into the target repo's .claude/settings.json (do not overwrite the whole file). Copy okf-validate.py + hooks-config.json into .claude/hooks/ alongside. Commands use ${CLAUDE_PROJECT_DIR}; if you distribute the plugin through the plugin channel instead, wire the same command with ${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py in the plugin's hooks.json.",
+  "$comment": "Hook wiring for the quenching OKF validator. MERGE these blocks into the target repo's .claude/settings.json (do not overwrite the whole file). Copy cq + the quenching/ package directory + hooks-config.json into .claude/hooks/ alongside each other. Commands use ${CLAUDE_PROJECT_DIR}; if you distribute the plugin through the plugin channel instead, wire the same command with ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq in the plugin's hooks.json.",
   "hooks": {
     "PostToolUse": [
       {
@@ -8,7 +8,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/cq knowledge hook",
             "timeout": 10
           }
         ]
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/cq knowledge hook",
             "timeout": 15
           }
         ]
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/okf-validate.py",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/cq knowledge hook",
             "timeout": 5
           }
         ]
