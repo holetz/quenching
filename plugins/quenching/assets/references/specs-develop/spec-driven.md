@@ -1,10 +1,10 @@
-# Spec-driven facts — the single-file lifecycle, the gates, the `specs.py` tool, the report mold
+# Spec-driven facts — the single-file lifecycle, the gates, the `cq specs` tool, the report mold
 
 **This file is the single owner
 of the spec-driven facts** — the `specs/` layout, the spec file's format, the gates, the
-derived stages, the executor contract, the `specs.py` tool surface, and the shape every
-`/specs:*` command reports in — and every
-`/specs:*` command cites these sections instead of restating them. The OKF bridge (what
+derived stages, the executor contract, the `cq specs` tool surface, and the shape every
+`/quenching:specs:*` command reports in — and every
+`/quenching:specs:*` command cites these sections instead of restating them. The OKF bridge (what
 durable knowledge crosses from a spec into `docs/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
@@ -12,16 +12,16 @@ durable knowledge crosses from a spec into `docs/` and how) lives with the close
 `.claude/quenching.json` — `files` (on a dedicated branch), `github`, or `azure-boards` — and the
 **selected backend is the source of truth**. The conceptual model below is the same whichever one
 is chosen: the same fourteen sections, the same frontmatter records, the same derived stages. Only
-*where and how* they are serialized differs, which is why every command drives `specs.py` rather
+*where and how* they are serialized differs, which is why every command drives `cq specs` rather
 than a path.
 
 What every backend owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and the refusal that never falls back to `files` — is owned by
-[spec-backend.md](/docs/standards/architecture/spec-backend.md) and never restated here.
+[spec-backend.md](/.docs/standards/architecture/spec-backend.md) and never restated here.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The `specs/` layout
 
@@ -41,12 +41,12 @@ specs/
 
 **The folder is the phase, and it is the single truth.** There is no `phase:` frontmatter field:
 two declared sources of one fact will diverge, and a folder cannot lie. There is exactly **one**
-transition left — `plans/` → `archive/`, a `git mv` performed by `specs.py promote` — so `git log`
+transition left — `plans/` → `archive/`, a `git mv` performed by `cq specs promote` — so `git log`
 narrates the close-out.
 
-`plans/` is **not** part of the OKF `docs/` bundle, and `okf-validate.py` is never pointed at it:
-a spec carries no OKF `type:`, and `specs.py validate` is its contract — the on-write check for
-this front, and the whole of it. The folder carries **no listing file** — `specs.py list` derives
+`plans/` is **not** part of the OKF `docs/` bundle, and `cq knowledge validate` is never pointed at it:
+a spec carries no OKF `type:`, and `cq specs validate` is its contract — the on-write check for
+this front, and the whole of it. The folder carries **no listing file** — `cq specs list` derives
 what it holds from disk on demand.
 
 Isolation-while-building is what a **branch or worktree** provides, with real merge, history, and
@@ -55,7 +55,7 @@ reversion (what crosses into `docs/`: §Boundary).
 The layout above is the `files` backend's. It is the reference implementation and not the only one:
 under an external backend there may be **no `specs/` folder at all**, the phase is the issue's own
 state rather than a folder, and `promote` moves nothing on disk. What does not change is anything a
-command can observe through `specs.py`.
+command can observe through `cq specs`.
 
 <!-- rationale -->
 
@@ -73,7 +73,7 @@ date is `date:` in the frontmatter, written **once, at creation**; `promote` mov
 never renames it, so the basename is stable for the whole lifecycle and `git log --follow` reads as
 one history.
 
-**Identity is the slug, not the path.** Every cross-reference names the bare slug; `specs.py`
+**Identity is the slug, not the path.** Every cross-reference names the bare slug; `cq specs`
 resolves it to the one spec whose basename is `<slug>.md`, wherever it sits — and then, if nothing
 matched exactly, by title and by one close match above a threshold, announcing that it approximated.
 **Two matches is a refusal (exit 2) at every rung**, never a guess. This is what makes repeated
@@ -104,7 +104,7 @@ else.**
 | `slug` | always | `create` | the identity key every command and cross-reference names |
 | `title` | always | `create` | one human-readable line |
 | `date` | always | `create` | `YYYY-MM-DD`, the capture date — stamped once and never rewritten (why it is not the basename's prefix: §Identity) |
-| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `specs.py verification`, **never** by editing the frontmatter |
+| `verification` | **optional** | `create` / `develop` | `per-task` · `per-section` · `end-of-plan` — when `verify:` runs. Absent means the default (`per-section`), applied on read; written after capture with `cq specs verification`, **never** by editing the frontmatter |
 | `priority` | once ranked | `triage` | `{level, criticality, complexity, date}` — a human's ranking against every other spec |
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
@@ -134,7 +134,7 @@ merely derived fact earns no such mirror.
 There is no attempt counter and no `.specs.json`.
 
 **Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
-first-level frontmatter key with its own deterministic verb (`specs.py tags|assignee|start|target
+first-level frontmatter key with its own deterministic verb (`cq specs tags|assignee|start|target
 <slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. Where a
 backend has a faithful native counterpart — issue labels/assignees on `github`,
 `System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
@@ -171,7 +171,7 @@ the body prose is written in is owned by the bundle's `docs/standards/agents/com
 
 **Every section declares its moment, and that is load-bearing.** `## Proposal` / `## Out of Scope`
 / `## Design` / `## Impact` / `## Handoff` / `## Tasks` are the `build` set — exactly what
-`/quenching:specs:execute` step 4 sends an executor (`specs.py section <slug> --moment build`).
+`/quenching:specs:execute` step 4 sends an executor (`cq specs section <slug> --moment build`).
 `## Overview` / `## Problem` / `## Alternatives Considered` / `## Open Decisions` / `## Risks` are
 `decision` — the human's, weighing whether to build at all. `## Validation` / `## Outcome` are
 `close` — `/quenching:specs:conclude`'s. `## Discoveries` carries no moment: captured
@@ -219,7 +219,7 @@ Three rules decide whether a section counts as filled:
    explicit null is strictly more information than an absent heading. It costs one line.
 2. **A present-but-empty heading is malformed and refuses.** It is neither an answer nor a
    not-yet.
-3. **An absent heading before its gate is legal.** `specs.py new` stamps `## Problem` and nothing
+3. **An absent heading before its gate is legal.** `cq specs new` stamps `## Problem` and nothing
    else — a captured spec is four lines of body, not a fourteen-heading skeleton.
 
 The sets live in `assets/specs/schema.json` and are read by **both** `promote` and `validate` — one
@@ -259,7 +259,7 @@ Resolution is **last match wins**, so a spec always reports the most advanced st
 asks inline and stamps rather than refusing. `executing` sorts last because it dominates all of
 them.
 
-`specs.py list` and `specs.py next --front` both group by these stages, deriving them from disk
+`cq specs list` and `cq specs next --front` both group by these stages, deriving them from disk
 on every call.
 
 ## `## Impact` — the one parsed declaration
@@ -295,7 +295,7 @@ assertion the spec's own author makes, never an economy the executor infers on i
 <!-- rules -->
 
 Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings, carrying optional
-`files:` / `verify:` / `pattern:` / `subject:` / `[P]` metadata. `specs.py task --check <id>` flips a
+`files:` / `verify:` / `pattern:` / `subject:` / `[P]` metadata. `cq specs task --check <id>` flips a
 box mechanically — **never by string surgery**.
 
 `subject:` is written by `task --check --subject <line>` and records **the subject of the commit
@@ -320,7 +320,7 @@ Written by the orchestrator when it decides to stop retrying; `next` skips it. *
 attempt limit.**
 
 `[P]` marks a parallel-eligible group, honoured only when the group's `files:` sets are provably
-disjoint (`specs.py parallel`). Serial by default.
+disjoint (`cq specs parallel`). Serial by default.
 
 <!-- rationale -->
 
@@ -342,10 +342,10 @@ it.
 It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
 verbatim. The orchestrator itself reads the whole `build` set at step 4
-(`specs.py section <slug> --moment build`); a `## Design` decision that bears on the task reaches
+(`cq specs section <slug> --moment build`); a `## Design` decision that bears on the task reaches
 the executor distilled into the task line or `## Handoff`, never as the section itself. It returns
 a structured result — status, diff summary, `verify:` output, discoveries, handoff deltas — and
-**never writes the spec**. The orchestrator applies everything via `specs.py` (`task --check`, `discover`,
+**never writes the spec**. The orchestrator applies everything via `cq specs` (`task --check`, `discover`,
 `section --write`), runs `verify:` itself, and commits: **whoever commits, verifies.**
 
 Discoveries are **captured indiscriminately**; whether one is worth acting on is a later judgment,
@@ -358,7 +358,7 @@ them — the run pauses, a task is written blocked, a discovery is recorded, the
 lands — and on nothing else. Each names an act the executor just performed, never an assessment it
 has to make, which is what lets the rule hold in an unattended run; staleness is this section's
 failure mode, and `validate` warns when a spec past the ready gate has an empty `## Handoff`. What a
-rewrite touches is scoped the same way what an executor reads is: `specs.py section <slug> Handoff
+rewrite touches is scoped the same way what an executor reads is: `cq specs section <slug> Handoff
 --write --scope global` for the evergreen block, `--scope current` for the block of the section
 whose tasks are still open. A section's block is never targeted again once its last task commits —
 that IS the close, no separate flag marks it — so a run that has moved on to `### 4.` never pays to
@@ -368,14 +368,14 @@ resend `### 1.` through `### 3.` again.
 
 One writer with mechanical writes is also what makes one file safe under parallelism.
 
-## The `specs.py` tool surface
+## The `cq specs` tool surface
 
 <!-- rules -->
 
 Uniform contract: `--json` on every subcommand; strict exit codes — **0** ok · **1** findings ·
 **2** refusal. A command branches on the exit code and the JSON, never on prose.
 
-`specs.py` is **stdlib-only Python**, in the same mold as `okf-validate.py`: no runtime to install
+`cq specs` is **stdlib-only Python**, in the same mold as `cq knowledge validate`: no runtime to install
 and no dependency to declare. An external backend's transport is `subprocess` over the vendor's own
 `gh` / `az`, so auth, paging and API errors are not this plugin's code — and the cost of that trade
 is declared rather than hidden: such a backend does not work without the binary installed, and a
@@ -383,26 +383,26 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 
 | Command | Use |
 | --- | --- |
-| `specs.py new <slug> [--title T] [--verification P] [--subject KEY]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
-| `specs.py list [--json]` | every spec, by folder and derived stage |
-| `specs.py status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
-| `specs.py section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
-| `specs.py show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
-| `specs.py record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
-| `specs.py tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
-| `specs.py verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
-| `specs.py config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
-| `specs.py promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
-| `specs.py next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
-| `specs.py next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
-| `specs.py task --spec <slug> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
-| `specs.py discover <slug> <text>` | append one line to `## Discoveries` |
-| `specs.py parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
-| `specs.py validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
-| `specs.py doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
-| `specs.py migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
-| `specs.py export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
-| `specs.py selftest` | prove the embedded schema and template have not drifted from their asset files |
+| `cq specs new <slug> [--title T] [--verification P] [--subject KEY]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
+| `cq specs list [--json]` | every spec, by folder and derived stage |
+| `cq specs status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
+| `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
+| `cq specs show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
+| `cq specs record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
+| `cq specs tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
+| `cq specs verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
+| `cq specs config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
+| `cq specs promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
+| `cq specs next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
+| `cq specs next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
+| `cq specs task --spec <slug> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
+| `cq specs discover <slug> <text>` | append one line to `## Discoveries` |
+| `cq specs parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
+| `cq specs validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
+| `cq specs doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
+| `cq specs migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
+| `cq specs export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
+| `cq specs selftest` | prove the embedded schema and template have not drifted from their asset files |
 
 `--outcome` is the only content a promote ever writes.
 
@@ -411,10 +411,10 @@ and lists them, overridable with `--force`; `--outcome abandoned` is always allo
 closing out a spec that will not be built is exactly the case where open tasks are expected.
 
 There is no `init` (scaffold is an asset copy — the align's job). There is no `store` subcommand
-either: the declared backend is read by `specs.py config`, never switched by a command mid-flight.
+either: the declared backend is read by `cq specs config`, never switched by a command mid-flight.
 
-Templates live in `assets/specs/templates/spec.md` and are stamped by `specs.py new` — with the
-same content embedded as a fallback constant in `specs.py` itself, so an installed copy under a
+Templates live in `assets/specs/templates/spec.md` and are stamped by `cq specs new` — with the
+same content embedded as a fallback constant in `cq specs` itself, so an installed copy under a
 target's `.claude/hooks/` with no adjacent assets stamps an identical file. **Edit both or
 neither.** A template's scaffold content must stay invisible to `has_real_content()`: only headings
 and HTML comments, with any example inside a comment or written as a `<placeholder>`.
@@ -424,7 +424,7 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 Owned by
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool, §Write the resolved path literally on every invocation: the plugin path
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/specs.py`, with **no fallback and no manual rung**. Invoke with
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs`, with **no fallback and no manual rung**. Invoke with
 `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`).
 
 ## Boundary: `specs/` vs the OKF `docs/` bundle
@@ -435,7 +435,7 @@ Owned by
 this section.
 
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
-  while it is being defined and built. Owned by the `/specs:*` commands; leaves for `archive/` when
+  while it is being defined and built. Owned by the `/quenching:specs:*` commands; leaves for `archive/` when
   it is concluded.
 - `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
   `docs/knowledge/` — generic understanding. A spec writes its durable rule **directly** into
@@ -452,7 +452,7 @@ and proved). There is no second store for it to duplicate.
 
 <!-- rules -->
 
-**Every `/specs:*` command's terminal report is built from the blocks below**, and a command body
+**Every `/quenching:specs:*` command's terminal report is built from the blocks below**, and a command body
 declares only its own deltas: which body blocks it emits, which columns they carry, and which
 next-step candidates exist under which condition. The mold is **literal — copy a block and
 substitute**, never compose a shape per command.
@@ -461,9 +461,9 @@ substitute**, never compose a shape per command.
 
 Measured across the eight bodies before this section existed: two rendered a literal block and six
 described their report in prose, producing six different closing verbs, no shared glyph, an `Age`
-column with no declared source, and `title` unused by every table although `specs.py` had been
+column with no declared source, and `title` unused by every table although `cq specs` had been
 emitting it all along. A shape restated in eight bodies is the fan-out
-[/docs/standards/quality/computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md)
+[/.docs/standards/quality/computed-fact-prose-fanout.md](/.docs/standards/quality/computed-fact-prose-fanout.md)
 describes — it ages in seven the moment it changes in one, with every checker green.
 
 ### The three bands
@@ -486,7 +486,7 @@ Three bands, in this order, always: **header · body · next step**.
 | `—` | no value — a **not-yet**, never a defect |
 | `…` | elision (`… N more`) |
 
-`✓ ! ·` are the three `specs.py status` already prints for section state, and mean the same here.
+`✓ ! ·` are the three `cq specs status` already prints for section state, and mean the same here.
 
 <!-- rationale -->
 
@@ -511,7 +511,7 @@ One spec:
 executing · 5/9 tasks · https://github.com/o/r/issues/41
 ```
 
-**The third field is the locator the tool returned** — the `path` field `specs.py new`, `status`,
+**The third field is the locator the tool returned** — the `path` field `cq specs new`, `status`,
 `list`, `next --front` and `section --write` all carry — never a filename the body assembled. Under
 `backend: github` it is an issue URL, under `files` a repo-relative path.
 
@@ -561,7 +561,7 @@ because a figure with no source is one nobody can check.
 
 **`State` mixes two populations, and they are not interchangeable.** `sp-spec-complete`,
 `sp-spec-blocked` and `sp-spec-stale` are **prose-only codes** the agent computes from `tasks` and
-`Age`; `specs.py` never emits them. A code the tool does emit is quoted, never invented; a
+`Age`; `cq specs` never emits them. A code the tool does emit is quoted, never invented; a
 prose-only code is never presented as tool output.
 
 ### The findings table
@@ -569,7 +569,7 @@ prose-only code is never presented as tool output.
 <!-- rules -->
 
 One row per finding, for the split by what closes each that a read-only view owes
-([/docs/standards/architecture/read-only-views.md](/docs/standards/architecture/read-only-views.md)):
+([/.docs/standards/architecture/read-only-views.md](/.docs/standards/architecture/read-only-views.md)):
 
 ```
 | Spec | Code | What it is | Closed by |
@@ -621,7 +621,7 @@ printed the least runnable suggestions in the surface, at the moment a human mos
 <!-- rules -->
 
 **Verbatim means a fenced block, unrewritten, unsummarized, carrying the exit code.** It covers
-`specs.py`, `git`, and any check a body runs.
+`cq specs`, `git`, and any check a body runs.
 
 **An inconclusive result is named as inconclusive, never counted as passed.** A check that cannot
 tell *this failed* from *this could not be measured* has returned no verdict.
@@ -637,7 +637,7 @@ where acting on a false green is unrecoverable, but not the only one that runs c
 <!-- rules -->
 
 This file is English; **the report a command prints is not**. It follows the target repo's declared
-tag ([/docs/standards/agents/communication.md](/docs/standards/agents/communication.md) §What it
+tag ([/.docs/standards/agents/communication.md](/.docs/standards/agents/communication.md) §What it
 governs). So each column has a **canonical name**, which is its address above, and a **printed
 label**, which follows the tag.
 

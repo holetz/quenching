@@ -4,10 +4,10 @@ title: O report de uma frente é um mold, possuído uma vez
 description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e um bloco de próximo passo executável como impresso — porque um formato reescrito em oito corpos envelhece em sete e nenhum checker vê
 resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md
 tags: [architecture, commands, report, output, references, specs]
-timestamp: 2026-08-04
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: branch holetz/specs-report (2026-08-04) — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/docs/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
+source: branch holetz/specs-report (2026-08-04) — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/knowledge/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
 maintainer: quenching
 ---
 
@@ -49,8 +49,8 @@ descreviam o report em prosa produziram seis formas diferentes.
 
 Um formato de saída é um fato que o corpo do comando *reescreve*. É o fan-out que
 [../quality/computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) descreve:
-muda no primeiro corpo, envelhece nos outros sete, e `skills.py doctor`, `skills.py lint` e
-`okf-validate.py` ficam todos verdes — nenhum deles enxerga prosa que descreve
+muda no primeiro corpo, envelhece nos outros sete, e `cq components doctor`, `cq components lint` e
+`cq knowledge validate` ficam todos verdes — nenhum deles enxerga prosa que descreve
 uma forma.
 
 **A medição, antes.** Dos oito corpos, dois renderizavam bloco literal e seis descreviam o report em
@@ -63,7 +63,7 @@ prosa. O resultado acumulado:
 | encadeamentos que nomeiam o comando sem o slug | 1 (`/quenching:specs:execute` → `conclude`) |
 | redações de "verbatim" sem dono | 7 |
 | vocabulário de glifo compartilhado | nenhum |
-| tabelas usando o `title` que `specs.py` já emitia | nenhuma |
+| tabelas usando o `title` que `cq specs` já emitia | nenhuma |
 
 O último é o mais revelador: `list --json` e `next --front` devolvem `title` desde sempre, e nenhuma
 tabela o mostrava. Ninguém decidiu omiti-lo — não havia lugar onde a decisão pudesse ser tomada uma
@@ -73,7 +73,7 @@ vez.
 
 **A seção vai dentro de um arquivo que os corpos já carregam, não em arquivo próprio.**
 
-`skills.py read` aceita **um arquivo por chamada**. Um mold em arquivo novo custaria `+1 tool call`
+`cq components read` aceita **um arquivo por chamada**. Um mold em arquivo novo custaria `+1 tool call`
 por execução de cada comando da frente; como seção de um arquivo que todos já citam, custa zero
 chamadas — apenas os seus próprios caracteres.
 
@@ -105,14 +105,14 @@ aquele standard nomeia — ler a tag no início da sessão e ainda assim reporta
 
 ## Divergência conhecida, aceita e não corrigida
 
-Até esta branch, `plugins/quenching/commands/docs/status.md` §4 era cópia quase literal de
+Até esta branch, `plugins/quenching/commands/knowledge/status.md` §4 era cópia quase literal de
 `plugins/quenching/commands/specs/status.md` §4 — as mesmas cinco seções, os mesmos títulos, a
 mesma frase de fechamento. Era um formato compartilhado *de fato*, escrito duas vezes e possuído por
 nenhum arquivo.
 
 Este trabalho tocou apenas a frente `specs`, então **as duas deixaram de ser espelhos**. Isso está
 registrado como divergência aceita, não como pendência silenciosa: a frente `docs` adotar o mold é
-trabalho próprio, e até lá `/quenching:docs:status` continua sendo dono da sua própria forma. A
+trabalho próprio, e até lá `/quenching:knowledge:status` continua sendo dono da sua própria forma. A
 alternativa — generalizar o mold para três vocabulários de finding diferentes no mesmo movimento —
 teria escrito um contrato genérico antes de haver dois casos provados para generalizar a partir de.
 

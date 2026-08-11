@@ -1,16 +1,22 @@
-# assets/hooks/ — the OKF enforcement hook
+# assets/hooks/ — the OKF enforcement hook's reference copies
 
-Self-contained enforcement payload of the `quenching` plugin. Keeps a target
-repo's `/.docs/` bundle aligned to OKF. **Nothing here is installed into a target** —
-the plugin's own `hooks/hooks.json` wires the checker at
-`${CLAUDE_PLUGIN_ROOT}/assets/hooks/okf-validate.py`, so it works in every repo that
-has the plugin.
+Keeps a target repo's `/.docs/` bundle aligned to OKF. The checker itself is the
+`knowledge` pillar of the plugin's one package, at `assets/bin/quenching/knowledge/`,
+reached through the single entry point `cq`. **Nothing here is installed into a
+target** — the plugin's own `hooks/hooks.json` wires the checker at
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge hook`, so it works in every repo that
+has the plugin. This directory holds no executable code of its own; it is the
+**reference copies** a target's own hand-maintained config is compared against.
 
 | File | Role |
 | --- | --- |
-| `okf-validate.py` | The OKF v0.1 conformance checker. Zero dependencies. Runs as a **CLI** (`okf-validate.py /.docs` — used by the skills and the verification step) or as a **hook** (reads the hook JSON on stdin). `--version` prints its version (kept in lockstep with the plugin `VERSION`). |
 | `hooks-config.json` | The **defaults reference** for the `okfValidate` block: `enabled`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`. A target that wants to override them maintains its own `.claude/hooks/hooks-config.json`. |
 | `settings.snippet.json` | The wiring, kept as a **reference copy** of what `hooks/hooks.json` declares. Nothing merges it into a target any more. |
+
+The checker itself (`cq knowledge validate /.docs` — used by the commands and the verification
+step — or `cq knowledge hook`, which reads the hook JSON on stdin) is documented at
+[../bin/quenching/knowledge/](../bin/quenching/knowledge/). `cq --version` prints the plugin
+version every pillar answers with, kept in lockstep with the plugin `VERSION`.
 
 ## What it checks (the OKF core)
 
@@ -62,9 +68,8 @@ directory is the **defaults reference**, not something an align installs.
 
 ## Legacy copies
 
-A repo that accepted the old install offer still has `okf-validate.py` under
+A repo that accepted the old install offer still has an old copy of the validator under
 `.claude/hooks/`, plus wiring in its `.claude/settings.json` pointing at it. Nothing
 resolves to that copy any more, so it fires only because the old `settings.json` entry
 still names it — the same checker running twice, one of them frozen at whatever version
-it was installed at. `skills.py drift` reports it and `/docs:align` §5 offers to remove
-it.
+it was installed at. `/quenching:knowledge:align` §5 offers to remove the stale wiring.

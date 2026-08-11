@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the /.docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /specs:develop; a version bump or other release obligation → /specs:conclude; creating one → /specs:create; reviewing the branch, merging and archiving → /specs:conclude; being told which spec to build next → /specs:continue.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the /.docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /quenching:specs:develop; a version bump or other release obligation → /quenching:specs:conclude; creating one → /quenching:specs:create; reviewing the branch, merging and archiving → /quenching:specs:conclude; being told which spec to build next → /quenching:specs:continue.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -20,7 +20,7 @@ policy, reviewing its diff, and committing it alone with the box already ticked 
 The example uses `§A` / `§B` as placeholders — they are not addresses.
 
 ```bash
-skills.py read <the cited file> --sections "§A" --sections "§B"
+cq components read <the cited file> --sections "§A" --sections "§B"
 ```
 
 One call, N sections, no frontmatter; a unique prefix resolves, so `§B` is enough. The reason is
@@ -35,7 +35,7 @@ opens on why that split holds.
 
 ## Resolving the tool
 
-Resolve `specs.py` and `skills.py` (the section reader every `§X` citation in this body resolves through)
+Resolve `cq` (`cq components read` is the section reader every `§X` citation in this body resolves through)
 per [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
@@ -44,7 +44,7 @@ never on prose.
 
 ### 1. Select the spec
 A slug was given → use it. Otherwise infer from the conversation, auto-select when exactly one spec
-is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. Announce
+is under way, or run `cq specs list --json` and pick with **AskUserQuestion**. Announce
 "Building spec: `<slug>`" and how to override.
 **Done when:** one spec in `plans/` is resolved.
 
@@ -52,7 +52,7 @@ is under way, or run `specs.py list --json` and pick with **AskUserQuestion**. A
 **The precondition comes first.** Load the rule that binds this step:
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
   --sections "§The precondition"
 ```
 
@@ -65,8 +65,8 @@ git branch --list "plan/<slug>"
 git branch --show-current
 git worktree list
 git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null
-specs.py status --spec "<slug>" --json
-specs.py config --json
+cq specs status --spec "<slug>" --json
+cq specs config --json
 # and the hook probe of 2b, in this same call
 ```
 
@@ -94,7 +94,7 @@ it. Anything short of being **on** the ref falls through to the branches below.
 
 **Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
 record, when one already exists; else the repo's own declared `integrationBranch` (already read
-above, from `specs.py config --json`); else `git symbolic-ref refs/remotes/origin/HEAD` (already
+above, from `cq specs config --json`); else `git symbolic-ref refs/remotes/origin/HEAD` (already
 read above); else `git config init.defaultBranch`, and then `main`. **The declared integration
 branch is consulted before `origin/HEAD`, never after** — under the develop/main flow
 ([branching.md](/.docs/standards/git/branching.md)) `origin/HEAD` resolves to `main`, the
@@ -107,7 +107,7 @@ checkout. Show the inference on the same line as the confirmation, before stampi
 `base: main — inferred; this branch was not cut by this command` — and stamp:
 
 ```bash
-specs.py record "<slug>" branch --set base=<resolved base> --set work=<current branch>
+cq specs record "<slug>" branch --set base=<resolved base> --set work=<current branch>
 ```
 
 Never derive `base` from `git merge-base` or `--fork-point` here: both answer a commit, not a
@@ -124,9 +124,9 @@ that the commits will land there.
 that name the branch and record the isolation, then read what the workspace declares:
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
   --sections "§Branch and worktree names" --sections "§Recording the isolation"
-specs.py config --json        # `worktreeSetup`, or null — exit 0 either way
+cq specs config --json        # `worktreeSetup`, or null — exit 0 either way
 ```
 
 State in one block: the spec, the base branch, the branch name that will be created, the worktree
@@ -162,7 +162,7 @@ it and blaming the shell.
 Then stamp what was taken:
 
 ```bash
-specs.py record "<slug>" branch --set base=<what was checked out> --set work=plan/<slug>
+cq specs record "<slug>" branch --set base=<what was checked out> --set work=plan/<slug>
 ```
 
 `base` is captured **now**, while it is still true: after the merge git cannot say what the branch
@@ -190,17 +190,17 @@ found already held, or declined, and any unresolved hook has been reported.
 **Load the stage ladder first** — what the derived stage names and means:
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§Derived stages"
 ```
 
-The `specs.py status --json` payload is **already in hand** from step 2 — do not read it again.
+The `cq specs status --json` payload is **already in hand** from step 2 — do not read it again.
 From it: the derived stage, the section states, task progress, the blocked tasks, the recorded
 subjects, and **`verification`** — the spec's declared policy, which decides when the suite runs so
 this command never has to.
 
 - **`approved` unset** → ask for it inline, in one question showing what the spec commits to, and
-  on a yes stamp it with `specs.py record "<slug>" approved --set date=<today>` — never by editing
+  on a yes stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing
   the frontmatter. **Never refuse over it** — refusing would rebuild the folder hop this front
   removed. A no ends the run cleanly.
 - **`next` reports `write_section`** → the ready gate is not met. Name the missing or malformed
@@ -210,7 +210,7 @@ this command never has to.
 - **`[!]` blocked tasks** → name them and their reasons up front. They were tried and stopped, not
   skipped.
 
-Mention any open `specs.py validate` warning **once** — `sp-unrefined` (nobody has interrogated
+Mention any open `cq specs validate` warning **once** — `sp-unrefined` (nobody has interrogated
 this spec), `sp-impact-uncovered` (a declared standard no task writes) — and offer
 `/quenching:specs:develop`. Never gate on it: the ready gate is a floor, not a verdict.
 **Done when:** the state is in hand, `approved` is settled, and any warning has been surfaced once.
@@ -219,7 +219,7 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-specs.py section "<slug>" --moment build --json
+cq specs section "<slug>" --moment build --json
 ```
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
@@ -239,7 +239,7 @@ contradicts one is surfaced (step 5), never silently resolved. No bundle → ski
 
 A declared bullet may carry a `§`address beside its path — `/.docs/standards/automation/skills.md
 §Invocation and permission are authored decisions §The admission criterion`. With one, read
-exactly those sections (`skills.py read <path> --sections "§A" --sections "§B"`); with none,
+exactly those sections (`cq components read <path> --sections "§A" --sections "§B"`); with none,
 read the file whole, exactly as today. The default never changes: reading less is an assertion the
 spec's own author wrote, never an economy the executor takes on its own.
 
@@ -247,14 +247,14 @@ spec's own author wrote, never an economy the executor takes on its own.
 task is reading, not parsing, so nothing scans the folder to net one
 ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
 §Tooling asides has the failure modes this avoids). What covers the gap is one line at the
-moment it shows up — `specs.py discover` records it while building, and `/quenching:specs:develop`
+moment it shows up — `cq specs discover` records it while building, and `/quenching:specs:develop`
 repairs `## Impact`.
 **Done when:** the spec's sections and the declared binding standards are read.
 
 ### 5. Implement tasks — loop until done or blocked
 Ask the tool for the next task; **never pick one by reading the file**:
 ```bash
-specs.py next --spec "<slug>" --json
+cq specs next --spec "<slug>" --json
 ```
 It returns that task's `verify`, `files`, `pattern` and `parallel`, plus the spec's `verification`
 policy, and it **skips `[!]` blocked tasks** (`action: "blocked"` once every remaining task is).
@@ -269,7 +269,7 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
    that rule untouched; when it is, load the rules that bound it before dispatching:
 
    ```bash
-   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§Delegating an executor"
    ```
 
@@ -277,28 +277,28 @@ c. **Write only the `/.docs/` this task names.** When this task writes `/.docs/`
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
-   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§Declared versus emergent"
-   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
      --sections "§Boundary"
    ```
 
    A `/.docs/standards/` path declared under `## Impact` and named by this task is part of its
    deliverable — written through the insert procedure in
-   [docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md) §The frontmatter
+   [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) §The frontmatter
    stamp §Updating `index.md` §Enriching the glossary §Self-check; stamp `authority` honestly and
-   self-check against [docs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-align/conformance.md)
+   self-check against [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
    §Concept docs §Resource integrity. Anything else the work reveals costs one line —
-   `specs.py discover "<slug>" "<finding>"` — and no authoring.
+   `cq specs discover "<slug>" "<finding>"` — and no authoring.
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
    task.** The verification policy, the validation loop, the self-review, the commit's hard rules; then the git conventions that name the subject — one call per file:
 
    ```bash
-   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit"
-   skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
      --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor"
    ```
 
@@ -312,7 +312,7 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
 
    ```bash
    <the task's verify:> \
-     && specs.py task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
+     && cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <id> <title>" \
      && git add <the task's declared files> <the spec file> \
      && git commit -m "plan/<slug>: <id> <title>" \
      && git log -1 --format=%s
@@ -323,16 +323,16 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
    verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
    that implements it, and any link failing short-circuits every link after it. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §The verification policy); otherwise the chain starts at `specs.py task`.
+   §The verification policy); otherwise the chain starts at `cq specs task`.
 
 f. **Read the chain's tail, and act on which link broke:**
 
    - **`verify:` failed** → nothing was ticked and nothing was committed; the chain stopped at link
      one. Read the failure, change the code, run it again. When attempts stop converging, write it
-     blocked with its reason — `specs.py task --spec "<slug>" --block <id> --reason "<why>"` — and
+     blocked with its reason — `cq specs task --spec "<slug>" --block <id> --reason "<why>"` — and
      move on. **Never weaken the check to make it pass.**
    - **The commit failed** — a rejecting hook, nothing staged — → the tick already landed, so
-     **undo it** (`specs.py task --spec "<slug>" --uncheck <id>`) so no box claims a commit that
+     **undo it** (`cq specs task --spec "<slug>" --uncheck <id>`) so no box claims a commit that
      does not exist, then report the failure. Never `--no-verify` your way past it.
    - **The final `git log -1 --format=%s` does not equal the recorded subject** → a `commit-msg`
      hook rewrote it. One that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
@@ -370,7 +370,7 @@ h. **On a section boundary, OFFER to stop — and keep going if nobody says othe
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `/.docs/standards/` contract (surface it and let the human pick — revise the
-standard via `/quenching:docs:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
+standard via `/quenching:knowledge:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
 
@@ -387,8 +387,8 @@ Rewrite the **relevant block** of `## Handoff` to the state of play a fresh exec
 A rewrite touches ONE of the two — never both, never a closed section's:
 
 ```bash
-specs.py section "<slug>" Handoff --write --scope global   # the evergreen block
-specs.py section "<slug>" Handoff --write --scope current  # the block of the open section
+cq specs section "<slug>" Handoff --write --scope global   # the evergreen block
+cq specs section "<slug>" Handoff --write --scope current  # the block of the open section
 ```
 
 Everything a resumed run *can* derive — which tasks are done, which commit carried each — is
@@ -416,7 +416,7 @@ it stands after the run's last commit.
 ### 7. Report, and hand off
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -479,7 +479,7 @@ front of you before the loop starts:
   ref**, never that the ref exists somewhere — and where it is not, offer isolation inline (taking
   a live ref, or cutting one), recommend it, and never impose it. Checking the right thing is what
   keeps the offer from being asked twice *and* from being skipped onto the base.
-- Drive off `specs.py status` / `next` / `task` and their exit codes. Never assume a path, never
+- Drive off `cq specs status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
   human to decide it then.
@@ -487,20 +487,20 @@ front of you before the loop starts:
   subject that commit will carry, so code and box land together. Undo the tick if the commit fails.
 - Never write a record after the commit it describes. A subject that drifted is reported, not
   corrected.
-- Never refuse over a missing `approved`; ask inline and stamp it with `specs.py record`, never by
+- Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
 - Stamp `branch:` only when isolation was actually taken, and never over an existing record —
-  through `specs.py record`, never by editing the frontmatter.
-- Write **only** the `/.docs/` a task explicitly names. Emergent findings are one `specs.py discover`
+  through `cq specs record`, never by editing the frontmatter.
+- Write **only** the `/.docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
   §Delegating an executor (declares `files:`, touches no `/.docs/`, pinned to the session model —
-  **never `haiku`**), and run two tasks in parallel only when `specs.py parallel` reports the `[P]`
+  **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
 - Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`, and
   splitting it is what makes a half-finished build resumable.
 - Keep changes minimal and scoped to each task; pause on errors, blockers, or unclear requirements
   rather than guessing.
 - **Route other durable learning to its OKF home**: an insight worth keeping beyond this spec goes
-  through `/quenching:docs:learn` / `/quenching:docs:add` / `/quenching:docs:define` — offered, never auto-written.
+  through `/quenching:knowledge:learn` / `/quenching:knowledge:add` / `/quenching:knowledge:define` — offered, never auto-written.

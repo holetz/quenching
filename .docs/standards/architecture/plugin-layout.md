@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-08-03
+timestamp: 2026-08-10
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated
 maintainer: quenching
 ---
 
@@ -18,8 +18,9 @@ The rule the collapse to one file per entry point created, and that nothing prev
 ## `commands/**` is the only tree Claude Code registers
 
 Every `.md` under `commands/` **is** a command. Not "is treated as one if it looks right" — the
-path is the identity, so `commands/docs/align/references/conformance.md` registers as
-`/docs:align:references:conformance` and appears in the surface a session pays for.
+path is the identity, so `commands/knowledge/align/references/conformance.md` would register as a
+four-segment `knowledge:align:references:conformance` command and appear in the surface a session
+pays for.
 
 Therefore: **anything that is not an entry point lives outside `commands/`.** Shared procedure,
 reference files, fixtures, eval cases, notes.
@@ -70,8 +71,8 @@ folder meaning three things is a folder meaning nothing.
 ### The revisit happened, and the answer was a name rather than a split
 
 That trigger fired (2026-07-29). The inventory had drifted past three reasons without anyone
-counting: `bin/` alone held four lifecycles — two tools installed into target repos (`specs.py`,
-`skills.py`), one the plugin runs but never installs (`session.py`, which says so in its own
+counting: `bin/` alone held four lifecycles — two tools installed into target repos (the specs
+and components tools), one the plugin runs but never installs (the session tool, which says so in its own
 docstring), and two bash harnesses that grade *this checkout* and are payload of nothing
 (`functional-checks.sh`, `conclude-order-check.sh`). `mkdocs/` was missing from the inventory
 line above entirely.
@@ -81,21 +82,26 @@ folder needed was the fourth reason **named and given its own subtree**, which i
 `evals/` had already done for the third: the two harnesses moved to `checks/`.
 
 The rule that decides where an executable sits, made explicit by the same move: **by how it is
-invoked, not by whether it ships.** `okf-validate.py` stays in `hooks/` because it is the one tool
-a **hook event** fires rather than a command body — `plugins/quenching/hooks/hooks.json` names it
-at `PostToolUse` and `Stop` — even though it is the CLI sibling of the two tools in `bin/` and the
-third member of the release lockstep. Symmetry of *kind* is not a reason to move a file; the way
-it is reached is a reason not to.
+invoked, not by whether it ships.** It placed by invocation only as long as each invocation kind
+had its own file: the knowledge checker sat in `hooks/` because it was the one tool a **hook event**
+fired rather than a command body, and the specs/components tools sat in `bin/` because commands were
+what invoked them. One entry point serving both kinds is the case that rule did not anticipate.
 
-**The adjacency that used to justify this is gone, and the rule outlived it.** The original
-reasoning was that `okf-validate.py` had to sit beside the `hooks-config.json` it loaded *from its
-own directory*, so separating the pair would break config loading in every installed copy. Both
-halves are now false: `_load_config` reads the **target's** `.claude/hooks/hooks-config.json`
-and nothing else — the bundle root it validates is the fixed `/.docs/` convention, which no
-configuration names ([bundle-root.md](bundle-root.md)) — and there are no installed copies left to
-break.
-The file stays in `hooks/` on the invocation rule alone — which is the rule that was doing the
-work all along.
+**The rule as amended: `hooks/` holds a handler dedicated to a hook event; an entry that serves
+both a command body and a hook lives in `bin/`.** `cq` answers `hooks/hooks.json`'s
+`PostToolUse`/`Stop` wiring (`cq knowledge hook`) *and* every pillar's own command bodies (`cq
+specs …`, `cq components …`), so it sits in `bin/` — the invocation that is not exclusive to the
+hook path wins the placement, and `hooks/` is left to hold what actually is hook-exclusive:
+`hooks/hooks.json` itself, which is wiring, not a handler, and does not move.
+
+**The adjacency that used to justify a hook handler sitting beside its config is gone too.** The
+original reasoning was that the knowledge checker had to sit beside the `hooks-config.json` it loaded
+*from its own directory*, so separating the pair would break config loading in every installed
+copy. Both halves are now false: the knowledge pillar reads the **target's**
+`.claude/hooks/hooks-config.json` and nothing else — the bundle root it validates is the fixed
+`/.docs/` convention, which no configuration names ([bundle-root.md](bundle-root.md)) — and there
+are no installed copies left to break. `hooks/hooks.json` itself is unaffected: it is wiring read
+at plugin-load time, addressed by the heading above, never by this one.
 
 Current subtrees, by the reason each is here:
 
@@ -103,7 +109,7 @@ Current subtrees, by the reason each is here:
 | --- | --- |
 | payload copied whole by an align | `docs/` `specs/` `claude/` `mkdocs/` |
 | payload applied per insert (molds) | `templates/` |
-| tool the plugin executes | `bin/` · `hooks/okf-validate.py` |
+| tool the plugin executes | `bin/cq` (its four retired predecessors, unwired, still sit under `bin/` and `hooks/` until removed) |
 | artifact of developing this repository | `references/` `evals/` `checks/` |
 
 Four rows is one past what the warning above tolerates, so the warning needs restating rather
@@ -125,28 +131,29 @@ ${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md
 rows 1–2, re-measured 2026-07-26 on Claude Code 2.1.215).
 
 Relative paths are not merely inconvenient here, they are **wrong**: a relative path encodes the
-depth of the *citing* file, so `commands/docs/documentation/build.md` and `commands/align.md`
+depth of the *citing* file, so `commands/knowledge/documentation/build.md` and `commands/align.md`
 would need different strings for the same target. The absolute form is one string everywhere,
 which is what makes the citation set mechanically rewritable and mechanically checkable.
 
 ### `<name>` is the owning command's path, flattened
 
-`commands/docs/add.md` owns `references/docs-add/`; `commands/align.md` owns `references/align/`.
-The path, with `/` → `-`, and nothing else — which is why `references/align-all/`, carrying the
-name of the retired `quenching-align-all` skill, was renamed: a directory name that lies is
-forbidden by [../naming/command-surface.md](../naming/command-surface.md), and it lies about the
-one thing this convention encodes.
+`commands/knowledge/add.md` owns `references/knowledge-add/`; `commands/align.md` owns
+`references/align/`. The path, with `/` → `-`, and nothing else — which is why
+`references/align-all/`, carrying the name of the retired `quenching-align-all` skill, was
+renamed: a directory name that lies is forbidden by
+[../naming/command-surface.md](../naming/command-surface.md), and it lies about the one thing this
+convention encodes.
 
 **Owning is not exclusive.** `references/align/` is cited by seven commands and
-`references/skill-new/` by four. The folder is named for the command that would have to *change*
+`references/components-command-new/` by four. The folder is named for the command that would have to *change*
 the procedure, not for every command that reads it — that is what keeps a single name answerable
 when a rule has several readers.
 
 **`evals/` encodes the same source differently, and the difference is deliberate.** An eval tree
-keeps the slashes — `commands/skill/hook/new.md` ↔ `evals/skill/hook/new/` — because it mirrors
-exactly one command 1:1 and is renamed in the same mechanical step as that command, so the two
-paths differ by one prefix and a reviewer finds it without searching
-([skill-eval/evaluation.md](/plugins/quenching/assets/references/skill-eval/evaluation.md)
+keeps the slashes — `commands/components/hook/new.md` ↔ `evals/components/hook/new/` — because it
+mirrors exactly one command 1:1 and is renamed in the same mechanical step as that command, so the
+two paths differ by one prefix and a reviewer finds it without searching
+([components-command-eval/evaluation.md](/plugins/quenching/assets/references/components-command-eval/evaluation.md)
 §Where the artifacts live). A reference folder is shared, has no 1:1 to preserve, and gains a flat
 listing from being flattened. Same input, two encodings, two jobs — do not reconcile them.
 
@@ -167,7 +174,7 @@ pasted by a human into a raw terminal dangles a `${CLAUDE_PLUGIN_ROOT}` citation
 blocks the moment a human reads that block verbatim — before the file is copied anywhere, and
 regardless of whether the plugin is loaded in the session doing the reading. Three trees still
 answer the wider test today — `assets/templates/**` (the harness and front-matter molds),
-`assets/docs/**` (the OKF skeleton, copied by `/docs:align`) and `assets/specs/templates/**`; a
+`assets/docs/**` (the OKF skeleton, copied by `/quenching:knowledge:align`) and `assets/specs/templates/**`; a
 fourth surface added later inherits the rule without amending this list. Naming one folder was how
 a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
 wording did not, and nothing else checks. **No validator catches this** — a path that fails to
@@ -192,7 +199,7 @@ the slug stays English, the prose around it follows the tag. Their whole value i
 at the instant a slug is written, which a citation spends a tool call to destroy.
 
 **The ownership test** — is a reminder legitimate at all? A boundary reminder states the edge of a
-rule the citing place **already owns**, seen from the other side. `/docs:add` owns where a doc goes
+rule the citing place **already owns**, seen from the other side. `/quenching:knowledge:add` owns where a doc goes
 and what its slug looks like, so "the slug is canonical English, the body may follow the repo's
 language" is that command's own rule at its border, not a second copy of somebody else's. A
 restatement states a fact the citing place neither owns nor can change.
@@ -214,12 +221,9 @@ absolves every copy there is.
 
 ## The layout rule needs no check of its own
 
-A stray file under `commands/` is a file with no `description`, which `skills.py doctor` already
-reports as **`sk-no-description`** — an error. Adding a second check for the same defect would
-give one failure two names.
-
-That claim is evidence, not argument: `skills.py selftest` builds a throwaway surface containing
-a `docs/references/homes.md` and asserts the finding fires.
+A stray file under `commands/` is a file with no `description`, which `cq components doctor`
+already reports as **`sk-no-description`** — an error. Adding a second check for the same defect
+would give one failure two names.
 
 ## How a violation actually presents
 

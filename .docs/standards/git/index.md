@@ -33,5 +33,5 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
   messages); escrever um aqui converteria esse default num contrato deste repositório sem que
   ninguém tenha pedido isso.
 - `tagging` — **deferred, coberto por `versioning-release.md`.** A tag é criada pelo mesmo verbo
-  `specs.py release` que move o lockstep; [../ci-cd/versioning-release.md](../ci-cd/versioning-release.md)
+  `cq specs release` que move o lockstep; [../ci-cd/versioning-release.md](../ci-cd/versioning-release.md)
   já a documenta como parte do lockstep, e um standard próprio duplicaria essa seção.

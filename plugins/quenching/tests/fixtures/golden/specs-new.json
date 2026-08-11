@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "slug": "gamma-lever",
+  "title": "Gamma Lever",
+  "verification": "end-of-plan",
+  "workItemType": null,
+  "phase": "plans",
+  "folder": "plans",
+  "file": "gamma-lever.md",
+  "stage": "captured",
+  "path": ".specs/plans/gamma-lever.md"
+}

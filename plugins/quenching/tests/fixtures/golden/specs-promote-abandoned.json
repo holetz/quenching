@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "slug": "beta-gizmo",
+  "from": "plans",
+  "to": "archive",
+  "outcome": "abandoned",
+  "dest": "archive/beta-gizmo.md",
+  "warn": [],
+  "resolvedBy": null,
+  "resolvedFrom": null
+}

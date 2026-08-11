@@ -2,9 +2,9 @@
 type: standard
 title: Recognising a superseded format
 description: How a recogniser is changed when the format it reads is superseded — the new pattern must be asserted against the OLD form, because a pattern that describes the new one correctly often matches the old one whole and yields a confident wrong answer with no finding; and a store's recogniser must separate "not mine" from "mine, but stale", because sending both to the same discard makes a half-migrated front vanish in silence
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/schema.json
+resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/schema.json
 tags: [code, parsing, migration, recognisers, findings, selftest]
-timestamp: 2026-08-03
+timestamp: 2026-08-10
 audience: both
 authority: current
 source: evaluate-spec-creation-flow spec — both halves measured against this repository's own 72 specs while the capture date was moved out of the basename, and both shipped with the assertions that now guard them (`SPEC_FILE_RE`'s lookahead, `LEGACY_DATED_FILE_RE` and `GitHubBackend.legacy_rows`)

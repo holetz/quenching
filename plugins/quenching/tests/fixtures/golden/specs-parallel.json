@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "slug": "alpha-widget",
+  "groups": [
+    {
+      "group": 1,
+      "tasks": [
+        "2.1",
+        "2.2"
+      ],
+      "eligible": true,
+      "undeclared": [],
+      "annotations": [],
+      "clashes": []
+    }
+  ]
+}

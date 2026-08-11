@@ -1,5 +1,5 @@
 ---
-description: Force a repo's /.specs/ workspace into the canonical shape — probe first, so a clean one costs two tool calls. Triggers on "align specs", "set up the specs workspace", "install the spec front", "migrate openspec", "fix the specs folder", "is my specs workspace conformant", "scaffold specs". Scaffolds when absent, folds an older backlog/ plus ready/ layout or a v1 three-file one into plans/, normalizes filenames and slugs, and stamps missing frontmatter. One plan, one OK, with code-coupled renames gating individually. Authoring and cycle actions are reported with the command that closes each, never performed. Not for: creating a spec → /specs:create; building one → /specs:execute; ranking the front → /specs:triage; the read-only view of what is here → /specs:status.
+description: Force a repo's /.specs/ workspace into the canonical shape — probe first, so a clean one costs two tool calls. Triggers on "align specs", "set up the specs workspace", "install the spec front", "migrate openspec", "fix the specs folder", "is my specs workspace conformant", "scaffold specs". Scaffolds when absent, folds an older backlog/ plus ready/ layout or a v1 three-file one into plans/, normalizes filenames and slugs, and stamps missing frontmatter. One plan, one OK, with code-coupled renames gating individually. Authoring and cycle actions are reported with the command that closes each, never performed. Not for: creating a spec → /quenching:specs:create; building one → /quenching:specs:execute; ranking the front → /quenching:specs:triage; the read-only view of what is here → /quenching:specs:status.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bash(cp:*), Bash(mv:*), Bash(git mv:*), Bash(rm:*), Write, Edit, Task
 ---
@@ -8,8 +8,8 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bas
 
 **Input**: `$ARGUMENTS` (optionally a `/.specs/` path or a scope; omit to align the whole workspace).
 
-One of the plugin's three aligns. Where `/quenching:docs:align` converges a repo's `/.docs/` bundle and
-`/quenching:skill:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
+One of the plugin's three aligns. Where `/quenching:knowledge:align` converges a repo's `/.docs/` bundle and
+`/quenching:components:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
 so every repo that adopts the plugin carries the same `/.specs/` too. Quenching-native: this front is
 **entirely plugin-owned** — no Node runtime, no `config.yaml`, no second spec store shadowing the
 declared one, no delta format. It is what installs the front (there is no `init` step — scaffolding
@@ -24,10 +24,10 @@ conformant workspace ends the run there. That is what makes this safe to run hab
 only when something is already broken.
 
 The facts it works against live once and are cited, never restated — the `/.specs/` layout, the
-fourteen canonical sections, the derived stages, the front's on-write check and the `specs.py`
+fourteen canonical sections, the derived stages, the front's on-write check and the `cq specs`
 surface in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The fourteen sections §Derived stages §The `specs.py` tool surface §The
+§The `specs/` layout §The fourteen sections §Derived stages §The `cq specs` tool surface §The
 report mold, which owns the shape step 7 prints in.
 The contract **this** command owns — the probe, the canonical workspace, every finding code, which
 findings it fixes versus only reports, and the migrations — is
@@ -47,7 +47,7 @@ never-delete-on-a-guess, and align-conformance-report-the-cycle — lives once, 
 §Contents (its own index of the eight numbered principles). Read it whole, as this command's
 doctrine. What follows is only what is **specific to `/.specs/`**:
 
-- **This front's probe is `specs.py doctor` + `specs.py validate`.** Both exit 0 with no findings
+- **This front's probe is `cq specs doctor` + `cq specs validate`.** Both exit 0 with no findings
   → say so and stop, before any inventory
   ([conformance](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md) §The probe).
   `doctor` in particular is the only command that tells an **unmigrated** workspace apart from an
@@ -62,9 +62,9 @@ doctrine. What follows is only what is **specific to `/.specs/`**:
   v1 three-file plan folders that are **deliberately never migrated**; they are never flagged,
   renamed, or rewritten, and no `sp-bad-filename` fires inside them. A date comes from frontmatter
   or the path's first commit, never from filesystem mtime, which a checkout rewrites.
-- **Migrations are one-way, and `specs.py migrate` owns both folds.** A legacy `openspec/`
+- **Migrations are one-way, and `cq specs migrate` owns both folds.** A legacy `openspec/`
   workspace folds into `/.specs/` first (interop with the external CLI is **lost** — say so before
-  applying); then `specs.py migrate` folds `backlog/` + `ready/` into `plans/` and any v1
+  applying); then `cq specs migrate` folds `backlog/` + `ready/` into `plans/` and any v1
   three-file folder into one file. Never hand-fold either.
 - **A diverged shadow copy is kept.** A legacy `openspec init` generated local
   `.claude/skills/openspec-*` copies of commands this plugin ships; identical ones are removal
@@ -82,13 +82,13 @@ doctrine. What follows is only what is **specific to `/.specs/`**:
 ## Workflow (probe → force-with-1-confirmation)
 
 ### 1. Probe — the two calls that decide whether anything else runs
-Resolve `specs.py` per
+Resolve `cq specs` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool, invoked via `python3` or `py`. Resolve the `/.specs/` root at the repo root,
 then:
 ```bash
-specs.py doctor --json
-specs.py validate --json
+cq specs doctor --json
+cq specs validate --json
 ```
 Branch exactly as
 [conformance](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md) §The probe
@@ -99,29 +99,18 @@ each; otherwise continue to step 2.
 Neither `/.specs/` nor a legacy `openspec/` exists → `sp-no-workspace`, which is not a failure: it is
 what step 4 offers to scaffold.
 
-**The installed copy is a third question, and one call answers it:**
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/skills.py" drift --json
-```
-Read this front's row (`specs.py`) and carry it into step 5's scaffold section: a **legacy copy**
-present under the target's `.claude/hooks/` → offer **removal**, never a refresh, since `specs.py`
-always resolves via the plugin path now and an installed copy does nothing but drift. Run the
-probe from the **plugin path** — an installed copy would answer from the same stale `VERSION` it
-is being asked about, and refuses (exit 2) rather than lie. A drift row does **not** by itself make
-an otherwise-clean workspace non-conformant: report it with the removal offer and stop as
-prescribed above.
 **Done when:** the two payloads are in hand and the run has either stopped or been committed to a
 full sweep.
 
 ### 2. Inventory (read-only)
-Only now, and writing nothing: `specs.py list --json` (slugs, folders, derived stages, task
+Only now, and writing nothing: `cq specs list --json` (slugs, folders, derived stages, task
 progress); `Glob` `/.specs/plans/*.md`; `Glob` a legacy `openspec/` tree
 (to detect `sp-legacy-workspace`) and read it if present; `Glob`
 `.claude/skills/openspec-*/SKILL.md` and `.claude/commands/opsx/*.md` (shadow copies, relevant only
 under a legacy migration); read `/.docs/index.md` for `okf_version`.
 
 **`validate --json` from the probe already covers every spec**, so there is no per-spec fan-out to
-plan and no reason to re-run it. Reach for `specs.py status --spec <slug> --json` only when a
+plan and no reason to re-run it. Reach for `cq specs status --spec <slug> --json` only when a
 specific spec's gates must be shown to the human in the plan — never once per spec by default.
 
 **Supplied inventory (handoff).** When a conductor passes one, take it as given and re-collect only
@@ -138,7 +127,7 @@ filenames and slugs, frontmatter stamps, shadow copies) and what it only **repor
 **`sp-v2-layout` and `sp-v1-leftover` are classified before anything else** — until the fold runs,
 every other reading of the workspace is about files that are not where they will be. A legacy
 `openspec/` fold requires an OKF bundle for its main-spec cut: if `/.docs/index.md` with
-`okf_version` is absent, that fold **stops** and this command suggests `/quenching:docs:align` first. For a
+`okf_version` is absent, that fold **stops** and this command suggests `/quenching:knowledge:align` first. For a
 shadow copy, diff it against the plugin's command of the same name before classifying: identical →
 removal candidate, divergent → `sp-shadow-diverged`, keep-and-report.
 **Done when:** every finding carries a code and lands in exactly one table.
@@ -156,11 +145,10 @@ worth the scan even when the file looks internal.
 
 ### 5. Present ONE plan → gate
 One plan, in sections: scaffold (copy `${CLAUDE_PLUGIN_ROOT}/assets/specs/` into `/.specs/` when
-`sp-no-workspace`; a
-legacy `.claude/hooks/specs.py` copy offered for **removal**, never refreshed); **migrations** (the
+`sp-no-workspace`); **migrations** (the
 legacy `openspec/` fold with
 each main-spec→`/.docs/standards/` cut shown and interop-lost stated; then the fold, shown as
-`specs.py migrate --dry-run`'s own output — every spec's destination, the source of each date, and
+`cq specs migrate --dry-run`'s own output — every spec's destination, the source of each date, and
 every folder that will be **kept** because it still holds a file); tool repairs (each quoting the
 tool's own message and remedy); renames (old → canonical, coupled ones marked); frontmatter stamps;
 shadow copies to remove and diverged ones kept-and-reported. Then, separately and explicitly
@@ -170,9 +158,8 @@ single confirmation; each code-coupled rename awaits its own.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
 ### 6. Apply exactly what was approved
-Copy `assets/specs/` if approved; run the legacy fold, then `specs.py migrate`, if approved —
-**never hand-fold**, and report every folder the tool kept; remove a confirmed legacy
-`.claude/hooks/specs.py` copy; apply each tool-stated repair; rename the confirmed files and
+Copy `assets/specs/` if approved; run the legacy fold, then `cq specs migrate`, if approved —
+**never hand-fold**, and report every folder the tool kept; apply each tool-stated repair; rename the confirmed files and
 update every reference site alongside its individually confirmed rename; stamp the
 missing frontmatter keys (MERGE); install the GENERATED markers without touching the fixed prose;
 delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migration.
@@ -180,8 +167,8 @@ delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migr
 
 ### 7. Verify and report
 Re-run the probe's two commands — clean, or the residual message quoted per §Quoting a tool's own output (a REPORTS-table code is a clean result, not a failure). Those two are
-the whole verification: `specs.py doctor` for
-the workspace's shape and `specs.py validate` for the spec files, both deciding on an exit code.
+the whole verification: `cq specs doctor` for
+the workspace's shape and `cq specs validate` for the spec files, both deciding on an exit code.
 There is no listing to regenerate and no second checker to point at `/.specs/` — the OKF validator
 owns the `/.docs/` bundle alone, and a spec carries no OKF `type:` for it to judge.
 
@@ -191,7 +178,7 @@ bundle log it used to append to is retired.
 Then §The report mold — loaded here, in the step that emits it:
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -217,7 +204,7 @@ verdict **is** the whole report.
 - Never write a frontmatter record this command does not own. `priority`, `refined`, `approved`,
   `branch`, `reviewed`, `merge` and `outcome` each have exactly one writer, and none of them is a
   sweep.
-- Never hand-fold a workspace. `specs.py migrate` is the declared remedy; a hand fold silently
+- Never hand-fold a workspace. `cq specs migrate` is the declared remedy; a hand fold silently
   drops sections and invents birth dates.
 - Never touch `/.specs/archive/**` — not its v1 plan folders, not their names, not their contents.
 - Never write anything before the plan's OK; a code-coupled rename never rides the batch. A
@@ -226,7 +213,7 @@ verdict **is** the whole report.
 - Never derive a spec's date from filesystem mtime while a truer source exists — frontmatter, then
   the path's first commit; otherwise report and leave the name alone.
 - Never delete a **diverged** shadow copy, and never touch any `.claude/` skill or command outside
-  `openspec-*` / `opsx/` under a legacy migration — that surface is `/quenching:skill:align`'s.
+  `openspec-*` / `opsx/` under a legacy migration — that surface is `/quenching:components:align`'s.
 - Never recreate `plans/index.md`. The artifact is retired: no command produces it, and one
   surviving in a target repo is left exactly as found — neither refreshed nor deleted.
 - Never stamp an OKF `type:` on a spec file to quiet the bundle validator — that validator owns the

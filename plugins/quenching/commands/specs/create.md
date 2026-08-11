@@ -15,10 +15,10 @@ built: this command creates it, `/quenching:specs:develop` fills its sections, `
 reconcile — and no ledger.
 
 The layout, the fourteen canonical sections, the gates, the front's on-write check and the
-`specs.py` surface live in
+`cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
-§The `specs.py` tool surface §The report mold, which owns the shape step 8 prints in.
+§The `cq specs` tool surface §The report mold, which owns the shape step 8 prints in.
 
 ## The one rule: effort proportional to input
 
@@ -38,7 +38,7 @@ levels in between are the develop pass's to re-evaluate when it closes.
 
 ## Doctrine
 
-- **A sentence becomes `## Problem` and stops.** `specs.py new` stamps the frontmatter (`slug`,
+- **A sentence becomes `## Problem` and stops.** `cq specs new` stamps the frontmatter (`slug`,
 `title`, `date`, `verification`) and that one heading. `date` is the capture date, written here and
 never again. Every other canonical heading is left ABSENT,
 which the stage-scoped explicit-none rule
@@ -50,7 +50,7 @@ the heading absent or write an explicit none that *says* the source was silent.
 - **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
 and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
 [communication.md](/.docs/standards/agents/communication.md) §Declaring it declares.
-- **MERGE, never clobber.** `specs.py new` refuses (exit 2) on an existing slug. Take that as the
+- **MERGE, never clobber.** `cq specs new` refuses (exit 2) on an existing slug. Take that as the
 answer: sharpen the existing spec instead, or pick a different slug.
 - **Compute `complexity`, never ask for it.** The level derives from the classification (step 1),
 is proposed with the scale in front of the human, and is written only on confirmation — the
@@ -58,7 +58,7 @@ same proposal the triage sweep makes, narrowed to the one field this command com
 
 ## Resolving the tool
 
-Resolve `specs.py` per
+Resolve `cq specs` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
@@ -67,7 +67,7 @@ Resolve `specs.py` per
 ### 1. Classify the input
 
 **Prose** → the sentence path. **A path to an existing `.md`**, or an explicit ask to convert a
-plan → the plan-file path. This is the one decision the CLI cannot make for you: `specs.py new`
+plan → the plan-file path. This is the one decision the CLI cannot make for you: `cq specs new`
 (step 4) resolves the backend, the workspace and the seed on its own, and reports a legacy
 `backlog/`/`ready/` folder as a finding rather than writing into one.
 **Done when:** the path is chosen.
@@ -78,7 +78,7 @@ Take a title and a one-sentence problem from the input, and derive a kebab slug 
 declared language. On the plan-file path, derive it from the plan's title or goal ("Add rate
 limiting to the API" → `add-api-rate-limiting`).
 
-**The collision check is `specs.py new`'s exit 2** (`sp-slug-exists`, naming where it is) — never a
+**The collision check is `cq specs new`'s exit 2** (`sp-slug-exists`, naming where it is) — never a
 front listing first, which under `github` is a paginated fetch of every issue (2.4s measured).
 **Done when:** a canonical slug is in hand.
 
@@ -95,7 +95,7 @@ exactly the cost this command exists to avoid.
 ### 4. Propose a subject, a type and tags, where the target declares them
 
 ```bash
-specs.py config --json
+cq specs config --json
 ```
 
 Read `subjects`, `workItemTypes` and `tagCatalog`. **All three absent or empty → skip this step
@@ -106,19 +106,19 @@ those — this is per-key, never all-or-nothing.
 **A declared `subjects`:** read each key's `name`/`description`, judge which one the input best
 fits, and confirm with **one** `AskUserQuestion` naming the candidate and its description —
 never silently pick one, and never skip the confirmation because a `defaultSubject` exists:
-`specs.py new` falls back to it on its own where nothing was resolved, but a human still chose
+`cq specs new` falls back to it on its own where nothing was resolved, but a human still chose
 this spec's content and gets the same say over where it is filed.
 
 **A declared `workItemTypes`:** read each key's `description` — the same prompt material a
 `tagCatalog` value already is — judge which entry the input best fits, and confirm with **one**
 `AskUserQuestion` naming the candidate and its description, in the SAME question as the subject
-where both apply. Never skip the confirmation because a `default` entry exists: `specs.py new`
+where both apply. Never skip the confirmation because a `default` entry exists: `cq specs new`
 falls back to it on its own where nothing was resolved, but a human still chose what kind of
 work this is and gets the same say `subjects` already gets.
 
 **A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
 documentation, written for exactly this judgment
-([plugin-configuration.md](docs/standards/workflows/plugin-configuration.md) §Three keys are
+([plugin-configuration.md](/.docs/standards/workflows/plugin-configuration.md) §Three keys are
 prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
 question as the subject and the type where all apply, or its own `AskUserQuestion` otherwise. A
 tag outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment
@@ -127,20 +127,20 @@ draws from.
 **The write is always the deterministic verb, never this command inventing its own.** The chosen
 subject's key is carried to step 5's `--subject`, the chosen type's key to step 5's `--type`; any
 confirmed catalog tag beyond the subject's own fixed ones is carried to step 5's follow-up
-`specs.py tags` call — nothing is written here, only decided.
+`cq specs tags` call — nothing is written here, only decided.
 **Done when:** a subject (or none), a type (or none) and zero or more tags are confirmed, or the
 step was skipped whole.
 
 ### 5. Create the plan
 
 ```bash
-specs.py new <slug> --title "<title>" [--subject <key>] [--type <key>]
+cq specs new <slug> --title "<title>" [--subject <key>] [--type <key>]
 ```
 
 `--subject`/`--type` only where step 4 resolved one. Exit 2 means the slug already exists — say
 so and stop, never invent a variant to get past it. `sp-no-subject`/`sp-subject-unknown`/
 `sp-type-unknown` means step 4's own resolution disagrees with the target's declared config RIGHT
-NOW (a race, or a stale read) — re-run `specs.py config --json` and redo step 4 rather than
+NOW (a race, or a stale read) — re-run `cq specs config --json` and redo step 4 rather than
 retrying blind. `sp-az-workitemtype-only-answer` means the target still declares the retired
 `azurePlacement.workItemType` with no `workItemTypes` catalog resolving one — name the finding
 and its remedy verbatim, and stop; migrating the target's config is not this command's call to
@@ -151,10 +151,10 @@ make. Any other backend failure (`sp-backend-unavailable`, `sp-worktree-unusable
 right after this one succeeds:
 
 ```bash
-specs.py tags <slug> "<subject's fixed tags>,<confirmed catalog tag>,..."
+cq specs tags <slug> "<subject's fixed tags>,<confirmed catalog tag>,..."
 ```
 
-`specs.py tags` **replaces** the whole list, never appends — the full set, fixed tags included,
+`cq specs tags` **replaces** the whole list, never appends — the full set, fixed tags included,
 or the fixed ones `--subject` just applied are lost. Skip this call whole when no catalog tag was
 confirmed beyond what `--subject` already applied.
 **Done when:** the tool exited 0 and reported the locator it created, and any confirmed catalog
@@ -166,13 +166,13 @@ Always write `## Problem` — the problem or opportunity in the source's own fra
 is a complete answer.
 
 ```bash
-specs.py section <slug> Problem --write   # body on stdin
+cq specs section <slug> Problem --write   # body on stdin
 ```
 
 **Sentence path: stop here.** Write nothing into any other heading.
 
 **Plan-file path:** additionally write each section the plan actually supports, via
-`specs.py section <slug> "<Heading>" --write`. Where the plan was silent on a section you are
+`cq specs section <slug> "<Heading>" --write`. Where the plan was silent on a section you are
 writing others around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
@@ -199,7 +199,7 @@ human's word decides, and the proposal only starts the conversation.
 
 Then stamp, **on the human's confirmation only**:
 ```bash
-specs.py record <slug> priority --set complexity=<level> --set date=<today>
+cq specs record <slug> priority --set complexity=<level> --set date=<today>
 ```
 The tool merges — `level`, `criticality` and any earlier fields survive, and `date` is the
 record's own, never the capture `date:`. A rejection writes nothing and stops.
@@ -207,17 +207,17 @@ record's own, never the capture `date:`. A rejection writes nothing and stops.
 nothing was written.
 ### 7. Check
 
-Run `specs.py validate --spec <slug>` — the spec's own conformance, and the whole check.
+Run `cq specs validate --spec <slug>` — the spec's own conformance, and the whole check.
 **Done when:** the check is clean, or the residue is reported verbatim.
 
 ### 8. Report
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
-Emit §The report mold. Its single-spec header line carries the locator `specs.py new` returned — the
+Emit §The report mold. Its single-spec header line carries the locator `cq specs new` returned — the
 `path` field, `plans/<slug>.md` under `files` and an issue URL under `github` — which the mold
 already requires be the tool's own answer rather than a filename this command assembled.
 
@@ -236,6 +236,6 @@ Close on §The next-step block: `/quenching:specs:develop <slug>` to take it fur
 - Never interrogate — no scope, task, design, or policy questions on either path.
 - Never write a heading the input did not support.
 - Never invent content a source plan lacks.
-- Never work around `specs.py new`'s exit 2 by inventing a slug variant.
+- Never work around `cq specs new`'s exit 2 by inventing a slug variant.
 - Never interrogate the human for `complexity` — compute it from the input and propose it; a
   rejected proposal writes nothing.

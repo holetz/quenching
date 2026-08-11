@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "slug": "alpha-widget",
+  "verification": "per-task",
+  "declared": "per-task",
+  "default": "per-section",
+  "resolvedBy": null,
+  "resolvedFrom": null
+}

@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "slug": "alpha-widget",
+  "from": "plans",
+  "to": "archive",
+  "outcome": "done",
+  "dest": "archive/alpha-widget.md",
+  "warn": [],
+  "resolvedBy": null,
+  "resolvedFrom": null
+}

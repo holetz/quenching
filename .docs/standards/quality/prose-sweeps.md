@@ -28,7 +28,7 @@ Measured on 2026-07-31: sweeping 519 bare command citations into their plugin-pr
 corrupted **two** sites out of 519, and both were the sentences that *defined the rule the sweep
 was implementing*:
 
-> a bare `/quenching:docs:align` is what a human types, not what the Skill tool resolves
+> a bare `/quenching:knowledge:align` is what a human types, not what the Skill tool resolves
 
 The sentence names the bare form and then shows a prefixed one. Every other site was correct.
 
@@ -55,8 +55,8 @@ explaining a form should carry the form's *shape*, not a real value:
 
 | Instead of | Write |
 | --- | --- |
-| the bare `/docs:harness` resolves only where… | the bare form `/<front>:<verb>` resolves only where… |
-| a bare `/docs:align` is what a human types | the registry name for the tool, `/<plugin>:<front>:<verb>` for a human |
+| the bare `/knowledge:align` resolves only where… | the bare form `/<front>:<verb>` resolves only where… |
+| a bare `/knowledge:align` is what a human types | the registry name for the tool, `/<plugin>:<front>:<verb>` for a human |
 
 Three things follow at once, and the third is why this is a rule rather than a preference:
 
