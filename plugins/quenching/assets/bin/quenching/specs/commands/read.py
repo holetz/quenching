@@ -97,6 +97,17 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     checked, blocked, total = task_progress(info["tasks"])
     dest = _next_phase(info["phase"])
     gates = gate_report(info, dest) if dest else None
+    # `gate_report` measures SECTIONS — the entry gate of the destination folder — and `promote`
+    # applies a second condition on top of it that lives nowhere else: archiving with `done` refuses
+    # while any task is unticked, blocked `[!]` included. Reported as sections alone, this block said
+    # `ok: true` for a spec `promote --outcome done` then refused (exit 2), and this command's own
+    # description calls itself "an honest dry run before a sweep is authorized" — so the dry run has
+    # to carry the same condition the real verb does. `openTasks` is the same shape `promote`'s
+    # refusal payload emits, so a caller reads one vocabulary for both.
+    if gates and dest == "archive":
+        gates["openTasks"] = [{"id": t["id"], "text": t["text"], "state": t["state"]}
+                              for t in info["tasks"] if not t["checked"]]
+        gates["ok"] = gates["ok"] and not gates["openTasks"]
     ready = ready_report(info) if info["phase"] == "plans" else None
     sections = [{"heading": h, "state": section_state(info["sections"], h)}
                 for h in canonical_headings()]
@@ -163,6 +174,9 @@ def cmd_status(args, root: str, out: Emitter) -> int:
                 print(f"  promote → {dest}/: missing {', '.join(gates['missing'])}")
             if gates["malformed"]:
                 print(f"  promote → {dest}/: empty (malformed) {', '.join(gates['malformed'])}")
+            if gates.get("openTasks"):
+                print(f"  promote → {dest}/: {len(gates['openTasks'])} of {total} tasks still "
+                      f"open — `--outcome done` refuses, `--outcome abandoned` does not")
     return 0
 
 
