@@ -162,17 +162,26 @@ fi
 #
 # SOME OF THIS REPO DESCRIBES A DIFFERENT REPO, and a path there is not a claim about a file here.
 # The plugin SHIPS content meant to land in a target checkout — the OKF skeleton under
-# `assets/docs/`, the moulds under `assets/templates/` — and that content spells the bundle the way
-# the target will hold it, `docs/`, which is precisely the path this repo does NOT have (here it is
-# `.docs/`). Reading those as citations reports the shipped product as broken. So:
+# `assets/docs/`, the moulds under `assets/templates/` — so a `/.docs/standards/<subject>/<concept>.md` written there
+# is a claim about the repo that installs it, not about this checkout. Reading those as citations
+# reports the shipped product as broken. So:
 #
 #   - a path under a shipped tree is not measured against this checkout;
-#   - a path rooted at bare `docs/` is not measured at all — that spelling names the target's
-#     bundle, and this repo would spell its own `.docs/`;
 #   - `tests/fixtures/golden/`, `tests/capture_golden.py` and `assets/evals/**/runs/` are not read
 #     at all, for both a cited PATH and a cited COMMAND — the same frozen-data reasoning half 1's
 #     header gives, applied here because a golden or a grading record legitimately names a path or
 #     a namespace that resolved on the day it was captured and is not asked to resolve today.
+#
+# THERE USED TO BE A THIRD RULE HERE, AND IT WAS EXCUSING A REAL DEFECT. It read: *a path rooted at
+# bare `docs/` is not measured at all — that spelling names the target's bundle, and this repo would
+# spell its own `.docs/`*. The premise is false. `/.docs/standards/architecture/bundle-root.md` fixes
+# the bundle at `/.docs/` **in the target repository**, not only here, so `docs/` names no repo's
+# bundle at all. What the rule actually did was silence 95 links and prose paths the 2026-08-06
+# root migration left un-migrated inside the shipped trees — a target that scaffolded from them got
+# an `index.md` whose every cross-home link resolved nowhere. `cq knowledge validate` never saw it
+# either: measured on both bundles, it reports 0 errors, because it does not resolve absolute
+# cross-home links. The skeleton and the moulds now spell `/.docs/`, and the rule is gone with the
+# thing it was hiding.
 #
 # None of this is an allowlist: no path is exempted by being on a list, and every exclusion is a
 # statement about which repository a tree is describing.
@@ -209,10 +218,11 @@ def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
         or p.startswith(("http:", "https:", "mailto:", "#"))
 
-def describes_target(target):
-    # `docs/<name>` is how the target holds its bundle; this repo holds `.docs/<name>`. A path
-    # rooted there is a claim about the installed repo, and nothing here can resolve it.
-    return target.startswith("docs/") or "/docs/" in target
+# A `describes_target(target)` guard used to sit here, keeping any path that contained `/.docs/`
+# out of the measurement. `in_bundle` below already carries that rule and carries it the right way
+# round — as a statement about the citing FILE, not a substring test on the cited path — so the
+# guard is gone. A substring rule over paths is exactly how a spelling nobody had migrated stayed
+# invisible for two months.
 
 def trim(p):
     # A path ending a sentence carries the final period, and a path in prose carries the comma
@@ -255,9 +265,10 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
 
     here = os.path.dirname(rel)
     # Two bundles live in this repo: the real one at .docs/, and the skeleton the plugin SHIPS at
-    # assets/docs/, whose links are written for the target repo that installs it (`/docs/x`) and
+    # assets/docs/, whose `/.docs/` links name the bundle of the repo that installs it and
     # therefore never resolve from here. `knowledge validate` governs both, and the repo gate
-    # already runs it over each.
+    # already runs it over each. Same test, both trees — which is only possible now that they
+    # spell the root the same way.
     in_bundle = rel.startswith(".docs/") or rel.startswith(SHIPPED)
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
@@ -281,7 +292,7 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
             candidates.append((m, [os.path.normpath(os.path.join(here, target)), bare]))
 
     for cited, targets in candidates:
-        if unmeasurable(cited) or any(describes_target(t) for t in targets):
+        if unmeasurable(cited):
             continue
         paths_checked += 1
         if not any(os.path.exists(t) for t in targets):

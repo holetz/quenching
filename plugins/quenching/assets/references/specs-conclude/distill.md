@@ -75,7 +75,7 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    invented; `source:` names the spec), update the home's `index.md`, enrich the glossary when a
    term warrants it. A follow-up instead goes through `/quenching:specs:create` into `specs/plans/`.
 4. **Narrate the bridge in the archived spec's `## Outcome`.** One line per minted doc —
-   `distilled: [<title>](/docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
+   `distilled: [<title>](/.docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
    already written at the archive gate. An empty harvest writes nothing.
 5. **Self-check** every touched file against
    [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).

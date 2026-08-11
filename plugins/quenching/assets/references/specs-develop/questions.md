@@ -367,7 +367,7 @@ compact table** and no trail:
 | gate | terms the spec uses in a sense `docs/knowledge/glossary.md` does not |
 | gate | `## Impact` paths no `## Tasks` item names, and tasks naming paths `## Impact` never declared |
 
-It follows the verifier shape of [agents.md](/docs/standards/automation/agents.md) §The verifier
+It follows the verifier shape of [agents.md](/.docs/standards/automation/agents.md) §The verifier
 shape: it **inspects and reports, never edits**, and it states an explicit *not checked here* list,
 which is the false-positive control.
 
@@ -382,7 +382,7 @@ Two things that look like this and are not available. **`context: fork` cannot a
 construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
 §`context: fork`); a bank is nothing but questions. And a sub-agent **does not share the session's
 prompt cache** — it runs on a cold context and pays the full first read of every file it touches
-([context-discipline.md](/docs/standards/automation/context-discipline.md) §What a delegated
+([context-discipline.md](/.docs/standards/automation/context-discipline.md) §What a delegated
 executor costs), so delegation here is never a cache play.
 
 What it *is* is the delegation test met exactly: the returned table is far smaller than the sweep

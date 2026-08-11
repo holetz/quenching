@@ -101,6 +101,39 @@ cannot express its claim reports success indistinguishable from the real one. **
 before trusting it**, and treat "it passed" as evidence only once "it failed on purpose" is on the
 record.
 
+#### Three ways the falsification step is skipped, all measured on one spec
+
+The rule above is old; what follows is what breaks when it is not applied, measured across the
+`modularizar-specs-knowledge-components` spec's 59 tasks. Each form passes green, and each one
+passes green for a *different* reason — so recognising one is not recognising the others.
+
+**Inverted polarity — green means the work is NOT done.** Twelve tasks declared
+`verify: git grep <the old pattern>` to prove a rename landed. `git grep` exits **0 when it finds**
+and 1 when it does not, so that line passes exactly while the old name survives and fails the moment
+the rename is complete. Under the `verify && task --check && commit` chain, none of those tasks
+could commit once done correctly. The damage was not confined to the instrument: the spec's
+`## Risks` named that same grep as the mitigation of its single largest risk — *"cada tarefa da
+seção 7 só é ticável quando o grep da sua própria string antiga volta vazio"* — so the mitigation
+was inverted at the same time, and nothing said so for nine sections. The correct form negates:
+`! git grep …`, or `git grep …; test $? -eq 1`.
+
+**A selector that matches nothing.** Seven tasks declared `python3 -m unittest discover -k <topic>`.
+A `-k` filter with no matching test collects **zero** cases and exits **0**. Those seven proved
+nothing about the pillars they named; the real coverage arrived two sections later, in the goldens
+and the migrated suites. A selector-based check must assert its own case count, or name a test that
+exists.
+
+**Measuring an absence where the thing never was.** One task declared
+`grep <marker> <the new package>; test $? -eq 1`, to prove a duplicated block had been deduplicated.
+The marker had only ever existed in the two pre-refactor scripts, which that task could not touch —
+so the check measured the absence of a string from a tree it was never in, and would have passed on
+day one. The proof was a test exercising both readers against one shared case list; the grep was
+decoration that read like evidence.
+
+**The shared shape.** In all three, the check runs, exits 0, and reports nothing — the failure is
+that it never had the power to say otherwise. `## Risks` mitigations get the same treatment as
+`verify:` lines, because a mitigation is a check with a longer name.
+
 ### A task's `verify:` is scoped at authoring time, never filtered at the gate
 
 What runs at a gate is decided by each task's `verify:`; the `verification` policy decides only

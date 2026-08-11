@@ -475,6 +475,15 @@ def capture_okf(cap: Capture) -> None:
     `resource` globs resolve against the bundle's parent: renaming the bundle turns
     every one of them into a `resource-unresolved` warning the shipped skeleton does
     not have.
+
+    THAT SENTENCE DESCRIBES THE SKELETON AS IT WAS FROZEN, AND THE SKELETON HAS SINCE
+    MOVED. It now spells the bundle root `/.docs/` throughout — the root
+    `standards/architecture/bundle-root.md` fixes for every target repo — so this copy's
+    `docs/` layout no longer matches what the skeleton declares, and no layout reproduces
+    the frozen output: at `docs/` the glossary's scope goes unresolved, and at `.docs/`
+    the two warnings the golden DOES carry resolve and vanish. The code is left exactly
+    as captured, because it is the shared builder both sides of the comparison run; the
+    three affected cases are named in `test_golden.UNROUTED` with that reason.
     """
     proj = cap.tmp / "ws-okf"
     proj.mkdir(parents=True)

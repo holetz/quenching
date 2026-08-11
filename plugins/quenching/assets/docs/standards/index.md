@@ -5,9 +5,9 @@ shared source of truth. One standard per file; subfolder names by **subject**. E
 concept doc carries `type: standard` + a derived `resource:` (the repo scope it governs).
 
 **Boundary:** `standards/` = "how **WE** do it (current/active)". Distinct from
-[reference/](/docs/reference/index.md) (external facts we consume) and
-[catalog/](/docs/catalog/index.md) (our data). Direction lives in
-[vision/](/docs/vision/index.md). An **agreed-but-unproven** rule sits here as
+[reference/](/.docs/reference/index.md) (external facts we consume) and
+[catalog/](/.docs/catalog/index.md) (our data). Direction lives in
+[vision/](/.docs/vision/index.md). An **agreed-but-unproven** rule sits here as
 `authority: background` and graduates to `current` once proven — there is no separate decisions
 home.
 

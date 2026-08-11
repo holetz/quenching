@@ -5,10 +5,10 @@ standards. External to what we produce; background, **never** our contract. Each
 carries `type: reference`.
 
 **Boundary** (the subtlest one): `reference/` = "facts about what **WE CONSUME**
-(external)" — distinct from [standards/](/docs/standards/index.md) ("how **WE** do it") and
-[catalog/](/docs/catalog/index.md) ("our **data**"). Example: the text of a regulation (a
+(external)" — distinct from [standards/](/.docs/standards/index.md) ("how **WE** do it") and
+[catalog/](/.docs/catalog/index.md) ("our **data**"). Example: the text of a regulation (a
 PDF) lives in [regulations/](regulations/index.md) via a sidecar; **our interface** to it
-(how we implement it) lives in [standards/mlops/](/docs/standards/mlops/index.md).
+(how we implement it) lives in [standards/mlops/](/.docs/standards/mlops/index.md).
 
 ## Subfolders
 

@@ -107,8 +107,20 @@ UNROUTED = {
                     "their `.py` extension and this stamp carries none.",
     "okf-validate-skeleton-text": "same stamp as `okf-version`, in the header line every "
                                    "text-mode validation prints — which made it the most-seen "
-                                   "citation of a deleted file in the product. The findings "
-                                   "below the header are unchanged.",
+                                   "citation of a deleted file in the product; and the same "
+                                   "skeleton-root change as `okf-validate-skeleton` below.",
+    "okf-validate-skeleton": "the shipped skeleton now spells the bundle root `/.docs/` "
+                              "throughout — the root `standards/architecture/bundle-root.md` "
+                              "fixes for every target repo — where it was frozen spelling `docs/`, "
+                              "a root no repo has. `capture_okf` copies it to `<project>/docs/` to "
+                              "match the old spelling, so the glossary's bundle-aggregate scope "
+                              "now reports `resource-unresolved` there. No layout reproduces the "
+                              "frozen bytes: moving the copy to `.docs/` resolves that scope but "
+                              "also resolves the two warnings the golden DOES carry. See "
+                              "`capture_golden.capture_okf`.",
+    "okf-validate-findings": "the same skeleton-root change as `okf-validate-skeleton`, over the "
+                              "same copy with one frontmatter-less doc injected — the injected "
+                              "finding is unchanged, the scope warning around it is not.",
 }
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package

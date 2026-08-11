@@ -100,7 +100,7 @@ OKF-valid — additive keys, descriptive types, reserved-file structures):
    Unreserving it is a different and much worse change than retiring it — see
    `docs/standards/architecture/retiring-a-reserved-artifact.md`. Provenance that used to
    land here now lands in the archived spec's `## Outcome`.
-5. **Links:** relative within a home, absolute `/docs/...` across homes.
+5. **Links:** relative within a home, absolute `/.docs/...` across homes.
 6. **Canonical English structure** — folder names **and concept-doc file slugs**, keys, enum
    values, and the `type` vocabulary. Frontmatter is English; **body prose MAY follow the repo's
    language**. Identifier-derived slugs (catalog tables/schemas, repo names)
