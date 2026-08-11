@@ -176,8 +176,8 @@ never hand-edit the checkbox character.
 Shape it so `/quenching:specs:execute` can walk it top to bottom:
 
 - **Ordered by dependency**, grouped into coherent sections (setup → core → wiring → tests → the
-  standards `## Impact` declares). Each item is one reviewable unit of work — small enough to check off honestly, large enough not
-  to be noise. Each is also **one commit**, so a section is what a `verification: per-section` spec
+  standards `## Impact` declares). Each item is one reviewable unit of work — small enough to
+  check off honestly, large enough not to be noise. Each is also **one commit**, so a section is what a `verification: per-section` spec
   verifies after.
 - **Within what the dependency order allows, group by file.** A section is the unit execution
   delegates — *"delegate by file, or by section of tasks, never task by task"*
