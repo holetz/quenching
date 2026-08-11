@@ -4,10 +4,10 @@ title: Spec file contract
 description: The one-file spec, its fourteen canonical sections, the phase-scoped explicit-none rule, the parsed Impact sub-heading, the duplicated template and the three-copy record vocabulary, and how to read a v1 plan in /.specs/archive/
 resource: plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/**
 tags: [workflows, specs, sections, gates, validation]
-timestamp: 2026-08-03
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec)
+source: specs-front-v2 plan (sections 1-2); lifecycle claims superseded by the specs-flow-consolidation plan; the `## Overview` section added by the add-eli5-section-to-specs spec; the `moment` axis, the `§`addressed `## Impact` bullet and the schema entry in the three-file lockstep by the narrow-the-execute-preamble spec; `date` moved out of the basename, `verification` became optional and the slug's language was named by evaluate-spec-creation-flow (task 5.5); both duplicated constants shown to be selftest-only once nothing installs the tool (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec); §What `## Tasks` does NOT carry added by the obrigacoes-de-merge-nao-nascem-como-task spec (task 1.1), which moved the merge-obligation boundary from the consuming side alone to the side that authors the list
 maintainer: quenching
 ---
 
@@ -164,6 +164,33 @@ Nothing reads as ready to build with nothing to execute. This is the surviving f
 guarantee v1 spelled `applyRequires: ["tasks"]`: under v3 the ten sections are computed rather than
 enforced by a `git mv`, so `## Tasks` is what keeps the derived `ready` stage from being a
 statement about prose alone.
+
+## What `## Tasks` does NOT carry
+
+A task is work whose result is **knowable when the task is written** and that lands in one commit
+on the spec's branch. Three classes fail that test, and each already has a command that owns it:
+
+| Not a task | Why it cannot be one | Owner |
+| --- | --- | --- |
+| A merge obligation — a version bump, a changelog entry, a manifest re-stamp, a tag, a release note | What the release *is* depends on what the last task turned out to be, so none of it is knowable at task 1; scheduled as work it also collides, two branches bumping from the same base to the same number | `/quenching:specs:conclude`, which settles them against the base actually being merged into |
+| The `/.docs/` the work **revealed** | It does not exist while the list is being written — it is an output of building, not an input to it | `/quenching:specs:conclude`, which writes it with the branch review |
+| The cycle's own closing actions — review the branch, archive, distil, merge or open the PR | They are that command's steps, not work the spec delivers | `/quenching:specs:conclude` |
+
+**One class stays a task, and stays required.** Every `/.docs/standards/**.md` path the spec
+**declares** under §`## Impact` carries one parsed sub-heading gets its own checkbox — that is the
+pairing `sp-impact-uncovered` checks, and building the spec *is* proving the rule. So the axis is
+**declared versus revealed**, never *docs versus code*: read as "no docs tasks", this rule would
+break the check the one beside it enforces.
+
+The test that separates them: **would this task exist if this branch were never merged?** Writing
+the code that performs a bump exists on its own; performing *this* cycle's bump exists only because
+there is a merge. The first is a task even in a spec whose product is the release; the second never
+is.
+
+This is the authoring half of a boundary `/quenching:specs:conclude` already states from the
+consuming side, and `/quenching:specs:execute` already refuses at build time. Written only there,
+the box had already been drafted, counted toward the ready gate and approved by a human before
+anything rejected it.
 
 ## What `promote` still refuses
 
