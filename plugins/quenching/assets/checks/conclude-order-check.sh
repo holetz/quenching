@@ -21,7 +21,17 @@
 # bodies state the ordering as an invariant rather than relying on this script.
 #
 #   usage:  ./conclude-order-check.sh
-#   exit :  0 all passed · 1 a check failed
+#   exit :  0 all passed · 1 a check failed · 2 the fixture could not be built, so NOTHING was
+#           measured — not a pass, and not the same thing as a failed assertion either
+#
+# THE THIRD RUNG IS NOT DECORATION. This script builds the history it then judges, so it has two
+# ways to be red, and they call for opposite responses: an assertion that fails is a claim about
+# `cq specs` to investigate, while a fixture that will not build is a claim about nothing at all.
+# It carried only `0 pass · 1 fail` until the fixture broke on two design changes it predates — the
+# undated spec filename and the `files` backend's persistent worktree — and reported that as a
+# failed check, sending a reader to look for a defect in the tool that the tool did not have. The
+# repo's own `/.docs/standards/quality/surface-verification.md` §The five preconditions a check must
+# satisfy is the rule; `citation-check.sh` already spells the same three rungs.
 #
 # Established by the `move-conclude-merge-last` spec, task 6.1.
 set -uo pipefail
@@ -34,6 +44,10 @@ PASS=0; FAIL=0
 
 emit () { printf '  %-6s %s\n' "$1" "$2"; }
 check () { if [ "$1" = "yes" ]; then emit "PASS" "$2"; PASS=$((PASS+1)); else emit "FAIL" "$2"; FAIL=$((FAIL+1)); fi }
+
+# The fixture could not be built. Everything below would assert against a history that was never
+# constructed, so the run has no verdict to give — exit 2, never 1.
+unmeasurable () { echo; echo "  NOTHING COULD BE MEASURED — $1" >&2; echo "  this is not a pass" >&2; exit 2; }
 
 # python3 on POSIX, the `py` launcher on Windows — the same fallback the commands use.
 if command -v python3 >/dev/null 2>&1; then PY=python3
@@ -56,13 +70,28 @@ git config user.email check@example.invalid
 git config user.name  "order check"
 git config commit.gpgsign false
 
-mkdir -p specs/plans specs/archive docs
+# `.specs/`, not `specs/`, and PRE-CREATED rather than left to `new` — both halves load-bearing,
+# and neither was true when this fixture was written. `find_specs_root` walks up for an existing
+# `.specs/` and uses it; only when none exists does the `files` backend put the workspace in its
+# persistent worktree under `.claude/worktrees/`, on a dedicated branch, in another checkout. This
+# fixture needs the in-tree form, because assertion 2 is that a task's box and its code ride the
+# SAME commit — which they cannot when the spec file lives on a different branch entirely.
+#
+# Pre-creating it also keeps the run off the backend's `.gitignore` guard: `cq specs new` refuses
+# (exit 2) when `.claude/worktrees/` is not ignored, and that refusal is only reachable on the
+# worktree path this fixture never takes. Measured both ways — see the `unmeasurable` call below,
+# which is exactly what a fixture that drops this line now gets.
+mkdir -p .specs/plans .specs/archive docs
 echo "# seed" > README.md
 git add -A && git commit -qm "seed"
 
-# create
-"$PY" "$CQ" specs new "$SLUG" --title "Order check" >/dev/null
-FILE=$(ls specs/plans/*-"$SLUG".md)
+# create — the refusal is NOT swallowed. `>/dev/null` here hid a hard exit 2 for as long as the
+# guard above existed, and every later step failed on its consequences instead of its cause.
+if ! "$PY" "$CQ" specs new "$SLUG" --title "Order check" >/dev/null; then
+  unmeasurable "cq specs new refused — the fixture has no spec to walk through the cycle"
+fi
+FILE=$(ls .specs/plans/"$SLUG".md 2>/dev/null) \
+  || unmeasurable "no spec file at .specs/plans/$SLUG.md after cq specs new"
 
 # fill the ready gate, plus one task carrying declared files
 for h in Proposal "Out of Scope" Impact Validation Design "Alternatives Considered" \
@@ -87,8 +116,7 @@ git add -A && git commit -qm "plan/$SLUG: record the spec"
 # The fixture is only useful if the tool can see its task. Fail loudly rather than quietly
 # asserting against a spec whose `## Tasks` never parsed.
 if ! "$PY" "$CQ" specs next --spec "$SLUG" --json 2>/dev/null | grep -q '"task": "1.1"'; then
-  echo "  FIXTURE BROKEN: cq specs cannot see task 1.1 — the assertions below would be vacuous" >&2
-  exit 1
+  unmeasurable "cq specs cannot see task 1.1 — the assertions below would be vacuous"
 fi
 
 BASE_BEFORE=$(git rev-parse HEAD)
@@ -121,7 +149,8 @@ io.open(p, 'w', encoding='utf-8', newline='').write(s)
 PY
 git add -A && git commit -qm "plan/$SLUG: write the outcome"
 "$PY" "$CQ" specs promote "$SLUG" --to archive --outcome done >/dev/null
-ARCHIVED=$(ls specs/archive/*-"$SLUG".md)
+ARCHIVED=$(ls .specs/archive/"$SLUG".md 2>/dev/null) \
+  || unmeasurable "no archived spec at .specs/archive/$SLUG.md after cq specs promote"
 git add -A && git commit -qm "plan/$SLUG: archive"
 
 echo "distilled" > docs/distilled.md                       # the distillation, on the BRANCH
