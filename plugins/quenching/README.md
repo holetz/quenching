@@ -318,10 +318,8 @@ every command drives `assets/bin/cq specs` (uniform `--json`, strict exit codes 
 findings · `2` refusal) rather than a path. `files` and `github` are validated against this
 repository; `azure-boards` ships implemented but **without an end-to-end run against a real
 Azure DevOps project** — `doctor`'s `sp-backend-unproved` finding, plus a one-line stderr warning
-on its first write each process, name that gap every time it is selected. `/specs:align` offers to
-**remove** a legacy copy of the tool a target's `.claude/hooks/` may still carry from before
-resolution went plugin-first — never to install or refresh one. Every command on this front reads
-the `/.docs/` bundle
+on its first write each process, name that gap every time it is selected. Every command on this
+front reads the `/.docs/` bundle
 as context going in and distils durable knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole pre-archive life.

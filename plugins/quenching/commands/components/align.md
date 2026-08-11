@@ -80,9 +80,6 @@ Resolve `cq components` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**This sweep also offers to remove a legacy copy** (§5) — never install or refresh one, since the
-tool always resolves via the plugin path.
-
 **Every shell grant is scoped**, per
 [`/.docs/standards/automation/skills.md`](../../../../.docs/standards/automation/skills.md)
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
