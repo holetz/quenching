@@ -1,11 +1,11 @@
 """The version lockstep — `bump_release_artifacts` proved against a disposable tree standing
-in for the seven real artifacts, never the plugin's own, so this runs safely on every test
+in for the four real artifacts, never the plugin's own, so this runs safely on every test
 run without ever bumping a real version.
 
-Migrated from `specs.py`'s `release_lockstep_failures`. Both directions matter: seven
-agreeing values all move together, and one already-drifted value refuses before any of the
-seven is touched — kept as two separate cases below rather than folded into one, so a failure
-names which direction broke.
+Migrated from the pre-refactor specs script's `release_lockstep_failures`. Both directions
+matter: four agreeing values all move together, and one already-drifted value refuses before
+any of the four is touched — kept as two separate cases below rather than folded into one, so
+a failure names which direction broke.
 """
 import os
 import tempfile
@@ -38,7 +38,7 @@ class Lockstep(unittest.TestCase):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_text(path, KINDS[kind])
 
-    def test_seven_agreeing_artifacts_are_reported_moved(self):
+    def test_four_agreeing_artifacts_are_reported_moved(self):
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertTrue(result["ok"], result.get("error"))
         self.assertEqual((result["oldVersion"], result["newVersion"]), ("9.9.9", "9.10.0"))
@@ -57,12 +57,13 @@ class Lockstep(unittest.TestCase):
         # The substitution is a regex on the VERSION line, not a line replacement — a comment
         # riding the same line must survive it.
         bump_release_artifacts(self.tmp, "9.10.0")
-        text = read_text(os.path.join(self.tmp, "plugins/quenching/assets/bin/specs.py"))
+        text = read_text(os.path.join(
+            self.tmp, "plugins/quenching/assets/bin/quenching/common/version.py"))
         self.assertIn("# a comment that must survive the bump", text)
 
     def test_a_lockstep_already_drifted_is_refused_rather_than_compounded(self):
         # Precondition: one artifact disagreeing with the rest BEFORE the bump is a refusal,
-        # not an eighth value folded into the compare.
+        # not a fifth value folded into the compare.
         write_text(os.path.join(self.tmp, "plugins/quenching/VERSION"), "9.9.8\n")
         result = bump_release_artifacts(self.tmp, "9.10.0")
         self.assertFalse(result["ok"])

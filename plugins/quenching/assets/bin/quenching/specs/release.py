@@ -1,7 +1,7 @@
-"""The version lockstep's mechanical half — the seven artifacts and the two-pass
+"""The version lockstep's mechanical half — the four artifacts and the two-pass
 bump that moves all of them or none.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import os
@@ -13,35 +13,31 @@ from quenching.common.io import read_text, write_text
 # --------------------------------------------------------------------------- #
 # release — the mechanical half of /.docs/standards/ci-cd/versioning-release.md
 # --------------------------------------------------------------------------- #
-# Seven artifacts, not six: `session.py` sits outside the SIX-artifact lockstep that
-# standard names (nothing installs a copy of it, so `drift` never compares it against
-# one) but still carries a `VERSION` constant and is bumped WITH the six, at the same
-# release, per that standard's own rule. All seven are relative to the REPO root, and
-# this verb only makes sense run from the plugin's own checkout — a target repository
-# that merely has this plugin installed carries none of them.
+# Four artifacts, down from the seven the pre-refactor scripts carried: each of the
+# four self-contained tools declared its own `VERSION` constant, and folding them into
+# one package folded those four declarations into the single one `common/version.py`
+# now carries — the package's every module imports it rather than repeating it. All
+# four are relative to the REPO root, and this verb only makes sense run from the
+# plugin's own checkout — a target repository that merely has this plugin installed
+# carries none of them.
 RELEASE_ARTIFACTS = (
     ("plugins/quenching/VERSION", "plain"),
     ("plugins/quenching/.claude-plugin/plugin.json", "json"),
     (".claude-plugin/marketplace.json", "json"),
-    ("plugins/quenching/assets/hooks/okf-validate.py", "py"),
-    ("plugins/quenching/assets/bin/specs.py", "py"),
-    ("plugins/quenching/assets/bin/skills.py", "py"),
-    ("plugins/quenching/assets/bin/session.py", "py"),
+    ("plugins/quenching/assets/bin/quenching/common/version.py", "py"),
 )
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
-# The same shape `skills.py`'s own `VERSION_CONSTANT_RE` reads for `drift` — duplicated
-# rather than imported, like every other cross-tool agreement in this codebase.
 _RELEASE_JSON_VERSION_RE = re.compile(r'("version"\s*:\s*")([^"]+)(")')
 _RELEASE_PY_VERSION_RE = re.compile(r'^(VERSION\s*=\s*["\'])([^"\']+)(["\'])', re.M)
 
 
 def bump_release_artifacts(repo_root: str, new_version: str) -> dict:
-    """Move all seven version-carrying artifacts to `new_version`, or change NOTHING.
+    """Move all four version-carrying artifacts to `new_version`, or change NOTHING.
 
     Two passes on purpose. The first only READS: every artifact's current version is
     collected before anything is written, so a lockstep that is ALREADY drifted — one
     artifact disagreeing with the rest — is refused outright rather than compounded with
-    an eighth value. The second pass writes only once every artifact was read
+    a fifth value. The second pass writes only once every artifact was read
     successfully and every one of them agreed."""
     reads: list[dict] = []
     for rel, kind in RELEASE_ARTIFACTS:
