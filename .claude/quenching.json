@@ -9,5 +9,56 @@
   },
   "profiles": {
     "installed": ["knowledge", "specs", "components"]
+  },
+  "azurePlacement": {
+    "defaultSubject": "plugin"
+  },
+  "subjects": {
+    "knowledge": {
+      "name": "Front /.docs/",
+      "description": "Trabalho no bundle OKF em /.docs/ — um standard, uma entrada de glossário, a forma do bundle, o validador `cq knowledge` e os comandos /quenching:knowledge:*. Escolha quando o entregável é conhecimento escrito ou a estrutura que o guarda.",
+      "tags": ["front:knowledge"]
+    },
+    "specs": {
+      "name": "Front /.specs/",
+      "description": "Trabalho no front de specs — os comandos /quenching:specs:*, o `cq specs`, o ciclo de vida de uma spec (captured até archive) e os três backends (files, github, azure-boards). Escolha quando o entregável muda como uma spec nasce, é construída ou é fechada.",
+      "tags": ["front:specs"]
+    },
+    "components": {
+      "name": "Front .claude/",
+      "description": "Trabalho na superfície de comandos — os comandos /quenching:components:*, o `cq components`, corpos de comando, descriptions, hooks e agents. Escolha quando o entregável muda o que a superfície registra, como um comando é roteado, ou o que uma description promete.",
+      "tags": ["front:components"]
+    },
+    "plugin": {
+      "name": "Plugin (transversal)",
+      "description": "Trabalho que atravessa mais de uma front, ou que é externo às três — release e lockstep de versão, o marketplace, o README, o CLAUDE.md, e as references compartilhadas sob assets/references/align/. Escolha quando nenhuma front sozinha é dona do entregável.",
+      "tags": ["front:plugin"]
+    }
+  },
+  "tagCatalog": {
+    "front:knowledge": "Aplicada automaticamente pelo subject `knowledge` — não proponha isoladamente.",
+    "front:specs": "Aplicada automaticamente pelo subject `specs` — não proponha isoladamente.",
+    "front:components": "Aplicada automaticamente pelo subject `components` — não proponha isoladamente.",
+    "front:plugin": "Aplicada automaticamente pelo subject `plugin` — não proponha isoladamente.",
+    "breaking": "A mudança quebra um repositório-alvo já instalado: um comando renomeado ou removido, uma chave de configuração que deixa de ser lida, um formato de frontmatter que muda. Escolha quando fazer upgrade do plugin exigir ação humana no alvo.",
+    "contract": "Altera um contrato escrito que outra coisa cita — um standard em /.docs/standards/, uma reference compartilhada, o okf-spec. Escolha quando o texto é normativo e tem citadores que precisam ser varridos.",
+    "cost": "O entregável é custo de execução: tokens que um corpo de comando lê, chamadas de ferramenta por sweep, prosa de reference que todo consumidor paga. Escolha quando a medida de sucesso é um número menor.",
+    "measured": "A spec só fecha com evidência coletada contra um alvo vivo — um repositório, um board, uma API — e não apenas com raciocínio. Escolha quando o trabalho exige provar, não argumentar.",
+    "regression": "Corrige comportamento que já funcionou e parou de funcionar. Escolha quando existe um estado anterior bom identificável, que é o alvo a restaurar."
+  },
+  "workItemTypes": {
+    "spec": {
+      "description": "Mudança de comportamento planejada, com problema, proposta e tasks — o caso normal deste repositório. Escolha quando o trabalho produz um entregável novo ou altera de propósito um existente.",
+      "default": true
+    },
+    "defect": {
+      "description": "Algo declarado que não se comporta como declarado: um corpo de comando que contradiz sua reference, uma ferramenta que sai 0 onde deveria refusar, uma description que promete o que o comando não faz. Escolha quando o alvo é a distância entre o escrito e o executado."
+    },
+    "spike": {
+      "description": "Investigação ou medição cujo entregável é uma resposta, não código — provar se um mecanismo funciona, medir um custo, decidir entre duas formas. Escolha quando o sucesso é saber, e não ter."
+    },
+    "chore": {
+      "description": "Manutenção sem mudança de comportamento observável: dedupe, renomeação interna, enxugar prosa, mover um arquivo. Escolha quando um usuário do plugin não notaria nada depois do merge."
+    }
   }
 }
