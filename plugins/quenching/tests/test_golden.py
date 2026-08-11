@@ -121,6 +121,14 @@ UNROUTED = {
     "okf-validate-findings": "the same skeleton-root change as `okf-validate-skeleton`, over the "
                               "same copy with one frontmatter-less doc injected — the injected "
                               "finding is unchanged, the scope warning around it is not.",
+    "specs-status-alpha": "the `promote` block gained an `openTasks` key. It reported only the "
+                           "SECTION gate of the destination folder, so a spec with an unticked "
+                           "box read `ok: true` here and was then refused (exit 2) by `promote "
+                           "--to archive --outcome done`, whose task condition lived nowhere else "
+                           "— and this verb's own description calls itself an honest dry run. The "
+                           "agreement is now asserted in `tests/test_specs_promote_gate.py`; the "
+                           "frozen payload predates the key.",
+    "specs-status-beta": "same added key as `specs-status-alpha`, on the second status fixture.",
 }
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package
