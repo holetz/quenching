@@ -50,7 +50,7 @@ ONE spec — create, develop, execute, conclude — in one run on one authorizat
 derived stage, invoking each stage as the command that owns it, and writing nothing itself. It
 shares the cycle-authorization contract with `/align`, and derives its run from the spec's
 `priority.complexity` per the gears contract
-([`orchestration-gears.md`](/docs/standards/automation/orchestration-gears.md)).
+([`orchestration-gears.md`](/.docs/standards/automation/orchestration-gears.md)).
 
 Every entry point shares one contract: any item whose blast radius reaches **product code**
 confirms on its own, always — and inside a conducted run, so does every **irreversible close**.

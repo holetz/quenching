@@ -4,7 +4,7 @@ title: Azure DevOps CLI measured behaviour
 description: Measured facts about `az boards` / `az devops` and the Azure Boards work item as a store — the WIQL macro that resolves to an indistinguishable empty answer, the project name the field compares against, the column that rewrites the state, the two ceilings a description travels under, the marker form `System.Description` does not strip, the identity `--assigned-to` accepts, and the one resource with a batch form
 resource: plugins/quenching/assets/bin/quenching/specs/**
 tags: [azure-devops, azure-boards, cli, wiql, work-item, tooling]
-timestamp: 2026-08-06
+timestamp: 2026-08-11
 audience: both
 authority: background
 source: provar-e-posicionar-o-backend-azure-boards spec §6 — measured against org `unicredbr`, team "Diretoria Risco", with `az` 2.89.0 and the `azure-devops` extension 1.0.6, on Linux
@@ -16,9 +16,9 @@ maintainer: quenching
 Facts about **how `az boards` / `az devops` and an Azure Boards work item actually behave** when a
 tool treats the work item as a document store. External tool behaviour, not our contract — the
 interface we hold every backend to is
-[standards/architecture/spec-backend.md](/docs/standards/architecture/spec-backend.md), and what a
+[standards/architecture/spec-backend.md](/.docs/standards/architecture/spec-backend.md), and what a
 target repository declares to reach this backend is
-[standards/workflows/plugin-configuration.md](/docs/standards/workflows/plugin-configuration.md).
+[standards/workflows/plugin-configuration.md](/.docs/standards/workflows/plugin-configuration.md).
 
 Everything below was measured against a real project, not read from documentation: `az` 2.89.0 with
 the `azure-devops` extension 1.0.6, org `unicredbr`, team "Diretoria Risco", Agile-derived process.

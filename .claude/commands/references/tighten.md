@@ -28,13 +28,13 @@ addressed, without losing a single thing a future session could not reconstruct.
 
 | Rule | Owner |
 | --- | --- |
-| `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/docs/standards/automation/context-discipline.md) §The rules/rationale marker convention |
-| Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/docs/standards/automation/context-discipline.md) §Two things measured and refused |
-| Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/docs/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
+| `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/.docs/standards/automation/context-discipline.md) §The rules/rationale marker convention |
+| Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/.docs/standards/automation/context-discipline.md) §Two things measured and refused |
+| Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/.docs/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
 | The no-op test, positive prescription, sediment / duplication / sprawl | [components-command-new/doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
-| The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/docs/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
-| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md) |
-| Which language the prose is written in | [communication.md](/docs/standards/agents/communication.md) |
+| The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/.docs/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
+| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.docs/standards/quality/computed-fact-prose-fanout.md) |
+| Which language the prose is written in | [communication.md](/.docs/standards/agents/communication.md) |
 
 Resolve `cq` at `plugins/quenching/assets/bin/cq`, invoked by that literal quoted
 path
@@ -133,7 +133,7 @@ If a command body under `plugins/quenching/commands/**` was touched at all, also
 
 Build the citation map (step 1) **once, in this session** — it is one grep and the whole batch
 shares it. Then delegate **one sub-agent per file**: that is the unit
-[context-discipline.md](/docs/standards/automation/context-discipline.md) §What a delegated
+[context-discipline.md](/.docs/standards/automation/context-discipline.md) §What a delegated
 executor costs blesses, because a sub-agent runs cold and pays a full first read of everything it
 opens. Hand each agent its own file path, its citation set, and its baseline numbers, so it
 re-derives none of them.

@@ -20,11 +20,11 @@ allowed-tools: Bash(git:*), Bash(python3:*), Read, AskUserQuestion
 from what accumulated and confirms it with you).
 
 This repository separates integration from publication —
-[docs/standards/git/branching.md](/docs/standards/git/branching.md): the integration branch
+[docs/standards/git/branching.md](/.docs/standards/git/branching.md): the integration branch
 (`develop` by default) is where specs merge; the release branch (`main` by default) only ever
 receives a deliberate `develop → main` merge, which is also the only moment the plugin's four
 version-carrying artifacts move
-([docs/standards/ci-cd/versioning-release.md](/docs/standards/ci-cd/versioning-release.md)) and a
+([docs/standards/ci-cd/versioning-release.md](/.docs/standards/ci-cd/versioning-release.md)) and a
 tag is created. This command is that deliberate act. The mechanical half — the four-artifact
 bump, the commit, the tag — is `plugins/quenching/assets/bin/cq specs release <version>`, already
 implemented and self-tested; this command judges *whether* and *what*, gets it confirmed, performs
@@ -51,7 +51,7 @@ branch's. **No checkout holds the release branch** → stop without merging, nam
 and that nothing has it checked out, and name the fix — check it out, or add a worktree of it.
 **No checkout holds the integration branch** → stop the same way: the bump needs a checkout of it.
 Never manufacture a temporary checkout
-([plan-git-record.md](/docs/standards/workflows/plan-git-record.md) §The merge runs in the
+([plan-git-record.md](/.docs/standards/workflows/plan-git-record.md) §The merge runs in the
 checkout that already holds the base is the same rule, applied here to the release branch instead
 of a spec's base).
 **Done when:** both branch names are known and a checkout exists for each, or the run has stopped
@@ -66,7 +66,7 @@ equivalent to "since the last release" without depending on tag history, since t
 only ever advances by this same command. **Zero** → nothing to publish; report that and stop.
 **Exactly one** → ask, once, with **AskUserQuestion**: "develop carries one merge since the last
 release — is this a release, or is it habit?" (the mitigation
-[branching.md](/docs/standards/git/branching.md) §O gatilho é a demanda names: nothing else
+[branching.md](/.docs/standards/git/branching.md) §O gatilho é a demanda names: nothing else
 pushes back on turning every single spec into its own release). Answering habit stops the run
 cleanly — nothing is written. Two or more → proceed without asking.
 **Done when:** the count is known and, if it was exactly one, answered.
@@ -77,7 +77,7 @@ Read `plugins/quenching/VERSION` for the current version. Show the merge commit 
 changed (a new command or a new capability → minor; a fix or a doc/prose-only change → patch; a
 breaking change to an installed consumer's contract → major) — **never invent a versioning
 policy**: this is human judgment the command conducts, per
-[versioning-release.md](/docs/standards/ci-cd/versioning-release.md)'s own boundary. If
+[versioning-release.md](/.docs/standards/ci-cd/versioning-release.md)'s own boundary. If
 `$ARGUMENTS` already named an exact version, skip the proposal and confirm that one instead.
 
 Present ONE plan and wait for it: the proposed version, "merge `<integrationBranch>` into
@@ -89,7 +89,7 @@ installs via the marketplace. **Done when:** the human has confirmed one exact `
 
 ### 4. Bump on the integration branch, merge, and push
 The bump comes FIRST, on the integration branch's checkout — the merge that follows is what
-carries the version ([versioning-release.md](/docs/standards/ci-cd/versioning-release.md)
+carries the version ([versioning-release.md](/.docs/standards/ci-cd/versioning-release.md)
 §When the bump happens): a bump committed on `main` after the merge is the one thing the release
 forbids. The `cd` in the subshell is what picks the repository — `cq specs` resolves it from the
 cwd, and refuses (exit 2, `sp-release-wrong-branch`) any checkout not on the integration branch.

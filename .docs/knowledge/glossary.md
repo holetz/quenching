@@ -164,7 +164,7 @@ sentence, and **link out** rather than explaining in full here.
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry
   point can drift from.
-- [**Gear**](/docs/standards/automation/orchestration-gears.md) — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from `priority.complexity`
+- [**Gear**](/.docs/standards/automation/orchestration-gears.md) — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from `priority.complexity`
 - [**Generated listing**](../standards/architecture/generated-listings.md) — a file, or a marked
   zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
   of a fact the disk already carries, so it earns its keep only where nothing else derives that

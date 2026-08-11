@@ -106,7 +106,7 @@ survived an earlier alignment.
   bundle. **Identifier-derived slugs are verbatim, never translated:**
   a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>` the
   real repo — translating them would break the greppable tie to the asset.
-- **Links:** relative **within** a home; absolute from the bundle root (`/docs/...`) when
+- **Links:** relative **within** a home; absolute from the bundle root (`/.docs/...`) when
   leaving for another home — so cross-links survive a home move/migration.
 - A directory that holds concept docs carries a reserved, frontmatter-free `index.md` listing
   its real children (the validator's `dir-no-index`/`index-broken-link`/`index-orphan` checks

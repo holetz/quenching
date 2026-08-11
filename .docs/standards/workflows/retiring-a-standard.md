@@ -2,9 +2,9 @@
 type: standard
 title: Retiring a standard — removal, the stamp, and the review as the net
 description: Como um standard do bundle é aposentado — remoção, nunca deprecação (o verbo é `git rm`; um doc que sobrevive anotado vira ritual que ninguém age sobre); o herdeiro carrega o carimbo `retired with <doc> (<spec>, <data>)` no `source:` e no corpo; a varredura das citações é humana e o `## Impact` deve nomear a classe de docs que citam; a zona GENERATED da listagem é reconstruída no mesmo movimento; e o review de branch é a rede — com `stale-doc` contando como aviso, nunca como falha
-resource: docs/**, specs/**
+resource: /.docs/**, /.specs/**
 tags: [workflows, docs, bundle, retirement]
-timestamp: 2026-08-06
+timestamp: 2026-08-11
 audience: both
 authority: background
 source: extensible-surface-and-budget-retirement plan, executed at close-out — tasks 2.1–2.3 deleted context-budget.md and re-pointed its citations, the inheriting note in context-discipline.md, and the review that caught the strays (2026-08-06); the missing index row this procedure lists first was itself the one stray the review did not catch

@@ -4,10 +4,10 @@ title: O report de uma frente é um mold, possuído uma vez
 description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e um bloco de próximo passo executável como impresso — porque um formato reescrito em oito corpos envelhece em sete e nenhum checker vê
 resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md
 tags: [architecture, commands, report, output, references, specs]
-timestamp: 2026-08-04
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: branch holetz/specs-report (2026-08-04) — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/docs/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
+source: branch holetz/specs-report (2026-08-04) — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/knowledge/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
 maintainer: quenching
 ---
 
@@ -105,7 +105,7 @@ aquele standard nomeia — ler a tag no início da sessão e ainda assim reporta
 
 ## Divergência conhecida, aceita e não corrigida
 
-Até esta branch, `plugins/quenching/commands/docs/status.md` §4 era cópia quase literal de
+Até esta branch, `plugins/quenching/commands/knowledge/status.md` §4 era cópia quase literal de
 `plugins/quenching/commands/specs/status.md` §4 — as mesmas cinco seções, os mesmos títulos, a
 mesma frase de fechamento. Era um formato compartilhado *de fato*, escrito duas vezes e possuído por
 nenhum arquivo.
