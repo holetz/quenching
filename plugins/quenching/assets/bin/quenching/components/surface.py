@@ -1,0 +1,204 @@
+"""The surface model — where the surface is, what a command IS on it, and what else it holds.
+
+Moved verbatim out of the pre-refactor components script.
+
+A **surface root** is the directory holding an automation surface's `commands/` tree.
+Two shapes are conformant and both resolve here:
+
+    <target>/.claude/          # a target repo's local surface
+      commands/<front>/[<object>/]<verb>.md
+
+    plugins/<plugin-name>/     # a packaged plugin's surface (this repo's own shape)
+      commands/<front>/[<object>/]<verb>.md
+
+ONE FILE PER ENTRY POINT. A command file carries its own description AND its own body; a
+command's path IS its invocation and its identity: `commands/specs/develop.md` is
+`/quenching:specs:develop`, one `:` per path segment. There is nothing to mirror.
+
+`commands/**` is the ONLY tree Claude Code registers, which is why nothing else may live
+there: a `references/` folder beside a command file would surface every reference as a
+phantom entry. Such a file carries no `description`, so `sk-no-description` already catches
+it — the layout rule needs no check of its own.
+
+`_quoted_phrases` sits at this layer and not in `lint`: `lint` reads a description's quoted
+phrases for the trigger-position code and `registry` reads them for the Typical trigger cell,
+and neither verb owns the other.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+
+from quenching.common.frontmatter import frontmatter_anomalies, parse_frontmatter
+from quenching.common.io import read_text
+from quenching.components.hooks import parse_frontmatter_hooks
+
+COMMANDS_DIR = "commands"
+CLAUDE_DIR = ".claude"
+HOOKS_DIR = "hooks"
+
+# The prose checks reach `assets/references/**` as well as `commands/**`, decided by count:
+# of the 519 bare command citations this surface carried on 2026-07-30, 183 lived under
+# `assets/references/`, so a scope stopping at `commands/` leaves 35% of the prose with no
+# net — and a reference is read by the same session that reads the body citing it, so a
+# body and its reference disagreeing is exactly the drift worth catching. A surface with no
+# such directory (every target repo's `.claude/`) contributes nothing and reports nothing.
+REFERENCES_DIR = os.path.join("assets", "references")
+
+SURFACE_MISSING = "—"
+
+FRONTMATTER_FENCE = "---"
+
+PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
+
+QUOTED_RE = re.compile(r"[\"“]([^\"”]{2,}?)[\"”]")
+
+
+# --------------------------------------------------------------------------- #
+# helpers
+# --------------------------------------------------------------------------- #
+def plural(n: int, noun: str) -> str:
+    return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
+
+
+def rel(path: str, base: str) -> str:
+    try:
+        return os.path.relpath(path, base).replace(os.sep, "/")
+    except ValueError:      # different drives on Windows
+        return path.replace(os.sep, "/")
+
+
+def body_after_frontmatter(text: str) -> str:
+    if not text.startswith(FRONTMATTER_FENCE):
+        return text
+    lines = text.splitlines()
+    if lines[0].strip() != FRONTMATTER_FENCE:
+        return text
+    for i in range(1, len(lines)):
+        if lines[i].strip() == FRONTMATTER_FENCE:
+            return "\n".join(lines[i + 1:])
+    return text
+
+
+def _quoted_phrases(text: str) -> list[str]:
+    return [m.group(1).strip() for m in QUOTED_RE.finditer(text) if m.group(1).strip()]
+
+
+def find_surface_root(root_arg: str | None) -> str:
+    """The directory holding `commands/`. `.claude/` wins over a bare `commands/` at the
+    same level, so a repo root carrying both a target surface and a packaged plugin
+    resolves to the target's."""
+    if root_arg:
+        return os.path.abspath(root_arg)
+    env = os.environ.get("SKILLS_ROOT")
+    if env:
+        return os.path.abspath(env)
+    d = os.path.abspath(os.getcwd())
+    while True:
+        if os.path.isdir(os.path.join(d, CLAUDE_DIR, COMMANDS_DIR)):
+            return os.path.join(d, CLAUDE_DIR)
+        if os.path.isdir(os.path.join(d, COMMANDS_DIR)):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    return os.path.join(os.path.abspath(os.getcwd()), CLAUDE_DIR)
+
+
+# --------------------------------------------------------------------------- #
+# the surface model — what every subcommand reads
+# --------------------------------------------------------------------------- #
+def command_invocation(relpath: str) -> str:
+    """`specs/develop.md` -> `/quenching:specs:develop` — one `:` per path segment. The path IS
+    the identity, so this is the whole naming rule; nothing derives a second name to
+    compare it against."""
+    return "/" + ":".join(relpath[:-3].split("/"))
+
+
+def discover_commands(commands_dir: str) -> list[dict]:
+    """Every `<commands_dir>/**/*.md`, sorted by invocation — one row per entry point.
+
+    Every `.md` under the tree is a command, including one that should not be there:
+    `commands/**` is the only tree Claude Code registers, so a stray file IS a
+    registered entry point and must be reported as one, never filtered out here."""
+    if not os.path.isdir(commands_dir):
+        return []
+    out = []
+    for dirpath, _dirnames, filenames in os.walk(commands_dir):
+        for fn in sorted(filenames):
+            if not fn.endswith(".md"):
+                continue
+            path = os.path.join(dirpath, fn)
+            relpath = rel(path, commands_dir)
+            text = read_text(path) or ""
+            body = body_after_frontmatter(text)
+            hooks, hooks_parsed = parse_frontmatter_hooks(text)
+            out.append({
+                "command": command_invocation(relpath),
+                "path": path,
+                "relpath": relpath,
+                "frontmatter": parse_frontmatter(text),
+                "anomalies": frontmatter_anomalies(text),
+                "hooks": hooks,
+                "hooksParsed": hooks_parsed,
+                "body": body,
+                "bodyLines": len(body.splitlines()),
+            })
+    return sorted(out, key=lambda c: c["command"])
+
+
+def discover_references(references_dir: str) -> list[dict]:
+    """Every `<references_dir>/**/*.md` — the shared procedure a command body cites by
+    absolute path instead of restating. These are NOT entry points and carry no
+    invocation: they are prose the prose checks read, nothing more."""
+    if not os.path.isdir(references_dir):
+        return []
+    out = []
+    for dirpath, _dirnames, filenames in os.walk(references_dir):
+        for fn in sorted(filenames):
+            if not fn.endswith(".md"):
+                continue
+            path = os.path.join(dirpath, fn)
+            text = read_text(path) or ""
+            out.append({
+                "path": path,
+                "relpath": rel(path, references_dir),
+                "body": body_after_frontmatter(text),
+            })
+    return sorted(out, key=lambda r: r["relpath"])
+
+
+def load_surface(root: str) -> dict:
+    return {
+        "root": root,
+        "commandsDir": os.path.join(root, COMMANDS_DIR),
+        "commands": discover_commands(os.path.join(root, COMMANDS_DIR)),
+    }
+
+
+def plugin_prefix(root: str) -> str | None:
+    """The registry prefix this surface's commands carry, from `<root>/.claude-plugin/
+    plugin.json`. `None` says the surface is a target repo's own `.claude/` — where a
+    command file IS in `.claude/commands/`, the bare form is the one that resolves, and
+    the citation check has nothing to say."""
+    text = read_text(os.path.join(root, PLUGIN_MANIFEST))
+    if text is None:
+        return None
+    try:
+        name = json.loads(text).get("name")
+    except (ValueError, AttributeError):
+        return None
+    return name.strip() if isinstance(name, str) and name.strip() else None
+
+
+def agent_definitions(root: str) -> list[tuple[str, dict]]:
+    """`(filename, frontmatter)` for every `<root>/agents/*.md`, sorted.
+
+    Read by `doctor` (which checks each definition is reachable)."""
+    agents_dir = os.path.join(root, "agents")
+    if not os.path.isdir(agents_dir):
+        return []
+    return [(fn, parse_frontmatter(read_text(os.path.join(agents_dir, fn)) or ""))
+            for fn in sorted(os.listdir(agents_dir)) if fn.endswith(".md")]

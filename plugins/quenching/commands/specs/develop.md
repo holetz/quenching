@@ -19,7 +19,7 @@ proposal needs an argument, a spec at the gate needs a yes. The bank is looked u
 **Every `§X` below is an address, and it is loaded as one — never by opening the file.**
 
 ```bash
-skills.py read <the cited file> --sections "§Choosing the bank" --sections "§The four shared mechanics"
+cq components read <the cited file> --sections "§Choosing the bank" --sections "§The four shared mechanics"
 ```
 
 One call, N sections, no frontmatter; a unique prefix resolves. The reason is this command's own
@@ -46,7 +46,7 @@ of which branch runs.
 
 ## Resolving the tool
 
-Resolve `specs.py` and `skills.py` (the section reader every `§X` citation above resolves through)
+Resolve `cq` (`cq components read` is the section reader every `§X` citation above resolves through)
 per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool, §Write the resolved path literally on every invocation; branch on the **exit
@@ -58,7 +58,7 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 
 ## Doctrine
 
-- **The stage picks the bank; the tool reports the stage.** `specs.py status --spec <slug> --json`
+- **The stage picks the bank; the tool reports the stage.** `cq specs status --spec <slug> --json`
   returns it. Never infer the stage by reading the headings, and never ask the human which mode
   they want — the answer is on disk. This is the one rule that is this command's own; everything
   about *how* a bank runs is owned by
@@ -87,7 +87,7 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
 ## Workflow
 
 ### 1. Resolve the spec
-Take the slug from the input, infer it from the conversation, or run `specs.py list --json` and ask
+Take the slug from the input, infer it from the conversation, or run `cq specs list --json` and ask
 with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announce it and how to
 override. Two matches for one slug is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
@@ -95,7 +95,7 @@ meant. An archived spec has nothing to develop: say so and stop.
 
 ### 2. Read the spec's STATE — not its body
 ```bash
-specs.py status --spec <slug> --json      # stage, section states, records, tasks, gate
+cq specs status --spec <slug> --json      # stage, section states, records, tasks, gate
 ```
 That is the whole of this step. **No section body is pulled here**, because nothing has chosen the
 bank yet and a body read before the choice is a body read for a bank that may not want it — at the
@@ -118,16 +118,16 @@ say which bank the spec's state calls for, offer the requested one anyway, and l
 Now that the bank is known, and in **one call per source**:
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md \
   --sections "§Bank: <name>"
-specs.py section <slug> "<Heading1>,<Heading2>,…"     # only the sections this bank reads or writes
+cq specs section <slug> "<Heading1>,<Heading2>,…"     # only the sections this bank reads or writes
 ```
 
 | Bank | Spec sections | `artifacts.md` (loaded at step 5) |
 | --- | --- | --- |
 | shape | `## Problem` | §The explicit-none rule §`## Overview` §The nine definition sections |
 | adversarial | `## Problem` `## Proposal` `## Design` `## Alternatives Considered` `## Risks` | §The nine definition sections §`## Overview` |
-| gate | the headings `specs.py next --spec <slug> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
+| gate | the headings `cq specs next --spec <slug> --json` reports, plus `## Impact` and `## Tasks` | §The explicit-none rule §The nine definition sections §`## Impact` §`## Tasks` §Execution metadata |
 | discoveries | `## Discoveries` | §`## Discoveries` and `## Outcome` |
 | approval | `## Proposal` `## Impact` `## Risks` | none — this bank writes nothing into the body |
 
@@ -161,7 +161,7 @@ Load the authoring doctrine now — the `artifacts.md` sections step 3b's table 
 bank, in one call:
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md \
   --sections "§The explicit-none rule" --sections "§`## Tasks`"
 ```
 
@@ -192,7 +192,7 @@ thinking is not lost.
 **Done when:** the user has answered.
 
 ### 6. Apply, and record what the pass earned
-Write each confirmed section with `specs.py section <slug> "<Heading>" --write` (body on stdin) —
+Write each confirmed section with `cq specs section <slug> "<Heading>" --write` (body on stdin) —
 it creates the heading in canonical position on first write, so creating and revising are the same
 call. An emptied section becomes an explicit `- none — <reason>`, never a deleted heading.
 
@@ -200,14 +200,14 @@ call. An emptied section becomes an explicit `- none — <reason>`, never a dele
 are three turns buying what one already does:
 
 ```bash
-specs.py section "<slug>" "<Heading>" --write <<'BODY'
+cq specs section "<slug>" "<Heading>" --write <<'BODY'
 <the drafted section, verbatim>
 BODY
 ```
 
 Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shell.
 
-Every follow-up the plan parked is written in this same edit — `specs.py discover <slug>
+Every follow-up the plan parked is written in this same edit — `cq specs discover <slug>
 "<finding>"`, one call per line — and never mid-bank, which
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
 mechanics forbids. The call creates `## Discoveries` when the heading is absent, and a filled
@@ -217,15 +217,15 @@ Then the frontmatter records this command owns — read
 [questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §Recording the
 pass for which bank earns which, and
 [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md) §Frontmatter
-for the write-once semantics, in one call. Each is stamped through `specs.py record` — **never by
+for the write-once semantics, in one call. Each is stamped through `cq specs record` — **never by
 editing the frontmatter**, which merges nothing and works only while the backend is `files`:
 
 | Record | When | Call |
 | --- | --- | --- |
-| `refined: {mode, date}` | the adversarial or gate bank ran | `specs.py record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
-| `approved: {date}` | the human said go in the approval bank | `specs.py record <slug> approved --set date=<today>` |
-| `verification` | the gate bank settled the policy | `specs.py verification <slug> <per-task\|per-section\|end-of-plan>` |
-| `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `specs.py record <slug> priority --set complexity=<level> --set date=<today>` |
+| `refined: {mode, date}` | the adversarial or gate bank ran | `cq specs record <slug> refined --set mode=<per questions.md §Recording the pass> --set date=<today>` |
+| `approved: {date}` | the human said go in the approval bank | `cq specs record <slug> approved --set date=<today>` |
+| `verification` | the gate bank settled the policy | `cq specs verification <slug> <per-task\|per-section\|end-of-plan>` |
+| `complexity` (in `priority`) | the plan proposed a re-evaluation, and the human approved it | `cq specs record <slug> priority --set complexity=<level> --set date=<today>` |
 
 `verification` is a plain frontmatter key rather than a record, which is why it has a verb of its
 own instead of a `--set`. **It is written through that verb and never by editing the frontmatter**
@@ -240,15 +240,15 @@ which is the answer, not an obstacle.
 `complexity` is a field of `priority`, and the record merges — `level` and `criticality` survive
 a re-stamp that touches only the size, and `date` is the ranking's own.
 
-Re-run `specs.py validate --spec <slug>` and report what it says. **When this pass touched
-`## Tasks`, run `specs.py parallel --spec <slug>` in the same call** — exit 1 names the `[P]` group
+Re-run `cq specs validate --spec <slug>` and report what it says. **When this pass touched
+`## Tasks`, run `cq specs parallel --spec <slug>` in the same call** — exit 1 names the `[P]` group
 whose `files:` sets are not disjoint, and definition time is the only moment that is cheap to fix.
 Report what it says either way; a `[P]` nobody proved is a promise execution will refuse.
 **Done when:** the sections are written, the records this bank earned are stamped, and validate —
 plus `parallel`, where `## Tasks` moved — has been re-run.
 
 ### 7. Re-derive, and offer the next bank
-Run `specs.py status --spec <slug> --json` again. The stage is now a fact about disk. If it selects
+Run `cq specs status --spec <slug> --json` again. The stage is now a fact about disk. If it selects
 a different bank, name it and what it would ask — then wait. Accepted → return to step 3. Declined,
 or the same bank selected again with nothing left to ask → go to step 8.
 **Done when:** the human has taken or declined the next bank.
@@ -256,7 +256,7 @@ or the same bank selected again with nothing left to ask → go to step 8.
 ### 8. Report
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -283,16 +283,22 @@ is friction for everyone.
 
 - **NEVER edit implementation code.** If the spec implies code changes, stop and name
   `/quenching:specs:execute`.
-- **Never write into `/.docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
-  understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define` — **offered, never
+- **Never write into `/.docs/`.** A durable rule a question surfaces routes to `/quenching:knowledge:add`, an
+  understanding to `/quenching:knowledge:learn`, a term to `/quenching:knowledge:define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
+- **Never write into `## Tasks` what the merge owns.** A version bump, a changelog entry, a manifest
+  re-stamp; the `/.docs/` the work *revealed* rather than declared; the cycle's own closing actions
+  (review, archive, distil, merge, open the PR) — all three belong to `/quenching:specs:conclude`,
+  which settles them once what the release *is* is knowable. A standard this spec **declares** under
+  `## Impact` still gets its own checkbox and still must: the axis is declared versus revealed,
+  never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
-  `specs.py discover <slug> "<finding>"` — landed inside the step 6 edit the human already
+  `cq specs discover <slug> "<finding>"` — landed inside the step 6 edit the human already
   confirmed, never as a loose call mid-bank. Turning a follow-up into its own spec stays
   `/quenching:specs:conclude`'s, which harvests it once the parent's fate is known. This route is
   not an offer: nothing is created, so there is nothing to ask for.
-- **Inside a develop pass, `specs.py new` runs only as the discoveries bank's `promoted:`
+- **Inside a develop pass, `cq specs new` runs only as the discoveries bank's `promoted:`
   resolution.** Nothing else here mints a spec.
 - Never write a section without showing it and getting the human's word first.
 - Never write anything mid-bank — accumulate, then apply once.
@@ -301,9 +307,9 @@ is friction for everyone.
   carries a recommendation either way.
 - Never ask the human to choose a mode; the derived stage chooses the bank.
 - **A sub-agent may read; it may never ask, write, or decide.** The evidence sweep of step 3b
-  returns a table. Every question, every `specs.py` call and every confirmation stays here.
+  returns a table. Every question, every `cq specs` call and every confirmation stays here.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
-  `skills.py read --sections`; and never hoist into the preamble what only one branch reads.
+  `cq components read --sections`; and never hoist into the preamble what only one branch reads.
 - Never derive the stage from what this pass intends to write — only from disk.
 - Never cross into another bank without offering it first.
 - Never delete a heading to signal that nothing applies — write `- none — <reason>`.
@@ -311,7 +317,7 @@ is friction for everyone.
   unanswered question: it goes in `## Open Decisions` with how it will be decided, which is a
   result, not a failure.
 - Never create a heading you are not filling in the same edit.
-- **Never edit a frontmatter record by hand.** `specs.py record` is the writer — it merges, it
+- **Never edit a frontmatter record by hand.** `cq specs record` is the writer — it merges, it
   enforces write-once, and it is the only form that survives a backend with no file to edit.
 - **Never fabricate a record.** `refined` is stamped only after real questions got real answers;
   `approved` only after a human actually said go. Neither can be inferred from the sections — that

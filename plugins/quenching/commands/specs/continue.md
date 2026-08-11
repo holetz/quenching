@@ -1,5 +1,5 @@
 ---
-description: Answer "which spec now, and which command?" — read the whole plans/ front, show the ordering, and hand off. Triggers on "what should I work on", "what is next", "continue", "pick up where I left off", "which spec now", "what is in flight", "where were we", "resume the plan". One tool call, no sub-agents, no file reads: the ranking, the reason each spec sits where it does, and the one command to run next. Branch-aware — the spec whose plan/<slug> branch you are standing on comes back first, and one alive but checked out elsewhere is demoted rather than offered twice. Suggests ranking the front first when nothing has been started and nothing carries a priority. Hands off; never builds, edits, or closes anything itself. Not for: building a spec → /specs:execute; sharpening one → /specs:develop; taking a branch or worktree → /specs:execute; closing one out → /specs:conclude; the full conformance view of the workspace → /specs:status.
+description: Answer "which spec now, and which command?" — read the whole plans/ front, show the ordering, and hand off. Triggers on "what should I work on", "what is next", "continue", "pick up where I left off", "which spec now", "what is in flight", "where were we", "resume the plan". One tool call, no sub-agents, no file reads: the ranking, the reason each spec sits where it does, and the one command to run next. Branch-aware — the spec whose plan/<slug> branch you are standing on comes back first, and one alive but checked out elsewhere is demoted rather than offered twice. Suggests ranking the front first when nothing has been started and nothing carries a priority. Hands off; never builds, edits, or closes anything itself. Not for: building a spec → /quenching:specs:execute; sharpening one → /quenching:specs:develop; taking a branch or worktree → /quenching:specs:execute; closing one out → /quenching:specs:conclude; the full conformance view of the workspace → /quenching:specs:status.
 argument-hint: [slug]
 allowed-tools: Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 ---
@@ -9,28 +9,28 @@ allowed-tools: Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
 **Input**: `$ARGUMENTS` — optionally a spec slug. With one, this answers "what is next **for that
 spec**"; without one, "what is next **on the front**".
 
-The router. Every other `/specs:*` command answers a question you already knew to ask; this one
+The router. Every other `/quenching:specs:*` command answers a question you already knew to ask; this one
 answers the question you have when you sit down: *what now?*
 
-**It must stay near-free.** One `specs.py` call, no file reads, no sub-agents. A router that costs
+**It must stay near-free.** One `cq specs` call, no file reads, no sub-agents. A router that costs
 as much as the work it routes to is a router nobody runs — and this is the command that gets run
 most often, on the least context, by someone who has just come back to a repo.
 
-The layout, the derived stages and the `specs.py` surface live in
+The layout, the derived stages and the `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §Derived stages §The `specs.py` tool surface §The report mold, which owns the
+§The `specs/` layout §Derived stages §The `cq specs` tool surface §The report mold, which owns the
 shape below — both cited and never restated.
 
 ## Resolving the tool
 
-Resolve `specs.py` per
+Resolve `cq specs` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
 
 ## Doctrine
 
-- **The tool ranks; this command reports and routes.** `specs.py next --front` is the only place
+- **The tool ranks; this command reports and routes.** `cq specs next --front` is the only place
   the ordering lives — a live `plan/<slug>` ref first, then four lexicographic factors: what is
   already executing, then closest to done, then the human's `priority`, then age. Never re-sort its
   output, never add a factor of your own, and never argue with the top candidate.
@@ -59,11 +59,11 @@ never on prose.
 ### 1. Ask the tool — once
 With a slug:
 ```bash
-specs.py next --spec "<slug>" --json
+cq specs next --spec "<slug>" --json
 ```
 Without one:
 ```bash
-specs.py next --front --json
+cq specs next --front --json
 ```
 That is the whole read. Do not open the spec files, do not run `status`, do not run `validate` —
 each of those is a different command's job, and paying for them here is what makes a router stop
@@ -101,7 +101,7 @@ Two things the payload does not decide, and which are named rather than routed a
 ### 3. Report the ordering, and offer the hand-off
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -139,7 +139,7 @@ Next step
 ## Invariants to never violate
 
 - Never re-rank, re-sort, or second-guess `next --front`'s ordering.
-- Never read a spec file, run a second `specs.py` subcommand, or dispatch a sub-agent. One call.
+- Never read a spec file, run a second `cq specs` subcommand, or dispatch a sub-agent. One call.
 - Never write anything: no section, no record, no checkbox, no listing zone.
 - Never recommend a command the payload's `action` does not support — routing is a lookup, not a
   judgment.

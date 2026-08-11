@@ -1,0 +1,120 @@
+{
+  "ok": true,
+  "slug": "beta-gizmo",
+  "title": "Beta Gizmo",
+  "phase": "plans",
+  "folder": "plans",
+  "legacy": false,
+  "stage": "captured",
+  "file": "beta-gizmo.md",
+  "date": "2026-01-09",
+  "verification": "per-section",
+  "records": {
+    "priority": null,
+    "refined": null,
+    "approved": null,
+    "branch": null,
+    "reviewed": null,
+    "merge": null,
+    "outcome": null
+  },
+  "ready": {
+    "phase": "ready",
+    "missing": [
+      "Proposal",
+      "Out of Scope",
+      "Impact",
+      "Validation",
+      "Design",
+      "Alternatives Considered",
+      "Open Decisions",
+      "Risks",
+      "Tasks"
+    ],
+    "malformed": [],
+    "warn": [
+      "Overview",
+      "Handoff"
+    ],
+    "ok": false
+  },
+  "sections": [
+    {
+      "heading": "Overview",
+      "state": "absent"
+    },
+    {
+      "heading": "Problem",
+      "state": "filled"
+    },
+    {
+      "heading": "Proposal",
+      "state": "absent"
+    },
+    {
+      "heading": "Out of Scope",
+      "state": "absent"
+    },
+    {
+      "heading": "Impact",
+      "state": "absent"
+    },
+    {
+      "heading": "Validation",
+      "state": "absent"
+    },
+    {
+      "heading": "Design",
+      "state": "absent"
+    },
+    {
+      "heading": "Alternatives Considered",
+      "state": "absent"
+    },
+    {
+      "heading": "Open Decisions",
+      "state": "absent"
+    },
+    {
+      "heading": "Risks",
+      "state": "absent"
+    },
+    {
+      "heading": "Handoff",
+      "state": "absent"
+    },
+    {
+      "heading": "Tasks",
+      "state": "absent"
+    },
+    {
+      "heading": "Discoveries",
+      "state": "absent"
+    },
+    {
+      "heading": "Outcome",
+      "state": "absent"
+    }
+  ],
+  "strays": [],
+  "tasks": {
+    "checked": 0,
+    "blocked": 0,
+    "total": 0,
+    "blockedTasks": [],
+    "subjects": [],
+    "commits": []
+  },
+  "promote": {
+    "phase": "archive",
+    "missing": [
+      "Outcome"
+    ],
+    "malformed": [],
+    "warn": [],
+    "ok": false
+  },
+  "path": ".specs/plans/beta-gizmo.md",
+  "resolvedBy": null,
+  "resolvedFrom": null
+}

@@ -21,5 +21,5 @@ records the rest below as deferrals (never a silent skip):
 Per-subject ledger the verify gate reads. A subject is "done" only when every candidate is
 **present or listed here** with a one-line why.
 
-- [command-surface.md](command-surface.md) — the plugin's skill + command-wrapper naming (present)
+- [command-surface.md](command-surface.md) — the plugin's command naming and namespacing (present)
 - `tables` · `columns` · `descriptions` · `schemas-catalogs` — not applicable (this repo has no data)

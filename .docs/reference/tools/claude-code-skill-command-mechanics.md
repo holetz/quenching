@@ -4,7 +4,7 @@ title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, the unified frontmatter schema, and what disable-model-invocation actually closes
 resource: plugins/quenching/commands/**
 tags: [claude-code, plugins, skills, commands, frontmatter, tooling]
-timestamp: 2026-08-02
+timestamp: 2026-08-11
 audience: both
 authority: background
 source: skill-description-tiering spec task 0.2 gate spike (rows 1–6, Claude Code 2.1.215); route-commands-without-always-on-descriptions task 0.1 (row 7, Claude Code 2.1.220)
@@ -136,7 +136,7 @@ records who ignored that advice and who did not.
 | Row | Relied on by | How load-bearing |
 | --- | --- | --- |
 | 1 — `${CLAUDE_PLUGIN_ROOT}` substitutes in a command body | `collapse-skills-into-commands` (2026-07-26) | **Total.** All 351 citations in the collapsed surface are `${CLAUDE_PLUGIN_ROOT}` absolute paths. If this row is false, every command body instructs a future session to read a file it cannot resolve — silently, since a bad path does not error. |
-| 2 — a command is invocable by name through the Skill tool | `collapse-skills-into-commands` (2026-07-26) | **Total.** All five conductors invoke their stages this way (`quenching:docs:align`). If false, a conductor runs and does nothing. |
+| 2 — a command is invocable by name through the Skill tool | `collapse-skills-into-commands` (2026-07-26) | **Total.** All five conductors invoke their stages this way (`quenching:knowledge:align`). If false, a conductor runs and does nothing. |
 | 4 — the registry is built at session start | `collapse-skills-into-commands` (2026-07-26) | **Methodological.** It is why that spec's `verification` is `per-section` and why its three functional checks each need a fresh `claude -p`: nothing it wrote was testable in the session that wrote it. |
 | 7 — the field closes both doors | `route-commands-without-always-on-descriptions` (2026-08-02) | **Total.** It sizes the typed-only class: every command a conductor reaches by name is excluded from it by this row. The row was measured *by* that spec, before it classified anything — which is the ordering this table exists to encourage. |
 | 3, 5 | — | Corroborating only. Neither was re-measured for the collapse. |
@@ -146,13 +146,13 @@ Rows 1, 2 and 4 were re-measured against **Claude Code 2.1.215** immediately bef
 migration moved its first file — see below.
 
 **Row 6 was contradicted before it was ever relied upon.** Three artifacts asserted that a scoped
-`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/docs:status` and
-`/specs:status` doctrine bullets, and the plugin `README.md`'s `/docs:status` paragraph — which is
+`allowed-tools` *was* the enforcement behind a read-only guarantee — the `/quenching:knowledge:status` and
+`/quenching:specs:status` doctrine bullets, and the plugin `README.md`'s `/quenching:knowledge:status` paragraph — which is
 the contrary of what row 6 observed, claimed without measuring anything.
 `verify-allowed-tools-enforcement` (2026-07-28) deleted all three, and closed the gap that produced
 them: `standards/automation/skills.md` §`allowed-tools` is always scoped and the
 `skills-standard.md` mold every aligned repo is cut from now both say the grant is a declaration
-`skills.py lint` checks. Worth recording as its own failure mode — an unmeasured row invites its
+`cq components lint` checks. Worth recording as its own failure mode — an unmeasured row invites its
 opposite, because a reader who finds no measured claim will supply one.
 
 ## Re-measurements

@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "slug": "alpha-widget",
+  "heading": "Problem",
+  "state": "filled",
+  "body": "\nThe loader and the renderer each keep their own copy of the widget list, so a widget added to\none is invisible to the other.\n",
+  "sections": [
+    {
+      "heading": "Problem",
+      "state": "filled",
+      "body": "\nThe loader and the renderer each keep their own copy of the widget list, so a widget added to\none is invisible to the other.\n"
+    }
+  ],
+  "absent": []
+}

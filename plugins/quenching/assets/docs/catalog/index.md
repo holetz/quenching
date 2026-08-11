@@ -6,10 +6,10 @@ LLM**: what each table means, **how to access** the source system, **which scrip
 it, and **where to look** for more.
 
 **Boundary:** `catalog/` = "the **data** we produce/consume". Distinct from
-[reference/](/docs/reference/index.md) (external tools/libs/regulations) and
-[standards/](/docs/standards/index.md) (our contracts). The modeling behind the data
-(grain/key/joins) lives in [standards/data-modeling/](/docs/standards/data-modeling/index.md);
-table/column naming in [standards/naming/](/docs/standards/naming/index.md).
+[reference/](/.docs/reference/index.md) (external tools/libs/regulations) and
+[standards/](/.docs/standards/index.md) (our contracts). The modeling behind the data
+(grain/key/joins) lives in [standards/data-modeling/](/.docs/standards/data-modeling/index.md);
+table/column naming in [standards/naming/](/.docs/standards/naming/index.md).
 
 ## Hierarchy: system → catalog → schema → table
 
@@ -32,7 +32,7 @@ catalog/
 - **`<schema>.md`** carries `type: schema` — consolidated, one line per table, no columns.
 - **`<schema>/<table>.md`** carries `type: table` — the detailed page.
 - The `<system>/<catalog>/<schema>/<table>` segments use the **real system names** (do not
-  translate); only the canonical home names in `docs/` are English kebab-case.
+  translate); only the canonical home names in `/.docs/` are English kebab-case.
 
 ## Two granularities
 

@@ -9,7 +9,7 @@ description: >-
   "rodar/subir o mkdocs local", "documentação que um LLM consiga reutilizar",
   "make the docs a joy to read", "docs studio", "score the docs". Not for: the
   quenching bundle's own site layer over docs/documentation →
-  /docs:documentation:build.
+  /quenching:knowledge:documentation:build.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

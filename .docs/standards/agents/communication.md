@@ -30,7 +30,7 @@ Language: pt-BR — the contract is /.docs/standards/agents/communication.md
 ```
 
 That line carries **a value and a citation, and nothing else**. It never paraphrases the rule below:
-a harness file that restates a standard is precisely the drift `/docs:harness` exists to remove,
+a harness file that restates a standard is precisely the drift `/quenching:components:harness:align` exists to remove,
 while a value plus a pointer is not a restatement. It carries **one** value — a second configuration
 key on that line is a defect, not a feature.
 
