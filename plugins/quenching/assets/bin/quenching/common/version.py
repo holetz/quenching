@@ -1,6 +1,6 @@
 """The version constant every shipped tool in the plugin carries.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
-VERSION = "5.0.0"  # kept in lockstep with the plugin VERSION file, plugin.json, and okf-validate.py
+VERSION = "5.0.0"  # kept in lockstep with the plugin VERSION file, plugin.json and marketplace.json
