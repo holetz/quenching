@@ -5,6 +5,7 @@ import json
 import os
 
 from quenching.common.frontmatter import frontmatter_anomalies
+from quenching.common.output import exit_for
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter
@@ -280,4 +281,12 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
                 print(f"          remedy: {f['remedy']}")
         if not findings:
             print("  OK — every spec conforms.")
-    return 1 if findings else 0
+    # Errors fail; warnings are reported. This line read `1 if findings else 0` for as long as the
+    # verb existed, which contradicted the `"ok": not errors` two lines above it — a warn-only run
+    # printed `"ok": true` and exited 1 — and contradicted `components lint`, `components doctor`
+    # and `common.output.exit_for`, all three of which count `severity == "error"` alone. Fifteen
+    # warn codes reach here (`sp-unrefined`, `sp-no-outcome`, `sp-impact-uncovered`, the six
+    # `sp-bad-merge` arms among them), so any conductor gating on this exit code failed on advice.
+    # `exit_for` rather than a fourth copy of the predicate: the rule is one, so its implementation
+    # is one.
+    return exit_for(findings)

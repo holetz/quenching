@@ -85,7 +85,11 @@ def main(argv: list[str]) -> int:
     exiting `FINDINGS`, exactly as it always did. The `REFUSAL` below is the ROUTER's, on a
     word that names no verb, and it can only be reached before any bundle is read."""
     if "--version" in argv:
-        print(f"okf-validate {VERSION}")
+        # `cq knowledge`, not the pre-refactor validator's filename: task 10.1 deleted that file,
+        # so the stamp was naming an artifact the repo no longer ships. `citation-check.sh` cannot
+        # see it — its dead patterns match the script names WITH their extension, and this string
+        # carries none.
+        print(f"cq knowledge {VERSION}")
         return OK
     verb = argv[0] if argv else ""
     if verb == "hook":

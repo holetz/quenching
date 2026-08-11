@@ -41,9 +41,15 @@ def declock(text: str) -> str:
         text = pattern.sub(token, text)
     return text
 
-# Golden ids with no `cq` invocation that reproduces them today, and why. A case leaves this
-# set only when a later task mounts the route it is missing — never by loosening the
-# comparison that proves it is still missing.
+# Golden ids `cq` does not reproduce today, and why. Two kinds live here and the reason line says
+# which: a route that does not exist at all (`specs-selftest`, `skills-drift`), and a route that
+# exists over content this spec deliberately changed (`skills-lint`, `okf-hook-posttooluse`). A
+# case leaves this set only when a later task mounts the route it is missing — never by loosening
+# the comparison that proves it is still missing.
+#
+# What does NOT belong here is a case whose bytes still match and whose verdict alone moved: that
+# is `CORRECTED_EXIT` below, which keeps asserting the stdout comparison. Parking such a case here
+# would silently drop a byte-for-byte guarantee the package still meets.
 UNROUTED = {
     "specs-selftest": "`selftest` is in no pillar's DISPATCH and is not coming back: task 6.3 "
                        "measured every suite behind it into `tests/`, including the embedded "
@@ -94,6 +100,39 @@ UNROUTED = {
                              "to `quenching-knowledge-align`/`quenching-knowledge-add` alongside "
                              "the same fix in `knowledge/render.py`'s live source, so the frozen "
                              "hook-JSON response and the live one now differ by design.",
+    "okf-version": "froze the pre-refactor OKF validator's own filename as its version stamp. "
+                    "Task 10.1 deleted that file, so the string named an artifact the repo no "
+                    "longer ships; the pillar stamps `cq knowledge <VERSION>` instead. Invisible "
+                    "to `citation-check.sh`, whose dead patterns match the script names with "
+                    "their `.py` extension and this stamp carries none.",
+    "okf-validate-skeleton-text": "same stamp as `okf-version`, in the header line every "
+                                   "text-mode validation prints — which made it the most-seen "
+                                   "citation of a deleted file in the product. The findings "
+                                   "below the header are unchanged.",
+}
+
+# Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package
+# deliberately corrected: `{id: (exit now, why)}`.
+#
+# This is a DIFFERENT claim from `UNROUTED`, and it is kept in its own set for that reason. An
+# unrouted case says "no `cq` invocation reproduces this at all"; a corrected exit says "the route
+# is there, the bytes are identical, and one verdict changed on purpose". Folding the second into
+# the first would let a real routing loss hide behind a behaviour-change reason, which is the drift
+# `test_the_unrouted_set_is_exactly_what_still_has_no_cq_equivalent` exists to catch.
+#
+# An entry here cannot sit vacuously: `test_a_corrected_exit_still_matches_stdout_and_really_moved`
+# asserts the stdout comparison still passes AND that the frozen code and the corrected one really
+# differ, so an entry that stops being a correction fails instead of being ignored.
+CORRECTED_EXIT = {
+    "specs-validate-all": (
+        0,
+        "the frozen exit of 1 came from a single `severity: warn` finding "
+        "(`sp-impact-uncovered`) under a body that printed `\"ok\": true` in the same breath — the "
+        "pre-refactor script's `return 1 if findings else 0` contradicted its own payload and the "
+        "errors-only rule `components lint`, `components doctor` and `common.output.exit_for` all "
+        "keep. The package routes this line through `exit_for`, so a warn-only workspace now "
+        "exits 0 with byte-identical output.",
+    ),
 }
 
 
@@ -178,10 +217,16 @@ class GoldenContract(unittest.TestCase):
         golden_text = declock((cg.GOLDEN_DIR / result["golden"]).read_text(encoding="utf-8"))
         return golden_text, entry
 
+    def _expected_exit(self, result: dict, entry: dict) -> int:
+        """The frozen exit code, unless this case is one the package deliberately corrected."""
+        if result["name"] in CORRECTED_EXIT:
+            return CORRECTED_EXIT[result["name"]][0]
+        return entry["exit"]
+
     def _matches_golden(self, result: dict) -> bool:
         golden_text, entry = self._golden_and_entry(result)
         return (result["stdout"] == golden_text
-                and result["exit"] == entry["exit"]
+                and result["exit"] == self._expected_exit(result, entry)
                 and result["stderr"] == entry["stderr"])
 
     def test_the_unrouted_set_is_exactly_what_still_has_no_cq_equivalent(self):
@@ -198,8 +243,21 @@ class GoldenContract(unittest.TestCase):
             with self.subTest(case=result["name"]):
                 golden_text, entry = self._golden_and_entry(result)
                 self.assertEqual(result["stdout"], golden_text)
-                self.assertEqual(result["exit"], entry["exit"])
+                self.assertEqual(result["exit"], self._expected_exit(result, entry))
                 self.assertEqual(result["stderr"], entry["stderr"])
+
+    def test_a_corrected_exit_still_matches_stdout_and_really_moved(self):
+        by_name = {r["name"]: r for r in self.results}
+        for name, (corrected, _reason) in CORRECTED_EXIT.items():
+            with self.subTest(case=name):
+                result = by_name[name]
+                golden_text, entry = self._golden_and_entry(result)
+                # The correction is about the verdict, never about the output: a case whose bytes
+                # also drifted is an unrouted case wearing this set's name.
+                self.assertEqual(result["stdout"], golden_text)
+                self.assertEqual(result["stderr"], entry["stderr"])
+                self.assertNotEqual(entry["exit"], corrected)
+                self.assertEqual(result["exit"], corrected)
 
     def test_the_unrouted_cases_are_skipped_by_name_not_by_a_silent_if(self):
         for name, reason in UNROUTED.items():

@@ -21,7 +21,10 @@ def _split(findings):
 
 def _render_text(findings, bundle_root: str) -> str:
     errors, warns = _split(findings)
-    lines = [f"OKF conformance — {bundle_root} (okf-validate v{VERSION})",
+    # `cq knowledge`, not the pre-refactor validator's filename — see this pillar's `main`. This
+    # header prints on EVERY text-mode validation, so it was the most-seen citation of a deleted
+    # file anywhere in the product.
+    lines = [f"OKF conformance — {bundle_root} (cq knowledge v{VERSION})",
              f"  {len(errors)} error(s), {len(warns)} warning(s)"]
     for sev, rel, code, msg in errors + warns:
         lines.append(f"  [{sev:<5}] {rel}: {msg}  ({code})")
