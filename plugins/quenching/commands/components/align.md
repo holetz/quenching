@@ -172,9 +172,7 @@ command is code-coupled.
 One table: **pairs to collapse** (skill + wrapper → the one command file that survives, with
 the skill name being retired), renames (old → canonical new, coupled ones marked), commands to
 create or rewrite (and wrongly nested generic commands to flatten), rule + registry creations
-from the molds when missing (rule born `authority: background`), a **legacy copy of the tool**
-`.claude/hooks/skills.py`
-(removal offered — §5, never installed or refreshed), unroutables kept-and-reported
+from the molds when missing (rule born `authority: background`), unroutables kept-and-reported
 with reasons, obsolete-suspect flags (no deletion proposed without the human's word), and —
 labelled **"reported, not applied"** — the wider-surface findings (`sk-agent-*`, `sk-hook-*`),
 each with the mint that closes it.
@@ -188,23 +186,7 @@ the cap, triggers second sentence — bodies untouched), write rule and registry
 when planned, update each code-coupled reference site alongside its individually confirmed
 rename.
 
-**Offer to remove a legacy copy of the front's tool.** `cq components` always resolves via the plugin
-path now, so a copy under the target's `.claude/hooks/` does nothing but drift — never install or
-refresh one. **Ask the tool rather than comparing by hand** — one call covers all three fronts'
-copies:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
-```
-
-Run it from the **plugin path**: an installed copy would answer from the same stale `VERSION` it
-is being asked about, and refuses (exit 2) instead. Act on this front's row (`cq components`): a
-legacy copy present → offer **removal**; absent → nothing to do. The same one call is what
-`/quenching:specs:align` reads for `cq specs` and `/quenching:knowledge:align` for `cq knowledge validate`, so a run of any one of
-them can report the other two fronts' drift without a second probe.
-
-**Done when:** every confirmed row is applied, and no stale `.claude/hooks/skills.py` copy
-remains (or its being ahead of the plugin is reported and left alone).
+**Done when:** every confirmed row is applied.
 
 ### 6. Collapse each confirmed pair — the merge, key by key
 For every `skills/<name>/SKILL.md` paired with a wrapper in §2, the surviving file is the

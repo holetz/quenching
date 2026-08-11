@@ -99,17 +99,6 @@ each; otherwise continue to step 2.
 Neither `/.specs/` nor a legacy `openspec/` exists → `sp-no-workspace`, which is not a failure: it is
 what step 4 offers to scaffold.
 
-**The installed copy is a third question, and one call answers it:**
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
-```
-Read this front's row (`cq specs`) and carry it into step 5's scaffold section: a **legacy copy**
-present under the target's `.claude/hooks/` → offer **removal**, never a refresh, since `cq`
-always resolves via the plugin path now and an installed copy does nothing but drift. Run the
-probe from the **plugin path** — an installed copy would answer from the same stale `VERSION` it
-is being asked about, and refuses (exit 2) rather than lie. A drift row does **not** by itself make
-an otherwise-clean workspace non-conformant: report it with the removal offer and stop as
-prescribed above.
 **Done when:** the two payloads are in hand and the run has either stopped or been committed to a
 full sweep.
 
@@ -156,8 +145,7 @@ worth the scan even when the file looks internal.
 
 ### 5. Present ONE plan → gate
 One plan, in sections: scaffold (copy `${CLAUDE_PLUGIN_ROOT}/assets/specs/` into `/.specs/` when
-`sp-no-workspace`; a
-legacy `.claude/hooks/specs.py` copy offered for **removal**, never refreshed); **migrations** (the
+`sp-no-workspace`); **migrations** (the
 legacy `openspec/` fold with
 each main-spec→`/.docs/standards/` cut shown and interop-lost stated; then the fold, shown as
 `cq specs migrate --dry-run`'s own output — every spec's destination, the source of each date, and
@@ -171,8 +159,7 @@ single confirmation; each code-coupled rename awaits its own.
 
 ### 6. Apply exactly what was approved
 Copy `assets/specs/` if approved; run the legacy fold, then `cq specs migrate`, if approved —
-**never hand-fold**, and report every folder the tool kept; remove a confirmed legacy
-`.claude/hooks/specs.py` copy; apply each tool-stated repair; rename the confirmed files and
+**never hand-fold**, and report every folder the tool kept; apply each tool-stated repair; rename the confirmed files and
 update every reference site alongside its individually confirmed rename; stamp the
 missing frontmatter keys (MERGE); install the GENERATED markers without touching the fixed prose;
 delete the approved shadow copies and any `/opsx:*` wrappers under a legacy migration.

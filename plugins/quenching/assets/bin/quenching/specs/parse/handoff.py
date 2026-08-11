@@ -1,7 +1,7 @@
 """`## Handoff` — the global block plus one block per `### N.` heading, and which one
 a scoped write targets.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import re
@@ -61,7 +61,7 @@ def parse_handoff(text: str) -> dict:
 
 def current_handoff_section(tasks: list[dict]) -> int | None:
     """The `### N.` a scoped `## Handoff` write targets: the section of the next task
-    still open and unblocked — the same task `specs.py next` would hand out — or, once
+    still open and unblocked — the same task `cq specs next` would hand out — or, once
     every remaining task is blocked, the first blocked one's section, matching what
     `next` itself falls back to. Every task done → the LAST section, so a finished run's
     Handoff still describes where it landed. No tasks at all → None, nothing to scope to."""

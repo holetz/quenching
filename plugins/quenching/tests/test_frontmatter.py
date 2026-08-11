@@ -1,8 +1,9 @@
 """The frontmatter parser's contract: the canonical cases, every value form, and the two sidecars.
 
-THIS FILE IS THE HOME OF `CANONICAL_CASES`. The table exists byte-identically in `specs.py`,
-`skills.py` and `okf-validate.py`, each copy carrying an `EDIT ALL THREE, OR NONE` warning, because
-each script shipped standalone and could import nothing. One parser replaced the three, so there is
+THIS FILE IS THE HOME OF `CANONICAL_CASES`. The table used to exist byte-identically in the
+pre-refactor specs, components and OKF validator scripts, each copy carrying an `EDIT ALL THREE,
+OR NONE` warning, because each script shipped standalone and could import nothing. One parser
+replaced the three, so there is
 one implementation left to hold to the table's word — and holding it there is a test's job, not a
 selftest subcommand's. The three in-script copies go with the parsers they were guarding.
 """
@@ -28,7 +29,7 @@ def kinds(text: str) -> tuple[str, ...]:
     return tuple(sorted(a["kind"] for a in frontmatter_anomalies(text)))
 
 
-# The canonical case list from `/.docs/standards/code/frontmatter-parsing.md`.
+# The canonical case list from `/.docs/standards/code/frontmatter-parser.md`.
 #   (label, frontmatter body, expected `title`, expected anomaly kinds)
 CANONICAL_CASES = [
     ("plain",                 "title: a plain value",              "a plain value",              ()),
@@ -108,31 +109,33 @@ class NormalizedUpward(unittest.TestCase):
         return parse_frontmatter(doc(body))["k"]
 
     def test_inline_list_normalized_upward_knowledge_gained_it(self):
-        # `okf-validate.py` kept the literal `[a, b]`.
+        # the pre-refactor OKF validator script kept the literal `[a, b]`.
         got = self._value("k: [a, b]")
         self.assertNotEqual(got, "[a, b]")
         self.assertIsInstance(got, list)
 
     def test_block_list_normalized_upward_knowledge_gained_it(self):
-        # `okf-validate.py` read an indented `- item` run as the empty string.
+        # the pre-refactor OKF validator script read an indented `- item` run as the empty string.
         got = self._value("k:\n  - a\n  - b")
         self.assertNotEqual(got, "")
         self.assertIsInstance(got, list)
 
     def test_block_record_normalized_upward_knowledge_and_components_gained_it(self):
-        # `okf-validate.py` and `skills.py` both read an indented `k: v` run as the empty string.
+        # the pre-refactor OKF validator and components scripts both read an indented `k: v` run
+        # as the empty string.
         got = self._value("k:\n  a: one")
         self.assertNotEqual(got, "")
         self.assertIsInstance(got, dict)
 
     def test_flow_map_normalized_upward_knowledge_and_components_gained_it(self):
-        # `okf-validate.py` and `skills.py` both kept the literal `{a: one}`.
+        # the pre-refactor OKF validator and components scripts both kept the literal `{a: one}`.
         got = self._value("k: {a: one}")
         self.assertNotEqual(got, "{a: one}")
         self.assertIsInstance(got, dict)
 
     def test_block_scalar_normalized_upward_knowledge_and_specs_gained_it(self):
-        # `okf-validate.py` and `specs.py` both kept the bare indicator as the value.
+        # the pre-refactor OKF validator and specs scripts both kept the bare indicator as the
+        # value.
         got = self._value("k: |\n  one\n  two")
         self.assertNotEqual(got, "|")
         self.assertEqual(got, "one\ntwo")

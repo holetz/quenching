@@ -1,6 +1,6 @@
 """The `files` backend — specs as markdown under the specs workspace.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import os

@@ -1,7 +1,7 @@
 """The OKF conformance vocabulary — the reserved names, the exempt ones, the recommended
 fields, and the two glob tables every check agrees on.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`, with TWO adjustments: `VERSION` is
+Moved verbatim out of the pre-refactor OKF validator script, with TWO adjustments: `VERSION` is
 imported from `quenching.common.version` rather than declared a second time, and `HERE`
 is gone — it was dead in the original, computed at import and read by nothing.
 

@@ -1,7 +1,7 @@
 """The specs pillar's frontmatter STATE fields and RECORDS: carry-forward on an ordinary
 write, calendar-real date parsing, and a record's round trip through `set_frontmatter_record`.
 
-Migrated from `specs.py`'s `_failures()` suites — `carry_forward_failures`,
+Migrated from the pre-refactor specs script's `_failures()` suites — `carry_forward_failures`,
 `field_date_failures`, `record_round_trip_failures`, `record_field_failures`. Parsing,
 handoff and slug resolution live in `test_specs_parse.py`.
 """

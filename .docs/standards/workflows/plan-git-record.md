@@ -265,5 +265,5 @@ last commit — and no longer includes a ticked box or a stamped `merge:` record
 **Never install `/.docs/standards/git/**` into a target.** A default written into the repo stops
 being a default: it converts an offer into a rule the repo now declares, which then wins forever
 without anyone having agreed to it. A target that wants its conventions written down routes
-through `/docs:add`, on its human's word. The same restraint bars inferring house style from
+through `/quenching:knowledge:add`, on its human's word. The same restraint bars inferring house style from
 `git log` — a guess that looks deliberate is worse than the stated default.

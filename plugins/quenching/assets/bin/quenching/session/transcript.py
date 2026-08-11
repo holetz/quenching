@@ -1,13 +1,13 @@
 """Where a session transcript lives, and how a cwd is spelled to find it.
 
-Moved verbatim out of `session.py`."""
+Moved verbatim out of the pre-refactor session script."""
 from __future__ import annotations
 
 from pathlib import Path
 
 # Claude Code encodes a project's cwd by replacing \ / : . with '-'. chr(92) IS the
 # backslash, spelled this way so no quoting layer can eat the escape. Same rule as
-# /docs:import-memory uses to find `memory/` — one encoding, not two.
+# /quenching:knowledge:import-memory uses to find `memory/` — one encoding, not two.
 PUNCT = set(chr(92) + "/:.")
 
 
@@ -23,7 +23,7 @@ def resolve_project_dir(cwd: Path) -> tuple[Path | None, str]:
     """The transcript directory for `cwd`, nearest ancestor first.
 
     A git worktree or a subdirectory has no directory of its own, and falls back to the
-    checkout it was cut from — the same nearest-first walk /docs:import-memory does.
+    checkout it was cut from — the same nearest-first walk /quenching:knowledge:import-memory does.
     """
     root = projects_root()
     if not root.is_dir():

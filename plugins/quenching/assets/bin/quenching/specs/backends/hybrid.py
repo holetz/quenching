@@ -1,6 +1,6 @@
 """The hybrid serialisation — how a spec document is stored inside a remote issue tracker.
 
-Moved verbatim out of `specs.py`, where these helpers were defined inside the `github` block
+Moved verbatim out of the pre-refactor specs script, where these helpers were defined inside the `github` block
 even though `azure-boards` consumes them at ten call sites. They belong to neither: they are
 the shared format both external backends read and write, so they live here and both import
 them, which is also what keeps `azure` from importing `github`."""

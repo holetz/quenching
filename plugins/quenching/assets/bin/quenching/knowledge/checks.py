@@ -1,6 +1,6 @@
 """The conformance core — one function per file kind, returning (severity, code, msg).
 
-Moved verbatim out of `assets/hooks/okf-validate.py`. The ONE mechanical change is the
+Moved verbatim out of the pre-refactor OKF validator script. The ONE mechanical change is the
 frontmatter call shape: `parse_frontmatter` now returns the bare dict, and the two bits
 these checks also need — does the file open a `---` fence, does that fence close — come
 from the `frontmatter_block` sidecar beside it.
@@ -11,7 +11,7 @@ PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
   continuation read as empty, or a duplicate top-level key that silently last-wins. It
   reports a suspicion it cannot resolve rather than letting the consequence surface as a
   content finding (`missing-type`, a missing recommended field). The YAML subset, the
-  comment rule and the canonical case list are `/.docs/standards/code/frontmatter-parsing.md`.
+  comment rule and the canonical case list are `/.docs/standards/code/frontmatter-parser.md`.
 
   The set it reports SHRANK when the three parsers collapsed into
   `quenching.common.frontmatter`: that parser reads inline lists, block lists, block

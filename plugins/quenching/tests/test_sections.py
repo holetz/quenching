@@ -1,8 +1,9 @@
 """ONE copy of the section rule's canonical case list, run against BOTH readers.
 
 THIS FILE IS THE HOME OF `SECTION_FIXTURE` AND `SECTION_CASES`. They lived byte-identically in
-`specs.py` and `skills.py` under a comment reading `EDIT BOTH, OR NEITHER` — a rule enforced by
-nothing but whoever remembered it, and the two scripts could not import each other because each
+the pre-refactor specs and components scripts under a comment reading `EDIT BOTH, OR NEITHER` —
+a rule enforced by nothing but whoever remembered it, and the two scripts could not import each
+other because each
 installed standalone into a target's `.claude/hooks/`. The package removed that constraint; this
 file removes the duplicate, in the same move and for the same reason `CANONICAL_CASES` came to
 live in `test_frontmatter.py`.

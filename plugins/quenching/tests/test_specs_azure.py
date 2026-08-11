@@ -1,6 +1,6 @@
 """The `azure-boards` backend's vocabulary: work-item type resolution, tags/board state,
-the `az` transport's refusal shapes, and the consolidated PATCH — migrated from `specs.py`'s
-`_failures()` selftest suites, run against `quenching.specs.*` rather than the script.
+the `az` transport's refusal shapes, and the consolidated PATCH — migrated from the pre-refactor
+specs script's `_failures()` selftest suites, run against `quenching.specs.*` rather than the script.
 
 Every case, fixture and `why` below is carried over verbatim from its `_failures()` — the
 translation is the assertion, not the data.

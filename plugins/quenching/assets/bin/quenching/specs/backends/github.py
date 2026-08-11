@@ -1,6 +1,6 @@
 """The `github` backend — specs as GitHub issues, over the `gh` CLI.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import json

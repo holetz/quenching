@@ -325,8 +325,8 @@ present the mid-flow confirmations every sweep depends on — the conversation c
 OK would be out of reach.
 
 Dispatching a sub-agent for a bounded, file-scoped unit of work does the opposite: the
-orchestrator **stays in the live conversation**, exactly as `/docs:glossary-backfill` and
-`/docs:import` already dispatch. One moves the decision-maker out of reach; the other
+orchestrator **stays in the live conversation**, exactly as `/quenching:knowledge:glossary-backfill` and
+`/quenching:knowledge:import` already dispatch. One moves the decision-maker out of reach; the other
 sends a worker out and keeps the decision-maker in place. They are different mechanisms about
 different things, and no future sweep may "fix" one into the other.
 

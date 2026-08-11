@@ -1,6 +1,6 @@
 """`digest` — one command's evidence: counts, redundant reads, corrections.
 
-Moved verbatim out of `session.py`."""
+Moved verbatim out of the pre-refactor session script."""
 from __future__ import annotations
 
 import json

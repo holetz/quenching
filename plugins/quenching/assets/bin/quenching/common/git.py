@@ -1,7 +1,7 @@
 """The two ways this tool asks git a question — one that reads absence as a fact,
 and one that reads git's own message and exit code.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import os

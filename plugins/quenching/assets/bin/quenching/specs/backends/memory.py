@@ -1,6 +1,6 @@
 """The `memory` backend — specs in a dict, the other side of the equivalence check.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.common.frontmatter import parse_frontmatter

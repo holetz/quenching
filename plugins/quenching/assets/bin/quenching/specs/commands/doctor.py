@@ -186,7 +186,7 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                          f"`{folder}/` still holds {len(held)} spec(s) — v3 "
                                          f"folded backlog/ and ready/ into plans/",
                                          path=folder, count=len(held),
-                                         remedy="specs.py migrate  (moves them into plans/ "
+                                         remedy="cq specs migrate  (moves them into plans/ "
                                                 "unrenamed; `/.specs/archive/**` is never touched)"))
 
         leftovers = _v1_leftovers(root)
@@ -194,7 +194,7 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
             findings.append(_finding("sp-v1-leftover", "error",
                                      f"`{name}/` is a v1 three-file plan folder",
                                      path=name,
-                                     remedy=f"specs.py migrate  (folds {name}/ into one v2 file; "
+                                     remedy=f"cq specs migrate  (folds {name}/ into one v2 file; "
                                             f"`/.specs/archive/**` is never touched)"))
         for entry in sorted(os.listdir(root)):
             full = os.path.join(root, entry)

@@ -1,7 +1,7 @@
 """The 69 goldens `capture_golden.py` froze, re-run through `cq` and compared byte-for-byte.
 
-The goldens are STDOUT captured from `specs.py`/`skills.py`/`session.py`/`okf-validate.py` —
-four scripts a refactor cannot recapture from, only be measured against (see that module's
+The goldens are STDOUT captured from the four pre-refactor scripts (specs, components, session,
+knowledge) — four scripts a refactor cannot recapture from, only be measured against (see that module's
 docstring). `INDEX.json` names the exact exit code and stderr behind each one, but not which
 workspace builder or transcript fixture produced it — that is unrecoverable from the index, so
 this suite does not replay from it. It instead imports `capture_specs`/`capture_skills`/
@@ -25,8 +25,8 @@ CQ = cg.PLUGIN_ROOT / "assets" / "bin" / "cq"
 # `capture_golden.normalize` replaces the capture date wherever it appears as a literal, but
 # `next --front` also reports it as arithmetic — `ageDays`, and the `Nd old` it renders into
 # `reason`. Those count from the wall clock, so the goldens holding them went stale the day
-# after they were captured: the untouched `specs.py` disagrees with its own golden today, which
-# is proof the drift is the clock's and not the package's.
+# after they were captured: the untouched pre-refactor specs script disagrees with its own
+# golden today, which is proof the drift is the clock's and not the package's.
 #
 # Neutralising them costs this suite any regression in the age arithmetic itself. That is the
 # cheaper side: the alternative is a fixture that reports a failure every day it is not the day
@@ -56,22 +56,55 @@ UNROUTED = {
     "okf-selftest": "same decision as `specs-selftest`: the knowledge pillar routes `hook` and "
                      "`validate` only, and what `selftest` proved lives in "
                      "`tests/test_knowledge.py`.",
-    "session-version": "`cq components session --version` never reaches session.py's own "
-                        "`--version` flag: the components pillar's `main` answers any argv "
+    "session-version": "`cq components session --version` never reaches the session module's "
+                        "own `--version` flag: the components pillar's `main` answers any argv "
                         "containing `--version` before the `session` subparser runs, so it "
                         "prints the components pillar's stamp (`skills <VERSION>`) and exits "
                         "0 rather than raising a routing error. The text this golden froze "
                         "(`session <VERSION>`) has no reachable `cq` invocation.",
+    "skills-drift": "`drift` detected a legacy copy of one of the four pre-refactor scripts "
+                     "left behind under a target's `.claude/hooks/` by an old install offer. "
+                     "Task 10.1 of this same spec removed all four from the plugin, so there is "
+                     "nothing left for the subcommand to compare an installed copy against, and "
+                     "it was retired with it — `components/commands/cli.py` routes no `drift` "
+                     "verb any more.",
+    "skills-lint": "captured against the command surface as it stood before this spec's own "
+                    "sections 7-9 restructured it (front renames, the `components` split into "
+                    "`command`/`agent`/`hook`/`harness`, new commands minted since) — the finding "
+                    "list this route now returns is a different, larger, CORRECT set for a "
+                    "surface with a different shape, not a divergence to reconcile.",
+    "skills-lint-one": "captured against `commands/docs/add.md`, which task 7.1 moved to "
+                        "`commands/knowledge/add.md`; the golden's `sk-no-commands` refusal for "
+                        "the (now nonexistent) old path is the correct answer for a path that no "
+                        "longer resolves, not a route this suite can still exercise identically.",
+    "skills-read-index": "reads `align/convergence.md`'s own section index — its `chars` per "
+                          "heading counts the very citations this spec renamed inside that file "
+                          "(`docs:align` → `knowledge:align` and the like), so the byte counts "
+                          "shifted with the rename itself; the route is reachable, the content it "
+                          "reads is not the content that was frozen.",
+    "skills-read-section": "same cause as `skills-read-index`, one section of the same file: the "
+                            "cited section's own prose now reads `cq knowledge validate` where the "
+                            "golden froze the pre-refactor OKF validator script's name, because "
+                            "task 8.x's citation sweep rewrote that section along with everything "
+                            "else.",
+    "skills-read-rules-only": "same cause as `skills-read-section`, filtered to the `<!-- rules "
+                               "-->` half of the same renamed section.",
+    "okf-hook-posttooluse": "the hook's own `sk-no-frontmatter` remedy text named the skill IDs "
+                             "`quenching-docs-align`/`quenching-docs-add`; task 10.3 renamed them "
+                             "to `quenching-knowledge-align`/`quenching-knowledge-add` alongside "
+                             "the same fix in `knowledge/render.py`'s live source, so the frozen "
+                             "hook-JSON response and the live one now differ by design.",
 }
 
 
 def to_cq_argv(script: str, argv: list[str]) -> list[str]:
     """The mechanical half of the translation: which pillar token(s) `cq` needs in front of
-    an old script's argv. `specs.py` and `skills.py` parse their OWN `--root`, so nothing
-    about the rest of `argv` changes crossing into `cq specs …` / `cq components …` —
-    `argparse.REMAINDER` forwards it untouched. `session.py` mounts under `components` and
-    carries no `--root` of its own, and `okf-validate.py`'s CLI/hook split becomes the
-    declared verb `cq knowledge` now routes on explicitly (see that pillar's `main`)."""
+    an old script's argv. The pre-refactor specs and components scripts parsed their OWN
+    `--root`, so nothing about the rest of `argv` changes crossing into `cq specs …` /
+    `cq components …` — `argparse.REMAINDER` forwards it untouched. The pre-refactor session
+    script mounts under `components` and carries no `--root` of its own, and the pre-refactor
+    knowledge validator's CLI/hook split becomes the declared verb `cq knowledge` now routes
+    on explicitly (see that pillar's `main`)."""
     if script == "specs":
         return ["specs", *argv]
     if script == "skills":

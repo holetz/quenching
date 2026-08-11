@@ -41,7 +41,7 @@ raising the count. The resource moved; the rule did not. Read the gate as zero e
 so no change under `commands/**` is testable in the session that writes it:
 
 ```bash
-./assets/checks/functional-checks.sh          # default: checks 1, 2, 4 — body, citation path, stage name
+./assets/checks/functional-checks.sh          # default: checks 1, 2 — a command body, a citation path
 ./assets/checks/functional-checks.sh --only 3 # opt-in: spoken routing. Prefer /quenching:components:command:eval — see below
 ```
 `exit 0` all measured assertions passed · `1` one failed · `2` nothing could be measured, which is

@@ -1,6 +1,6 @@
 """The model a transcript is narrowed into: one `Command` per attributed name.
 
-Moved verbatim out of `session.py`. `read_window` sits here rather than in `parse`
+Moved verbatim out of the pre-refactor session script. `read_window` sits here rather than in `parse`
 because it is part of what a `Command` records, not part of reading a line."""
 from __future__ import annotations
 

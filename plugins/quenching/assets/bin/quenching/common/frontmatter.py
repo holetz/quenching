@@ -1,10 +1,10 @@
 """The one frontmatter parser — the union of the three that preceded it.
 
-`/.docs/standards/code/frontmatter-parsing.md` owns the comment rule, the canonical case list and
+`/.docs/standards/code/frontmatter-parser.md` owns the comment rule, the canonical case list and
 the anomaly set. Until this module it also owned a lockstep obligation — EDIT ALL THREE, OR NONE —
-resting on a premise stated in `specs.py`: each script installed standalone into a target repo's
-`.claude/hooks/`, "so none may import the others". Nothing installs any more, so the premise is
-gone and the three copies collapse into this one.
+resting on a premise stated in the pre-refactor specs script: each script installed standalone
+into a target repo's `.claude/hooks/`, "so none may import the others". Nothing installs any
+more, so the premise is gone and the three copies collapse into this one.
 
 NORMALIZING UPWARD, NOT PICKING A WINNER
 ----------------------------------------
@@ -19,8 +19,9 @@ The three never read the same YAML subset, and no two read the same one:
     block scalar | / >              no      yes     no  — kept the bare indicator
 
 Nobody read the union: `specs` read records and flow maps but no block scalars, `skills` the
-reverse. This parser reads every row, so the `knowledge` pillar (`okf-validate.py`) gains the four
-forms it used to flatten and `components` (`skills.py`) gains records and flow maps.
+reverse. This parser reads every row, so the `knowledge` pillar (the pre-refactor OKF validator
+script) gains the four forms it used to flatten and `components` (the pre-refactor components
+script) gains records and flow maps.
 
 WHAT THAT COSTS, DELIBERATELY
 -----------------------------
@@ -255,7 +256,7 @@ def frontmatter_block(text: str) -> tuple[bool, bool]:
 
     A SIDECAR, for the same reason `frontmatter_anomalies` is one: only the `knowledge` pillar acts
     on these two bits, and folding them back into a `(fm, has_block, well_formed)` tuple — which is
-    what `okf-validate.py` returned — would put a three-way unpack at every call site in three
+    what the pre-refactor OKF validator script returned — would put a three-way unpack at every call site in three
     pillars to carry a signal one of them reads.
 
     An unclosed fence is the case the parse cannot express on its own: `parse_frontmatter` returns

@@ -2,7 +2,8 @@
 worktree lock, and the meta-suites that keep `files`/`memory`/`github`/`azure-boards` honest
 against each other.
 
-Migrated out of `specs.py`'s selftest, which held forty-three `_failures() -> list[str]`
+Migrated out of the pre-refactor specs script's selftest, which held forty-three
+`_failures() -> list[str]`
 functions aggregated by hand with no framework underneath them. This file carries the eleven
 bound to GitHub, the hybrid wire format, the worktree lock, and cross-backend equivalence — the
 fixtures each suite built for itself (the canonical case table, a spec document, a marker) travel

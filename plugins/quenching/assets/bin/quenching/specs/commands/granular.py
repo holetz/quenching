@@ -167,8 +167,8 @@ def _show_human(obj: dict, info: dict) -> str:
             out.append(f"  tasks ({len(obj['tasks'])})")
             for t in obj["tasks"]:
                 out.append(f"    [{t['state']}] {t['text']}")
-        out.append(f"  read sections: specs.py section {obj['slug']} \"<Heading>,<Heading>\"\n"
-                   f"  read one task: specs.py show --spec {obj['slug']} --task <id>"
+        out.append(f"  read sections: cq specs section {obj['slug']} \"<Heading>,<Heading>\"\n"
+                   f"  read one task: cq specs show --spec {obj['slug']} --task <id>"
                    f"   (--full for the whole document)")
         return "\n".join(out)
     for t in obj["tasks"]:

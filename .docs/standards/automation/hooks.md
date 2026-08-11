@@ -84,8 +84,8 @@ bundle.
 **A target that once accepted the old install offer carries a second, dead rung.** Its
 `.claude/settings.json` still names its installed copy under `${CLAUDE_PROJECT_DIR}/.claude/hooks/`, so the
 same checker fires twice — once from the plugin at the current version, once from a copy frozen at
-whatever it was installed at. That is legacy debris, reported by `cq components drift` and removed by
-`/quenching:knowledge:align`, not a second opinion worth keeping.
+whatever it was installed at. That is legacy debris, removed by `/quenching:knowledge:align`, not a
+second opinion worth keeping.
 
 **This repository carried that dead rung until 2026-08-06, and it was not silent.** The frozen copy
 was 4.4.5 against a shipped 4.13.0, and 4.4.5 still resolved its bundle root from a `docsDir`

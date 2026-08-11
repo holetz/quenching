@@ -96,7 +96,7 @@ its four Diátaxis sections, and their `.pages`); never scaffold a home here.
 Collect, without writing anything:
 - root `mkdocs.yml` / `mkdocs.yaml` — parse it: `docs_dir`, `site_name`, `site_description`,
   `theme.features`, `plugins`, `markdown_extensions`; note every key a human added.
-- any requirements file pinning the docs toolchain (`requirements.txt`, `/.docs/requirements.txt`,
+- any requirements file pinning the docs toolchain (`requirements.txt`, one under `/.docs/`,
   `pyproject.toml`, `uv.lock` …) — the pins may already live somewhere else.
 - every folder under `/.docs/documentation/**` with its `.pages`, its `index.md`, and its pages.
 - `.gitignore` (is `site/` ignored?) and `git ls-files site` (is a build already tracked?).

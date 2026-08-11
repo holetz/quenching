@@ -16,7 +16,7 @@
 # citation: git history holds the past, the docs describe the present, and a check with content
 # exceptions is a check people learn to ignore.
 #
-# TWO SCOPE RULES, WHICH ARE NOT EXCEPTIONS:
+# THREE SCOPE RULES, WHICH ARE NOT EXCEPTIONS:
 #
 #   - The instrument does not measure itself. A check that greps for a string necessarily
 #     contains that string, so this file is out of scope by construction — and to keep that from
@@ -28,6 +28,14 @@
 #   - `.specs/` is out of scope. It is the planning workspace — the record of what was decided,
 #     not a description of the present — and every task-level `verify:` in this plan excludes it
 #     the same way.
+#   - `tests/fixtures/golden/`, `tests/capture_golden.py` and `assets/evals/**/runs/` are data, not
+#     citations. A golden is STDOUT a pre-refactor script actually printed, frozen the day task 1.1
+#     captured it — task 1.1's own constraint is that nothing later may recapture one, so a golden
+#     necessarily keeps quoting a script that no longer exists, forever, by design; an eval run log
+#     is the same shape, a grading record of one dated invocation that used to route through the
+#     old namespace before it was renamed. `tests/test_golden.py` names each script by a paraphrase
+#     for exactly this reason (see its own module docstring) and is measured normally: it is prose
+#     ABOUT the goldens, not the frozen bytes themselves.
 #
 # Only tracked files are read (`git ls-files`), which is what makes the sweep blind: no path list
 # to maintain, and a file added anywhere is covered the day it is committed.
@@ -51,6 +59,12 @@ REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)}"
 SELF="plugins/quenching/assets/checks/citation-check.sh"
 cd "$REPO" || { echo "citation-check: cannot enter $REPO"; exit 2; }
 
+# Half 1's own scope, beyond `.specs/`: frozen golden data, not live citations — see the header's
+# third scope rule for why.
+SCOPE_EXCLUDE=(':!.specs/' ':!plugins/quenching/tests/fixtures/golden/'
+               ':!plugins/quenching/tests/capture_golden.py'
+               ':(exclude,glob)plugins/quenching/assets/evals/**/runs/**')
+
 want () { case ",$HALF," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 FAIL=0
 
@@ -62,19 +76,30 @@ echo
 #
 # Each pattern is an extended regex. The four script names are matched with their extension so a
 # directory called `specs/` or a front called `skill` does not read as a survivor; the namespaces
-# are matched in both citation forms — `/docs:add` for a human to type, `quenching:docs:add` for
-# the Skill tool — because rewriting one and not the other is the most common way a namespace
-# half-survives.
+# are matched in both citation forms — `/docs:<verb>` for a human to type, `quenching:docs:<verb>`
+# for the Skill tool — because rewriting one and not the other is the most common way a namespace
+# half-survives. `session\.py` alone carries a leading `\b`: unlike the other three, it is also the
+# tail of a real, current, correctly-named file — `tests/test_session.py` — and without the
+# boundary the retired script and that live test file's name are the same substring.
+#
+# THE NAMESPACE PATTERNS NAME VERBS, NOT A BARE PREFIX — because this repository ships its own,
+# unrelated local command group that happens to share the retired front's name: `/docs:storyteller`
+# (`.claude/commands/docs/storyteller.md`) has nothing to do with the plugin's `docs` front and is
+# never renamed by this spec. A bare `/docs:` would call that a survivor forever. The ten `docs`
+# verbs and six `skill` verbs below are the CLOSED, historical set this rename actually retired
+# (`git log --diff-filter=R -- plugins/quenching/commands/` names them exactly); `\b` after each
+# stops `import` from also matching `import-memory` short — it already does, because `-` ends a
+# word — so the list needs no separate entry for it.
 # --------------------------------------------------------------------------- #
 DEAD_PATTERNS=(
   'specs\.py'
   'skills\.py'
-  'session\.py'
+  '\bsession\.py'
   'okf-validate\.py'
-  '/docs:'
-  '/skill:'
-  'quenching:docs:'
-  'quenching:skill:'
+  '/docs:(add|align|define|documentation|glossary-backfill|harness|import|learn|status)\b'
+  '/skill:(align|new|eval|retro|agent|hook)\b'
+  'quenching:docs:(add|align|define|documentation|glossary-backfill|harness|import|learn|status)\b'
+  'quenching:skill:(align|new|eval|retro|agent|hook)\b'
 )
 
 if want 1; then
@@ -83,7 +108,7 @@ if want 1; then
   # The canary is the plugin's own name: it is in every corner of this repo and the rename does
   # not touch it, so it reads the same before and after. Zero hits means the sweep is blind, not
   # that the repo is clean.
-  canary="$(git grep -I -l -E -- 'quenching' -- ":!$SELF" ':!.specs/' 2>/dev/null | wc -l)"
+  canary="$(git grep -I -l -E -- 'quenching' -- ":!$SELF" "${SCOPE_EXCLUDE[@]}" 2>/dev/null | wc -l)"
   if [ "$canary" -lt 2 ]; then
     echo "  the sweep sees $canary file(s) — the corpus is empty or git grep failed"
     echo "  nothing could be measured — this is not a pass"
@@ -92,8 +117,8 @@ if want 1; then
   printf '  ok     %-22s sweep sees %s files\n' '(canary)' "$canary"
 
   for pat in "${DEAD_PATTERNS[@]}"; do
-    hits="$(git grep -I -c -E -- "$pat" -- ":!$SELF" ':!.specs/' 2>/dev/null | wc -l)"
-    occ="$(git grep -I -o -E -- "$pat" -- ":!$SELF" ':!.specs/' 2>/dev/null | wc -l)"
+    hits="$(git grep -I -c -E -- "$pat" -- ":!$SELF" "${SCOPE_EXCLUDE[@]}" 2>/dev/null | wc -l)"
+    occ="$(git grep -I -o -E -- "$pat" -- ":!$SELF" "${SCOPE_EXCLUDE[@]}" 2>/dev/null | wc -l)"
     if [ "$hits" -gt 0 ]; then
       printf '  FAIL   %-22s %s occurrence(s) in %s file(s)\n' "$pat" "$occ" "$hits"
       FAIL=$((FAIL+1))
@@ -125,7 +150,10 @@ fi
 #   - a path under a shipped tree is not measured against this checkout;
 #   - a path rooted at bare `docs/` is not measured at all — that spelling names the target's
 #     bundle, and this repo would spell its own `.docs/`;
-#   - `tests/fixtures/` is data, and a fixture names files that deliberately do not exist.
+#   - `tests/fixtures/golden/`, `tests/capture_golden.py` and `assets/evals/**/runs/` are not read
+#     at all, for both a cited PATH and a cited COMMAND — the same frozen-data reasoning half 1's
+#     header gives, applied here because a golden or a grading record legitimately names a path or
+#     a namespace that resolved on the day it was captured and is not asked to resolve today.
 #
 # None of this is an allowlist: no path is exempted by being on a list, and every exclusion is a
 # statement about which repository a tree is describing.
@@ -144,14 +172,14 @@ import os, re, sys
 plugin = "plugins/quenching"
 commands_dir = os.path.join(plugin, "commands")
 
-# `${CLAUDE_PLUGIN_ROOT}/x`, and the same path spelled absolute in a command body — both name a
+# `${CLAUDE_PLUGIN_ROOT}/<path>`, and the same path spelled absolute in a command body — both name a
 # file under the plugin. The absolute form appears because ${CLAUDE_PLUGIN_ROOT} is expanded when
 # a body is loaded, and the expansion is what gets copied into prose.
 PLUGIN_ROOT_RE = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
 MD_LINK_RE     = re.compile(r"\]\(([^)\s]+)\)")
 REPO_PATH_RE   = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
 DOCS_PATH_RE   = re.compile(r"(?<![A-Za-z0-9_./-])/?(\.docs/[A-Za-z0-9_./-]+)")
-# Both citation forms. The Skill tool takes the bare `quenching:ns:cmd`; a human types the slash.
+# Both citation forms. The Skill tool takes the bare `quenching:<ns>:<cmd>`; a human types the slash.
 CMD_RE         = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
 
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
@@ -163,8 +191,8 @@ def unmeasurable(p):
         or p.startswith(("http:", "https:", "mailto:", "#"))
 
 def describes_target(target):
-    # `docs/x` is how the target holds its bundle; this repo holds `.docs/x`. A path rooted there
-    # is a claim about the installed repo, and nothing here can resolve it.
+    # `docs/<name>` is how the target holds its bundle; this repo holds `.docs/<name>`. A path
+    # rooted there is a claim about the installed repo, and nothing here can resolve it.
     return target.startswith("docs/") or "/docs/" in target
 
 def trim(p):
@@ -183,9 +211,23 @@ for root, _, names in os.walk(commands_dir):
             rel = os.path.relpath(os.path.join(root, n), commands_dir)
             commands.add("quenching:" + rel[:-3].replace(os.sep, ":"))
 
+FROZEN_DATA = (plugin + "/tests/fixtures/golden/", plugin + "/tests/capture_golden.py",
+               # A `files:` case table reproducing a real, historical bug report verbatim — a
+               # disposable probe command, reverted at the end of that repro, whose own comment
+               # says so. Not a citation, a fixed
+               # historical fact the parser is tested against; the file carries no other path this
+               # half would otherwise need to measure.
+               plugin + "/tests/test_specs_parse.py")
+
+def is_frozen_eval_run(rel):
+    parts = rel.split("/")
+    return len(parts) > 2 and rel.startswith(plugin + "/assets/evals/") and "runs" in parts
+
 for rel in sys.stdin.buffer.read().split(b"\x00"):
     rel = rel.decode("utf-8", "replace")
     if not rel or rel.endswith((".png", ".jpg", ".gif", ".ico")):
+        continue
+    if rel.startswith(FROZEN_DATA) or is_frozen_eval_run(rel):
         continue
     try:
         text = open(rel, encoding="utf-8", errors="replace").read()

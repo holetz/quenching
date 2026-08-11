@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# functional-checks.sh — the four checks nothing in-process can make.
+# functional-checks.sh — the three checks nothing in-process can make.
 #
 # The command registry is built at SESSION START, so no change under commands/** is testable
 # in the session that writes it. Each check below therefore runs its own fresh `claude -p`.
@@ -16,7 +16,7 @@
 # It is also what lets this harness see a BRANCH or a WORKTREE, and therefore gate a merge
 # before it happens rather than report on it afterwards.
 #
-#   usage:  ./functional-checks.sh [--only 1,2,4] [/path/to/plugin/repo]
+#   usage:  ./functional-checks.sh [--only 1,2] [/path/to/plugin/repo]
 #   exit :  0 every measured assertion passed
 #           1 an assertion failed
 #           2 nothing could be measured — no verdict, do not read it as a pass
@@ -31,11 +31,11 @@
 #
 # COST — each check is a full agent session, so scope the run to what the change can break:
 #
-#   (no flag)      checks 1, 2, 4 — a command BODY, a citation path, a conductor's stage names
+#   (no flag)      checks 1, 2 — a command BODY, a citation path
 #   --only 3       spoken routing — OPT-IN, see below
-#   --only 1,2,3,4 all four
+#   --only 1,2,3   all three
 #
-# CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the eight
+# CHECK 3 IS OPT-IN, AND `/quenching:components:command:eval` IS THE BETTER INSTRUMENT. Check 3 is five of the seven
 # sessions, the only NON-DETERMINISTIC one (recorded twice: same tree, opposite verdicts on
 # identical runs), and a strictly worse duplicate of `/quenching:components:command:eval` step 7 — which measures the
 # same thing with should-trigger AND should-not-trigger prompts, graded, per command, instead of
@@ -45,7 +45,7 @@
 # Established by the `collapse-skills-into-commands` spec, task 7.1.
 set -uo pipefail
 
-ONLY="1,2,4"
+ONLY="1,2"
 REPO=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -249,42 +249,6 @@ probe c "add a standard: we always use snake_case for database columns"         
 # measured as a MISS before that edit, so a regression puts it straight back to failing here.
 probe d "set up something that audits our migrations and reports back"                        "quenching:components:agent:new"
 probe e "I want something to catch it automatically whenever a migration lands"               "quenching:components:hook:new"
-fi
-
-# --------------------------------------------------------------------------- #
-# 4. the conductor's probe checks for a legacy tool copy, from the plugin's own copy
-#
-# The drift check is only worth having if it actually RUNS, and its whole subject —
-# whether a legacy copy still sits under `.claude/hooks/`, dead weight since resolution
-# is plugin-first with no fallback — is invisible to every in-process check: `doctor`
-# and `lint` read the surface, not what a session decides to invoke.
-#
-# The prompt names the STEP (which the body defines) and never the tool, the subcommand
-# or the path, so a matching `Bash` call can only have come from the body being loaded.
-# The negative half is the rule that makes the answer trustworthy: run from the plugin's
-# own copy, because an installed copy answers from the same stale VERSION it is being
-# asked about.
-# --------------------------------------------------------------------------- #
-if want 4; then
-echo "4. the conductor's probe checks for a legacy tool copy"
-newbox "$WORK/sandbox4"
-( cd "$WORK/sandbox4" && claude -p --plugin-dir "$PLUGIN" "/quenching:align
-
-Run ONLY step 1, the read-only probe. Report what every call in it returned, then stop —
-write nothing and do not present the plan." \
-  --max-turns 10 --output-format stream-json --verbose < /dev/null > "$WORK/4.jsonl" 2>&1 )
-# `tools` prints each input as JSON, so a quoted path arrives escaped —
-# `python3 \"/…/cq\" components drift`. Match across the escape rather than assuming a bare
-# space, or a correct call reads as a miss (it did, on the first run of this check).
-if evidence "$WORK/4.jsonl"; then
-  if grep -qE 'cq[\\"[:space:]]+components[[:space:]]+drift' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=yes; else r=no; fi
-  check "$r" "ran cq components drift during the probe"
-  if grep -q 'hooks/cq' <<<"$(tools Bash "$WORK/4.jsonl")"; then r=no; else r=yes; fi
-  check "$r" "ran it from the plugin's copy, never from .claude/hooks/"
-else
-  inconc "ran cq components drift during the probe" "no tool_use in the capture"
-  inconc "ran it from the plugin's copy, never from .claude/hooks/" "no tool_use in the capture"
-fi
 fi
 
 echo

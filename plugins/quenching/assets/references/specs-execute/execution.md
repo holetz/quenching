@@ -350,7 +350,7 @@ scoped to `python3`/`py` because they only ever talk to `cq specs`.
 
 <!-- rationale -->
 
-When neither `skills.py` nor the target's `.claude/hooks/skills.py` resolves, the body falls back
+When neither `cq` nor the target's `.claude/hooks/cq` resolves, the body falls back
 to `Read`ing the cited file whole and says so in the report — because that is the run's context
 cost changing, not a cosmetic difference.
 
@@ -483,7 +483,7 @@ The account is **declared arithmetic over files on disk, not a measurement of an
 distinction `docs/standards/automation/session-evidence.md` §The rule a counted claim must obey
 imposes, and it is stated as an estimate here because that is what it is. On this repo's
 `configurable-spec-backend`, 18 of 29 tasks are delegation-eligible and 13 of them declare the same
-file: `specs.py` (as it stood then, before this repo split it into a package), ~37k tokens.
+file: the pre-refactor specs script (as it stood then, before this repo split it into a package), ~37k tokens.
 Task-by-task that is ~13 × 37k ≈ 480k against roughly 150k for an
 orchestrator reading it once and re-reading from cache — a delegation that reads as a saving and
 is not one. Measured across the whole transcript archive, this permission had never once been

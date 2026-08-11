@@ -1,7 +1,7 @@
 """What the parsed model is evidence OF — human turns attached to the command they
 are about, and one command's bounded digest.
 
-Moved verbatim out of `session.py`."""
+Moved verbatim out of the pre-refactor session script."""
 from __future__ import annotations
 
 from quenching.session.model import Command

@@ -1,7 +1,7 @@
 """The spec lifecycle contract — the vocabulary, the embedded schema and template,
 and the readers that resolve both from the shipped assets.
 
-Moved verbatim out of `specs.py`, with ONE adjustment: `ASSET_DIR` climbs three
+Moved verbatim out of the pre-refactor specs script, with ONE adjustment: `ASSET_DIR` climbs three
 levels rather than one, because this module sits at `assets/bin/quenching/specs/`
 and the assets it reads are at `assets/specs/`. The old depth resolved to
 `assets/bin/quenching/specs` — a directory that exists and holds no schema — and
@@ -140,8 +140,8 @@ def _behavioral(node):
     schema.json; the embedded fallback has never carried them, and they are not what the
     tool branches on.
 
-    Moved verbatim out of `specs.py`. Left behind when `DEFAULT_SCHEMA` moved here — without
-    it, the selftest's schema-drift check falls back to a raw `==` between `schema.json` (which
+    Moved verbatim out of the pre-refactor specs script. Left behind when `DEFAULT_SCHEMA` moved
+    here — without it, `test_specs_assets.py`'s schema-drift check falls back to a raw `==` between `schema.json` (which
     carries `note`/`why`) and `DEFAULT_SCHEMA` (which never has), a comparison that is `False`
     by construction and reports drift on every conformant pair."""
     if isinstance(node, dict):
@@ -153,8 +153,8 @@ def _behavioral(node):
 
 # The FULL template, embedded VERBATIM so an installed copy with no adjacent assets can
 # still stamp a capture AND pull any heading's guidance for `section --write`. It is a
-# byte-for-byte copy of assets/specs/templates/spec.md — `specs.py selftest` proves it, and
-# EDIT BOTH OR NEITHER.
+# byte-for-byte copy of assets/specs/templates/spec.md — `test_specs_assets.py`'s
+# `test_the_embedded_template_is_byte_for_byte_spec_md` proves it, and EDIT BOTH OR NEITHER.
 TEMPLATE_SPEC = """---
 slug: <SLUG>
 title: <TITLE>
@@ -166,9 +166,9 @@ verification: <VERIFICATION>
 
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
-     `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
+     `cq specs new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
      lines of body, not a fourteen-heading skeleton. Every other heading below is created on
-     first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
+     first write by `cq specs section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
      THE STAGE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
@@ -248,7 +248,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
-     /.docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
+     /.docs/standards/` sub-heading below is PARSED by `cq specs validate`: every
      `/.docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
      validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
      anchor.
@@ -262,7 +262,7 @@ verification: <VERIFICATION>
 
 ### Standards this spec will write into /.docs/standards/
 
-- `</.docs/standards/subject/concept.md>` — <the rule it states>
+- <path under /.docs/standards/> — <the rule it states>
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -337,7 +337,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
-     `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
+     `cq specs task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
      `[ ]` / `[x]` character. `--subject <line>` records the commit that implements it.
 
      A checkbox MAY carry indented metadata lines directly beneath it:
@@ -368,7 +368,7 @@ verification: <VERIFICATION>
 
      Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
      marked tasks' `files:` sets are provably disjoint and none writes into `/.docs/` —
-     `specs.py parallel` checks the disjunction mechanically rather than judging it in prose.
+     `cq specs parallel` checks the disjunction mechanically rather than judging it in prose.
      Serial execution is the default and needs no marker.
 
      A BLOCKED task is a visible marker, not a hidden counter:
@@ -388,7 +388,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
      not tied to one of the three. No gate — appended during execution.
 
-     One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
+     One line per discovery, appended by `cq specs discover <slug> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
      executor's.
 
@@ -403,7 +403,7 @@ verification: <VERIFICATION>
 
      What actually happened, written at archive time: what shipped, what was left out, what
      the next reader needs to know. `outcome: done | abandoned` is stamped into the
-     frontmatter by `specs.py promote --to archive`; this section is the prose behind it.
+     frontmatter by `cq specs promote --to archive`; this section is the prose behind it.
 
      For an abandoned spec, the reason it will not be built is the whole content. -->
 """

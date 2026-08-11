@@ -1,7 +1,7 @@
 """`## ` sections of a spec document — the parse, the three-state rule, and the gates
 computed over them.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import re

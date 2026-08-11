@@ -1,7 +1,7 @@
 """The `## Tasks` grammar — the checkbox line, its indented metadata, and the block
 each task owns.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import re

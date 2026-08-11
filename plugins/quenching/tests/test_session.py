@@ -1,6 +1,6 @@
 """The transcript reader's own fixture: one JSONL file exercising every rule
-`read_session`/`close_attribution`/`silence_refusal` hold, migrated from `session.py`'s
-`selftest_failures`.
+`read_session`/`close_attribution`/`silence_refusal` hold, migrated from the pre-refactor
+session script's `selftest_failures`.
 
 Each fixture below stayed exactly what it was in the script — a case earns its place because
 some prior, real reading of a transcript got it wrong, and the comment on each record says

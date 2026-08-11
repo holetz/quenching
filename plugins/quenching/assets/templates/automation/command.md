@@ -62,13 +62,14 @@ exist, exists; every step's criterion held. Report what was written.>
      THE PATH IS THE ONLY THING UNDER `commands/`. That tree is the only one Claude Code
      registers, so anything that is not an entry point — shared procedure, references,
      fixtures, eval cases — lives OUTSIDE it. A `references/` folder beside this file would
-     register every reference as a phantom command like `/quenching:knowledge:align:references:conformance`.
+     register every reference as a phantom command like the four-segment
+     `knowledge:align:references:conformance`.
      Cite shared procedure by absolute path instead; in a plugin that is
      `${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md`, which substitutes inside a
      command body.
 
-     VERIFY IT, don't eyeball it: `skills.py lint <this-file> --json` decides every mechanical
-     rule and names each gap by a stable `sk-*` code; `skills.py doctor --json` decides the
+     VERIFY IT, don't eyeball it: `cq components lint <this-file> --json` decides every mechanical
+     rule and names each gap by a stable `sk-*` code; `cq components doctor --json` decides the
      surface-wide invariant (every command has a non-empty description, no two resolve to the
      same `/` path, every segment kebab-case). Thresholds live in
      `docs/standards/automation/skills.md` — this mold never restates a number.

@@ -1,5 +1,5 @@
-"""Two retirement fixtures from `okf-validate.py`'s `run_selftest`: proof that a checker
-DROPPED cleanly, not partially.
+"""Two retirement fixtures from the pre-refactor OKF validator script's `run_selftest`: proof
+that a checker DROPPED cleanly, not partially.
 
 Both prove a NEGATIVE — "this used to fire, and must not anymore" — which a plain absence-of-
 error test cannot distinguish from "the fixture stopped exercising the code path at all". Each

@@ -1,7 +1,7 @@
 """The section engine — resolving a requested heading name, and splicing one section's
 block back into a document in canonical position.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.specs.parse.handoff import (current_handoff_section, parse_handoff,
@@ -20,7 +20,7 @@ def resolve_heading_name(name: str, candidates: list[str]) -> str | None:
     """One requested name onto the candidate that answers it, or None.
 
     **`§X` and `## X` are the same request, and a UNIQUE prefix resolves** — the two forms
-    `SECTION_CASES` pins, which `skills.py` carries verbatim. The command bodies already cite
+    `SECTION_CASES` pins, which the components pillar carries verbatim. The command bodies already cite
     sections as `§Handoff`, so a reader that refused over the marker would be unusable from the
     very prose it serves. An ambiguous prefix resolves to nothing: a guess between two headings is
     worse than the refusal that names them.
@@ -40,7 +40,7 @@ def resolve_heading_name(name: str, candidates: list[str]) -> str | None:
 
 def _match_heading(heading: str) -> str | None:
     """Case-insensitive lookup onto the canonical spelling. Headings are a parsed contract,
-    so the FILE always carries canonical English — but a human typing `specs.py section x
+    so the FILE always carries canonical English — but a human typing `cq specs section x
     validation` should not get a stray section for their trouble."""
     return resolve_heading_name(heading, canonical_headings())
 

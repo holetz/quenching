@@ -72,7 +72,7 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
         return None, {
             "code": "sp-backend-unavailable", "exit": 2, "backend": name,
             "message": f"backend '{name}' is declared in {CONFIG_FILE} but this copy of "
-                       f"specs.py does not implement it yet — no spec was read or written",
+                       f"cq specs does not implement it yet — no spec was read or written",
         }
     _BACKEND_CACHE[root] = backend
     return backend, {}

@@ -4,10 +4,10 @@ title: Align surface — one align per front, probe first
 description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the two conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:orchestrate` conducts the four stages of one spec, and neither reimplements what it conducts
 resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/orchestrate.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/references/align/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4)
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4)
 maintainer: quenching
 ---
 
@@ -78,16 +78,6 @@ and the align opens by running it, branching on the code:
 The probe and the closing verification are the **same programs run twice**, which is why the rule
 costs a couple of tool calls rather than a second contract to maintain — and why it inverted the
 old order, where a full read-only inventory was paid before anything knew whether there was work.
-
-**One probe call is deliberately cross-front.** `cq components drift` reports, for every
-pre-refactor script at once, whether the target still carries a **legacy copy** under
-`.claude/hooks/` — dead weight since resolution went plugin-first with no fallback — so each align
-reads its own row from the same payload and offers to remove what it finds, and a run of any one
-align can report the other two fronts' leftovers without a second probe. It is a **read**: it
-parses each legacy script's own `VERSION` constant and never executes a script sitting in the
-target's `.claude/hooks/`, because a probe that runs whatever a repo has on disk is a much larger
-claim than one that reads a few lines. The rule it implements is
-[../ci-cd/versioning-release.md](../ci-cd/versioning-release.md) §Noticing drift.
 
 **The rule is load-bearing, not an optimization.** An align that is expensive on a clean repo is
 an align nobody runs as the repo grows — which is exactly when drift accumulates. A free no-op

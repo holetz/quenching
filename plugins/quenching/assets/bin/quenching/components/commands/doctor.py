@@ -1,10 +1,10 @@
 """doctor — the surface's shape, plus the report-only inventory of everything beside it.
 
-Moved verbatim out of `skills.py`.
+Moved verbatim out of the pre-refactor components script.
 
 `lint` judges one command against the doctrine; `doctor` judges the surface as a whole, which
 is where the front's convergence condition actually lives. Every finding carries a `remedy` the
-sweep applies rather than invents, the same contract `specs.py doctor` already gives the specs
+sweep applies rather than invents, the same contract `cq specs doctor` already gives the specs
 front.
 
 WHAT REPLACED THE BIJECTION. This used to check that every skill had exactly one mirrored
@@ -76,8 +76,8 @@ def _wider_findings(root: str) -> list[dict]:
     """REPORT-ONLY inventory of the surfaces beside commands/: subagent definitions
     (`<root>/agents/*.md`) and the hooks wired in `<root>/settings*.json`. The sweep never
     renames or rewrites anything here — each finding names the mint that owns the fix
-    (/skill:agent:new, /skill:hook:new), so the confirmed plan's write set stays exactly
-    the command surface's."""
+    (/quenching:components:agent:new, /quenching:components:hook:new), so the confirmed plan's
+    write set stays exactly the command surface's."""
     findings: list[dict] = []
 
     for fn, fm in agent_definitions(root):
@@ -87,7 +87,7 @@ def _wider_findings(root: str) -> list[dict]:
                 f"agents/{fn} has no `description` — the agent can never be delegated to",
                 command=f"agents/{fn}", path=f"agents/{fn}",
                 remedy="add a description stating what it does and when to invoke it "
-                       "(/skill:agent:new)"))
+                       "(/quenching:components:agent:new)"))
 
     for settings_name in ("settings.json", "settings.local.json"):
         text = read_text(os.path.join(root, settings_name))

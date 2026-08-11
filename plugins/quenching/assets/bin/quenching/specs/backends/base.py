@@ -1,6 +1,6 @@
 """The spec backend interface, and the refusal an external backend carries to the CLI.
 
-Moved verbatim out of `specs.py`. `BackendRefusal` travels with the interface rather than with
+Moved verbatim out of the pre-refactor specs script. `BackendRefusal` travels with the interface rather than with
 `github`, where it used to sit: both external backends raise it, and neither may import the
 other."""
 from __future__ import annotations

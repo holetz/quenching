@@ -1,6 +1,6 @@
 """HOOK mode — the three Claude Code events this pillar answers, and the JSON it answers with.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`, with TWO mechanical changes: the
+Moved verbatim out of the pre-refactor OKF validator script, with TWO mechanical changes: the
 frontmatter call shape (bare dict from `parse_frontmatter`, the two fence bits from the
 `frontmatter_block` sidecar), and `0` written as `OK` where it already meant "the verb
 answered".

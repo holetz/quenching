@@ -27,7 +27,7 @@ other homes.
 This home is a plain Markdown tree, consumable by any documentation site generator. The
 plugin ships a batteries-included **mkdocs-material** setup at the repo root (`mkdocs.yml`,
 `requirements.txt`) — first installed by `quenching-docs-align`, and created/updated/verified from
-then on by **`/docs:documentation:build`** (the site layer's owner: config, `.pages` nav, and
+then on by **`/quenching:knowledge:documentation:build`** (the site layer's owner: config, `.pages` nav, and
 a `mkdocs build --strict` check):
 
 - The generator points here — `docs_dir: docs/documentation` in `mkdocs.yml` (kept at the
@@ -36,7 +36,7 @@ a `mkdocs build --strict` check):
   `navigation.indexes` feature) — no separate landing file needed.
 - Navigation follows the folder tree automatically via `mkdocs-awesome-pages-plugin`; the
   `.pages` file in each section sets its title and order. A new section has no `.pages` until
-  `/docs:documentation:build` writes one.
+  `/quenching:knowledge:documentation:build` writes one.
 - **Link caveat:** absolute OKF links (`/docs/standards/…`) point outside a site rooted at
   `documentation/` and will not resolve in the built HTML — keep these pages self-contained
   and cross-link to other homes sparingly.

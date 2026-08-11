@@ -1,6 +1,6 @@
 """The dirty marker — the only thing this pillar ever writes (a stamp in tempdir).
 
-Moved verbatim out of `assets/hooks/okf-validate.py`. It is its own module for the same
+Moved verbatim out of the pre-refactor OKF validator script. It is its own module for the same
 reason it was its own banner there: the trust note turns on this being the one write, and
 a reader auditing that claim should find the whole of it in one file.
 

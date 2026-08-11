@@ -77,7 +77,7 @@ auto-routes to a command by its `description`; typing the command is the explici
 
 Derives the target's current `/.docs/` shape, maps every existing section to a
 canonical **home**, and produces an **alignment plan**: which homes to scaffold,
-which variant names to migrate (`/.docs/arquitetura/` → `/.docs/standards/`), which
+which variant names to migrate (a non-English `/.docs/<arquitetura>/` → `/.docs/standards/`), which
 misfiled docs to relocate, which frontmatter to stamp/normalize, which `index.md`
 to (re)generate, and the blast radius of any rename that reaches product code. It
 presents the **full plan** and executes on **one**
@@ -121,7 +121,7 @@ files/folders, or URLs — and mints **multiple** conformant OKF concept docs fr
 force-with-one-confirmation pass: scope the source read-only, extract knowledge units and
 classify each into its home + `type` + mold, dedupe within the source and against the
 existing bundle, present **one** ingestion plan, then mint each doc under the insert
-procedure ([`quenching-knowledge-add/references/homes.md`](skills/quenching-knowledge-add/references/homes.md),
+procedure ([`knowledge-add/homes.md`](assets/references/knowledge-add/homes.md),
 its single owner — enrich cites, never restates). A Claude-native analogue of the OKF
 reference implementation's `enrich` command, **without** BigQuery or heavy deps. Web
 ingestion is **bounded** (seed list + host allowlist + page cap, never an open crawl);
@@ -257,10 +257,10 @@ the **rule** at `/.docs/standards/automation/skills.md` (`type: standard`, born
 `<!-- GENERATED:BEGIN/END -->` zone is derived from `.claude/skills/*/SKILL.md`
 frontmatter and written only by these two skills — the same anti-drift pattern as
 `backlog/index.md`. The doctrine lives once, in
-[`quenching-components-command-new/references/doctrine.md`](skills/quenching-components-command-new/references/doctrine.md)
+[`components-command-new/doctrine.md`](assets/references/components-command-new/doctrine.md)
 (how a SKILL.md is written: predictability, one trigger per branch, checkable step
 criteria, the no-op test) and
-[`quenching-components-command-new/references/taxonomy.md`](skills/quenching-components-command-new/references/taxonomy.md)
+[`components-command-new/taxonomy.md`](assets/references/components-command-new/taxonomy.md)
 (the axis, naming, mirroring, registry format); the sweep cites, never restates.
 
 **`quenching-components-command-new`** (per-item) mints or edits ONE conformant skill: reads the rule
@@ -524,19 +524,14 @@ All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 ## Upgrade
 
 Resolution is **plugin-first, with no install and no fallback** — every command reaches its tool
-at `${CLAUDE_PLUGIN_ROOT}/assets/{bin,hooks}/<tool>` — so a version bump reaches every consumer the
-moment Claude Code applies the plugin upgrade; there is nothing installed to compare against and
-nothing to sync. What each front's align (`/quenching:knowledge:align`, `/specs:align`, `/quenching:components:align`) still does
-is offer to **remove** a legacy copy a repo installed before resolution went plugin-first —
-`cq components drift` is what finds one, reading the leftover's own `VERSION` constant against the
-shipped tool's.
+at `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` — so a version bump reaches every consumer the moment
+Claude Code applies the plugin upgrade; there is nothing installed to compare against and nothing
+to sync.
 
 Publishing the bump itself is mechanized, not a manual edit. `cq specs release <version>` moves the
-seven version-carrying files together and creates the tag in one act: `.claude-plugin/plugin.json`,
-`VERSION`, the marketplace manifest's plugin entry, and the four pre-refactor scripts' own `VERSION`
-constants (under `assets/hooks/` and `assets/bin/`) — they stay byte-for-byte until they are
-retired, and the lockstep still targets each of them directly, `session`'s included even though no
-consumer reads it back. This
+four version-carrying files together and creates the tag in one act: `.claude-plugin/plugin.json`,
+`VERSION`, the marketplace manifest's plugin entry, and the one shared `common/version.py` constant
+every pillar's `--version` reads. This
 repository's own `/release` command (`.claude/commands/release.md` — not shipped by the plugin)
 drives it: run once, deliberately, at the **`develop → main` merge**, never at a spec's own
 conclude, it reads what accumulated on `develop` since the last release, proposes a patch/minor/major
@@ -577,7 +572,7 @@ why each half of the lockstep matters, and
   `Task` for `/quenching:components:align`'s doctrine audit — `sk-unscoped-bash` 8 → 5, every survivor stating
   its reason. `/.docs/standards/automation/hooks.md` graduated to `authority: current` on that
   adopting surface; `agents.md` stayed `background` because there is no `.claude/agents/` anywhere
-  to follow it. `/quenching:components:package` was **dismissed on a real packaging run**: four mechanical
+  to follow it. A proposed `components package` verb was **dismissed on a real packaging run**: four mechanical
   operations, then six fields that came back requiring a human. Still twenty-four commands.
 - **1.0.0:** **the middle front went fully native — the external OpenSpec CLI is gone.** The
   `openspec/` workspace this plugin used to *drive* (`@fission-ai/openspec`, `openspec init`,
@@ -622,7 +617,7 @@ why each half of the lockstep matters, and
   plan → one OK with code-coupled items gating individually, the cycle-authorized narration
   exception, blast radius, MERGE-never-clobber, never-delete-on-a-guess,
   align-conformance-report-the-cycle — now lives once in
-  [`quenching-align-all/references/sweep-doctrine.md`](skills/quenching-align-all/references/sweep-doctrine.md),
+  [`align/sweep-doctrine.md`](assets/references/align/sweep-doctrine.md),
   and each align states only its own front's deltas. The `openspec/` ↔ `/.docs/` boundary is
   declared normatively once, in `quenching-specs-develop/references/openspec.md` §Boundary. The backlog's
   prose "self-check" is gone: `cq knowledge validate` gained **`--listing-root`** and now checks
@@ -660,11 +655,11 @@ why each half of the lockstep matters, and
 - **0.18.0:** **the interface completed — one 2×4 matrix, and `converge` renamed.** 0.17.0 gave
   every front an `align`; this release gives every front an **`align-and-update`** and renames
   the concept so it says what it does. `quenching-converge` → **`quenching-knowledge-align-and-update`**
-  (`/quenching:knowledge:converge` → `/quenching:knowledge:align-and-update`) — clean cut, no compatibility alias. New
-  **`quenching-specs-align-and-update`** (`/specs:align-and-update`) drives the cycle actions
+  (`knowledge:converge` → `knowledge:align-and-update`, both retired since) — clean cut, no compatibility alias. New
+  **`quenching-specs-align-and-update`** (`specs:align-and-update`, retired since) drives the cycle actions
   `quenching-specs-align` only reports: align → archive each complete change (syncing specs and
   distilling into `/.docs/`) → sync leftover deltas → triage the inbox, looped; **each archive
-  confirms on its own**. New **`quenching-components-align-and-update`** (`/quenching:components:align-and-update`)
+  confirms on its own**. New **`quenching-components-align-and-update`** (`components:align-and-update`, retired since)
   adds the one thing the align is forbidden to do — a **read-only doctrine audit of every skill
   body**, reported with the `/quenching:components:command:new` that fixes it, never rewritten. New
   **`quenching-align-and-update-all`** (root `/align-and-update`) loops all three fronts,
@@ -734,8 +729,8 @@ why each half of the lockstep matters, and
   `decisions/` ADR home**: an agreed-but-unproven decision is now a `standards/` doc with
   `authority: background`, a proven one `authority: current`; a change's rationale/alternatives
   live in its `design.md` while active and distill to a `standard` at archive time.
-  `migration.md` gains rules (§1e/§1f) to relocate an existing `/.docs/backlog/` → `openspec/backlog/`
-  and restamp `/.docs/decisions/` ADRs into `standards/`. Still **eighteen** skills.
+  `migration.md` gains rules (§1e/§1f) to relocate an existing bundle's `backlog/` home → `openspec/backlog/`
+  and restamp its `decisions/` ADRs into `standards/`. Still **eighteen** skills.
 - **0.12.0:** narrowed the OKF taxonomy from eleven homes to **nine** — retired the
   `communications/` and `presentations/` homes (and dropped the leftover empty
   `superpowers/` folder), removing the `communication`/`communication-template` types from
