@@ -98,24 +98,10 @@ each already probes before paying for one:
   `.claude/skills/*/SKILL.md` and directory-scoped `**/.claude/skills/*/SKILL.md` for legacy pairs,
   noting how many are legacy CLI-generated `openspec-*` shadow copies (front 2 clears those when
   migrating a legacy `openspec/` workspace).
-- **the legacy tool copies** — one call, spanning all three fronts:
-  ```bash
-  python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
-  ```
-  It reports any copy still sitting under `.claude/hooks/` from before resolution went
-  plugin-first. Run it from the **plugin path**, never from `.claude/hooks/skills.py`: a legacy
-  copy would answer from the same stale `VERSION` it is being asked about, and it refuses (exit 2)
-  rather than lie. `sk-tool-behind`, `sk-tool-ahead` and `sk-tool-unreadable` are all **warnings**
-  naming the same remedy — the version only says what kind of debris the copy is — and a tool that
-  is simply absent is the expected state and reports nothing. Each finding names the align that
-  removes it, so the row goes to that front's section of the step-2 plan — **this command never
-  removes a tool itself, and never installs one.**
 
 **All three fronts probe clean** → say so and stop, before any plan: *"all three fronts conformant
-— nothing to align."* A drift finding is **not** by itself unclean: it drives no structural work,
-so report it with the removal offer that closes it and stop as prescribed, rather than opening a
-plan for it. That is the cheapest complete answer this command can give, and giving it is the point
-of probing here rather than inside three separate runs.
+— nothing to align."* That is the cheapest complete answer this command can give, and giving it is
+the point of probing here rather than inside three separate runs.
 **Done when:** each front is marked *present / absent / not applicable* with its counts, and
 nothing has been written.
 

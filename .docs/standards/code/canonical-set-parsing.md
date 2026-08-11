@@ -20,7 +20,7 @@ Code that consumes it must be explicit about which of the two it is relying on â
 change independently, and only one of them is ever re-checked.
 
 This standard governs the **consumption** side. The parsing of frontmatter itself is
-[frontmatter-parsing.md](frontmatter-parsing.md); the section contract being declared is
+[frontmatter-parser.md](frontmatter-parser.md); the section contract being declared is
 [../workflows/plan-artifacts.md](../workflows/plan-artifacts.md).
 
 ## Slice by membership, never by position

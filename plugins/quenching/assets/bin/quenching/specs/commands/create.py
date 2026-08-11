@@ -90,5 +90,5 @@ def cmd_new(args, root: str, out: Emitter) -> int:
               "phase": "plans", "folder": "plans", "file": name, "stage": "captured",
               "path": display_locator(path, root)},
              f"created plans/{name}  (slug: {slug} · verification: {policy})\n"
-             f"next: write ## Problem, then `specs.py section {slug} Proposal --write`")
+             f"next: write ## Problem, then `cq specs section {slug} Proposal --write`")
     return 0

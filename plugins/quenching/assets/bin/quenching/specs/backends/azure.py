@@ -1,6 +1,6 @@
 """The `azure-boards` backend — specs as Azure Boards work items, over the `az` CLI.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import json
@@ -69,7 +69,7 @@ def azure_cache_path(org: str, project: str) -> str:
     directory is per-machine by construction, which is the property that matters.
 
     IT IS NOT A STORE. `spec-backend.md` §Granular reading already admits a cache inside
-    `specs.py` on three conditions — it is not authoritative, nothing outside the CLI reads
+    `cq specs` on three conditions — it is not authoritative, nothing outside the CLI reads
     it, and the backend stays the source of truth. Crossing processes changes none of those;
     what it changes is that a wrong entry now survives the process that wrote it, which is
     why every reader here re-validates against what came back rather than trusting the hit.
@@ -1029,7 +1029,7 @@ class AzureBoardsBackend(SpecBackend):
         if type_name in self._board_field:
             return self._board_field[type_name]
         # BETWEEN PROCESSES, not just within one. The guid is per-team and per-process
-        # caching meant paying 1 + N calls on every `specs.py` invocation — measured 2,8s on
+        # caching meant paying 1 + N calls on every pre-refactor specs script invocation — measured 2,8s on
         # a team with six boards. Task 1.1 ruled out reading it off the item itself, so the
         # resolution stays authoritative and only its ANSWER is remembered, keyed by the team
         # and work item type it was resolved for.

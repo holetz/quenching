@@ -1,6 +1,6 @@
 """The streaming parser — one pass over a transcript, and the honesty it owes.
 
-Moved verbatim out of `session.py`, whose module docstring carried the four sections
+Moved verbatim out of the pre-refactor session script, whose module docstring carried the four sections
 below unchanged.
 
 WHAT A TRANSCRIPT HOLDS
@@ -42,7 +42,7 @@ the conductor **once**, never returns to any command 36 times, and jumps to a th
 The consequence is not academic. In the session that answered this spec's own go/no-go,
 `/specs:develop` invoked `/specs:isolate` as a stage; isolate finished at its "Isolated."
 turn, and the conductor's next five `AskUserQuestion` calls — its own spec-shape bank — are
-still stamped `quenching:specs:isolate`. Reported naively that is "the isolation stage asked
+still stamped with the stage label `specs:isolate`. Reported naively that is "the isolation stage asked
 the human five questions", which is false and entirely plausible.
 
 There is no end marker in the transcript to fix this with. Inventing one would manufacture

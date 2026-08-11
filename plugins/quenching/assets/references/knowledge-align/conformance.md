@@ -99,7 +99,7 @@ A doc that is provably **lying about itself**. These join the structural set the
 - **WARN `resource-self`** — the doc's own path falls inside the scope its `resource` declares.
   Such a doc governs nothing and is eternally fresh, which silently disables `stale-doc` for it.
   Matching is **segment-wise**: a single `*` does not cross a `/`, so `/.docs/*` does not contain
-  `/.docs/standards/x.md`.
+  a deeper path like `/.docs/standards/<subject>.md`.
   - **The bundle-aggregate exemption.** An entry whose scope contains the bundle **root** is an
     aggregate, not a mistake, and never raises this. `knowledge/glossary.md` really does govern
     the whole bundle, so `resource: /.docs/**` is truthful and narrowing it would be the

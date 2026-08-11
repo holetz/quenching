@@ -1,9 +1,9 @@
 """lint — the per-command conformance checks, and the citation form a plugin's prose must use.
 
-Moved verbatim out of `skills.py`.
+Moved verbatim out of the pre-refactor components script.
 
 Every check here is decidable FROM THE FILE. The doctrine's remaining tests — the no-op test,
-sediment, sprawl, positive prescription — stay a human read in `/skill:align` Stage 2, because
+sediment, sprawl, positive prescription — stay a human read in `/quenching:components:align` Stage 2, because
 each needs a claim about behaviour that no parser can make. Adding a heuristic for one of them
 would move the plugin's anti-fabrication boundary, not the tool's coverage.
 """
@@ -37,10 +37,11 @@ DONE_WHEN_MARKER = "**Done when:**"
 UNSCOPED_TOOLS = ("Bash",)      # granting the whole shell for the turn
 EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
 
-# A slash citation carrying at least one `:` — `/docs:add`, `/docs:documentation:build`. The
-# lookbehind rejects a citation already prefixed by a path or a scheme (`https://`,
-# `${CLAUDE_PLUGIN_ROOT}/…`), and requiring a segment after the `:` keeps a bare namespace
-# (`/skill:`) out: naming the namespace is not citing a command.
+# A slash citation carrying at least one `:` — `/quenching:knowledge:add`,
+# `/quenching:knowledge:documentation:build`. The lookbehind rejects a citation already
+# prefixed by a path or a scheme (`https://`, `${CLAUDE_PLUGIN_ROOT}/…`), and requiring a
+# segment after the `:` keeps a bare namespace (`/quenching:components:`) out: naming the
+# namespace is not citing a command.
 CITATION_RE = re.compile(r"(?<![\w:/-])/([a-z0-9-]+(?::[a-z0-9-]+)+)")
 CITATION_SAMPLE = 3      # examples carried in the message; the count carries the rest
 
@@ -339,7 +340,7 @@ def _lint_frontmatter_hooks(cmd: dict, where: dict) -> list[dict]:
                            "the ladder checks could not read it — it is NOT reported as clean",
                            **where,
                            remedy="rewrite it in the shape of "
-                                  "assets/templates/automation/hook.md shape 1 (/skill:hook:new)"))
+                                  "assets/templates/automation/hook.md shape 1 (/quenching:components:hook:new)"))
     out.extend(hook_ladder_findings(cmd.get("hooks") or {},
                                     where_in=f"{where['path']} frontmatter", where=where))
     return out

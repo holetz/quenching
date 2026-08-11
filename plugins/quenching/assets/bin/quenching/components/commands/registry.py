@@ -1,6 +1,6 @@
 """registry reindex — this pillar OWNS the GENERATED zone format.
 
-Moved verbatim out of `skills.py`.
+Moved verbatim out of the pre-refactor components script.
 
 Until this existed `taxonomy.md` described the row format and two skills reproduced it by hand,
 which asked one LLM to both generate a derived table and verify its own output. The zone is

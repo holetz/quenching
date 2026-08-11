@@ -1,6 +1,6 @@
 """Two renderings of one finding list — the operator's report and the agent's proposal.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`, with ONE adjustment: `VERSION` is
+Moved verbatim out of the pre-refactor OKF validator script, with ONE adjustment: `VERSION` is
 imported from `quenching.common.version` rather than declared here.
 
 `_split` is the severity partition every caller branches on, and it is why this pillar
@@ -36,5 +36,5 @@ def _render_proposal(findings) -> str:
     body = "\n".join(f"  - [{sev}] {rel}: {msg}" for sev, rel, code, msg in shown)
     return (f"[{TAG}] OKF conformance findings ({len(errors)} error(s), {len(warns)} warning(s)):\n"
             f"{body}\n"
-            "Fix with the `quenching-docs-align` / `quenching-docs-add` skill (stamp `type`, keep `index.md` a "
+            "Fix with the `quenching-knowledge-align` / `quenching-knowledge-add` skill (stamp `type`, keep `index.md` a "
             "frontmatter-free listing).")

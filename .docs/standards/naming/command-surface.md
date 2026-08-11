@@ -76,9 +76,9 @@ lives under `/quenching:knowledge:`.
 
 The `.claude/` front used to be named `skill`, and that name carried a defect independent of the
 namespace rename: `skill` was simultaneously the front's own name and the name of one artifact
-*inside* it, so `/skill:new` minted a command while `/skill:agent:new` minted a subagent — two
-artifact levels, one of them wearing the front's own name, treated as if one were a sub-type of
-the other.
+*inside* it, so its front-root `new` verb minted a command while its nested `agent:new` verb minted
+a subagent — two artifact levels, one of them wearing the front's own name, treated as if one were
+a sub-type of the other.
 
 `components` does not have that defect: no artifact under this front is called "a component". It
 holds **four sibling contexts, each named for the artifact it mints, none a sub-type of another**:
@@ -96,7 +96,7 @@ context.** `/quenching:components:align` is the front's own sweep — it has no 
 to sit under, so it stays at the root, exactly as `/quenching:knowledge:align` and `/specs:align`
 do for their fronts. `command:new`, `command:eval` and `command:retro` are three verbs that all act
 on the same artifact (a command), so they share the `command/` context rather than each claiming a
-piece of the front root the way `/skill:new`/`/skill:eval` used to.
+piece of the front root the way the old front's `new`/`eval` verbs used to.
 
 `/quenching:components:harness:align` is the one entry that **changed front**, not merely name:
 `CLAUDE.md` and `AGENTS.md` are files Claude Code reads as instruction, which makes the harness an
@@ -136,7 +136,7 @@ This standard used to carry a §*Why the wrapper still exists*, arguing that the
 wrapper bought exactly one thing — the `:`-namespaced `/` tree — at a measured cost of ~2,072
 characters always in context, and closing with an explicit revisit trigger:
 
-> reconsider it when `skills.py budget` shows wrapper descriptions displacing skill descriptions.
+> reconsider it when the pre-refactor components script's `budget` verb shows wrapper descriptions displacing skill descriptions.
 
 **That trigger fired, from the other side.** The question was never whether the wrapper displaced
 the skill description; it was that the *skill* description was the redundant one. Collapsing into

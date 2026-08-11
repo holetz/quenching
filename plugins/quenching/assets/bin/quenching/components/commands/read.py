@@ -1,6 +1,6 @@
 """read — N sections of any markdown file, in ONE call.
 
-Moved verbatim out of `skills.py`. The rule itself is `quenching.components.sections`; this is
+Moved verbatim out of the pre-refactor components script. The rule itself is `quenching.components.sections`; this is
 the verb over it — the heading index when nothing was asked for, the refusal that names an
 absent section, and the `--rules-only` note that keeps a missing marker from becoming silence.
 """

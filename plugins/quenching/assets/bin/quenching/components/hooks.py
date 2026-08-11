@@ -1,6 +1,6 @@
 """The frontmatter `hooks:` block, and the ladder checks that run over any `hooks` object.
 
-Moved verbatim out of `skills.py`.
+Moved verbatim out of the pre-refactor components script.
 
 Two things live together here because they are the same rung read twice. `parse_frontmatter_hooks`
 is the reader the generic parser deliberately does not have — it is the reason
@@ -123,7 +123,8 @@ def hook_ladder_findings(hooks: dict, where_in: str, where: dict) -> list[dict]:
                     "every tool call, and every iteration in the repo pays it",
                     **at,
                     remedy="add a matcher, or state where it is wired why nothing "
-                           "narrower suffices (/skill:hook:new owns the scope ladder)"))
+                           "narrower suffices (/quenching:components:hook:new owns the scope "
+                           "ladder)"))
             for h in entry.get("hooks") or []:
                 if isinstance(h, dict) and str(h.get("type", "")).strip() in LLM_HANDLERS:
                     out.append(finding(
@@ -133,5 +134,5 @@ def hook_ladder_findings(hooks: dict, where_in: str, where: dict) -> list[dict]:
                         **at,
                         remedy="decide the deterministic path with a command handler "
                                "and keep the inference for the judgment tail "
-                               "(/skill:hook:new owns the handler ladder)"))
+                               "(/quenching:components:hook:new owns the handler ladder)"))
     return out

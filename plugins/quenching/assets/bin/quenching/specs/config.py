@@ -1,6 +1,6 @@
 """Where the workspace is, and what `.claude/quenching.json` declares about it.
 
-Moved verbatim out of `specs.py`. `AZ_SPEC_TYPE` is imported INSIDE the two
+Moved verbatim out of the pre-refactor specs script. `AZ_SPEC_TYPE` is imported INSIDE the two
 functions that read it: it belongs to `quenching.specs.backends.azure`, which
 imports this module at its top, so a module-level edge would close a cycle."""
 from __future__ import annotations
@@ -59,7 +59,7 @@ DEFAULT_SPECS_BRANCH = "specs"
 # (`infer_base_branch`) must tell "declared" from "not declared" to know whether it may
 # skip `origin/HEAD`; baking the default into `load_config` would erase that distinction
 # for every repo that never opted into the develop/main flow. Callers that need an actual
-# branch name once a value IS missing — `specs.py release` among them — apply these two
+# branch name once a value IS missing — `cq specs release` among them — apply these two
 # constants themselves, at the point of use.
 DEFAULT_INTEGRATION_BRANCH = "develop"
 DEFAULT_RELEASE_BRANCH = "main"
@@ -115,8 +115,9 @@ def announce_unproved(name: str) -> None:
     _UNPROVED_ANNOUNCED.add(name)
     print(f"warning: backend '{name}' ships without an end-to-end run against a real "
           f"target — its writes have never seen a live response, so this one may fail, or "
-          f"half-succeed and leave items behind. `specs.py selftest` proves its five "
-          f"primitives and its refusals; nothing proves this call.", file=sys.stderr)
+          f"half-succeed and leave items behind. `tests/test_specs_backends.py`'s "
+          f"`BackendEquivalence` proves the five primitives and their refusals for "
+          f"`files`/`memory`; nothing proves this call.", file=sys.stderr)
 
 
 def find_repo_root(specs_root: str) -> str:

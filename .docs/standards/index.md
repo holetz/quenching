@@ -34,7 +34,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 ## Current docs
 
-<!-- BEGIN GENERATED: rebuilt from disk by `quenching-docs-align`/`quenching-docs-add` — DO NOT edit by hand.
+<!-- BEGIN GENERATED: rebuilt from disk by `quenching-knowledge-align`/`quenching-knowledge-add` — DO NOT edit by hand.
      Scans standards/**/*.md, reads title/description/timestamp/type, grouped by subject subfolder.
      Row model per subfolder:
        ### code/
@@ -80,7 +80,7 @@ generate list). The **agent-facing pointer** for this home is [CLAUDE.md](CLAUDE
 
 | Doc | Covers |
 | --- | --- |
-| [versioning-release.md](ci-cd/versioning-release.md) | Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version and cq components drift read — bumped once per release, at the develop → main merge, never at conclude and never as a task; cq specs release still moves the four pre-refactor scripts' own constants as well, pending their retirement |
+| [versioning-release.md](ci-cd/versioning-release.md) | Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, at the develop → main merge, never at conclude and never as a task |
 
 ### code/
 

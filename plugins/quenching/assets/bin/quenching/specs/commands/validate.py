@@ -54,7 +54,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                             f"{where}: `{a['key']}`: {a['detail']}", spec=s["slug"], path=where,
                             kind=a["kind"], key=a["key"],
                             remedy="quote the value, or write the comment on its own line — "
-                                   "see /.docs/standards/code/frontmatter-parsing.md"))
+                                   "see /.docs/standards/code/frontmatter-parser.md"))
 
     schema = load_schema()
     for key in schema.get("frontmatter", {}).get("required", []):
@@ -87,7 +87,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
         out.append(_finding("sp-gate-unmet", "warn",
                             f"{where}: `## {h}` is required in {s['phase']}/ and is absent",
                             spec=s["slug"], path=where, heading=h,
-                            remedy=f"specs.py section {s['slug']} \"{h}\" --write"))
+                            remedy=f"cq specs section {s['slug']} \"{h}\" --write"))
     # Malformed is NOT phase-scoped. Once a heading exists it must say something, in any
     # phase: it is neither an answer nor a not-yet, and leaving it for the promote to catch
     # means a spec looks fine right up until the gate refuses it.
@@ -108,7 +108,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                                     f"{where}: `## Overview` is empty in a spec that meets "
                                     f"the ready gate — a reader gets no orientation",
                                     spec=s["slug"], path=where, heading=h,
-                                    remedy=f"specs.py section {s['slug']} \"Overview\" --write, "
+                                    remedy=f"cq specs section {s['slug']} \"Overview\" --write, "
                                            "written last once the other sections settle"))
             else:
                 out.append(_finding("sp-handoff-empty", "warn",
@@ -246,13 +246,13 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
                 findings.append(_finding("sp-stray-dir", "warn",
                                          f"{ph}/{name}/ is a directory — v2 specs are files",
                                          path=f"{ph}/{name}",
-                                         remedy="a v1 plan folder? run `specs.py migrate`"))
+                                         remedy="a v1 plan folder? run `cq specs migrate`"))
             elif not SPEC_FILE_RE.match(name):
                 dated = LEGACY_DATED_FILE_RE.match(name)
                 findings.append(_finding("sp-bad-filename", "error",
                                          f"{ph}/{name} is not `<slug>.md`",
                                          path=f"{ph}/{name}",
-                                         remedy="run `specs.py migrate` — the date belongs in "
+                                         remedy="run `cq specs migrate` — the date belongs in "
                                                 "`date:` now, not in the basename"
                                          if dated else
                                          "rename it to the one filename pattern all "

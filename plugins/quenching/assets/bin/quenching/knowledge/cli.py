@@ -1,11 +1,11 @@
 """CLI mode, and the pillar's entry point.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`, with two changes stated below.
+Moved verbatim out of the pre-refactor OKF validator script, with two changes stated below.
 
 CLI  `validate [<bundle-or-docs-dir>] [--json]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
-   This is what `quenching-docs-align`/`quenching-docs-add` invoke and what the plugin's own
+   This is what `quenching-knowledge-align`/`quenching-knowledge-add` invoke and what the plugin's own
    verification runs over `assets/docs/`.
    This checker validates OKF bundles and nothing else. The `specs/` front is owned
    end-to-end by the specs pillar's `validate`, which holds a spec to its own contract
@@ -15,7 +15,7 @@ CLI  `validate [<bundle-or-docs-dir>] [--json]`
 
 THE MODE IS A VERB, NOT A HEURISTIC — the one behaviour change
 --------------------------------------------------------------
-`okf-validate.py` decided its mode by looking at the world: no `argv` **and** a non-tty
+The pre-refactor OKF validator script decided its mode by looking at the world: no `argv` **and** a non-tty
 stdin meant "hook". That test does not survive a pillar prefix, and it should not: it
 misfires under CI, under a subprocess, and under any redirection, silently and with no
 way to override it. `main` routes the DECLARED token — `hook` to
@@ -73,13 +73,13 @@ def run_cli(argv: list[str]) -> int:
 def main(argv: list[str]) -> int:
     """The pillar's whole entry: one declared token chooses the mode.
 
-    BOTH modes are verbs, and neither is the default. `okf-validate.py` reached CLI mode by
+    BOTH modes are verbs, and neither is the default. The pre-refactor OKF validator script reached CLI mode by
     falling through — any argv that was not the hook shape was read as a bundle path, so a
     mistyped verb came back as `no-bundle` against a directory nobody named. Under a prefix
     that fallback is an unannounced alias for `validate`, which the spec's `## Out of Scope`
     rules out by name, so a token that is not a verb is a usage refusal.
 
-    THE VALIDATOR STILL HAS NO REFUSAL STEP. `okf-validate.py` never had one — not one
+    THE VALIDATOR STILL HAS NO REFUSAL STEP. The pre-refactor OKF validator script never had one — not one
     `return 2` in its 1,372 lines — and inventing one would be a behaviour change dressed as
     a move. A bundle root that is not a directory is still a `no-bundle` ERROR finding
     exiting `FINDINGS`, exactly as it always did. The `REFUSAL` below is the ROUTER's, on a

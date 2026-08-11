@@ -1,6 +1,6 @@
 """The three entry points every caller validates through — one file, one text, one tree.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`. This is the dispatch that decides
+Moved verbatim out of the pre-refactor OKF validator script. This is the dispatch that decides
 which conformance function a filename earns: exempt harness pointers, the reserved
 `index.md`, the retired `log.md`, the migration `README.md`, and everything else as a
 concept doc.

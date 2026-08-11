@@ -32,8 +32,8 @@ The branch review found three defects, one per seam:
 | # | Site | What the edit did | What the file then said |
 | --- | --- | --- | --- |
 | 1 | `plugins/quenching/README.md` | deleted a wrapped line whose first two words ended the *previous* sentence | *"…contradicting every other statement that the inbox is outside"* — then a new paragraph |
-| 2 | `plugins/quenching/commands/docs/align.md` | deleted a bullet, kept its three indented continuation lines | the continuation reattached to the **preceding** bullet, telling a live command to list a file that no longer exists |
-| 3 | `plugins/quenching/commands/skill/align.md` | deleted the only thing a `Bash(cp:*)` grant was for | the body still justified the grant by *"the manual install"*, and the grant was still in `allowed-tools` |
+| 2 | the knowledge front's `align.md` (then still `commands/docs/`) | deleted a bullet, kept its three indented continuation lines | the continuation reattached to the **preceding** bullet, telling a live command to list a file that no longer exists |
+| 3 | the components front's `align.md` (then still `commands/skill/`) | deleted the only thing a `Bash(cp:*)` grant was for | the body still justified the grant by *"the manual install"*, and the grant was still in `allowed-tools` |
 
 ## Seam 1 — the line is the tool's unit, the sentence is the reader's
 

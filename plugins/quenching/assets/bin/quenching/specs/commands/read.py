@@ -69,7 +69,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
         group = [r for r in rows if r["folder"] == folder]
         if not group:
             continue
-        legacy = " (v2 — `specs.py migrate` folds it into plans/)" \
+        legacy = " (v2 — `cq specs migrate` folds it into plans/)" \
             if folder in LEGACY_PHASES else ""
         print(f"\n  {folder}/{legacy}")
         for r in group:

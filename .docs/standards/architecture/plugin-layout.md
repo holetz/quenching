@@ -18,8 +18,9 @@ The rule the collapse to one file per entry point created, and that nothing prev
 ## `commands/**` is the only tree Claude Code registers
 
 Every `.md` under `commands/` **is** a command. Not "is treated as one if it looks right" — the
-path is the identity, so `commands/knowledge/align/references/conformance.md` registers as
-`/quenching:knowledge:align:references:conformance` and appears in the surface a session pays for.
+path is the identity, so `commands/knowledge/align/references/conformance.md` would register as a
+four-segment `knowledge:align:references:conformance` command and appear in the surface a session
+pays for.
 
 Therefore: **anything that is not an entry point lives outside `commands/`.** Shared procedure,
 reference files, fixtures, eval cases, notes.

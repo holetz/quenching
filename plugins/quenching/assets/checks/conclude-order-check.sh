@@ -8,7 +8,7 @@
 #     and therefore nothing is committed to the base branch after the merge.
 #
 # Only a history exhibits that. So this builds a throwaway git repo, walks one spec through
-# create -> isolate -> execute -> conclude -> merge using the SAME `specs.py` calls the command
+# create -> isolate -> execute -> conclude -> merge using the SAME `cq specs` calls the command
 # bodies specify, and then asserts three properties of the resulting history.
 #
 # WHAT THIS PROVES: that the tool supports the ordering, and that a history built to it has the
@@ -27,7 +27,7 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SPECS="$HERE/../bin/specs.py"
+CQ="$HERE/../bin/cq"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 PASS=0; FAIL=0
@@ -44,7 +44,7 @@ SLUG=order-check
 SUBJ_TASK="plan/$SLUG: 1.1 Add the widget"
 SUBJ_MERGE="plan/$SLUG: merge (merge-commit)"
 
-echo "conclude-order-check — specs.py at $SPECS"
+echo "conclude-order-check — cq at $CQ"
 echo
 
 # --------------------------------------------------------------------------- #
@@ -61,13 +61,13 @@ echo "# seed" > README.md
 git add -A && git commit -qm "seed"
 
 # create
-"$PY" "$SPECS" new "$SLUG" --title "Order check" >/dev/null
+"$PY" "$CQ" specs new "$SLUG" --title "Order check" >/dev/null
 FILE=$(ls specs/plans/*-"$SLUG".md)
 
 # fill the ready gate, plus one task carrying declared files
 for h in Proposal "Out of Scope" Impact Validation Design "Alternatives Considered" \
          "Open Decisions" Risks Handoff Tasks; do
-  "$PY" "$SPECS" section "$SLUG" "$h" --write >/dev/null
+  "$PY" "$CQ" specs section "$SLUG" "$h" --write >/dev/null
 done
 "$PY" - "$FILE" <<'PY'
 import io, re, sys
@@ -86,8 +86,8 @@ git add -A && git commit -qm "plan/$SLUG: record the spec"
 
 # The fixture is only useful if the tool can see its task. Fail loudly rather than quietly
 # asserting against a spec whose `## Tasks` never parsed.
-if ! "$PY" "$SPECS" next --spec "$SLUG" --json 2>/dev/null | grep -q '"task": "1.1"'; then
-  echo "  FIXTURE BROKEN: specs.py cannot see task 1.1 — the assertions below would be vacuous" >&2
+if ! "$PY" "$CQ" specs next --spec "$SLUG" --json 2>/dev/null | grep -q '"task": "1.1"'; then
+  echo "  FIXTURE BROKEN: cq specs cannot see task 1.1 — the assertions below would be vacuous" >&2
   exit 1
 fi
 
@@ -106,12 +106,12 @@ git add -A && git commit -qm "plan/$SLUG: record the isolation"
 
 # execute — write the code, TICK THE BOX, then commit both together
 mkdir -p src && echo "widget" > src/widget.txt
-"$PY" "$SPECS" task --spec "$SLUG" --check 1.1 --subject "$SUBJ_TASK" >/dev/null
+"$PY" "$CQ" specs task --spec "$SLUG" --check 1.1 --subject "$SUBJ_TASK" >/dev/null
 git add src/widget.txt "$FILE" && git commit -qm "$SUBJ_TASK"
 TASK_COMMIT=$(git rev-parse HEAD)
 
 # conclude — archive on the branch, distil on the branch, stamp the merge on the branch
-"$PY" "$SPECS" section "$SLUG" Outcome --write >/dev/null
+"$PY" "$CQ" specs section "$SLUG" Outcome --write >/dev/null
 "$PY" - "$FILE" <<'PY'
 import io, re, sys
 p = sys.argv[1]
@@ -120,7 +120,7 @@ s = re.sub(r'(?m)^## Outcome\n\n(?=(?:<!--|\Z))', '## Outcome\n\nShipped.\n\n', 
 io.open(p, 'w', encoding='utf-8', newline='').write(s)
 PY
 git add -A && git commit -qm "plan/$SLUG: write the outcome"
-"$PY" "$SPECS" promote "$SLUG" --to archive --outcome done >/dev/null
+"$PY" "$CQ" specs promote "$SLUG" --to archive --outcome done >/dev/null
 ARCHIVED=$(ls specs/archive/*-"$SLUG".md)
 git add -A && git commit -qm "plan/$SLUG: archive"
 

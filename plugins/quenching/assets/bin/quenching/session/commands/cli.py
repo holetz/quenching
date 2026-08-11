@@ -10,7 +10,7 @@ action, and neither path is named anywhere below.
 `selftest` is NOT here. `cmd_selftest` and the three fixtures are tests and migrate to
 `tests/`; re-adding the verb is one subparser and one `DISPATCH` row.
 
-Moved verbatim out of `session.py`, whose module docstring carried the two sections
+Moved verbatim out of the pre-refactor session script, whose module docstring carried the two sections
 below unchanged. Two adjustments to what they say: `VERSION` is now IMPORTED from
 `quenching.common.version` rather than declared "below" — the same constant at the same
 value, declared once for the four pillars — and `--json` is now proved by `tests/`
@@ -29,7 +29,8 @@ Two consequences follow, and both are deliberate:
     That lockstep exists because an align must decide whether an installed copy is stale;
     with no installed copy there is no such decision. `VERSION` below tracks the plugin for
     a legible `--version`, and no align compares it against anything.
-  * `skills.py`'s stated contract — it reads `commands/**` and nothing else — stays intact.
+  * The pre-refactor components script's stated contract — it reads `commands/**` and nothing
+    else — stays intact.
     Folding a transcript reader into it would have broken that sentence.
 
 
@@ -85,7 +86,7 @@ DISPATCH: dict = {
 }
 
 
-def build_parser(prog: str = "session.py") -> argparse.ArgumentParser:
+def build_parser(prog: str = "cq components session") -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog=prog,
                                 description="read a Claude Code session transcript as evidence")
     p.add_argument("--version", action="store_true", help="print the version and exit")

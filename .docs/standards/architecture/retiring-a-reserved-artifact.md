@@ -74,9 +74,9 @@ What made the departure payable, and what a future one has to match:
 ## The consequence for disposition
 
 Because the reservation survives, a retired artifact is **legible and writable forever**, and
-`/docs:align` neither creates nor deletes one. Whether to keep or delete a surviving file is
+`/quenching:knowledge:align` neither creates nor deletes one. Whether to keep or delete a surviving file is
 the target repo's call, not the sweep's — a sweep that deleted it would be destroying content
-it never owned. `/docs:status` reports it as a **figure with no finding code**, in the same
+it never owned. `/quenching:knowledge:status` reports it as a **figure with no finding code**, in the same
 register as the density table: informative, never something to chase, with no owning command
 to name.
 

@@ -18,8 +18,8 @@ cannot faithfully read its input, the finding it emits must name the *misread*, 
 *consequence* — because the consequence looks exactly like an ordinary content defect, and the
 person acting on it will fix the wrong thing.
 
-The sibling [../code/frontmatter-parsing.md](../code/frontmatter-parsing.md) owns the mechanics —
-which YAML subset the three shipped tools read, the comment rule, the canonical case list. This
+The sibling [../code/frontmatter-parser.md](../code/frontmatter-parser.md) owns the mechanics —
+which YAML subset the parser reads, the comment rule, the canonical case list. This
 standard owns the obligation those mechanics exist to satisfy.
 
 ## The failure this exists to prevent
@@ -94,7 +94,7 @@ This matches the fail-open contract `cq components parse_frontmatter_hooks` alre
 
 A diagnostic that says *"this parser does not read block records"* discharges the obligation. Teaching
 the parser to read them is a **separate** decision with its own cost, and one that
-[../code/frontmatter-parsing.md](../code/frontmatter-parsing.md) rules out for these tools.
+[../code/frontmatter-parser.md](../code/frontmatter-parser.md) rules out for it.
 
 So the anomaly set is a floor: each tool exempts the forms it genuinely reads and reports the rest.
 `cq knowledge` reads top-level scalars only, so a block list is as unreadable to it as prose and

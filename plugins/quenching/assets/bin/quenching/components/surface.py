@@ -1,6 +1,6 @@
 """The surface model — where the surface is, what a command IS on it, and what else it holds.
 
-Moved verbatim out of `skills.py`.
+Moved verbatim out of the pre-refactor components script.
 
 A **surface root** is the directory holding an automation surface's `commands/` tree.
 Two shapes are conformant and both resolve here:

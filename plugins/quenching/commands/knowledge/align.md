@@ -179,25 +179,14 @@ plan was rejected and nothing was written.
 
 **Done when:** every approved (a)–(f) item is on disk and no unapproved item was touched.
 
-### 5. Offer to remove a legacy hook copy, install the language declaration and the site layer — pass 1 only, offered
-All three are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
+### 5. Install the language declaration and the site layer — pass 1 only, offered
+Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
 **The enforcement hook needs no install.** The plugin's own `hooks/hooks.json` wires
 `cq knowledge hook` on `PostToolUse`/`Stop` automatically, from the plugin path — nothing is copied
-into the target's `.claude/hooks/` and nothing is merged into its `.claude/settings.json`. Set
-The bundle root is the fixed `/.docs/` convention — no config names it.
-
-**Offer to remove a legacy copy, if one exists.** A `.claude/hooks/okf-validate.py` and/or
-`hooks-config.json` left by a pre-`hooks.json` run of this command does nothing but drift now —
-one call answers whether either is still there:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json
-```
-
-Read this front's row (`cq knowledge`) and act on it: a legacy copy present → offer
-**removal**; absent → nothing to do. Never offer to install, overwrite or refresh one — the
-plugin path is the only wiring now.
+into the target's `.claude/hooks/` and nothing is merged into its `.claude/settings.json`. Never
+offer to install, overwrite or refresh a copy there — the plugin path is the only wiring now. The
+bundle root is the fixed `/.docs/` convention — no config names it.
 
 **The language declaration.** Ask **once**, and only when the target's **root** harness file
 (`CLAUDE.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
@@ -228,7 +217,7 @@ later update, nav regeneration, config merge, and build verification is **its** 
 is anything more than stamping two absent files — a customized `mkdocs.yml` to merge, a `docs_dir`
 pointing elsewhere, `.pages` files no longer matching the tree — hand off to that command instead of
 resolving it here.
-**Done when:** the three offers have been made once and answered, or the pass is >1 and this step
+**Done when:** the two offers have been made once and answered, or the pass is >1 and this step
 was skipped.
 
 ### 6. Run the content stages that have work, in order
@@ -286,8 +275,8 @@ state, and — explicitly — what was **deliberately not closed**, each with th
 it (per-item content needing human input, unroutable harness facts, deferred sub-standards, a
 declined glossary sweep).
 
-**The report is the record.** This step used to also append a closing entry to `/.docs/log.md`;
-that artifact is retired, and the sweep leaves no trace of itself in the bundle. What the pass
+**The report is the record.** This step used to also append a closing entry to the bundle's
+now-retired `log.md`, and the sweep leaves no trace of itself in the bundle. What the pass
 did to `/.docs/` is legible from `/.docs/` and from the repo's own history — a self-describing
 entry added nothing a reader could not already see, and cost a write on every run.
 **Done when:** the report names the residue with its owning command.

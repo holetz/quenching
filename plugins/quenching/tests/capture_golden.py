@@ -441,16 +441,16 @@ def capture_skills(cap: Capture) -> None:
 
 def capture_session(cap: Capture) -> None:
     """`list` and `digest` need a transcript; the only one that ships is the
-    `FIXTURE` constant `selftest` materializes into a tempfile. Import it and write
-    the same records to a stable path so the two readers get a shipped fixture too."""
-    sys.path.insert(0, str(SESSION_PY.parent))
-    session = __import__("session")
-    sys.path.pop(0)
+    `FIXTURE` constant `selftest` materialized into a tempfile. Task 10.1 removed the
+    script this used to import that constant from; `FIXTURE` migrated verbatim to
+    `test_session.py` under task 6.3 (its docstring says so), so this reads it from
+    there instead — the same records, a different, still-live home."""
+    fixture = __import__("test_session").FIXTURE
 
     tdir = cap.tmp / "ws-session"
     tdir.mkdir(parents=True)
     transcript = tdir / "fixture.jsonl"
-    transcript.write_text("\n".join(json.dumps(r) for r in session.FIXTURE) + "\n",
+    transcript.write_text("\n".join(json.dumps(r) for r in fixture) + "\n",
                           encoding="utf-8")
 
     def run(name: str, argv: list[str], ext: str = "json") -> None:

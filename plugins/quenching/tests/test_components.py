@@ -1,19 +1,17 @@
-"""The section rule over FREE markdown — the half of `skills.py`'s `cmd_selftest` that is
-this pillar's OWN, migrated from its `selftest` subcommand.
+"""The section rule over FREE markdown — the half of the pre-refactor components script's
+`cmd_selftest` that is this pillar's OWN, migrated from its `selftest` subcommand.
 
-`specs.py` and `skills.py` share ONE canonical case list (`SECTION_CASES`, run against
-`SECTION_FIXTURE`) proving what both readers agree on: level-2 sections. That shared pair is
-still duplicated verbatim in both scripts under an `EDIT BOTH, OR NEITHER` marker and belongs
-to task 6.4, which gives the now-unified `quenching.components.sections` reader its one home
-for that table — nothing about it is migrated here.
+The specs and components readers share ONE canonical case list (`SECTION_CASES`, run against
+`SECTION_FIXTURE`) proving what both agree on: level-2 sections. That shared pair now lives
+once, in `test_sections.py` — nothing about it is duplicated here.
 
-What IS this pillar's own, and covered below: `skills.py` also resolves `#` and `###` over
-free markdown (a reference or a standard has headings at every level, unlike a spec's
-fourteen `##`s), and it owns two ladders `specs.py` has no equivalent of — `--sections`
-(comma-vs-address) and `--rules-only` (the binding sentence vs. its rationale). Each fixture
-below is local to the assertion it drives, on purpose: growing the shared `SECTION_FIXTURE`
-with a comma-bearing heading to serve the `--sections` ladder would change an index the 6.4
-suite asserts on too.
+What IS this pillar's own, and covered below: the components reader also resolves `#` and
+`###` over free markdown (a reference or a standard has headings at every level, unlike a
+spec's fourteen `##`s), and it owns two ladders the specs reader has no equivalent of —
+`--sections` (comma-vs-address) and `--rules-only` (the binding sentence vs. its rationale).
+Each fixture below is local to the assertion it drives, on purpose: growing the shared
+`SECTION_FIXTURE` with a comma-bearing heading to serve the `--sections` ladder would change
+an index `test_sections.py` asserts on too.
 
 `canonical_case_failures()` (the FRONTMATTER cases) is also not here — it moved to
 `test_frontmatter.py` with the one parser that now answers for all three tools.
@@ -75,8 +73,8 @@ SECTIONS_LADDER_CASES = (
 
 
 class SectionsLadder(unittest.TestCase):
-    """`--sections`, this pillar's own — `specs.py`'s arm resolves name by name and splits
-    nothing, so a comma case there would prove a rule that tool does not have."""
+    """`--sections`, this pillar's own — the specs reader's arm resolves name by name and
+    splits nothing, so a comma case there would prove a rule that tool does not have."""
 
     def test_a_value_is_first_an_address_and_only_then_a_list(self):
         for label, ask, want in SECTIONS_LADDER_CASES:

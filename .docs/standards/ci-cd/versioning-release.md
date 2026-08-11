@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Versioning and release — the four-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version and cq components drift read — bumped once per release, at the develop → main merge, never at conclude and never as a task; `cq specs release` still moves the four pre-refactor scripts' own constants as well, pending their retirement
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, at the develop → main merge, never at conclude and never as a task
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
-authority: background
-source: modularizar-specs-knowledge-components spec, task 9.2 — rewritten for the one-package, one-entry-point (`cq`) architecture; the lockstep target drops from seven artifacts to four now that a single `common/version.py` constant answers for every pillar, but `cq specs release` (task 10.2 of the same spec) has not yet been narrowed to match, so this file states the target the mechanical half has not caught up to — background until 10.2 lands and the release tool itself proves it; inherits the drift/legacy-copy reasoning from the six-artifact doc it replaces (moved from CLAUDE.md; drift half added by notice-installed-tool-version-drift task 4.1; plugin-first rewrite 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks; bump moved to release by configurable-branch-strategy task 1.2, 2026-08-04)
+authority: current
+source: modularizar-specs-knowledge-components spec, tasks 9.2 and 10.2 — rewritten for the one-package, one-entry-point (`cq`) architecture; the lockstep target dropped from seven artifacts to four once a single `common/version.py` constant answered for every pillar and `cq specs release` (task 10.2) was narrowed to match; the legacy-copy detector this standard used to document (`notice-installed-tool-version-drift` task 4.1) was retired the same spec, task 10.3, once the four scripts it compared against stopped existing to be compared against (moved from CLAUDE.md; plugin-first rewrite 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks; bump moved to release by configurable-branch-strategy task 1.2, 2026-08-04)
 maintainer: quenching
 ---
 
@@ -17,12 +17,8 @@ A release bumps **four** version strings, and they must agree. The rule is not b
 tidiness: two independent consumers read two different halves of the set, and a partial bump
 makes each one wrong in its own way.
 
-**This is the target, not yet the mechanism.** `cq specs release <version>` — the tool this
-section's *Verifying* block names — still moves the **seven** artifacts the one-package
-refactor inherited: the four below, plus the three pre-refactor scripts' own `VERSION`
-constants that this repository has not yet retired (`modularizar-specs-knowledge-components`
-task 10.1) and narrowed the release tool to match (task 10.2). Until then, bumping still touches
-seven files and this standard's own `authority: background` says so honestly.
+`cq specs release <version>` — the tool this section's *Verifying* block names — moves exactly
+these four, in one two-pass, all-or-nothing write.
 
 ## The four
 
@@ -31,7 +27,7 @@ seven files and this standard's own `authority: background` says so honestly.
 | 1 | `plugins/quenching/.claude-plugin/plugin.json` → `version` | Claude Code, to detect and apply an upgrade |
 | 2 | `plugins/quenching/VERSION` | the same detection, as the pair's other half |
 | 3 | `.claude-plugin/marketplace.json` → the plugin entry's `version` | the marketplace listing |
-| 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`); `cq components drift`, identifying a legacy copy under a target's `.claude/hooks/` |
+| 4 | `plugins/quenching/assets/bin/quenching/common/version.py` → `VERSION` | every pillar's own `--version` (`cq specs`, `cq knowledge`, `cq components`) |
 
 ## Why each half matters
 
@@ -44,10 +40,9 @@ version it does not have.
 every command invokes `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` with no fallback and no manual rung
 ([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool) — so a bump no longer *delivers* anything. What the one constant still does is
-answer `--version` for every pillar alike, and give `cq components drift` the number a **legacy
-copy** left under a target's `.claude/hooks/` is identified against. Three scripts each carrying
-their own copy of this constant was never a design choice — it was the shape a self-contained,
-no-import single file forced, back when each pillar shipped as its own script
+answer `--version` for every pillar alike. Four scripts each carrying their own copy of this
+constant was never a design choice — it was the shape a self-contained, no-import single file
+forced, back when each pillar shipped as its own script
 ([frontmatter-parser.md](../code/frontmatter-parser.md), which owns that history). One package with
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
@@ -83,42 +78,17 @@ version claim with it. A bump committed to `main` after that merge would be the 
 release forbids outright, the same way a post-merge commit to the base is forbidden everywhere else
 in this front.
 
-## Noticing drift — the half a bump cannot do
+## What a bump does not need to do any more
 
 Resolution is **plugin-first with no fallback and no manual rung**, so a bump reaches every repo
-the moment the plugin upgrades. What a bump cannot do is clear out what earlier versions left
-behind: a repo that once accepted an align's install offer still has a pre-refactor script sitting
-under `.claude/hooks/`, and **nothing executes any of it**. This repository ran an installed copy
-at an old version against a much newer plugin for months, back when the manual rung could still
-resolve ahead of the plugin — long enough that the stale copy's own CLI shape had already drifted
-from the current one's. That failure is now impossible; what survives it is the copy, still on
-disk, read by nothing.
-
-`python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json` is what notices. Three
-rules make its answer worth trusting:
-
-**1. It runs from the plugin's copy, and refuses otherwise.** `drift` derives the plugin root from
-its own location (or takes `--root`) and **exits 2** when neither resolves. A checker that cannot
-tell "nothing left over" from "could not look" reports the silence it exists to break.
-
-**1b. It reads; it never runs the copy.** The version comes from each legacy script's own
-`VERSION = "…"` constant, parsed. Shelling out for `--version` would mean a probe **executing**
-whatever script a target happens to have under `.claude/hooks/` — a far larger claim than reading
-one line, and one that also needs `python3` on `PATH`. A copy too old to declare a constant reads
-`unreadable`, which carries the same call to action as the rest: remove it.
-
-**2. Every copy is a finding, and its version only says what kind of debris it is.** `behind`,
-`ahead` and `unreadable` are the three shapes a leftover takes, and none of them changes the
-remedy — the align for that front offers to **remove** it, never to overwrite it. There is no
-stale-dependency case left to distinguish, because there is no dependency.
-
-**3. `absent` is the expected state, and is not reported.** Every legacy script is `absent` in any
-repo that never took the old offer, and in every repo an align has since cleaned. A probe that
-announced the normal case on every run would be noise, and a probe whose output is routine noise
-gets skipped.
-
-Severity follows from there: every finding is a **warning**. A leftover copy breaks nothing — it
-is unread weight, and the repo is already running the current tool — so none of them is an error.
+the moment the plugin upgrades — nothing installs a tool standalone, so there is no installed copy
+left running an old version for a bump to miss. Earlier plugin generations shipped as separate
+scripts an align could copy into a target's `.claude/hooks/`, which meant a bump could leave a
+stale, still-executing copy behind; a dedicated detector (`cq components drift`) existed for
+exactly that gap. Neither the copying nor the gap exists any more — a target repository holds
+nothing this plugin ships beyond the command bodies Claude Code itself loads — so the detector was
+retired with the four scripts it used to compare an installed copy against
+(`modularizar-specs-knowledge-components` spec, task 10.3).
 
 ## Verifying
 
@@ -129,12 +99,6 @@ The lockstep is checked by reading every version surface back and confirming one
 cd plugins/quenching
 cat VERSION
 python3 assets/bin/cq --version
-```
-
-And the other end of the same rule — which legacy copies a target still carries:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" components drift --json      # 0 ok · 1 findings · 2 refused to guess
 ```
 
 The broader "did I break the shipped skeleton" gate is

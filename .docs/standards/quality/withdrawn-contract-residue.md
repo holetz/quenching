@@ -32,7 +32,7 @@ the withdrawn contract, in five different wordings:
 | 1 | `commands/specs/isolate.md` | a citation to the section that carried the fallback | execution |
 | 2 | `commands/align.md` | named findings the change deleted, and told the human an INSTALL offer belonged in the plan | execution |
 | 3 | embedded manuals | `${CLAUDE_PLUGIN_ROOT}` line citations | execution |
-| 4 | `assets/README.md` | "Installed into a target? **yes, by `/docs:align`**", plus four more rows | branch review |
+| 4 | `assets/README.md` | "Installed into a target? **yes, by the docs align**", plus four more rows | branch review |
 | 5 | `/.docs/standards/architecture/plugin-layout.md` | a placement justified by an adjacency the same branch removed | branch review |
 
 None of the five shared a substring with any other. A grep for the class would have had to guess

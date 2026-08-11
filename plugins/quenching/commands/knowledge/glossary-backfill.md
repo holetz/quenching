@@ -30,7 +30,7 @@ procedure live with `/quenching:knowledge:add`
   stays exclusively `/quenching:knowledge:learn`'s job).
 - **Bounded reconnaissance, sliced fan-out.** List doc paths cheaply first (`Glob`/`find`, no
   bodies). Slice by top-level home by default (further splitting a large home to ~15–20
-  /.docs/agent). One `Task` sub-agent per slice reads only its slice's docs and returns compact
+  docs/agent). One `Task` sub-agent per slice reads only its slice's docs and returns compact
   `{term, one-sentence definition, candidate doc path}` candidates — never full bodies back
   to the orchestrator. Apply the same caution `/quenching:knowledge:import-memory` applies to
   `catalog/**` and `reference/repositories/**`: list-only by default (skip body scanning),

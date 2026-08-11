@@ -38,7 +38,7 @@ metadata:
 <the fact; feedback/project add **Why:** and **How to apply:** lines; [[links]] to siblings>
 ```
 
-`MEMORY.md` (same folder) is the index — one `- [Title](file.md) — hook` line per memory.
+`MEMORY.md` (same folder) is the index — one `- [Title](<file>.md) — hook` line per memory.
 
 <!-- rationale -->
 The Windows drive letter produces the **double** dash (`c:` + `\`) and its case is not stable. This

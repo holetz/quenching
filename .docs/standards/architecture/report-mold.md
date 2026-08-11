@@ -112,7 +112,7 @@ nenhum arquivo.
 
 Este trabalho tocou apenas a frente `specs`, então **as duas deixaram de ser espelhos**. Isso está
 registrado como divergência aceita, não como pendência silenciosa: a frente `docs` adotar o mold é
-trabalho próprio, e até lá `/quenching:docs:status` continua sendo dono da sua própria forma. A
+trabalho próprio, e até lá `/quenching:knowledge:status` continua sendo dono da sua própria forma. A
 alternativa — generalizar o mold para três vocabulários de finding diferentes no mesmo movimento —
 teria escrito um contrato genérico antes de haver dois casos provados para generalizar a partir de.
 

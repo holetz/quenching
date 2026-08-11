@@ -1,11 +1,12 @@
 """The specs pillar's parsing contracts: slugs, config resolution, spec resolution and its
 receipt, `## Tasks`/`## Handoff` sectioning.
 
-Migrated from `specs.py`'s `_failures()` suites — `slug_case_failures`, `base_inference_failures`,
-`subject_resolution_failures`, `resolution_failures`, `announcement_failures`,
-`handoff_block_failures`, `files_parse_failures`, `handoff_write_failures`. Records and fields live
-in `test_specs_records.py`; `canonical_case_failures` lives in `test_frontmatter.py`;
-`section_case_failures` is task 6.4's.
+Migrated from the pre-refactor specs script's `_failures()` suites — `slug_case_failures`,
+`base_inference_failures`, `subject_resolution_failures`, `resolution_failures`,
+`announcement_failures`, `handoff_block_failures`, `files_parse_failures`,
+`handoff_write_failures`. Records and fields live in `test_specs_records.py`;
+`canonical_case_failures` lives in `test_frontmatter.py`; `section_case_failures` lives in
+`test_sections.py`.
 """
 import ast
 import inspect
@@ -155,7 +156,8 @@ class ResolveOne(unittest.TestCase):
 
 class EmitterReceipt(unittest.TestCase):
     """The receipt of an inexact resolution, carried by `Emitter` instead of the module
-    global `_RESOLUTION` `specs.py` used to reset by hand. `resolved()` is the same call
+    global `_RESOLUTION` the pre-refactor specs script used to reset by hand. `resolved()` is
+    the same call
     `read_one` makes, so these exercise the real API rather than a private re-implementation."""
 
     def test_a_command_that_resolved_no_slug_announces_nothing(self):
@@ -232,8 +234,8 @@ class EveryVerbAnnouncesThroughTheEmitter(unittest.TestCase):
         self.assertTrue(_dispatches_a_fresh_emitter(inspect.getsource(main)))
 
 
-# The canonical case list for the `## Handoff` section-block rule — `specs.py`'s own
-# contract, not duplicated in `skills.py` or `okf-validate.py`.
+# The canonical case list for the `## Handoff` section-block rule — the pre-refactor specs
+# script's own contract, not duplicated in the components or OKF validator scripts.
 HANDOFF_BLOCK_FIXTURE = """## Handoff
 
 Global block: still true no matter which section is being built.
@@ -375,7 +377,7 @@ date: 2026-08-04
 class WriteHandoffBlock(unittest.TestCase):
     """`write_handoff_block` is stateful across a build — each write reads the PRIOR write's
     output — so it is proved as one sequential scenario rather than a table of independent
-    inputs, the same shape `specs.py` proved it in."""
+    inputs, the same shape the pre-refactor specs script proved it in."""
 
     SPEC = {"slug": "x", "phase": "plans"}
 

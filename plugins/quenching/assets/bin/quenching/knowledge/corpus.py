@@ -1,6 +1,6 @@
 """The single read pass — every whole-tree consumer reads each file exactly once.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`. `_`-prefixed, dot, and asset dirs
+Moved verbatim out of the pre-refactor OKF validator script. `_`-prefixed, dot, and asset dirs
 are pruned from the whole bundle walk (they hold private/raw sidecar content, never OKF
 concepts), and both the per-file conformance checks and the structural-integrity pass
 consume the one dict this builds.

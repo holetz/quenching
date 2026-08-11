@@ -1,7 +1,7 @@
 """The persistent specs worktree the `files` backend writes into, and the lock that
 serialises the invocations that write there.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import datetime
@@ -327,7 +327,7 @@ def _holder_is_gone(info: dict) -> bool:
 
 
 class SpecsLock:
-    """Serialises the `specs.py` invocations that WRITE into one specs worktree.
+    """Serialises the `cq specs` invocations that WRITE into one specs worktree.
 
     THE SCOPE IS THE WHOLE COMMAND, not the write syscall. Every writing command is a
     read-modify-write — `task --check` reads the document, flips one character, writes the
@@ -366,7 +366,7 @@ class SpecsLock:
         deadline = time.monotonic() + max(0.0, wait)
         record = json.dumps({"pid": os.getpid(), "host": socket.gethostname(),
                              "command": self.label, "since": _now_iso(),
-                             "tool": f"specs.py {VERSION}"}, ensure_ascii=False)
+                             "tool": f"cq specs {VERSION}"}, ensure_ascii=False)
         while True:
             try:
                 os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)

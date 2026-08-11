@@ -196,7 +196,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
         print(f"  {i}. {c['slug']:<32} {c['reason']}")
     if needs_triage:
         print("\n  nothing is in flight and nothing carries a priority record — this order "
-              "is age alone.\n  `specs.py`-driven triage would give it something to stand on.")
+              "is age alone.\n  `cq specs`-driven triage would give it something to stand on.")
     return 0
 
 
@@ -274,7 +274,7 @@ def cmd_next(args, root: str, out: Emitter) -> int:
             return 0
         obj = {"ok": True, "action": "promote", "to": "archive", **base,
                "message": f"all tasks complete — write ## Outcome, then "
-                          f"`specs.py promote {info['slug']} --to archive`"}
+                          f"`cq specs promote {info['slug']} --to archive`"}
         out.emit(args.json, obj, obj["message"])
         return 0
 

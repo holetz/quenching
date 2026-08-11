@@ -5,9 +5,10 @@
     2  refusal   the verb did not answer, and says why
 
 Before this module the contract was declared in three docstrings and implemented in none: only
-`session.py` named the three steps as constants, `okf-validate.py` had no refusal step at all
-(not one `return 2` in 1,372 lines), and the three scripts disagreed on the trivial case of being
-run with no subcommand — 1, 2 and 0 respectively, from the same contract. Naming the steps here
+the pre-refactor session script named the three steps as constants, the pre-refactor OKF
+validator script had no refusal step at all (not one `return 2` in 1,372 lines), and the three
+scripts disagreed on the trivial case of being run with no subcommand — 1, 2 and 0 respectively,
+from the same contract. Naming the steps here
 is what turns the contract into something a caller can branch on, which is what every command
 body already assumes it is doing.
 

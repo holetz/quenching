@@ -1,7 +1,7 @@
 """The spec document parser — everything derivable from one markdown spec, and the
 writers that splice a change back into it.
 
-Moved verbatim out of `specs.py`, cut into modules by layer: `text` (the primitives),
+Moved verbatim out of the pre-refactor specs script, cut into modules by layer: `text` (the primitives),
 `sections`, `tasks`, `handoff` (the three grammars), `spec` (identity and resolution),
 `derive` (the single derivation), `records` (frontmatter records and their label
 projection), `edit` and `fields` (the writers).

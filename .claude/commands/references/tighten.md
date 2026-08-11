@@ -6,9 +6,9 @@ description: >-
   the citing bodies actually load. Triggers: "enxugar a prosa das references",
   "revisar esse reference", "marcar rules/rationale", "desinflar o custo de
   leitura das references", "tighten the references", "review the reference
-  prose". Not for: a command body or its description → /quenching:skill:new,
-  /quenching:skill:align; a docs/ standard or the OKF bundle →
-  /quenching:docs:align; generating a documentation site → /docs:storyteller.
+  prose". Not for: a command body or its description → /quenching:components:command:new,
+  /quenching:components:align; a docs/ standard or the OKF bundle →
+  /quenching:knowledge:align; generating a documentation site → /docs:storyteller.
 argument-hint: "[reference-path | --all] [--review] [--skip <path>]"
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python3:*), Bash(grep:*), Bash(git grep:*), Bash(wc:*), Task
 ---
@@ -31,13 +31,13 @@ addressed, without losing a single thing a future session could not reconstruct.
 | `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/docs/standards/automation/context-discipline.md) §The rules/rationale marker convention |
 | Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/docs/standards/automation/context-discipline.md) §Two things measured and refused |
 | Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/docs/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
-| The no-op test, positive prescription, sediment / duplication / sprawl | [skill-new/doctrine.md](/plugins/quenching/assets/references/skill-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
+| The no-op test, positive prescription, sediment / duplication / sprawl | [components-command-new/doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
 | The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/docs/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
 | A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md) |
 | Which language the prose is written in | [communication.md](/docs/standards/agents/communication.md) |
 
-Resolve `skills.py` at `plugins/quenching/assets/bin/skills.py`, invoked by that literal quoted
-path — **never** `.claude/hooks/skills.py`, which is legacy debris nothing executes
+Resolve `cq` at `plugins/quenching/assets/bin/cq`, invoked by that literal quoted
+path
 ([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool).
 
@@ -50,7 +50,7 @@ Targets are files under `plugins/quenching/assets/references/`; `--all` globs th
 ```bash
 grep -rn -B2 -A3 "<dir>/<basename>.md" \
   plugins/quenching/commands plugins/quenching/assets/references plugins/quenching/assets/bin \
-  docs .claude
+  .docs .claude
 ```
 
 Record per target: **who cites it**, **which `§`-addresses each citer names**, and whether the
@@ -64,8 +64,8 @@ split — none of it from memory.
 
 ### 2. Measure the baseline
 ```bash
-python3 "plugins/quenching/assets/bin/skills.py" read <path>
-python3 "plugins/quenching/assets/bin/skills.py" read <path> --sections "<A>" --sections "<B>"
+python3 "plugins/quenching/assets/bin/cq" components read <path>
+python3 "plugins/quenching/assets/bin/cq" components read <path> --sections "<A>" --sections "<B>"
 ```
 The index's `chars` **already includes a section's `###` children** — that number IS what the
 reader returns and what the citer pays. Never add a section's prose to its children, and never
@@ -114,9 +114,9 @@ Write the approved moves and nothing else. Two conditions bind every write:
 
 ### 6. Verify against the citation map, then report what was measured
 ```bash
-python3 "plugins/quenching/assets/bin/skills.py" read <path> --sections "<A>" --sections "<B>"
-python3 "plugins/quenching/assets/bin/skills.py" read <path>
-grep -rn "<any renamed or reworded form>" plugins/quenching docs .claude
+python3 "plugins/quenching/assets/bin/cq" components read <path> --sections "<A>" --sections "<B>"
+python3 "plugins/quenching/assets/bin/cq" components read <path>
+grep -rn "<any renamed or reworded form>" plugins/quenching .docs .claude
 ```
 Every `§`-address the map collected must still resolve with exit 0 — that is the check that the
 API survived the rewrite. Then re-measure and report **before → after per addressed section**,
@@ -124,7 +124,7 @@ plus the file total, as measured numbers. A pass that moved little says so; an e
 not a result.
 
 If a command body under `plugins/quenching/commands/**` was touched at all, also run
-`python3 "plugins/quenching/assets/bin/skills.py" --root plugins/quenching doctor --json` and
+`python3 "plugins/quenching/assets/bin/cq" components --root plugins/quenching doctor --json` and
 `lint` before reporting.
 
 **Done when:** every addressed `§` resolves, and the report carries measured before/after numbers.
@@ -158,4 +158,4 @@ the skipped ones say why.
 - **Never report a delta that was not measured** by step 6's re-read.
 - **Never write during `--review`**, and never edit a `docs/` standard, a command body, or a file
   outside `plugins/quenching/assets/references/` from here — report it with the command that owns
-  it (`/quenching:docs:add`, `/quenching:skill:new`) instead.
+  it (`/quenching:knowledge:add`, `/quenching:components:command:new`) instead.

@@ -1,7 +1,7 @@
 """The frontmatter records a spec may carry, and the native tag surface they project
 onto — the `spec:` rendering, what the document itself declared, and the catalogue check.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.specs.schema import load_schema

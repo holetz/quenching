@@ -1,8 +1,8 @@
 """The section rule over FREE markdown — every heading, the body it owns, and the rule half.
 
-Moved verbatim out of `skills.py`.
+Moved verbatim out of the pre-refactor components script.
 
-`specs.py section` reads a SPEC, whose fourteen headings are a validated contract. A reference or
+`cq specs section` reads a SPEC, whose fourteen headings are a validated contract. A reference or
 a standard is free markdown, so the two cannot share an implementation — but they must not
 disagree about what a section IS. Per `/.docs/standards/code/canonical-set-parsing.md`, what is
 shared is the RULE, proved by both tools against the same canonical case list.
@@ -37,7 +37,7 @@ def markdown_sections(text: str) -> list[dict]:
 
     - **A section ends at the next heading of the same level or shallower.** So
       sub-headings travel with their parent, exactly as `## Impact` keeps its parsed
-      `### Standards …` sub-heading in `specs.py`. Ending at the next heading of ANY
+      `### Standards …` sub-heading in `cq specs`. Ending at the next heading of ANY
       level would orphan them.
     - **A fenced block is never read as a heading.** Several sections here open with
       ```` ```bash ```` blocks containing `## ` comments, and a line-matching reader
@@ -126,7 +126,7 @@ def normalize_heading(name: str) -> str:
 def select_sections(heads: list[dict], wanted: list[str]) -> tuple[list[dict], list[str]]:
     """The requested sections in the order they were ASKED FOR, plus the names that
     resolved to nothing. Duplicate headings resolve to the first — the same rule
-    `parse_sections` applies in `specs.py`.
+    `parse_sections` applies in `cq specs`.
 
     **An exact name wins; failing that, a UNIQUE prefix resolves.** Free-markdown headings
     are long and full of punctuation — `## The commit — one per task, carrying its own

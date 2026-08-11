@@ -1,6 +1,6 @@
 """`stale-doc` — the one check that asks git a question, and the two calls that ask it.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`; only `parse_frontmatter`'s call
+Moved verbatim out of the pre-refactor OKF validator script; only `parse_frontmatter`'s call
 shape changed, from the `(fm, has_block, well_formed)` tuple to the bare dict
 `quenching.common.frontmatter` returns.
 

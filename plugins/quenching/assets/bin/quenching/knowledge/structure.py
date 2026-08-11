@@ -1,6 +1,6 @@
 """Structural integrity — the bundle's own link graph, read off the shared corpus.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`.
+Moved verbatim out of the pre-refactor OKF validator script.
 
 STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`dir-no-index`**      a directory holds concept docs but has no `index.md` listing.
@@ -10,7 +10,7 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
   whose links ARE its content — a dead entry is a dead lookup, and `index-broken-link`
   never reached it because the glossary is a concept doc, not an `index.md`.
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
-synthesize a missing index); the `quenching-docs-align`/`quenching-docs-add` skills treat them as must-fix
+synthesize a missing index); the `quenching-knowledge-align`/`quenching-knowledge-add` skills treat them as must-fix
 in their own verify gate.
 """
 from __future__ import annotations

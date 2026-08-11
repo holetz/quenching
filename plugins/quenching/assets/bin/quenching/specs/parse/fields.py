@@ -1,7 +1,7 @@
 """The frontmatter writers — one key, one record, the state fields a native surface
 stores instead, and the legacy dated-basename fold.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 from quenching.common.frontmatter import parse_frontmatter

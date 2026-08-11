@@ -4,7 +4,8 @@
 answers it, and `main` is the pillar's whole entry: the UTF-8 reconfiguration, the `--version`
 short-circuit, and the surface resolution every verb is handed.
 
-WHY THE TABLE IS LITERAL. `skills.py` kept two empty dicts at the top of the file and filled them
+WHY THE TABLE IS LITERAL. The pre-refactor components script kept two empty dicts at the top of
+the file and filled them
 from a `register()` call sitting after each verb — registration as an import side effect, spread
 over five places. Cut into modules that stops working the moment a submodule is imported in a
 different order, or not imported at all, and the failure is a subcommand that silently does not
@@ -23,7 +24,6 @@ import sys
 
 from quenching.common.version import VERSION
 from quenching.components.commands.doctor import cmd_doctor
-from quenching.components.commands.drift import cmd_drift
 from quenching.components.commands.lint import cmd_lint
 from quenching.components.commands.read import cmd_read
 from quenching.components.commands.registry import REGISTRY_RELPATH, cmd_registry
@@ -33,7 +33,7 @@ from quenching.session.commands.cli import add_subcommands as add_session_subcom
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="skills.py",
+    p = argparse.ArgumentParser(prog="cq components",
                                 description="deterministic trail for the .claude/ front")
     p.add_argument("--root", help="the surface root holding commands/ "
                                   "(default: nearest .claude/ or commands/ upward)")
@@ -55,12 +55,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--registry", help="path to the registry doc "
                                        "(default: nearest "
                                        f"{'/'.join(REGISTRY_RELPATH)} upward)")
-    add_json(sp)
-
-    sp = sub.add_parser("drift")
-    sp.add_argument("--plugin-root",
-                    help="the plugin checkout holding VERSION beside assets/ "
-                         "(default: the one this script runs from)")
     add_json(sp)
 
     sp = sub.add_parser("read")
@@ -101,7 +95,6 @@ DISPATCH: dict = {
     "lint": cmd_lint,
     "doctor": cmd_doctor,
     "registry": cmd_registry,
-    "drift": cmd_drift,
     "read": cmd_read,
     "session": cmd_session,
 }

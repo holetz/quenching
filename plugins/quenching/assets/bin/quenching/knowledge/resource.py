@@ -1,6 +1,6 @@
 """`resource` — what a doc claims to govern, how that claim is parsed, and whether it holds.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`; only `parse_frontmatter`'s call
+Moved verbatim out of the pre-refactor OKF validator script; only `parse_frontmatter`'s call
 shape changed, from the `(fm, has_block, well_formed)` tuple to the bare dict
 `quenching.common.frontmatter` returns.
 
@@ -89,8 +89,8 @@ def _glob_contains(pattern: str, rel_path: str) -> bool:
     """Segment-wise match of a `*`/`**` glob against a forward-slash relative path.
 
     `fnmatch` is deliberately NOT used for this: its `*` also matches `/`, so
-    `/.docs/*` would claim to contain `/.docs/standards/x.md` and raise a false
-    `resource-self` — and since the skills treat every WARN as must-fix, a false
+    `/.docs/*` would claim to contain any deeper path, `/.docs/standards/<subject>/<doc>.md`
+    included, and raise a false `resource-self` — and since the skills treat every WARN as must-fix, a false
     positive here costs more than a missed one. `*` matches inside one segment;
     `**` matches any number of segments, including none.
     """

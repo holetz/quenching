@@ -1,6 +1,6 @@
 """What the target repo declares about this checker, and the two reads that find it.
 
-Moved verbatim out of `assets/hooks/okf-validate.py`.
+Moved verbatim out of the pre-refactor OKF validator script.
 
 Config (target repo's `.claude/hooks/hooks-config.json` + `hooks-config.local.json`, block
   `okfValidate`): enabled, warnAsError, blockOnFail, hardBlock, deadlineMs, stopScan.

@@ -1,7 +1,7 @@
 """Reading and writing a whole document — the atomic replace every writer goes
 through, and the read that treats an unreadable file as absence.
 
-Moved verbatim out of `specs.py`."""
+Moved verbatim out of the pre-refactor specs script."""
 from __future__ import annotations
 
 import os

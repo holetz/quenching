@@ -38,7 +38,7 @@ from quenching.specs.worktree import writer_lock
 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
-    p = argparse.ArgumentParser(prog="specs.py",
+    p = argparse.ArgumentParser(prog="cq specs",
                                 description="deterministic trail for the specs front")
     p.add_argument("--root", help="the `/.specs/` workspace directory (default: nearest `/.specs/` upward)")
     p.add_argument("--version", action="store_true", help="print the version and exit")
