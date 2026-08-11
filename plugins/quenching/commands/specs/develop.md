@@ -286,6 +286,12 @@ is friction for everyone.
 - **Never write into `/.docs/`.** A durable rule a question surfaces routes to `/quenching:docs:add`, an
   understanding to `/quenching:docs:learn`, a term to `/quenching:docs:define` — **offered, never
   auto-written**. The rules a spec *proves* are written during execution, not during definition.
+- **Never write into `## Tasks` what the merge owns.** A version bump, a changelog entry, a manifest
+  re-stamp; the `/.docs/` the work *revealed* rather than declared; the cycle's own closing actions
+  (review, archive, distil, merge, open the PR) — all three belong to `/quenching:specs:conclude`,
+  which settles them once what the release *is* is knowable. A standard this spec **declares** under
+  `## Impact` still gets its own checkbox and still must: the axis is declared versus revealed,
+  never docs versus code.
 - **Park an out-of-scope follow-up; never mint a spec for it.** A finding this pass raised that does
   not belong to the spec being developed becomes ONE line of `## Discoveries` on that same spec —
   `specs.py discover <slug> "<finding>"` — landed inside the step 6 edit the human already
