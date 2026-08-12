@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
 resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-11
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11)
 maintainer: quenching
 ---
 
@@ -28,7 +28,10 @@ by whoever is about to commit.
 Two consequences, and they are why the anchor changed:
 
 - **`/quenching:specs:execute` ticks the box before committing**, so the checkbox travels inside the commit
-  that implements it. One task is exactly one commit, and the per-task bookkeeping commit is gone.
+  that implements it — one task, one commit, while its section is still open; the per-task
+  bookkeeping commit is gone, and the section's own commits squash to one at that section's own
+  boundary ([execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The
+  section squash — §The task→commit link below is what the anchor does across that squash).
 - **`/quenching:specs:conclude` stamps `merge:` on the work branch**, so the merge is the last action of the
   run and **nothing is ever committed to the base branch after it**. One merge carries the code,
   the emergent docs, the archived spec and the distillation; reverting it reverts the spec's whole
@@ -190,7 +193,7 @@ make, and is reported rather than repaired.
 The four merge strategies differ in one dimension that matters here — what happens to the commits
 the recorded subjects resolve against:
 
-| Strategy | The per-task subjects |
+| Strategy | The per-section subjects |
 | --- | --- |
 | merge commit *(default)* | resolve from the base branch forever |
 | fast-forward | unchanged — nothing rewritten, nothing added |
@@ -257,10 +260,13 @@ defaults for the rest); an `authority: background` git standard still wins over 
 report states which one governed.
 
 With nothing declared, the plugin's defaults apply — branch `plan/<slug>`, one commit per task with
-the subject `plan/<slug>: <id> <title>`, `plan/<slug>: merge (<strategy>)` for a merge, and
-`plan/<slug>: record …` for the bookkeeping that remains. That bookkeeping is now only what a
-commit genuinely cannot carry ahead of itself — `## Handoff`, which describes the tree *after* the
-last commit — and no longer includes a ticked box or a stamped `merge:` record.
+the subject `plan/<slug>: <id> <title>` while a section is open, squashed to one commit per section
+with the subject `plan/<slug>: <N> <section title>` at that section's own boundary
+([execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The section
+squash), `plan/<slug>: merge (<strategy>)` for a merge, and `plan/<slug>: record …` for the
+bookkeeping that remains. That bookkeeping is now only what a commit genuinely cannot carry ahead
+of itself — `## Handoff`, which describes the tree *after* the last commit — and no longer includes
+a ticked box or a stamped `merge:` record.
 
 **Never install `/.docs/standards/git/**` into a target.** A default written into the repo stops
 being a default: it converts an offer into a rule the repo now declares, which then wins forever

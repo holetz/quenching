@@ -1,0 +1,6 @@
+{
+  "$comment": "Shared config for the quenching OKF validation hook this repo installs on itself (dogfooding quenching@claude-quenching). enabled:false makes the plugin's PostToolUse/Stop hook (plugins/quenching/hooks/hooks.json, cq knowledge hook) inert here without touching the plugin's own shipped wiring or any other repo that installs it. Tracked for review at https://github.com/holetz/claude-quenching/issues/921 — revert this override (or set enabled:true) once that spec decides whether the hook should run here again.",
+  "okfValidate": {
+    "enabled": false
+  }
+}

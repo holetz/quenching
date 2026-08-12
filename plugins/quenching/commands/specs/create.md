@@ -117,12 +117,10 @@ falls back to it on its own where nothing was resolved, but a human still chose 
 work this is and gets the same say `subjects` already gets.
 
 **A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
-documentation, written for exactly this judgment
-([plugin-configuration.md](/.docs/standards/workflows/plugin-configuration.md) §Three keys are
-prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
-question as the subject and the type where all apply, or its own `AskUserQuestion` otherwise. A
-tag outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment
-draws from.
+documentation, written for exactly this judgment — and propose zero or more that fit the input, in
+the SAME question as the subject and the type where all apply, or its own `AskUserQuestion`
+otherwise. A tag outside the declared catalog is never proposed: `tagCatalog` is the closed set
+this judgment draws from.
 
 **The write is always the deterministic verb, never this command inventing its own.** The chosen
 subject's key is carried to step 5's `--subject`, the chosen type's key to step 5's `--type`; any
