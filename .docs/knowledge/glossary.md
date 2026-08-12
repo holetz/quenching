@@ -47,7 +47,7 @@ sentence, and **link out** rather than explaining in full here.
   therefore the only surface cost paid whether or not a command runs.
 - [**Anchorless strategy**](../standards/workflows/plan-git-record.md) — a merge strategy that
   produces **no merge commit** — `fast-forward` and `rebase` — so the **Merge record** has nothing
-  to name and carries an explicit none instead of a fabricated pointer. Under both, the per-task
+  to name and carries an explicit none instead of a fabricated pointer. Under both, the per-section
   commits land on the base directly and their subjects resolve there, which is why a merge pointer
   would add nothing rather than being merely unavailable. `cq specs validate` reports the mismatch
   in **both** directions (`sp-bad-merge`): an anchorless strategy carrying a real subject, and a
@@ -138,7 +138,9 @@ sentence, and **link out** rather than explaining in full here.
   action of `/quenching:specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
-  backfilled.
+  backfilled. Squashed to one commit per **Section boundary**, every task the section held is
+  re-stamped onto that one surviving commit's subject — the anchor narrows to section granularity,
+  never loses resolvability.
 - [**Context (components)**](../standards/naming/command-surface.md) — one of the four sibling
   contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
   for the artifact it mints, none a sub-type of another. A front-level verb sits at the front's own
@@ -192,7 +194,7 @@ sentence, and **link out** rather than explaining in full here.
   **on the work branch before the merge** — which is what makes the merge that command's last
   action and leaves nothing to be committed to the base after it. The strategy was a human choice
   and the subject names the merge commit it is about to produce; recording both is what tells a
-  future reader whether the per-task subjects still resolve from the base. An **anchorless
+  future reader whether the per-section subjects still resolve from the base. An **anchorless
   strategy** carries an explicit none here. `pr` exists only on the **pull-request route** and
   names the pull request the merge went through — absent on every local conclusion, and refused
   under `fast-forward`, which `gh pr merge` cannot perform (`sp-merge-pr-no-route`).
@@ -365,11 +367,13 @@ sentence, and **link out** rather than explaining in full here.
   narrower suffices is stated where it is wired. `cq components` holds rung 1 and rung 2 to the same
   checks from one implementation.
 - [**Section boundary**](../standards/automation/context-discipline.md) — the moment a `## N.`
-  section's last task commits with another section still ahead: a clean point for a build to
-  **offer** to stop, because the resumption trail (`## Handoff`, `git log`, the recorded commit
-  subjects) is already maintained for other reasons, which is what makes the cut nearly free. The
-  trigger is **that event, never a window size** — a threshold invented before it is measured fixes
-  the answer. It offers and never imposes, never ends a run itself, and writes no new state.
+  section's last task commits with none of its tasks blocked: the section's own per-task commits
+  squash into one (execution.md §The section squash) before a build **offers** to stop — a clean
+  point, because the resumption trail (`##
+  Handoff`, `git log`, the recorded commit subjects) is already maintained for other reasons, which
+  is what makes the cut nearly free. The trigger is **that event, never a window size** — a
+  threshold invented before it is measured fixes the answer. It offers and never imposes, never
+  ends a run itself, and writes no new state.
 - [**Section reader**](../standards/automation/context-discipline.md) — the verb that resolves the
   `§X` address the prose was already writing: `cq components read <path> --sections "§A"` over free
   markdown, `cq specs section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
@@ -383,6 +387,16 @@ sentence, and **link out** rather than explaining in full here.
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
   cited by its full title; `cq specs` splits unconditionally, which is unreachable there because
   the fourteen canonical headings carry no comma and it refuses any name outside them.
+- [**Section squash**](../standards/workflows/task-execution.md) — the local `git reset --soft`
+  plus recommit that collapses a `## N.` section's own per-task commits into one, at that
+  section's own **Section boundary**, provided none of its tasks is `[!]`. The per-task chain that
+  verifies, ticks and commits stays exactly what it always was — this is what buys resumability
+  *while the section runs*; the squash only ever reaches back into commits its own section just
+  made, never a prior section's or anything already shared, which is the narrow, explicit exception
+  to "never rewrite an earlier commit." Every task the section held is re-stamped onto the
+  surviving commit's subject (or sha) in the same step — the **Commit record**'s granularity
+  narrows to the section, never loses resolvability. Distinct from the squash-**merge** strategy
+  `/quenching:specs:conclude` offers, which is a different mechanism at a different moment.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
   só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos
