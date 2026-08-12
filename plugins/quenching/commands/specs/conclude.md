@@ -168,9 +168,9 @@ no bundle.
 For `done` with a `branch` record, offer the strategies in
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
-delete the branch** — a squash collapses every per-task commit, so each task's recorded `subject:`
-resolves only while the branch survives. Say that plainly rather than deleting and discovering it
-later.
+delete the branch** — a squash collapses every per-section commit, so each task's recorded
+`subject:` resolves only while the branch survives. Say that plainly rather than deleting and
+discovering it later.
 
 **Then, separately, offer the route** — pull request, or local — per
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
@@ -304,8 +304,7 @@ being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. The repo's own
-[surface-verification.md](../../../../.docs/standards/quality/surface-verification.md)
+it. The repo's own `quality/surface-verification.md`
 §The five preconditions a check must satisfy is where that distinction is defined for the command
 surface.
 
@@ -358,10 +357,9 @@ gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<s
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch — which stays `main`
-([branching.md](/.docs/standards/git/branching.md) §O consumidor não muda nada — depends on it
-never moving — see `## Out of Scope` in the spec that introduced the develop/main
-flow). `<base>` here is this spec's own resolved base — the same one the local route's merge
+default branch — which stays `main` (`git/branching.md` §O consumidor não muda nada — depends on
+it never moving — see `## Out of Scope` in the spec that introduced the develop/main flow).
+`<base>` here is this spec's own resolved base — the same one the local route's merge
 targets — so a spec whose base is the declared integration branch opens its PR against that
 branch, never against the publication one, without any GitHub repository setting having to
 change.
