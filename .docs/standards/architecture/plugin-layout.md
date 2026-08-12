@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-08-03
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the QUENCHING.md bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the QUENCHING.md bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.docs/` path
 maintainer: quenching
 ---
 
@@ -180,6 +180,32 @@ alongside it. This is why a mold and the plugin's own copy of the same standard 
 in wording: `skills.md` may point at the measurement behind a rule, while
 `skills-standard.md` states the rule and stops. That difference is the rule being obeyed, not
 drift — do not "reconcile" them.
+
+### A plugin body cites the target's bundle only where the align installs it
+
+The rule above governs the direction a mold may not cite: content that will *become* target
+content may not cite the plugin, because `${CLAUDE_PLUGIN_ROOT}` never resolves once it is copied
+there. The opposite direction — a command or a reference, which stays in the plugin forever,
+citing a path in the target's own bundle — needs its own rule, because nothing above states one.
+
+`/.docs/standards/<subject>/<file>.md` is a **fixed string**
+([bundle-root.md](bundle-root.md)), never a variable, so it reads as a well-formed link in every
+repo whether or not the named file actually exists there. Existence is not syntax: a target only
+carries that file if `/docs:align` installs it — that is, only if it exists under
+`plugins/quenching/assets/docs/**` in this very plugin.
+
+**A command body or a reference in `commands/**` or `assets/references/**` links a `/.docs/` path
+only when that path exists under `plugins/quenching/assets/docs/**`.** Where it does not, the body
+names the target in backticks, without a markdown link, and states the rule the citation would
+have carried directly in its own prose — the citation was never load-bearing there, only
+provenance, and the statement survives its removal. `commands/specs/create.md` is the didactic
+case, two halves of the same rule in the same file: the line citing
+[agents/communication.md](../agents/communication.md), which the align installs, stays linked; the
+line that cited `workflows/plugin-configuration.md`, which it does not, loses the link and keeps
+only the prose the citation was standing in for.
+
+Same mechanic as the rule above, same warning: **no validator catches this** — a path that fails to
+resolve reads as ordinary prose, so the rule is the only guard.
 
 ### A boundary reminder is not a restatement
 
