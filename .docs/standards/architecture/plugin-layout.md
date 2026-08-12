@@ -7,7 +7,7 @@ tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.docs/` path
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.docs/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited
 maintainer: quenching
 ---
 
@@ -208,6 +208,14 @@ case, two halves of the same rule in the same file: the line citing
 [agents/communication.md](../agents/communication.md), which the align installs, stays linked; the
 line that cited `workflows/plugin-configuration.md`, which it does not, loses the link and keeps
 only the prose the citation was standing in for.
+
+**The citation's form is not part of the rule.** An absolute `](/.docs/standards/…)` and a relative
+climb `](../../../../.docs/standards/…)` are the same citation of the same target file, and both
+dangle identically where the align installs nothing. A sweep that derives the class from the
+absolute form alone under-counts it: this section's own branch review found **five** relative-form
+citations still standing in the payload the sweep had just declared clean — two of them in files
+that sweep had already edited. Derive the class from the target file, never from the link's
+spelling.
 
 Same mechanic as the rule above, same warning: **no validator catches this** — a path that fails to
 resolve reads as ordinary prose, so the rule is the only guard.
