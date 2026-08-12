@@ -377,6 +377,17 @@ h. **On a section boundary, squash the section into one commit before anything e
    — leaves the section's per-task commits untouched, the state before the squash was attempted.
    Report it as a finding; never force past it (`--no-verify` stays forbidden here too).
 
+   **Then repair every squashed task's commit record**, so `subject:` (or `commit:`, on a backend
+   that carries it) resolves to the commit that now actually exists, not the one the squash just
+   replaced. The same `task --check` call, re-run per task — it upserts the metadata in place
+   without re-opening anything the task already proved:
+
+   ```bash
+   cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"
+   ```
+
+   Skip this whole sub-step along with the squash itself when a `[!]` in the section skipped it.
+
 i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** Another
    section still ahead is a clean boundary, and the branch is already at its final shape for this
    section — one commit. Say it in one line and continue:
