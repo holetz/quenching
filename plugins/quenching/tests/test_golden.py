@@ -134,6 +134,10 @@ UNROUTED = {
                   "the record.",
     "specs-record-unknown": "same added record as `specs-list`: the `sp-unknown-record` refusal "
                              "lists every declared record name, and `pr` is now one of them.",
+    "specs-root-too-high-control-list": "same added record as `specs-list`, on the control arm of "
+                                         "the root-override fixture — it lists a real spec, so its "
+                                         "`records` dict carries `pr` too. The frozen payload was "
+                                         "captured on the base, before the record existed.",
 }
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package
