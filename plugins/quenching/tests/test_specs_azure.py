@@ -555,5 +555,42 @@ class LabelReconciliation(unittest.TestCase):
                 self.assertEqual(reconcile_label_set(current, desired), want)
 
 
+class ResolveRepoIds(unittest.TestCase):
+    """`_resolve_repo_ids` — resolved once, cached cross-process like the project's own name,
+    and a name that does not resolve refuses rather than silently skipping the link."""
+
+    def _isolated_cache(self):
+        tmp = tempfile.TemporaryDirectory()
+        old_xdg = os.environ.get("XDG_CACHE_HOME")
+        os.environ["XDG_CACHE_HOME"] = tmp.name
+        self.addCleanup(tmp.cleanup)
+        if old_xdg is None:
+            self.addCleanup(os.environ.pop, "XDG_CACHE_HOME", None)
+        else:
+            self.addCleanup(os.environ.__setitem__, "XDG_CACHE_HOME", old_xdg)
+
+    def test_resolves_and_caches_the_pair(self):
+        self._isolated_cache()
+        az = AzureBoardsBackend("test-org-5-1", "test-proj-5-1", AZ_STATES, ".",
+                                repository="the-repo")
+        calls = []
+        az._az_raw = lambda action, *argv, expect="object": (
+            calls.append(argv) or {"id": "R1", "project": {"id": "P1"}})
+        self.assertEqual(az._resolve_repo_ids(), ("P1", "R1"))
+        self.assertEqual(len(calls), 1)
+        # A second call hits the cross-process cache — no second `az` call.
+        self.assertEqual(az._resolve_repo_ids(), ("P1", "R1"))
+        self.assertEqual(len(calls), 1, "re-resolving the same repository called `az` again")
+
+    def test_an_unresolvable_repository_refuses_rather_than_skipping_silently(self):
+        self._isolated_cache()
+        az = AzureBoardsBackend("test-org-5-1b", "test-proj-5-1b", AZ_STATES, ".",
+                                repository="nonesuch")
+        az._az_raw = lambda action, *argv, expect="object": {}
+        with self.assertRaises(BackendRefusal) as ctx:
+            az._resolve_repo_ids()
+        self.assertEqual(ctx.exception.err.get("code"), "sp-az-repo-unresolved")
+
+
 if __name__ == "__main__":
     unittest.main()

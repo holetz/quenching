@@ -482,6 +482,7 @@ class AzureBoardsBackend(SpecBackend):
                 work_item_type: str | None = None, iteration_path: str | None = None,
                 parent_id: int | None = None, team: str | None = None,
                 board_column: str | None = None,
+                repository: str | None = None,
                 column_map: dict[str, str] | None = None,
                 tag_catalog: dict[str, str] | None = None,
                 types: dict[str, dict] | None = None) -> None:
@@ -507,6 +508,13 @@ class AzureBoardsBackend(SpecBackend):
         self.parent_id = parent_id
         self.team = team
         self.board_column = board_column
+        # `azurePlacement.repository` — the Azure Repos repository name backing this target's
+        # CODE, declared because §Design's own `resolve_azure_project` already established
+        # that a board project and a code repository are independent facts here. `None` on
+        # every target whose code is not in Azure Repos, which is the ordinary case — never a
+        # refusal, only the absence of the branch/commit `ArtifactLink` below.
+        self.repository = repository
+        self._repo_ids: tuple[str, str] | None = None
         self.column_map = column_map or {}
         self.tag_catalog = tag_catalog or {}
         # WEF_<guid>_Kanban.Column, per work-item-type — a process resolving specs of more
@@ -931,6 +939,30 @@ class AzureBoardsBackend(SpecBackend):
             self._az_patch(f"updating work item {item_id}", item_id, ops)
         self._invalidate()
 
+    def _resolve_repo_ids(self) -> tuple[str, str]:
+        """`(projectId, repositoryId)` for `self.repository` — cached the same way the
+        project's own name already is (§Granular reading), keyed under it so more than one
+        repository in the same project resolves independently."""
+        cached = (azure_cache_read(self.org, self.project).get("repos") or {}).get(
+            self.repository)
+        if cached:
+            return cached["projectId"], cached["repositoryId"]
+        repo = self._az_raw("resolving `azurePlacement.repository`", "repos", "show",
+                            "--repository", self.repository, "--project", self.project)
+        project_id = ((repo or {}).get("project") or {}).get("id")
+        repo_id = (repo or {}).get("id")
+        if not (project_id and repo_id):
+            raise BackendRefusal({
+                "code": "sp-az-repo-unresolved", "exit": 2, "repository": self.repository,
+                "message": f"`azurePlacement.repository` ('{self.repository}') does not "
+                           f"resolve against project '{self.project}' — no native link was "
+                           f"attempted; the record itself is already saved",
+            })
+        repos = azure_cache_read(self.org, self.project).get("repos") or {}
+        repos[self.repository] = {"projectId": project_id, "repositoryId": repo_id}
+        azure_cache_write(self.org, self.project, repos=repos)
+        return project_id, repo_id
+
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
         m = SPEC_FILE_RE.match(filename)
@@ -1250,6 +1282,7 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                               iteration_path=placement.get("iterationPath"),
                               team=placement.get("team"),
                               board_column=placement.get("boardColumn"),
+                              repository=placement.get("repository"),
                               column_map=cfg["azureColumns"],
                               tag_catalog=cfg["tagCatalog"],
                               types=cfg["workItemTypes"]), {}
