@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 
+from quenching.common.git import _git
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_wrap)
@@ -429,6 +430,17 @@ def azure_patch_culprit(ops: list[dict], said: str) -> str | None:
         if op["path"].rsplit("/", 1)[-1] in said:
             return op["path"]
     return None
+
+
+def azure_artifact_url(kind: str, project_id: str, repo_id: str, value: str) -> str:
+    """The `vstfs:///Git/...` URI an `ArtifactLink` relation's `url` carries — Microsoft's own
+    fixed encoding, `<projectId>%2F<repositoryId>%2F<value>`, one scheme per artifact kind.
+    `kind='pr'` is deliberately not admitted here: the `PullRequestId` scheme names a Pull
+    Request that is itself in Azure Repos, and this plugin's `pr`/`merge.pr` records always
+    name a `github` one — not the same artifact, so not a mapping (## Design)."""
+    scheme = {"branch": "Ref", "commit": "Commit"}[kind]
+    tail = f"GB{value}" if kind == "branch" else value
+    return f"vstfs:///Git/{scheme}/{project_id}%2F{repo_id}%2F{tail}"
 
 
 class AzureBoardsBackend(SpecBackend):
@@ -937,7 +949,30 @@ class AzureBoardsBackend(SpecBackend):
                                parent=parent)
         if ops:
             self._az_patch(f"updating work item {item_id}", item_id, ops)
+        if self.repository:
+            self._link_new_artifacts(item_id, info, fresh)
         self._invalidate()
+
+    def _link_new_artifacts(self, item_id: int, old_info: dict, fresh: dict) -> None:
+        """`branch`/task-commit `ArtifactLink`s, attempted only for what THIS write actually
+        changed — an internal diff against `old_info` (the pre-write read every caller already
+        hands `write_spec`), never a second Azure read. §Design: a relation has no field this
+        backend already reads back, so the alternative would be `$expand=relations` on every
+        load; comparing the document to itself is what makes one attempt per real change cost
+        nothing on every OTHER write."""
+        old_branch = (old_info["frontmatter"].get("branch") or {}).get("work")
+        new_branch = (fresh["frontmatter"].get("branch") or {}).get("work")
+        if new_branch and new_branch != old_branch:
+            self._link_artifact(item_id, "branch", new_branch)
+        old_subjects = {t.get("id"): t.get("subject") for t in old_info["tasks"]}
+        for task in fresh["tasks"]:
+            subject = task.get("subject")
+            if not subject or subject == old_subjects.get(task.get("id")):
+                continue
+            sha = _git(os.getcwd(), "log", "--fixed-strings", "--grep", subject,
+                      "--format=%H", "-1").strip()
+            if sha:
+                self._link_artifact(item_id, "commit", sha)
 
     def _resolve_repo_ids(self) -> tuple[str, str]:
         """`(projectId, repositoryId)` for `self.repository` — cached the same way the
@@ -962,6 +997,18 @@ class AzureBoardsBackend(SpecBackend):
         repos[self.repository] = {"projectId": project_id, "repositoryId": repo_id}
         azure_cache_write(self.org, self.project, repos=repos)
         return project_id, repo_id
+
+    def _link_artifact(self, item_id: int, kind: str, value: str) -> None:
+        """Add ONE `ArtifactLink` relation, in its OWN `az rest` call — never folded into the
+        document PATCH above. Raises on refusal, the same shape `GitHubBackend._set_type`
+        already uses for its own secondary, best-effort write: the document already saved
+        successfully by the time this runs, so a refusal here is reported loudly rather than
+        swallowed, and never undoes what already landed."""
+        project_id, repo_id = self._resolve_repo_ids()
+        url = azure_artifact_url(kind, project_id, repo_id, value)
+        self._az_patch(f"linking {kind} '{value}' to work item {item_id}", item_id,
+                       [{"op": "add", "path": "/relations/-",
+                         "value": {"rel": "ArtifactLink", "url": url}}])
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
