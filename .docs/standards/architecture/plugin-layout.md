@@ -7,7 +7,7 @@ tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.docs/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.docs/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down
 maintainer: quenching
 ---
 
@@ -117,6 +117,29 @@ than quietly exceeding: what makes a folder mean nothing is a **membership rule 
 This one's rule is still the single sentence in the blockquote, and the four rows are
 consequences of it that a reader can derive. Revisit when a subtree stops being derivable from
 that sentence — not when the table gains a row.
+
+### A contract a command reads at runtime is a reference, not a standard
+
+The split between a bundle standard and a plugin reference is **by kind, not by size**. A standard
+states what this repo holds itself to — a rule its own work is graded against. A reference carries
+what a command reads *while running inside a target*: procedure, not a fact about anyone's repo.
+
+Two standards already sit on that line and delegate across it. [skills.md](../automation/skills.md)
+states the command taxonomy rule and leaves the writing doctrine to
+`assets/references/components-command-new/`; [plan-artifacts.md](../workflows/plan-artifacts.md)
+states what a spec must contain and leaves the per-section authoring to `specs-develop/`. Both keep
+a standard because both **have** a rule this repo is graded against, separable from the procedure.
+
+**Where a contract is entirely runtime procedure, there is no standard left to shrink** — it moves
+whole into `assets/references/` and the standard is **retired**, under
+[retiring-a-standard.md](../workflows/retiring-a-standard.md), never kept as a stub. A stub that
+restates the reference is the second copy the delegation existed to prevent, now with the two
+halves graded by different validators. `automation/orchestration-gears.md` is the worked case:
+every sentence in it was procedure `/quenching:specs:orchestrate` reads mid-run, so shrinking it
+would have left a pointer and nothing else.
+
+Read the precedent by what it **kept**, never by its shape: a shrunken standard is evidence that a
+separable rule existed there, not a template for a contract that has none.
 
 ## References are cited by absolute path, never relatively
 
