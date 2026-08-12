@@ -292,12 +292,13 @@ c. **Write only the `/.docs/` this task names.** When this task writes `/.docs/`
    `cq specs discover "<slug>" "<finding>"` — and no authoring.
 
 d. **On the first pass through 5d–5e, load the rules the chain runs under — once, never per
-   task.** The verification policy, the validation loop, the self-review, the commit's hard rules; then the git conventions that name the subject — one call per file:
+   task.** The verification policy, the validation loop, the self-review, the commit's hard rules,
+   the section squash; then the git conventions that name the subject — one call per file:
 
    ```bash
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
-     --sections "§The diff self-review" --sections "§The commit"
+     --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
      --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor"
    ```
@@ -325,20 +326,10 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
    when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §The verification policy); otherwise the chain starts at `cq specs task`.
 
-f. **Read the chain's tail, and act on which link broke:**
-
-   - **`verify:` failed** → nothing was ticked and nothing was committed; the chain stopped at link
-     one. Read the failure, change the code, run it again. When attempts stop converging, write it
-     blocked with its reason — `cq specs task --spec "<slug>" --block <id> --reason "<why>"` — and
-     move on. **Never weaken the check to make it pass.**
-   - **The commit failed** — a rejecting hook, nothing staged — → the tick already landed, so
-     **undo it** (`cq specs task --spec "<slug>" --uncheck <id>`) so no box claims a commit that
-     does not exist, then report the failure. Never `--no-verify` your way past it.
-   - **The final `git log -1 --format=%s` does not equal the recorded subject** → a `commit-msg`
-     hook rewrote it. One that only *adds* (a ticket prefix, a `Change-Id`, a sign-off) leaves the
-     recorded subject resolvable as a substring — fine, and needs nothing. One that **replaces** it
-     breaks the task→commit link: **report it as a finding and write nothing.** Editing the record
-     now would put a write after the commit again, which is exactly what this ordering removed.
+f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
+   5d: `verify:` failed → nothing ticked, nothing committed; fix and retry, or block it when
+   attempts stop converging. The commit failed → undo the tick, report. The recorded subject
+   drifted → report it as a finding and write nothing.
 
 g. **Announce the declared hook for this event, and move on.** Once the task has committed,
    `after_specs_execute_task` has fired: print what the config declared for it — the event's
@@ -354,43 +345,19 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
      prompt: none declared
    ```
 
-h. **On a section boundary, squash the section into one commit before anything else.** The event
-   is exact and needs no threshold: the last task of a `## N.` section just committed, and none of
-   the section's tasks is `[!]`. Collapse the section's own per-task commits into one, touching
-   nothing from any earlier section:
+h. **On a section boundary with no `[!]`, squash and repair** — per §The section squash, loaded once alongside 5d:
 
    ```bash
    git reset --soft <the commit immediately BEFORE this section's first task> \
      && git commit -m "plan/<slug>: <N> <section title>"
+   cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"   # per task
    ```
 
-   The reset target is the commit **before** the section's first task — never that task's own
-   commit. `git reset --soft <sha>` moves HEAD to `<sha>` while keeping the index exactly as it
-   stands; resetting to the first task's own commit would leave that task's changes already
-   "consumed" by the reset and out of the new commit. On a plan's first section, the target is
-   whatever commit stood on the branch before this run's first task.
+   A `[!]` in the section skips both calls whole; a failed squash reports as a finding and leaves
+   the per-task commits untouched.
 
-   **A `[!]` anywhere in the section skips this step whole.** The section's per-task commits stay
-   exactly as they are — one per task, exactly as today — until the section closes for real.
-
-   **A squash that fails** — the `reset --soft` or the recommit rejected by a hook, nothing staged
-   — leaves the section's per-task commits untouched, the state before the squash was attempted.
-   Report it as a finding; never force past it (`--no-verify` stays forbidden here too).
-
-   **Then repair every squashed task's commit record**, so `subject:` (or `commit:`, on a backend
-   that carries it) resolves to the commit that now actually exists, not the one the squash just
-   replaced. The same `task --check` call, re-run per task — it upserts the metadata in place
-   without re-opening anything the task already proved:
-
-   ```bash
-   cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"
-   ```
-
-   Skip this whole sub-step along with the squash itself when a `[!]` in the section skipped it.
-
-i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** Another
-   section still ahead is a clean boundary, and the branch is already at its final shape for this
-   section — one commit. Say it in one line and continue:
+i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The branch
+   is already at its final shape (one commit), another section still ahead. Say it and continue:
 
    ```
    Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <slug>` resumes from here —
@@ -398,9 +365,8 @@ i. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    ```
 
    It **offers and never imposes**, never ends the run itself, and writes no state — the trail that
-   makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event and
-   never a window size, and why a section is the unit, live in
-   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The section boundary.
+   makes the boundary resumable is the one step 6 already keeps. Why the trigger is that event, and
+   why a section is the unit, live in [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The section boundary.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
 task contradicts a `/.docs/standards/` contract (surface it and let the human pick — revise the
