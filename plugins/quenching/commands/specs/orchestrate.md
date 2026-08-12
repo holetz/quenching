@@ -37,10 +37,9 @@ human on the same screen; the human's OK is the run's authorization.
   cycle-authorization contract — one confirmation at run start authorizes the run; narration
   replaces each stage's plan gate; code-coupled items and irreversible cycle actions still gate
   individually.
-- [orchestration-gears.md](/docs/standards/automation/orchestration-gears.md) §What a gear is
-  §Deriving the gears plan §Re-evaluating a gear — the repo's gears contract: the three ways a
-  stage runs, how `complexity` derives the plan, and the signals that move a gear up. A repo that
-  does not carry it has no gears to derive: say so and stop before the plan.
+- [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-orchestrate/gears.md) §What a gear is
+  §Deriving the gears plan §Re-evaluating a gear — the gears contract: the three ways a
+  stage runs, how `complexity` derives the plan, and the signals that move a gear up.
 - [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §Derived stages §Frontmatter §The `specs.py` tool surface — the derived stage is the dispatch,
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface
@@ -128,8 +127,9 @@ on), declaring the authorization as step 3's sentence — the minimal-gear form 
 the minimal gear. Under the minimal gear, `conclude` is invoked with the **pull-request route**
 against the declared `integrationBranch`: the route was chosen and approved in the gears plan,
 never rediscussed at the stage. A stage whose gear is `sub-agent` runs isolated and returns its
-summary per the gears contract (§What a gear is); the contract's test that the summary is much
-smaller than the work is [agents.md](/docs/standards/automation/agents.md).
+summary per the gears contract (§What a gear is): delegate when the returned summary is much
+smaller than the work that produced it; keep a stage in-session when its output would be as large
+as itself.
 **Done when:** the stage finished (or was skipped with a stated reason) and its outcome is
 recorded.
 
