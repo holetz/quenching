@@ -11,7 +11,7 @@
 
   "frontmatter": {
     "required": ["slug", "title", "date"],
-    "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed", "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
+    "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed", "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
     "verification": ["per-task", "per-section", "end-of-plan"],
     "outcome": ["done", "abandoned"],
 
@@ -48,6 +48,12 @@
         "writeOnce": true,
         "why": "after a merge, git cannot say what the base was"
       },
+      "pr": {
+        "fields": ["number", "url", "date"],
+        "writtenBy": "conclude",
+        "writeOnce": false,
+        "why": "a PR opened before it is merged — distinct from `merge.pr`, which is stamped only once the merge already happened. `conclude`'s PR route stamps this the moment `gh pr create` returns; running under the orchestrator's minimal-gear authorization, the route stops there rather than merging in the same block, so this is the only record of the PR until a later run (or a human) merges it and `merge` is stamped. Restamped if the PR is recreated — closed and reopened, or force-pushed to a fresh number — which is why it carries its own `date` rather than being writeOnce"
+      },
       "reviewed": {
         "fields": ["date"],
         "writtenBy": "conclude",
@@ -71,7 +77,7 @@
         "writeOnce": true,
         "why": "a human's verdict on whether the work was completed or dropped"
       },
-      "note": "Every record here is a human judgment no derivation can reproduce — that is the whole admission test, and it is why there is no `created`, no `phase`, no `ready` and no attempt counter. Read top to bottom in `optional` order, the records narrate the spec's history: ranked, interrogated, approved, isolated, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition, where rewriting the value would falsify a fact that already happened. `writeOnce: false` marks a standing judgment its OWNING command may restamp — a triage sweep re-ranks, a second interrogation records a new mode, a re-read diff is reviewed again — which is why those three carry their own `date`. In neither case may a command other than `writtenBy` touch the record. `label` names the `spec:` label a GitHub or Azure Boards backend mirrors onto the tracker's own issue/work item whenever this record is present — a derived projection recalculated from the document on every write, never read back (see `/.docs/standards/architecture/spec-backend.md`). `branch` and `outcome` carry none: `branch` narrates `isolated`, which the derived `executing` stage's own `spec:built` label already covers, and there is no closing label — the issue's own open/closed state is the phase."
+      "note": "Every record here is a human judgment no derivation can reproduce — that is the whole admission test, and it is why there is no `created`, no `phase`, no `ready` and no attempt counter. Read top to bottom in `optional` order, the records narrate the spec's history: ranked, interrogated, approved, isolated, PR opened, reviewed, merged, closed. `writeOnce: true` marks an irreversible transition, where rewriting the value would falsify a fact that already happened. `writeOnce: false` marks a standing judgment its OWNING command may restamp — a triage sweep re-ranks, a second interrogation records a new mode, a re-read diff is reviewed again, a recreated PR gets a fresh number — which is why those four carry their own `date`. In neither case may a command other than `writtenBy` touch the record. `label` names the `spec:` label a GitHub or Azure Boards backend mirrors onto the tracker's own issue/work item whenever this record is present — a derived projection recalculated from the document on every write, never read back (see `/.docs/standards/architecture/spec-backend.md`). `branch`, `pr` and `outcome` carry none: `branch` narrates `isolated`, which the derived `executing` stage's own `spec:built` label already covers; `pr` narrates a fact the PR itself already shows on its own page, with nothing in the `spec:` vocabulary to say about it that `merge`'s label does not already say once it lands; and there is no closing label — the issue's own open/closed state is the phase."
     },
 
     "note": "Frontmatter records human judgments; the filesystem, git and section presence record everything else. `date` is the exception that proves it: it is a fact about the spec rather than a judgment, but no store carries an honest copy of it — the basename stopped holding it, and an issue's created_at is when the issue was made — so it is declared here. No `phase` field: the folder is that fact. No `ready` field: the ten gate sections are that fact (stages.derived.ready). `verification` is OPTIONAL, and absent means the default applied on read — never stamped into a document to make it explicit, because a one-sentence capture has nobody to decide it yet. See `records` for what each optional key holds. `workItemType` is the abstract `workItemTypes` catalogue key a spec was born under (plugin-configuration.md) — resolved once at creation and FIXED thereafter, outside `FIELD_KEYS` because no backend has a faithful native counterpart for the abstract key itself: the concrete name is a write-only projection, never read back, the same argument that keeps `date:` in the document. `tags`, `assignee`, `start` and `target` are STATE, never records: each is written by its own deterministic verb (`cq specs tags|assignee|start|target`), and a backend with a faithful native counterpart stores it there — reassembled into these same keys on read, never reprojected on every write. See docs/standards/architecture/spec-backend.md §A native value is the same fact, or it is not a mapping at all for the test that decides which fields may be mapped this way."
