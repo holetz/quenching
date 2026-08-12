@@ -17,6 +17,7 @@ from quenching.specs.backends.azure import (
     AZ_SPEC_TYPE,
     AzureBoardsBackend,
     az_refusal,
+    azure_artifact_url,
     azure_comparable_fields,
     azure_native_fields,
     azure_patch_body,
@@ -590,6 +591,84 @@ class ResolveRepoIds(unittest.TestCase):
         with self.assertRaises(BackendRefusal) as ctx:
             az._resolve_repo_ids()
         self.assertEqual(ctx.exception.err.get("code"), "sp-az-repo-unresolved")
+
+
+class ArtifactUrl(unittest.TestCase):
+    """`azure_artifact_url` — the fixed vstfs encoding, one scheme per kind. `pr` is not a
+    kind this function admits at all (## Design): the `PullRequestId` scheme names an Azure
+    Repos pull request, and this plugin's `pr`/`merge.pr` records always name a `github` one."""
+
+    def test_branch_gets_the_ref_scheme_and_the_gb_prefix(self):
+        self.assertEqual(azure_artifact_url("branch", "P", "R", "plan/alpha"),
+                         "vstfs:///Git/Ref/P%2FR%2FGBplan/alpha")
+
+    def test_commit_gets_the_commit_scheme_and_no_prefix(self):
+        self.assertEqual(azure_artifact_url("commit", "P", "R", "abc123"),
+                         "vstfs:///Git/Commit/P%2FR%2Fabc123")
+
+    def test_pr_is_not_an_admitted_kind(self):
+        with self.assertRaises(KeyError):
+            azure_artifact_url("pr", "P", "R", "1")
+
+
+class LinkNewArtifacts(unittest.TestCase):
+    """`_link_new_artifacts` — attempted only for what THIS write actually changed, diffed
+    against the pre-write `info` every caller already hands `write_spec`. No network: `_git`
+    is stubbed at the module level, and `_link_artifact`'s own `az` call is recorded rather
+    than shelled out."""
+
+    def _stubbed(self, grep_hits: dict[str, str]):
+        az = AzureBoardsBackend("test-org-5-2", "test-proj-5-2", AZ_STATES, ".",
+                                repository="the-repo")
+        az._resolve_repo_ids = lambda: ("P1", "R1")
+        linked: list[tuple[str, str]] = []
+        az._az_patch = lambda action, item_id, ops: (
+            linked.append((ops[0]["value"]["url"], action)) or None)
+        import quenching.specs.backends.azure as azure_module
+        real_git = azure_module._git
+        azure_module._git = lambda cwd, *argv: grep_hits.get(argv[argv.index("--grep") + 1], "")
+        self.addCleanup(setattr, azure_module, "_git", real_git)
+        return az, linked
+
+    def test_a_newly_stamped_branch_is_linked_once(self):
+        az, linked = self._stubbed({})
+        old = {"frontmatter": {"branch": None}, "tasks": []}
+        fresh = {"frontmatter": {"branch": {"base": "develop", "work": "plan/alpha"}},
+                "tasks": []}
+        az._link_new_artifacts(1, old, fresh)
+        self.assertEqual(len(linked), 1)
+        self.assertIn("GBplan/alpha", linked[0][0])
+
+    def test_an_unchanged_branch_is_never_relinked(self):
+        az, linked = self._stubbed({})
+        same = {"branch": {"base": "develop", "work": "plan/alpha"}}
+        az._link_new_artifacts(1, {"frontmatter": same, "tasks": []},
+                               {"frontmatter": same, "tasks": []})
+        self.assertEqual(linked, [])
+
+    def test_a_newly_recorded_task_subject_resolves_and_links_its_commit(self):
+        subject = "plan/alpha: 1.1 Do the thing"
+        az, linked = self._stubbed({subject: "deadbeef" * 5})
+        old = {"frontmatter": {}, "tasks": [{"id": "1.1", "subject": None}]}
+        fresh = {"frontmatter": {}, "tasks": [{"id": "1.1", "subject": subject}]}
+        az._link_new_artifacts(1, old, fresh)
+        self.assertEqual(len(linked), 1)
+        self.assertIn("deadbeef" * 5, linked[0][0])
+
+    def test_a_subject_that_does_not_resolve_in_this_checkout_links_nothing(self):
+        subject = "plan/alpha: 1.1 Do the thing"
+        az, linked = self._stubbed({})   # `_git` returns "" — nothing resolves
+        old = {"frontmatter": {}, "tasks": [{"id": "1.1", "subject": None}]}
+        fresh = {"frontmatter": {}, "tasks": [{"id": "1.1", "subject": subject}]}
+        az._link_new_artifacts(1, old, fresh)
+        self.assertEqual(linked, [])
+
+    def test_no_repository_declared_means_write_spec_never_calls_this_at_all(self):
+        # `write_spec` itself gates on `self.repository` before calling `_link_new_artifacts`
+        # — proved here as the constructor default, the property every other case in this
+        # class relies on `repository="the-repo"` to opt out of.
+        az = AzureBoardsBackend("test-org-5-2b", "test-proj-5-2b", AZ_STATES, ".")
+        self.assertIsNone(az.repository)
 
 
 if __name__ == "__main__":
