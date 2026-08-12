@@ -63,7 +63,7 @@ can produce.
 `.claude/quenching.json`, at the **repo root** — the `backend` key naming which store holds the
 specs. Read by `specs.py config --json`, which exits 0 whether or not anything is declared; the
 recognised keys, their defaults, and every way the file can be wrong are owned by
-[plugin-configuration.md](/docs/standards/workflows/plugin-configuration.md) §The recognised keys.
+`plugin-configuration.md` §The recognised keys.
 It is **not** `specs/config.json` any more — a stranded copy is named (`sp-config-legacy-location`),
 never merged, and deliberately exempt from `sp-stray-file`.
 
@@ -232,9 +232,7 @@ the only promote left is the gated one into `archive/`.
 A spec carries `slug`/`title`/`verification` and deliberately **no OKF `type:`**.
 
 `plans/index.md` is a **retired artifact**. The sweep neither creates nor deletes a surviving copy
-in a target repo
-([`retiring-a-reserved-artifact.md`](/docs/standards/architecture/retiring-a-reserved-artifact.md)
-§The consequence for disposition).
+in a target repo (`retiring-a-reserved-artifact.md` §The consequence for disposition).
 
 <!-- rationale -->
 There is no listing here for it to check, and there never was a spec file it could judge. A spec is
@@ -262,6 +260,5 @@ an already-aligned workspace stops on two tool calls.
 GENERATED zone matches disk". Nothing computed it — `specs.py` never emitted a `changed` field for
 a command to read — so the one clause that could actually rot was the one left to a human's eye,
 and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
-[`generated-listings.md`](/docs/standards/architecture/generated-listings.md); the narrower lesson
-belongs here. A clause a program cannot evaluate is not a stricter standard, it is an unverified
-one.
+`generated-listings.md`; the narrower lesson belongs here. A clause a program cannot evaluate is
+not a stricter standard, it is an unverified one.

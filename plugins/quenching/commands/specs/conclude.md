@@ -358,10 +358,9 @@ gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<s
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch — which stays `main`
-([branching.md](/.docs/standards/git/branching.md) §O consumidor não muda nada — depends on it
-never moving — see `## Out of Scope` in the spec that introduced the develop/main
-flow). `<base>` here is this spec's own resolved base — the same one the local route's merge
+default branch — which stays `main` (`git/branching.md` §O consumidor não muda nada — depends on
+it never moving — see `## Out of Scope` in the spec that introduced the develop/main flow).
+`<base>` here is this spec's own resolved base — the same one the local route's merge
 targets — so a spec whose base is the declared integration branch opens its PR against that
 branch, never against the publication one, without any GitHub repository setting having to
 change.

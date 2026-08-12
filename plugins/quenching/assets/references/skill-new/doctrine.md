@@ -115,9 +115,8 @@ with this" is a claim about the whole surface and only a reader holding all of i
 
 **A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
 a command quietly stops firing for the user who worded it differently, and only a measured miss
-retires one — `/quenching:skill:eval`'s, per
-[skill-evaluation.md](/docs/standards/automation/skill-evaluation.md) §Description tuning
-is the one edit measurement authorizes. A trigger that looks like sediment is **reported** with the
+retires one — `/quenching:skill:eval`'s own measurement (`skill-evaluation.md` §Description
+tuning) is the one edit it authorizes. A trigger that looks like sediment is **reported** with the
 `/quenching:skill:eval <command>` that decides it.
 
 ## The loading hierarchy

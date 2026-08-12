@@ -17,7 +17,7 @@ than a path.
 
 What every backend owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and the refusal that never falls back to `files` — is owned by
-[spec-backend.md](/docs/standards/architecture/spec-backend.md) and never restated here.
+`spec-backend.md` and never restated here.
 
 ## Contents
 
@@ -463,8 +463,8 @@ Measured across the eight bodies before this section existed: two rendered a lit
 described their report in prose, producing six different closing verbs, no shared glyph, an `Age`
 column with no declared source, and `title` unused by every table although `specs.py` had been
 emitting it all along. A shape restated in eight bodies is the fan-out
-[/docs/standards/quality/computed-fact-prose-fanout.md](/docs/standards/quality/computed-fact-prose-fanout.md)
-describes — it ages in seven the moment it changes in one, with every checker green.
+`computed-fact-prose-fanout.md` describes — it ages in seven the moment it changes in one, with
+every checker green.
 
 ### The three bands
 
@@ -569,7 +569,7 @@ prose-only code is never presented as tool output.
 <!-- rules -->
 
 One row per finding, for the split by what closes each that a read-only view owes
-([/docs/standards/architecture/read-only-views.md](/docs/standards/architecture/read-only-views.md)):
+(`read-only-views.md`):
 
 ```
 | Spec | Code | What it is | Closed by |
@@ -637,7 +637,7 @@ where acting on a false green is unrecoverable, but not the only one that runs c
 <!-- rules -->
 
 This file is English; **the report a command prints is not**. It follows the target repo's declared
-tag ([/docs/standards/agents/communication.md](/docs/standards/agents/communication.md) §What it
+tag ([/.docs/standards/agents/communication.md](/.docs/standards/agents/communication.md) §What it
 governs). So each column has a **canonical name**, which is its address above, and a **printed
 label**, which follows the tag.
 

@@ -109,11 +109,10 @@ never silently pick one, and never skip the confirmation because a `defaultSubje
 this spec's content and gets the same say over where it is filed.
 
 **A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
-documentation, written for exactly this judgment
-([plugin-configuration.md](docs/standards/workflows/plugin-configuration.md) §Two keys are
-prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
-question as the subject where both apply, or its own `AskUserQuestion` otherwise. A tag outside
-the declared catalog is never proposed: `tagCatalog` is the closed set this judgment draws from.
+documentation, written for exactly this judgment — and propose zero or more that fit the input, in
+the SAME question as the subject where both apply, or its own `AskUserQuestion` otherwise. A tag
+outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment draws
+from.
 
 **The write is always the deterministic verb, never this command inventing its own.** The chosen
 subject's key is carried to step 5's `--subject`; any confirmed catalog tag beyond the subject's
