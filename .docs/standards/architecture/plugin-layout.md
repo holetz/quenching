@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-08-10
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.docs/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.docs/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down
 maintainer: quenching
 ---
 
@@ -118,6 +118,29 @@ This one's rule is still the single sentence in the blockquote, and the four row
 consequences of it that a reader can derive. Revisit when a subtree stops being derivable from
 that sentence — not when the table gains a row.
 
+### A contract a command reads at runtime is a reference, not a standard
+
+The split between a bundle standard and a plugin reference is **by kind, not by size**. A standard
+states what this repo holds itself to — a rule its own work is graded against. A reference carries
+what a command reads *while running inside a target*: procedure, not a fact about anyone's repo.
+
+Two standards already sit on that line and delegate across it. [skills.md](../automation/skills.md)
+states the command taxonomy rule and leaves the writing doctrine to
+`assets/references/components-command-new/`; [plan-artifacts.md](../workflows/plan-artifacts.md)
+states what a spec must contain and leaves the per-section authoring to `specs-develop/`. Both keep
+a standard because both **have** a rule this repo is graded against, separable from the procedure.
+
+**Where a contract is entirely runtime procedure, there is no standard left to shrink** — it moves
+whole into `assets/references/` and the standard is **retired**, under
+[retiring-a-standard.md](../workflows/retiring-a-standard.md), never kept as a stub. A stub that
+restates the reference is the second copy the delegation existed to prevent, now with the two
+halves graded by different validators. `automation/orchestration-gears.md` is the worked case:
+every sentence in it was procedure `/quenching:specs:orchestrate` reads mid-run, so shrinking it
+would have left a pointer and nothing else.
+
+Read the precedent by what it **kept**, never by its shape: a shrunken standard is evidence that a
+separable rule existed there, not a template for a contract that has none.
+
 ## References are cited by absolute path, never relatively
 
 Every citation of a bundled reference is:
@@ -185,6 +208,40 @@ alongside it. This is why a mold and the plugin's own copy of the same standard 
 in wording: `skills.md` may point at the measurement behind a rule, while
 `skills-standard.md` states the rule and stops. That difference is the rule being obeyed, not
 drift — do not "reconcile" them.
+
+### A plugin body cites the target's bundle only where the align installs it
+
+The rule above governs the direction a mold may not cite: content that will *become* target
+content may not cite the plugin, because `${CLAUDE_PLUGIN_ROOT}` never resolves once it is copied
+there. The opposite direction — a command or a reference, which stays in the plugin forever,
+citing a path in the target's own bundle — needs its own rule, because nothing above states one.
+
+`/.docs/standards/<subject>/<file>.md` is a **fixed string**
+([bundle-root.md](bundle-root.md)), never a variable, so it reads as a well-formed link in every
+repo whether or not the named file actually exists there. Existence is not syntax: a target only
+carries that file if `/quenching:knowledge:align` installs it — that is, only if it exists under
+`plugins/quenching/assets/docs/**` in this very plugin.
+
+**A command body or a reference in `commands/**` or `assets/references/**` links a `/.docs/` path
+only when that path exists under `plugins/quenching/assets/docs/**`.** Where it does not, the body
+names the target in backticks, without a markdown link, and states the rule the citation would
+have carried directly in its own prose — the citation was never load-bearing there, only
+provenance, and the statement survives its removal. `commands/specs/create.md` is the didactic
+case, two halves of the same rule in the same file: the line citing
+[agents/communication.md](../agents/communication.md), which the align installs, stays linked; the
+line that cited `workflows/plugin-configuration.md`, which it does not, loses the link and keeps
+only the prose the citation was standing in for.
+
+**The citation's form is not part of the rule.** An absolute `](/.docs/standards/…)` and a relative
+climb `](../../../../.docs/standards/…)` are the same citation of the same target file, and both
+dangle identically where the align installs nothing. A sweep that derives the class from the
+absolute form alone under-counts it: this section's own branch review found **five** relative-form
+citations still standing in the payload the sweep had just declared clean — two of them in files
+that sweep had already edited. Derive the class from the target file, never from the link's
+spelling.
+
+Same mechanic as the rule above, same warning: **no validator catches this** — a path that fails to
+resolve reads as ordinary prose, so the rule is the only guard.
 
 ### A boundary reminder is not a restatement
 
