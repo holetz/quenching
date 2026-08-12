@@ -387,6 +387,16 @@ sentence, and **link out** rather than explaining in full here.
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
   cited by its full title; `cq specs` splits unconditionally, which is unreachable there because
   the fourteen canonical headings carry no comma and it refuses any name outside them.
+- [**Section squash**](../standards/workflows/task-execution.md) — the local `git reset --soft`
+  plus recommit that collapses a `## N.` section's own per-task commits into one, at that
+  section's own **Section boundary**, provided none of its tasks is `[!]`. The per-task chain that
+  verifies, ticks and commits stays exactly what it always was — this is what buys resumability
+  *while the section runs*; the squash only ever reaches back into commits its own section just
+  made, never a prior section's or anything already shared, which is the narrow, explicit exception
+  to "never rewrite an earlier commit." Every task the section held is re-stamped onto the
+  surviving commit's subject (or sha) in the same step — the **Commit record**'s granularity
+  narrows to the section, never loses resolvability. Distinct from the squash-**merge** strategy
+  `/quenching:specs:conclude` offers, which is a different mechanism at a different moment.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
   só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos
