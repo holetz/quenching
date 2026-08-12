@@ -233,6 +233,20 @@ plan/<slug>: merge (<strategy>)
 plan/<slug>: record <what>
 ```
 
+**A section's squashed commit trades the task id for the section number**, otherwise the same
+grammar:
+
+```
+plan/<slug>: <N> <section title>
+```
+
+```
+plan/session-tokens: 3 Rate limiting for the auth middleware
+```
+
+Every task the section held ends up recording this same subject — [execution.md](execution.md)
+§The section squash is where and when that happens.
+
 ## The subject is the anchor
 
 <!-- rules -->
@@ -256,9 +270,12 @@ git log --grep="<the recorded subject>" --fixed-strings
 it has one consequence everywhere: every record is written *before* the thing it describes, so
 nothing is left to write afterwards.
 
-- `/quenching:specs:execute` ticks the box **first**, then commits the code and the ticked box together. One
-  task is exactly one commit. The per-task bookkeeping commit is gone — it existed only because a
-  sha cannot be known before the commit that carries it.
+- `/quenching:specs:execute` ticks the box **first**, then commits the code and the ticked box together. The
+  per-task bookkeeping commit is gone — it existed only because a sha cannot be known before the
+  commit that carries it. The commit itself is squashed to one per section at that section's own
+  boundary ([execution.md](execution.md) §The section squash), which re-stamps every task's
+  `subject:` to the section's, so the anchor still resolves — at the section's granularity, not
+  the task's.
 - `/quenching:specs:conclude` stamps `merge: {strategy, subject}` on the work branch, so the **merge is the
   last action of the run** and nothing is ever committed to the base branch after it.
 
@@ -283,8 +300,8 @@ Under the sha anchor, rebase rewrote every recorded commit and left the archived
 fields pointing at commits that no longer existed — it was the one strategy that made the record
 strictly worse rather than merely narrower.
 
-**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-task commits land
-on the base directly and their subjects resolve there, so a merge pointer would add nothing.
+**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-section commits
+land on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
 Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
 [plan-git-record.md](../../../../../.docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
