@@ -196,7 +196,7 @@ citing a path in the target's own bundle — needs its own rule, because nothing
 `/.docs/standards/<subject>/<file>.md` is a **fixed string**
 ([bundle-root.md](bundle-root.md)), never a variable, so it reads as a well-formed link in every
 repo whether or not the named file actually exists there. Existence is not syntax: a target only
-carries that file if `/docs:align` installs it — that is, only if it exists under
+carries that file if `/quenching:knowledge:align` installs it — that is, only if it exists under
 `plugins/quenching/assets/docs/**` in this very plugin.
 
 **A command body or a reference in `commands/**` or `assets/references/**` links a `/.docs/` path
