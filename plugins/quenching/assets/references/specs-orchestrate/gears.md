@@ -70,7 +70,7 @@ frontmatter at all.
 
 <!-- rules -->
 
-At the end of every stage, the state is read again (`specs.py status --spec <slug> --json`) and the
+At the end of every stage, the state is read again (`cq specs status --spec <slug> --json`) and the
 gear is re-evaluated against what the stage just revealed. Three signals move a gear up:
 
 - **tasks born** — the task count grew beyond what the plan assumed;
