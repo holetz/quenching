@@ -9,9 +9,9 @@ verification: <VERIFICATION>
 
 <!-- ONE spec is ONE file for its whole lifecycle. Phases enrich it; they never split it.
 
-     `specs.py new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
+     `cq specs new` stamps the frontmatter and `## Problem` ALONE — a captured spec is four
      lines of body, not a fourteen-heading skeleton. Every other heading below is created on
-     first write by `specs.py section <slug> "<Heading>" --write`, which inserts it in the
+     first write by `cq specs section <slug> "<Heading>" --write`, which inserts it in the
      canonical position with the guidance comment kept here.
 
      THE STAGE-SCOPED EXPLICIT-NONE RULE. A heading is required — and required to carry
@@ -39,15 +39,15 @@ verification: <VERIFICATION>
      Headings are a PARSED contract — canonical English, exactly as written here. Body prose
      follows the repo's language. A heading outside this set is a stray and validate flags it.
      *(`standards/agents/communication.md` owns that language rule for a repo whose bundle has
-     one. This template states it self-contained rather than citing it: `/specs:align` is native
+     one. This template states it self-contained rather than citing it: `/quenching:specs:align` is native
      and installs here into repos that never adopted the bundle, where that path resolves to
      nothing.)*
 
      MOMENT. Each section belongs to one of three moments on the spec's timeline: `decision`
      (the human, deciding whether to build), `build` (the executor, in step 4 of
-     `/specs:execute`), `close` (`/specs:conclude`, at archive time). `## Discoveries` belongs
+     `/quenching:specs:execute`), `close` (`/quenching:specs:conclude`, at archive time). `## Discoveries` belongs
      to none of them — captured indiscriminately while building, resolved later by
-     `/specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
+     `/quenching:specs:develop`'s triage sweep on its own schedule. An orchestrator sends an executor
      exactly the `build` set; that is what lets one file serve every moment without bloating
      agent context. -->
 
@@ -91,7 +91,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: build + PARSED. Gate: ready (derived).
 
      Declared scope for human review. The `### Standards this spec will write into
-     /.docs/standards/` sub-heading below is PARSED by `specs.py validate`: every
+     /.docs/standards/` sub-heading below is PARSED by `cq specs validate`: every
      `/.docs/standards/**.md` path bulleted under it must be named by a `## Tasks` item, or
      validate emits `sp-impact-uncovered` (warn). Keep that heading text verbatim — it is the
      anchor.
@@ -105,7 +105,7 @@ verification: <VERIFICATION>
 
 ### Standards this spec will write into /.docs/standards/
 
-- `</.docs/standards/subject/concept.md>` — <the rule it states>
+- <path under /.docs/standards/> — <the rule it states>
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -180,7 +180,7 @@ verification: <VERIFICATION>
 <!-- MOMENT: build. Gate: ready (derived).
 
      Checkboxes `- [ ] <id> <text>` grouped under `### N. <Section>` headings.
-     `specs.py task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
+     `cq specs task --spec <slug> --check <id>` flips one mechanically — NEVER hand-edit the
      `[ ]` / `[x]` character. `--subject <line>` records the commit that implements it.
 
      A checkbox MAY carry indented metadata lines directly beneath it:
@@ -211,7 +211,7 @@ verification: <VERIFICATION>
 
      Set HERE, at definition time, and NEVER inferred while building. Honoured only when the
      marked tasks' `files:` sets are provably disjoint and none writes into `/.docs/` —
-     `specs.py parallel` checks the disjunction mechanically rather than judging it in prose.
+     `cq specs parallel` checks the disjunction mechanically rather than judging it in prose.
      Serial execution is the default and needs no marker.
 
      A BLOCKED task is a visible marker, not a hidden counter:
@@ -228,10 +228,10 @@ verification: <VERIFICATION>
 
 ## Discoveries
 
-<!-- MOMENT: none — triage, resolved by `/specs:develop`'s discoveries bank whenever it runs,
+<!-- MOMENT: none — triage, resolved by `/quenching:specs:develop`'s discoveries bank whenever it runs,
      not tied to one of the three. No gate — appended during execution.
 
-     One line per discovery, appended by `specs.py discover <slug> "<text>"` while building.
+     One line per discovery, appended by `cq specs discover <slug> "<text>"` while building.
      Captured INDISCRIMINATELY: whether one is worth acting on is triage's judgment, not the
      executor's.
 
@@ -246,6 +246,6 @@ verification: <VERIFICATION>
 
      What actually happened, written at archive time: what shipped, what was left out, what
      the next reader needs to know. `outcome: done | abandoned` is stamped into the
-     frontmatter by `specs.py promote --to archive`; this section is the prose behind it.
+     frontmatter by `cq specs promote --to archive`; this section is the prose behind it.
 
      For an abandoned spec, the reason it will not be built is the whole content. -->

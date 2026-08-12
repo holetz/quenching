@@ -2,12 +2,12 @@
 type: standard
 title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/bin/specs.py, plugins/quenching/assets/specs/templates/spec.md
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-08-07
+timestamp: 2026-08-11
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `specs.py validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding
 maintainer: quenching
 ---
 
@@ -43,7 +43,7 @@ bound; the delegate owns the work, and a measurement that says so is better than
 
 ## Verification is declared per spec, never decided mid-implementation
 
-The spec's frontmatter carries `verification`, written at creation by `specs.py new --verification`:
+The spec's frontmatter carries `verification`, written at creation by `cq specs new --verification`:
 
 | Policy | Runs each task's `verify:` | Fits |
 | --- | --- | --- |
@@ -101,6 +101,39 @@ cannot express its claim reports success indistinguishable from the real one. **
 before trusting it**, and treat "it passed" as evidence only once "it failed on purpose" is on the
 record.
 
+#### Three ways the falsification step is skipped, all measured on one spec
+
+The rule above is old; what follows is what breaks when it is not applied, measured across the
+`modularizar-specs-knowledge-components` spec's 59 tasks. Each form passes green, and each one
+passes green for a *different* reason — so recognising one is not recognising the others.
+
+**Inverted polarity — green means the work is NOT done.** Twelve tasks declared
+`verify: git grep <the old pattern>` to prove a rename landed. `git grep` exits **0 when it finds**
+and 1 when it does not, so that line passes exactly while the old name survives and fails the moment
+the rename is complete. Under the `verify && task --check && commit` chain, none of those tasks
+could commit once done correctly. The damage was not confined to the instrument: the spec's
+`## Risks` named that same grep as the mitigation of its single largest risk — *"cada tarefa da
+seção 7 só é ticável quando o grep da sua própria string antiga volta vazio"* — so the mitigation
+was inverted at the same time, and nothing said so for nine sections. The correct form negates:
+`! git grep …`, or `git grep …; test $? -eq 1`.
+
+**A selector that matches nothing.** Seven tasks declared `python3 -m unittest discover -k <topic>`.
+A `-k` filter with no matching test collects **zero** cases and exits **0**. Those seven proved
+nothing about the pillars they named; the real coverage arrived two sections later, in the goldens
+and the migrated suites. A selector-based check must assert its own case count, or name a test that
+exists.
+
+**Measuring an absence where the thing never was.** One task declared
+`grep <marker> <the new package>; test $? -eq 1`, to prove a duplicated block had been deduplicated.
+The marker had only ever existed in the two pre-refactor scripts, which that task could not touch —
+so the check measured the absence of a string from a tree it was never in, and would have passed on
+day one. The proof was a test exercising both readers against one shared case list; the grep was
+decoration that read like evidence.
+
+**The shared shape.** In all three, the check runs, exits 0, and reports nothing — the failure is
+that it never had the power to say otherwise. `## Risks` mitigations get the same treatment as
+`verify:` lines, because a mitigation is a check with a longer name.
+
 ### A task's `verify:` is scoped at authoring time, never filtered at the gate
 
 What runs at a gate is decided by each task's `verify:`; the `verification` policy decides only
@@ -122,7 +155,7 @@ one.
 `stale-doc` rises structurally on any branch that edits a path some standard governs — the resource
 moved, the rule did not — so a warning total is not a property of the change under test, and
 [bundle-verification.md](../quality/bundle-verification.md) already says to read the gate as zero
-errors for exactly that reason. A `verify:` written as `okf-validate.py docs → 0 error(s), 0
+errors for exactly that reason. A `verify:` written as `cq knowledge docs → 0 error(s), 0
 warning(s)` is therefore false about any mature bundle *before the spec is written*, and it fails
 at the gate having proved nothing about the task. Measured 2026-08-03: that assertion, authored
 against the shipped `assets/docs` skeleton — conformant by construction — stopped a build whose
@@ -130,7 +163,7 @@ deliverable was correct, over 29 warnings the bundle already carried at the bran
 zero errors, and name the doc the task wrote.
 
 **And a validator that folds warnings into a failing exit makes `exit 0` the same false
-assertion, one step earlier.** Measured 2026-08-06: a task's `verify:` demanded `specs.py
+assertion, one step earlier.** Measured 2026-08-06: a task's `verify:` demanded `cq specs
 validate` exit 0 against a real target workspace carrying seven pre-existing warnings —
 `validate` exits 1 on any finding, error or warning alike, so that gate could not have passed on
 the day it was authored, whatever the task did. It was verified instead by reading the error
@@ -160,15 +193,15 @@ On failure the code is fixed and the check is run again. Two bounds:
 - **Stop when attempts stop converging**, and write the reason into the file:
 
   ```bash
-  specs.py task --spec <slug> --block <id> --reason "<why, one line>"
+  cq specs task --spec <slug> --block <id> --reason "<why, one line>"
   ```
 
   which produces `- [!] <id> <title> — blocked: <reason>` in `## Tasks`. Not a sixth try, not a
   different approach, not a weaker check.
 
-A blocked task is **distinguishable from an untried one**: `specs.py next` skips `[!]` and offers
+A blocked task is **distinguishable from an untried one**: `cq specs next` skips `[!]` and offers
 the following task, so one bad task never stalls a spec. A human resumes it by fixing the cause and
-returning it to `- [ ]` (`specs.py task --uncheck <id>`) — never merely to retry the same approach.
+returning it to `- [ ]` (`cq specs task --uncheck <id>`) — never merely to retry the same approach.
 
 **`--block` requires `--reason`**; the tool refuses without one.
 
@@ -189,7 +222,7 @@ they never open — because the reason is right there in the line they are alrea
 | | Per-task self-review | Branch review |
 | --- | --- | --- |
 | Scope | one task's diff | the whole branch, `<base>...HEAD` |
-| Owner | `/specs:execute`, inside the task | `/specs:conclude`, step 2 |
+| Owner | `/quenching:specs:execute`, inside the task | `/quenching:specs:conclude`, step 2 |
 | When | before every commit | once, before the merge |
 | Looks for | reuse · useless defense · obvious comment · dead code | coherence, layering, whether the parts add up |
 
@@ -218,11 +251,11 @@ isolation taken at the start buy nothing.
 
 The anchor written back onto the task line is the commit's **sha** —
 [plan-git-record.md](plan-git-record.md) §The task→commit link — recorded by
-`specs.py task --check <id> --commit <sha>` **after** the commit exists:
+`cq specs task --check <id> --commit <sha>` **after** the commit exists:
 
 ```bash
 git add <the task's files> <the spec file> && git commit -m "<subject>"
-specs.py task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
+cq specs task --spec <slug> --check <id> --commit "$(git rev-parse HEAD)"
 ```
 
 This is possible today because [the configurable spec backend](../architecture/spec-backend.md) guarantees no
@@ -240,7 +273,7 @@ contradicted. Adopting the commit's **subject** instead — known before the com
 tick land inside the same commit it describes:
 
 ```bash
-specs.py task --spec <slug> --check <id> --subject "<subject>"
+cq specs task --spec <slug> --check <id> --subject "<subject>"
 git add <the task's files> <the spec file> && git commit -m "<subject>"
 ```
 
@@ -278,7 +311,7 @@ no "just this once":
 `## Handoff` carries the state of play a fresh executor would need and **cannot derive**: a parallel
 session in the checkout, an unversioned hook, a design flaw found mid-build. Everything a resumed
 run *can* derive — which tasks are done, which commit carried each one — already lives in `git log`
-and in the `subjects` `specs.py status` returns, so the Handoff is not the resumption trail and
+and in the `subjects` `cq specs status` returns, so the Handoff is not the resumption trail and
 must not be rewritten as though it were.
 
 It is refreshed on exactly four events:
@@ -315,7 +348,7 @@ A per-task executor sub-agent is permitted when the task **declares `files:`** a
 `/.docs/`**, pinned to the session model — never `haiku`, which writes production code here.
 
 The orchestrator keeps, without exception: spec selection, the isolation offer, every
-confirmation, every `specs.py task --check` flip, every block marker, every `/.docs/standards/`
+confirmation, every `cq specs task --check` flip, every block marker, every `/.docs/standards/`
 write, the commit, and the decision to pause.
 
 ### This is not `context: fork`, and that rule is untouched
@@ -325,8 +358,8 @@ present the mid-flow confirmations every sweep depends on — the conversation c
 OK would be out of reach.
 
 Dispatching a sub-agent for a bounded, file-scoped unit of work does the opposite: the
-orchestrator **stays in the live conversation**, exactly as `/docs:glossary-backfill` and
-`/docs:import` already dispatch. One moves the decision-maker out of reach; the other
+orchestrator **stays in the live conversation**, exactly as `/quenching:knowledge:glossary-backfill` and
+`/quenching:knowledge:import` already dispatch. One moves the decision-maker out of reach; the other
 sends a worker out and keeps the decision-maker in place. They are different mechanisms about
 different things, and no future sweep may "fix" one into the other.
 
@@ -341,7 +374,7 @@ Two tasks run concurrently only when all three hold:
 Serial is the default and needs no marker. Without proven disjunction, parallel execution trades
 wall-clock for merge conflicts and loses on both.
 
-The disjunction is **checked mechanically, not judged in prose**: `specs.py parallel --spec <n>`
+The disjunction is **checked mechanically, not judged in prose**: `cq specs parallel --spec <n>`
 reports each group and exits **0** when every marked group is eligible, **1** when any overlaps or
 lacks `files:`. Two paths conflict when they are the same file or when one is a directory
 containing the other. A group is bounded to one `## N.` section, so a run never straddles two

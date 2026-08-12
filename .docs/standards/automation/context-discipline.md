@@ -2,9 +2,9 @@
 type: standard
 title: Context discipline — open less, and run for less time
 description: The two halves of a run's integral `tokens × turns remaining` and the only two ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention) and run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
-resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/skills.py, plugins/quenching/assets/bin/specs.py
+resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-05
+timestamp: 2026-08-10
 audience: both
 authority: background
 source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute
@@ -37,7 +37,7 @@ Three rules, in descending order of what they were measured to be worth:
 2. **A reference citation in a command body IS a `§`-address — never a bare path.** Surface-wide
    rule, proved on one command: measured on `/quenching:specs:execute`, six of its top-preamble
    citations named only a file, and five of its `§`-addresses named a section with no file to
-   resolve it in. A citation is resolvable, by a reader and by `skills.py` alike, only when four
+   resolve it in. A citation is resolvable, by a reader and by `cq components` alike, only when four
    halves hold together — the first three about how the address is written, the fourth about how
    the reader takes it:
    1. every `§`-address carries the file it belongs to, in the same link or glued to it;
@@ -64,9 +64,9 @@ Three rules, in descending order of what they were measured to be worth:
    repository ran once, agreed but unproven elsewhere, that graduates when a second adopting repo
    reproduces the shape.
 
-   `skills.py read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
-   `specs.py section <slug> "A,B"` for a spec's fourteen canonical headings. **Only the first
-   implements the ladder** — the fourteen canonical headings carry no comma and `specs.py` refuses
+   `cq components read <path> --sections "§A" --sections "§B"` answers it for any markdown, and
+   `cq specs section <slug> "A,B"` for a spec's fourteen canonical headings. **Only the first
+   implements the ladder** — the fourteen canonical headings carry no comma and `cq specs` refuses
    any name outside them, so the defect is unreachable there and the asymmetry is deliberate.
    Eight command bodies are converted to this shape today — `/quenching:specs:execute`,
    `/quenching:specs:develop`, and the six `specs/*` commands (`align`, `conclude`, `continue`,
@@ -90,7 +90,7 @@ the spec read by section rather than whole (35,099 → 18,994, −46%) and the s
 five declared rather than the four subject folders (126,720 → 53,037, 19 files → 5, −59%). The
 folder rule is the larger of the two and was the one nothing had attacked.
 
-**The fourth half of rule 2 came from a defect, not from a design.** `skills.py read --sections`
+**The fourth half of rule 2 came from a defect, not from a design.** `cq components read --sections`
 split every value on the comma before resolving anything, and its own `--help` documented an escape
 by repeating the flag that the code did not implement — so a body citing `§What crosses, what
 stays` got `sk-read-no-section`, which reads to an agent as *the section does not exist*, whose

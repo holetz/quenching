@@ -1,10 +1,10 @@
 # `assets/templates/` — the molds
 
-Frontmatter + body molds the commands stamp/apply. They live **outside** the `docs/` bundle
+Frontmatter + body molds the commands stamp/apply. They live **outside** the `/.docs/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
 filled — except the `harness/` and `automation/command|agent|hook` molds, which produce files
-that are not OKF concepts at all. `/docs:add` picks the mold by home → `type` (see
-`${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md`).
+that are not OKF concepts at all. `/quenching:knowledge:add` picks the mold by home → `type` (see
+`${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md`).
 
 A mold is **applied per insert, never copied wholesale**: its content reaches the target repo,
 the file itself does not.
@@ -31,19 +31,21 @@ the file itself does not.
 
 The **harness molds** (`harness/`) produce **exempt** files — `CLAUDE.md`/`AGENTS.md` carry **no
 frontmatter and no `type`** (harness pointers, not OKF concepts — okf-spec strict-7; the validator
-skips them). `/docs:harness` applies them when it refactors a repo's harness files into thin
+skips them). `/quenching:components:harness:align` applies them when it refactors a repo's harness files into thin
 pointers over the bundle.
 
-The **automation molds** (`automation/`) are the `/skill:*` family's — `/skill:new`,
-`/skill:agent:new`, `/skill:hook:new` mint from the three artifact molds, and `/skill:align`
-maintains the registry and the three `*-standard.md` rules in the target's bundle. There is
+The **automation molds** (`automation/`) are the `/quenching:components:*` family's —
+`/quenching:components:command:new`, `/quenching:components:agent:new`,
+`/quenching:components:hook:new` mint from the three artifact molds, and
+`/quenching:components:align` maintains the registry and the three `*-standard.md` rules in the
+target's bundle. There is
 ONE command mold, not a skill-plus-wrapper pair: Claude Code merged commands into skills, so a
 single `.claude/commands/<path>.md` carries both the description that routes to it and the body
 that runs. It lands under `.claude/` (outside the bundle — never validated), while the registry
 and taxonomy-standard molds are OKF concept docs the pair maintains in the bundle; the
 registry's `<!-- GENERATED:BEGIN/END -->` zone is derived from `.claude/commands/**/*.md` and
 only those two commands write inside its markers (taxonomy owner:
-`${CLAUDE_PLUGIN_ROOT}/assets/references/skill-new/taxonomy.md`).
+`${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md`).
 
 ## Stamp discipline
 

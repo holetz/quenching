@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "root": "<REPO>/plugins/quenching",
+  "pluginRoot": "<REPO>/plugins/quenching",
+  "shipped": "<VERSION>",
+  "tools": [
+    {
+      "tool": "okf-validate.py",
+      "align": "/docs:align",
+      "installedPath": null,
+      "installed": null,
+      "shipped": "<VERSION>",
+      "status": "absent",
+      "executes": "plugin"
+    },
+    {
+      "tool": "specs.py",
+      "align": "/specs:align",
+      "installedPath": null,
+      "installed": null,
+      "shipped": "<VERSION>",
+      "status": "absent",
+      "executes": "plugin"
+    },
+    {
+      "tool": "skills.py",
+      "align": "/skill:align",
+      "installedPath": null,
+      "installed": null,
+      "shipped": "<VERSION>",
+      "status": "absent",
+      "executes": "plugin"
+    }
+  ],
+  "findings": []
+}

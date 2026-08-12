@@ -17,7 +17,7 @@ saying the same thing, not by pointing at each other.
 
 ## Contents
 
-`skills.py read <this file>` returns the heading index; `--sections` addresses one.
+`cq components read <this file>` returns the heading index; `--sections` addresses one.
 
 ## The cycle-authorization contract
 
@@ -25,7 +25,7 @@ saying the same thing, not by pointing at each other.
 An align asks for ONE human confirmation, at run start, that authorizes the entire run — up to
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
-it: the `docs/` stages (`/quenching:docs:import-memory`, `/quenching:docs:harness`, `/quenching:docs:glossary-backfill`), the
+it: the `docs/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
 `specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), and the three front aligns when `/align`
 invokes them.
 
@@ -105,11 +105,11 @@ what the minimal gear exists to avoid.
 
 <!-- rules -->
 Let a pass be **empty** when every applicable stage reports "nothing to do." Let a front be
-**clean** when its own verifier passes: `okf-validate.py <docs> --json` exiting 0 **and**
+**clean** when its own verifier passes: `cq knowledge validate <docs> --json` exiting 0 **and**
 reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `docs/` (these are
-WARN — exit 0 alone does not prove them clear, read the findings); `specs.py doctor` +
-`specs.py validate` clean, and nothing else, for `specs/`; `skills.py lint` + `skills.py doctor` exiting 0
-**and** `skills.py registry reindex` reporting `changed: false` for `.claude/`.
+WARN — exit 0 alone does not prove them clear, read the findings); `cq specs doctor` +
+`cq specs validate` clean, and nothing else, for `specs/`; `cq components lint` + `cq components doctor` exiting 0
+**and** `cq components registry reindex` reporting `changed: false` for `.claude/`.
 
 - **Converged (stop, success):** a pass is **empty** *and* the front is **clean**. This is the
   fixpoint. Report and write the log entry.
@@ -142,15 +142,15 @@ that keeps producing follow-on work, worth reporting.
 
 <!-- rules -->
 A command that acts on **ONE item a human states** is never a loop stage, because a conducted pass
-has **no fresh human input**: `/quenching:docs:add`, `/quenching:docs:learn`, `/quenching:docs:define`,
-`/quenching:docs:import`, `/quenching:skill:new`, `/quenching:specs:create`, `/quenching:specs:develop`,
+has **no fresh human input**: `/quenching:knowledge:add`, `/quenching:knowledge:learn`, `/quenching:knowledge:define`,
+`/quenching:knowledge:import`, `/quenching:components:command:new`, `/quenching:specs:create`, `/quenching:specs:develop`,
 `/quenching:specs:execute`, `/quenching:specs:conclude`.
 
 `/quenching:specs:status` is not a stage either: it writes nothing, so it can
 never close a finding.
 
 They enter a run only **indirectly**, as the tools a sweep stage delegates to
-(`/quenching:docs:harness` MOVEs a durable fact via `/quenching:docs:add`). When the assessment finds a gap
+(`/quenching:components:harness:align` MOVEs a durable fact via `/quenching:knowledge:add`). When the assessment finds a gap
 only a per-item command could fill, the align **names the gap and the command that would close
 it** in its report — the user then invokes that command with the missing input, and the next run
 picks the work up. This is the plugin's **anti-fabrication boundary**: an align closes only what a
@@ -166,6 +166,6 @@ would be fabricating a decision, which is exactly what this boundary exists to p
 would authorize — the assessment an align performs internally, made visible on its own.
 
 The same split runs through the whole plugin: the whole-bundle glossary sweep
-(`/quenching:docs:glossary-backfill`) IS a stage, the single-term capture (`/quenching:docs:define`) is not;
+(`/quenching:knowledge:glossary-backfill`) IS a stage, the single-term capture (`/quenching:knowledge:define`) is not;
 the whole-front ranking sweep (`/quenching:specs:triage`) IS a stage, the single-spec capture
 (`/quenching:specs:create`) is not.
