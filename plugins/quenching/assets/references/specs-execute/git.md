@@ -420,10 +420,9 @@ gh pr create --base <base> --title "<title>" --body "<body>"
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch, and in a repo running the develop/main flow
-([docs/standards/git/branching.md](/docs/standards/git/branching.md)) that default deliberately
-stays the publication branch — see that standard's own reasoning for why. `<base>` is this spec's
-own resolved base, the same value the local route's merge targets.
+default branch, and in a repo running the develop/main flow (`git/branching.md`) that default
+deliberately stays the publication branch — see that standard's own reasoning for why. `<base>` is
+this spec's own resolved base, the same value the local route's merge targets.
 
 **The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
 in the same block, before the run reports done:
