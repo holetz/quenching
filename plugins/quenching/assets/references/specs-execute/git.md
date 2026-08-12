@@ -342,9 +342,9 @@ the main checkout, from the main checkout it names itself. When no checkout hold
 
 | Strategy | Command | What it buys | What it costs |
 | --- | --- | --- | --- |
-| **merge commit** *(default)* | `git merge --no-ff plan/<slug>` | every per-task commit stays on the base branch and every recorded subject resolves from it | one extra commit, and the base branch's history carries the spec's task-level detail |
-| **squash** | `git merge --squash plan/<slug>` then commit | one commit on the base branch; the spec reads as a single change | **the per-task commits live only on the branch** — deleting it leaves every recorded subject resolving to nothing |
-| **rebase** | `git rebase <base> plan/<slug>`, then fast-forward | linear history, per-task commits preserved | rewrites every commit it moves — but a subject is carried along by the rewrite, so the records survive it |
+| **merge commit** *(default)* | `git merge --no-ff plan/<slug>` | every per-section commit stays on the base branch and every recorded subject resolves from it | one extra commit, and the base branch's history carries the spec's section-level detail |
+| **squash** | `git merge --squash plan/<slug>` then commit | one commit on the base branch; the spec reads as a single change | **the per-section commits live only on the branch** — deleting it leaves every recorded subject resolving to nothing |
+| **rebase** | `git rebase <base> plan/<slug>`, then fast-forward | linear history, per-section commits preserved | rewrites every commit it moves — but a subject is carried along by the rewrite, so the records survive it |
 | **fast-forward** | `git merge --ff-only plan/<slug>` | nothing is rewritten and nothing is added | only possible when the base has not moved |
 
 Whatever is chosen is recorded as `merge: {strategy, subject}` and stated in `## Outcome`, because
@@ -372,7 +372,7 @@ none (`sp-bad-merge`).
 
 <!-- rules -->
 
-**The per-task commits survive only on the
+**The per-section commits survive only on the
 branch.** So when squash is chosen, `/quenching:specs:conclude` offers **not** to delete the branch, and says
 why. Keeping it costs a ref; deleting it silently turns every `subject:` field in the archived spec
 into a reference that resolves to nothing.

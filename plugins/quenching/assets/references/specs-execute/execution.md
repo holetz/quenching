@@ -492,30 +492,34 @@ short-circuiting every link after it, which is exactly the failure behaviour the
 documented and the chained form gets for free. Nothing about what is guaranteed moved; only the
 number of calls did.
 
-### Why one commit per task, and why the subject rather than a sha
+### Why one commit per task while a section is open, and why the subject rather than a sha
 
 <!-- rationale -->
 
 **There is no per-task bookkeeping commit any more.** It existed only because a sha cannot be known
 before the commit that carries it, so the tick had to follow the commit and could not join it. One
-task is now exactly one commit: code, docs the task named, and the ticked box.
+task is one commit while its section is still open: code, docs the task named, and the ticked box.
 
-One commit per task is what makes the branch worth having: `git revert` undoes exactly one task,
-`git log` reads as the spec's task list, and a review can walk it step by step. N tasks piled into
-one uncommitted blob gives none of that, and the isolation offer buys nothing.
+One commit per task, while the section runs, is what makes retrying and resuming mid-section worth
+having: a bad task can be blocked or undone without touching what already landed. §The section
+squash then collapses the section's own commits into one once it closes — the unit the branch is
+worth reading and reverting by is the section, and `git revert` undoes exactly one of those; the
+per-task granularity is what buys the safety net getting there, not the shape the branch ends in.
 
-The record cannot go stale: the rules above forbid amending an earlier task's commit and forbid
-force-push. Unlike a sha it also **survives a rebase**, so the one merge strategy that used to
-destroy every recorded link no longer does.
+The record cannot go stale: the rules above forbid amending an earlier *section's* commit and
+forbid force-push — a section may only ever rewrite its own, at its own close. Unlike a sha it also
+**survives a rebase**, so the one merge strategy that used to destroy every recorded link no longer
+does.
 
 ### Why squash is `conclude`'s caveat and not this loop's
 
 <!-- rationale -->
 
-**Squash is the one caveat, and `conclude` owns it.** A squashed merge leaves the per-task commits
-reachable only from the branch — which is why `/quenching:specs:conclude` records `merge: {strategy, subject}`
-and, on a squash, offers to keep the branch. Nothing in this loop needs to know; recording the
-subject honestly is the whole job here.
+**A squash-merge is the one caveat, and `conclude` owns it — a different squash from §The section
+squash above.** A squashed *merge* leaves the section's own commits reachable only from the branch —
+which is why `/quenching:specs:conclude` records `merge: {strategy, subject}` and, on a squash,
+offers to keep the branch. Nothing in this loop needs to know; recording the subject honestly is
+the whole job here.
 
 ### Why discoveries are captured indiscriminately
 
