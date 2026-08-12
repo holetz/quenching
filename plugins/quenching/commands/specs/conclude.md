@@ -304,8 +304,7 @@ being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. The repo's own
-[surface-verification.md](../../../../.docs/standards/quality/surface-verification.md)
+it. The repo's own `quality/surface-verification.md`
 §The five preconditions a check must satisfy is where that distinction is defined for the command
 surface.
 
