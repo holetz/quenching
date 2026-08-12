@@ -111,6 +111,11 @@ measured*, which is neither a pass nor a failure.
 measured hit rates. The harness is **not** a repo-wide post-change mandate, and it is **not** named
 in a spec's `## Validation` or a task's `verify:`.
 
+`assets/checks/conclude-order-check.sh` belongs to the same front, on the same rule: it proves an
+ordering property of the spec cycle — nothing is written to the base branch after the merge — so it
+is rerun when that ordering logic changes (`conclude.md`, `execute.md`, or the `cq specs` backend
+code), never by an individual spec that happens to reach a merge.
+
 That is a narrowing, and it was earned by evidence rather than by budget. Measured 2026-07-29 over
 the whole `/.specs/archive/` record: **every red run this harness has ever produced traced to a
 defect in the harness itself** — the cp1252 read, a hardcoded marketplace ref that made a live
@@ -118,6 +123,16 @@ command read as `Unknown command`, a turn cap that reported working triggers as 
 flaky enough to flip verdict on identical runs. **Not one traced to a surface regression.**
 Meanwhile the one real routing defect the repo has recorded — a `/quenching:components:hook:new` trigger that
 measured as a miss — was found by `/quenching:components:command:eval`, and check 3 gained a probe for it only afterwards.
+
+**That measurement is scoped to `functional-checks.sh` alone.** It does not extend to
+`citation-check.sh` or `conclude-order-check.sh` by proximity — no equivalent record exists for
+either, and the defect class that earned the rule (a cp1252 read, a hardcoded marketplace ref, a
+turn cap, a probe flaky across identical runs) has no counterpart in a tool with no LLM in its
+loop: both are deterministic and cheap to run (`citation-check.sh` ~0.26s, `conclude-order-check.sh`
+~1.0s, against this harness's full, non-deterministic `claude -p` sessions). That is reason to find
+the rule plausible there too, never reason to assert what nobody has measured —
+[citation-verification.md](citation-verification.md) records the opportunistic route chosen
+instead: no dedicated measurement campaign, a red run's cause recorded when one actually happens.
 
 A check that has only ever caught itself earns a narrow trigger. Two things follow:
 
