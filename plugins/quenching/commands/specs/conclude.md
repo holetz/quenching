@@ -168,9 +168,9 @@ no bundle.
 For `done` with a `branch` record, offer the strategies in
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
-delete the branch** — a squash collapses every per-task commit, so each task's recorded `subject:`
-resolves only while the branch survives. Say that plainly rather than deleting and discovering it
-later.
+delete the branch** — a squash collapses every per-section commit, so each task's recorded
+`subject:` resolves only while the branch survives. Say that plainly rather than deleting and
+discovering it later.
 
 **Then, separately, offer the route** — pull request, or local — per
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
