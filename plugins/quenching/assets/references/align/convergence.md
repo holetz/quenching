@@ -76,8 +76,8 @@ spec whose tasks are all checked may still be waiting on a deploy.
 The minimal gear differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
 run, always; under the orchestrator's minimal gear
-([orchestration-gears.md](/docs/standards/automation/orchestration-gears.md) §Deriving the gears
-plan, the `low` row) neither stops — the whole cycle runs in one session on a single authorization
+([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-orchestrate/gears.md) §Deriving the
+gears plan, the `low` row) neither stops — the whole cycle runs in one session on a single authorization
 and ends opening a pull request, so the human review the gates would have hosted moves to the PR
 instead: opened against the integration branch declared in `.claude/quenching.json`
 (`integrationBranch`), where the merge waits on review and on the checks before it lands. The
@@ -86,11 +86,10 @@ is what the gear re-evaluation exists to bound, as a run that outgrows the minim
 back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` offers pull request or local
-alongside the strategy ([plan-git-record.md](/docs/standards/workflows/plan-git-record.md) §The
-route is a second choice, and it moves when `merge:` is stamped), and the `merge` record's `pr`
-field names the pull request — the fact the base branch's history cannot reproduce: which PR the
-merge went through, and where the review and the checks still live once the branch is gone
-(§Two frontmatter records carry the underivable git facts).
+alongside the strategy, and the `merge` record's `pr` field names the pull request — the fact the
+base branch's history cannot reproduce: which PR the merge went through, and where the review and
+the checks still live once the branch is gone (§Two frontmatter records carry the underivable git
+facts).
 
 No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
 classes gating individually, item by item, in the session, exactly as when the stage runs
