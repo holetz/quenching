@@ -96,6 +96,7 @@ is already set is **reported and skipped**, not repeated:
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
+| PR opened, not merged | a `pr:` record present, `merge:` absent | never re-open a second PR — read `gh pr view <number> --json state` for the number `pr:` names; `MERGED` → stamp `merge:` now with the strategy step 4 would have chosen and continue from step 7; still `OPEN` → report the link and stop again, exactly the minimal-gear stopping point, unless the human now asks to merge it |
 | merge stamp | a `merge:` record in frontmatter | skip the stamp; the merge itself may still be pending |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | merge | `git branch --merged` lists the work branch | skip; never merge twice |
@@ -343,15 +344,27 @@ finding** — never repaired with another commit, because a commit on the base a
 exact thing this ordering exists to prevent. If something must be fixed, say so and let the human
 start a new change.
 
-**PR route.** Push, open the PR, stamp the merge record now that it exists, and merge it — **one
-consented block**, per
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
-Show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
+**PR route.** Push and open the PR, stamping `pr:` the moment it exists. Under the orchestrator's
+minimal-gear authorization this part asks nothing — irreversible cycle actions do not gate under
+that gear. Every other run asks first, in the **same consented block** as the merge below, per
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route:
+show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
 choosing the PR route in step 4 was not this consent:
 
 ```bash
 git push -u origin plan/<slug>
 gh pr create --base <base> --title "<title>" --body "<body>"
+cq specs record "<slug>" pr --set number=<the PR's number> --set url=<the PR's URL> --set date=<today>
+```
+
+**Running under `/quenching:specs:orchestrate`'s minimal-gear authorization → stop here.** Do not
+call `gh pr merge` and do not stamp `merge:` — report the PR link and end the run. The merge waits
+on human review, exactly as orchestrate.md §The PR route promises; a later `conclude` run, or a
+human merging by hand, finishes it — §Resuming's "PR opened, not merged" row is the resume path.
+
+**Every other run → merge now**, in the same consented block as the push and the PR above:
+
+```bash
 cq specs record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)" --set pr=<the PR's URL>
 gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<strategy>)"
@@ -410,7 +423,8 @@ For `abandoned`, do not merge and do not remove the worktree. Offer to keep the 
 delete it, and record the choice in the report.
 **Done when:** the gate ran green on the branch and the merge landed with its subject asserted, any
 worktree was removed or its refusal reported, or the run recorded why nothing was merged — a red
-gate among them.
+gate among them, or (PR route, minimal-gear authorization) the PR opened and `pr:` was stamped with
+the merge deliberately left for later.
 
 ### 7. Report
 
@@ -422,8 +436,8 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 Emit §The report mold. The single-spec header line carries the archived locator and the outcome; four
 body blocks:
 
-1. **At close** — fixed. Task progress, `reviewed` / `merge` / `branch` as they now stand, and — for
-   an abandonment — that nothing was adopted.
+1. **At close** — fixed. Task progress, `reviewed` / `pr` / `merge` / `branch` as they now stand,
+   and — for an abandonment — that nothing was adopted.
 2. **The review** — fixed. What it found and what was done about it, the docs written in step 3 and
    step 5, and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
    result, which means **a check that came back inconclusive is named as such, never counted as
