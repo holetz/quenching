@@ -34,10 +34,5 @@ English kebab-case; all prose the agent authors follows the repo's declared lang
 first — [knowledge/glossary.md](/.docs/knowledge/glossary.md), the A–Z lookup (one entry per
 term, linked to its full doc when one exists): `grep -i '<term>' /.docs/knowledge/glossary.md`.
 
-**Operating this bundle.** How knowledge gets in, which command to run, what the enforcement
-hook checks, and how to read a validator finding — [QUENCHING.md](QUENCHING.md), the operator
-manual installed beside this listing. This `index.md` says **what** is here; that file says
-**how** it is worked.
-
 The full contract (homes, types, migration doctrine, conformance) lives in the `quenching`
 skills' `references/`.

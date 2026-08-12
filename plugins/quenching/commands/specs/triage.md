@@ -1,5 +1,5 @@
 ---
-description: Rank the whole plans/ front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads every spec's frontmatter and derived stage directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes the priority record — level, criticality, complexity, date — and nothing else. Never removes a spec, never infers completion, never treats staleness as abandonment. Not for: closing a spec out or abandoning it → /specs:conclude; resolving a spec's discoveries → /specs:develop; being handed the single next action → /specs:continue; the conformance view of the workspace → /specs:status.
+description: Rank the whole plans/ front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads every spec's frontmatter and derived stage directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes the priority record — level, criticality, complexity, date — and nothing else. Never removes a spec, never infers completion, never treats staleness as abandonment. Not for: closing a spec out or abandoning it → /quenching:specs:conclude; resolving a spec's discoveries → /quenching:specs:develop; being handed the single next action → /quenching:specs:continue; the conformance view of the workspace → /quenching:specs:status.
 argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
@@ -22,9 +22,9 @@ ordering and not a judgment. Triage is what turns it into one.
 that anything is finished — those are `/quenching:specs:conclude` and `/quenching:specs:develop`'s discoveries bank.
 A sweep that could also delete is a sweep nobody can safely re-run.
 
-The layout, the derived stages, the front's on-write check and the `specs.py` surface live in
+The layout, the derived stages, the front's on-write check and the `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §Derived stages §The `specs.py` tool surface §The report mold, which owns the
+§The `specs/` layout §Derived stages §The `cq specs` tool surface §The report mold, which owns the
 shape of both the step 2 table and the step 6 report; how the tool is resolved and its path
 written in
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
@@ -33,7 +33,7 @@ restated.
 
 ## Resolving the tool
 
-Resolve `specs.py` and `okf-validate.py` per
+Resolve `cq` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
@@ -80,7 +80,7 @@ command writes it.
   A spec that will not be built is `/quenching:specs:conclude --outcome abandoned`, on the human's word, and
   staleness is never evidence of it — a spec untouched for a year may be waiting on a vendor.
 - **Nothing but the record is written.** Ranking touches each spec's `priority` frontmatter and no
-  other file — there is no listing to refresh, because `specs.py list` derives one on demand.
+  other file — there is no listing to refresh, because `cq specs list` derives one on demand.
 - **No sub-agents.** A front is small by nature and a spec's frontmatter is a few lines; the
   orchestrator reads and writes everything itself.
 
@@ -90,8 +90,8 @@ command writes it.
 Find `/.specs/plans/` at the target repo root. Missing → stop and offer `/quenching:specs:create`, which
 installs the seed. Then:
 ```bash
-specs.py list --json                    # every spec: folder, derived stage, and its records
-specs.py section <slug> Problem         # per spec being ranked, for the reason column
+cq specs list --json                    # every spec: folder, derived stage, and its records
+cq specs section <slug> Problem         # per spec being ranked, for the reason column
 ```
 `list --json` carries the seven `records`, so the current `priority` of every spec arrives in that
 one call — **never open a spec file to read it.** Read `/.docs/vision/` when present, to ground the
@@ -129,7 +129,7 @@ rather than open-ended.
 ### 4. Apply exactly what was approved
 One call per approved spec, and **never an edit to the file**:
 ```bash
-specs.py record <slug> priority --set level=<n> --set criticality=<word> \
+cq specs record <slug> priority --set level=<n> --set criticality=<word> \
   [--set complexity=<hours>] --set date=<today>
 ```
 The tool merges: a field not named survives, and `slug`, `title`, `date`, `verification` and the
@@ -141,7 +141,7 @@ backend is `files` — against a backend whose specs are issues there is no file
 
 ### 5. Check
 ```bash
-specs.py validate --json
+cq specs validate --json
 ```
 That is the whole check, and it must exit 0. Nothing else was written: the ranking lives in each
 spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `/.docs/`
@@ -151,7 +151,7 @@ bundle — the log this used to append to is retired.
 ### 6. Report
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -177,11 +177,11 @@ what this just wrote.
   sweep cannot honestly place.
 - Never write a field outside the `priority` record. This command ranks; it does not develop,
   execute, or conclude.
-- Never edit a spec's frontmatter directly. `specs.py record` is the writer, and it is what keeps
+- Never edit a spec's frontmatter directly. `cq specs record` is the writer, and it is what keeps
   the merge honest and the write backend-agnostic.
 - Never remove a spec, move a spec, tick a checkbox, or resolve a `## Discoveries` line.
 - Never infer completion or abandonment, and never treat staleness as evidence of either.
-- Never create or refresh a `plans/index.md`. The artifact is retired; `specs.py list` derives the
+- Never create or refresh a `plans/index.md`. The artifact is retired; `cq specs list` derives the
   same listing from disk on demand.
-- Never fan out sub-agents, and never re-implement a check in prose — run `specs.py validate` and
+- Never fan out sub-agents, and never re-implement a check in prose — run `cq specs validate` and
   report what it says.

@@ -5,7 +5,7 @@ How the data is modeled — grain, keys, joins, catalog/schema choice, historiza
 
 **Boundary:** the *shape* of the data (grain/key/joins); the *names* live in
 [../naming/](../naming/index.md); the physical catalog of tables lives in
-[catalog/](/docs/catalog/index.md). One standard per file (files, not sub-folders); each
+[catalog/](/.docs/catalog/index.md). One standard per file (files, not sub-folders); each
 carries `type: standard` + a derived `resource:`; add each to [../index.md](../index.md).
 
 ## Candidate sub-standards

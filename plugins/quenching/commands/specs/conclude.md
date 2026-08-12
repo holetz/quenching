@@ -1,5 +1,5 @@
 ---
-description: Close ONE spec out — review the whole branch, write the /.docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /specs:execute; sharpening or interrogating one → /specs:develop; creating one → /specs:create; taking a branch or worktree → /specs:execute; ranking the whole front → /specs:triage.
+description: Close ONE spec out — review the whole branch, write the /.docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /quenching:specs:execute; sharpening or interrogating one → /quenching:specs:develop; creating one → /quenching:specs:create; taking a branch or worktree → /quenching:specs:execute; ranking the whole front → /quenching:specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 model: opus
@@ -36,15 +36,15 @@ The distillation doctrine — what crosses into `/.docs/`, what stays, and how i
 rule for a target's `/.docs/standards/git/**` live in
 [specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §Merge strategies §The squash caveat §The read-if-present rule. The layout, the gates and the
-`specs.py` surface live in
+`cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-§The `specs/` layout §The gates and the stage-scoped explicit-none rule §The `specs.py` tool
+§The `specs/` layout §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
 surface §The report mold, which owns the shape step 7 prints in.
 All three are cited, never restated.
 
 ## Resolving the tool
 
-Resolve `specs.py` per
+Resolve `cq specs` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`,
 never on prose.
@@ -112,15 +112,15 @@ is a **finding to report**, never a value to overwrite.
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
-Take the slug from the input, or run `specs.py list --json` and ask. Establish the outcome —
+Take the slug from the input, or run `cq specs list --json` and ask. Establish the outcome —
 **ask if it was not stated**, via **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will
 not be built).
 ```bash
-specs.py status --spec "<slug>" --json
+cq specs status --spec "<slug>" --json
 ```
 Read task progress, the `## Outcome` state, and the records — `branch`, `reviewed`, `merge`,
 `outcome` — from that payload. Then, for the `## Discoveries` lines themselves, the one body this
-step needs: `specs.py section "<slug>" Discoveries --json`. Then read git: the
+step needs: `cq specs section "<slug>" Discoveries --json`. Then read git: the
 current branch, whether the work branch exists, and whether it is already merged. Announce the
 outcome and, per §Resuming, which stages this run will actually perform.
 
@@ -139,7 +139,7 @@ extracting once the third caller appeared, a `## Impact` path nothing ever wrote
 diff contradicts.
 
 Present the findings. Fixes go in as ordinary commits on the branch, before the merge. Then stamp
-the record — `specs.py record "<slug>" reviewed --set date=<today>`, never by editing the
+the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
 frontmatter.
 
 No `branch` record (the work was done in place), or no git → say so and skip to step 4; there is no
@@ -155,7 +155,7 @@ worth a doc, and whatever the branch review just surfaced.
 Decide what crosses with the table in
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
 §What crosses, what stays; write each through the insert procedure in
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
 `authority` honestly. Present them as ONE plan and take one confirmation.
 
@@ -185,8 +185,8 @@ route here is not the consent to push or open one; that lives in its own block i
 
 `## Outcome` is the archive gate — the spec cannot move without it. Draft it, confirm it, write it:
 ```bash
-specs.py section "<slug>" Outcome --write     # body on stdin
-specs.py promote "<slug>" --to archive --outcome done|abandoned [--force]
+cq specs section "<slug>" Outcome --write     # body on stdin
+cq specs promote "<slug>" --to archive --outcome done|abandoned [--force]
 ```
 For `done`: what shipped, what was left out, what the next reader needs — **including the merge
 strategy and, when the PR route was taken, the PR itself**, because a squash changes what a future
@@ -215,7 +215,7 @@ merge. Three things happen here, in this order.
   distil nothing, and that is the correct result.
 
 One plan, one OK. Every write goes through
-[docs-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/docs-add/homes.md)
+[knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
 silently. Commit what it writes **on the work branch**.
 
@@ -238,7 +238,7 @@ with `pr` still unknown would burn the one write this record gets. **Local route
 still on the branch, naming the subject the merge commit is about to carry:
 
 ```bash
-specs.py record "<slug>" merge --set strategy=<chosen in step 4> \
+cq specs record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)"
 ```
 
@@ -250,7 +250,7 @@ write-once: a spec already carrying one refuses (exit 2) with the value it holds
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
 none — see
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
-§When there is no merge commit to name. `specs.py validate` reports a record that gets this
+§When there is no merge commit to name. `cq specs validate` reports a record that gets this
 backwards either way (`sp-bad-merge`).
 
 The archived spec now lives in `archive/`, so stamping it is one of the two edits this command
@@ -352,7 +352,7 @@ choosing the PR route in step 4 was not this consent:
 ```bash
 git push -u origin plan/<slug>
 gh pr create --base <base> --title "<title>" --body "<body>"
-specs.py record "<slug>" merge --set strategy=<chosen in step 4> \
+cq specs record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)" --set pr=<the PR's URL>
 gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<strategy>)"
 ```
@@ -366,7 +366,7 @@ branch, never against the publication one, without any GitHub repository setting
 change.
 
 `fast-forward` never reaches this block — step 4 already ruled the PR route out under it, so
-`gh pr merge`'s missing fast-forward mode is never a live gap. `specs.py record` refuses `pr:` set
+`gh pr merge`'s missing fast-forward mode is never a live gap. `cq specs record` refuses `pr:` set
 under `fast-forward` regardless (`sp-merge-pr-no-route`), so a slip here is caught rather than
 silently written.
 
@@ -414,7 +414,7 @@ gate among them.
 ### 7. Report
 
 ```bash
-skills.py read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
   --sections "§The report mold" --rules-only
 ```
 
@@ -461,7 +461,7 @@ block are all reported.
 - Never delete a branch after a **squash** without saying what it costs: each task's recorded
   `subject:` stops resolving.
 - Never overwrite a `writeOnce` record (`merge`, `outcome`) to make reality fit — report the
-  disagreement instead. Every record here is stamped with `specs.py record`, which refuses on its
+  disagreement instead. Every record here is stamped with `cq specs record`, which refuses on its
   own; editing the frontmatter to get past that refusal is the thing the refusal exists to stop.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
 - Never re-write a rule a task already wrote into `/.docs/standards/` during execution — concluding

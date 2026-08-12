@@ -4,22 +4,22 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-08-02
+timestamp: 2026-08-10
 audience: both
 authority: current
-source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /skill:align (2026-08-02)
+source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02)
 maintainer: quenching
 ---
 
 # Command authoring and alignment
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
-from the `add-quenching-skill-pair` change. `/skill:new` mints or edits one command; `/skill:align`
+from the `add-quenching-skill-pair` change. `/quenching:components:command:new` mints or edits one command; `/quenching:components:align`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
 writing-doctrine detail lives once in
-`plugins/quenching/assets/references/skill-new/` and is cited, never restated.
+`plugins/quenching/assets/references/components-command-new/` and is cited, never restated.
 
 **One file per entry point.** Claude Code merged custom commands into skills, so a command file
 carries both the description that routes to it and the body that runs. Where this standard once
@@ -48,7 +48,7 @@ the *verb* differs — a command that waits for a human-stated edit and one that
 questions are opposite directions of initiative and stay apart; two scripts for the same
 interrogation do not.
 
-## Authoring (`/skill:new`)
+## Authoring (`/quenching:components:command:new`)
 
 - **ONE file** per mint — a `commands/<path>.md` carrying frontmatter and body. Nothing else goes
   under `commands/`.
@@ -62,7 +62,7 @@ interrogation do not.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 
-## Alignment (`/skill:align`)
+## Alignment (`/quenching:components:align`)
 
 - **Read-only inventory** of the existing command surface before any plan — plus a `Glob` for any
   surviving `skills/<name>/SKILL.md`, which the verifier cannot see because it reads `commands/**`
@@ -77,7 +77,7 @@ interrogation do not.
   scaffolding change — existing bodies are preserved. An unclassifiable command is kept and
   reported, never forced.
 - **One surface-wide description review, on its own confirmation.** A body is reported with the
-  `/skill:new` that fixes it; a **description** is rewritten here, because its central question —
+  `/quenching:components:command:new` that fixes it; a **description** is rewritten here, because its central question —
   does anything else answer to the same request? — is unanswerable one command at a time, and this
   is the only pass holding the whole surface. Prose about *how* a command works is cut, a missing
   concept or trigger is added, an unearned `Not for:` is waived with the competitor set named — and
@@ -145,9 +145,9 @@ Two consequences that are not obvious from the test itself:
 
 - **"A human might type this" is not a reason to pick typed-only.** Every command can be typed. The
   question is whether anything *else* reaches it, and for a conductor stage the answer is yes even
-  though a human can also type it — which is exactly how `/docs:harness`, `/docs:import-memory` and
-  `/docs:glossary-backfill` would be misclassified by intuition.
-- **The name-reachable half is not a judgment call.** `skills.py lint` derives it from the command
+  though a human can also type it — which is exactly how `/quenching:components:harness:align`, `/quenching:knowledge:import-memory` and
+  `/quenching:knowledge:glossary-backfill` would be misclassified by intuition.
+- **The name-reachable half is not a judgment call.** `cq components lint` derives it from the command
   bodies and reports `sk-inert-stage` at error for a typed-only command another body reaches by
   name. Classify against the instrument, not against recollection of who calls what.
 
@@ -170,14 +170,14 @@ buy. An inline pin invalidates the session's prompt cache (a pin inside a fork o
 cache-safe); `paths` binds a domain-bound command's autonomous firing to its folder. Subagents
 are governed by [agents.md](agents.md), hooks by [hooks.md](hooks.md); the pricing doctrine
 lives once in the plugin
-(`plugins/quenching/assets/references/skill-new/capabilities.md`) and is cited, never
+(`plugins/quenching/assets/references/components-command-new/capabilities.md`) and is cited, never
 restated.
 
 ### `allowed-tools` is always scoped
 
 Grant the narrowest set that lets the workflow finish. A tool that takes a scope gets one:
 `Bash(python3:*)`, `Bash(py:*)`, `Bash(git status:*)` — never a bare `Bash`, which grants the whole
-shell for the turn. `skills.py lint` reports a bare grant as `sk-unscoped-bash`.
+shell for the turn. `cq components lint` reports a bare grant as `sk-unscoped-bash`.
 
 One exception, and it must be **stated in the body**: a skill that runs the *target repo's own*
 toolchain — its build, its tests, its linters, its migrations — cannot enumerate those commands in
@@ -186,7 +186,7 @@ provided its body says so and says why. `/specs:apply` is the standing example. 
 finding is still reported; what the stated reason buys is a reader who can tell a deliberate grant
 from an unexamined one.
 
-**The grant is a declaration `skills.py lint` checks; whether it also restricts is unmeasured.**
+**The grant is a declaration `cq components lint` checks; whether it also restricts is unmeasured.**
 What scoping reliably buys is that lint: a bare grant is reported, and a reader can see at a glance
 which tools a command expects to reach. It has never been observed to stop a command from using a
 tool it did not declare — [../quality/surface-verification.md](../quality/surface-verification.md)
@@ -196,15 +196,14 @@ guarantee in its own numbered steps and its doctrine, never in its `allowed-tool
 
 ## The verifier
 
-`skills.py` is this front's verifier, the peer of `okf-validate.py` for `/.docs/` and `specs.py` for
+`cq components` is this front's verifier, the peer of `cq knowledge` for `/.docs/` and `cq specs` for
 `/.specs/`. Same contract: `--json` on every subcommand, exit **0** ok · **1** findings · **2**
 refusal, errors setting the exit code and warnings never doing so.
 
 | Subcommand | Decides |
 | --- | --- |
 | `lint [path]` | one command against this standard — the description caps, trigger position, the `Not for:` boundary, body length, a `**Done when:**` per numbered step, unscoped `Bash`, invocation coherence, and the profile's decidable slice (`sk-fork-gate`, `sk-profile-value`). On a surface carrying `.claude-plugin/plugin.json` it also grades **citation form** (`sk-bare-citation`), and a surface root brings `assets/references/**` into scope alongside `commands/**` |
-| `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated |
-| `selftest` | that a file parked under `commands/` which is not an entry point fires `sk-no-description` — the layout rule's evidence |
+| `doctor` | the surface invariant — a non-empty `description` on every command, no two resolving to the same `/` path, kebab-case segments — plus the **report-only** wider surface: `agents/*.md` and the hooks wired in `settings*.json` (`sk-agent-no-description`, `sk-hook-unmatched`, `sk-hook-llm-frequent`, `sk-hook-unparseable`), each routed to its mint, never migrated. A file parked under `commands/` which is not an entry point is exactly this shape — `sk-no-description` — the layout rule's evidence |
 | `registry reindex` | regenerates the registry's GENERATED zone; it **owns** that format |
 
 **The caps, inherited from the README's cost model.** A `description` is bounded by **1,536
@@ -225,6 +224,6 @@ behaviour.
 
 ## Convergence condition
 
-The surface is aligned when `skills.py doctor` and `skills.py lint` exit 0 — or every surviving
-finding is named in the report by its `sk-*` code — and `skills.py registry reindex` reports
+The surface is aligned when `cq components doctor` and `cq components lint` exit 0 — or every surviving
+finding is named in the report by its `sk-*` code — and `cq components registry reindex` reports
 `changed: false`.

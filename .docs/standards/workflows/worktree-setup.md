@@ -2,9 +2,9 @@
 type: standard
 title: Worktree setup contract
 description: The `worktreeSetup` hook — what it is for, where it is declared now that the plugin's config moved to `.claude/quenching.json`, what its absence means, who runs the declared command and with which cwd, why the consent is the isolation offer rather than a prompt of its own, and the record of why the specs front took a config file at all
-resource: plugins/quenching/assets/bin/specs.py, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/git.md
+resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/assets/references/specs-execute/git.md
 tags: [workflows, specs, worktree, configuration, consent]
-timestamp: 2026-08-03
+timestamp: 2026-08-11
 audience: both
 authority: current
 source: prefer-worktree-isolation plan (task 4.2), relocated by configurable-spec-backend plan (task 1.5)
@@ -39,7 +39,7 @@ only what the key *means*.
 | the declared command does not resolve | `null` in effect — reported as not run | no |
 | the key misspelt (`worktree_setup`) | `null` | **`sp-config-unknown-key`** (warn) |
 
-Most repositories declare nothing, so declaring nothing must cost nothing — `specs.py config` exits
+Most repositories declare nothing, so declaring nothing must cost nothing — `cq specs config` exits
 0 with `worktreeSetup: null` and no output worth reading.
 
 **The misspelling is the failure mode the finding exists for**: the file is valid JSON, the key is
@@ -49,17 +49,17 @@ other command still works. Neither it nor a truncated JSON file is ever raised a
 
 ## Who runs it, and where
 
-`/specs:execute`'s inline isolation offer runs it — **once**, immediately after `git worktree add`,
+`/quenching:specs:execute`'s inline isolation offer runs it — **once**, immediately after `git worktree add`,
 with **cwd inside the newly created worktree**. The cwd is the entire point: the tree that lacks
 the dependencies is the tree that must install them.
 
-`specs.py` reads the value and never executes it. That split is not ceremony — whether the command
-resolves can only be judged relative to the new worktree, whose path `specs.py` is never told. The
+`cq specs` reads the value and never executes it. That split is not ceremony — whether the command
+resolves can only be judged relative to the new worktree, whose path `cq specs` is never told. The
 check belongs where the answer exists.
 
 **A failing setup never undoes the worktree.** The worktree exists either way; whether it is usable
 is a fact to report, not a reason to tear down a tree that may already hold the human's chosen
-isolation. `/specs:execute` reports the output and the exit code, and says plainly which of the two
+isolation. `/quenching:specs:execute` reports the output and the exit code, and says plainly which of the two
 happened. A command whose first token does not resolve is reported as not run, for that reason,
 rather than executed and blamed on the shell.
 
@@ -72,10 +72,10 @@ not a build. `worktreeSetup` runs for the *isolation* worktree a human works in,
 
 ## The consent is the isolation offer, not a prompt of its own
 
-This hook executes **the target repository's code**, which no `/specs:*` command did before it. The
+This hook executes **the target repository's code**, which no `/quenching:specs:*` command did before it. The
 bound is not a new confirmation:
 
-- the command is displayed **verbatim** in `/specs:execute`'s isolation-offer block — the same
+- the command is displayed **verbatim** in `/quenching:specs:execute`'s isolation-offer block — the same
   block that already shows the spec, the base, the branch name and the worktree path;
 - choosing **Worktree** in that offer **is** the OK for the command shown;
 - there is no second prompt, and no remembered "this repository is authorised" state.
@@ -88,14 +88,14 @@ having been displayed first.**
 ## Why a config file, in a front that had none
 
 This section is the record of an earlier reversal, kept because the argument still decides things.
-The specs front deliberately had no configuration: `specs.py` loads its schema and templates from
+The specs front deliberately had no configuration: `cq specs` loads its schema and templates from
 `assets/specs/` when adjacent and from embedded constants otherwise, never from the target. Taking
 a config file at all reversed that.
 
 The alternatives were real. `/.specs/worktree-setup.sh`, whose mere existence would be the
 declaration, is deterministic by a single `stat` and has no format to get wrong — but it can hold
 exactly one parameter forever. A `/.docs/standards/` doc with the path in frontmatter would follow
-the read-if-present contract already used for a target's git conventions — but it forces `specs.py`
+the read-if-present contract already used for a target's git conventions — but it forces `cq specs`
 to parse markdown frontmatter to find an executable, and mixes the home of *contracts* with an
 operational pointer.
 

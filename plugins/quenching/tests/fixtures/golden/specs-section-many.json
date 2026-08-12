@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "slug": "alpha-widget",
+  "sections": [
+    {
+      "heading": "Problem",
+      "state": "filled",
+      "body": "\nThe loader and the renderer each keep their own copy of the widget list, so a widget added to\none is invisible to the other.\n"
+    },
+    {
+      "heading": "Risks",
+      "state": "filled",
+      "body": "\n- ACCEPTED — a third reader could appear and skip the registry; nothing enforces it yet.\n"
+    }
+  ],
+  "absent": []
+}

@@ -5,7 +5,7 @@ configuration (the Diátaxis **reference** quadrant). Each page carries `type: d
 
 **Boundary:** this is reference for **our** product, aimed at its users. Facts about an
 **external** asset WE CONSUME (a named tool / library / regulation) belong to the root
-[reference/](/docs/reference/index.md) home, not here — the two are different homes at
+[reference/](/.docs/reference/index.md) home, not here — the two are different homes at
 different paths.
 
 ## How to organize
