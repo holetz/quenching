@@ -245,6 +245,14 @@ sentence, and **link out** rather than explaining in full here.
   for, and a tool that cannot prove it implements the rule does not get the rule. Severity is
   **warn**, because a deliberate comment and lost prose are byte-identical — the tool states a
   suspicion it cannot resolve. Delivered by an **anomaly sidecar**.
+- [**Payload**](../standards/architecture/plugin-layout.md) — everything the plugin carries for use
+  **inside a target repo**, as opposed to a fact about this repo. Two disjoint halves: the
+  *installed* payload an align copies whole or per insert (`assets/docs/` `assets/specs/`
+  `assets/claude/` `assets/templates/`), and the *read* payload a command loads at runtime by
+  `${CLAUDE_PLUGIN_ROOT}` and never installs (`assets/references/`). Both are payload because
+  neither is graded against this repo — which is what decides reference over standard
+  (§A contract a command reads at runtime is a reference, not a standard). Not to be confused with
+  the **JSON payload** a `cq` verb emits, the unrelated sense used of tool output.
 - [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
