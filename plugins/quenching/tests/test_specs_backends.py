@@ -34,7 +34,7 @@ from quenching.specs.backends.memory import MemoryBackend
 from quenching.specs.commands.next import _candidate
 from quenching.specs.commands.validate import merge_record_finding, validate_spec
 from quenching.specs.config import (BACKENDS, DEFAULT_SPECS_BRANCH, UNPROVED_BACKENDS,
-                                    _UNPROVED_ANNOUNCED, announce_unproved)
+                                    _UNPROVED_ANNOUNCED, announce_unproved, is_root_too_high)
 from quenching.specs.parse import FIELD_KEYS, derive_labels
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
@@ -780,6 +780,33 @@ class FilesRoot(unittest.TestCase):
     def test_a_namespaced_branch_does_not_deepen_the_worktree_path(self):
         want = os.path.join("/repo", SPECS_WORKTREE_DIR, "quenching-specs")
         self.assertEqual(specs_worktree_path("/repo", "quenching/specs"), want)
+
+
+class RootTooHigh(unittest.TestCase):
+    """`is_root_too_high` — the structural test behind `sp-root-too-high`. Pure path
+    arithmetic, so it runs on an installed copy with no repository staged."""
+
+    def test_a_container_with_a_phased_specs_child_is_too_high(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, ".specs", "plans"))
+            self.assertTrue(is_root_too_high(tmp))
+
+    def test_a_root_that_is_already_the_workspace_is_not_too_high(self):
+        # Even with a foreign `.specs/` nested deeper somewhere inside it — `root` already
+        # qualifying as the workspace short-circuits before that nested directory is looked at.
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "plans"))
+            os.makedirs(os.path.join(tmp, "somewhere", ".specs", "plans"))
+            self.assertFalse(is_root_too_high(tmp))
+
+    def test_a_fresh_empty_directory_is_not_too_high(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertFalse(is_root_too_high(tmp))
+
+    def test_an_unrelated_path_with_no_specs_at_all_is_not_too_high(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "src"))
+            self.assertFalse(is_root_too_high(tmp))
 
 
 # --------------------------------------------------------------------------- #
