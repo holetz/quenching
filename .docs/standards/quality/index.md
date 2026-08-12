@@ -15,6 +15,11 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [bundle-verification.md](bundle-verification.md) — what the `knowledge` front machine-checks versus
   what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check,
   where an accepted gap is recorded, and the `resource` glob-set format.
+* [citation-verification.md](citation-verification.md) — how `citation-check.sh` proves a rename's
+  two halves both landed — the old name died and the new name was born, blind and with no
+  allowlist — the three scope rules read from the script's own header, that it runs manually and
+  is documented rather than gated automatically, and why the "every red is a harness defect"
+  precedent stays scoped to `functional-checks.sh` alone.
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
   it as a content gap: the sidecar that adds the signal without changing a return type, why the
   finding is a warn, and why a lossy transform never ships without the diagnostic for it.
@@ -43,7 +48,7 @@ the checks that hold it honest. The *modeling* that defines data lives in
   edit that retires both together.
 * [surface-verification.md](surface-verification.md) — how a change to the command surface is
   proven: a fresh process because the registry is built at session start, assertions on captured
-  `tool_use` rather than prose, and the three preconditions a functional check must satisfy.
+  `tool_use` rather than prose, and the five preconditions a functional check must satisfy.
 
 ## Candidate sub-standards
 

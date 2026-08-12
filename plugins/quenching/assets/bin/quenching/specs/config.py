@@ -11,7 +11,7 @@ import sys
 
 from quenching.common.git import _git
 from quenching.common.io import read_text
-from quenching.specs.parse.spec import PHASES
+from quenching.specs.parse.spec import PHASE_DIRS, PHASES
 
 
 def find_specs_root(root_arg: str | None) -> str:
@@ -33,6 +33,35 @@ def find_specs_root(root_arg: str | None) -> str:
             break
         d = parent
     return os.path.join(cur, ".specs")   # default (created by `new`)
+
+
+def is_root_too_high(root: str) -> bool:
+    """True when `root` is the CONTAINER sitting one level above a phased `.specs/` workspace,
+    rather than the workspace itself — the mis-levelled `--root`/`SPECS_ROOT` that today reads
+    as merely empty. `root` must hold none of `PHASE_DIRS` itself (that is the correctly
+    levelled case `_holds_phase_folder` already answers, `specs/worktree.py:190-191`) AND
+    `root/.specs` must hold at least one — the same phase-folder idea reused rather than
+    reimplemented a third time.
+
+    Only ever true over an EXPLICIT `--root`/`SPECS_ROOT`. The default nearest-upward search in
+    `find_specs_root` above stops the moment it finds a directory literally named `.specs`, so
+    the root it returns already IS that directory — it can never be the container this predicate
+    looks for, by construction, with no extra branch needed to keep the default search exempt."""
+    if any(os.path.isdir(os.path.join(root, p)) for p in PHASE_DIRS):
+        return False
+    nested = os.path.join(root, ".specs")
+    return any(os.path.isdir(os.path.join(nested, p)) for p in PHASE_DIRS)
+
+
+ROOT_TOO_HIGH_REMEDY = "point --root at the .specs/ directory itself"
+
+
+def root_too_high_message(root: str) -> str:
+    """The one message text for `sp-root-too-high`, written here and cited by both call sites
+    (`open_backend`'s refusal, `doctor`'s finding) rather than duplicated at each."""
+    return (f"'{root}' has no phase folder of its own, but "
+            f"'{os.path.join(root, '.specs')}' does — this --root/SPECS_ROOT points at the "
+            f"workspace's container, not the workspace itself")
 
 
 CONFIG_FILE = os.path.join(".claude", "quenching.json")
