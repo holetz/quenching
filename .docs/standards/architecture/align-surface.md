@@ -7,7 +7,7 @@ tags: [architecture, aligns, commands, probe, convergence]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4)
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
 maintainer: quenching
 ---
 
@@ -53,7 +53,7 @@ apart by what they conduct:
 | The conductor | What it conducts | The contract |
 | --- | --- | --- |
 | `/align` | the three fronts, in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
-| `/quenching:specs:orchestrate` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan ([orchestration-gears.md](../automation/orchestration-gears.md)) |
+| `/quenching:specs:orchestrate` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan (`specs-orchestrate/gears.md`, retired with `orchestration-gears.md` — see below) |
 
 The spec orchestrator is a conductor, not an align: it conducts no front, so it earns no row in
 the 1×4 column. It conducts the lifecycle of one spec, invoking each stage as the command that
@@ -61,6 +61,11 @@ owns it — the same conduct-never-reimplement rule that binds `/align` — and 
 the `complexity` the spec's `priority` record carries, per the gears contract. Both open on one
 human OK that authorizes the whole run, nest one level, and surface code-coupled confirmations
 individually; the clause that once limited the contract to `/align` is gone.
+
+The gears contract itself lives in the plugin's own `assets/references/specs-orchestrate/gears.md`,
+never in this bundle — procedure a command needs while running inside a target is payload, not a
+fact about the target, so it is cited by `${CLAUDE_PLUGIN_ROOT}` the same way from every repo —
+retired with `orchestration-gears.md` (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11).
 
 ## Probe before the inventory
 
