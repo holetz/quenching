@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the /.docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /quenching:specs:develop; a version bump or other release obligation → /quenching:specs:conclude; creating one → /quenching:specs:create; reviewing the branch, merging and archiving → /quenching:specs:conclude; being told which spec to build next → /quenching:specs:continue.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /quenching:specs:develop; a version bump or other release obligation → /quenching:specs:conclude; creating one → /quenching:specs:create; reviewing the branch, merging and archiving → /quenching:specs:conclude; being told which spec to build next → /quenching:specs:continue.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -354,9 +354,32 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
      prompt: none declared
    ```
 
-h. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** The event
-   is exact and needs no threshold: the last task of a `## N.` section just committed, and another
-   section is still ahead. Say it in one line and continue:
+h. **On a section boundary, squash the section into one commit before anything else.** The event
+   is exact and needs no threshold: the last task of a `## N.` section just committed, and none of
+   the section's tasks is `[!]`. Collapse the section's own per-task commits into one, touching
+   nothing from any earlier section:
+
+   ```bash
+   git reset --soft <the commit immediately BEFORE this section's first task> \
+     && git commit -m "plan/<slug>: <N> <section title>"
+   ```
+
+   The reset target is the commit **before** the section's first task — never that task's own
+   commit. `git reset --soft <sha>` moves HEAD to `<sha>` while keeping the index exactly as it
+   stands; resetting to the first task's own commit would leave that task's changes already
+   "consumed" by the reset and out of the new commit. On a plan's first section, the target is
+   whatever commit stood on the branch before this run's first task.
+
+   **A `[!]` anywhere in the section skips this step whole.** The section's per-task commits stay
+   exactly as they are — one per task, exactly as today — until the section closes for real.
+
+   **A squash that fails** — the `reset --soft` or the recommit rejected by a hook, nothing staged
+   — leaves the section's per-task commits untouched, the state before the squash was attempted.
+   Report it as a finding; never force past it (`--no-verify` stays forbidden here too).
+
+i. **On a section boundary, OFFER to stop — and keep going if nobody says otherwise.** Another
+   section still ahead is a clean boundary, and the branch is already at its final shape for this
+   section — one commit. Say it in one line and continue:
 
    ```
    Section 3 of 7 done, at a clean boundary. `/quenching:specs:execute <slug>` resumes from here —
