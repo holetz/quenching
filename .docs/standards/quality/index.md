@@ -48,7 +48,7 @@ the checks that hold it honest. The *modeling* that defines data lives in
   edit that retires both together.
 * [surface-verification.md](surface-verification.md) — how a change to the command surface is
   proven: a fresh process because the registry is built at session start, assertions on captured
-  `tool_use` rather than prose, and the three preconditions a functional check must satisfy.
+  `tool_use` rather than prose, and the five preconditions a functional check must satisfy.
 
 ## Candidate sub-standards
 
