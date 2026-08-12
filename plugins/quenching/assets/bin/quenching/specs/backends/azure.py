@@ -443,6 +443,15 @@ def azure_artifact_url(kind: str, project_id: str, repo_id: str, value: str) -> 
     return f"vstfs:///Git/{scheme}/{project_id}%2F{repo_id}%2F{tail}"
 
 
+# `attributes.name` per relation — MEASURED live (task 5.4) against a throwaway work item
+# (org `unicredbr`, project `TI`): `rel: "ArtifactLink"` alone answers 400 "Artifact links
+# must have a valid name specified", regardless of what the `url` scheme already says. The
+# url disambiguates WHICH artifact; this name is Azure's own display label for the relation
+# and is a second, independent requirement — read back and confirmed via `--expand relations`
+# on the same probe.
+AZURE_ARTIFACT_LINK_NAME = {"branch": "Branch", "commit": "Fixed in Commit"}
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
@@ -1008,7 +1017,8 @@ class AzureBoardsBackend(SpecBackend):
         url = azure_artifact_url(kind, project_id, repo_id, value)
         self._az_patch(f"linking {kind} '{value}' to work item {item_id}", item_id,
                        [{"op": "add", "path": "/relations/-",
-                         "value": {"rel": "ArtifactLink", "url": url}}])
+                         "value": {"rel": "ArtifactLink", "url": url,
+                                   "attributes": {"name": AZURE_ARTIFACT_LINK_NAME[kind]}}}])
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
