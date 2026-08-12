@@ -143,8 +143,10 @@ Present the findings. Fixes go in as ordinary commits on the branch, before the 
 the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
 frontmatter.
 
-No `branch` record (the work was done in place), or no git → say so and skip to step 4; there is no
-branch diff to read.
+**The test is `branch.work != branch.base`, never the record's mere presence** — a spec built in
+place stamps one too, with `work` equal to `base` (`git.md` §Where a branch comes from). No
+`branch` record, `work` equal to `base`, or no git → say so and skip to step 4; there is no branch
+diff to read.
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
@@ -166,7 +168,8 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 no bundle.
 
 ### 4. Choose the merge strategy and route, then write `## Outcome` and archive
-For `done` with a `branch` record, offer the strategies in
+For `done` with a work ref of its own — `branch.work != branch.base`, the same test step 2 used;
+in place there is nothing to merge — offer the strategies in
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
 delete the branch** — a squash collapses every per-section commit, so each task's recorded
@@ -367,7 +370,7 @@ cq specs record "<slug>" pr --set number=<the PR's number> --set url=<the PR's U
 
 **Running under `/quenching:specs:orchestrate`'s minimal-gear authorization → stop here.** Do not
 call `gh pr merge` and do not stamp `merge:` — report the PR link and end the run. The merge waits
-on human review, exactly as orchestrate.md §The PR route promises; a later `conclude` run, or a
+on human review, exactly as convergence.md §The PR route promises; a later `conclude` run, or a
 human merging by hand, finishes it — §Resuming's "PR opened, not merged" row is the resume path.
 
 **Every other run → merge now**, in the same consented block as the push and the PR above:

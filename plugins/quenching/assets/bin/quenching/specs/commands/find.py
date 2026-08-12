@@ -55,7 +55,11 @@ def find_match(backend: SpecBackend, *, branch: str | None = None,
         rec_pr = fm.get("pr") or {}
         rec_merge = fm.get("merge") or {}
 
-        if branch and rec_branch.get("work") == branch:
+        # `work == base` is a spec built in place, not a branch that identifies it — every
+        # such spec records the same base, so matching it would hand back an arbitrary one of
+        # them as if it owned the ref (`git.md` §Where a branch comes from).
+        if (branch and rec_branch.get("work") == branch
+                and rec_branch.get("work") != rec_branch.get("base")):
             return {"info": info, "matchedBy": "branch"}
         if pr and pr in (_pr_number(rec_pr.get("number")), _pr_number(rec_pr.get("url")),
                         _pr_number(rec_merge.get("pr"))):

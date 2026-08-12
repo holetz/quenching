@@ -182,10 +182,16 @@ cq specs record <slug> branch --set base=main --set work=plan/<slug>
 not — **after the merge, git cannot say what the branch was cut from**, which is the whole reason
 the record exists and why it is captured while still true.
 
-**Every branch that is not the repository's base gets `branch:` stamped**, including one this
-plugin never cut.
-Stamp nothing only in the true in-place case: the human declined isolation and stayed on the base
-branch, where a record whose `base` equals its `work` would state no fact.
+**Every resolved work ref gets `branch:` stamped**, including a branch this plugin never cut and
+including the in-place case, where `work` equals `base`. That last one is not the silence it used
+to be: an absent record and a record reading `work == base` are different claims — nobody has
+decided yet, versus a human declined isolation — and only the second is a fact worth carrying.
+
+**`work == base` means no isolation was taken, and every consumer must read it that way.** It is
+not a work ref that happens to be alive: the base is always alive, so anything ranking, diffing or
+merging on the mere PRESENCE of the record gets the in-place case backwards. `cq specs next` guards
+it explicitly, and `/quenching:specs:conclude` branches on `work != base` rather than on the record
+existing — there is no branch diff to review and nothing to merge when the work never left the base.
 
 **For a branch this plugin cuts, `base` is an observed fact** — it was what stood checked out the
 moment the branch was created. **For a branch it adopts, `base` is inferred**, in this order,

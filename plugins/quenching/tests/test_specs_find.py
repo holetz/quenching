@@ -39,6 +39,9 @@ class FindMatch(unittest.TestCase):
         self.backend.create_spec(
             "plans", "delta.md",
             _doc("delta", merge={"pr": "https://github.com/o/r/pull/99"}))
+        self.backend.create_spec(
+            "plans", "epsilon.md",
+            _doc("epsilon", branch={"base": "develop", "work": "develop"}))
 
     def test_branch_resolves_the_owning_slug(self):
         hit = find_match(self.backend, branch="plan/alpha")
@@ -56,6 +59,13 @@ class FindMatch(unittest.TestCase):
     def test_commit_subject_resolves_against_a_tasks_recorded_subject(self):
         hit = find_match(self.backend, commit_subject="plan/gamma: 2.1 Add the thing")
         self.assertEqual(hit["info"]["slug"], "gamma")
+
+    def test_an_in_place_record_never_answers_for_its_base(self):
+        # `epsilon` records `work == base == develop` — a spec built in place, not the owner
+        # of `develop`. Every such spec records the same name, so a match here would hand
+        # back an arbitrary one of them as if it owned the ref (`git.md` §Where a branch
+        # comes from). The sibling guard in `cq specs next` lives in `test_specs_next.py`.
+        self.assertIsNone(find_match(self.backend, branch="develop"))
 
     def test_no_criterion_matches_returns_none(self):
         self.assertIsNone(find_match(self.backend, branch="plan/nonesuch"))
