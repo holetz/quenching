@@ -151,7 +151,8 @@ tracks — no installed dependencies, no `.env`, no venv, no build output.
 ```
 
 See
-[plugin-configuration.md](../../../../../.docs/standards/workflows/plugin-configuration.md).
+[plugin-configuration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/plugin-configuration.md)
+§The recognised keys.
 
 Read by `cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
 the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
@@ -304,7 +305,7 @@ strictly worse rather than merely narrower.
 land on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
 Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
-[plan-git-record.md](../../../../../.docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+`plan-git-record.md` already state. `## Outcome` is
 written before the merge and says what the run **delivered** — an open, unmerged PR archived as
 `done` would assert something that has not happened yet. And `merge:` is stamped before the merge
 so that it is the run's last action; a run that ends before the merge leaves the record stamped and
@@ -437,10 +438,9 @@ gh pr create --base <base> --title "<title>" --body "<body>"
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch, and in a repo running the develop/main flow
-([docs/standards/git/branching.md](/.docs/standards/git/branching.md)) that default deliberately
-stays the publication branch — see that standard's own reasoning for why. `<base>` is this spec's
-own resolved base, the same value the local route's merge targets.
+default branch, and in a repo running the develop/main flow (`git/branching.md`) that default
+deliberately stays the publication branch — see that standard's own reasoning for why. `<base>` is
+this spec's own resolved base, the same value the local route's merge targets.
 
 **The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
 in the same block, before the run reports done:
