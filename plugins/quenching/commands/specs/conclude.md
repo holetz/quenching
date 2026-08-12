@@ -349,11 +349,20 @@ minimal-gear authorization this part asks nothing — irreversible cycle actions
 that gear. Every other run asks first, in the **same consented block** as the merge below, per
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route:
 show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
-choosing the PR route in step 4 was not this consent:
+choosing the PR route in step 4 was not this consent.
+
+**On backend `github`, the body always ends with a `Refs #<issue>` line** — the spec's own
+locator names the issue number. It is what makes the branch and the PR appear, at zero extra
+calls, in the issue's own Development panel the moment the PR exists (`git.md` §The pull-request
+route; the branch itself has no such free surface — `## Design` measured that a linked branch can
+only ever be a NEW one, which this branch is not). On any other backend the body is drafted the
+same way it always was — there is no issue to reference.
 
 ```bash
 git push -u origin plan/<slug>
-gh pr create --base <base> --title "<title>" --body "<body>"
+gh pr create --base <base> --title "<title>" --body "<body>
+
+Refs #<issue-number>"
 cq specs record "<slug>" pr --set number=<the PR's number> --set url=<the PR's URL> --set date=<today>
 ```
 
