@@ -7,7 +7,7 @@ tags: [automation, commands]
 timestamp: <ISO 8601 — e.g. 2026-07-20>
 audience: both
 authority: current
-source: <who established the surface — e.g. quenching-skill-align first run>
+source: <who established the surface — e.g. quenching-components-align first run>
 maintainer: <owner>
 ---
 

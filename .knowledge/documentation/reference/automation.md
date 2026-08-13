@@ -7,7 +7,7 @@ tags: [automation, commands]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: quenching-skill-align first run
+source: quenching-components-align first run
 maintainer: Israel Holetz
 ---
 
