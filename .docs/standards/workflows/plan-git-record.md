@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch and merge frontmatter records, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records, the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route with the write-many `pr` record it alone writes and the minimal-gear run that stops at the open PR without ever stamping `merge`, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
 resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-12
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12)
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die
 maintainer: quenching
 ---
 
@@ -115,17 +115,22 @@ matched against rewritable prose — but a `--commit` write that fails (a networ
 external backend, mid-way through recording it) must be **reported, never left implicit**: the
 commit exists either way, and a tick that silently did not land would claim proof of nothing.
 
-## Two frontmatter records carry the underivable git facts
+## Three frontmatter records carry the underivable git facts
 
-Both belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the same
-admission test — a fact no derivation can reproduce:
+All three belong to the record vocabulary in [plan-lifecycle.md](plan-lifecycle.md) and pass the
+same admission test — a fact no derivation can reproduce:
 
-- **`branch: {base, work}`** — stamped by `/quenching:specs:execute`'s inline isolation offer, write-once, at
-  the moment isolation is taken. `work` is derivable while the branch is checked out; `base` is
-  not — **after the merge, git cannot say what the branch was cut from**, which is the whole
-  reason the record exists and why it is captured while still true. Work done in place stamps
-  nothing: a record whose `base` equals its `work` states no fact. A later run reads the record; a
-  current branch that disagrees with `work` is a finding to report, never a value to correct.
+- **`branch: {base, work}`** — stamped by `/quenching:specs:execute`'s inline isolation offer, write-once,
+  **once the work ref is resolved** — taken or declined. `work` is derivable while the branch is
+  checked out; `base` is not — **after the merge, git cannot say what the branch was cut from**,
+  which is the whole reason the record exists and why it is captured while still true. A later run
+  reads the record; a current branch that disagrees with `work` is a finding to report, never a
+  value to correct.
+
+  **Work done in place stamps `work` equal to `base`**, where it once stamped nothing. The pair is
+  not the empty statement that silence would be: an absent record and `work == base` are different
+  claims — *nobody has decided yet* versus *a human declined isolation* — and only a spec that
+  records the second can be told apart from one that was never started.
 
   **Every branch that is not the repository's base gets this stamped**, including one the plugin
   never cut. A human may check one out by hand before running `execute`; a spec built there with
@@ -150,6 +155,18 @@ admission test — a fact no derivation can reproduce:
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
   [git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Recording the isolation,
   cited rather than restated.
+- **`pr: {number, url, date}`** — stamped by `conclude` the moment `gh pr create` returns, on the
+  PR route only, and **write-many** where the other two are write-once: a PR may be closed and
+  reopened, or force-pushed to a fresh number, and each is a new fact rather than a falsification
+  of the old one — which is why it carries its own `date`.
+
+  It is distinct from `merge.pr` below, and the distinction is the whole reason it exists. `merge`
+  is stamped only once the merge is about to happen; under `/quenching:specs:orchestrate`'s minimal
+  gear the PR route deliberately **stops** at the open PR, leaving the merge to human review. With
+  only `merge.pr` to write into, that run had no honest way to record the PR it had just opened —
+  stamping the write-once `merge` for a merge that had not been decided would have burned the one
+  write it gets.
+
 - **`merge: {strategy, subject, pr}`** — stamped by `conclude`, write-once, **on the work branch
   before the merge**. The strategy was a human choice and the subject names the merge it will
   produce. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit
@@ -165,10 +182,24 @@ record outlives the branch it names. Anything asking whether a spec is in flight
 live ref — which is what `cq specs next --front` does, and why `/quenching:specs:continue` demotes a spec
 whose branch is alive but checked out elsewhere.
 
+**`work == base` is the one exception, and it exists because that ref cannot die.** The rule above
+is safe only while a live ref means something happened; the base branch is alive in every
+repository, always, so a spec built in place would answer *yes, in flight* forever. The liveness
+question has to be skipped for that pair and the record read instead — the single case where the
+record IS the signal.
+
+MEASURED, and the reason this is written rather than assumed: when in-place work began stamping
+the pair, `cq specs next` still ranked on liveness alone, and every spec built in place rose to the
+top of `/quenching:specs:continue` with the reason *"you are on this branch"* whenever the session
+stood on the base. The guard the code already carried — *a record whose ref is gone stops
+counting* — could not fire, because nothing was ever going to remove `develop`. The shape
+generalizes past this record: **an expiry condition that the sentinel value can never satisfy is
+not a guard, and it fails silently in the direction of always-true.**
+
 ## The branch also carries a git-native mark, outside any frontmatter record
 
-Beside `branch:` and `merge:` above, `/quenching:specs:execute` writes a third signal that is **not**
-a frontmatter record: a recognizable line in the branch's own description —
+Beside `branch:`, `pr:` and `merge:` above, `/quenching:specs:execute` writes one more signal that is
+**not** a frontmatter record: a recognizable line in the branch's own description —
 `quenching-slugs: <slug1>,<slug2>` — rewritten, never duplicated, after every task's commit, and
 never written when the spec runs `In place`. The mechanism is
 [git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Marking the branch with the
@@ -182,7 +213,7 @@ materialize a minimal spec before continuing — never a size threshold. The ful
 [auto-discover.md](/plugins/quenching/assets/references/specs-conclude/auto-discover.md), owned by
 `conclude`.
 
-**Why this is not a third frontmatter record.** `branch:` and `merge:` above answer questions only
+**Why this is not a fourth frontmatter record.** The three records above answer questions only
 the spec itself can honestly hold — a write-once fact this exact spec is the source of. The
 branch's mark answers a different question — *which* spec(s), if any, built this ref — asked by a
 command that does not yet know the slug, so the answer has to live somewhere reachable **before**
@@ -209,7 +240,8 @@ write-before-the-thing rule bends without breaking:
 | Route | When `merge:` is stamped | Why not earlier or later |
 | --- | --- | --- |
 | local | on the branch, before the merge | the subject is knowable the moment the strategy is chosen |
-| pull request | on the branch, after the PR is opened and before it is merged | `pr:` names something that does not exist until `gh pr create` returns, and the record is write-once — stamping without it would burn the single write |
+| pull request | on the branch, after the PR is opened and before it is merged | `merge.pr` names something that does not exist until `gh pr create` returns, and the record is write-once — stamping without it would burn the single write |
+| pull request, minimal gear | **never, this run** | the run stops at the open PR by design, leaving the merge to human review; the write-many `pr:` record carries the PR until a later run merges it |
 
 Both stamps still land **before** the merge and **on the work branch**, which is the invariant that
 matters: nothing is written to the base after it. A run interrupted between the stamp and the merge
