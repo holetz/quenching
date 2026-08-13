@@ -23,7 +23,7 @@ This standard is the rule *behind* both.
 The rule this front learned the hard way. The glossary tail step — "after a capture, check whether
 the new concept introduced a term that belongs in `glossary.md`" — is specified in **six**
 places: `homes.md` §Enriching the glossary, `quenching-knowledge-add`, `quenching-knowledge-learn`,
-`quenching-knowledge-import-memory`, `quenching-knowledge-define`, and `quenching-specs-archive`'s
+`quenching-knowledge-import-memory`, `quenching-knowledge-define`, and `/quenching:specs:conclude`'s
 `distill.md`. Across two real distillation runs it produced **zero** entries.
 
 An invariant written six times and executed zero times is not under-specified. It is evidence that
