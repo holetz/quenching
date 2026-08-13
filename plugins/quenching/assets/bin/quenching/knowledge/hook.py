@@ -8,13 +8,13 @@ answered".
 HOOK  (reads the hook JSON on stdin)
 Dispatches on `hook_event_name`:
 - **PostToolUse** (matcher `Write|Edit`): validates the single touched
-  `/.docs/**` file and, on a finding, **PROPOSES** the fix via
+  `/.knowledge/**` file and, on a finding, **PROPOSES** the fix via
   `additionalContext` (exit 0). With `blockOnFail: true` it escalates to
   `decision: block` (the reason is fed back to Claude). It also touches the
   **dirty marker** (a stamp file in the system temp dir) so the Stop sweep
   knows the bundle changed this session.
 - **Stop**: with `stopScan: "dirty"` (the default), exits immediately when
-  the dirty marker is absent — a turn that touched no `/.docs/**` file costs
+  the dirty marker is absent — a turn that touched no `/.knowledge/**` file costs
   one stat, not a full-bundle scan. When the marker is present (or
   `stopScan: "always"`), validates the whole bundle in a SINGLE read pass
   and PROPOSES residual gaps (`additionalContext`, exit 0); the marker is
@@ -98,7 +98,7 @@ def run_hook() -> int:
     if cfg.get("enabled") is False:
         return OK
     event = data.get("hook_event_name") or ""
-    docs_dir = ".docs"
+    docs_dir = ".knowledge"
     bundle_root = os.path.join(project, docs_dir)
     started = time.monotonic()
     deadline = float(cfg.get("deadlineMs", DEFAULTS["deadlineMs"])) / 1000.0
@@ -161,7 +161,7 @@ def run_hook() -> int:
         if data.get("stop_hook_active"):
             return OK
         if str(cfg.get("stopScan", "dirty")) != "always" and not os.path.exists(_marker_path(project)):
-            return OK  # no docs/** edit since the last completed scan — 1 stat, no walk
+            return OK  # no .knowledge/** edit since the last completed scan — 1 stat, no walk
         findings = validate_tree(bundle_root, deadline=started + deadline, ignore_globs=ignore_globs)
         if findings is None:
             return OK  # deadline expired mid-walk — abort silently, KEEP the marker for next turn
