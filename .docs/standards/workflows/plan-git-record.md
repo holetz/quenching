@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
-resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch and merge frontmatter records, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
+resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-11
+timestamp: 2026-08-12
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11)
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12)
 maintainer: quenching
 ---
 
@@ -164,6 +164,35 @@ admission test — a fact no derivation can reproduce:
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
 live ref — which is what `cq specs next --front` does, and why `/quenching:specs:continue` demotes a spec
 whose branch is alive but checked out elsewhere.
+
+## The branch also carries a git-native mark, outside any frontmatter record
+
+Beside `branch:` and `merge:` above, `/quenching:specs:execute` writes a third signal that is **not**
+a frontmatter record: a recognizable line in the branch's own description —
+`quenching-slugs: <slug1>,<slug2>` — rewritten, never duplicated, after every task's commit, and
+never written when the spec runs `In place`. The mechanism is
+[git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Marking the branch with the
+specs it built, owned by `execute`.
+
+`/quenching:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
+called with no `--spec`: one valid slug resolves silently, more than one asks, and a slug the
+marking names that no longer resolves under `plans/` is dropped as stale rather than trusted. No
+valid marking at all falls to measuring the branch's own diff and always asking whether to
+materialize a minimal spec before continuing — never a size threshold. The full procedure is
+[auto-discover.md](/plugins/quenching/assets/references/specs-conclude/auto-discover.md), owned by
+`conclude`.
+
+**Why this is not a third frontmatter record.** `branch:` and `merge:` above answer questions only
+the spec itself can honestly hold — a write-once fact this exact spec is the source of. The
+branch's mark answers a different question — *which* spec(s), if any, built this ref — asked by a
+command that does not yet know the slug, so the answer has to live somewhere reachable **before**
+any spec is resolved. Frontmatter lives inside a spec; a slug is the key that opens one. The mark
+lives on the ref instead, which is the one place a slug-less `conclude` can look first.
+
+**Local to the `.git` that wrote it — the same limitation as any git config.** A branch pulled onto
+another machine, or a fresh clone, carries no description at all, so this mark never crosses one.
+`conclude`'s diff-based fallback exists to cover exactly that gap, not as a general substitute for
+the mark.
 
 ## The route is a second choice, and it moves when `merge:` is stamped
 

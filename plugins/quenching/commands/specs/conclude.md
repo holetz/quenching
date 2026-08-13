@@ -112,9 +112,17 @@ is a **finding to report**, never a value to overwrite.
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
-Take the slug from the input, or run `cq specs list --json` and ask. Establish the outcome —
-**ask if it was not stated**, via **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will
-not be built).
+A slug in the input → use it. **No slug given → try auto-discovery first**, off the current
+branch's own marking:
+[auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
+§Reading the marking §Filtering to valid slugs §Resolving what remains, cited rather than
+restated. One valid slug resolves it silently, naming the marking as the source; more than one asks
+which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
+asks whether to materialize a minimal spec — accepted, its new slug is used from here on exactly
+like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
+built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
+ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
+**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
 cq specs status --spec "<slug>" --json
 ```
