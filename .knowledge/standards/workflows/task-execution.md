@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, commit-per-task, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11)
 maintainer: quenching
 ---
 
@@ -237,15 +237,28 @@ different scale of diff, it precedes an irreversible merge, and bolting it onto 
 run that died after task nine had to redo tasks one through eight to reach it. That it ran is
 recorded as `reviewed`, per [plan-git-record.md](plan-git-record.md).
 
-## One commit per task — literally one
+## One commit per section, squashed from its tasks
 
 ```
-plan/<slug>: <task-id> <task title>
+plan/<slug>: <section-number> <section title>
 ```
 
-`git revert` then undoes exactly one task, `git log` reads as the spec's task list, and a review can
-walk it step by step. N tasks piled into one uncommitted blob gives none of that, and makes the
-isolation taken at the start buy nothing.
+`git revert` then undoes exactly one section, `git log` reads as the spec's `## Tasks` sections, and
+a review can walk it section by section. N tasks piled into one uncommitted blob gives none of
+that, and neither does a standing commit per task once a section routinely runs to five or ten of
+them — the unit worth reverting, reading and reviewing is the section that shipped together, not
+each task that built it.
+
+**Every task still gets its own commit while its section is open.** The chain that verifies, ticks
+and commits it — [execution.md](/plugins/quenching/assets/references/specs-execute/execution.md)
+§The commit — is unchanged: retrying, blocking and resuming a task mid-section reads off a real,
+individual commit, exactly as before. Only once the section's last task commits clean, with none of
+the section `[!]`, does it collapse — a local `git reset --soft` to the commit standing before the
+section, plus one recommit, per
+[execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The section squash
+— never touching a prior section's commits, never anything already shared. The isolation taken at
+the start still buys everything it always did: what changes is which commit survives, never whether
+the work was proved before it landed.
 
 ### The anchor is the sha, where no backend co-branches with the code
 
@@ -293,6 +306,12 @@ Whichever anchor a given commit is carrying, the discipline is the same: if the 
 the subject, report the drift as a finding and write nothing — repairing the record after the
 commit is the ordering this contract exists to prevent, under either anchor.
 
+**The section squash narrows the anchor's granularity, never its resolvability.** The moment a
+section's commits collapse into one, every task the section held is re-stamped onto that one
+surviving commit's subject (or sha) — [execution.md](/plugins/quenching/assets/references/specs-execute/execution.md)
+§The section squash. `git log --grep`, or the sha lookup, still resolves for every one of those
+tasks; it resolves to the section's commit rather than a commit of that task's own.
+
 ### Hard rules
 
 These are the ways an implementation ships a lie behind a green checkbox. Each is absolute, with
@@ -303,7 +322,9 @@ no "just this once":
   code, or report the task blocked.
 - Never `git commit --no-verify`. A failing hook is a finding to report, not an obstacle to route
   around. Same for `--no-gpg-sign`.
-- Never amend or rewrite an earlier task's commit; never force-push.
+- Never amend or rewrite an earlier task's commit; never force-push. §The section squash
+  (execution.md) is the one narrow exception — and only ever a section's own just-made commits, at
+  the moment that section closes, never a prior section's or anything already shared.
 - Never tick a checkbox for work that was not verified.
 
 ## The Handoff refresh cadence is four events

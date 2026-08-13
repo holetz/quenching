@@ -156,12 +156,14 @@ Cheap, per task, over that task's diff only (`git diff`). Four questions, not a 
 Fix what it finds **before** committing, so the commit is the reviewed version. The
 whole-branch review runs once, and it belongs to `/quenching:specs:conclude`.
 
-## The commit — one per task, carrying its own ticked box
+## The commit — one per task, squashed to one per section
 
 <!-- rules -->
 
 After the self-review passes, **decide the subject, then verify, tick the box with it, commit, and
-assert the subject survived**.
+assert the subject survived**. This chain is unchanged by §The section squash below: every task
+still gets its own commit here, and stays resumable from it, for as long as its section is still
+open.
 
 Run it as **one chained call**, gate included:
 
@@ -199,7 +201,9 @@ standard into a target to create the answer.
 - **Never edit the `verify:` command, the test, or the assertion so it stops failing.** Change the
   code, or report the task as blocked. Editing the check is how a spec ships a lie with a green
   checkbox.
-- **Never amend or rewrite an earlier task's commit**, and never force-push.
+- **Never amend or rewrite an earlier task's commit**, and never force-push. §The section squash
+  is the one narrow exception, and only ever to the commits its OWN section just made — never a
+  prior section's, never anything already shared.
 - If the repo has no git, skip committing entirely and say so once.
 
 The chain's last link **asserts the subject survived**, and the rule is report rather than repair:
@@ -213,6 +217,53 @@ link: **report it as a finding and write nothing.**
 
 With no git in the repo there is nothing to anchor to: tick the box without `--subject` and say so
 once in the report, rather than inventing a placeholder.
+
+## The section squash
+
+<!-- rules -->
+
+At a section boundary (§The section boundary) with no `[!]` task in it, the section's own per-task
+commits collapse into one — the unit a reviewer reads the branch by is the section, not the task,
+while the retry safety net during the section stays exactly what §The commit above already gives
+it.
+
+```bash
+git reset --soft <the commit immediately BEFORE this section's first task> \
+  && git commit -m "plan/<slug>: <N> <section title>"
+```
+
+**The reset target is the commit before the section's first task — never that task's own commit.**
+`git reset --soft <sha>` moves HEAD to `<sha>` while leaving the index exactly as it stands;
+resetting to the first task's own commit would leave that task's changes already "consumed" by the
+reset and out of the new commit. On a plan's first section, the target is whatever commit stood on
+the branch before this run's first task.
+
+**Then repair every squashed task's commit record**, so `subject:` (or `commit:`, on a backend that
+carries it) resolves to the commit that now actually exists rather than the one the squash just
+replaced. The same `task --check` call, re-run per task, upserts the metadata in place:
+
+```bash
+cq specs task --check <id> --spec "<slug>" --subject "plan/<slug>: <N> <section title>"
+```
+
+Every task in the section ends up sharing that one subject — the anchor's granularity narrows from
+task to section, which is exactly the trade this contract makes. `git log --grep` still resolves;
+it now resolves to the section's commit for every task the section held.
+
+**A `[!]` anywhere in the section skips both the squash and the repair, whole.** The section's
+per-task commits stay exactly as they are — one per task — until the section closes for real; a
+squash never runs partial.
+
+**A squash that fails** — the `reset --soft` or the recommit rejected by a hook, nothing staged —
+leaves the section's per-task commits untouched, the state before the squash was attempted. Report
+it as a finding; never force past it (`--no-verify` is still forbidden here).
+
+**Why this does not violate "never rewrite an earlier task's commit."** §The commit's hard rule
+protects a section (or a session) that has already closed — reaching back into it would falsify a
+record something else may already be resuming from. This squash reaches back only into the commits
+its OWN section produced, at the exact moment that section closes, in the same run that made them.
+"Earlier" in that rule means an earlier section or an earlier session, never the current section's
+own just-made commits.
 
 ## Declared versus emergent `knowledge/`
 
@@ -441,30 +492,34 @@ short-circuiting every link after it, which is exactly the failure behaviour the
 documented and the chained form gets for free. Nothing about what is guaranteed moved; only the
 number of calls did.
 
-### Why one commit per task, and why the subject rather than a sha
+### Why one commit per task while a section is open, and why the subject rather than a sha
 
 <!-- rationale -->
 
 **There is no per-task bookkeeping commit any more.** It existed only because a sha cannot be known
 before the commit that carries it, so the tick had to follow the commit and could not join it. One
-task is now exactly one commit: code, docs the task named, and the ticked box.
+task is one commit while its section is still open: code, docs the task named, and the ticked box.
 
-One commit per task is what makes the branch worth having: `git revert` undoes exactly one task,
-`git log` reads as the spec's task list, and a review can walk it step by step. N tasks piled into
-one uncommitted blob gives none of that, and the isolation offer buys nothing.
+One commit per task, while the section runs, is what makes retrying and resuming mid-section worth
+having: a bad task can be blocked or undone without touching what already landed. §The section
+squash then collapses the section's own commits into one once it closes — the unit the branch is
+worth reading and reverting by is the section, and `git revert` undoes exactly one of those; the
+per-task granularity is what buys the safety net getting there, not the shape the branch ends in.
 
-The record cannot go stale: the rules above forbid amending an earlier task's commit and forbid
-force-push. Unlike a sha it also **survives a rebase**, so the one merge strategy that used to
-destroy every recorded link no longer does.
+The record cannot go stale: the rules above forbid amending an earlier *section's* commit and
+forbid force-push — a section may only ever rewrite its own, at its own close. Unlike a sha it also
+**survives a rebase**, so the one merge strategy that used to destroy every recorded link no longer
+does.
 
 ### Why squash is `conclude`'s caveat and not this loop's
 
 <!-- rationale -->
 
-**Squash is the one caveat, and `conclude` owns it.** A squashed merge leaves the per-task commits
-reachable only from the branch — which is why `/quenching:specs:conclude` records `merge: {strategy, subject}`
-and, on a squash, offers to keep the branch. Nothing in this loop needs to know; recording the
-subject honestly is the whole job here.
+**A squash-merge is the one caveat, and `conclude` owns it — a different squash from §The section
+squash above.** A squashed *merge* leaves the section's own commits reachable only from the branch —
+which is why `/quenching:specs:conclude` records `merge: {strategy, subject}` and, on a squash,
+offers to keep the branch. Nothing in this loop needs to know; recording the subject honestly is
+the whole job here.
 
 ### Why discoveries are captured indiscriminately
 

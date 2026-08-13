@@ -400,6 +400,32 @@ def capture_specs(cap: Capture) -> None:
     write("migrate-dry-run", ["migrate", "--dry-run", "--json"], legacy=True)
     write("migrate", ["migrate", "--json"], legacy=True)
 
+    # `--root` naming the CONTAINER of a phased `.specs/`, not the workspace itself —
+    # `sp-root-too-high`. One workspace serves the read-only cases below (`list`/`validate`/
+    # `status`/`doctor`, over the SAME fixture the control pair reads correctly); `new` gets its
+    # own so a bug that fails to refuse cannot leave a stray `plans/` behind for the others to
+    # read.
+    too_high = cap.workspace("root-too-high")
+    container = str(too_high)
+    correct = str(too_high / ".specs")
+
+    def over_root(name: str, root: str, argv: list[str]) -> None:
+        cap.run(f"specs-root-too-high-{name}", "specs", ["--root", root] + argv,
+                cwd=plugin, ws=too_high)
+
+    over_root("list", container, ["list", "--json"])
+    over_root("validate", container, ["validate", "--json"])
+    over_root("status", container, ["status", "--spec", "alpha-widget", "--json"])
+    over_root("doctor", container, ["doctor", "--json"])
+    # Control — same fixture, `--root` pointed at `.specs/` itself: unaffected, exactly as
+    # before this predicate existed.
+    over_root("control-list", correct, ["list", "--json"])
+    over_root("control-validate", correct, ["validate", "--json"])
+
+    new_ws = cap.workspace("root-too-high-new")
+    cap.run("specs-root-too-high-new", "specs",
+            ["--root", str(new_ws), "new", "some-spec", "--json"], cwd=plugin, ws=new_ws)
+
     exp = cap.workspace("export")
     cap.run("specs-export", "specs",
             ["--root", str(exp / ".specs"), "export", "--all",

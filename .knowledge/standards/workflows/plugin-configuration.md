@@ -52,7 +52,7 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | `releaseBranch` | any branch name | **none** — `cq specs release` applies `main` at the point of use | the release verb only |
 | `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event, through the config the core read |
 | `profiles` | `{"installed": ["knowledge", "specs", "components"]}` | none — an absent key leaves all three fronts installed | the `/align` conductor, through the config the core read |
-| `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default (see below) | the `azure-boards` backend only |
+| `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject, repository}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default (see below) | the `azure-boards` backend only |
 | `azureColumns` | `{"<board state>": "<lane>", …}` — any subset | `{}` — falls back to `azurePlacement.boardColumn` per state | the `azure-boards` backend only |
 | `subjects` | `{"<key>": {name, description, parent, tags}, …}` | `{}` | `/quenching:specs:create`'s subject proposal, and every backend's `create_spec` |
 | `tagCatalog` | `{"<tag>": "<description>", …}` | `{}` | `/quenching:specs:create`'s tag proposal — an agent reads the description to choose |
@@ -150,6 +150,19 @@ required in practice only once a spec write needs to resolve a board column — 
 consults a per-team field, so a repository that never declares `team` simply never gets a column
 applied. `boardColumn` is the de-para's fallback for a board state absent from `azureColumns`,
 never a value written on its own.
+
+**`repository` has no default, and its absence is never a refusal** — the opposite shape from
+`areaPath`. It names the Azure Repos repository backing this target's CODE, and
+[spec-backend.md](../architecture/spec-backend.md) already establishes why nothing here derives
+it: an Azure DevOps remote URL carries an organization and a repository, and the repository is not
+the project, so a board project's own configuration says nothing about which repository (if any)
+holds the code. Declared, it resolves once to the repository's and project's ids and every write
+that just stamped `branch:` or a task's `subject:` links the matching branch or commit as an
+`ArtifactLink` on the work item. Absent — the ordinary case, since most `azure-boards` targets keep
+their code elsewhere entirely — nothing is attempted and nothing is missing: there is no native
+surface to render onto. It never covers a PR: `pr:`/`merge.pr` always name a `github` pull request,
+and Azure Repos' own `PullRequestId` artifact scheme names a pull request that is itself in Azure
+Repos — not the same artifact, so not a mapping either key could honestly make.
 
 ## Three keys are prompt material, not documentation
 

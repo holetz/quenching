@@ -14,7 +14,8 @@ from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.backends.base import SpecBackend
 from quenching.specs.backends.files import FilesBackend
 from quenching.specs.backends.github import open_github_backend
-from quenching.specs.config import CONFIG_FILE, load_config
+from quenching.specs.config import (CONFIG_FILE, ROOT_TOO_HIGH_REMEDY, is_root_too_high,
+                                    load_config, root_too_high_message)
 from quenching.specs.worktree import resolve_files_root
 
 
@@ -45,6 +46,14 @@ def open_backend(root: str) -> tuple[SpecBackend | None, dict]:
     cfg = load_config(root)
     name = cfg["backend"]
     if name == "files":
+        if is_root_too_high(root):
+            # `--root`/`SPECS_ROOT` named the container that holds a phased `.specs/`, not the
+            # workspace itself — reading it as empty (today's behaviour) would silently lose
+            # every `list`/`validate`/`new` call this root reaches. Refuse instead of resolving.
+            return None, {
+                "code": "sp-root-too-high", "exit": 2, "root": root,
+                "message": root_too_high_message(root), "remedy": ROOT_TOO_HIGH_REMEDY,
+            }
         target, err = resolve_files_root(root, cfg)
         if err:
             # A worktree that could not be created — unignored, occupied, or refused by git.

@@ -437,7 +437,7 @@
       "cwd": "<REPO>/plugins/quenching",
       "stdin": null,
       "exit": 2,
-      "stderr": "usage: cq specs [-h] [--root ROOT] [--version]\n                {new,list,status,show,section,verification,tags,assignee,start,target,record,promote,task,next,parallel,discover,validate,config,release,doctor,migrate,export}\n                ...\ncq specs: error: argument cmd: invalid choice: 'selftest' (choose from 'new', 'list', 'status', 'show', 'section', 'verification', 'tags', 'assignee', 'start', 'target', 'record', 'promote', 'task', 'next', 'parallel', 'discover', 'validate', 'config', 'release', 'doctor', 'migrate', 'export')\n"
+      "stderr": "usage: cq specs [-h] [--root ROOT] [--version]\n                {new,list,status,show,section,verification,tags,assignee,start,target,record,promote,task,next,parallel,find,discover,validate,config,release,doctor,migrate,export}\n                ...\ncq specs: error: argument cmd: invalid choice: 'selftest' (choose from 'new', 'list', 'status', 'show', 'section', 'verification', 'tags', 'assignee', 'start', 'target', 'record', 'promote', 'task', 'next', 'parallel', 'find', 'discover', 'validate', 'config', 'release', 'doctor', 'migrate', 'export')\n"
     },
     {
       "golden": "specs-migrate-noop.json",
@@ -1056,6 +1056,114 @@
       "cwd": "<WS>",
       "stdin": "{\"hook_event_name\": \"PostToolUse\", \"cwd\": \"<WS>\", \"tool_name\": \"Write\", \"tool_input\": {\"file_path\": \"<WS>/.knowledge/concepts/golden-fixture-bad.md\"}}",
       "exit": 0,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-list.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>",
+        "list",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 2,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-validate.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>",
+        "validate",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 2,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-status.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>",
+        "status",
+        "--spec",
+        "alpha-widget",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 2,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-doctor.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>",
+        "doctor",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 1,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-control-list.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>/.specs",
+        "list",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-control-validate.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>/.specs",
+        "validate",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "golden": "specs-root-too-high-new.json",
+      "script": "plugins/quenching/assets/bin/cq",
+      "argv": [
+        "specs",
+        "--root",
+        "<WS>",
+        "new",
+        "some-spec",
+        "--json"
+      ],
+      "cwd": "<REPO>/plugins/quenching",
+      "stdin": null,
+      "exit": 2,
       "stderr": ""
     }
   ],

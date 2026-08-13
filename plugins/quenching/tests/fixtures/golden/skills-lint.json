@@ -2,7 +2,7 @@
   "ok": true,
   "root": "<REPO>/plugins/quenching",
   "commandCount": 26,
-  "referenceCount": 24,
+  "referenceCount": 27,
   "findings": [
     {
       "code": "sk-description-portable",
@@ -135,6 +135,15 @@
       "tool": "Bash",
       "command": "/specs:conclude",
       "path": "commands/specs/conclude.md"
+    },
+    {
+      "code": "sk-description-portable",
+      "severity": "warn",
+      "message": "description is 1065 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1065,
+      "cap": 1024,
+      "command": "/specs:execute",
+      "path": "commands/specs/execute.md"
     },
     {
       "code": "sk-unscoped-bash",
