@@ -1,14 +1,16 @@
 """The 69 goldens `capture_golden.py` froze, re-run through `cq` and compared byte-for-byte.
 
-The goldens are STDOUT captured from the four pre-refactor scripts (specs, components, session,
-knowledge) — four scripts a refactor cannot recapture from, only be measured against (see that module's
-docstring). `INDEX.json` names the exact exit code and stderr behind each one, but not which
-workspace builder or transcript fixture produced it — that is unrecoverable from the index, so
-this suite does not replay from it. It instead imports `capture_specs`/`capture_skills`/
-`capture_session`/`capture_okf` and runs them again, unmodified, against a `Capture` subclass
-whose `run` shells out to `cq` instead of the old script and records the comparison instead of
-writing a new golden. The fixture-building code is therefore identical on both sides of the
-comparison; only the binary under test changes.
+The goldens were originally STDOUT captured from the four pre-refactor scripts (specs, components,
+session, knowledge); every case a rename or route change left stale has since been refreshed
+against `cq` itself instead (`renomear-docs-para-knowledge`, task 6.1, 2026-08-13 — see `UNROUTED`
+below, now empty). `capture_golden.py`'s own `main()` cannot do that refresh: its `SCRIPTS` name
+files a prior refactor deleted (see that module's docstring). `INDEX.json` names the exact exit
+code and stderr behind each one, but not which workspace builder or transcript fixture produced
+it — that is unrecoverable from the index, so this suite does not replay from it. It instead
+imports `capture_specs`/`capture_skills`/`capture_session`/`capture_okf` and runs them again,
+unmodified, against a `Capture` subclass whose `run` shells out to `cq` instead of the old script
+and records the comparison instead of writing a new golden. The fixture-building code is therefore
+identical on both sides of the comparison; only the binary under test changes.
 """
 import json
 import pathlib
