@@ -42,18 +42,18 @@ the part that gets thrown away. A grep that returns 14,252 chars for an eight-li
 the other 14,000-odd chars for nothing; `grep -c` or `grep -l` would have answered the same
 question for a few dozen.
 
-## 2. Section-address any markdown — a target's `/.docs/` included
+## 2. Section-address any markdown — a target's `/.knowledge/` included
 
 <!-- rules -->
 
 `cq components read <path> --sections "§X"` resolves **any** markdown file, not only
-`assets/references/**` — a target repo's own `/.docs/standards/**.md` and
-`/.docs/knowledge/glossary.md` included. Where a step needs only the one or two sections that
+`assets/references/**` — a target repo's own `/.knowledge/standards/**.md` and
+`/.knowledge/glossary.md` included. Where a step needs only the one or two sections that
 govern its decision, address them the same way this plugin already addresses its own references;
 reading the whole file through the plain file-reading tool is never the default once the file's
 own heading index would have answered narrower.
 
-A doctrine text that says "read `/.docs/standards/X.md`" without naming a section is instructing a
+A doctrine text that says "read `/.knowledge/standards/X.md`" without naming a section is instructing a
 whole-file read on purpose — a short file with one governing rule throughout, or a step that
 genuinely needs all of it. That default never changes on its own; narrowing to a section is an
 assertion the citing text makes deliberately, the same way
@@ -65,6 +65,6 @@ the bullet carries a `§`address.
 
 The mechanism already generalizes — nothing about `cq components read` is specific to the plugin's
 own `assets/references/`, and a doctrine site that still reaches for the plain file-reading tool on
-a target's `/.docs/` is paying for that gap, not for a real constraint. A rule two sections long
+a target's `/.knowledge/` is paying for that gap, not for a real constraint. A rule two sections long
 costs the same to read narrow as it does to read whole; only the surrounding rules that were not
 in question stop being paid for.
