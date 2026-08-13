@@ -113,9 +113,17 @@ is a **finding to report**, never a value to overwrite.
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
-Take the slug from the input, or run `cq specs list --json` and ask. Establish the outcome —
-**ask if it was not stated**, via **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will
-not be built).
+A slug in the input → use it. **No slug given → try auto-discovery first**, off the current
+branch's own marking:
+[auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
+§Reading the marking §Filtering to valid slugs §Resolving what remains, cited rather than
+restated. One valid slug resolves it silently, naming the marking as the source; more than one asks
+which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
+asks whether to materialize a minimal spec — accepted, its new slug is used from here on exactly
+like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
+built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
+ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
+**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
 cq specs status --spec "<slug>" --json
 ```
@@ -244,10 +252,9 @@ cq specs record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)"
 ```
 
-**PR route, stamp nothing here** — step 6's push/PR block stamps `strategy`, `subject` and `pr`
-together, in one call, once the PR exists and the gate has already passed. Either way the record is
-write-once: a spec already carrying one refuses (exit 2) with the value it holds — the finding
-§Resuming describes, never a value to edit past.
+**PR route, stamp nothing here** — step 6 stamps `pr:` the moment the PR exists, then `merge:` if
+that same run merges. `merge` is write-once: a spec already carrying one refuses (exit 2) with the
+value it holds — the finding §Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
 none — see
@@ -255,10 +262,9 @@ none — see
 §When there is no merge commit to name. `cq specs validate` reports a record that gets this
 backwards either way (`sp-bad-merge`).
 
-The archived spec now lives in `archive/`, so stamping it is one of the two edits this command
-makes to a file already there — the other is the distillation's append to `## Outcome` above.
-Both are permitted because they touch *this* spec, closing *this* run, and because the
-alternative is a write on the base after the merge. Commit them on the branch.
+The archived spec now lives in `archive/`, so stamping it is one of the three edits this command
+makes to a file already there — §Invariants names all three. Each touches *this* spec, closing
+*this* run, and the alternative is a write on the base after the merge. Commit them on the branch.
 
 For `abandoned` nothing is merged, so nothing is stamped **and no release obligation is settled** —
 a version nobody adopted is a claim the history should not carry. The distillation above still runs.
@@ -351,12 +357,10 @@ that gear. Every other run asks first, in the **same consented block** as the me
 show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
 choosing the PR route in step 4 was not this consent.
 
-**On backend `github`, the body always ends with a `Refs #<issue>` line** — the spec's own
-locator names the issue number. It is what makes the branch and the PR appear, at zero extra
-calls, in the issue's own Development panel the moment the PR exists (`git.md` §The pull-request
-route; the branch itself has no such free surface — `## Design` measured that a linked branch can
-only ever be a NEW one, which this branch is not). On any other backend the body is drafted the
-same way it always was — there is no issue to reference.
+**On backend `github`, the body always ends with a `Refs #<issue>` line** — the spec's own locator
+names the issue. The cross-reference puts both the PR and its branch in the issue's Development
+panel at zero extra calls, which a branch alone can never buy (`spec-backend.md` §A record renders
+onto a native surface too). Other backends have no issue to reference.
 
 ```bash
 git push -u origin plan/<slug>
@@ -380,12 +384,10 @@ gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<s
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch — which stays `main` (`git/branching.md` §O consumidor não muda nada — depends on
-it never moving — see `## Out of Scope` in the spec that introduced the develop/main flow).
-`<base>` here is this spec's own resolved base — the same one the local route's merge
-targets — so a spec whose base is the declared integration branch opens its PR against that
-branch, never against the publication one, without any GitHub repository setting having to
-change.
+default branch, which stays `main` (`git/branching.md` §O consumidor não muda nada). `<base>` is
+this spec's own resolved base — the one the local route merges into — so a spec cut from the
+declared integration branch opens its PR there, never against the publication one, with no GitHub
+setting having to change.
 
 `fast-forward` never reaches this block — step 4 already ruled the PR route out under it, so
 `gh pr merge`'s missing fast-forward mode is never a live gap. `cq specs record` refuses `pr:` set
