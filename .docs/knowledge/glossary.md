@@ -89,15 +89,16 @@ sentence, and **link out** rather than explaining in full here.
   integração** (`develop`), de onde `plan/<slug>` é cortada e para onde mergeia. O gatilho da
   publicação é a demanda do mantenedor, nunca uma cadência, e a rota é sempre um merge local.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-  frontmatter entry stamped by `/quenching:specs:execute` for **any** branch that is not the repo's base —
-  the one it cut and the one a human already had open alike — write-once. `work` is derivable
-  while the branch is checked out; **`base` is not** — after the merge, git
-  cannot say what the branch was cut from, which is the whole reason the record exists and why it
-  is captured while still true. Work done on the base stamps nothing, because a record whose `base`
-  equals its `work` states no fact. **The record is never the signal**: anything asking whether a
-  spec is in flight asks git whether the ref is alive — the record's `work`, falling back to
-  `plan/<slug>` — since a human may cut a branch with no record and a record outlives the branch
-  it names.
+  frontmatter entry stamped by `/quenching:specs:execute` once the work ref is resolved, write-once —
+  for **any** branch that is not the repo's base (the one it cut and the one a human already had
+  open alike), and for work done in place, where `work` equals `base`. `work` is derivable while
+  the branch is checked out; **`base` is not** — after the merge, git cannot say what the branch
+  was cut from, which is the whole reason the record exists and why it is captured while still
+  true. **The record is never the signal**: anything asking whether a spec is in flight asks git
+  whether the ref is alive — the record's `work`, falling back to `plan/<slug>` — since a human may
+  cut a branch with no record and a record outlives the branch it names. **`work == base` is the
+  one exception**, and only because that ref cannot die: the base is alive in every repository, so
+  liveness would answer *yes, in flight* forever, and the record has to be read instead.
 - [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/quenching:knowledge:status`
   prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
   which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
@@ -281,6 +282,16 @@ sentence, and **link out** rather than explaining in full here.
   `azurePlacement.areaPath`, neither of which has a default because the project itself defines
   them, and whose absence refuses instead of guessing; every other way it can be wrong comes back
   as a field for `doctor` to judge.
+- [**PR record**](../standards/workflows/plan-git-record.md) — the `pr: {number, url, date}`
+  frontmatter entry stamped by `/quenching:specs:conclude` the moment `gh pr create` returns, on the
+  PR route only, and **write-many** where the other git records are write-once: a PR may be closed
+  and reopened, or force-pushed to a fresh number, and each is a new fact rather than a
+  falsification of the old one. It is not `merge.pr`, which is stamped only once the merge is
+  about to happen — under `/quenching:specs:orchestrate`'s **minimal gear** the PR route deliberately
+  stops at the open PR and leaves the merge to human review, so `merge` never lands and this is the
+  spec's only record of the pull request. On backend `github` it is also what makes the branch
+  visible on the issue: the PR body's `Refs #<issue>` line populates the Development panel at no
+  extra call, which a branch alone cannot do (`createLinkedBranch` only ever creates a NEW branch).
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`cq knowledge validate`, `cq specs doctor`, `cq components doctor`) whose exit code
   decides whether an align inventories anything at all, making a no-op align cost a couple of tool
