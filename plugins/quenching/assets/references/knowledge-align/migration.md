@@ -126,6 +126,42 @@ semantic-placement call with its own OK**, blast-radius swept (§3–4) — neve
 A decision's rationale and still-open alternatives belong in an OpenSpec change's `design.md`,
 not a docs home.
 
+### 1g. Root migration — the bundle's own root changed name between releases
+
+<!-- rules -->
+
+A plugin release may rename a root it itself declares — the bundle root moved from `docs/` to
+`knowledge/` once. Nothing here is written against that pair specifically: a future release could
+rename `specs/` the same way, and this procedure has to hold without being rewritten. Detection is
+**structural, sítio a sítio, never `okf_version`-gated** — a version bump does not imply a rename
+happened, and a rename can land without one.
+
+`cq knowledge validate` emits four independent findings for a target that has not run this sweep
+since the rename, each looking at only its own site:
+
+| Finding | Fires when |
+| --- | --- |
+| `okf-legacy-root` | the new root is absent and the pre-rename root sits where it should be |
+| `okf-legacy-home` | a pre-rename home name (`knowledge/`, `reference/`) sits at the bundle root |
+| `okf-legacy-doc-quadrant` | a pre-rename Diátaxis quadrant sits under `documentation/` |
+| `okf-legacy-glossary` | `glossary.md` sits inside a home instead of at the bundle root |
+
+Each is **idempotent** — migrating one site clears exactly its own finding, so a bundle migrated
+halfway (an interrupted previous run) converges the same way `align` already converges everything
+else: run it again.
+
+**Resolve root-first, then the rest, same order every time**: `git mv` the root itself (§1, same
+mechanism as any other rename), then the homes, quadrants and glossary underneath it — each swept
+for blast radius (§3) and each gated on its OWN confirmation when it reaches product code (§4). A
+root rename is *never* a bare `git mv`: the root's name is also a **path constant** hard-coded into
+the tool that validates the bundle (a default argument, a docstring, a hook's own root variable), so
+the rename's blast radius always reaches code, and §4's code-coupled confirmation always applies —
+it is never folded into the bulk "align all" opt-in.
+
+**No dual-root compatibility window.** The old root and the new one are never both read at once;
+the migration is one rename per site, immediately superseding the old name, exactly as `align`
+already treats every other variant → canonical convergence in this file.
+
 ### Content relocation (distinct from rename)
 
 A doc filed under the **wrong subject** moves to its subject home — a job/task framework under
