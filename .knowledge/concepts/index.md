@@ -3,7 +3,7 @@
 **Cross-cutting understanding the team carries** — domain concepts, glossaries,
 mental models, explanations, learnings and background insight that inform the work
 but are not a contract, a procedure, or a fact about a specific external asset. The
-**Diátaxis "explanation" quadrant** raised to a home. Each doc carries `type: knowledge`.
+**Diátaxis "explanation" quadrant** raised to a home. Each doc carries `type: concept`.
 
 **Boundary** (what lands here vs. its neighbors):
 

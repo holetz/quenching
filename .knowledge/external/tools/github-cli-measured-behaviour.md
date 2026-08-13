@@ -1,5 +1,5 @@
 ---
-type: reference
+type: external
 title: GitHub CLI measured behaviour
 description: Measured facts about `gh` and the GitHub REST API's issue endpoints — the REST create's silent handling of an invalid Issue Type versus the porcelain commands' loud refusal for the same name, and where Issue Types are actually defined
 resource: plugins/quenching/assets/bin/quenching/specs/**
