@@ -6,8 +6,8 @@ not a single `VISION.md`.
 
 **Boundary:** direction **carries no deadline, milestone, or order**. A **raw task** toward
 it lands in `specs/backlog/` (the task inbox, outside this bundle); what **has already
-become reality** distills into [standards/](/.docs/standards/index.md); an agreed-but-unproven
-decision about *how* also lands in [standards/](/.docs/standards/index.md) as
+become reality** distills into [standards/](/.knowledge/standards/index.md); an agreed-but-unproven
+decision about *how* also lands in [standards/](/.knowledge/standards/index.md) as
 `authority: background`.
 
 ## Organization
