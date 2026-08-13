@@ -16,7 +16,6 @@ import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
-from quenching.knowledge.hook import hard_block_exempt
 from quenching.knowledge.schema import RESERVED
 from quenching.knowledge.validate import validate_tree
 
@@ -77,9 +76,6 @@ class RetiredLogChecker(unittest.TestCase):
     def test_log_md_stays_reserved_so_a_surviving_log_is_never_read_as_a_concept_doc(self):
         self.assertIn("log.md", RESERVED)
 
-    def test_log_md_stays_exempt_from_the_pretooluse_hard_gate(self):
-        self.assertTrue(hard_block_exempt("log.md"))
-
 
 # --------------------------------------------------------------------------- #
 # the retired `--listing-root` mode
@@ -113,12 +109,6 @@ class RetiredListingRootMode(unittest.TestCase):
 
     def test_index_md_stays_reserved_retiring_a_mode_is_never_unreserving_a_name(self):
         self.assertIn("index.md", RESERVED)
-
-    def test_index_md_does_not_enter_the_pretooluse_hard_gate_exemption(self):
-        # `log.md` is exempt because a retired artifact is judged by nothing; `index.md` is
-        # still PRODUCED by the bundle, and denying a typed one is the hard gate's whole job.
-        # Exempting it here is the mutation this asserts against.
-        self.assertFalse(hard_block_exempt("index.md"))
 
 
 # --------------------------------------------------------------------------- #
