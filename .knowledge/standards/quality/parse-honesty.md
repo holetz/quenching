@@ -47,7 +47,7 @@ Three consequences, in the order they bind:
 1. **The diagnostic ships with the transform, never after it.** `cq knowledge` stripped no
    comments at all, which made it the one tool that could not truncate. It was given the comment
    rule and `okf-frontmatter-unparsed` in the same change — adding a prose-loss path to a hook that
-   fires on every `/.docs/**` write in every target repo, without the means to say when it fired,
+   fires on every `/.knowledge/**` write in every target repo, without the means to say when it fired,
    would have been strictly worse than leaving it alone.
 2. **The diagnostic runs before the content checks it would otherwise be mistaken for.** In all
    three tools the anomaly finding is emitted ahead of the required-field checks, so a reader sees

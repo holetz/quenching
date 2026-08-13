@@ -15,7 +15,7 @@ maintainer: quenching
 
 Facts about **how Claude Code itself loads a plugin's commands and skills**. External tool
 behavior, not our contract — how we choose to *use* it belongs in
-[standards/automation/](/.docs/standards/automation/index.md).
+[standards/automation/](/.knowledge/standards/automation/index.md).
 
 Everything below was measured on Linux by probing throwaway command and skill files in fresh
 `claude -p` processes. Where a claim is inference rather than observation, it says so.

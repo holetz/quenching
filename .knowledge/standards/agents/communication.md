@@ -2,7 +2,7 @@
 type: standard
 title: Agent communication
 description: The language this repo declares for the prose its agents author — one BCP-47 tag on the root harness line, governing artifact and conversation alike — and the conduct contract that holds whether or not a language is declared
-resource: /.docs/**, /.specs/**
+resource: /.knowledge/**, /.specs/**
 tags: [agents, language, communication, harness]
 timestamp: 2026-07-30
 audience: both
@@ -26,7 +26,7 @@ A repo declares its language as **one BCP-47 tag**, on a single line of its **ro
 (`CLAUDE.md` / `AGENTS.md`):
 
 ```
-Language: pt-BR — the contract is /.docs/standards/agents/communication.md
+Language: pt-BR — the contract is /.knowledge/standards/agents/communication.md
 ```
 
 That line carries **a value and a citation, and nothing else**. It never paraphrases the rule below:
@@ -37,7 +37,7 @@ key on that line is a defect, not a feature.
 Three properties earn this form:
 
 - it is **in context at session start**, so reading it costs zero tool calls;
-- it works in a repo that has `specs/` and **no `/.docs/` bundle** at all;
+- it works in a repo that has `specs/` and **no `/.knowledge/` bundle** at all;
 - it is one line, so there is nothing to keep in sync.
 
 **Only the root harness carries the declaration.** A nested harness file

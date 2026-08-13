@@ -61,7 +61,7 @@ so nothing checks that they agree.
 
 The surface is partitioned by the artifact each front's commands touch:
 
-- **`/quenching:knowledge:`** — the OKF `/.docs/` bundle.
+- **`/quenching:knowledge:`** — the OKF `/.knowledge/` bundle.
 - **`/quenching:specs:`** — the native spec-driven workspace.
 - **`/quenching:components:`** — the target repo's `.claude/` automation surface.
 - **root `/align`** — deliberately outside the three namespaces, because it is the one command that

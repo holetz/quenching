@@ -16,7 +16,7 @@ maintainer: quenching
 Facts about **how `gh` and the GitHub REST issue endpoints actually behave**, measured live rather
 than read from documentation. External tool behaviour, not our contract — how this plugin's
 `github` backend uses `gh` is
-[standards/architecture/spec-backend.md](/.docs/standards/architecture/spec-backend.md).
+[standards/architecture/spec-backend.md](/.knowledge/standards/architecture/spec-backend.md).
 
 ## Issue Type: the REST create silently drops an invalid name, the porcelain commands refuse
 

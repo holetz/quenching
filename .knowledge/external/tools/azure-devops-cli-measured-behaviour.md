@@ -16,9 +16,9 @@ maintainer: quenching
 Facts about **how `az boards` / `az devops` and an Azure Boards work item actually behave** when a
 tool treats the work item as a document store. External tool behaviour, not our contract — the
 interface we hold every backend to is
-[standards/architecture/spec-backend.md](/.docs/standards/architecture/spec-backend.md), and what a
+[standards/architecture/spec-backend.md](/.knowledge/standards/architecture/spec-backend.md), and what a
 target repository declares to reach this backend is
-[standards/workflows/plugin-configuration.md](/.docs/standards/workflows/plugin-configuration.md).
+[standards/workflows/plugin-configuration.md](/.knowledge/standards/workflows/plugin-configuration.md).
 
 Everything below was measured against a real project, not read from documentation: `az` 2.89.0 with
 the `azure-devops` extension 1.0.6, org `unicredbr`, team "Diretoria Risco", Agile-derived process.

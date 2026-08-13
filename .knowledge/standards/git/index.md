@@ -27,7 +27,7 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 **present or listed here** with a one-line why.
 
 - `branching` — **present**: [branching.md](branching.md).
-- `commit-conventions` — **deferred, not applicable.** Sem um `/.docs/standards/git/**` de
+- `commit-conventions` — **deferred, not applicable.** Sem um `/.knowledge/standards/git/**` de
   mensagens de commit, `/quenching:specs:execute` já aplica o default do plugin
   ([specs-execute/git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Commit
   messages); escrever um aqui converteria esse default num contrato deste repositório sem que

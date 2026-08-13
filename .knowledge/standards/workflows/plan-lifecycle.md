@@ -52,7 +52,7 @@ spec that run is closing, and both before the merge:
 
 The shape of the test is what generalizes, not the count: an append is permitted only when the
 fact is **unavailable at promote time and unwritable anywhere else**. The distillation line
-qualifies on the second clause too — `/.docs/log.md` used to carry that provenance, and with the
+qualifies on the second clause too — `/.knowledge/log.md` used to carry that provenance, and with the
 log retired the archived spec is the only honest home left for "this doc came from this spec".
 
 **A third exception is argued for, never assumed from these two.** Two precedents are how a

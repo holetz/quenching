@@ -4,7 +4,7 @@ Quality — *observing correctness over time*: what is verified mechanically, wh
 reader, and at which severity.
 
 **Boundary:** *observing correctness*, whatever the subject. In a data repo that means per-row
-checks, drift and model monitoring; here it is the repo's own artifacts — the `/.docs/` bundle and
+checks, drift and model monitoring; here it is the repo's own artifacts — the `/.knowledge/` bundle and
 the checks that hold it honest. The *modeling* that defines data lives in
 [../data-modeling/](../data-modeling/index.md); the model lifecycle in
 [../mlops/](../mlops/index.md). One standard per file (files, not sub-folders); each carries

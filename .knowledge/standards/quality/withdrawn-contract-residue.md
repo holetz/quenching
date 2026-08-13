@@ -33,7 +33,7 @@ the withdrawn contract, in five different wordings:
 | 2 | `commands/align.md` | named findings the change deleted, and told the human an INSTALL offer belonged in the plan | execution |
 | 3 | embedded manuals | `${CLAUDE_PLUGIN_ROOT}` line citations | execution |
 | 4 | `assets/README.md` | "Installed into a target? **yes, by the docs align**", plus four more rows | branch review |
-| 5 | `/.docs/standards/architecture/plugin-layout.md` | a placement justified by an adjacency the same branch removed | branch review |
+| 5 | `/.knowledge/standards/architecture/plugin-layout.md` | a placement justified by an adjacency the same branch removed | branch review |
 
 None of the five shared a substring with any other. A grep for the class would have had to guess
 "install", "installed", "copies", "merges", "offers the overwrite", "beside the config it loads" —
@@ -61,7 +61,7 @@ So: **declare the membership rule, then derive the list from it in the task**, a
 derivation be the thing the task runs.
 
 ```bash
-grep -rln 'tool-resolution.md' --include='*.md' plugins/ /.docs/
+grep -rln 'tool-resolution.md' --include='*.md' plugins/ /.knowledge/
 ```
 
 A list written from memory is a claim about a set nobody enumerated. A list derived from a rule is

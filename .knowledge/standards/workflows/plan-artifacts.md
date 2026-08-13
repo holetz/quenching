@@ -173,10 +173,10 @@ on the spec's branch. Three classes fail that test, and each already has a comma
 | Not a task | Why it cannot be one | Owner |
 | --- | --- | --- |
 | A merge obligation — a version bump, a changelog entry, a manifest re-stamp, a tag, a release note | What the release *is* depends on what the last task turned out to be, so none of it is knowable at task 1; scheduled as work it also collides, two branches bumping from the same base to the same number | `/quenching:specs:conclude`, which settles them against the base actually being merged into |
-| The `/.docs/` the work **revealed** | It does not exist while the list is being written — it is an output of building, not an input to it | `/quenching:specs:conclude`, which writes it with the branch review |
+| The `/.knowledge/` the work **revealed** | It does not exist while the list is being written — it is an output of building, not an input to it | `/quenching:specs:conclude`, which writes it with the branch review |
 | The cycle's own closing actions — review the branch, archive, distil, merge or open the PR | They are that command's steps, not work the spec delivers | `/quenching:specs:conclude` |
 
-**One class stays a task, and stays required.** Every `/.docs/standards/**.md` path the spec
+**One class stays a task, and stays required.** Every `/.knowledge/standards/**.md` path the spec
 **declares** under §`## Impact` carries one parsed sub-heading gets its own checkbox — that is the
 pairing `sp-impact-uncovered` checks, and building the spec *is* proving the rule. So the axis is
 **declared versus revealed**, never *docs versus code*: read as "no docs tasks", this rule would
@@ -206,12 +206,12 @@ The authorization to build is **not** a promote: it is the `approved` record, pe
 ## `## Impact` carries one parsed sub-heading
 
 ```markdown
-### Standards this spec will write into /.docs/standards/
+### Standards this spec will write into /.knowledge/standards/
 
-- `/.docs/standards/auth/session-tokens.md` — how a session token is minted and revoked
+- `/.knowledge/standards/auth/session-tokens.md` — how a session token is minted and revoked
 ```
 
-`parse_impact_standards()` reads the `/.docs/standards/**.md` paths bulleted under **that heading and
+`parse_impact_standards()` reads the `/.knowledge/standards/**.md` paths bulleted under **that heading and
 only that heading**, and `validate` emits `sp-impact-uncovered` (warn) for any path no `## Tasks`
 item names.
 
@@ -220,9 +220,9 @@ spec never promised to write), and an unfilled `<placeholder>` declares nothing.
 sub-heading declares nothing and is never flagged — **the check is opt-in by writing the heading**.
 
 A bullet may carry a `§`address beside its path —
-`/.docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
+`/.knowledge/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
-only the `/.docs/standards/**.md` path and ignores the rest of the line, addressed or not, so no code
+only the `/.knowledge/standards/**.md` path and ignores the rest of the line, addressed or not, so no code
 changed to accept it. Without an address, `/quenching:specs:execute` step 4 reads the file whole,
 exactly as before — the address is an assertion the spec's own author makes, never an economy the
 executor infers on its own.
