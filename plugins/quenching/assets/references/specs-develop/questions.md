@@ -348,14 +348,21 @@ and stamps rather than refusing, so declining here costs nothing but a question 
 
 **Stop when** the human has answered. One question, one answer, done.
 
-## Gathering the evidence — delegated, and only for two banks
+## Gathering the evidence — economically, and delegated for two banks
 
 <!-- rules -->
 
-The **adversarial** and **gate** banks ask questions that only a reading answers: which alternatives
-the codebase actually admits, which `docs/standards/` contract a task would violate, which term the
-spec uses in a sense the glossary does not. That reading is **optional and delegable**; the
-interrogation never is.
+Every bank that reads the codebase or `/.docs/` to answer its own questions — the **shape** bank's
+"read it, do not theorize" included, not only what follows below — does so under
+[align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md):
+the aggregate a `grep`/`gh`/`cq` call produces, never the raw dump; `cq components read <path>
+--sections "§X"` for `/.docs/standards/` and `/.docs/knowledge/glossary.md`, the same way this
+plugin's own references already address a section instead of a whole file.
+
+The **adversarial** and **gate** banks additionally ask questions that only a reading answers:
+which alternatives the codebase actually admits, which `docs/standards/` contract a task would
+violate, which term the spec uses in a sense the glossary does not. That reading is **optional and
+delegable**; the interrogation never is.
 
 Where it is taken, the sub-agent is `Read, Grep, Glob` and nothing else, and it returns **one
 compact table** and no trail:
