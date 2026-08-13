@@ -69,12 +69,15 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
   own gate is legal — stated once in
   [spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §The gates, applied here on every write.
-- **Read `/.knowledge/` before writing — in the branch that needs it.** The relevant `/.knowledge/standards/` and
-  `glossary.md` are binding on wording, so a spec does not contradict a rule the repo
-  already agreed on or invent a second name for a thing that already has one. Only the
-  **adversarial** and **gate** banks ask questions that reading answers, so it is step 3b's and
-  never the preamble's; shape, discoveries and approval skip it. No OKF bundle in the repo
-  (`/.knowledge/index.md` with `okf_version`) → skip silently.
+- **Read `/.knowledge/` before writing — in the branch that needs it, and by section.** The relevant
+  `/.knowledge/standards/` and `/.knowledge/glossary.md` are binding on wording, so a spec does not
+  contradict a rule the repo already agreed on or invent a second name for a thing that already has
+  one. Only the **adversarial** and **gate** banks ask questions that reading answers, so it is
+  step 3b's and never the preamble's; shape, discoveries and approval skip it. Read it per
+  [align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md)
+  — `cq components read <path> --sections "§X"`, not the whole file, when only a rule or two
+  governs the question at hand; it resolves `/.knowledge/` the same way it resolves this plugin's own
+  references. No OKF bundle in the repo (`/.knowledge/index.md` with `okf_version`) → skip silently.
 - **Never edit code.** If the work implies code changes, that is `/quenching:specs:execute`. If a request
   changes the spec's *intent* rather than sharpening it, say so and offer a fresh
   `/quenching:specs:create` instead of quietly rewriting what was already agreed.
