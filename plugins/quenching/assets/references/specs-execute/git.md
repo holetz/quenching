@@ -151,7 +151,8 @@ tracks — no installed dependencies, no `.env`, no venv, no build output.
 ```
 
 See
-[plugin-configuration.md](../../../../../.docs/standards/workflows/plugin-configuration.md).
+[plugin-configuration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/plugin-configuration.md)
+§The recognised keys.
 
 Read by `cq specs config --json` (exit 0 whether or not anything is declared) and run **once** by
 the inline offer, immediately after `git worktree add`, with **cwd inside the new worktree** — the
@@ -301,6 +302,20 @@ plan/<slug>: merge (<strategy>)
 plan/<slug>: record <what>
 ```
 
+**A section's squashed commit trades the task id for the section number**, otherwise the same
+grammar:
+
+```
+plan/<slug>: <N> <section title>
+```
+
+```
+plan/session-tokens: 3 Rate limiting for the auth middleware
+```
+
+Every task the section held ends up recording this same subject — [execution.md](execution.md)
+§The section squash is where and when that happens.
+
 ## The subject is the anchor
 
 <!-- rules -->
@@ -324,9 +339,12 @@ git log --grep="<the recorded subject>" --fixed-strings
 it has one consequence everywhere: every record is written *before* the thing it describes, so
 nothing is left to write afterwards.
 
-- `/quenching:specs:execute` ticks the box **first**, then commits the code and the ticked box together. One
-  task is exactly one commit. The per-task bookkeeping commit is gone — it existed only because a
-  sha cannot be known before the commit that carries it.
+- `/quenching:specs:execute` ticks the box **first**, then commits the code and the ticked box together. The
+  per-task bookkeeping commit is gone — it existed only because a sha cannot be known before the
+  commit that carries it. The commit itself is squashed to one per section at that section's own
+  boundary ([execution.md](execution.md) §The section squash), which re-stamps every task's
+  `subject:` to the section's, so the anchor still resolves — at the section's granularity, not
+  the task's.
 - `/quenching:specs:conclude` stamps `merge: {strategy, subject}` on the work branch, so the **merge is the
   last action of the run** and nothing is ever committed to the base branch after it.
 
@@ -351,11 +369,11 @@ Under the sha anchor, rebase rewrote every recorded commit and left the archived
 fields pointing at commits that no longer existed — it was the one strategy that made the record
 strictly worse rather than merely narrower.
 
-**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-task commits land
-on the base directly and their subjects resolve there, so a merge pointer would add nothing.
+**On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-section commits
+land on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
 Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
-[plan-git-record.md](../../../../../.docs/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+`plan-git-record.md` already state. `## Outcome` is
 written before the merge and says what the run **delivered** — an open, unmerged PR archived as
 `done` would assert something that has not happened yet. And `merge:` is stamped before the merge
 so that it is the run's last action; a run that ends before the merge leaves the record stamped and
@@ -393,9 +411,9 @@ the main checkout, from the main checkout it names itself. When no checkout hold
 
 | Strategy | Command | What it buys | What it costs |
 | --- | --- | --- | --- |
-| **merge commit** *(default)* | `git merge --no-ff plan/<slug>` | every per-task commit stays on the base branch and every recorded subject resolves from it | one extra commit, and the base branch's history carries the spec's task-level detail |
-| **squash** | `git merge --squash plan/<slug>` then commit | one commit on the base branch; the spec reads as a single change | **the per-task commits live only on the branch** — deleting it leaves every recorded subject resolving to nothing |
-| **rebase** | `git rebase <base> plan/<slug>`, then fast-forward | linear history, per-task commits preserved | rewrites every commit it moves — but a subject is carried along by the rewrite, so the records survive it |
+| **merge commit** *(default)* | `git merge --no-ff plan/<slug>` | every per-section commit stays on the base branch and every recorded subject resolves from it | one extra commit, and the base branch's history carries the spec's section-level detail |
+| **squash** | `git merge --squash plan/<slug>` then commit | one commit on the base branch; the spec reads as a single change | **the per-section commits live only on the branch** — deleting it leaves every recorded subject resolving to nothing |
+| **rebase** | `git rebase <base> plan/<slug>`, then fast-forward | linear history, per-section commits preserved | rewrites every commit it moves — but a subject is carried along by the rewrite, so the records survive it |
 | **fast-forward** | `git merge --ff-only plan/<slug>` | nothing is rewritten and nothing is added | only possible when the base has not moved |
 
 Whatever is chosen is recorded as `merge: {strategy, subject}` and stated in `## Outcome`, because
@@ -423,7 +441,7 @@ none (`sp-bad-merge`).
 
 <!-- rules -->
 
-**The per-task commits survive only on the
+**The per-section commits survive only on the
 branch.** So when squash is chosen, `/quenching:specs:conclude` offers **not** to delete the branch, and says
 why. Keeping it costs a ref; deleting it silently turns every `subject:` field in the archived spec
 into a reference that resolves to nothing.
@@ -488,10 +506,9 @@ gh pr create --base <base> --title "<title>" --body "<body>"
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch, and in a repo running the develop/main flow
-([docs/standards/git/branching.md](/.docs/standards/git/branching.md)) that default deliberately
-stays the publication branch — see that standard's own reasoning for why. `<base>` is this spec's
-own resolved base, the same value the local route's merge targets.
+default branch, and in a repo running the develop/main flow (`git/branching.md`) that default
+deliberately stays the publication branch — see that standard's own reasoning for why. `<base>` is
+this spec's own resolved base, the same value the local route's merge targets.
 
 **The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
 in the same block, before the run reports done:
