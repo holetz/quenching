@@ -59,6 +59,26 @@ gate. `cq knowledge validate selftest` holds the line with a fixture bundle carr
 
 - **WARN `bundle-no-index`** — the bundle root has no `index.md`.
 
+## Pre-rename layout (whole-tree — every mode; ERROR)
+
+<!-- rules -->
+
+A target that has not run `/quenching:knowledge:align` since a plugin release renamed one of its own
+declared roots (the bundle root moved from `docs/` to `knowledge/` once — see
+[migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §1g). Each
+finding looks at exactly one site and is **idempotent** — migrating that one site clears it, whether
+or not the others have migrated yet. **ERROR**, decided in `renomear-docs-para-knowledge` `##
+Open Decisions`: the `PreToolUse` hard block never reads `validate_file`/`validate_tree` output, so
+this severity can never deny a write.
+
+- **ERROR `okf-legacy-root`** — the new root is absent and the pre-rename root sits where it
+  should be.
+- **ERROR `okf-legacy-home`** — a pre-rename home name (`knowledge/`, `reference/`) sits at the
+  bundle root instead of its OKF name (`concepts/`, `external/`).
+- **ERROR `okf-legacy-doc-quadrant`** — a pre-rename Diátaxis quadrant (`getting-started/`,
+  `concepts/`) sits under `documentation/` instead of its OKF name (`tutorials/`, `explanation/`).
+- **ERROR `okf-legacy-glossary`** — `glossary.md` sits inside a home instead of at the bundle root.
+
 ## Structural integrity (whole-tree — CLI + `Stop` only)
 
 <!-- rules -->

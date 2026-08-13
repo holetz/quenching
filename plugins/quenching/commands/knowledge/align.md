@@ -116,6 +116,11 @@ route every probe finding to its owner via
 [knowledge-align/cycle.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/cycle.md)'s table. Produce
 the plan — enumerate:
   - **(a)** homes to scaffold (only those that apply);
+  - **(a2)** pre-rename plugin-layout sites to migrate (`okf-legacy-root`/`-home`/`-doc-quadrant`/
+    `-glossary` findings) — the bundle root, a home, a `documentation/` quadrant, or the glossary
+    still sitting under a name a plugin release retired; resolved via
+    [knowledge-align/migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)
+    §1g, each swept for blast radius like any other rename (f);
   - **(b)** variants to migrate/rename (with per-item destination);
   - **(b2)** **prefix-clusters to fold into subfolders** (`nomenclatura-*` siblings → a
     `symbol-naming/` folder, prefix stripped) — one folder per coherent cluster; note the ones
@@ -164,6 +169,11 @@ plan was rejected and nothing was written.
   `knowledge/index.md` (it is the only pre-seeded concept doc the skeleton ships).
 - **Migrate** variants: move the folder, update every cross-ref found in step 3 (relative
   within a home, absolute `/.docs/...` across homes).
+- **Resolve `okf-legacy-*` sites** ([migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md)
+  §1g): `git mv` the root/home/quadrant/glossary to its canonical name, root first, then repoint
+  every code-coupled reference the blast-radius sweep found (a path default, a docstring, a hook's
+  own root constant) — each such site is its **own** confirmation from step 3, never folded into
+  the batch OK.
 - **Stamp/merge** frontmatter with the molds in `${CLAUDE_PLUGIN_ROOT}/assets/templates/`
   (`standard-front.md` for standards, `concept-front.md` otherwise).
 - **Regenerate** every `index.md` deterministically — **one for every directory that holds
