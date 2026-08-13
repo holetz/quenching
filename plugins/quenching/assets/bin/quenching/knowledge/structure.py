@@ -6,7 +6,7 @@ STRUCTURAL INTEGRITY (whole-tree only — CLI + Stop; all WARN, OKF-tolerant)
 - **`dir-no-index`**      a directory holds concept docs but has no `index.md` listing.
 - **`index-broken-link`** an `index.md` links to a `.md`/dir that does not exist on disk.
 - **`index-orphan`**      a concept doc nothing links to (unlisted / not discoverable).
-- **`glossary-broken-link`** the same link rule applied to `knowledge/glossary.md`,
+- **`glossary-broken-link`** the same link rule applied to `glossary.md`,
   whose links ARE its content — a dead entry is a dead lookup, and `index-broken-link`
   never reached it because the glossary is a concept doc, not an `index.md`.
 These stay WARN by design (OKF says consumers MUST tolerate broken links and MAY
@@ -51,8 +51,8 @@ def _resolve_link(target: str, file_dir: str, root: str):
     flagged — for anything OKF does not govern: external URLs, anchors, mailto/tel,
     non-markdown assets (`.png`/`.pdf`/…), links that escape the bundle root
     (repo files, `../..` climbs), and repo-absolute `/…` links not written in the
-    bundle's own form (`/.docs/…` or `/<home>/…`). We only police the bundle's own
-    link graph, so a legitimate reference to a repo file outside `/.docs/` is not a
+    bundle's own form (`/.knowledge/…` or `/<home>/…`). We only police the bundle's own
+    link graph, so a legitimate reference to a repo file outside `/.knowledge/` is not a
     false "broken link".
     """
     t = target.split("#", 1)[0].strip()
@@ -73,7 +73,7 @@ def _resolve_link(target: str, file_dir: str, root: str):
     if t.startswith("/"):
         rest = t[1:]
         first, _, tail = rest.partition("/")
-        if first == os.path.basename(root):          # `/.docs/…` — this plugin's bundle-absolute form
+        if first == os.path.basename(root):          # `/.knowledge/…` — this plugin's bundle-absolute form
             rest = tail
         elif not os.path.isdir(os.path.join(root, first)):
             return None                              # repo-absolute `/…` (e.g. `/.claude/…`) — not bundle-governed
@@ -100,7 +100,7 @@ def validate_structure(bundle_root: str, corpus: dict) -> list[tuple[str, str, s
       - `dir-no-index`      a folder holds concept docs but has no `index.md`.
       - `index-broken-link` an `index.md` links to a file/dir that does not exist.
       - `index-orphan`      a concept doc no `.md` in the bundle links to (unlisted).
-      - `glossary-broken-link` the same link rule on `knowledge/glossary.md`.
+      - `glossary-broken-link` the same link rule on `glossary.md`.
     Consumes the `_build_corpus` dict — no disk reads of its own.
     """
     findings: list[tuple[str, str, str, str]] = []

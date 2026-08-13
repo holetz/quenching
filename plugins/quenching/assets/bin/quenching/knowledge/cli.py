@@ -6,7 +6,7 @@ CLI  `validate [<bundle-or-docs-dir>] [--json]`
    Validates the whole bundle rooted at the given directory (walks every `.md`),
    prints a human report, and exits **0** when there are no errors, **1** otherwise.
    This is what `quenching-knowledge-align`/`quenching-knowledge-add` invoke and what the plugin's own
-   verification runs over `assets/docs/`.
+   verification runs over `assets/knowledge/`.
    This checker validates OKF bundles and nothing else. The `specs/` front is owned
    end-to-end by the specs pillar's `validate`, which holds a spec to its own contract
    (canonical heading set, stage gates, filename conformance, slug identity) — a contract
@@ -42,7 +42,7 @@ from quenching.knowledge.validate import validate_tree
 
 
 USAGE = ("usage: cq knowledge validate [<bundle-dir>] [--json]   "
-         "(default bundle-dir: .docs)\n"
+         "(default bundle-dir: .knowledge)\n"
          "       cq knowledge hook                               "
          "(reads the hook JSON on stdin)")
 
@@ -51,7 +51,7 @@ def run_cli(argv: list[str]) -> int:
     cfg = _load_config(_project_dir({}))
     as_json = "--json" in argv
     paths = [a for a in argv if not a.startswith("-")]
-    target = paths[0] if paths else ".docs"
+    target = paths[0] if paths else ".knowledge"
     ignore_globs = tuple(cfg.get("ignoreGlobs") or ())
     # no deadline in CLI mode — always a full scan
     # `with_stale` only here: CLI is the one mode that may shell out to git per doc

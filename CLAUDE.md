@@ -2,11 +2,11 @@
 
 A Claude Code **plugin marketplace** holding one plugin, `quenching`
 ([plugins/quenching/](plugins/quenching/)): a three-front aligner that forces a *target* repo's
-`/.docs/` OKF bundle, native `/.specs/` workspace, and `.claude/` command surface into one canonical
+`/.knowledge/` OKF bundle, native `/.specs/` workspace, and `.claude/` command surface into one canonical
 shape. There is no application code, no build step and no test framework — the repo is markdown
 command bodies plus four dependency-free stdlib Python tools.
 
-Language: pt-BR — the contract is [/.docs/standards/agents/communication.md](/.docs/standards/agents/communication.md).
+Language: pt-BR — the contract is [/.knowledge/standards/agents/communication.md](/.knowledge/standards/agents/communication.md).
 
 ## Operating this repo
 
@@ -22,7 +22,7 @@ cd plugins/quenching
 cat VERSION
 python3 assets/bin/cq --version
 # the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
-python3 assets/bin/cq knowledge validate assets/docs                      # 0 error(s); stale-doc warns are advisory
+python3 assets/bin/cq knowledge validate assets/knowledge                 # 0 error(s); stale-doc warns are advisory
 # the command surface
 python3 assets/bin/cq --root . components doctor --json                  # 26 commands, no findings
 python3 assets/bin/cq --root . components lint --json                    # exit 0 (warnings reported, not fatal)
@@ -31,10 +31,10 @@ python3 -m unittest discover -s tests
 ```
 
 **`stale-doc` is never counted as a failure**, here or anywhere. The skeleton's
-`standards/agents/communication.md` declares `resource: /.docs/**, /.specs/**` — a legitimate
+`standards/agents/communication.md` declares `resource: /.knowledge/**, /.specs/**` — a legitimate
 bundle-aggregate scope, per
-[bundle-verification.md](/.docs/standards/quality/bundle-verification.md) §The `resource` glob-set
-format — so **any** commit under either tree ages it, and a branch that touches `/.docs/` cannot help
+[bundle-verification.md](/.knowledge/standards/quality/bundle-verification.md) §The `resource` glob-set
+format — so **any** commit under either tree ages it, and a branch that touches `/.knowledge/` cannot help
 raising the count. The resource moved; the rule did not. Read the gate as zero errors.
 
 **Nothing above tests that the surface actually LOADS** — the registry is built at session start,
@@ -54,7 +54,7 @@ is a billed agent session, and measured across the whole archive, **every red ru
 produced traced to a defect in the harness itself, none to a surface regression**. For spoken
 routing reach for `/quenching:components:command:eval`, which measures it graded and with a
 boundary arm; check 3 is a worse copy kept opt-in. Full reasoning →
-[surface-verification.md](/.docs/standards/quality/surface-verification.md).
+[surface-verification.md](/.knowledge/standards/quality/surface-verification.md).
 
 `cq specs` has no fixture in the repo; exercise it in a throwaway workspace (`cq specs new x` →
 `status`/`next`/`task` → `promote x --outcome abandoned`) when its logic changes.
@@ -76,24 +76,24 @@ boundary arm; check 3 is a worse copy kept opt-in. Full reasoning →
 
 ## Where knowledge lives
 
-Knowledge is **NOT** in this file — it lives in the OKF bundle at [/.docs/](/.docs/index.md).
+Knowledge is **NOT** in this file — it lives in the OKF bundle at [/.knowledge/](/.knowledge/index.md).
 
 **Resolving a term.** Hit an unfamiliar repo word or codename? The glossary first →
-[/.docs/knowledge/glossary.md](/.docs/knowledge/glossary.md) (`grep -i '<term>' /.docs/knowledge/glossary.md`).
+[/.knowledge/glossary.md](/.knowledge/glossary.md) (`grep -i '<term>' /.knowledge/glossary.md`).
 
-- [/.docs/standards/](/.docs/standards/index.md) — how WE build: the proven contracts. Start here for
-  the [command surface's naming](/.docs/standards/naming/command-surface.md) (one file per entry
-  point, the path is the identity), the [align surface](/.docs/standards/architecture/align-surface.md)
-  (one align per front, probe first), the [plugin layout rule](/.docs/standards/architecture/plugin-layout.md)
+- [/.knowledge/standards/](/.knowledge/standards/index.md) — how WE build: the proven contracts. Start here for
+  the [command surface's naming](/.knowledge/standards/naming/command-surface.md) (one file per entry
+  point, the path is the identity), the [align surface](/.knowledge/standards/architecture/align-surface.md)
+  (one align per front, probe first), the [plugin layout rule](/.knowledge/standards/architecture/plugin-layout.md)
   (`commands/**` is the only registered tree, which is why shared procedure lives under `assets/`),
-  and the [release lockstep](/.docs/standards/ci-cd/versioning-release.md).
-- [/.docs/knowledge/](/.docs/knowledge/index.md) — generic understanding we hold; its
-  [glossary.md](/.docs/knowledge/glossary.md) is the A–Z term lookup.
-- [/.docs/reference/](/.docs/reference/index.md) — facts about what we consume.
-- [/.docs/catalog/](/.docs/catalog/index.md), [/.docs/vision/](/.docs/vision/index.md) and
-  [/.docs/documentation/](/.docs/documentation/index.md) exist but are empty — this repo has no data,
+  and the [release lockstep](/.knowledge/standards/ci-cd/versioning-release.md).
+- [/.knowledge/concepts/](/.knowledge/concepts/index.md) — generic understanding we hold; ships the
+  fixed [glossary.md](/.knowledge/glossary.md), the A–Z term lookup.
+- [/.knowledge/external/](/.knowledge/external/index.md) — facts about what we consume.
+- [/.knowledge/catalog/](/.knowledge/catalog/index.md), [/.knowledge/vision/](/.knowledge/vision/index.md) and
+  [/.knowledge/documentation/](/.knowledge/documentation/index.md) exist but are empty — this repo has no data,
   and direction and the site layer have not been written.
-- The spec workspace — a quenching-managed front **outside** the `/.docs/` bundle, and **not a folder
+- The spec workspace — a quenching-managed front **outside** the `/.knowledge/` bundle, and **not a folder
   in this repo**: `.claude/quenching.json` declares `backend: github`, so every spec is an issue and
   there is nothing under `/.specs/` to read. `python3 plugins/quenching/assets/bin/cq specs list`
   derives the front from the declared backend on demand, and is the only honest way to see it.
@@ -118,5 +118,5 @@ path are the **product's own documentation**, not repo standards — do not rest
   [assets/references/knowledge-align/okf-spec.md](plugins/quenching/assets/references/knowledge-align/okf-spec.md).
 
 <!-- Root harness pointer, auto-loaded by Claude Code on every turn. Keep it a thin pointer:
-     repo-wide operations + the /.docs/ home map. Knowledge is MOVED into /.docs/, never copied here.
+     repo-wide operations + the /.knowledge/ home map. Knowledge is MOVED into /.knowledge/, never copied here.
      Maintained by the quenching plugin; this file is a harness pointer, not an OKF concept. -->

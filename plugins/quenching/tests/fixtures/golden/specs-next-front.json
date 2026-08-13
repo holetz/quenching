@@ -28,7 +28,7 @@
         "complexity": "medium",
         "date": "2026-01-05"
       },
-      "ageDays": 216,
+      "ageDays": 220,
       "unreadable": null,
       "branch": {
         "work": "plan/alpha-widget",
@@ -54,7 +54,7 @@
       "readyGateMet": false,
       "approved": null,
       "priority": null,
-      "ageDays": 212,
+      "ageDays": 216,
       "unreadable": null,
       "branch": {
         "work": "plan/beta-gizmo",
@@ -62,7 +62,7 @@
         "current": false
       },
       "path": ".specs/plans/beta-gizmo.md",
-      "reason": "captured, 212d old"
+      "reason": "captured, 216d old"
     }
   ]
 }

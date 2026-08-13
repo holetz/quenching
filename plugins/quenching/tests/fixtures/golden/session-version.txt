@@ -1,1 +1,1 @@
-session <VERSION>
+skills <VERSION>

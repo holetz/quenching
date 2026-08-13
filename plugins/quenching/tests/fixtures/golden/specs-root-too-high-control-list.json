@@ -1,0 +1,105 @@
+{
+  "ok": true,
+  "root": "<WS>/.specs",
+  "count": 3,
+  "specs": [
+    {
+      "slug": "alpha-widget",
+      "phase": "plans",
+      "folder": "plans",
+      "legacy": false,
+      "file": "alpha-widget.md",
+      "date": "2026-01-05",
+      "title": "Alpha Widget",
+      "stage": "executing",
+      "outcome": null,
+      "records": {
+        "priority": {
+          "level": "1",
+          "criticality": "high",
+          "complexity": "medium",
+          "date": "2026-01-05"
+        },
+        "refined": {
+          "mode": "deep",
+          "date": "2026-01-06"
+        },
+        "approved": {
+          "date": "2026-01-07"
+        },
+        "branch": {
+          "base": "develop",
+          "work": "plan/alpha-widget"
+        },
+        "reviewed": null,
+        "merge": null,
+        "outcome": null
+      },
+      "unreadable": null,
+      "tasks": {
+        "checked": 1,
+        "blocked": 1,
+        "total": 6
+      },
+      "path": ".specs/plans/alpha-widget.md"
+    },
+    {
+      "slug": "beta-gizmo",
+      "phase": "plans",
+      "folder": "plans",
+      "legacy": false,
+      "file": "beta-gizmo.md",
+      "date": "2026-01-09",
+      "title": "Beta Gizmo",
+      "stage": "captured",
+      "outcome": null,
+      "records": {
+        "priority": null,
+        "refined": null,
+        "approved": null,
+        "branch": null,
+        "reviewed": null,
+        "merge": null,
+        "outcome": null
+      },
+      "unreadable": null,
+      "tasks": {
+        "checked": 0,
+        "blocked": 0,
+        "total": 0
+      },
+      "path": ".specs/plans/beta-gizmo.md"
+    },
+    {
+      "slug": "legacy-knob",
+      "phase": "archive",
+      "folder": "archive",
+      "legacy": false,
+      "file": "legacy-knob.md",
+      "date": "2025-11-02",
+      "title": "Legacy Knob",
+      "stage": "archive",
+      "outcome": "done",
+      "records": {
+        "priority": null,
+        "refined": null,
+        "approved": null,
+        "branch": null,
+        "reviewed": null,
+        "merge": {
+          "strategy": "merge-commit",
+          "subject": "plan/legacy-knob: merge",
+          "pr": "41"
+        },
+        "outcome": "done"
+      },
+      "unreadable": null,
+      "tasks": {
+        "checked": 1,
+        "blocked": 0,
+        "total": 1
+      },
+      "path": ".specs/archive/legacy-knob.md"
+    }
+  ]
+}

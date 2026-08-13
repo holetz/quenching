@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Freeze the `--json` contract of the four shipped scripts as golden outputs.
 
-`python3 plugins/quenching/tests/capture_golden.py` rebuilds
-`tests/fixtures/golden/` from scratch: one file per captured invocation, plus an
-`INDEX.json` naming the exact argv, cwd and exit code behind each one.
+DO NOT RUN THIS FILE DIRECTLY. `SPECS_PY`/`SKILLS_PY`/`SESSION_PY`/`OKF_PY` name the
+four pre-refactor scripts `plan/modularizar-specs-knowledge-components` (task 10.1)
+deleted. `main()` still deletes every existing golden first, then shells out to
+those paths; each `Capture.run` gets an empty stdout back (`python3: can't open
+file ...`, exit 2, recorded in `INDEX.json` but never checked), and `main()`
+reports success regardless. Running it today does not regenerate the goldens —
+it silently empties them.
 
-The capture only exists while `specs.py`, `skills.py`, `session.py` and
-`okf-validate.py` are the four separate scripts it shells out to. A refactor that
-merges them into a package cannot regenerate these goldens — it can only be
-measured against them.
+The four `capture_*` functions below are still live: `test_golden.Replay` imports
+and reuses them, pointed at `cq` instead of `SCRIPTS`, to both compare against and
+(`renomear-docs-para-knowledge`, task 6.1, 2026-08-13) refresh the frozen bytes.
+`main()` itself has had no working target since that refactor; fix `SCRIPTS` before
+ever invoking it again.
 
 Everything that varies between machines or runs goes through `normalize`, which
 the regression suite re-imports so both sides of a comparison are normalized by
@@ -121,9 +126,9 @@ one is invisible to the other.
 
 ## Impact
 
-### Standards this spec will write into /.docs/standards/
+### Standards this spec will write into /.knowledge/standards/
 
-- `/.docs/standards/architecture/widget-registry.md` — one registry owns the list
+- `/.knowledge/standards/architecture/widget-registry.md` — one registry owns the list
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -170,8 +175,8 @@ The registry lives in `src/widgets/registry.py`. Both readers import it; neither
       pattern: src/widgets/registry.py
       verify: python3 -m unittest tests.widgets.test_loader
 - [ ] 1.3 Write the registry standard
-      files: /.docs/standards/architecture/widget-registry.md (new)
-      verify: python3 assets/hooks/okf-validate.py .docs
+      files: /.knowledge/standards/architecture/widget-registry.md (new)
+      verify: python3 assets/hooks/okf-validate.py .knowledge
 
 ### 2. Readers
 
@@ -395,6 +400,32 @@ def capture_specs(cap: Capture) -> None:
     write("migrate-dry-run", ["migrate", "--dry-run", "--json"], legacy=True)
     write("migrate", ["migrate", "--json"], legacy=True)
 
+    # `--root` naming the CONTAINER of a phased `.specs/`, not the workspace itself —
+    # `sp-root-too-high`. One workspace serves the read-only cases below (`list`/`validate`/
+    # `status`/`doctor`, over the SAME fixture the control pair reads correctly); `new` gets its
+    # own so a bug that fails to refuse cannot leave a stray `plans/` behind for the others to
+    # read.
+    too_high = cap.workspace("root-too-high")
+    container = str(too_high)
+    correct = str(too_high / ".specs")
+
+    def over_root(name: str, root: str, argv: list[str]) -> None:
+        cap.run(f"specs-root-too-high-{name}", "specs", ["--root", root] + argv,
+                cwd=plugin, ws=too_high)
+
+    over_root("list", container, ["list", "--json"])
+    over_root("validate", container, ["validate", "--json"])
+    over_root("status", container, ["status", "--spec", "alpha-widget", "--json"])
+    over_root("doctor", container, ["doctor", "--json"])
+    # Control — same fixture, `--root` pointed at `.specs/` itself: unaffected, exactly as
+    # before this predicate existed.
+    over_root("control-list", correct, ["list", "--json"])
+    over_root("control-validate", correct, ["validate", "--json"])
+
+    new_ws = cap.workspace("root-too-high-new")
+    cap.run("specs-root-too-high-new", "specs",
+            ["--root", str(new_ws), "new", "some-spec", "--json"], cwd=plugin, ws=new_ws)
+
     exp = cap.workspace("export")
     cap.run("specs-export", "specs",
             ["--root", str(exp / ".specs"), "export", "--all",
@@ -419,7 +450,7 @@ def capture_skills(cap: Capture) -> None:
 
     run("version", ["--version"], ext="txt")
     run("lint", ["lint", "--json"])
-    run("lint-one", ["lint", "commands/docs/add.md", "--json"])
+    run("lint-one", ["lint", "commands/knowledge/add.md", "--json"])
     run("doctor", ["doctor", "--json"])
     run("selftest", ["selftest", "--json"])
     run("drift", ["drift", "--json"])
@@ -471,24 +502,19 @@ def capture_okf(cap: Capture) -> None:
     this repo's commit history. The copy carries no git, so the scan is the
     structural verdict alone — which is the contract these goldens exist to freeze.
 
-    The copy keeps the skeleton's own layout, `<project>/docs/`, because a doc's
-    `resource` globs resolve against the bundle's parent: renaming the bundle turns
-    every one of them into a `resource-unresolved` warning the shipped skeleton does
-    not have.
-
-    THAT SENTENCE DESCRIBES THE SKELETON AS IT WAS FROZEN, AND THE SKELETON HAS SINCE
-    MOVED. It now spells the bundle root `/.docs/` throughout — the root
-    `standards/architecture/bundle-root.md` fixes for every target repo — so this copy's
-    `docs/` layout no longer matches what the skeleton declares, and no layout reproduces
-    the frozen output: at `docs/` the glossary's scope goes unresolved, and at `.docs/`
-    the two warnings the golden DOES carry resolve and vanish. The code is left exactly
-    as captured, because it is the shared builder both sides of the comparison run; the
-    three affected cases are named in `test_golden.UNROUTED` with that reason.
+    The copy keeps the skeleton's own layout, `<project>/.knowledge/`, matching what
+    `standards/architecture/bundle-root.md` fixes for every target repo: a doc's
+    `resource` globs resolve against the bundle's parent, so a copy under any other
+    name would turn every one of them into a `resource-unresolved` warning the
+    shipped skeleton does not have (`renomear-docs-para-knowledge`, task 6.1,
+    2026-08-13 — this copy used to sit at `<project>/docs/` while the skeleton
+    declared `/.docs/`, a mismatch `okf-validate-skeleton`/`-text`/`-findings`
+    carried as UNROUTED entries until this fix).
     """
     proj = cap.tmp / "ws-okf"
     proj.mkdir(parents=True)
-    bundle = proj / "docs"
-    shutil.copytree(PLUGIN_ROOT / "assets" / "docs", bundle)
+    bundle = proj / ".knowledge"
+    shutil.copytree(PLUGIN_ROOT / "assets" / "knowledge", bundle)
 
     cap.run("okf-version", "okf", ["--version"], cwd=proj, ws=proj, ext="txt")
     cap.run("okf-selftest", "okf", ["selftest", "--json"], cwd=proj, ws=proj)
@@ -496,15 +522,15 @@ def capture_okf(cap: Capture) -> None:
     cap.run("okf-validate-skeleton-text", "okf", [str(bundle)], cwd=proj, ws=proj, ext="txt")
 
     bad_body = "# Golden Fixture Bad\n\nA concept doc carrying no frontmatter at all.\n"
-    (bundle / "knowledge" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
+    (bundle / "concepts" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
     cap.run("okf-validate-findings", "okf", [str(bundle), "--json"], cwd=proj, ws=proj)
 
-    # Hook mode reads the bundle at `<project>/.docs` and never at a path argument,
+    # Hook mode reads the bundle at `<project>/.knowledge` and never at a path argument,
     # so it needs its own copy under that name.
     hook_proj = cap.tmp / "ws-okf-hook"
     hook_proj.mkdir(parents=True)
-    shutil.copytree(PLUGIN_ROOT / "assets" / "docs", hook_proj / ".docs")
-    bad = hook_proj / ".docs" / "knowledge" / "golden-fixture-bad.md"
+    shutil.copytree(PLUGIN_ROOT / "assets" / "knowledge", hook_proj / ".knowledge")
+    bad = hook_proj / ".knowledge" / "concepts" / "golden-fixture-bad.md"
     bad.write_text(bad_body, encoding="utf-8")
     payload = json.dumps({
         "hook_event_name": "PostToolUse",

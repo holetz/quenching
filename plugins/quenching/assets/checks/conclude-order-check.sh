@@ -30,7 +30,7 @@
 # It carried only `0 pass · 1 fail` until the fixture broke on two design changes it predates — the
 # undated spec filename and the `files` backend's persistent worktree — and reported that as a
 # failed check, sending a reader to look for a defect in the tool that the tool did not have. The
-# repo's own `/.docs/standards/quality/surface-verification.md` §The five preconditions a check must
+# repo's own `/.knowledge/standards/quality/surface-verification.md` §The five preconditions a check must
 # satisfy is the rule; `citation-check.sh` already spells the same three rungs.
 #
 # Established by the `move-conclude-merge-last` spec, task 6.1.

@@ -1,15 +1,21 @@
 [
   {
     "severity": "ERROR",
-    "path": "knowledge/golden-fixture-bad.md",
+    "path": "concepts/golden-fixture-bad.md",
     "code": "no-frontmatter",
     "message": "concept doc has no YAML frontmatter (needs a `---` block with a non-empty `type`)"
   },
   {
     "severity": "WARN",
+    "path": "glossary.md",
+    "code": "resource-unresolved",
+    "message": "`resource` entry `/.knowledge/**` matches nothing on disk"
+  },
+  {
+    "severity": "WARN",
     "path": "standards/agents/communication.md",
     "code": "resource-unresolved",
-    "message": "`resource` entry `/.docs/**` matches nothing on disk"
+    "message": "`resource` entry `/.knowledge/**` matches nothing on disk"
   },
   {
     "severity": "WARN",
@@ -19,7 +25,7 @@
   },
   {
     "severity": "WARN",
-    "path": "knowledge/golden-fixture-bad.md",
+    "path": "concepts/golden-fixture-bad.md",
     "code": "index-orphan",
     "message": "concept doc is not linked from any index.md or sibling doc (unlisted \u2014 regenerate the folder's index.md)"
   }

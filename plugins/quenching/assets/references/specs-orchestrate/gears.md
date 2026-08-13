@@ -9,7 +9,7 @@ it moves up.
 This contract lives in the plugin, never in a target's bundle: it is procedure a command needs
 while running inside a target, not a fact about that target, so it is cited by
 `${CLAUDE_PLUGIN_ROOT}` from every repo the same way — never installed, and never resolved from a
-target's own `/.docs/`.
+target's own `/.knowledge/`.
 
 ## Contents
 

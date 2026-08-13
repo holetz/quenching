@@ -16,7 +16,7 @@ is the **single owner** of the per-doc procedure (classify → stamp → index �
 self-check); this skill **cites** it and adds only the ingestion-safety deltas below. Source
 scoping, the bounded-crawl rules, unit extraction, dedup, and attribution are in
 [knowledge-import/sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-import/sources.md). Requires an existing OKF bundle — run
-`/quenching:knowledge:align` first if `/.docs/` is not one.
+`/quenching:knowledge:align` first if `/.knowledge/` is not one.
 
 ## Doctrine (own deltas; the per-doc procedure is homes.md)
 
@@ -97,7 +97,7 @@ being **enriched** already carries the `source_uri:` that found it; MERGE never 
 ### 5. Self-check + validate
 Self-check every touched file against homes.md §Self-check /
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md),
-then run `python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate /.docs` over the
+then run `python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge validate /.knowledge` over the
 bundle: **zero errors**, and the structural WARNs (`dir-no-index` / `index-broken-link` /
 `index-orphan`) cleared. Report residue — units deferred, sources left unfetched, MERGE
 targets skipped.

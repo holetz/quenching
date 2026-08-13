@@ -7,7 +7,7 @@ description: >-
   "revisar esse reference", "marcar rules/rationale", "desinflar o custo de
   leitura das references", "tighten the references", "review the reference
   prose". Not for: a command body or its description → /quenching:components:command:new,
-  /quenching:components:align; a docs/ standard or the OKF bundle →
+  /quenching:components:align; a knowledge/ standard or the OKF bundle →
   /quenching:knowledge:align; generating a documentation site → /docs:storyteller.
 argument-hint: "[reference-path | --all] [--review] [--skip <path>]"
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python3:*), Bash(grep:*), Bash(git grep:*), Bash(wc:*), Task
@@ -28,13 +28,13 @@ addressed, without losing a single thing a future session could not reconstruct.
 
 | Rule | Owner |
 | --- | --- |
-| `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/.docs/standards/automation/context-discipline.md) §The rules/rationale marker convention |
-| Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/.docs/standards/automation/context-discipline.md) §Two things measured and refused |
-| Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/.docs/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
+| `<!-- rules -->` / `<!-- rationale -->`, marker reach, cold destination, section+children cost | [context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §The rules/rationale marker convention |
+| Rationale is relocated, never deleted; the bundle is never segmented into more files | [context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §Two things measured and refused |
+| Read the narrowest thing; a citation is a resolvable `§`-address; N sections in ONE call | [context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §Open less: read the narrowest thing that answers the question |
 | The no-op test, positive prescription, sediment / duplication / sprawl | [components-command-new/doctrine.md](/plugins/quenching/assets/references/components-command-new/doctrine.md) §The no-op test, §Positive prescription, §Named failure modes |
-| The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/.docs/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
-| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.docs/standards/quality/computed-fact-prose-fanout.md) |
-| Which language the prose is written in | [communication.md](/.docs/standards/agents/communication.md) |
+| The mention/use trap, and writing a mention as a placeholder | [prose-sweeps.md](/.knowledge/standards/quality/prose-sweeps.md) §Write the mention as a placeholder, not as an instance |
+| A computed number restated in prose fans out — grep its literal form | [computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md) |
+| Which language the prose is written in | [communication.md](/.knowledge/standards/agents/communication.md) |
 
 Resolve `cq` at `plugins/quenching/assets/bin/cq`, invoked by that literal quoted
 path
@@ -50,12 +50,12 @@ Targets are files under `plugins/quenching/assets/references/`; `--all` globs th
 ```bash
 grep -rn -B2 -A3 "<dir>/<basename>.md" \
   plugins/quenching/commands plugins/quenching/assets/references plugins/quenching/assets/bin \
-  .docs .claude
+  .knowledge .claude
 ```
 
 Record per target: **who cites it**, **which `§`-addresses each citer names**, and whether the
 citer reads it whole or `--rules-only`. A citer under `plugins/quenching/commands/**` is **hot** —
-every run of that command pays those sections; a citer that is another reference, a `docs/`
+every run of that command pays those sections; a citer that is another reference, a `knowledge/`
 standard, or a Python docstring is **cold**. A citation naming the bare file with no `§` pays the
 whole file: say so, because it changes what tightening this file buys.
 
@@ -116,7 +116,7 @@ Write the approved moves and nothing else. Two conditions bind every write:
 ```bash
 python3 "plugins/quenching/assets/bin/cq" components read <path> --sections "<A>" --sections "<B>"
 python3 "plugins/quenching/assets/bin/cq" components read <path>
-grep -rn "<any renamed or reworded form>" plugins/quenching .docs .claude
+grep -rn "<any renamed or reworded form>" plugins/quenching .knowledge .claude
 ```
 Every `§`-address the map collected must still resolve with exit 0 — that is the check that the
 API survived the rewrite. Then re-measure and report **before → after per addressed section**,
@@ -133,7 +133,7 @@ If a command body under `plugins/quenching/commands/**` was touched at all, also
 
 Build the citation map (step 1) **once, in this session** — it is one grep and the whole batch
 shares it. Then delegate **one sub-agent per file**: that is the unit
-[context-discipline.md](/.docs/standards/automation/context-discipline.md) §What a delegated
+[context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §What a delegated
 executor costs blesses, because a sub-agent runs cold and pays a full first read of everything it
 opens. Hand each agent its own file path, its citation set, and its baseline numbers, so it
 re-derives none of them.
@@ -156,6 +156,6 @@ the skipped ones say why.
 - **Never relocate rationale into a section a hot citer already addresses** — the chars are still
   billed every turn, and nothing detects it.
 - **Never report a delta that was not measured** by step 6's re-read.
-- **Never write during `--review`**, and never edit a `docs/` standard, a command body, or a file
+- **Never write during `--review`**, and never edit a `knowledge/` standard, a command body, or a file
   outside `plugins/quenching/assets/references/` from here — report it with the command that owns
   it (`/quenching:knowledge:add`, `/quenching:components:command:new`) instead.

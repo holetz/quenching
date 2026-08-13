@@ -25,7 +25,7 @@ saying the same thing, not by pointing at each other.
 An align asks for ONE human confirmation, at run start, that authorizes the entire run — up to
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
-it: the `docs/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
+it: the `knowledge/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
 `specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), and the three front aligns when `/align`
 invokes them.
 
@@ -43,7 +43,7 @@ stops:
    path constant, an import, a docstring, a branch name, a CI job).
 2. **Irreversible cycle actions** — an action that discards or relocates a record of work rather
    than reshaping it: concluding a spec (it moves the spec into `archive/` and distils into
-   `docs/`), and removing a spec from `plans/`. One OK **per item**, with
+   `knowledge/`), and removing a spec from `plans/`. One OK **per item**, with
    what it will do shown.
 
 **What it does not change** — the stages' safe-write invariants (write-then-verify-then-delete
@@ -86,9 +86,11 @@ is what the gear re-evaluation exists to bound, as a run that outgrows the minim
 back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` offers pull request or local
-alongside the strategy, and the `merge` record's `pr` field names the pull request — the fact the
-base branch's history cannot reproduce: which PR the merge went through, and where the review and
-the checks still live once the branch is gone (§Two frontmatter records carry the underivable git
+alongside the strategy, and the `pr` record names the pull request the moment it is opened — the
+fact the base branch's history cannot reproduce: which PR carries this spec, and where the review
+and the checks still live once the branch is gone. Under this gear that record is the only one the
+run writes: it stops at the open PR, so `merge` — whose own `pr` field names the same PR once a
+merge is decided — is never stamped at all (§Three frontmatter records carry the underivable git
 facts).
 
 No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
@@ -105,8 +107,8 @@ what the minimal gear exists to avoid.
 
 <!-- rules -->
 Let a pass be **empty** when every applicable stage reports "nothing to do." Let a front be
-**clean** when its own verifier passes: `cq knowledge validate <docs> --json` exiting 0 **and**
-reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `docs/` (these are
+**clean** when its own verifier passes: `cq knowledge validate <knowledge> --json` exiting 0 **and**
+reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `knowledge/` (these are
 WARN — exit 0 alone does not prove them clear, read the findings); `cq specs doctor` +
 `cq specs validate` clean, and nothing else, for `specs/`; `cq components lint` + `cq components doctor` exiting 0
 **and** `cq components registry reindex` reporting `changed: false` for `.claude/`.

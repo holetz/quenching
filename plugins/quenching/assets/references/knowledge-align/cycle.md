@@ -1,4 +1,4 @@
-# The `docs/` front's cycle — pipeline and routing
+# The `knowledge/` front's cycle — pipeline and routing
 
 Everything that is **not** front-specific lives elsewhere and is cited, never restated here: the
 probe-before-inventory rule, the one-plan-one-OK model and the blast-radius procedure in
@@ -17,7 +17,7 @@ stage's input. Stage 1 is `/quenching:knowledge:align`'s own work; stages 2–4 
 | 1 | the align's own structural pass | **structure** | Nothing can be filed, listed, or validated into a tree that isn't there. Scaffold homes, migrate variants, stamp frontmatter, regenerate every `index.md`, run the checker. Everything downstream assumes an aligned bundle. |
 | 2 | `/quenching:knowledge:import-memory` | **content in from memory** | The project's Claude Code memory is one of two out-of-band stores of durable facts. Drain it into homes **before** the glossary sweep, so terms it introduces are in the bundle when stage 4 reads. |
 | 3 | `/quenching:components:harness:align` | **content in from the harness** | `CLAUDE.md`/`AGENTS.md` are the other out-of-band store. Harness MOVEs inlined durable knowledge into homes (delegating each MOVE to `/quenching:knowledge:add`), leaving thin pointers. Runs after memory so both content feeders finish before the glossary sweep. |
-| 4 | `/quenching:knowledge:glossary-backfill` | **glossary from the whole bundle** | Now the bundle is structurally sound and both feeders have landed, sweep the **complete** bundle for repo-specific terms and backfill `knowledge/glossary.md`. Swept earlier, it would miss terms stages 2–3 were still importing. |
+| 4 | `/quenching:knowledge:glossary-backfill` | **glossary from the whole bundle** | Now the bundle is structurally sound and both feeders have landed, sweep the **complete** bundle for repo-specific terms and backfill the bundle-root `glossary.md`. Swept earlier, it would miss terms stages 2–3 were still importing. |
 
 **Stages 1–3 are probed; stage 4 is offered.** Gate stage 4 on a free proxy (concept-doc count
 against glossary size, plus whether this pass created any docs) and **offer** it with its cost,
@@ -49,7 +49,7 @@ read-only prefix with stage 2's execution — plan in parallel, write in series:
    landed can flip a unit's verdict from MOVE to **DEDUPE** (the fact now has a doc) — re-verify
    (a cheap `Grep` for coverage) only the units whose home/subject intersects the new docs; the
    rest of the table stands.
-5. **Writes to `docs/` are one stage at a time, always** — harness's writes start only after the
+5. **Writes to `knowledge/` are one stage at a time, always** — harness's writes start only after the
    memory drain's writes have finished.
 
 When only ONE feeder has work, run it in the normal serial flow. The stages' own internal fan-outs
@@ -57,7 +57,7 @@ When only ONE feeder has work, run it in the normal serial flow. The stages' own
 
 <!-- rationale -->
 The logic stays in its owner; only its read-only prefix runs ahead of schedule. Two stages
-read-modify-writing the same shared files (a home's `index.md`, `knowledge/glossary.md`) is a race
+read-modify-writing the same shared files (a home's `index.md`, the bundle-root `glossary.md`) is a race
 with no lock. Dispatching a discovery agent with nothing to overlap only costs tokens.
 
 ## Finding → owning-command routing table
@@ -73,10 +73,11 @@ auto-closed. The rightmost column is also what the probe reads: a run whose only
 | Un-stamped / mis-stamped frontmatter, `summary:`→`description:`, enum drift | stage 1 | Yes |
 | Prefix-cluster to fold (`nomenclatura-*.md`), non-English slug to translate | stage 1 | Yes |
 | `dir-no-index` / `index-broken-link` / `index-orphan` (validator WARN) | stage 1 | Yes |
+| `okf-legacy-root` / `okf-legacy-home` / `okf-legacy-doc-quadrant` / `okf-legacy-glossary` — the bundle's own root/home/quadrant/glossary sits in a pre-rename layout | stage 1 | Yes |
 | Undrained facts in `~/.claude/projects/<cwd>/memory/` | `/quenching:knowledge:import-memory` | Yes |
 | Fat harness — durable knowledge inlined in `CLAUDE.md`/`AGENTS.md` | `/quenching:components:harness:align` | Yes (MOVE, via `/quenching:knowledge:add`) |
 | Broken / lying harness pointer | `/quenching:components:harness:align` | Yes |
-| Repo-specific term in the bundle, absent from `knowledge/glossary.md` | `/quenching:knowledge:glossary-backfill` | **Offered** — no cheap signal proves the gap, so the human is asked once per run |
+| Repo-specific term in the bundle, absent from the bundle-root `glossary.md` | `/quenching:knowledge:glossary-backfill` | **Offered** — no cheap signal proves the gap, so the human is asked once per run |
 | `resource-unresolved` — a `resource` entry matching nothing on disk | *(surface → `/quenching:knowledge:add` to restamp)* | **No** — only a human knows what the doc now governs; reported with the entry |
 | `resource-self` — the doc sits inside its own declared scope | *(surface → `/quenching:knowledge:add` to restamp)* | **No** — narrowing a scope is a judgement, and a bundle aggregate is legitimate; reported |
 | `glossary-broken-link` — a glossary entry points at a deleted doc | *(surface → `/quenching:knowledge:define`)* | **No** — the backfill stage ADDS missing terms, it never prunes a dead one; reported |
