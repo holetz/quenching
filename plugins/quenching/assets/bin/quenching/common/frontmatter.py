@@ -1,6 +1,6 @@
 """The one frontmatter parser — the union of the three that preceded it.
 
-`/.docs/standards/code/frontmatter-parser.md` owns the comment rule, the canonical case list and
+`/.knowledge/standards/code/frontmatter-parser.md` owns the comment rule, the canonical case list and
 the anomaly set. Until this module it also owned a lockstep obligation — EDIT ALL THREE, OR NONE —
 resting on a premise stated in the pre-refactor specs script: each script installed standalone
 into a target repo's `.claude/hooks/`, "so none may import the others". Nothing installs any
@@ -280,7 +280,7 @@ def frontmatter_anomalies(text: str) -> list[dict]:
     Every entry is a suspicion the tool cannot resolve, never a proven violation: a stripped comment
     and lost prose are byte-identical, and nothing here guarantees Claude Code's own loader resolves
     a duplicate key the way this one does. Callers surface them at WARN — see
-    `/.docs/standards/quality/parse-honesty.md`."""
+    `/.knowledge/standards/quality/parse-honesty.md`."""
     body = _frontmatter_body(text)
     if body is None:
         return []

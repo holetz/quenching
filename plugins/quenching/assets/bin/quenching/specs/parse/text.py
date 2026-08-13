@@ -12,7 +12,7 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 BULLET_RE = re.compile(r"^\s*[-*+]\s")
 SUBHEADING_RE = re.compile(r"^\s*(?:#{1,6}\s+|\*\*\S)")
-STANDARD_PATH_RE = re.compile(r"/\.docs/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
+STANDARD_PATH_RE = re.compile(r"/\.knowledge/standards/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.md")
 
 
 def strip_comments(text: str) -> str:
