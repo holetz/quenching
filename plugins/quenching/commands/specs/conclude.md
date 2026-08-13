@@ -143,10 +143,9 @@ Present the findings. Fixes go in as ordinary commits on the branch, before the 
 the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
 frontmatter.
 
-**The test is `branch.work != branch.base`, never the record's mere presence** — a spec built in
-place stamps one too, with `work` equal to `base` (`git.md` §Where a branch comes from). No
-`branch` record, `work` equal to `base`, or no git → say so and skip to step 4; there is no branch
-diff to read.
+**The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
+one too (`git.md` §Where a branch comes from). No record, `work` equal to `base`, or no git → say
+so and skip to step 4; there is no branch diff to read.
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
@@ -168,8 +167,7 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 no bundle.
 
 ### 4. Choose the merge strategy and route, then write `## Outcome` and archive
-For `done` with a work ref of its own — `branch.work != branch.base`, the same test step 2 used;
-in place there is nothing to merge — offer the strategies in
+For `done` with a work ref of its own (`branch.work != branch.base` — in place there is nothing to merge), offer the strategies in
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
 delete the branch** — a squash collapses every per-section commit, so each task's recorded
@@ -495,10 +493,12 @@ block are all reported.
   states — a bump nobody asked for is a release claim this command had no authority to make.
 - Never bulk-copy a spec into `/.docs/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
-- Never edit or delete anything already in `archive/`, with exactly two exceptions, both in
-  step 5 and both onto the spec this run is closing: the `merge:` stamp, and the distillation's
-  one-line-per-doc append to `## Outcome`. Both record facts that only exist after the archive
-  move; neither revises what the spec claimed. Never touch a spec other than that one, and never
-  revise an archived spec from an earlier run.
+- Never edit or delete anything already in `archive/`, with exactly three exceptions, all onto the
+  spec this run is closing: the distillation's `## Outcome` append and the `merge:` stamp in step
+  5, and the `pr:` stamp in step 6 on the PR route. Each records a fact that did not exist at the
+  archive move and has nowhere earlier to live — the two-clause test in
+  [plan-lifecycle.md](/.docs/standards/workflows/plan-lifecycle.md) §The archive is append-only,
+  which a further exception is argued against, never assumed into. None revises what the spec
+  claimed. Never touch a spec other than that one, nor an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.
