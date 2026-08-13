@@ -1,4 +1,4 @@
-# `knowledge/` — generic knowledge we hold
+# `concepts/` — generic knowledge we hold
 
 **Cross-cutting understanding the team carries** — domain concepts, glossaries,
 mental models, explanations, learnings and background insight that inform the work
@@ -7,24 +7,24 @@ but are not a contract, a procedure, or a fact about a specific external asset. 
 
 **Boundary** (what lands here vs. its neighbors):
 
-- vs. [standards/](/.docs/standards/index.md) — standards are "how **WE** do it" (a
+- vs. [standards/](/.knowledge/standards/index.md) — standards are "how **WE** do it" (a
   current, code-derived **contract**); knowledge is "what we **understand**"
   (explanatory, non-binding). If it binds how code is written, it is a standard.
-- vs. [reference/](/.docs/reference/index.md) — reference is facts about a **specific
+- vs. [external/](/.knowledge/external/index.md) — reference is facts about a **specific
   external asset WE CONSUME** (a named tool / library / regulation); knowledge is
   **generic** understanding not tied to one consumed asset (a domain concept, a
   learning). If it documents a named dependency, it is reference.
-- vs. [documentation/](/.docs/documentation/index.md) — documentation is the published,
-  human-facing product site (how-to, tutorials, product reference/concepts); knowledge is
+- vs. [documentation/](/.knowledge/documentation/index.md) — documentation is the published,
+  human-facing product site (how-to, tutorials, product reference/explanation); knowledge is
   internal team understanding. If it is a page for the docs site, it is documentation.
-- vs. [vision/](/.docs/vision/index.md) — vision is future **direction**; knowledge is
+- vs. [vision/](/.knowledge/vision/index.md) — vision is future **direction**; knowledge is
   present **understanding**.
 
 ## Fixed doc
 
-* [Glossary](glossary.md) — the repo's A–Z term lookup. **Resolve any unfamiliar
+* [Glossary](../glossary.md) — the repo's A–Z term lookup. **Resolve any unfamiliar
   repo term here first** (Ctrl-F / `grep`); it is the one file that ships with the
-  home and the one deliberate exception to "one concept per file" (a flat, sorted
+  bundle and the one deliberate exception to "one concept per file" (a flat, sorted
   bullet list — the same syntax every `index.md` uses — of term → one-line meaning
   → link to the full doc, or unlinked when none exists yet). Enriched by
   `quenching-docs-define` on demand, `quenching-docs-glossary-backfill` in bulk, and, as a tail
