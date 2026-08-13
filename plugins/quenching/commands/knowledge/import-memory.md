@@ -196,7 +196,7 @@ with this skill's deltas kept inline:
   write the memory's content into `## Problem` and nothing else, then `cq specs validate --spec
   <slug>` as the self-check per
   [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
-  (the OKF hook does not cover `/.specs/`); the bundle-log line is
+  (`cq knowledge validate` never covers `/.specs/`); the bundle-log line is
   `**Creation**: [<title>](/.specs/plans/<slug>.md) — migrated from project memory`.
   **Never stamp an OKF `type:` on it** — a spec is not a concept doc, and never invent a
   `priority`: an unranked spec is `/quenching:specs:triage`'s to place.
@@ -210,7 +210,7 @@ with this skill's deltas kept inline:
 ### 6. Report
 Summarize: docs created (by home), memories deleted, and memories **kept** (with the reason —
 `user`/unroutable/failed insert) so the user can decide on those. Leave `MEMORY.md` in place even
-if it ends empty. If the `cq knowledge hook` is wired, it machine-verifies each write.
+if it ends empty.
 
 ## Invariants to never violate
 
