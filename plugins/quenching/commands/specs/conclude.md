@@ -1,5 +1,5 @@
 ---
-description: Close ONE spec out — review the whole branch, write the /.docs/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /quenching:specs:execute; sharpening or interrogating one → /quenching:specs:develop; creating one → /quenching:specs:create; taking a branch or worktree → /quenching:specs:execute; ranking the whole front → /quenching:specs:triage.
+description: Close ONE spec out — review the whole branch, write the /.knowledge/ the work revealed, archive, distil, and merge LAST. Triggers on "conclude this spec", "close it out", "wrap up the plan", "review the branch", "merge this plan", "archive this spec", "abandon this spec", "it will not be built". Everything lands on the work branch, so one merge carries the code, the emergent docs, the archived spec and the distillation, and nothing is ever committed to the base after it. Settles pre-merge release obligations. Resumable: the reviewed, merge and outcome records plus git say which stages already ran. Archiving as done refuses while boxes are open unless forced; abandoned is always allowed and distils at most a background note. Never infers the outcome or treats staleness as abandonment. Not for: building a spec's tasks → /quenching:specs:execute; sharpening or interrogating one → /quenching:specs:develop; creating one → /quenching:specs:create; taking a branch or worktree → /quenching:specs:execute; ranking the whole front → /quenching:specs:triage.
 argument-hint: [slug] [--outcome done|abandoned]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Skill
 model: opus
@@ -10,7 +10,7 @@ model: opus
 **Input**: `$ARGUMENTS` — the spec slug, and optionally its outcome.
 
 Closes ONE spec out. Four things happen, in this order, and each is a separate decision: the whole
-branch is **reviewed**, the `/.docs/` the work *revealed* is **written**, the spec is **archived and
+branch is **reviewed**, the `/.knowledge/` the work *revealed* is **written**, the spec is **archived and
 distilled** into the OKF bundle, and only then is the branch **merged**.
 
 **The merge is the last action, without exception.** Everything above it happens on the work
@@ -23,17 +23,17 @@ the stamp and the distillation were stranded on the base branch behind it. Recor
 **Why this is not part of `/quenching:specs:execute`.** Every step here is a different scale of judgment from
 building a task: the branch review reads the whole diff rather than one task's, the merge is
 irreversible and needs its own confirmation, and the distillation is the single bridge into
-`/.docs/`. Bolting them onto the end of the build meant a run that died after task nine had to redo
+`/.knowledge/`. Bolting them onto the end of the build meant a run that died after task nine had to redo
 tasks one through eight to reach them.
 
 **This command is resumable, and that is a property of the data, not of a session.** Frontmatter
 records the human judgments (`reviewed`, `merge`, `outcome`); git and the filesystem record
 everything else. A second call reads both and skips what already happened — see §Resuming.
 
-The distillation doctrine — what crosses into `/.docs/`, what stays, and how it is graded — lives in
+The distillation doctrine — what crosses into `/.knowledge/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
 §What crosses, what stays. The merge strategies, the squash caveat and the **read-if-present**
-rule for a target's `/.docs/standards/git/**` live in
+rule for a target's `/.knowledge/standards/git/**` live in
 [specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §Merge strategies §The squash caveat §The read-if-present rule. The layout, the gates and the
 `cq specs` surface live in
@@ -64,14 +64,14 @@ gate the merge. Its read-only siblings are scoped to `python3`/`py`.
   the work was descoped, or proven elsewhere — and says so.
 - **Abandoning is always allowed.** Open tasks are precisely what you expect when closing out work
   that will not be built, so `--outcome abandoned` never refuses and never needs `--force`.
-- **`done` distils; `abandoned` does not.** Concluding as done mints by-products into `/.docs/` as
+- **`done` distils; `abandoned` does not.** Concluding as done mints by-products into `/.knowledge/` as
   knowledge the product **adopted**. That is wrong for dropped work — it would enshrine a rule
   nobody kept. An abandoned spec harvests at most what was learned by *not* building it, as
   `authority: background`; a decision it *would* have made never crosses.
 - **An abandoned spec's branch is never merged on this command's initiative.** Partial work on a
   branch nobody adopted is history, not a change; offer to keep it or delete it, and default to
   keeping.
-- **Declared rules were already written.** The `/.docs/standards/` a task explicitly named went in
+- **Declared rules were already written.** The `/.knowledge/standards/` a task explicitly named went in
   during execution, honestly graded. What lands here is what the work *revealed* — and there is no
   delta and no second store to sync either way.
 - **What a standard attaches to the *merge* is settled here, not built as a task.** A version bump,
@@ -92,7 +92,7 @@ is already set is **reported and skipped**, not repeated:
 | Stage | Signal it already ran | On resume |
 | --- | --- | --- |
 | review | `reviewed: {date}` in frontmatter | skip; offer a re-read only if the diff grew since |
-| emergent `/.docs/` | it rides with the review — same stage, same commit | skipped with the review |
+| emergent `/.knowledge/` | it rides with the review — same stage, same commit | skipped with the review |
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
@@ -147,8 +147,8 @@ branch diff to read.
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
-### 3. Write the `/.docs/` the work revealed
-The `/.docs/standards/` a task explicitly named is already in — execute wrote it as part of that
+### 3. Write the `/.knowledge/` the work revealed
+The `/.knowledge/standards/` a task explicitly named is already in — execute wrote it as part of that
 task. What lands **here** is what the work revealed and nobody declared: the `## Discoveries` lines
 worth a doc, and whatever the branch review just surfaced.
 
@@ -203,7 +203,7 @@ committed, or the run stopped at a refusal the human declined to override.
 This is the last writing step, and everything it writes lands on the **work branch**, before any
 merge. Three things happen here, in this order.
 
-**First, the distillation pass** — the single bridge into `/.docs/`, per
+**First, the distillation pass** — the single bridge into `/.knowledge/`, per
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
 §The procedure (one confirmation), **branching on the outcome**:
 
@@ -220,7 +220,7 @@ One plan, one OK. Every write goes through
 silently. Commit what it writes **on the work branch**.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
-OKF bundle present, read the `/.docs/standards/` subjects the branch diff touched and apply what they
+OKF bundle present, read the `/.knowledge/standards/` subjects the branch diff touched and apply what they
 require *of the merge* rather than of any one task — a version bumped across artifacts a standard
 says must move together, a changelog entry, a manifest re-stamped. This is the only correct moment
 for that class of edit: the whole branch is written, so what the release *is* is finally knowable,
@@ -305,7 +305,7 @@ being merged.
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
 it. The repo's own
-[surface-verification.md](../../../../.docs/standards/quality/surface-verification.md)
+[surface-verification.md](../../../../.knowledge/standards/quality/surface-verification.md)
 §The five preconditions a check must satisfy is where that distinction is defined for the command
 surface.
 
@@ -359,7 +359,7 @@ gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<s
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
 default branch — which stays `main`
-([branching.md](/.docs/standards/git/branching.md) §O consumidor não muda nada — depends on it
+([branching.md](/.knowledge/standards/git/branching.md) §O consumidor não muda nada — depends on it
 never moving — see `## Out of Scope` in the spec that introduced the develop/main
 flow). `<base>` here is this spec's own resolved base — the same one the local route's merge
 targets — so a spec whose base is the declared integration branch opens its PR against that
@@ -438,7 +438,7 @@ body blocks:
 Close on §The next-step block. `/quenching:specs:develop <slug>` when block 4 has rows,
 `/quenching:specs:continue` to be handed the next spec — the front has moved on, and this is the
 moment a human most needs telling where.
-**Done when:** path, outcome, records, the worktree's fate, both `/.docs/` passes and the next-step
+**Done when:** path, outcome, records, the worktree's fate, both `/.knowledge/` passes and the next-step
 block are all reported.
 
 ## Invariants to never violate
@@ -465,11 +465,11 @@ block are all reported.
   disagreement instead. Every record here is stamped with `cq specs record`, which refuses on its
   own; editing the frontmatter to get past that refusal is the thing the refusal exists to stop.
 - Never re-run a stage whose signal is already set without saying so and being asked to.
-- Never re-write a rule a task already wrote into `/.docs/standards/` during execution — concluding
+- Never re-write a rule a task already wrote into `/.knowledge/standards/` during execution — concluding
   syncs nothing.
 - Never settle a release obligation for an **abandoned** spec, and never invent one no standard
   states — a bump nobody asked for is a release claim this command had no authority to make.
-- Never bulk-copy a spec into `/.docs/`; only what outlives it crosses.
+- Never bulk-copy a spec into `/.knowledge/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
 - Never edit or delete anything already in `archive/`, with exactly two exceptions, both in
   step 5 and both onto the spec this run is closing: the `merge:` stamp, and the distillation's

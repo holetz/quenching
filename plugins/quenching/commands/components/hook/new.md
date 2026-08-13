@@ -1,5 +1,5 @@
 ---
-description: Wire ONE scoped hook — the narrowest scope and the cheapest handler that still catch what it must. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Walks the scope ladder, states the hook's cost claim, and applies on one OK — warn by default, block only by the human's word. Not for: a command → /quenching:components:command:new; a subagent → /quenching:components:agent:new; the /.docs/ conformance hook → /quenching:knowledge:align (it installs and upgrades cq).
+description: Wire ONE scoped hook — the narrowest scope and the cheapest handler that still catch what it must. Use when the user asks to "create a hook", "add a validation hook", "check this after every edit", "block that command before it runs", or "catch it automatically whenever a migration lands". Walks the scope ladder, states the hook's cost claim, and applies on one OK — warn by default, block only by the human's word. Not for: a command → /quenching:components:command:new; a subagent → /quenching:components:agent:new; the /.knowledge/ conformance hook → /quenching:knowledge:align (it installs and upgrades cq).
 argument-hint: [what-the-hook-should-catch]
 allowed-tools: Bash(python3:*), Bash(py:*), Read, Grep, Glob, Write, Edit
 ---
@@ -21,7 +21,7 @@ ladder, and the policy defaults live in
 - **A hook charges other people's operations.** It fires on events this mint does not own,
   so every widening of scope is a tax on every iteration in the repo — the plan prices it.
 - **The rule governs; the plan proposes.** In a target repo the rule is
-  `/.docs/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
+  `/.knowledge/standards/automation/hooks.md`; absent + OKF bundle present → the plan offers
   creating it from `automation/hooks-standard.md`, born `authority: background`. No bundle →
   write the hook only, suggest `/quenching:knowledge:align` once.
 - **One plan, one OK, nothing before.** The check, the rung, the handler, the cost claim,
@@ -36,7 +36,7 @@ ladder, and the policy defaults live in
 ## Workflow
 
 ### 1. Read the rule
-Read `/.docs/standards/automation/hooks.md` and confirm the bundle (`/.docs/index.md` carries
+Read `/.knowledge/standards/automation/hooks.md` and confirm the bundle (`/.knowledge/index.md` carries
 `okf_version`). Rule present → it governs (a repo delta there beats the plugin default).
 Absent + bundle → plan its creation from the mold. No bundle → note the tail as skipped and
 plan the `/quenching:knowledge:align` suggestion. **Done when:** the governing rule (or its planned

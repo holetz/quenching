@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the /.docs/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /quenching:specs:develop; a version bump or other release obligation → /quenching:specs:conclude; creating one → /quenching:specs:create; reviewing the branch, merging and archiving → /quenching:specs:conclude; being told which spec to build next → /quenching:specs:continue.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in ONE commit per task. Writes the /.knowledge/standards/ a task explicitly names, and records everything else the work reveals as a one-line discovery. Stops at the last commit — the branch review, the merge and the archive are a separate command. Not for: writing or sharpening a spec → /quenching:specs:develop; a version bump or other release obligation → /quenching:specs:conclude; creating one → /quenching:specs:create; reviewing the branch, merging and archiving → /quenching:specs:conclude; being told which spec to build next → /quenching:specs:continue.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -29,7 +29,7 @@ turn one is paid for the length of the run — a section runs ~400 tokens agains
 file that holds it. `--rules-only` narrows to the `<!-- rules -->` half where a section carries
 the marker, and returns the whole section, saying so, where it does not.
 
-**This command stops at the last commit.** Reviewing the whole branch, writing the `/.docs/` the work
+**This command stops at the last commit.** Reviewing the whole branch, writing the `/.knowledge/` the work
 *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
 opens on why that split holds.
 
@@ -97,7 +97,7 @@ record, when one already exists; else the repo's own declared `integrationBranch
 above, from `cq specs config --json`); else `git symbolic-ref refs/remotes/origin/HEAD` (already
 read above); else `git config init.defaultBranch`, and then `main`. **The declared integration
 branch is consulted before `origin/HEAD`, never after** — under the develop/main flow
-([branching.md](/.docs/standards/git/branching.md)) `origin/HEAD` resolves to `main`, the
+([branching.md](/.knowledge/standards/git/branching.md)) `origin/HEAD` resolves to `main`, the
 publication branch, and falling through to it first would merge an unstamped spec there by
 default. Left undeclared, this step answers nothing and the chain is exactly as it was.
 
@@ -227,17 +227,17 @@ the same fact this call's own `absent` list repeats: a section not yet `filled` 
 empty on a spec's first build is the ordinary case, not a finding — is read as empty. No second
 call, and no heading enumerated here to know which one that was.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
-`/.docs/standards/` paths and the code this spec expects to touch.
+`/.knowledge/standards/` paths and the code this spec expects to touch.
 
-Then, if the repo carries an OKF bundle (`/.docs/index.md` with `okf_version`), read the
-`/.docs/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
-task's own text names — **never the folder** `/.docs/standards/<subject>/`, the wrong and the
+Then, if the repo carries an OKF bundle (`/.knowledge/index.md` with `okf_version`), read the
+`/.knowledge/standards/**.md` files the spec **declares** under `## Impact`, plus the ones the current
+task's own text names — **never the folder** `/.knowledge/standards/<subject>/`, the wrong and the
 expensive unit ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
 §Tooling asides has the measurement). Those files are **binding contracts** for
 HOW the work is built, complementing the spec's own sections (WHAT to build). A task that
 contradicts one is surfaced (step 5), never silently resolved. No bundle → skip silently.
 
-A declared bullet may carry a `§`address beside its path — `/.docs/standards/automation/skills.md
+A declared bullet may carry a `§`address beside its path — `/.knowledge/standards/automation/skills.md
 §Invocation and permission are authored decisions §The admission criterion`. With one, read
 exactly those sections (`cq components read <path> --sections "§A" --sections "§B"`); with none,
 read the file whole, exactly as today. The default never changes: reading less is an assertion the
@@ -263,7 +263,7 @@ Then, for that task:
 a. **Show what is being worked on** — the id, its declared `files:` and its `verify:`.
 
 b. **Write the code**, minimal and scoped to the declared files. A task that declares `files:` and
-   writes nothing under `/.docs/` **may** go to an executor sub-agent under
+   writes nothing under `/.knowledge/` **may** go to an executor sub-agent under
    [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
    §Delegating an executor — which also explains why this is **not** `context: fork` and leaves
    that rule untouched; when it is, load the rules that bound it before dispatching:
@@ -273,7 +273,7 @@ b. **Write the code**, minimal and scoped to the declared files. A task that dec
      --sections "§Delegating an executor"
    ```
 
-c. **Write only the `/.docs/` this task names.** When this task writes `/.docs/`, load the rule that
+c. **Write only the `/.knowledge/` this task names.** When this task writes `/.knowledge/`, load the rule that
    draws the line between declared and emergent, and the boundary it crosses:
 
    ```bash
@@ -283,7 +283,7 @@ c. **Write only the `/.docs/` this task names.** When this task writes `/.docs/`
      --sections "§Boundary"
    ```
 
-   A `/.docs/standards/` path declared under `## Impact` and named by this task is part of its
+   A `/.knowledge/standards/` path declared under `## Impact` and named by this task is part of its
    deliverable — written through the insert procedure in
    [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) §The frontmatter
    stamp §Updating `index.md` §Enriching the glossary §Self-check; stamp `authority` honestly and
@@ -346,7 +346,7 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
    on. Announcing is not executing: never invoke the declared command, never wait for it, never
    integrate its result. The step-2 read already filtered `enabled: false` hooks out, so this
    announces exactly what the read returned, whether or not the hook was written for this repo
-   ([extension-points.md](/.docs/standards/automation/extension-points.md) §The body announces —
+   ([extension-points.md](/.knowledge/standards/automation/extension-points.md) §The body announces —
    name, command and prompt — and moves on):
 
    ```text
@@ -369,7 +369,7 @@ h. **On a section boundary, OFFER to stop — and keep going if nobody says othe
    [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The section boundary.
 
 **Pause if:** a task is unclear; implementation reveals a design problem (→ `/quenching:specs:develop`); a
-task contradicts a `/.docs/standards/` contract (surface it and let the human pick — revise the
+task contradicts a `/.knowledge/standards/` contract (surface it and let the human pick — revise the
 standard via `/quenching:knowledge:add`, or the spec via `/quenching:specs:develop`); attempts stop converging; or the user
 interrupts.
 **Done when:** every task is `- [x]` or `- [!]`, or the run pauses with the reason stated.
@@ -435,7 +435,7 @@ mid-plan.
 
 **At 100%**, after the block, offer once to chain straight into `/quenching:specs:conclude` (the `Skill` tool, which takes
 the registry name): the branch review,
-the emergent `/.docs/`, the merge, and the archive-time distillation. Declined → the block already
+the emergent `/.knowledge/`, the merge, and the archive-time distillation. Declined → the block already
 named the command, so stop. Paused → say why and wait.
 **Done when:** the summary is shown and the hand-off has been offered or declined.
 
@@ -491,11 +491,11 @@ front of you before the loop starts:
   editing the frontmatter.
 - Stamp `branch:` only when isolation was actually taken, and never over an existing record —
   through `cq specs record`, never by editing the frontmatter.
-- Write **only** the `/.docs/` a task explicitly names. Emergent findings are one `cq specs discover`
+- Write **only** the `/.knowledge/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
   [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-  §Delegating an executor (declares `files:`, touches no `/.docs/`, pinned to the session model —
+  §Delegating an executor (declares `files:`, touches no `/.knowledge/`, pinned to the session model —
   **never `haiku`**), and run two tasks in parallel only when `cq specs parallel` reports the `[P]`
   group eligible.
 - Never review the whole branch, merge, or archive from here — that is `/quenching:specs:conclude`, and

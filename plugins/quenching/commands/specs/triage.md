@@ -66,7 +66,7 @@ command writes it.
 ## Doctrine
 
 - **Propose, don't invent.** Every proposed position traces to something readable — the spec's own
-  `## Problem`, its derived stage, its task progress, its age, and `/.docs/vision/` when the repo has
+  `## Problem`, its derived stage, its task progress, its age, and `/.knowledge/vision/` when the repo has
   one. Each row carries a one-line reason. A rank with no visible grounds cannot be overruled in one
   word, which is the only way a human reviews twenty of them.
 - **One plan, one OK.** Every proposal merges into ONE table before anything is written. A single
@@ -94,7 +94,7 @@ cq specs list --json                    # every spec: folder, derived stage, and
 cq specs section <slug> Problem         # per spec being ranked, for the reason column
 ```
 `list --json` carries the seven `records`, so the current `priority` of every spec arrives in that
-one call — **never open a spec file to read it.** Read `/.docs/vision/` when present, to ground the
+one call — **never open a spec file to read it.** Read `/.knowledge/vision/` when present, to ground the
 ordering in where the repo is going rather than in what is loudest. No sub-agents.
 
 Note what the table will have to explain: specs already ranked, specs whose ranking predates their
@@ -144,7 +144,7 @@ backend is `files` — against a backend whose specs are issues there is no file
 cq specs validate --json
 ```
 That is the whole check, and it must exit 0. Nothing else was written: the ranking lives in each
-spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `/.docs/`
+spec's own `priority` record, there is no listing to regenerate, and nothing goes into the `/.knowledge/`
 bundle — the log this used to append to is retired.
 **Done when:** the validator is clean, or its residue is reported verbatim.
 

@@ -1,5 +1,5 @@
 ---
-description: Create or update the mkdocs-material site over the /.docs/documentation home. Triggers on "build the docs site", "generate the mkdocs site for /.docs/documentation", "fix the documentation site's nav". Not for: page-level content inside /.docs/ → /quenching:knowledge:align.
+description: Create or update the mkdocs-material site over the /.knowledge/documentation home. Triggers on "build the docs site", "generate the mkdocs site for /.knowledge/documentation", "fix the documentation site's nav". Not for: page-level content inside /.knowledge/ → /quenching:knowledge:align.
 argument-hint: [optional-section-or-mkdocs-path]
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 
 **Input**: `$ARGUMENTS` (optionally a `documentation/` section to focus the nav check on, or the path of an existing `mkdocs.yml`; omit to inventory the whole site layer).
 
-Makes the OKF bundle's [`documentation/`](${CLAUDE_PLUGIN_ROOT}/assets/docs/documentation/index.md) home
+Makes the OKF bundle's [`documentation/`](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/documentation/index.md) home
 **render as a site**, and keeps that rendering honest as the home grows. The home is a plain
 Markdown tree; everything generator-specific lives in a thin **site layer** around it — the
 `mkdocs.yml` + `requirements.txt` at the repo **root** (outside the bundle) and one `.pages`
@@ -25,13 +25,13 @@ bundle; every install, update, and re-verification after that is **this** skill.
 
 ## Doctrine
 
-- **The site layer is not the bundle.** Config lives at the repo root, *outside* `/.docs/`; only
+- **The site layer is not the bundle.** Config lives at the repo root, *outside* `/.knowledge/`; only
   the `.pages` files live inside, and they are nav metadata, not concept docs (never stamped,
   never indexed, never listed in an `index.md`). The OKF markdown stays **generator-neutral** —
   never add mkdocs-specific syntax, a `nav:` entry inside a page, or generator frontmatter to a
   concept doc to make the site look better.
-- **The site is rooted at `documentation/`, not at the bundle.** `docs_dir: .docs/documentation`.
-  The other homes (`standards/`, `knowledge/`, `catalog/`, …) are the team's internal surface and
+- **The site is rooted at `documentation/`, not at the bundle.** `docs_dir: .knowledge/documentation`.
+  The other homes (`standards/`, `concepts/`, `catalog/`, …) are the team's internal surface and
   are **not published** by this skill. A repo that wants the whole bundle online is a deliberate
   human decision, and re-aiming `docs_dir` is its **own** confirmation item (step 5) — it can
   break an already-published site and any CI pinned to it.
@@ -44,7 +44,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
   A `title:` a human wrote survives untouched; a missing one is derived from the section's
   `index.md` H1.
 - **Report page-level drift; never fix it here.** A section with no `index.md`, a page with no
-  frontmatter, an absolute `/.docs/<other-home>/…` link that cannot resolve in a site rooted at
+  frontmatter, an absolute `/.knowledge/<other-home>/…` link that cannot resolve in a site rooted at
   `documentation/` — each is **reported** with the command that closes it (`/quenching:knowledge:align`,
   `/quenching:knowledge:add`), never repaired by this skill. Writing and repairing pages belongs to the skills
   that own them; this one would be guessing.
@@ -73,7 +73,7 @@ bundle; every install, update, and re-verification after that is **this** skill.
 | `site-nav-stale` | a `.pages` `nav:` names a missing entry, or omits a section **and** has no `- ...` | **FIX** — regenerate the list, keep the human `title:` |
 | `site-artifacts-tracked` | `site/` not gitignored (or already tracked) | **FIX** the gitignore; a tracked build is **REPORTED** for the human to remove |
 | `site-section-no-index` | a section folder with no `index.md` (breaks `navigation.indexes` *and* the OKF listing rule) | **REPORT** → `/quenching:knowledge:align` |
-| `site-link-escapes` | a `documentation/` page links `/.docs/<other-home>/…` — dead in the built HTML | **REPORT** → `/quenching:knowledge:add` / the page's author |
+| `site-link-escapes` | a `documentation/` page links `/.knowledge/<other-home>/…` — dead in the built HTML | **REPORT** → `/quenching:knowledge:add` / the page's author |
 | `site-page-unstamped` | a page under `documentation/` with no `type: documentation` | **REPORT** → `/quenching:knowledge:align` |
 | `site-ci-absent` | no `.github/workflows/docs.yml` | **REPORT**; install only on request (own confirmation — platform-specific) |
 | `site-build-failed` | `mkdocs build --strict` exits non-zero | **FIX** only what is site-layer; anything page-level is **REPORTED** |
@@ -87,7 +87,7 @@ to `python3`/`py`.
 ## Workflow
 
 ### 1. Preflight — the bundle and the home
-Confirm `/.docs/index.md` carries `okf_version`. **No bundle → stop** and offer
+Confirm `/.knowledge/index.md` carries `okf_version`. **No bundle → stop** and offer
 `/quenching:knowledge:align` first; there is nothing to render. Bundle
 but **no `documentation/` home** → stop and offer `/quenching:knowledge:align` (the skeleton ships the home,
 its four Diátaxis sections, and their `.pages`); never scaffold a home here.
@@ -96,9 +96,9 @@ its four Diátaxis sections, and their `.pages`); never scaffold a home here.
 Collect, without writing anything:
 - root `mkdocs.yml` / `mkdocs.yaml` — parse it: `docs_dir`, `site_name`, `site_description`,
   `theme.features`, `plugins`, `markdown_extensions`; note every key a human added.
-- any requirements file pinning the docs toolchain (`requirements.txt`, one under `/.docs/`,
+- any requirements file pinning the docs toolchain (`requirements.txt`, one under `/.knowledge/`,
   `pyproject.toml`, `uv.lock` …) — the pins may already live somewhere else.
-- every folder under `/.docs/documentation/**` with its `.pages`, its `index.md`, and its pages.
+- every folder under `/.knowledge/documentation/**` with its `.pages`, its `index.md`, and its pages.
 - `.gitignore` (is `site/` ignored?) and `git ls-files site` (is a build already tracked?).
 - `.github/workflows/docs.yml`.
 - the toolchain: `mkdocs --version` (fall back to `python -m mkdocs --version`,
@@ -106,7 +106,7 @@ Collect, without writing anything:
 
 ### 3. Detect drift
 Walk the `site-*` table above over the inventory. For `site-link-escapes`, `Grep` the home for
-`](/.docs/` and keep only targets **outside** `documentation/`. For `site-nav-stale`, compare each
+`](/.knowledge/` and keep only targets **outside** `documentation/`. For `site-nav-stale`, compare each
 `.pages` `nav:` against the folder's real entries. Record the **evidence** for every finding —
 a file:line or the parsed key — never a suspicion.
 
@@ -127,7 +127,7 @@ complete, valid outcome — and go straight to step 7's verification.
 In order: `mkdocs.yml` (stamp from `${CLAUDE_PLUGIN_ROOT}/assets/mkdocs/mkdocs.yml.tmpl` when
 absent, else merge the missing keys) → requirements → the `.pages` files → `.gitignore` → the CI
 workflow **only if** its own OK was given (copy `ci-github-pages.yml` → `.github/workflows/docs.yml`).
-Nothing under `/.docs/documentation/**` other than `.pages` is touched.
+Nothing under `/.knowledge/documentation/**` other than `.pages` is touched.
 
 ### 7. Verify with a real build
 If the toolchain is present, run
