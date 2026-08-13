@@ -1,4 +1,5 @@
-OKF conformance — <WS>/docs (okf-validate v<VERSION>)
-  0 error(s), 2 warning(s)
-  [WARN ] standards/agents/communication.md: `resource` entry `/.docs/**` matches nothing on disk  (resource-unresolved)
+OKF conformance — <WS>/.knowledge (cq knowledge v<VERSION>)
+  0 error(s), 3 warning(s)
+  [WARN ] glossary.md: `resource` entry `/.knowledge/**` matches nothing on disk  (resource-unresolved)
+  [WARN ] standards/agents/communication.md: `resource` entry `/.knowledge/**` matches nothing on disk  (resource-unresolved)
   [WARN ] standards/agents/communication.md: `resource` entry `/.specs/**` matches nothing on disk  (resource-unresolved)

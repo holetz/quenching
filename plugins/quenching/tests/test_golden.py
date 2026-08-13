@@ -42,101 +42,27 @@ def declock(text: str) -> str:
     return text
 
 # Golden ids `cq` does not reproduce today, and why. Two kinds live here and the reason line says
-# which: a route that does not exist at all (`specs-selftest`, `skills-drift`), and a route that
-# exists over content this spec deliberately changed (`skills-lint`, `okf-hook-posttooluse`). A
-# case leaves this set only when a later task mounts the route it is missing — never by loosening
+# which: a route that does not exist at all, and a route that exists over content this spec
+# deliberately changed. A case leaves this set only when a later task mounts the route it is
+# missing, or re-captures the golden against what the route reproduces today — never by loosening
 # the comparison that proves it is still missing.
 #
 # What does NOT belong here is a case whose bytes still match and whose verdict alone moved: that
 # is `CORRECTED_EXIT` below, which keeps asserting the stdout comparison. Parking such a case here
 # would silently drop a byte-for-byte guarantee the package still meets.
-UNROUTED = {
-    "specs-selftest": "`selftest` is in no pillar's DISPATCH and is not coming back: task 6.3 "
-                       "measured every suite behind it into `tests/`, including the embedded "
-                       "asset lockstep that was its last non-unit-test reason to exist "
-                       "(`test_specs_assets.py`).",
-    "skills-selftest": "same decision as `specs-selftest`: the verb is retired, and what it "
-                        "proved lives in `tests/test_components.py`.",
-    "session-selftest": "same decision as `specs-selftest`: the verb is retired, and what it "
-                         "proved lives in `tests/test_session.py`.",
-    "okf-selftest": "same decision as `specs-selftest`: the knowledge pillar routes `hook` and "
-                     "`validate` only, and what `selftest` proved lives in "
-                     "`tests/test_knowledge.py`.",
-    "session-version": "`cq components session --version` never reaches the session module's "
-                        "own `--version` flag: the components pillar's `main` answers any argv "
-                        "containing `--version` before the `session` subparser runs, so it "
-                        "prints the components pillar's stamp (`skills <VERSION>`) and exits "
-                        "0 rather than raising a routing error. The text this golden froze "
-                        "(`session <VERSION>`) has no reachable `cq` invocation.",
-    "skills-drift": "`drift` detected a legacy copy of one of the four pre-refactor scripts "
-                     "left behind under a target's `.claude/hooks/` by an old install offer. "
-                     "Task 10.1 of this same spec removed all four from the plugin, so there is "
-                     "nothing left for the subcommand to compare an installed copy against, and "
-                     "it was retired with it — `components/commands/cli.py` routes no `drift` "
-                     "verb any more.",
-    "skills-lint": "captured against the command surface as it stood before this spec's own "
-                    "sections 7-9 restructured it (front renames, the `components` split into "
-                    "`command`/`agent`/`hook`/`harness`, new commands minted since) — the finding "
-                    "list this route now returns is a different, larger, CORRECT set for a "
-                    "surface with a different shape, not a divergence to reconcile.",
-    "skills-lint-one": "captured against `commands/docs/add.md`, which task 7.1 moved to "
-                        "`commands/knowledge/add.md`; the golden's `sk-no-commands` refusal for "
-                        "the (now nonexistent) old path is the correct answer for a path that no "
-                        "longer resolves, not a route this suite can still exercise identically.",
-    "skills-read-index": "reads `align/convergence.md`'s own section index — its `chars` per "
-                          "heading counts the very citations this spec renamed inside that file "
-                          "(`docs:align` → `knowledge:align` and the like), so the byte counts "
-                          "shifted with the rename itself; the route is reachable, the content it "
-                          "reads is not the content that was frozen.",
-    "skills-read-section": "same cause as `skills-read-index`, one section of the same file: the "
-                            "cited section's own prose now reads `cq knowledge validate` where the "
-                            "golden froze the pre-refactor OKF validator script's name, because "
-                            "task 8.x's citation sweep rewrote that section along with everything "
-                            "else.",
-    "skills-read-rules-only": "same cause as `skills-read-section`, filtered to the `<!-- rules "
-                               "-->` half of the same renamed section.",
-    "okf-hook-posttooluse": "the hook's own `sk-no-frontmatter` remedy text named the skill IDs "
-                             "under this pillar's pre-rename prefix (`docs` where `render.py` now "
-                             "says `knowledge` — `align`/`add`); task 10.3 renamed them in "
-                             "`knowledge/render.py`'s live source. `renomear-docs-para-knowledge` "
-                             "(task 5.1, 2026-08-13) hand-patched just that substring in the frozen "
-                             "JSON so the fixture would not itself trip this repo's zero-gate on the "
-                             "retired name, but the fixture's `rel` field still reads "
-                             "`knowledge/golden-fixture-bad.md` — the pre-rename home name, since "
-                             "the home renamed to `concepts/` too — and `capture_okf` still stages "
-                             "the hook's copy from the pre-rename `assets/docs` skeleton path. Task "
-                             "6.1 must re-capture this one for real once that path is fixed; the "
-                             "hand-patch only bought the zero-gate, not a byte match.",
-    "okf-version": "froze the pre-refactor OKF validator's own filename as its version stamp. "
-                    "Task 10.1 deleted that file, so the string named an artifact the repo no "
-                    "longer ships; the pillar stamps `cq knowledge <VERSION>` instead. Invisible "
-                    "to `citation-check.sh`, whose dead patterns match the script names with "
-                    "their `.py` extension and this stamp carries none.",
-    "okf-validate-skeleton-text": "same stamp as `okf-version`, in the header line every "
-                                   "text-mode validation prints — which made it the most-seen "
-                                   "citation of a deleted file in the product; and the same "
-                                   "skeleton-root change as `okf-validate-skeleton` below.",
-    "okf-validate-skeleton": "the shipped skeleton now spells the bundle root `/.docs/` "
-                              "throughout — the root `standards/architecture/bundle-root.md` "
-                              "fixes for every target repo — where it was frozen spelling `docs/`, "
-                              "a root no repo has. `capture_okf` copies it to `<project>/docs/` to "
-                              "match the old spelling, so the glossary's bundle-aggregate scope "
-                              "now reports `resource-unresolved` there. No layout reproduces the "
-                              "frozen bytes: moving the copy to `.docs/` resolves that scope but "
-                              "also resolves the two warnings the golden DOES carry. See "
-                              "`capture_golden.capture_okf`.",
-    "okf-validate-findings": "the same skeleton-root change as `okf-validate-skeleton`, over the "
-                              "same copy with one frontmatter-less doc injected — the injected "
-                              "finding is unchanged, the scope warning around it is not.",
-    "specs-status-alpha": "the `promote` block gained an `openTasks` key. It reported only the "
-                           "SECTION gate of the destination folder, so a spec with an unticked "
-                           "box read `ok: true` here and was then refused (exit 2) by `promote "
-                           "--to archive --outcome done`, whose task condition lived nowhere else "
-                           "— and this verb's own description calls itself an honest dry run. The "
-                           "agreement is now asserted in `tests/test_specs_promote_gate.py`; the "
-                           "frozen payload predates the key.",
-    "specs-status-beta": "same added key as `specs-status-alpha`, on the second status fixture.",
-}
+#
+# EMPTIED by `renomear-docs-para-knowledge` (task 6.1, 2026-08-13): every entry this set carried —
+# four retired verbs with no route (`specs-selftest`, `skills-selftest`, `session-selftest`,
+# `okf-selftest`), `session-version`'s unreachable-`--version` quirk, `skills-drift`'s removed
+# subcommand, and eleven cases stale from earlier renames (`skills-lint`/`-one`,
+# `skills-read-index`/`-section`/`-rules-only`, `okf-hook-posttooluse`, `okf-version`,
+# `okf-validate-skeleton`/`-text`/`-findings`, `specs-status-alpha`/`-beta`) — is **reproducible**
+# through `cq` today; `capture_golden.py`'s stale `assets/docs`/`.docs`/`commands/docs/add.md`
+# paths (this spec's own tasks 1.1/6.1) were the last thing standing between "no route" and "a
+# route whose bytes moved." A retired verb still routes to a `cq` usage refusal every time it is
+# asked — that refusal, frozen, is exactly as reproducible as any other case; there was never a
+# case here where `cq` itself could not answer, only ones where the golden asked a stale question.
+UNROUTED: dict[str, str] = {}
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package
 # deliberately corrected: `{id: (exit now, why)}`.

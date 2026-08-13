@@ -419,7 +419,7 @@ def capture_skills(cap: Capture) -> None:
 
     run("version", ["--version"], ext="txt")
     run("lint", ["lint", "--json"])
-    run("lint-one", ["lint", "commands/docs/add.md", "--json"])
+    run("lint-one", ["lint", "commands/knowledge/add.md", "--json"])
     run("doctor", ["doctor", "--json"])
     run("selftest", ["selftest", "--json"])
     run("drift", ["drift", "--json"])
@@ -471,24 +471,19 @@ def capture_okf(cap: Capture) -> None:
     this repo's commit history. The copy carries no git, so the scan is the
     structural verdict alone — which is the contract these goldens exist to freeze.
 
-    The copy keeps the skeleton's own layout, `<project>/docs/`, because a doc's
-    `resource` globs resolve against the bundle's parent: renaming the bundle turns
-    every one of them into a `resource-unresolved` warning the shipped skeleton does
-    not have.
-
-    THAT SENTENCE DESCRIBES THE SKELETON AS IT WAS FROZEN, AND THE SKELETON HAS SINCE
-    MOVED. It now spells the bundle root `/.docs/` throughout — the root
-    `standards/architecture/bundle-root.md` fixes for every target repo — so this copy's
-    `docs/` layout no longer matches what the skeleton declares, and no layout reproduces
-    the frozen output: at `docs/` the glossary's scope goes unresolved, and at `.docs/`
-    the two warnings the golden DOES carry resolve and vanish. The code is left exactly
-    as captured, because it is the shared builder both sides of the comparison run; the
-    three affected cases are named in `test_golden.UNROUTED` with that reason.
+    The copy keeps the skeleton's own layout, `<project>/.knowledge/`, matching what
+    `standards/architecture/bundle-root.md` fixes for every target repo: a doc's
+    `resource` globs resolve against the bundle's parent, so a copy under any other
+    name would turn every one of them into a `resource-unresolved` warning the
+    shipped skeleton does not have (`renomear-docs-para-knowledge`, task 6.1,
+    2026-08-13 — this copy used to sit at `<project>/docs/` while the skeleton
+    declared `/.docs/`, a mismatch `okf-validate-skeleton`/`-text`/`-findings`
+    carried as UNROUTED entries until this fix).
     """
     proj = cap.tmp / "ws-okf"
     proj.mkdir(parents=True)
-    bundle = proj / "docs"
-    shutil.copytree(PLUGIN_ROOT / "assets" / "docs", bundle)
+    bundle = proj / ".knowledge"
+    shutil.copytree(PLUGIN_ROOT / "assets" / "knowledge", bundle)
 
     cap.run("okf-version", "okf", ["--version"], cwd=proj, ws=proj, ext="txt")
     cap.run("okf-selftest", "okf", ["selftest", "--json"], cwd=proj, ws=proj)
@@ -496,15 +491,15 @@ def capture_okf(cap: Capture) -> None:
     cap.run("okf-validate-skeleton-text", "okf", [str(bundle)], cwd=proj, ws=proj, ext="txt")
 
     bad_body = "# Golden Fixture Bad\n\nA concept doc carrying no frontmatter at all.\n"
-    (bundle / "knowledge" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
+    (bundle / "concepts" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
     cap.run("okf-validate-findings", "okf", [str(bundle), "--json"], cwd=proj, ws=proj)
 
-    # Hook mode reads the bundle at `<project>/.docs` and never at a path argument,
+    # Hook mode reads the bundle at `<project>/.knowledge` and never at a path argument,
     # so it needs its own copy under that name.
     hook_proj = cap.tmp / "ws-okf-hook"
     hook_proj.mkdir(parents=True)
-    shutil.copytree(PLUGIN_ROOT / "assets" / "docs", hook_proj / ".docs")
-    bad = hook_proj / ".docs" / "knowledge" / "golden-fixture-bad.md"
+    shutil.copytree(PLUGIN_ROOT / "assets" / "knowledge", hook_proj / ".knowledge")
+    bad = hook_proj / ".knowledge" / "concepts" / "golden-fixture-bad.md"
     bad.write_text(bad_body, encoding="utf-8")
     payload = json.dumps({
         "hook_event_name": "PostToolUse",

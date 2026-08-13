@@ -112,7 +112,8 @@
     ],
     "malformed": [],
     "warn": [],
-    "ok": false
+    "ok": false,
+    "openTasks": []
   },
   "path": ".specs/plans/beta-gizmo.md",
   "resolvedBy": null,

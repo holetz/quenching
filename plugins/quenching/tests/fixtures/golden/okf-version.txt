@@ -1,1 +1,1 @@
-okf-validate <VERSION>
+cq knowledge <VERSION>
