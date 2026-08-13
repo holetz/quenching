@@ -87,7 +87,7 @@ every capture runs; on-demand counterpart `/quenching:knowledge:define`, bulk co
 ### 7. Self-check against the conformance core
 Verify every file you touched against
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) —
-the same checks the installed `cq knowledge hook` (if wired) machine-verifies on write.
+the same checks `cq knowledge validate` machine-verifies.
 
 ## Invariants to never violate
 
