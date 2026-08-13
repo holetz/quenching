@@ -17,5 +17,5 @@ vision/
   <area>.md        # one shell per area (type: vision) — e.g. platform.md, data.md
 ```
 
-Mold: `vision/area.md` (applied by `quenching-docs-add`). This home starts empty — the repo
+Mold: `vision/area.md` (applied by `quenching-knowledge-add`). This home starts empty — the repo
 declares its areas.

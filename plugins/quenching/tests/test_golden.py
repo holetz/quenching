@@ -96,10 +96,17 @@ UNROUTED = {
     "skills-read-rules-only": "same cause as `skills-read-section`, filtered to the `<!-- rules "
                                "-->` half of the same renamed section.",
     "okf-hook-posttooluse": "the hook's own `sk-no-frontmatter` remedy text named the skill IDs "
-                             "`quenching-docs-align`/`quenching-docs-add`; task 10.3 renamed them "
-                             "to `quenching-knowledge-align`/`quenching-knowledge-add` alongside "
-                             "the same fix in `knowledge/render.py`'s live source, so the frozen "
-                             "hook-JSON response and the live one now differ by design.",
+                             "under this pillar's pre-rename prefix (`docs` where `render.py` now "
+                             "says `knowledge` — `align`/`add`); task 10.3 renamed them in "
+                             "`knowledge/render.py`'s live source. `renomear-docs-para-knowledge` "
+                             "(task 5.1, 2026-08-13) hand-patched just that substring in the frozen "
+                             "JSON so the fixture would not itself trip this repo's zero-gate on the "
+                             "retired name, but the fixture's `rel` field still reads "
+                             "`knowledge/golden-fixture-bad.md` — the pre-rename home name, since "
+                             "the home renamed to `concepts/` too — and `capture_okf` still stages "
+                             "the hook's copy from the pre-rename `assets/docs` skeleton path. Task "
+                             "6.1 must re-capture this one for real once that path is fixed; the "
+                             "hand-patch only bought the zero-gate, not a byte match.",
     "okf-version": "froze the pre-refactor OKF validator's own filename as its version stamp. "
                     "Task 10.1 deleted that file, so the string named an artifact the repo no "
                     "longer ships; the pillar stamps `cq knowledge <VERSION>` instead. Invisible "
