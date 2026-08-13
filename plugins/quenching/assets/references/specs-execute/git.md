@@ -210,6 +210,74 @@ frontmatter to get past that refusal — the refusal is the rule, working.
 record outlives the branch it names. Anything asking "is this spec in flight?" asks git for a live
 ref — the record only supplies the ref's name when it is not the default.
 
+### Marking the branch with the specs it built
+
+<!-- rules -->
+
+Beside the `branch:` frontmatter record, `/quenching:specs:execute` also marks the branch itself, in a
+form that survives outside the spec's own file — a recognizable line in the branch's own
+description:
+
+```bash
+git config branch.<name>.description
+```
+
+the same slot `git branch --edit-description` opens an editor on. After every task's commit, read
+the current description and rewrite — never duplicate — the one line it owns:
+
+```
+quenching-slugs: <slug1>,<slug2>
+```
+
+Any other text already in the description — a line a human wrote by hand — is preserved untouched
+above and below it. A second spec built on the same branch appends its slug to the same line rather
+than writing a second one, and the line is rewritten on every task commit, which is what keeps it
+current with HEAD without a separate cleanup pass. The read-merge-write, run by
+`/quenching:specs:execute` after every task's commit:
+
+```bash
+python3 -c "
+import subprocess, re, sys
+name, slug = sys.argv[1], sys.argv[2]
+r = subprocess.run(['git', 'config', 'branch.%s.description' % name], capture_output=True, text=True)
+lines = r.stdout.splitlines() if r.returncode == 0 else []
+slugs, idx = set(), None
+for i, line in enumerate(lines):
+    m = re.match(r'quenching-slugs: (.*)', line)
+    if m:
+        slugs, idx = {s.strip() for s in m.group(1).split(',') if s.strip()}, i
+slugs.add(slug)
+newline = 'quenching-slugs: ' + ','.join(sorted(slugs))
+if idx is not None:
+    lines[idx] = newline
+else:
+    lines.append(newline)
+subprocess.run(['git', 'config', 'branch.%s.description' % name, chr(10).join(lines)], check=True)
+" "<work>" "<slug>"
+```
+
+**Never marked under `In place`.** The mark exists only when this command controls the branch it is
+building on — one adopted or cut by the isolation offer. Building in place, on a branch that was
+already checked out and possibly shared or someone else's, writes nothing here, exactly as it
+stamps no `branch:` record there.
+
+The description is tied to the **ref**, not to a worktree's physical directory, so it reads back
+identically whether the isolation taken was **Worktree** or plain **Branch**.
+
+`/quenching:specs:conclude`, without a `--spec` argument, reads this same line to resolve which spec(s)
+built the branch it is closing —
+[plan-git-record.md](/.docs/standards/workflows/plan-git-record.md) is the contract this mechanism
+answers to.
+
+<!-- rationale -->
+
+The branch description was chosen over a dedicated `git config` key, a branch-name convention, or a
+versioned file in the branch: it needs no new git plumbing, ties to the ref rather than a directory
+or a name a human might rename, and never leaks into the branch's own tree. Its cost is symmetric
+with its simplicity — the description is local to the `.git` that wrote it and does not survive a
+clone or fetch, which `/quenching:specs:conclude`'s own fallback exists to cover when it does not
+resolve.
+
 ## Commit messages
 
 <!-- rules -->
