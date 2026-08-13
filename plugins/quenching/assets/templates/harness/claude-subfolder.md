@@ -4,8 +4,8 @@
 Auto-loads only under this folder — nearest-file navigation, not a second root.>
 
 - **Local operations:** <commands / quirks scoped to this folder — omit this bullet if none>.
-- **Knowledge for this area:** [<home>](/.docs/<home>/index.md) — <one line on what that home holds>.
-- **Unfamiliar term?** Resolve it in the glossary: [/.docs/knowledge/glossary.md](/.docs/knowledge/glossary.md)
+- **Knowledge for this area:** [<home>](/.knowledge/<home>/index.md) — <one line on what that home holds>.
+- **Unfamiliar term?** Resolve it in the glossary: [/.knowledge/glossary.md](/.knowledge/glossary.md)
   (`grep -i '<term>'`) — omit this bullet if the repo has no glossary.
 - **To create / edit knowledge:** use the `quenching` skills (`quenching-docs-add` to add
   one, `quenching-docs-align` to migrate/normalize, `quenching-docs-harness` to keep pointers thin).
@@ -18,7 +18,7 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
 
 <!-- MOLD (quenching · subfolder harness pointer — do NOT copy this note into the produced file):
      Produces a subfolder CLAUDE.md as a THIN, NEAREST-FILE navigation pointer. Modeled on the
-     shipped exemplar assets/docs/standards/CLAUDE.md (18 lines).
+     shipped exemplar assets/knowledge/standards/CLAUDE.md (18 lines).
      • NO frontmatter, NO `type` — EXEMPT from OKF (okf-spec §strict-7); the validator skips it.
        EVERY link MUST resolve (checked by quenching-docs-harness, not the validator).
      • It auto-loads ONLY when the agent works under this folder: put the LOCAL commands/quirks
@@ -28,5 +28,5 @@ Auto-loads only under this folder — nearest-file navigation, not a second root
        either a harness unit clearly scoped to this folder, or a greenfield folder with a local
        operational surface (build/run script, distinct toolchain, README of run-commands) and no
        CLAUDE.md. Never one per directory; data/output/asset folders earn nothing.
-       `quenching-docs-align`'s skeleton already ships /.docs/standards/CLAUDE.md.
+       `quenching-docs-align`'s skeleton already ships /.knowledge/standards/CLAUDE.md.
      • Size budget: aim ≤ ~20 lines. Structure/links canonical English; prose MAY follow the repo's language. -->

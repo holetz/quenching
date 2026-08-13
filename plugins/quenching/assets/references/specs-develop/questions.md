@@ -206,7 +206,7 @@ Assume the spec is wrong and find where. Be specific. Aim at:
 - **Scope inflation.** Which part of `## Proposal` does not follow from `## Problem`? What survives
   if it is cut?
 - **Cheaper paths.** What buys 80% of the benefit for 20% of the change?
-- **Contradiction with a binding contract.** Does any task violate a `docs/standards/` doc? Name
+- **Contradiction with a binding contract.** Does any task violate a `knowledge/standards/` doc? Name
   the doc and the line.
 - **Permanent cost.** What does this add forever — surface, config, a rule to remember? Is the
   benefit recurring or one-off?
@@ -282,7 +282,7 @@ parallel-eligible task at all. The mechanism was never the missing piece; the qu
 This bank also settles the two declarations nothing else owns: the **`verification` policy** (one of
 the three values in [spec-driven.md](spec-driven.md) §Frontmatter, asked once and written to
 frontmatter, so `execute` never has to guess mid-build) and the parsed `### Standards this spec will
-write into docs/standards/` sub-heading under `## Impact`.
+write into knowledge/standards/` sub-heading under `## Impact`.
 
 **Stop when** `cq specs next` stops reporting `write_section` — every gate section answered with
 content or a reasoned `- none`, every task with a judgeable completion, no `## Impact` path
@@ -336,7 +336,7 @@ so the duplicate arrives through the front door and has to be turned away there.
 
 This bank asks a single question, and it is the only bank that adds nothing to the body. Show what
 the spec now commits to — the proposal in one line, the task count, the `verification` policy, the
-declared `docs/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
+declared `knowledge/standards/` paths, the biggest accepted risk — and ask for the go-ahead.
 
 On yes, stamp it with `cq specs record "<slug>" approved --set date=<today>` — never by editing the
 frontmatter, which works only while the backend is `files`. On no, ask what would have to change
@@ -353,7 +353,7 @@ and stamps rather than refusing, so declining here costs nothing but a question 
 <!-- rules -->
 
 The **adversarial** and **gate** banks ask questions that only a reading answers: which alternatives
-the codebase actually admits, which `docs/standards/` contract a task would violate, which term the
+the codebase actually admits, which `knowledge/standards/` contract a task would violate, which term the
 spec uses in a sense the glossary does not. That reading is **optional and delegable**; the
 interrogation never is.
 
@@ -363,11 +363,11 @@ compact table** and no trail:
 | Bank | What it is asked for |
 | --- | --- |
 | adversarial | candidate whole-shape alternatives, each with cost, benefit and what it forecloses |
-| adversarial | contradictions with a binding contract — the `docs/standards/` doc and the line |
-| gate | terms the spec uses in a sense `docs/knowledge/glossary.md` does not |
+| adversarial | contradictions with a binding contract — the `knowledge/standards/` doc and the line |
+| gate | terms the spec uses in a sense `glossary.md` does not |
 | gate | `## Impact` paths no `## Tasks` item names, and tasks naming paths `## Impact` never declared |
 
-It follows the verifier shape of [agents.md](/.docs/standards/automation/agents.md) §The verifier
+It follows the verifier shape of [agents.md](/.knowledge/standards/automation/agents.md) §The verifier
 shape: it **inspects and reports, never edits**, and it states an explicit *not checked here* list,
 which is the false-positive control.
 
@@ -382,7 +382,7 @@ Two things that look like this and are not available. **`context: fork` cannot a
 construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
 §`context: fork`); a bank is nothing but questions. And a sub-agent **does not share the session's
 prompt cache** — it runs on a cold context and pays the full first read of every file it touches
-([context-discipline.md](/.docs/standards/automation/context-discipline.md) §What a delegated
+([context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §What a delegated
 executor costs), so delegation here is never a cache play.
 
 What it *is* is the delegation test met exactly: the returned table is far smaller than the sweep

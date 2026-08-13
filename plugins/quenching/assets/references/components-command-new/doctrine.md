@@ -11,7 +11,7 @@ be. A description written as a `/`-menu label routes nothing.
 
 **This file owns the judgement; the tool owns the thresholds.** Every number a rule below depends
 on — the two description caps, the body line limit, trigger position, the `Not for:` boundary —
-lives in `docs/standards/automation/skills.md`, and is checked by `cq components lint` under a
+lives in `knowledge/standards/automation/skills.md`, and is checked by `cq components lint` under a
 stable `sk-*` code. This file names the code and never restates the number, so the rule and its
 checker cannot drift apart.
 
@@ -44,7 +44,7 @@ Put it on a stage another command's body invokes and that stage goes silently in
 conductor is refused, does not fail, and does nothing. That is `sk-inert-stage`, an error, with
 the reachable set derived from the command bodies rather than a hand-kept list. Which class a
 command belongs to is decided by the admission criterion in
-`docs/standards/automation/skills.md`, and the tier its description then owes is decided
+`knowledge/standards/automation/skills.md`, and the tier its description then owes is decided
 there, §The admission criterion.
 
 **Within the routed class, `sk-no-boundary` stays wider than the rule.** It fires on absence alone,
@@ -116,7 +116,7 @@ with this" is a claim about the whole surface and only a reader holding all of i
 **A quoted trigger is never cut for length.** Shortening a description by deleting a trigger is how
 a command quietly stops firing for the user who worded it differently, and only a measured miss
 retires one — `/quenching:components:command:eval`'s, per
-[skill-evaluation.md](/.docs/standards/automation/skill-evaluation.md) §Description tuning
+[skill-evaluation.md](/.knowledge/standards/automation/skill-evaluation.md) §Description tuning
 is the one edit measurement authorizes. A trigger that looks like sediment is **reported** with the
 `/quenching:components:command:eval <command>` that decides it.
 

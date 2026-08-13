@@ -1,26 +1,26 @@
-# Distill — the OKF bridge from a concluded spec to `docs/`
+# Distill — the OKF bridge from a concluded spec to `knowledge/`
 
 How `/quenching:specs:conclude` offers to carry the **durable** knowledge a spec produced into the
-repo's OKF `docs/` bundle: this file decides **what crosses**; the insert mechanics live with
+repo's OKF `knowledge/` bundle: this file decides **what crosses**; the insert mechanics live with
 `/quenching:knowledge:add` ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)).
 
 ## What crosses, what stays
 
 | The spec produced… | Cross? | OKF home / route |
 | --- | --- | --- |
-| a rule a task **explicitly named** under `## Impact` | **no** | `/quenching:specs:execute` **already wrote it into `docs/standards/`** as part of that task — nothing to do here. There is no separate spec store to sync |
+| a rule a task **explicitly named** under `## Impact` | **no** | `/quenching:specs:execute` **already wrote it into `knowledge/standards/`** as part of that task — nothing to do here. There is no separate spec store to sync |
 | a **decision** (rationale + considered alternatives, usually in `## Design`) not yet captured as a standard | yes | `standards/<subject>/<concept>.md` (`type: standard`; `authority: current` if the spec proved it, else `background`) — there is no separate ADR home |
-| **generic understanding** gained (domain insight, mental model, a learning from implementation) | yes | `knowledge/<subject>/<slug>.md` (`type: knowledge`) |
-| a **repo-specific term** the spec coined or clarified | yes | an entry in `knowledge/glossary.md` (§Enriching the glossary in homes.md) |
-| a **follow-up** the spec surfaced but did not pursue | yes | a fresh spec in `specs/plans/` via `/quenching:specs:create` — outside the `docs/` bundle, and never stamped with an OKF `type:` |
-| `## Proposal` / `## Design` / `## Tasks` as documents | no | they are the archive's history; copying them into `docs/` duplicates a source of truth |
+| **generic understanding** gained (domain insight, mental model, a learning from implementation) | yes | `concepts/<subject>/<slug>.md` (`type: concept`) |
+| a **repo-specific term** the spec coined or clarified | yes | an entry in `glossary.md` (§Enriching the glossary in homes.md) |
+| a **follow-up** the spec surfaced but did not pursue | yes | a fresh spec in `specs/plans/` via `/quenching:specs:create` — outside the `knowledge/` bundle, and never stamped with an OKF `type:` |
+| `## Proposal` / `## Design` / `## Tasks` as documents | no | they are the archive's history; copying them into `knowledge/` duplicates a source of truth |
 | task checklists, progress notes, transient debugging chatter | no | transient by nature |
 
-The `specs/` ↔ `docs/` boundary is owned by
+The `specs/` ↔ `knowledge/` boundary is owned by
 [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §Boundary — when it and this table seem to disagree, the boundary wins and this table is wrong.
 
-Boundary tie-breakers **within** `docs/` (standards vs knowledge vs reference) are the ones in
+Boundary tie-breakers **within** `knowledge/` (standards vs concepts vs external) are the ones in
 [homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md) §Classification — apply them verbatim.
 
 ## Two moments, one table
@@ -38,9 +38,9 @@ when the doc has to exist:
 
 <!-- rationale -->
 The top row is the load-bearing difference from the old delta model: because a task writes the
-binding rule **straight into `docs/standards/`** while it is built, concluding is not a *sync* — it
+binding rule **straight into `knowledge/standards/`** while it is built, concluding is not a *sync* — it
 is catching the **by-products** (a decision left in `## Design`, an understanding, a term, a
-follow-up) that were never committed to a home. Most of what a spec proves is already in `docs/` by
+follow-up) that were never committed to a home. Most of what a spec proves is already in `knowledge/` by
 the time it closes; the harvest is usually small.
 
 A rule the code demonstrates belongs beside that code in history; a by-product of the *thinking* has
@@ -62,12 +62,12 @@ Runs **after** the archive move succeeds, as the command's distillation step:
 
 1. **Harvest candidates.** Read the archived spec's sections (`## Problem`, `## Proposal`,
    `## Design`, `## Discoveries`, `## Outcome`) and the conversation's own context, and check what
-   `docs/` already received — during execution, and at the emergent moment above. List each
+   `knowledge/` already received — during execution, and at the emergent moment above. List each
    **remaining** candidate as *one line*: what it is → proposed home + `type` + path (per the table
    above). Expect **zero to a few** — a spec that captured its rules as it went, and taught nothing
    else durable, is normal; say so and skip to done.
 2. **One plan, one OK.** Present the candidate list as a single distillation plan and ask one
-   confirmation. The user may strike items. If the OKF bundle is missing (no `docs/index.md` with
+   confirmation. The user may strike items. If the OKF bundle is missing (no `knowledge/index.md` with
    `okf_version`), offer `/quenching:knowledge:align` first, or skip distillation entirely — never scaffold ad hoc.
 3. **Mint each approved doc** under the insert procedure
    ([homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)): fill the home's mold, stamp the
@@ -75,7 +75,7 @@ Runs **after** the archive move succeeds, as the command's distillation step:
    invented; `source:` names the spec), update the home's `index.md`, enrich the glossary when a
    term warrants it. A follow-up instead goes through `/quenching:specs:create` into `specs/plans/`.
 4. **Narrate the bridge in the archived spec's `## Outcome`.** One line per minted doc —
-   `distilled: [<title>](/.docs/<path>.md) — <what it carries>` — appended to the `## Outcome`
+   `distilled: [<title>](/.knowledge/<path>.md) — <what it carries>` — appended to the `## Outcome`
    already written at the archive gate. An empty harvest writes nothing.
 5. **Self-check** every touched file against
    [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md).
@@ -94,7 +94,7 @@ to it. Any third exception should be argued for, not assumed from these two.
 
 ## Invariants
 
-- **Never bulk-copy** an artifact into `docs/` — distill the durable unit, cite the archive.
+- **Never bulk-copy** an artifact into `knowledge/` — distill the durable unit, cite the archive.
 - **Never delete or revise** the archived spec while distilling — the archive is history. The one
   write permitted here is step 4's append to `## Outcome`, which records what the distillation
   produced and changes nothing the spec claimed.

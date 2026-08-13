@@ -2,7 +2,7 @@
 
 <!-- rules -->
 
-The plugin has **three** aligns, one per front: `/quenching:knowledge:align` (`docs/`), `/quenching:specs:align`
+The plugin has **three** aligns, one per front: `/quenching:knowledge:align` (`knowledge/`), `/quenching:specs:align`
 (`specs/`), and `/quenching:components:align` (`.claude/`) — plus `/align`, which conducts all three.
 Everything about **how** the operation behaves is identical across them and lives here; only a
 front's own deltas (what it inventories, which findings it produces, what its verifier is) stay in
@@ -184,7 +184,7 @@ it deliberately did not close, each with the command that closes it.
 
 | Front | Align | Verifier |
 | --- | --- | --- |
-| `docs/` | `/quenching:knowledge:align` | `cq knowledge validate <docs-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
+| `knowledge/` | `/quenching:knowledge:align` | `cq knowledge validate <knowledge-dir>` — exit 0 **and** no `dir-no-index` / `index-broken-link` / `index-orphan` (they are WARN; read the findings) |
 | `specs/` | `/quenching:specs:align` | `cq specs doctor` + `cq specs validate` — the whole condition; the OKF validator is never pointed at `specs/` |
 | `.claude/` | `/quenching:components:align` | `cq components lint` + `cq components doctor`, plus `cq components registry reindex` reporting `changed: false` for the zone |
 
