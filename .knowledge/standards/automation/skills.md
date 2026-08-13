@@ -7,14 +7,15 @@ tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-08-10
 audience: both
 authority: current
-source: add-quenching-skill-pair change (skill-authoring + skill-alignment deltas) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02)
+source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02)
 maintainer: quenching
 ---
 
 # Command authoring and alignment
 
 The contract for how a command enters and stays in this plugin's automation surface, distilled
-from the `add-quenching-skill-pair` change. `/quenching:components:command:new` mints or edits one command; `/quenching:components:align`
+from the skill-authoring + skill-alignment change that first paired a skill with its wrapper.
+`/quenching:components:command:new` mints or edits one command; `/quenching:components:align`
 sweeps the whole surface into conformance. The naming these produce is governed by
 [command-surface.md](../naming/command-surface.md); the layout rule for what may sit under
 `commands/` by [../architecture/plugin-layout.md](../architecture/plugin-layout.md); the
