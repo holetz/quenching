@@ -7,10 +7,9 @@ shells out to the same single entry point, `cq`, naming its pillar (`specs`, `kn
 ## Resolving the tool
 
 Invoke the tool at its plugin path — `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` — followed by the pillar
-and its subcommand: `cq specs ...`, `cq knowledge ...`, `cq components ...` (the plugin's own
-`hooks/hooks.json` wires `cq knowledge hook` the same way). **There is no fallback and no manual
-rung**: never look for a copy under a target's `.claude/hooks/`, never install one there, never
-merge anything into a target's `.claude/settings.json` to make a tool resolve.
+and its subcommand: `cq specs ...`, `cq knowledge ...`, `cq components ...`. **There is no fallback
+and no manual rung**: never look for a copy under a target's `.claude/hooks/`, never install one
+there, never merge anything into a target's `.claude/settings.json` to make a tool resolve.
 
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
