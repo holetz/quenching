@@ -109,20 +109,21 @@ else.**
 | `refined` | once interrogated | `develop` | `{mode, date}` — that a real interrogation happened, and which bank ran it |
 | `approved` | once approved | `develop`, or `execute` inline | `{date}` — **a human said go**; the one fact the old folder hop carried |
 | `branch` | once building | `execute` | `{base, work}` — after a merge, git cannot say what the base was |
+| `pr` | once opened | `conclude` | `{number, url, date}` — a PR opened but not yet merged, distinct from `merge.pr`, which is stamped only once the merge already happened. Restamped if the PR is recreated |
 | `reviewed` | once reviewed | `conclude` | `{date}` — that a human read the whole branch diff |
 | `merge` | once merged | `conclude` | `{strategy, subject, pr}` — the strategy was a choice, the subject names the merge it produced. Known BEFORE the merge, so the stamp lands on the work branch and the merge is the last action. `rebase`/`fast-forward` create no merge commit, so the subject is an explicit none. `pr` names the pull request the PR route opened — absent on every local conclusion, and **refused** under `fast-forward` (`sp-merge-pr-no-route`), the one strategy `gh pr merge` cannot perform |
 | `outcome` | at archive | `conclude` | `done` · `abandoned` — stamped by `promote --to archive` |
 
 Read top to bottom, the optional records **narrate the spec's history**: ranked, interrogated,
-approved, isolated, reviewed, merged, closed. Not "built" — `branch` narrates that isolation was
-taken, never that the work finished; "built" is the derived stage `executing`, which a spec built
-in place, with no `branch` record at all, still reaches. An absent record is a *not-yet*, never a
-defect.
+approved, isolated (or explicitly not), PR opened, reviewed, merged, closed. Not "built" — `branch`
+narrates whether isolation was taken, never that the work finished; "built" is the derived stage
+`executing`, which a spec built in place — `branch.work` equal to `branch.base` — still reaches
+exactly the same way an isolated one does. An absent record is a *not-yet*, never a defect.
 
 `writeOnce: true` (`approved`, `branch`, `merge`, `outcome`) marks an irreversible transition, where
 rewriting the value would falsify something that already happened. `writeOnce: false` (`priority`,
-`refined`, `reviewed`) marks a standing judgment its **owning command** may restamp — which is why
-those three carry their own `date`. In neither case may a command other than the owner touch the
+`refined`, `pr`, `reviewed`) marks a standing judgment its **owning command** may restamp — which is
+why those four carry their own `date`. In neither case may a command other than the owner touch the
 record. The declared shapes live in `assets/specs/schema.json` under `frontmatter.records`.
 
 **There is no `created` field**: `date:` is that fact, and one truth never gets

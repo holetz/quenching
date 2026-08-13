@@ -62,14 +62,24 @@ def _git_refs(root: str) -> tuple[set[str], str | None]:
     return heads, (current if current and current != "HEAD" else None)
 
 
-def _work_ref(fm: dict, slug: str) -> str:
-    """The branch this spec's work would live on.
+def _work_ref(fm: dict, slug: str) -> str | None:
+    """The branch this spec's work would live on, or `None` when it never left the base.
 
     The `branch:` record when one was stamped, else the default `plan/<slug>` — because a
     human may have cut the branch by hand, with no record at all. The record alone is NEVER
-    the signal: what counts is whether the ref is alive."""
+    the signal: what counts is whether the ref is alive.
+
+    `work == base` is the ONE case where the record is the whole signal, and it is why this
+    returns `None` rather than the base's own name: `execute` stamps that pair when the human
+    declined isolation (`git.md` §Where a branch comes from), and the base branch is always
+    alive. Read as a work ref it would make every spec built in place rank as permanently in
+    flight — `live` and `current` both true forever — on a ref it never took."""
     rec = fm.get("branch")
-    work = str(rec.get("work", "")).strip() if isinstance(rec, dict) else ""
+    if not isinstance(rec, dict):
+        return f"plan/{slug}"
+    work = str(rec.get("work", "")).strip()
+    if work and work == str(rec.get("base", "")).strip():
+        return None
     return work or f"plan/{slug}"
 
 
@@ -95,9 +105,11 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     progress = (checked / total) if total else 0.0
     executing = stage == "executing"
     work = _work_ref(fm, s["slug"])
-    live = work in heads
+    live = work is not None and work in heads
     # A record whose ref is gone stops counting: the branch was merged or deleted, so the
-    # spec is no more "in flight" than one that never had a branch at all.
+    # spec is no more "in flight" than one that never had a branch at all. A spec built in
+    # place (`work` is `None` above) never counts either, for the same reason read the other
+    # way round — its ref cannot go, so nothing would ever stop it counting.
     on_it = live and work == current
     branch_rank = 0 if on_it else (2 if live else 1)
     return {

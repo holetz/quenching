@@ -34,4 +34,5 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 - `manifest-generation` — **deferred.** Both manifests (`plugin.json`, `marketplace.json`) are
   hand-edited and small; nothing generates them today.
 - `pipeline-stages` — **deferred, not applicable.** There is no CI pipeline for the plugin itself;
-  the verification gates are the test suite and `functional-checks.sh`, run locally.
+  the verification gates are the test suite, `functional-checks.sh`, `conclude-order-check.sh` and
+  `citation-check.sh`, run locally.

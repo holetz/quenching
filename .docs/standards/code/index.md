@@ -25,6 +25,11 @@ its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standa
 * [frontmatter-parser.md](frontmatter-parser.md) — the YAML subset `common/frontmatter.py` reads:
   the comment rule, the canonical case list its tests hold it to, and the anomaly sidecar — one
   parser now, reading the union of what the three retired scripts used to read separately.
+* [root-override-validation.md](root-override-validation.md) — an explicit `--root`/config-path
+  override that resolves to the container of a phased workspace, not the workspace itself, must
+  refuse (`exit 2`, `sp-root-too-high`) instead of reading as merely empty — one shared predicate,
+  one shared refusal idiom, and the one exception a diagnostic verb takes, reporting the same
+  condition as a finding rather than refusing.
 * [superseded-format-recognition.md](superseded-format-recognition.md) — how a recogniser is changed
   when the format it reads is superseded: the new pattern must be asserted against the OLD form,
   because one that describes the new form correctly often matches the old one whole and answers
