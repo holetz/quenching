@@ -121,9 +121,9 @@ one is invisible to the other.
 
 ## Impact
 
-### Standards this spec will write into /.docs/standards/
+### Standards this spec will write into /.knowledge/standards/
 
-- `/.docs/standards/architecture/widget-registry.md` — one registry owns the list
+- `/.knowledge/standards/architecture/widget-registry.md` — one registry owns the list
 
 ### Standards at `authority: background` this spec may resolve
 
@@ -170,8 +170,8 @@ The registry lives in `src/widgets/registry.py`. Both readers import it; neither
       pattern: src/widgets/registry.py
       verify: python3 -m unittest tests.widgets.test_loader
 - [ ] 1.3 Write the registry standard
-      files: /.docs/standards/architecture/widget-registry.md (new)
-      verify: python3 assets/hooks/okf-validate.py .docs
+      files: /.knowledge/standards/architecture/widget-registry.md (new)
+      verify: python3 assets/hooks/okf-validate.py .knowledge
 
 ### 2. Readers
 

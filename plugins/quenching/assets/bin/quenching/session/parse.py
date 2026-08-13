@@ -49,7 +49,7 @@ There is no end marker in the transcript to fix this with. Inventing one would m
 findings, so this tool does the other thing: it **detects and names the misread**. A command
 entered as a stage whose caller never regained attribution is marked `closed: false`, and
 every count on it is reported as an upper bound that may include the caller's own work. That
-is `/.docs/standards/quality/parse-honesty.md` applied to a pointer instead of a parser — name
+is `/.knowledge/standards/quality/parse-honesty.md` applied to a pointer instead of a parser — name
 the *misread*, never the *consequence*.
 
 So the entry marks are read for *how a command was reached and with what arguments*, and
@@ -57,7 +57,7 @@ attribution for *what it plausibly cost*, with the honesty flag attached.
 
 PARSE HONESTY
 -------------
-Per `/.docs/standards/quality/parse-honesty.md`: this tool narrows a transcript into a
+Per `/.knowledge/standards/quality/parse-honesty.md`: this tool narrows a transcript into a
 command model, so it must be able to say what it could not read. A line that fails to
 parse is counted and reported as an anomaly ahead of the content, because "no commands
 found" and "I could not read this file" look identical in a report and lead to opposite

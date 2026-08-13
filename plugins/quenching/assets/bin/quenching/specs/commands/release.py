@@ -14,7 +14,7 @@ def cmd_release(args, root: str, out: Emitter) -> int:
     and tag that commit — the MECHANICAL half of a release. Judging what the number should
     be, whether a lone merge on `develop` is a release or a habit, and the `develop -> main`
     merge itself all belong to the command that calls this; see
-    /.docs/standards/git/branching.md.
+    /.knowledge/standards/git/branching.md.
 
     Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
     not this plugin's own checkout, a lockstep already disagreeing with itself, or a

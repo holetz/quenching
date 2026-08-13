@@ -55,7 +55,7 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                             f"{where}: `{a['key']}`: {a['detail']}", spec=s["slug"], path=where,
                             kind=a["kind"], key=a["key"],
                             remedy="quote the value, or write the comment on its own line — "
-                                   "see /.docs/standards/code/frontmatter-parser.md"))
+                                   "see /.knowledge/standards/code/frontmatter-parser.md"))
 
     schema = load_schema()
     for key in schema.get("frontmatter", {}).get("required", []):
