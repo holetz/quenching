@@ -25,6 +25,11 @@ Dispatches on `hook_event_name`:
   only the two hard violations — writing an `index.md` that carries a concept
   `type`, or writing a concept doc with no non-empty `type`. This is the single
   hard gate; everything else proposes. Off by default (proposes, never blocks).
+  It never consults `validate_file`/`validate_tree` — so an `okf-legacy-*` finding
+  (raised only by those two, and only when a write already lands under the CURRENT
+  root) can never reach this gate; measured against a discard bundle in the old
+  layout, a write under the old root is invisible to `_under_docs` too, so nothing
+  denies it either. `okf-legacy-*` is declared `error` on that basis.
 
 EVERY PATH RETURNS `OK`. The hook signals through the JSON on stdout — `_emit_block`,
 `_emit_deny`, `_emit_additional_context` — and never through the exit code, which is why
