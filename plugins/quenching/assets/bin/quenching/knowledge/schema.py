@@ -66,6 +66,11 @@ GIT_TIMEOUT_S = 10
 ASSET_DIRS = ("img", "imgs", "images", "assets", "static", "media", "node_modules", "__pycache__")
 # Markdown inline-link target: capture what sits between `](` and the closing `)`.
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
+# Pre-rename layout `okf-legacy-*` recognizes as migration debt — never a current OKF
+# name, only ever compared against to find a target that has not run `knowledge:align` yet.
+LEGACY_ROOT_NAME = ".docs"
+LEGACY_HOMES = {"knowledge": "concepts", "reference": "external"}
+LEGACY_QUADRANTS = {"getting-started": "tutorials", "concepts": "explanation"}
 
 
 def _nonempty(fm: dict, key: str) -> bool:
