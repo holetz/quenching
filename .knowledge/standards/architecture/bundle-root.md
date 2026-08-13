@@ -49,7 +49,7 @@ target's choice, so no target ever needs to point the plugin at it.
   bundle and the whole workspace in one glob — a string that only exists because the root is
   fixed ([bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set
   format).
-- **A checker with no root to load.** The hook validates the fixed root by construction; the
+- **A checker with no root to load.** The checker validates the fixed root by construction; the
   key that used to say where the bundle lives is gone rather than relocated
   ([plugin-configuration.md](../workflows/plugin-configuration.md)).
 - **The harness line cites it.** The root harness's one-line language declaration points at
@@ -72,7 +72,7 @@ Three contracts were checked against this rule, and all three hold after the cha
 - [plugin-configuration.md](../workflows/plugin-configuration.md) recognises **six** keys; the
   key that named the bundle root and the section that explained why a second tool read the file
   were removed together.
-- [plugin-layout.md](plugin-layout.md) rests the checker's `hooks/` placement on the invocation
-  rule alone — `_load_config` reads one file, and the root is not a value it loads.
+- [plugin-layout.md](plugin-layout.md) rests `cq`'s placement in `bin/` on the invocation rule
+  alone — `_load_config` reads one file, and the root is not a value it loads.
 - [bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set format
   keeps its rules; only the aggregate example moves to the fixed root (`resource: /.knowledge/**`).
