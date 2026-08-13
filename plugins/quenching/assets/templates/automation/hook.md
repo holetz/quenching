@@ -97,7 +97,7 @@ if __name__ == "__main__":
 ```
 
 <!-- MOLD (quenching · scoped hook) → wired by /quenching:components:hook:new under
-     `/.docs/standards/automation/hooks.md`, one plan → one OK.
+     `/.knowledge/standards/automation/hooks.md`, one plan → one OK.
 
      THE COST CLAIM. Every hook enters its plan with one line of arithmetic: which event ×
      how often it fires in this repo × handler cost per firing × the fast-path cost on

@@ -14,15 +14,15 @@ Each existing section matches a canonical home **by function**:
 
 | Variant (examples) | Canonical |
 | --- | --- |
-| `docs/arquitetura/`, `docs/architecture-docs/` | `docs/standards/` (or `standards/architecture/` if only that) |
-| `docs/adr/`, `docs/decisions` (ADRs) | `docs/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
+| `docs/arquitetura/`, `docs/architecture-docs/` | `knowledge/standards/` (or `standards/architecture/` if only that) |
+| `docs/adr/`, `docs/decisions` (ADRs) | `knowledge/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
 | `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `specs/` (leaves the bundle — §1e) |
-| `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `docs/vision/` |
-| `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `docs/catalog/` |
-| `docs/normativos/`, `docs/regulamentos/` | `docs/reference/regulations/` (content) |
-| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `docs/documentation/how-to/` |
-| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `docs/documentation/getting-started/` |
-| `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `docs/documentation/` |
+| `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `knowledge/vision/` |
+| `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `knowledge/catalog/` |
+| `docs/normativos/`, `docs/regulamentos/` | `knowledge/external/regulations/` (content) |
+| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `knowledge/documentation/how-to/` |
+| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `knowledge/documentation/tutorials/` |
+| `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `knowledge/documentation/` |
 
 ### 1a. Subfolder-level map (inside `standards/`)
 
@@ -32,7 +32,7 @@ Convergence applies one level down — a variant **subfolder** is a smell too:
 `servicos/`→ the fitting subject (usually `platform/`, or split by content). The folder name +
 frontmatter (keys, enums, and the `title:`/`description:` free-text on this agent-facing
 surface) become canonical English. **A migration never translates body prose** — which language it
-is written in is owned by the bundle's `docs/standards/agents/communication.md`.
+is written in is owned by the bundle's `knowledge/standards/agents/communication.md`.
 
 ### 1b. File-slug translation + prefix-cluster folding
 
@@ -40,7 +40,7 @@ Convergence reaches the **filename** too — a non-English concept-doc slug and 
 are both smells `/quenching:knowledge:align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
 
 - **Translate non-English slugs** on the technical homes (`standards/`, `vision/`,
-  `documentation/`, `reference/` non-identifier) to canonical English describing the concept:
+  `documentation/`, `external/` non-identifier) to canonical English describing the concept:
   `convencoes.md`→`conventions.md` · `hierarquia-tasks.md`→`task-hierarchy.md` ·
   `validacao-desenvolvimento.md`→`development-validation.md` · `notebooks-spark.md`→`spark-notebooks.md`.
 - **Fold a prefix-cluster into a subfolder** (prefix stripped, English leaf names, generated
@@ -56,19 +56,19 @@ are both smells `/quenching:knowledge:align` resolves as renames (each swept for
 
 - **Identifier-derived slugs are verbatim — never translate them.** A catalog `<schema>`/
   `<table>` mirrors the real object (`dim_associado.md` stays `dim_associado.md`);
-  `reference/repositories/<repo>` mirrors the real repo. The
+  `external/repositories/<repo>` mirrors the real repo. The
   slug is the greppable key to the asset — anglicizing it is data loss.
 
 ### 1c. Retired canonical home — `guides/` → `documentation/`
 
 <!-- rules -->
 OKF v0.9 retired the `guides/` home; its content now lives in the `documentation/` home. A repo
-already conformant on the **old** canonical (`docs/guides/`) is therefore a migration candidate
+already conformant on the **old** canonical (`knowledge/guides/`) is therefore a migration candidate
 too — not a variant name, but a retired home. Scaffold the `documentation/` skeleton (its
 `index.md` + the four section listings + `.pages`), restamp `type: guide` → `type: documentation`,
-and relocate each `docs/guides/**` doc **by shape** — per item, like Content relocation below,
+and relocate each `knowledge/guides/**` doc **by shape** — per item, like Content relocation below,
 because a legacy `guides/` folder mixes both quadrants: a **task recipe / how-to** ("how do I do
-X") → `docs/documentation/how-to/`; a **learning-oriented tutorial** → `docs/documentation/getting-started/`.
+X") → `knowledge/documentation/how-to/`; a **learning-oriented tutorial** → `knowledge/documentation/tutorials/`.
 Sweep the blast radius like any rename (its **own** confirmation when links reach product code).
 
 <!-- rationale -->
@@ -91,19 +91,19 @@ in it.** A legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. Th
 (`cq specs list` derives what `plans/` holds from disk), so a zone written here would be a
 listing nobody produces and nobody reads.
 
-### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → the `specs/` front
+### 1e. Backlog leaves the OKF bundle — `knowledge/backlog/` → the `specs/` front
 
-OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `specs/` front as
+OKF v0.13 moved parked work out of the `knowledge/` bundle, and it now lands in the `specs/` front as
 **specs**, not as OKF docs — `cq knowledge validate` no longer scans it, and a spec carries no OKF
 `type:` at all.
 
 The move is two hops, and this sweep performs only the first:
 
 1. **`/quenching:knowledge:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
-   then every `docs/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
+   then every `knowledge/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
    not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
-   every cross-link into `docs/backlog/`.
+   every cross-link into `knowledge/backlog/`.
 2. **`cq specs migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
    `complexity` preserved as a line in `## Problem`. Name that second hop in the report and let
@@ -115,7 +115,7 @@ After both hops, `/quenching:specs:create` and `/quenching:specs:triage` own tha
 ### 1f. Retired home — `decisions/` → `standards/`
 
 <!-- rules -->
-OKF v0.13 removed the standalone ADR home. A target's existing `docs/decisions/*.md`
+OKF v0.13 removed the standalone ADR home. A target's existing `knowledge/decisions/*.md`
 (`type: decision`, usually `NNNN-slug.md` ADRs) migrates by restamping `type: decision` →
 `type: standard` with `authority: background` (or `current` if the decision is clearly
 implemented in the code), and relocating to the fitting `standards/<subject>/` — naming the

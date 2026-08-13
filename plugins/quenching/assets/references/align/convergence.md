@@ -25,7 +25,7 @@ saying the same thing, not by pointing at each other.
 An align asks for ONE human confirmation, at run start, that authorizes the entire run — up to
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
-it: the `docs/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
+it: the `knowledge/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
 `specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), and the three front aligns when `/align`
 invokes them.
 
@@ -43,7 +43,7 @@ stops:
    path constant, an import, a docstring, a branch name, a CI job).
 2. **Irreversible cycle actions** — an action that discards or relocates a record of work rather
    than reshaping it: concluding a spec (it moves the spec into `archive/` and distils into
-   `docs/`), and removing a spec from `plans/`. One OK **per item**, with
+   `knowledge/`), and removing a spec from `plans/`. One OK **per item**, with
    what it will do shown.
 
 **What it does not change** — the stages' safe-write invariants (write-then-verify-then-delete
@@ -76,7 +76,7 @@ spec whose tasks are all checked may still be waiting on a deploy.
 The minimal gear differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
 run, always; under the orchestrator's minimal gear
-([orchestration-gears.md](/.docs/standards/automation/orchestration-gears.md) §Deriving the gears
+([orchestration-gears.md](/.knowledge/standards/automation/orchestration-gears.md) §Deriving the gears
 plan, the `low` row) neither stops — the whole cycle runs in one session on a single authorization
 and ends opening a pull request, so the human review the gates would have hosted moves to the PR
 instead: opened against the integration branch declared in `.claude/quenching.json`
@@ -86,7 +86,7 @@ is what the gear re-evaluation exists to bound, as a run that outgrows the minim
 back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` offers pull request or local
-alongside the strategy ([plan-git-record.md](/.docs/standards/workflows/plan-git-record.md) §The
+alongside the strategy ([plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §The
 route is a second choice, and it moves when `merge:` is stamped), and the `merge` record's `pr`
 field names the pull request — the fact the base branch's history cannot reproduce: which PR the
 merge went through, and where the review and the checks still live once the branch is gone
@@ -106,8 +106,8 @@ what the minimal gear exists to avoid.
 
 <!-- rules -->
 Let a pass be **empty** when every applicable stage reports "nothing to do." Let a front be
-**clean** when its own verifier passes: `cq knowledge validate <docs> --json` exiting 0 **and**
-reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `docs/` (these are
+**clean** when its own verifier passes: `cq knowledge validate <knowledge> --json` exiting 0 **and**
+reporting zero `dir-no-index` / `index-broken-link` / `index-orphan` for `knowledge/` (these are
 WARN — exit 0 alone does not prove them clear, read the findings); `cq specs doctor` +
 `cq specs validate` clean, and nothing else, for `specs/`; `cq components lint` + `cq components doctor` exiting 0
 **and** `cq components registry reindex` reporting `changed: false` for `.claude/`.

@@ -99,7 +99,7 @@ this walk.
   reachable by browsing). The fix is to add it to its folder's `index.md` (or the derived
   standards zone). Link language/wording is **not** machine-checked — the English-slug rule is a
   skill-applied convention (the validator cannot reliably detect a document's natural language).
-- **WARN `glossary-broken-link`** — the same link rule applied to `knowledge/glossary.md`, whose
+- **WARN `glossary-broken-link`** — the same link rule applied to the bundle-root `glossary.md`, whose
   links **are** its content: an entry pointing at a deleted doc is a dead lookup. It needs its own
   code because `index-broken-link` is only ever judged on an `index.md`, and the glossary is a
   concept doc. Same resolver, so the two never diverge on what a link means.
@@ -118,11 +118,11 @@ A doc that is provably **lying about itself**. These join the structural set the
   implemented, and flagging syntax nobody writes would make the must-fix set unusable.
 - **WARN `resource-self`** — the doc's own path falls inside the scope its `resource` declares.
   Such a doc governs nothing and is eternally fresh, which silently disables `stale-doc` for it.
-  Matching is **segment-wise**: a single `*` does not cross a `/`, so `/.docs/*` does not contain
-  a deeper path like `/.docs/standards/<subject>.md`.
+  Matching is **segment-wise**: a single `*` does not cross a `/`, so `/.knowledge/*` does not contain
+  a deeper path like `/.knowledge/standards/<subject>.md`.
   - **The bundle-aggregate exemption.** An entry whose scope contains the bundle **root** is an
-    aggregate, not a mistake, and never raises this. `knowledge/glossary.md` really does govern
-    the whole bundle, so `resource: /.docs/**` is truthful and narrowing it would be the
+    aggregate, not a mistake, and never raises this. The bundle-root `glossary.md` really does govern
+    the whole bundle, so `resource: /.knowledge/**` is truthful and narrowing it would be the
     fabrication. This is `TYPES_WITHOUT_RESOURCE` generalized — one exemption mechanism, not two.
 
 ## Staleness (CLI only — advisory, never blocking)
@@ -148,8 +148,8 @@ deadline.
 <!-- rules -->
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.docs        # human report; exit 0/1
-python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.docs --json # machine-readable findings
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.knowledge        # human report; exit 0/1
+python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.knowledge --json # machine-readable findings
 ```
 
 As a hook (stdin JSON): **PostToolUse**/**Stop** PROPOSE fixes via `additionalContext`;
@@ -161,7 +161,7 @@ concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
 
 <!-- rules -->
 
-A bundle is **aligned** when `cq knowledge validate /.docs` exits 0 **and** the structural-integrity and
+A bundle is **aligned** when `cq knowledge validate /.knowledge` exits 0 **and** the structural-integrity and
 resource-integrity WARNs are all cleared — **zero** `dir-no-index`, `index-broken-link`,
 `index-orphan`, `glossary-broken-link`, `resource-unresolved`, `resource-self`. (These are WARN,
 so they do not fail exit-0; the skill reads them from `--json` and treats them as blocking.)

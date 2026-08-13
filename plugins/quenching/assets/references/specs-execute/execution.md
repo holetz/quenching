@@ -9,7 +9,7 @@ nothing in between and nothing after. A task that was never run, never reviewed,
 committed leaves a checkbox that claims more than the repo can show.
 
 **Where this contract stops.** It ends at the last task's commit. Reviewing the whole branch,
-writing the `docs/` the work *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — a
+writing the `knowledge/` the work *revealed*, merging, and archiving belong to `/quenching:specs:conclude` — a
 different scale of judgment, needing a different confirmation, and resumable on its own: a run that
 dies after task nine must be resumable without redoing tasks one through eight. This file never
 reaches past the loop.
@@ -187,7 +187,7 @@ report the failure.
 
 The **subject line format** is the target repo's to declare. Read
 [specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
-§Commit messages: a repo with `docs/standards/git/**` owns the format outright and this contract defers to it; with nothing
+§Commit messages: a repo with `knowledge/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.
 
@@ -214,12 +214,12 @@ link: **report it as a finding and write nothing.**
 With no git in the repo there is nothing to anchor to: tick the box without `--subject` and say so
 once in the report, rather than inventing a placeholder.
 
-## Declared versus emergent `docs/`
+## Declared versus emergent `knowledge/`
 
 <!-- rules -->
 
-A task writes a `docs/standards/` doc **only when the task itself names it** — the path bulleted
-under `## Impact`'s parsed `### Standards this spec will write into docs/standards/` sub-heading,
+A task writes a `knowledge/standards/` doc **only when the task itself names it** — the path bulleted
+under `## Impact`'s parsed `### Standards this spec will write into knowledge/standards/` sub-heading,
 and named by that task. That doc is part of the task's deliverable: it is written before the
 commit, reviewed in the same diff, and stamped `authority` honestly — `current` when the task
 actually proved the rule, `background` when it is agreed but not yet proven.
@@ -235,7 +235,7 @@ It is captured **indiscriminately**. The lines are resolved by `/quenching:specs
 discoveries bank, and the doc an emergent finding deserves is written by
 `/quenching:specs:conclude` at distillation.
 
-A task that writes into `docs/` is not delegated — §Delegating an executor.
+A task that writes into `knowledge/` is not delegated — §Delegating an executor.
 
 ## Delegating an executor — permitted, and bounded
 
@@ -244,14 +244,14 @@ A task that writes into `docs/` is not delegated — §Delegating an executor.
 A per-task executor sub-agent (`Task`) is **permitted** when both hold:
 
 - the task declares `files:` — the sub-agent gets a bounded scope, not the whole repo;
-- the task writes nothing under `docs/`.
+- the task writes nothing under `knowledge/`.
 
 Pin it to the session model. **Never `haiku`** — it is writing production code, and the model
 policy for that is the same one that protects `/quenching:knowledge:import-memory`'s classifiers.
 
 **The orchestrator keeps, without exception:** spec selection, the isolation offer, every
 confirmation, every `cq specs task --check` flip, every `cq specs task --block` marker, every
-`docs/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
+`knowledge/standards/` write, every `cq specs discover` line, the commit, and the decision to pause. The
 sub-agent writes code inside its declared files and reports back — it never talks to the human and
 never touches the spec's bookkeeping.
 
@@ -280,7 +280,7 @@ Two tasks run concurrently **only** when all three hold:
 1. a `[P]` marker was set on both **at definition time** — never inferred while executing;
 2. their declared `files:` sets are **provably disjoint** (`cq specs` checks this mechanically —
    see §The `[P]` check);
-3. neither writes into `docs/`.
+3. neither writes into `knowledge/`.
 
 Serial is the default and needs no marker. Without proven file disjunction, parallel execution
 trades wall-clock for merge conflicts and loses on both.
@@ -486,7 +486,7 @@ full first read of every file it touches. Where N tasks declare the same large f
 cold reads against the orchestrator's one warm one.
 
 The account is **declared arithmetic over files on disk, not a measurement of any run** — the
-distinction `docs/standards/automation/session-evidence.md` §The rule a counted claim must obey
+distinction `knowledge/standards/automation/session-evidence.md` §The rule a counted claim must obey
 imposes, and it is stated as an estimate here because that is what it is. On this repo's
 `configurable-spec-backend`, 18 of 29 tasks are delegation-eligible and 13 of them declare the same
 file: the pre-refactor specs script (as it stood then, before this repo split it into a package), ~37k tokens.
