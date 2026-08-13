@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "root": "<WS>/.specs",
+  "specs": 3,
+  "findings": [
+    {
+      "code": "sp-impact-uncovered",
+      "severity": "warn",
+      "message": "plans/alpha-widget.md: `/.docs/standards/architecture/widget-registry.md` is declared under ## Impact but no task names it",
+      "spec": "alpha-widget",
+      "path": "plans/alpha-widget.md",
+      "standard": "/.docs/standards/architecture/widget-registry.md",
+      "remedy": "add a task that writes it, or drop the declaration"
+    }
+  ]
+}

@@ -129,6 +129,15 @@ UNROUTED = {
                            "agreement is now asserted in `tests/test_specs_promote_gate.py`; the "
                            "frozen payload predates the key.",
     "specs-status-beta": "same added key as `specs-status-alpha`, on the second status fixture.",
+    "specs-list": "the `records` dict gained a `pr` key — a new write-many record, `{number, url, "
+                  "date}`, narrating a PR opened but not yet merged. The frozen payload predates "
+                  "the record.",
+    "specs-record-unknown": "same added record as `specs-list`: the `sp-unknown-record` refusal "
+                             "lists every declared record name, and `pr` is now one of them.",
+    "specs-root-too-high-control-list": "same added record as `specs-list`, on the control arm of "
+                                         "the root-override fixture — it lists a real spec, so its "
+                                         "`records` dict carries `pr` too. The frozen payload was "
+                                         "captured on the base, before the record existed.",
 }
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package

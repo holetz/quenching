@@ -143,7 +143,8 @@ Then ask with **AskUserQuestion**:
   a fresh checkout carries only what git tracks — no `node_modules/`, no `.venv/`, no `.env`, no
   build output — so a repo with installed dependencies needs them installed again there;
 - **Branch** — `git checkout -b plan/<slug>`, work continues in this checkout;
-- **In place** — declines isolation. Nothing is created and **nothing is stamped**.
+- **In place** — declines isolation. Nothing is created, and `branch` is stamped honestly with
+  `work` equal to `base`: `cq specs record "<slug>" branch --set base=<base> --set work=<base>`.
 
 Worktree leads **unconditionally** — never on a heuristic that sniffs the target for
 `package.json` or `.venv/`. A recommendation that changes from repo to repo cannot be documented in
@@ -300,7 +301,7 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
-     --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor"
+     --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor" --sections "§Marking the branch with the specs it built"
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -324,7 +325,8 @@ e. **Then run verify, tick and commit as ONE chained call.** Decide the subject 
    verify precedes the tick, the tick precedes the commit so the box travels *inside* the commit
    that implements it, and any link failing short-circuits every link after it. Run `verify:` only
    when the spec's declared policy says this task is a gate ([execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md)
-   §The verification policy); otherwise the chain starts at `cq specs task`.
+   §The verification policy); otherwise the chain starts at `cq specs task`. A `branch:` record
+   also gets the branch marked, per the rule loaded in 5d.
 
 f. **Read the chain's tail, and act on which link broke** — per §The commit, already loaded in
    5d: `verify:` failed → nothing ticked, nothing committed; fix and retry, or block it when
@@ -399,9 +401,8 @@ targeted again: `--scope current` always resolves to whichever section still has
 closing costs nothing extra and adds no event of its own.
 
 **Not after every committed task, and not on a judgment call either** — both were tried and both
-failed;
-[execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The Handoff cadence
-has the measurement. Each trigger above is a moment this body *just finished doing
+failed; [execution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md) §The
+Handoff cadence has the measurement. Each trigger above is a moment this body *just finished doing
 something*, never one where it appraises something.
 
 **The section-boundary offer (step 5h) adds no fifth event and writes no new state.** Accepted, it is a
@@ -489,8 +490,7 @@ front of you before the loop starts:
   corrected.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
-- Stamp `branch:` only when isolation was actually taken, and never over an existing record —
-  through `cq specs record`, never by editing the frontmatter.
+- Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.
 - Write **only** the `/.docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under
