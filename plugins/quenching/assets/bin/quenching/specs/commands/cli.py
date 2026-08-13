@@ -21,6 +21,7 @@ from quenching.specs.backends.base import BackendRefusal
 from quenching.specs.commands.create import cmd_new
 from quenching.specs.commands.doctor import cmd_config, cmd_doctor
 from quenching.specs.commands.fields import cmd_field, cmd_record, cmd_verification
+from quenching.specs.commands.find import cmd_find
 from quenching.specs.commands.granular import cmd_section, cmd_show
 from quenching.specs.commands.migrate import cmd_migrate
 from quenching.specs.commands.next import cmd_next
@@ -152,6 +153,13 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("parallel", help="prove a [P] group's files: are disjoint"))
     sp.add_argument("--spec", required=True)
 
+    sp = add_json(sub.add_parser("find", help="resolve a branch, a commit, or a PR back to "
+                                              "the spec that owns it"))
+    sp.add_argument("--branch", help="an exact `branch.work` value")
+    sp.add_argument("--commit", help="a commit sha, resolved to its subject and matched "
+                                     "against each task's recorded `subject:`")
+    sp.add_argument("--pr", help="a PR number or URL, matched against `pr`/`merge.pr`")
+
     sp = add_json(sub.add_parser("discover", help="append a line to ## Discoveries"))
     sp.add_argument("spec")
     sp.add_argument("text")
@@ -199,6 +207,7 @@ DISPATCH: dict = {
     "task": cmd_task,
     "next": cmd_next,
     "parallel": cmd_parallel,
+    "find": cmd_find,
     "discover": cmd_discover,
     "validate": cmd_validate,
     "config": cmd_config,

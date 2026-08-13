@@ -143,7 +143,8 @@ Then ask with **AskUserQuestion**:
   a fresh checkout carries only what git tracks — no `node_modules/`, no `.venv/`, no `.env`, no
   build output — so a repo with installed dependencies needs them installed again there;
 - **Branch** — `git checkout -b plan/<slug>`, work continues in this checkout;
-- **In place** — declines isolation. Nothing is created and **nothing is stamped**.
+- **In place** — declines isolation. Nothing is created, and `branch` is stamped honestly with
+  `work` equal to `base`: `cq specs record "<slug>" branch --set base=<base> --set work=<base>`.
 
 Worktree leads **unconditionally** — never on a heuristic that sniffs the target for
 `package.json` or `.venv/`. A recommendation that changes from repo to repo cannot be documented in
@@ -489,8 +490,7 @@ front of you before the loop starts:
   corrected.
 - Never refuse over a missing `approved`; ask inline and stamp it with `cq specs record`, never by
   editing the frontmatter.
-- Stamp `branch:` only when isolation was actually taken, and never over an existing record —
-  through `cq specs record`, never by editing the frontmatter.
+- Stamp `branch:` once the work ref is resolved, taken or declined (`work` then equals `base`) — never over an existing record, through `cq specs record`, never the frontmatter.
 - Write **only** the `/.docs/` a task explicitly names. Emergent findings are one `cq specs discover`
   line — never an unrequested standard, and never a loose code comment.
 - Delegate an executor only under

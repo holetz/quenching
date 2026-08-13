@@ -66,6 +66,8 @@ class SetFrontmatterRecordRoundTrip(unittest.TestCase):
         "long": {"strategy": "merge-commit",
                  "subject": "plan/a-rather-long-slug-name-here: merge (merge-commit) "
                             "carrying every task"},
+        "pr-open": {"number": "42", "url": "https://github.com/o/r/pull/42",
+                    "date": "2026-08-12"},
     }
 
     def test_every_record_shape_round_trips_verbatim(self):

@@ -76,7 +76,7 @@ BACKENDS = ("files", "github", "azure-boards")
 # where a spec is born rather than what state it reads as. `open_azure_backend` is where that
 # refusal lives; this tuple only says which sub-keys `load_config` keeps.
 AZURE_PLACEMENT_KEYS = ("areaPath", "workItemType", "discoveryTag", "team",
-                        "iterationPath", "boardColumn", "defaultSubject")
+                        "iterationPath", "boardColumn", "defaultSubject", "repository")
 # `discoveryTag`'s default. Unlike `areaPath`, this name is the TOOL's, not the project's —
 # same argument `specsBranch` already carries — so it defaults rather than refuses;
 # configurable only to resolve a collision with a tag the project already uses.

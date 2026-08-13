@@ -86,9 +86,11 @@ is what the gear re-evaluation exists to bound, as a run that outgrows the minim
 back into a run with gates before it reaches the PR.
 
 The route already exists — nothing new is built for it. `conclude` offers pull request or local
-alongside the strategy, and the `merge` record's `pr` field names the pull request — the fact the
-base branch's history cannot reproduce: which PR the merge went through, and where the review and
-the checks still live once the branch is gone (§Two frontmatter records carry the underivable git
+alongside the strategy, and the `pr` record names the pull request the moment it is opened — the
+fact the base branch's history cannot reproduce: which PR carries this spec, and where the review
+and the checks still live once the branch is gone. Under this gear that record is the only one the
+run writes: it stops at the open PR, so `merge` — whose own `pr` field names the same PR once a
+merge is decided — is never stamped at all (§Three frontmatter records carry the underivable git
 facts).
 
 No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
