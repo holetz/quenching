@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import re
 
-TAG = "okf"
 # `log.md` is RETIRED, not unreserved: it keeps its slot here (and its skip in the
 # PreToolUse hard block) so a log surviving in an already-aligned bundle stays
 # recognized. Drop it from this tuple and every such file falls through to the
