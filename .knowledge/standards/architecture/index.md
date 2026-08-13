@@ -26,6 +26,7 @@ rule sits here as `authority: background` (no separate decisions home). One stan
 | [retiring-a-reserved-artifact.md](retiring-a-reserved-artifact.md) | A reserved filename that is retired keeps its slot in RESERVED and its skip in the hard block; only its checker goes, because unreserving it silently converts every surviving file into a malformed concept doc — plus the one departure this house made knowingly, and the three things that made it payable |
 | [shared-mold-keys.md](shared-mold-keys.md) | A frontmatter mold cited by several commands is a fill-in invitation, so a key only one writer may write stays out of it and lives with that writer's own contract — prevention where a deterministic check is not available |
 | [spec-backend.md](spec-backend.md) | Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation, and the in-memory fake that turns "identical" into a checked property |
+| [type-follows-home.md](type-follows-home.md) | A home's name and a doc's `type:` are two spellings of the same fact — a home rename restamps every doc's `type:` in the same commit, never as a follow-up sweep, or the naming complaint recreates one level down in the bundle's most greppable field; proved by `renomear-docs-para-knowledge`, unchecked by any validator today |
 
 ## Candidate sub-standards
 
