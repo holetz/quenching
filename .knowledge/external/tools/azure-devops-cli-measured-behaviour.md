@@ -1,5 +1,5 @@
 ---
-type: reference
+type: external
 title: Azure DevOps CLI measured behaviour
 description: Measured facts about `az boards` / `az devops` and the Azure Boards work item as a store — the WIQL macro that resolves to an indistinguishable empty answer, the project name the field compares against, the column that rewrites the state, the two ceilings a description travels under, the marker form `System.Description` does not strip, the identity `--assigned-to` accepts, and the one resource with a batch form
 resource: plugins/quenching/assets/bin/quenching/specs/**

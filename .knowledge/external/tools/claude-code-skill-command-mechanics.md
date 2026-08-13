@@ -1,5 +1,5 @@
 ---
-type: reference
+type: external
 title: Claude Code skill and command loading mechanics
 description: Measured facts about how Claude Code loads plugin commands vs skills — placeholder substitution, the Skill-tool registry, startup-time discovery, the unified frontmatter schema, and what disable-model-invocation actually closes
 resource: plugins/quenching/commands/**

@@ -1,5 +1,5 @@
 ---
-type: knowledge
+type: concept
 title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
 resource: /.docs/**
