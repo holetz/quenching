@@ -2,7 +2,7 @@
   "ok": true,
   "root": "<REPO>/plugins/quenching",
   "commandCount": 26,
-  "referenceCount": 27,
+  "referenceCount": 28,
   "findings": [
     {
       "code": "sk-description-portable",
