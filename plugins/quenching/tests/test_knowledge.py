@@ -121,5 +121,93 @@ class RetiredListingRootMode(unittest.TestCase):
         self.assertFalse(hard_block_exempt("index.md"))
 
 
+# --------------------------------------------------------------------------- #
+# `okf-legacy-*` — pre-rename layout debt (renomear-docs-para-knowledge, task 2.2)
+#
+# Each detector checks exactly one site; a fixture proves it fires on the old name and
+# stays silent once that one site is renamed, without the other three sites in play.
+# --------------------------------------------------------------------------- #
+class LegacyRootDetector(unittest.TestCase):
+    def test_fires_when_new_root_absent_and_old_root_present(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, ".docs"))
+            findings = validate_tree(os.path.join(tmp, ".knowledge"))
+        codes = {code for sev, rel, code, msg in findings}
+        self.assertEqual(codes, {"okf-legacy-root"})
+
+    def test_no_bundle_survives_when_neither_root_exists(self):
+        # Regression guard on the branch this task edited: a target with no bundle at
+        # all — migrated or not — must still get the original finding, not a silent drop.
+        with tempfile.TemporaryDirectory() as tmp:
+            findings = validate_tree(os.path.join(tmp, ".knowledge"))
+        codes = {code for sev, rel, code, msg in findings}
+        self.assertEqual(codes, {"no-bundle"})
+
+
+class LegacyHomeDetector(unittest.TestCase):
+    def test_fires_on_both_pre_rename_homes(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "knowledge/index.md": "# Knowledge\n",
+            "reference/index.md": "# Reference\n",
+        }
+        findings = _validated(fixture)
+        legacy = {(rel, code) for sev, rel, code, msg in findings if code == "okf-legacy-home"}
+        self.assertEqual(legacy, {("knowledge/", "okf-legacy-home"), ("reference/", "okf-legacy-home")})
+
+    def test_silent_once_renamed(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "concepts/index.md": "# Concepts\n",
+            "external/index.md": "# External\n",
+        }
+        findings = _validated(fixture)
+        codes = {code for sev, rel, code, msg in findings}
+        self.assertNotIn("okf-legacy-home", codes)
+
+
+class LegacyDocQuadrantDetector(unittest.TestCase):
+    def test_fires_on_both_pre_rename_quadrants(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "documentation/getting-started/index.md": "# Getting started\n",
+            "documentation/concepts/index.md": "# Concepts\n",
+        }
+        findings = _validated(fixture)
+        legacy = {rel for sev, rel, code, msg in findings if code == "okf-legacy-doc-quadrant"}
+        self.assertEqual(legacy, {"documentation/getting-started/", "documentation/concepts/"})
+
+    def test_silent_once_renamed(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "documentation/tutorials/index.md": "# Tutorials\n",
+            "documentation/explanation/index.md": "# Explanation\n",
+        }
+        findings = _validated(fixture)
+        codes = {code for sev, rel, code, msg in findings}
+        self.assertNotIn("okf-legacy-doc-quadrant", codes)
+
+
+class LegacyGlossaryDetector(unittest.TestCase):
+    def test_fires_only_on_the_nested_copy(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "glossary.md": "# Glossary\n\n- [Term](standards/term.md)\n",
+            "concepts/glossary.md": "# Glossary\n",
+        }
+        findings = _validated(fixture)
+        legacy = {rel for sev, rel, code, msg in findings if code == "okf-legacy-glossary"}
+        self.assertEqual(legacy, {"concepts/glossary.md"})
+
+    def test_silent_when_only_the_root_copy_exists(self):
+        fixture = {
+            "index.md": '---\nokf_version: "0.1"\n---\n\n# Bundle\n',
+            "glossary.md": "# Glossary\n",
+        }
+        findings = _validated(fixture)
+        codes = {code for sev, rel, code, msg in findings}
+        self.assertNotIn("okf-legacy-glossary", codes)
+
+
 if __name__ == "__main__":
     unittest.main()

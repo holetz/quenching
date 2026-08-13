@@ -22,7 +22,13 @@ PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
 from __future__ import annotations
 
 from quenching.common.frontmatter import frontmatter_anomalies, frontmatter_block, parse_frontmatter
-from quenching.knowledge.schema import RECOMMENDED, TYPES_WITHOUT_RESOURCE, _nonempty
+from quenching.knowledge.schema import (
+    LEGACY_HOMES,
+    LEGACY_QUADRANTS,
+    RECOMMENDED,
+    TYPES_WITHOUT_RESOURCE,
+    _nonempty,
+)
 
 
 def check_concept(text: str) -> list[tuple[str, str, str]]:
@@ -86,3 +92,52 @@ def check_index(text: str, is_root: bool) -> list[tuple[str, str, str]]:
             out.append(("ERROR", "index-has-frontmatter",
                         "a non-root `index.md` must have no frontmatter (it is a listing, not a concept)"))
     return out
+
+
+# --------------------------------------------------------------------------- #
+# PRE-RENAME LAYOUT DEBT (whole-bundle; ERROR — decided in ## Open Decisions,
+# task renomear-docs-para-knowledge 2.1: the PreToolUse hard block never reads
+# these findings, so `error` cannot deny a write)
+#
+# Each function below checks exactly one site and is idempotent — a migrated
+# site simply stops appearing in its input. Unlike `check_concept`/`check_index`,
+# these return complete (severity, rel, code, msg) tuples instead of leaving
+# `rel` to the caller: a single call can name more than one site (`okf-legacy-home`
+# on both `knowledge/` and `reference/`) or a site the caller has no single path
+# for (`okf-legacy-glossary` on however many nested `glossary.md` exist).
+# --------------------------------------------------------------------------- #
+def check_legacy_root(legacy_root_present: bool, legacy_root_rel: str) -> list[tuple[str, str, str, str]]:
+    """`okf-legacy-root` — call only once the new root is already known absent (the
+    `no-bundle` branch); fires when the pre-rename sibling is present there."""
+    if not legacy_root_present:
+        return []
+    return [("ERROR", legacy_root_rel, "okf-legacy-root",
+             f"`{legacy_root_rel}` is the pre-rename bundle root — migrate it to the OKF root (`.knowledge/`)")]
+
+
+def check_legacy_home(root_entries: set[str]) -> list[tuple[str, str, str, str]]:
+    """`okf-legacy-home` — a pre-rename home (`knowledge/`, `reference/`) sits at the
+    bundle root instead of its OKF name (`concepts/`, `external/`)."""
+    return [
+        ("ERROR", f"{old}/", "okf-legacy-home", f"`{old}/` is the pre-rename home — rename it to `{new}/`")
+        for old, new in LEGACY_HOMES.items() if old in root_entries
+    ]
+
+
+def check_legacy_doc_quadrant(quadrant_entries: set[str]) -> list[tuple[str, str, str, str]]:
+    """`okf-legacy-doc-quadrant` — a pre-rename Diátaxis quadrant under `documentation/`."""
+    return [
+        ("ERROR", f"documentation/{old}/", "okf-legacy-doc-quadrant",
+         f"`documentation/{old}/` is the pre-rename Diátaxis name — rename it to `documentation/{new}/`")
+        for old, new in LEGACY_QUADRANTS.items() if old in quadrant_entries
+    ]
+
+
+def check_legacy_glossary(glossary_rels: list[str], canonical: str) -> list[tuple[str, str, str, str]]:
+    """`okf-legacy-glossary` — a `glossary.md` sitting inside a home instead of at the
+    bundle root, where the OKF contract pins it."""
+    return [
+        ("ERROR", rel, "okf-legacy-glossary",
+         f"`{rel}` — the glossary lives at the bundle root (`{canonical}`), not inside a home")
+        for rel in glossary_rels if rel != canonical
+    ]
