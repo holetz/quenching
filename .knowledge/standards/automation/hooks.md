@@ -74,10 +74,10 @@ offered: the wiring travels with the plugin, which is why no command needs a run
 `/quenching:knowledge:define`) had it removed as redundant.
 
 The `Stop` hook is the rung-3 example in the flesh rather than in the abstract — it is only
-affordable because the shipped `stopScan: "dirty"` gate makes a turn that touched no `/.docs/**` file
+affordable because the shipped `stopScan: "dirty"` gate makes a turn that touched no `/.knowledge/**` file
 cost one stat. The opt-in `PreToolUse` deny gate is deliberately **not** wired: `hardBlock` stays
 `false`, so the checker proposes and never blocks. Note the second-order cost this repo pays and a
-target repo does not — `plugins/quenching/assets/docs/` is a bundle skeleton, so an edit there fires
+target repo does not — `plugins/quenching/assets/knowledge/` is a bundle skeleton, so an edit there fires
 the same `Write|Edit` hook against payload that is deliberately a template rather than a live
 bundle.
 
@@ -89,7 +89,7 @@ second opinion worth keeping.
 
 **This repository carried that dead rung until 2026-08-06, and it was not silent.** The frozen copy
 was 4.4.5 against a shipped 4.13.0, and 4.4.5 still resolved its bundle root from a `docsDir`
-config key defaulting to `docs` — while the root had become the fixed `/.docs/` convention. So the
+config key defaulting to `docs` — while the root had become the fixed `/.knowledge/` convention. So the
 dead rung reported `bundle root is not a directory` on every `Stop` sweep, against a bundle the
 current checker passed with zero errors. The lesson is the sharper half of the rule above: a frozen
 duplicate is not merely redundant, because the contract it was frozen against can move underneath

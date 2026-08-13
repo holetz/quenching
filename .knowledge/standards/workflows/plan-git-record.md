@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.docs/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, the branch and merge frontmatter records, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route and the `pr` field it alone writes, why every record is written before the thing it describes, the squash caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.knowledge/standards/git/
 resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-11
@@ -251,7 +251,7 @@ separate, offered decision it already was.
 
 ## The target's git conventions win — read if present, never installed
 
-Before the first commit of a run, `/.docs/standards/git/` is checked **once**. Anything found there
+Before the first commit of a run, `/.knowledge/standards/git/` is checked **once**. Anything found there
 governs verbatim; partial coverage splits (the target's docs for what they cover, the plugin
 defaults for the rest); an `authority: background` git standard still wins over the defaults. The
 report states which one governed.
@@ -262,7 +262,7 @@ the subject `plan/<slug>: <id> <title>`, `plan/<slug>: merge (<strategy>)` for a
 commit genuinely cannot carry ahead of itself — `## Handoff`, which describes the tree *after* the
 last commit — and no longer includes a ticked box or a stamped `merge:` record.
 
-**Never install `/.docs/standards/git/**` into a target.** A default written into the repo stops
+**Never install `/.knowledge/standards/git/**` into a target.** A default written into the repo stops
 being a default: it converts an offer into a rule the repo now declares, which then wins forever
 without anyone having agreed to it. A target that wants its conventions written down routes
 through `/quenching:knowledge:add`, on its human's word. The same restraint bars inferring house style from

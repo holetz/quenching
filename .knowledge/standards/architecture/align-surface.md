@@ -23,7 +23,7 @@ architectural rule — why the surface has this shape and not the previous one.
 
 | Front | Command |
 | --- | --- |
-| `/.docs/` | `/quenching:knowledge:align` |
+| `/.knowledge/` | `/quenching:knowledge:align` |
 | `/.specs/` | `/quenching:specs:align` |
 | `.claude/` | `/quenching:components:align` |
 | all three | `/align` — conducts the three, in dependency order, on one nested OK |
@@ -39,7 +39,7 @@ command that closes them, never driven**.
 The two real loops survive where the looping is real: `/quenching:knowledge:align` keeps its
 internal fixpoint (memory → harness → glossary feed each other), and `/align` keeps the
 cross-front pass, because the fronts feed each other (a spec's distillation is glossary work; the
-components front's registry is a `/.docs/` listing). The conductor contract — one human OK
+components front's registry is a `/.knowledge/` listing). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
 `align/convergence.md`, shared by both conductors and never restated by either (§Two conductor
@@ -66,7 +66,7 @@ individually; the clause that once limited the contract to `/align` is gone.
 
 **Nothing is inventoried until the front's own verifier has said there is work.** Each front
 already ships a program that answers "is there work?" with an exit code — `cq knowledge validate`
-(`/.docs/`), `cq specs doctor`/`validate` (`/.specs/`), `cq components doctor`/`lint` (`.claude/`) —
+(`/.knowledge/`), `cq specs doctor`/`validate` (`/.specs/`), `cq components doctor`/`lint` (`.claude/`) —
 and the align opens by running it, branching on the code:
 
 - **exit 0, nothing found** → report "conformant, nothing to align" and stop. No inventory, no
@@ -92,22 +92,22 @@ automatically.
 ## No sweep records itself
 
 **Every write a sweep makes belongs to the front it is aligning. The report is the only account
-of the run itself.** Each align used to close by appending one consolidated line to `/.docs/log.md`
+of the run itself.** Each align used to close by appending one consolidated line to `/.knowledge/log.md`
 — `converged in N passes`, `aligned workspace (N migrated, M renamed)`, `ranked N specs` — and
 `/align` added a fifth for the cross-front run. All five are gone, and the rule that replaced
 them holds for any sweep added later.
 
-The entry was self-describing, and that is what made it worthless. What a pass did to `/.docs/` is
-legible **from `/.docs/`** and from the repo's own history; a line saying a sweep ran told a reader
+The entry was self-describing, and that is what made it worthless. What a pass did to `/.knowledge/` is
+legible **from `/.knowledge/`** and from the repo's own history; a line saying a sweep ran told a reader
 nothing the tree and the git log did not already say, and cost a write on every invocation —
 including the no-op runs the probe rule exists to make free. A sweep whose clean case costs three
 tool calls should not spend a fourth narrating that it found nothing.
 
 It also removed the one thing every align wrote **outside its own front**. `/quenching:specs:align` and
-`/quenching:specs:triage` reached into the `/.docs/` bundle for a log line and nothing else; with that gone,
-the `specs` front writes into `/.docs/` at exactly one point — a concluded spec's distillation,
+`/quenching:specs:triage` reached into the `/.knowledge/` bundle for a log line and nothing else; with that gone,
+the `specs` front writes into `/.knowledge/` at exactly one point — a concluded spec's distillation,
 which mints real knowledge rather than a record of activity. The cross-front dependency in
-[§The 1×4 column](#the-14-column) is unchanged: `/.docs/` still goes first, because that
+[§The 1×4 column](#the-14-column) is unchanged: `/.knowledge/` still goes first, because that
 distillation and the components front's rule + registry still need the tree to exist.
 
 The general form: **a command's own account of itself goes in its report, never into the artifact

@@ -345,10 +345,10 @@ when nothing changed.
 ## Delegation is permitted; the orchestrator never is
 
 A per-task executor sub-agent is permitted when the task **declares `files:`** and **touches no
-`/.docs/`**, pinned to the session model — never `haiku`, which writes production code here.
+`/.knowledge/`**, pinned to the session model — never `haiku`, which writes production code here.
 
 The orchestrator keeps, without exception: spec selection, the isolation offer, every
-confirmation, every `cq specs task --check` flip, every block marker, every `/.docs/standards/`
+confirmation, every `cq specs task --check` flip, every block marker, every `/.knowledge/standards/`
 write, the commit, and the decision to pause.
 
 ### This is not `context: fork`, and that rule is untouched
@@ -369,7 +369,7 @@ Two tasks run concurrently only when all three hold:
 
 1. a `[P]` marker was set on both **when the tasks were written** — never inferred while building;
 2. their declared `files:` sets are **provably disjoint**;
-3. neither writes into `/.docs/`.
+3. neither writes into `/.knowledge/`.
 
 Serial is the default and needs no marker. Without proven disjunction, parallel execution trades
 wall-clock for merge conflicts and loses on both.

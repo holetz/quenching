@@ -89,5 +89,5 @@ the tree validates clean, the name is still in `RESERVED`, and `hard_block_exemp
 it. Undoing any leg of the retirement fails it.
 
 This is what made the rule `authority: current` rather than `background`: the retirement of
-`/.docs/log.md` was carried out under it, and the fixture was verified to fail when the
+`/.knowledge/log.md` was carried out under it, and the fixture was verified to fail when the
 reservation is removed.

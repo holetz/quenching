@@ -2,7 +2,7 @@
 type: concept
 title: Glossary
 description: The repo's single A–Z lookup of terms, acronyms, and domain vocabulary — one entry per term, each linking to its full concept doc when one exists.
-resource: /.docs/**
+resource: /.knowledge/**
 tags: [glossary, vocabulary, terminology]
 timestamp: 2026-08-11
 audience: both
@@ -19,7 +19,7 @@ definition>` when a full concept doc exists, or `* **<Term>** — <one-sentence 
 when it doesn't — the glossary is the *index* of vocabulary, not the long-form home.
 
 **Resolving a term.** When a repo-specific word, acronym, or piece of jargon is unclear,
-**search this file first** (Ctrl-F, or `grep -i '<term>' /.docs/knowledge/glossary.md`). A
+**search this file first** (Ctrl-F, or `grep -i '<term>' /.knowledge/glossary.md`). A
 matching entry gives the local meaning and, when linked, points to the doc that explains
 it in full. No entry means the term is not yet defined — capture it (see *How to enrich*).
 
@@ -104,7 +104,7 @@ sentence, and **link out** rather than explaining in full here.
   would make permanent noise of a repo that legitimately has no `mlops/`, omitting them would hide
   a bundle passing every check while knowing nothing. A figure informs without accumulating as a
   defect to chase.
-- [**Bundle root**](../standards/architecture/bundle-root.md) — the fixed `/.docs/` location of a
+- [**Bundle root**](../standards/architecture/bundle-root.md) — the fixed `/.knowledge/` location of a
   target's OKF bundle, and `/.specs/` for a files-backend specs workspace, a convention no
   configuration file names because an LLM executor runs command bodies literally and a root it
   must resolve from config is a root it can resolve wrong.
@@ -164,14 +164,14 @@ sentence, and **link out** rather than explaining in full here.
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry
   point can drift from.
-- [**Gear**](/.docs/standards/automation/orchestration-gears.md) — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from `priority.complexity`
+- [**Gear**](/.knowledge/standards/automation/orchestration-gears.md) — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from `priority.complexity`
 - [**Generated listing**](../standards/architecture/generated-listings.md) — a file, or a marked
   zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
   of a fact the disk already carries, so it earns its keep only where nothing else derives that
   fact **and** a checker can decide its freshness — staleness being its only failure mode, and a
   silent one. The decision criterion is asked before any code: does a command already answer the
   same question on demand? Yes → the listing is duplication and its checker is pure cost; no → the
-  listing IS the source and a checker is mandatory. The `/.docs/` bundle's `index.md` files are the
+  listing IS the source and a checker is mandatory. The `/.knowledge/` bundle's `index.md` files are the
   bounding counterexample: nothing else enumerates the bundle, so they keep their checks; the
   retired `/.specs/plans/index.md` duplicated `cq specs list` and went with its four `sp-*` codes.
 - [**Handler ladder**](../standards/automation/hooks.md) — the ordering a hook's handler is chosen
@@ -337,7 +337,7 @@ sentence, and **link out** rather than explaining in full here.
   validator's `RESERVED` set and its skip in the `PreToolUse` hard block. Deliberately not
   **unreserved**: dropping the reservation too would send every surviving instance down the
   concept-doc path, turning it into a `no-frontmatter`/`missing-type` ERROR in target repos that
-  changed nothing. `/.docs/log.md` is the first artifact retired this way.
+  changed nothing. `/.knowledge/log.md` is the first artifact retired this way.
 - [**Retiring a standard**](../standards/workflows/retiring-a-standard.md) — removing a bundle
   standard rather than deprecating it — `git rm` is the verb, the inheriting doc carries the
   `retired with <doc> (<spec>, <data>)` stamp, the citation sweep is human with the branch review
@@ -460,7 +460,7 @@ newcomer would not know. Three ways in:
 - **On demand, one term at a time.** Run `quenching-docs-define` to add or refine a single
   entry (inserted in alphabetical position, MERGE — never clobbering a filled definition).
 - **In bulk, across the whole bundle.** Run `quenching-docs-glossary-backfill` to sweep every doc
-  already in `/.docs/` for repo-specific terms that were never fed into the glossary and
+  already in `/.knowledge/` for repo-specific terms that were never fed into the glossary and
   backfill them in one pass.
 
 Keep entries honest: define the term as **this repo** uses it, not the dictionary sense,

@@ -99,7 +99,7 @@ original reasoning was that the knowledge checker had to sit beside the `hooks-c
 *from its own directory*, so separating the pair would break config loading in every installed
 copy. Both halves are now false: the knowledge pillar reads the **target's**
 `.claude/hooks/hooks-config.json` and nothing else — the bundle root it validates is the fixed
-`/.docs/` convention, which no configuration names ([bundle-root.md](bundle-root.md)) — and there
+`/.knowledge/` convention, which no configuration names ([bundle-root.md](bundle-root.md)) — and there
 are no installed copies left to break. `hooks/hooks.json` itself is unaffected: it is wiring read
 at plugin-load time, addressed by the heading above, never by this one.
 
@@ -127,7 +127,7 @@ ${CLAUDE_PLUGIN_ROOT}/assets/references/<name>/<file>.md
 ```
 
 `${CLAUDE_PLUGIN_ROOT}` substitutes inside a command body — measured, not assumed
-([/.docs/reference/tools/claude-code-skill-command-mechanics.md](/.docs/reference/tools/claude-code-skill-command-mechanics.md)
+([/.knowledge/external/tools/claude-code-skill-command-mechanics.md](/.knowledge/external/tools/claude-code-skill-command-mechanics.md)
 rows 1–2, re-measured 2026-07-26 on Claude Code 2.1.215).
 
 Relative paths are not merely inconvenient here, they are **wrong**: a relative path encodes the
@@ -174,7 +174,7 @@ pasted by a human into a raw terminal dangles a `${CLAUDE_PLUGIN_ROOT}` citation
 blocks the moment a human reads that block verbatim — before the file is copied anywhere, and
 regardless of whether the plugin is loaded in the session doing the reading. Three trees still
 answer the wider test today — `assets/templates/**` (the harness and front-matter molds),
-`assets/docs/**` (the OKF skeleton, copied by `/quenching:knowledge:align`) and `assets/specs/templates/**`; a
+`assets/knowledge/**` (the OKF skeleton, copied by `/quenching:knowledge:align`) and `assets/specs/templates/**`; a
 fourth surface added later inherits the rule without amending this list. Naming one folder was how
 a `${CLAUDE_PLUGIN_ROOT}` citation reached `assets/docs/` unnoticed: the reasoning covered it, the
 wording did not, and nothing else checks. **No validator catches this** — a path that fails to

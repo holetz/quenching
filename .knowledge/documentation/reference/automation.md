@@ -18,9 +18,9 @@ hosts the `quenching` plugin, so nearly every command a session here reaches for
 *contributed* rather than local. The two local commands are development instruments for
 building this repo's documentation and diagrams, classified on the single axis the rule
 defines — a **domain-bound** command is pathed after the one folder it serves
-(`/docs:storyteller` acts on `/.docs/`), a **generic** one is a flat `verb-object` at the top
+(`/docs:storyteller` acts on `/.knowledge/`), a **generic** one is a flat `verb-object` at the top
 level (`/skill-map` maps whatever it is pointed at, so no single folder claims it). The rule
-itself is [/.docs/standards/automation/skills.md](/.docs/standards/automation/skills.md).
+itself is [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md).
 
 The `quenching` plugin installed from this marketplace contributes the twenty-six
 `/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:components:*` and `/align` commands. Those are the **product's** surface,
@@ -36,7 +36,7 @@ them is overwritten by the next run, not merged.
 <!-- GENERATED:BEGIN -->
 | Command | Serves | Typical trigger |
 | --- | --- | --- |
-| /docs:storyteller | /.docs/ | "transformar/gerar os md em mkdocs" |
+| /docs:storyteller | /.knowledge/ | "transformar/gerar os md em mkdocs" |
 | /release | generic | "publish a release" |
 | /skill-map | generic | "kit map" |
 <!-- GENERATED:END -->

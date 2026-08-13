@@ -21,7 +21,7 @@ This standard is the rule *behind* both.
 ## An invariant restated in more than two skills is owed a deterministic check
 
 The rule this front learned the hard way. The glossary tail step — "after a capture, check whether
-the new concept introduced a term that belongs in `knowledge/glossary.md`" — is specified in **six**
+the new concept introduced a term that belongs in `glossary.md`" — is specified in **six**
 places: `homes.md` §Enriching the glossary, `quenching-knowledge-add`, `quenching-knowledge-learn`,
 `quenching-knowledge-import-memory`, `quenching-knowledge-define`, and `quenching-specs-archive`'s
 `distill.md`. Across two real distillation runs it produced **zero** entries.
@@ -32,7 +32,7 @@ skills, the honest options are a **deterministic check** or an accepted gap reco
 a third paragraph.
 
 The same held for `resource:`: four skills forbade inventing one, and nothing checked that it
-pointed at anything. The repo's own shipped seed carried a self-pointing `resource: /.docs/**`, in
+pointed at anything. The repo's own shipped seed carried a self-pointing `resource: /.knowledge/**`, in
 violation of the rule it was meant to demonstrate, for as long as only prose guarded it.
 
 **Corollary.** When a check lands, the prose it replaces gets *cut*, not kept as belt-and-braces.
@@ -186,7 +186,7 @@ repo's own bundle are lists.
 - **A doc must not point at itself.** A self-scoped doc governs nothing and is eternally fresh,
   which silently disables `stale-doc` for it.
 - **Except a bundle aggregate.** A scope containing the bundle *root* is legitimate:
-  `knowledge/glossary.md` really does govern the whole bundle, so `resource: /.docs/**` is truthful
+  `glossary.md` really does govern the whole bundle, so `resource: /.knowledge/**` is truthful
   and narrowing it to look tidier would be the fabrication. This is the `TYPES_WITHOUT_RESOURCE`
   exemption generalized — one mechanism, not two.
 

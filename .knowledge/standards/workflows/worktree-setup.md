@@ -94,7 +94,7 @@ a config file at all reversed that.
 
 The alternatives were real. `/.specs/worktree-setup.sh`, whose mere existence would be the
 declaration, is deterministic by a single `stat` and has no format to get wrong — but it can hold
-exactly one parameter forever. A `/.docs/standards/` doc with the path in frontmatter would follow
+exactly one parameter forever. A `/.knowledge/standards/` doc with the path in frontmatter would follow
 the read-if-present contract already used for a target's git conventions — but it forces `cq specs`
 to parse markdown frontmatter to find an executable, and mixes the home of *contracts* with an
 operational pointer.

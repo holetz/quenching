@@ -31,8 +31,8 @@ when a second adopting repo reproduces the shape.
 Three rules, in descending order of what they were measured to be worth:
 
 1. **Read the files a spec *declares*, never the folder they sit in.** `## Impact` names the
-   `/.docs/standards/` paths a spec expects to touch; those, plus whatever the current task's own text
-   names, are the binding contracts. A `/.docs/standards/<subject>/` folder is a location, not a
+   `/.knowledge/standards/` paths a spec expects to touch; those, plus whatever the current task's own text
+   names, are the binding contracts. A `/.knowledge/standards/<subject>/` folder is a location, not a
    claim about relevance.
 2. **A reference citation in a command body IS a `§`-address — never a bare path.** Surface-wide
    rule, proved on one command: measured on `/quenching:specs:execute`, six of its top-preamble
@@ -94,9 +94,9 @@ folder rule is the larger of the two and was the one nothing had attacked.
 split every value on the comma before resolving anything, and its own `--help` documented an escape
 by repeating the flag that the code did not implement — so a body citing `§What crosses, what
 stays` got `sk-read-no-section`, which reads to an agent as *the section does not exist*, whose
-fallback is opening the file whole. Measured across `assets/references/`, `/.docs/` and
+fallback is opening the file whole. Measured across `assets/references/`, `/.knowledge/` and
 `assets/docs/`: **146 headings carry a comma**. 145 resolved only by the accident that the fragment
-before the comma happened to be unique, and one — `/.docs/standards/git/branching.md`
+before the comma happened to be unique, and one — `/.knowledge/standards/git/branching.md`
 "A publicação, em duas metades" — resolved by no form at all.
 
 Whole-first was chosen over three alternatives, and the deciding evidence was a simulation rather
@@ -213,7 +213,7 @@ crossed rather than resending it to every task built after.
 
 Neither of these is an available move here, and both come back looking obvious:
 
-- **Do not segment the bundle into more files.** Taking the 50 files of `/.docs/standards/**` and
+- **Do not segment the bundle into more files.** Taking the 50 files of `/.knowledge/standards/**` and
   `assets/references/**` to their 315 sections would cost **265 new frontmatters × 1,424 chars ≈
   371k chars (~93k tokens)**, ~76% growth over the current 488k, in pure header — and it does not
   address the cause, since N sections remain N reads, which is N turns.

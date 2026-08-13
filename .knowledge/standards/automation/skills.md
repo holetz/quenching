@@ -120,12 +120,12 @@ owns this class of fact carried no line about it at all. It has now been measure
 > `Skill quenching:zzprobeb cannot be used with Skill tool due to disable-model-invocation`
 
 Two arms with a control, filesystem-verified, Claude Code 2.1.220 — recorded as row 7 of
-[claude-code-skill-command-mechanics.md](/.docs/reference/tools/claude-code-skill-command-mechanics.md).
+[claude-code-skill-command-mechanics.md](/.knowledge/external/tools/claude-code-skill-command-mechanics.md).
 The control arm, identical but for the field, was listed and invoked by name successfully.
 
 Recorded plainly because being right by luck is worth as much as being wrong here: the opposite
 assertion would have been equally easy to write, and
-[the mechanics doc's own history](/.docs/reference/tools/claude-code-skill-command-mechanics.md)
+[the mechanics doc's own history](/.knowledge/external/tools/claude-code-skill-command-mechanics.md)
 carries a case where three artifacts supplied the contrary of an unmeasured row. Cite the row; do
 not restate the mechanic from memory.
 
@@ -196,7 +196,7 @@ guarantee in its own numbered steps and its doctrine, never in its `allowed-tool
 
 ## The verifier
 
-`cq components` is this front's verifier, the peer of `cq knowledge` for `/.docs/` and `cq specs` for
+`cq components` is this front's verifier, the peer of `cq knowledge` for `/.knowledge/` and `cq specs` for
 `/.specs/`. Same contract: `--json` on every subcommand, exit **0** ok · **1** findings · **2**
 refusal, errors setting the exit code and warnings never doing so.
 

@@ -1,4 +1,4 @@
-# `concepts/` — explanation
+# `explanation/` — explanation
 
 Understanding-oriented pages that explain how and why the product works, for the reader of
 the documentation site (the Diátaxis **explanation** quadrant). Each page carries
@@ -6,7 +6,7 @@ the documentation site (the Diátaxis **explanation** quadrant). Each page carri
 
 **Boundary:** a concept page here is part of the **published site** for product users.
 Internal team understanding — mental models, learnings, the glossary — is not a site page and
-belongs in [knowledge/](/.docs/knowledge/index.md).
+belongs in [concepts/](/.knowledge/concepts/index.md).
 
 ## How to organize
 

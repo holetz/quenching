@@ -102,7 +102,7 @@ for before it routes.
 
 Measured while building these two evals: `/quenching:components:agent:new`'s phrase *"set up something that audits
 our migrations and reports back"* routed 5/5 in a fixture that shipped
-`/.docs/standards/automation/agents.md` — and the identical phrase in a bare repo routed to
+`/.knowledge/standards/automation/agents.md` — and the identical phrase in a bare repo routed to
 `/quenching:components:command:new` instead. Single variable, both runs healthy. The 5/5 was **fixture-assisted**: the
 description was borrowing routing the target repo supplied.
 

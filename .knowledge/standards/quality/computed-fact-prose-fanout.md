@@ -54,7 +54,7 @@ fact is precisely the one that cannot see the restatements.
 The mitigation is cheap and has to happen while the change is still open:
 
 ```bash
-grep -rn "merge: {strategy" --include='*.md' /.docs/ plugins/ README.md
+grep -rn "merge: {strategy" --include='*.md' /.knowledge/ plugins/ README.md
 ```
 
 Search for the **spelled-out form** — the brace list, the field names in sequence — not for the

@@ -1,8 +1,8 @@
 title: Documentation
 nav:
   - index.md
-  - getting-started
+  - tutorials
   - how-to
   - reference
-  - concepts
+  - explanation
   - ...

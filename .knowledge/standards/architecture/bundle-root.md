@@ -1,8 +1,8 @@
 ---
 type: standard
-title: The bundle root is the fixed `/.docs/` convention
-description: The OKF bundle of a target repo lives at the fixed `/.docs/` root and a files-backend specs workspace at the fixed `/.specs/` root — no configuration file names either, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
-resource: /.docs/**, /.specs/**
+title: The bundle root is the fixed `/.knowledge/` convention
+description: The OKF bundle of a target repo lives at the fixed `/.knowledge/` root and a files-backend specs workspace at the fixed `/.specs/` root — no configuration file names either, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
+resource: /.knowledge/**, /.specs/**
 tags: [architecture, bundle, okf, convention, config]
 timestamp: 2026-08-06
 audience: both
@@ -11,14 +11,14 @@ source: docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by 
 maintainer: quenching
 ---
 
-# The bundle root is the fixed `/.docs/` convention
+# The bundle root is the fixed `/.knowledge/` convention
 
 The one layout fact every quenching-managed repo shares, and the one that stopped being
 configurable.
 
 ## Two fixed roots, and no config that names them
 
-- **The OKF bundle** lives at `/.docs/` — at the root of the target repository, beside
+- **The OKF bundle** lives at `/.knowledge/` — at the root of the target repository, beside
   `.claude/`.
 - **A files-backend specs workspace** lives at `/.specs/` — the plans and archive folders the
   `files` backend manages.
@@ -45,7 +45,7 @@ target's choice, so no target ever needs to point the plugin at it.
 
 ## What the fixed root makes possible
 
-- **The bundle-aggregate `resource:`.** `resource: /.docs/**, /.specs/**` covers the whole
+- **The bundle-aggregate `resource:`.** `resource: /.knowledge/**, /.specs/**` covers the whole
   bundle and the whole workspace in one glob — a string that only exists because the root is
   fixed ([bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set
   format).
@@ -53,7 +53,7 @@ target's choice, so no target ever needs to point the plugin at it.
   key that used to say where the bundle lives is gone rather than relocated
   ([plugin-configuration.md](../workflows/plugin-configuration.md)).
 - **The harness line cites it.** The root harness's one-line language declaration points at
-  `/.docs/standards/agents/communication.md` — a citation that is the same string in every repo
+  `/.knowledge/standards/agents/communication.md` — a citation that is the same string in every repo
   only because the root is fixed ([communication.md](../agents/communication.md)).
 
 ## Nothing else contradicts it
@@ -66,4 +66,4 @@ Three contracts were checked against this rule, and all three hold after the cha
 - [plugin-layout.md](plugin-layout.md) rests the checker's `hooks/` placement on the invocation
   rule alone — `_load_config` reads one file, and the root is not a value it loads.
 - [bundle-verification.md](../quality/bundle-verification.md) §The `resource` glob-set format
-  keeps its rules; only the aggregate example moves to the fixed root (`resource: /.docs/**`).
+  keeps its rules; only the aggregate example moves to the fixed root (`resource: /.knowledge/**`).

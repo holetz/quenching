@@ -1,8 +1,8 @@
 ---
 type: standard
 title: Generated listings — a derived listing only pays for itself when a program can prove it is fresh
-description: A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /.docs/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides
-resource: plugins/quenching/assets/docs/**/index.md, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
+description: A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /.knowledge/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides
+resource: plugins/quenching/assets/knowledge/**/index.md, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
 tags: [architecture, listings, derived-state, verification, convergence]
 timestamp: 2026-08-10
 audience: both
@@ -41,10 +41,10 @@ than a review comment.
 
 ## The counterexample that bounds the rule
 
-The `/.docs/` bundle's `index.md` files are generated listings that **do** pay for themselves, and
+The `/.knowledge/` bundle's `index.md` files are generated listings that **do** pay for themselves, and
 the contrast is exact:
 
-| | `/.docs/**/index.md` | the retired `/.specs/plans/index.md` |
+| | `/.knowledge/**/index.md` | the retired `/.specs/plans/index.md` |
 | --- | --- | --- |
 | Does a command derive the same fact on demand? | **No.** Nothing enumerates the bundle. | **Yes** — `cq specs list` and `cq specs status` read `plans/` directly. |
 | What the listing is | the bundle's **only** navigation — a doc no index reaches is invisible | a table duplicating what the tool already returned |
