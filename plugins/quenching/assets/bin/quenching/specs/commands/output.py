@@ -36,7 +36,7 @@ class Emitter:
     payload BY CONSTRUCTION — a verb added tomorrow announces an approximate match without its
     author knowing the rule exists, because the emitter arrives in the signature and there is no
     other way to answer. The alternative, writing the two keys into each verb's payload by hand,
-    is the shape /.docs/standards/architecture/shared-mold-keys.md measured and rejected: a rule
+    is the shape /.knowledge/standards/architecture/shared-mold-keys.md measured and rejected: a rule
     that depends on the author remembering is a rule the next author forgets, and the count of
     verbs owing it moved three times while this was being specified.
 

@@ -1,6 +1,6 @@
 # assets/hooks/ — the OKF enforcement hook's reference copies
 
-Keeps a target repo's `/.docs/` bundle aligned to OKF. The checker itself is the
+Keeps a target repo's `/.knowledge/` bundle aligned to OKF. The checker itself is the
 `knowledge` pillar of the plugin's one package, at `assets/bin/quenching/knowledge/`,
 reached through the single entry point `cq`. **Nothing here is installed into a
 target** — the plugin's own `hooks/hooks.json` wires the checker at
@@ -13,7 +13,7 @@ has the plugin. This directory holds no executable code of its own; it is the
 | `hooks-config.json` | The **defaults reference** for the `okfValidate` block: `enabled`, `warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`. A target that wants to override them maintains its own `.claude/hooks/hooks-config.json`. |
 | `settings.snippet.json` | The wiring, kept as a **reference copy** of what `hooks/hooks.json` declares. Nothing merges it into a target any more. |
 
-The checker itself (`cq knowledge validate /.docs` — used by the commands and the verification
+The checker itself (`cq knowledge validate /.knowledge` — used by the commands and the verification
 step — or `cq knowledge hook`, which reads the hook JSON on stdin) is documented at
 [../bin/quenching/knowledge/](../bin/quenching/knowledge/). `cq --version` prints the plugin
 version every pillar answers with, kept in lockstep with the plugin `VERSION`.
@@ -25,7 +25,7 @@ version every pillar answers with, kept in lockstep with the plugin `VERSION`.
   fields (`title`/`description`/`resource`/`timestamp`) → WARN.
 - **`index.md`** (reserved listing): must **not** carry a concept `type` (ERROR).
   A non-root `index.md` must have **no frontmatter** (ERROR). The **root**
-  `/.docs/index.md` may carry frontmatter but only `okf_version` (should be `"0.1"`).
+  `/.knowledge/index.md` may carry frontmatter but only `okf_version` (should be `"0.1"`).
 - **`log.md`** (reserved history): `## YYYY-MM-DD` headings, newest first; no `type`.
 - **Structural integrity** (whole-tree, CLI + `Stop`; all WARN): `dir-no-index` (a folder
   holds concept docs but has no `index.md`), `index-broken-link` (a listing points to a
@@ -44,7 +44,7 @@ version every pillar answers with, kept in lockstep with the plugin `VERSION`.
 
 - **Dirty-gated Stop** (`stopScan: "dirty"`, the default): `PostToolUse` touches a
   marker file in the system temp dir (`okf-dirty-<sha1(project)[:12]>`) on every
-  `/.docs/**` edit; `Stop` scans only when the marker exists, else exits on **one stat**
+  `/.knowledge/**` edit; `Stop` scans only when the marker exists, else exits on **one stat**
   (<5 ms). The marker is cleared after any **completed** scan (a fixing edit re-arms
   it) and **kept** when `deadlineMs` aborts a scan mid-walk. Trade-off: a brand-new
   session over an already-dirty bundle does not re-report until the first docs edit —
@@ -60,7 +60,7 @@ version every pillar answers with, kept in lockstep with the plugin `VERSION`.
 
 ## Configuring a target
 
-Nothing is copied and nothing is merged. The bundle root is the fixed `/.docs/` convention —
+Nothing is copied and nothing is merged. The bundle root is the fixed `/.knowledge/` convention —
 no config names it. The knobs (`enabled`, `warnAsError`, `blockOnFail`, `hardBlock`,
 `deadlineMs`, `stopScan`, `ignoreGlobs`) are read from the target's own
 `.claude/hooks/hooks-config.json` when it maintains one by hand. The copy in this

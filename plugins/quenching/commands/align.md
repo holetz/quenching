@@ -1,5 +1,5 @@
 ---
-description: Align the whole repository — /.docs/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a /.docs/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: one front only → /quenching:knowledge:align, /quenching:specs:align, /quenching:components:align; reading without changing → /quenching:knowledge:status, /quenching:specs:status; the next action on one spec → /quenching:specs:continue.
+description: Align the whole repository — /.knowledge/ then /.specs/ then .claude/ — on ONE confirmation, looped until nothing changes anywhere. Triggers on "align the repo", "align everything", "align and update everything", "set up quenching here", "converge this repository", "run all the aligns", "fix all three fronts". Probes the three fronts read-only, asks once, then invokes each front's align in dependency order and loops across them, because they feed each other: a spec's distillation is glossary work, and the skill front's registry is a /.knowledge/ listing. Authorization nests one level — each front align inherits the OK and never re-asks, while a code-coupled rename and an irreversible close still gate on their own. Conducts, never reimplements: every write is made by the front align it invokes. Not for: one front only → /quenching:knowledge:align, /quenching:specs:align, /quenching:components:align; reading without changing → /quenching:knowledge:status, /quenching:specs:status; the next action on one spec → /quenching:specs:continue.
 argument-hint: [optional-scope]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Skill
 ---
@@ -14,7 +14,7 @@ one that spans all three.
 
 | # | Front | Align | What converges |
 | --- | --- | --- | --- |
-| 1 | `/.docs/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
+| 1 | `/.knowledge/` — the OKF bundle | `/quenching:knowledge:align` | homes, frontmatter stamps, every `index.md`, the validator — then project memory, the harness, the glossary |
 | 2 | `/.specs/` — the spec-driven workspace | `/quenching:specs:align` | scaffold, doctor/validate, spec + archive names, the `plans/` inbox and its derived zone — then the close-outs and the ranking |
 | 3 | `.claude/` — the automation surface | `/quenching:components:align` | command paths on the taxonomy axis, collapsed pairs, the rule + registry, the GENERATED zone — then the read-only doctrine audit |
 
@@ -45,10 +45,10 @@ here, not three edits that must stay in agreement.
 
 ## Doctrine
 
-- **Order is a dependency, not a preference.** `/.docs/` → `/.specs/` → `.claude/`:
+- **Order is a dependency, not a preference.** `/.knowledge/` → `/.specs/` → `.claude/`:
   - **docs first** — both other fronts write OKF artifacts into the bundle (the skill front's
-    rule `/.docs/standards/automation/skills.md` and registry
-    `/.docs/documentation/reference/automation.md`; the `/.docs/standards/` docs a spec's
+    rule `/.knowledge/standards/automation/skills.md` and registry
+    `/.knowledge/documentation/reference/automation.md`; the `/.knowledge/standards/` docs a spec's
     distillation mints). None can land in a tree that is not there.
   - **specs before skills** — when migrating a legacy `openspec/` workspace, `/quenching:specs:align`
     removes the CLI-generated `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow
@@ -58,11 +58,11 @@ here, not three edits that must stay in agreement.
   Never run a later front before an earlier one.
 - **Loop across fronts, because they feed each other.** This is the whole reason this command is
   not three invocations typed in a row. The concrete edges:
-  - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `/.docs/` → the `/.docs/`
+  - `/quenching:specs:align` **concludes** a spec → its distillation mints docs into `/.knowledge/` → the `/.knowledge/`
     front's glossary stage must now index those terms.
-  - `/quenching:components:align` **creates** the rule and registry in `/.docs/` → the `docs` front's `index.md`
+  - `/quenching:components:align` **creates** the rule and registry in `/.knowledge/` → the `docs` front's `index.md`
     must list them.
-  - `/quenching:knowledge:align`'s **harness** stage moves a fact into `/.docs/` that a `/.specs/` spec should now
+  - `/quenching:knowledge:align`'s **harness** stage moves a fact into `/.knowledge/` that a `/.specs/` spec should now
     cite instead of restating.
   A single cross-front pass would leave every one of those half-done.
 - **One OK for the whole repo; authorization nests one level.** The gate fires **once**, before
@@ -74,7 +74,7 @@ here, not three edits that must stay in agreement.
 - **Conduct, never reimplement.** The conductor sequences, gates, and reports. If a front's
   behaviour must change, change that front's align — the same ONE-authority-per-concern rule that
   keeps each align from re-deriving its own stages' logic.
-- **Front presence decides the pass; only `/.docs/` is installed unasked.** An absent `/.docs/` bundle
+- **Front presence decides the pass; only `/.knowledge/` is installed unasked.** An absent `/.knowledge/` bundle
   is *the* thing this plugin installs, so front 1 always runs. An absent `/.specs/` is **offered as
   its own line in the plan** — scaffolding it imposes a spec-driven workflow, so it is opt-in,
   never a side effect. An empty `.claude/` surface (no commands, no skills) skips front 3 with a
@@ -88,8 +88,8 @@ here, not three edits that must stay in agreement.
 ### 1. Probe the three fronts (read-only, cheap)
 Presence and rough scale only — **not** a full inventory, which each align does for itself, and
 each already probes before paying for one:
-- **`/.docs/`** — does the bundle root exist (`/.docs/index.md` with `okf_version`)? Run
-  `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate /.docs --json` and keep
+- **`/.knowledge/`** — does the bundle root exist (`/.knowledge/index.md` with `okf_version`)? Run
+  `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate /.knowledge --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
 - **`/.specs/`** — does a `/.specs/` root exist? If yes, `cq specs doctor --json` and
@@ -116,7 +116,7 @@ inherits this OK and will not ask again; only a rename touching product code and
 close-out still confirm on their own."* Wait for **one** OK.
 **Done when:** the user has answered; declined → nothing written, run ends.
 
-### 3. Front 1 — `/quenching:knowledge:align` (the `/.docs/` bundle)
+### 3. Front 1 — `/quenching:knowledge:align` (the `/.knowledge/` bundle)
 Invoke via the **Skill** tool under its registry name **`quenching:knowledge:align`** — the command path
 prefixed by the plugin. Every front below is named the same way; the three forms and the condition
 on each are [sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md)
@@ -150,8 +150,8 @@ verify the front order held before invoking. Record its counts and its **doctrin
 
 ### 6. Re-probe across fronts → decide (loop or stop)
 Re-run step 1's probe **plus** a check of the specific cross-front edges: did front 2 conclude
-anything (→ new `/.docs/` content for front 1's glossary stage)? did front 3 create the rule or
-registry (→ `/.docs/` listings to regenerate)? Then decide by the four outcomes in
+anything (→ new `/.knowledge/` content for front 1's glossary stage)? did front 3 create the rule or
+registry (→ `/.knowledge/` listings to regenerate)? Then decide by the four outcomes in
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md)
 §The convergence contract: **progress** → another cross-front pass from step 3 under the same
 authorization, narrating what each front will do this time (fronts whose input is unchanged will

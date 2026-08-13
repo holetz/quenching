@@ -79,7 +79,7 @@ def stray_headings(sections: dict, schema: dict | None = None) -> list[str]:
 
 
 def parse_impact_standards(text: str, schema: dict | None = None) -> list[str]:
-    """The `/.docs/standards/**.md` paths a spec DECLARES it will write, read from the one
+    """The `/.knowledge/standards/**.md` paths a spec DECLARES it will write, read from the one
     fixed sub-heading of `## Impact`.
 
     Only that sub-heading is parsed, and deliberately so. Its siblings name paths the spec

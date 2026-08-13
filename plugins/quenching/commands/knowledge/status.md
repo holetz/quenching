@@ -54,27 +54,27 @@ point: a status view that disagreed with the sweep would be worse than none.
 ## Workflow (one read, one report)
 
 ### 1. Resolve the bundle
-Resolve the bundle at its fixed root `/.docs/` at the repo root — the root is never read from
+Resolve the bundle at its fixed root `/.knowledge/` at the repo root — the root is never read from
 config. Resolve `cq knowledge` per
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
 §Resolving the tool. Invoke via `python3`/`py`; branch on the **exit code** and the `--json`,
 never on prose.
 
-**No bundle at all** is a complete, valid answer: report that `/.docs/` is absent and that
-`/quenching:knowledge:align` would install it, then stop. A `/.docs/` that exists without an `okf_version` root
+**No bundle at all** is a complete, valid answer: report that `/.knowledge/` is absent and that
+`/quenching:knowledge:align` would install it, then stop. A `/.knowledge/` that exists without an `okf_version` root
 `index.md` is an un-installed tree, not a broken bundle — say which.
 **Done when:** the bundle root and the checker are resolved, or their absence recorded.
 
 ### 2. Collect (read-only)
-- `cq knowledge validate /.docs --json` — every conformance finding, with `stale-doc` included, since
+- `cq knowledge validate /.knowledge --json` — every conformance finding, with `stale-doc` included, since
   this is CLI mode (per [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md)
   §Staleness, it never runs in the hook path).
-- `Glob` `/.docs/**/*.md` for the density counts, and read `/.docs/index.md`, each home's `index.md`,
-  and `/.docs/knowledge/glossary.md`.
+- `Glob` `/.knowledge/**/*.md` for the density counts, and read `/.knowledge/index.md`, each home's `index.md`,
+  and `/.knowledge/glossary.md`.
 - `Glob` `~/.claude/projects/<cwd>/memory/*.md` and read the root `CLAUDE.md`/`AGENTS.md` size —
   the two out-of-band stores whose content the cycle would pull in.
 - Note whether a **retired `log.md`** is still present anywhere in the bundle (`Glob`
-  `/.docs/**/log.md`) — a figure for §5, never a finding.
+  `/.knowledge/**/log.md`) — a figure for §5, never a finding.
 
 Nothing here writes. If the checker is unavailable, collect what the frontmatter supports and mark
 every conformance row as unverified rather than reporting a clean bundle.
@@ -137,7 +137,7 @@ Report it as one table, and give **no row a finding code**:
 | --- | --- |
 | Concept docs, total | `.md` files that are not `index.md`, `log.md`, or an EXEMPT basename (`CLAUDE.md`, `AGENTS.md`) |
 | Concept docs **per home** | the same count, grouped by top-level home, with **installed-but-empty homes shown as `0`** — never omitted, since the zero is the signal |
-| Glossary terms | entries under `## Terms` in `knowledge/glossary.md`; note separately when the shipped **seed placeholder** is still the only one |
+| Glossary terms | entries under `## Terms` in `glossary.md`; note separately when the shipped **seed placeholder** is still the only one |
 | Unlinked glossary entries | terms with no concept doc yet — a **valid permanent state**, reported as a figure and never as a defect |
 | Standards subjects | subject subfolders under `standards/`, and how many hold at least one doc |
 | Last activity | the newest `timestamp:` across the bundle's concept docs |

@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), Bash(mkdir:*), Bas
 
 **Input**: `$ARGUMENTS` (optionally a `/.specs/` path or a scope; omit to align the whole workspace).
 
-One of the plugin's three aligns. Where `/quenching:knowledge:align` converges a repo's `/.docs/` bundle and
+One of the plugin's three aligns. Where `/quenching:knowledge:align` converges a repo's `/.knowledge/` bundle and
 `/quenching:components:align` its `.claude/` command surface, this one converges its **spec-driven workspace** —
 so every repo that adopts the plugin carries the same `/.specs/` too. Quenching-native: this front is
 **entirely plugin-owned** — no Node runtime, no `config.yaml`, no second spec store shadowing the
@@ -107,7 +107,7 @@ Only now, and writing nothing: `cq specs list --json` (slugs, folders, derived s
 progress); `Glob` `/.specs/plans/*.md`; `Glob` a legacy `openspec/` tree
 (to detect `sp-legacy-workspace`) and read it if present; `Glob`
 `.claude/skills/openspec-*/SKILL.md` and `.claude/commands/opsx/*.md` (shadow copies, relevant only
-under a legacy migration); read `/.docs/index.md` for `okf_version`.
+under a legacy migration); read `/.knowledge/index.md` for `okf_version`.
 
 **`validate --json` from the probe already covers every spec**, so there is no per-spec fan-out to
 plan and no reason to re-run it. Reach for `cq specs status --spec <slug> --json` only when a
@@ -126,7 +126,7 @@ auto-closes), splitting the two tables: what the sweep **fixes** (structure, the
 filenames and slugs, frontmatter stamps, shadow copies) and what it only **reports**.
 **`sp-v2-layout` and `sp-v1-leftover` are classified before anything else** — until the fold runs,
 every other reading of the workspace is about files that are not where they will be. A legacy
-`openspec/` fold requires an OKF bundle for its main-spec cut: if `/.docs/index.md` with
+`openspec/` fold requires an OKF bundle for its main-spec cut: if `/.knowledge/index.md` with
 `okf_version` is absent, that fold **stops** and this command suggests `/quenching:knowledge:align` first. For a
 shadow copy, diff it against the plugin's command of the same name before classifying: identical →
 removal candidate, divergent → `sp-shadow-diverged`, keep-and-report.
@@ -147,7 +147,7 @@ worth the scan even when the file looks internal.
 One plan, in sections: scaffold (copy `${CLAUDE_PLUGIN_ROOT}/assets/specs/` into `/.specs/` when
 `sp-no-workspace`); **migrations** (the
 legacy `openspec/` fold with
-each main-spec→`/.docs/standards/` cut shown and interop-lost stated; then the fold, shown as
+each main-spec→`/.knowledge/standards/` cut shown and interop-lost stated; then the fold, shown as
 `cq specs migrate --dry-run`'s own output — every spec's destination, the source of each date, and
 every folder that will be **kept** because it still holds a file); tool repairs (each quoting the
 tool's own message and remedy); renames (old → canonical, coupled ones marked); frontmatter stamps;
@@ -170,9 +170,9 @@ Re-run the probe's two commands — clean, or the residual message quoted per §
 the whole verification: `cq specs doctor` for
 the workspace's shape and `cq specs validate` for the spec files, both deciding on an exit code.
 There is no listing to regenerate and no second checker to point at `/.specs/` — the OKF validator
-owns the `/.docs/` bundle alone, and a spec carries no OKF `type:` for it to judge.
+owns the `/.knowledge/` bundle alone, and a spec carries no OKF `type:` for it to judge.
 
-This sweep writes nothing into the `/.docs/` bundle — the `specs` front records itself, and the
+This sweep writes nothing into the `/.knowledge/` bundle — the `specs` front records itself, and the
 bundle log it used to append to is retired.
 
 Then §The report mold — loaded here, in the step that emits it:
@@ -198,7 +198,7 @@ verdict **is** the whole report.
   ends the run at step 1 — that is the whole reason this command is cheap enough to run habitually.
 - Never author a spec's sections — not a `## Problem`, not a missing gate heading, and **not an
   explicit `- none — <reason>`**. A section is content; only filenames and frontmatter keys are
-  this sweep's to write. (A legacy fold's main-spec→`/.docs/standards/` mapping is the one authored
+  this sweep's to write. (A legacy fold's main-spec→`/.knowledge/standards/` mapping is the one authored
   crossing, and it is human-chosen.)
 - Never `promote` a spec, and never propose one — that is `/quenching:specs:develop` and `/quenching:specs:conclude`.
 - Never write a frontmatter record this command does not own. `priority`, `refined`, `approved`,
@@ -217,6 +217,6 @@ verdict **is** the whole report.
 - Never recreate `plans/index.md`. The artifact is retired: no command produces it, and one
   surviving in a target repo is left exactly as found — neither refreshed nor deleted.
 - Never stamp an OKF `type:` on a spec file to quiet the bundle validator — that validator owns the
-  `/.docs/` bundle, and is never pointed at `/.specs/`.
+  `/.knowledge/` bundle, and is never pointed at `/.specs/`.
 - Never invent a repair the tool did not state.
 - Never hand this command file `context: fork` — both gates are mid-flow.

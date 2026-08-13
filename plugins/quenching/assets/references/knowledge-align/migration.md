@@ -14,15 +14,15 @@ Each existing section matches a canonical home **by function**:
 
 | Variant (examples) | Canonical |
 | --- | --- |
-| `docs/arquitetura/`, `docs/architecture-docs/` | `docs/standards/` (or `standards/architecture/` if only that) |
-| `docs/adr/`, `docs/decisions` (ADRs) | `docs/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
+| `docs/arquitetura/`, `docs/architecture-docs/` | `.knowledge/standards/` (or `standards/architecture/` if only that) |
+| `docs/adr/`, `docs/decisions` (ADRs) | `.knowledge/standards/<subject>/` — restamp `type: decision` → `standard` (§1f) |
 | `docs/backlog/`, `BACKLOG.md`, `docs/tarefas/` | `specs/` (leaves the bundle — §1e) |
-| `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `docs/vision/` |
-| `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `docs/catalog/` |
-| `docs/normativos/`, `docs/regulamentos/` | `docs/reference/regulations/` (content) |
-| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `docs/documentation/how-to/` |
-| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `docs/documentation/getting-started/` |
-| `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `docs/documentation/` |
+| `VISION.md`, `ROADMAP.md`, `docs/direcao/` | `.knowledge/vision/` |
+| `docs/catalogo_dados/`, `docs/dominio/`, `docs/data/` | `.knowledge/catalog/` |
+| `docs/normativos/`, `docs/regulamentos/` | `.knowledge/external/regulations/` (content) |
+| `docs/guias/`, `docs/howto/`, `docs/how-to/` | `.knowledge/documentation/how-to/` |
+| `docs/tutoriais/`, `docs/tutorials/`, `docs/getting-started/` | `.knowledge/documentation/tutorials/` |
+| `docs/documentacao/`, `docs/user-docs/`, `docs/site/`, `docs/manual/`, `docs/wiki/` | `.knowledge/documentation/` |
 
 ### 1a. Subfolder-level map (inside `standards/`)
 
@@ -32,7 +32,7 @@ Convergence applies one level down — a variant **subfolder** is a smell too:
 `servicos/`→ the fitting subject (usually `platform/`, or split by content). The folder name +
 frontmatter (keys, enums, and the `title:`/`description:` free-text on this agent-facing
 surface) become canonical English. **A migration never translates body prose** — which language it
-is written in is owned by the bundle's `docs/standards/agents/communication.md`.
+is written in is owned by the bundle's `.knowledge/standards/agents/communication.md`.
 
 ### 1b. File-slug translation + prefix-cluster folding
 
@@ -40,7 +40,7 @@ Convergence reaches the **filename** too — a non-English concept-doc slug and 
 are both smells `/quenching:knowledge:align` resolves as renames (each swept for its blast radius, ⇒ §3–4).
 
 - **Translate non-English slugs** on the technical homes (`standards/`, `vision/`,
-  `documentation/`, `reference/` non-identifier) to canonical English describing the concept:
+  `documentation/`, `external/` non-identifier) to canonical English describing the concept:
   `convencoes.md`→`conventions.md` · `hierarquia-tasks.md`→`task-hierarchy.md` ·
   `validacao-desenvolvimento.md`→`development-validation.md` · `notebooks-spark.md`→`spark-notebooks.md`.
 - **Fold a prefix-cluster into a subfolder** (prefix stripped, English leaf names, generated
@@ -56,19 +56,19 @@ are both smells `/quenching:knowledge:align` resolves as renames (each swept for
 
 - **Identifier-derived slugs are verbatim — never translate them.** A catalog `<schema>`/
   `<table>` mirrors the real object (`dim_associado.md` stays `dim_associado.md`);
-  `reference/repositories/<repo>` mirrors the real repo. The
+  `external/repositories/<repo>` mirrors the real repo. The
   slug is the greppable key to the asset — anglicizing it is data loss.
 
 ### 1c. Retired canonical home — `guides/` → `documentation/`
 
 <!-- rules -->
 OKF v0.9 retired the `guides/` home; its content now lives in the `documentation/` home. A repo
-already conformant on the **old** canonical (`docs/guides/`) is therefore a migration candidate
+already conformant on the **old** canonical (`.knowledge/guides/`) is therefore a migration candidate
 too — not a variant name, but a retired home. Scaffold the `documentation/` skeleton (its
 `index.md` + the four section listings + `.pages`), restamp `type: guide` → `type: documentation`,
-and relocate each `docs/guides/**` doc **by shape** — per item, like Content relocation below,
+and relocate each `.knowledge/guides/**` doc **by shape** — per item, like Content relocation below,
 because a legacy `guides/` folder mixes both quadrants: a **task recipe / how-to** ("how do I do
-X") → `docs/documentation/how-to/`; a **learning-oriented tutorial** → `docs/documentation/getting-started/`.
+X") → `.knowledge/documentation/how-to/`; a **learning-oriented tutorial** → `.knowledge/documentation/tutorials/`.
 Sweep the blast radius like any rename (its **own** confirmation when links reach product code).
 
 <!-- rationale -->
@@ -91,19 +91,19 @@ in it.** A legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. Th
 (`cq specs list` derives what `plans/` holds from disk), so a zone written here would be a
 listing nobody produces and nobody reads.
 
-### 1e. Backlog leaves the OKF bundle — `docs/backlog/` → the `specs/` front
+### 1e. Backlog leaves the OKF bundle — `.knowledge/backlog/` → the `specs/` front
 
-OKF v0.13 moved parked work out of the `docs/` bundle, and it now lands in the `specs/` front as
+OKF v0.13 moved parked work out of the `.knowledge/` bundle, and it now lands in the `specs/` front as
 **specs**, not as OKF docs — `cq knowledge validate` no longer scans it, and a spec carries no OKF
 `type:` at all.
 
 The move is two hops, and this sweep performs only the first:
 
 1. **`/quenching:knowledge:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
-   then every `docs/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
+   then every `.knowledge/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
    not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
-   every cross-link into `docs/backlog/`.
+   every cross-link into `.knowledge/backlog/`.
 2. **`cq specs migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
    `complexity` preserved as a line in `## Problem`. Name that second hop in the report and let
@@ -115,7 +115,7 @@ After both hops, `/quenching:specs:create` and `/quenching:specs:triage` own tha
 ### 1f. Retired home — `decisions/` → `standards/`
 
 <!-- rules -->
-OKF v0.13 removed the standalone ADR home. A target's existing `docs/decisions/*.md`
+OKF v0.13 removed the standalone ADR home. A target's existing `.knowledge/decisions/*.md`
 (`type: decision`, usually `NNNN-slug.md` ADRs) migrates by restamping `type: decision` →
 `type: standard` with `authority: background` (or `current` if the decision is clearly
 implemented in the code), and relocating to the fitting `standards/<subject>/` — naming the
@@ -125,6 +125,50 @@ semantic-placement call with its own OK**, blast-radius swept (§3–4) — neve
 <!-- rationale -->
 A decision's rationale and still-open alternatives belong in an OpenSpec change's `design.md`,
 not a docs home.
+
+### 1g. Root migration — the bundle's own root changed name between releases
+
+<!-- rules -->
+
+A plugin release may rename a root it itself declares — the bundle root moved from `.docs/` to
+`.knowledge/` once. Nothing here is written against that pair specifically: a future release could
+rename `.specs/` the same way, and this procedure has to hold without being rewritten. Detection is
+**structural, sítio a sítio, never `okf_version`-gated** — a version bump does not imply a rename
+happened, and a rename can land without one.
+
+**A root and a home can share a spelling, and mean opposite things.** Every root in §1's table is
+the dotted bundle root (`.knowledge/`, always with the dot — §1 fixed this file's own earlier
+`knowledge/`-without-a-dot spelling for exactly this reason). `okf-legacy-home` below is about the
+*other* `knowledge/`, undotted, that used to sit one level inside that root as a home's own name —
+the one §1c/§1's canonical map, and the rest of this plugin, calls `concepts/` today. Writing the
+bare, undotted spelling anywhere it is meant as the root reads as the finding's target, not the
+root.
+
+`cq knowledge validate` emits four independent findings for a target that has not run this sweep
+since the rename, each looking at only its own site:
+
+| Finding | Fires when |
+| --- | --- |
+| `okf-legacy-root` | the new root is absent and the pre-rename root sits where it should be |
+| `okf-legacy-home` | a pre-rename home name (`knowledge/`, `reference/`) sits at the bundle root |
+| `okf-legacy-doc-quadrant` | a pre-rename Diátaxis quadrant sits under `documentation/` |
+| `okf-legacy-glossary` | `glossary.md` sits inside a home instead of at the bundle root |
+
+Each is **idempotent** — migrating one site clears exactly its own finding, so a bundle migrated
+halfway (an interrupted previous run) converges the same way `align` already converges everything
+else: run it again.
+
+**Resolve root-first, then the rest, same order every time**: `git mv` the root itself (§1, same
+mechanism as any other rename), then the homes, quadrants and glossary underneath it — each swept
+for blast radius (§3) and each gated on its OWN confirmation when it reaches product code (§4). A
+root rename is *never* a bare `git mv`: the root's name is also a **path constant** hard-coded into
+the tool that validates the bundle (a default argument, a docstring, a hook's own root variable), so
+the rename's blast radius always reaches code, and §4's code-coupled confirmation always applies —
+it is never folded into the bulk "align all" opt-in.
+
+**No dual-root compatibility window.** The old root and the new one are never both read at once;
+the migration is one rename per site, immediately superseding the old name, exactly as `align`
+already treats every other variant → canonical convergence in this file.
 
 ### Content relocation (distinct from rename)
 

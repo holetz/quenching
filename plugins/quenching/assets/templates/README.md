@@ -1,6 +1,6 @@
 # `assets/templates/` — the molds
 
-Frontmatter + body molds the commands stamp/apply. They live **outside** the `/.docs/` bundle
+Frontmatter + body molds the commands stamp/apply. They live **outside** the `/.knowledge/` bundle
 (so they are not themselves validated), and each produces an OKF-conformant concept doc when
 filled — except the `harness/` and `automation/command|agent|hook` molds, which produce files
 that are not OKF concepts at all. `/quenching:knowledge:add` picks the mold by home → `type` (see
@@ -17,7 +17,7 @@ the file itself does not.
 | `catalog/schema.md` | `catalog/<system>/<catalog>/<schema>.md` | `schema` |
 | `catalog/table.md` | `catalog/<system>/<catalog>/<schema>/<table>.md` | `table` |
 | `vision/area.md` | `vision/<area>.md` | `vision` |
-| `sidecar.md` | `reference/regulations/**` extract | `sidecar` |
+| `sidecar.md` | `external/regulations/**` extract | `sidecar` |
 | `index.md.tmpl` | a folder's reserved `index.md` listing (no frontmatter; root carries only `okf_version`) | *(reserved)* |
 | `harness/claude-root.md` | a repo-root `CLAUDE.md` thin pointer over the bundle | *(harness — exempt)* |
 | `harness/claude-subfolder.md` | a subfolder `CLAUDE.md` nearest-file pointer | *(harness — exempt)* |

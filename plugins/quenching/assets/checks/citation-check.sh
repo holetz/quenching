@@ -162,7 +162,7 @@ fi
 #
 # SOME OF THIS REPO DESCRIBES A DIFFERENT REPO, and a path there is not a claim about a file here.
 # The plugin SHIPS content meant to land in a target checkout — the OKF skeleton under
-# `assets/docs/`, the moulds under `assets/templates/` — so a `/.docs/standards/<subject>/<concept>.md` written there
+# `assets/knowledge/`, the moulds under `assets/templates/` — so a `/.knowledge/standards/<subject>/<concept>.md` written there
 # is a claim about the repo that installs it, not about this checkout. Reading those as citations
 # reports the shipped product as broken. So:
 #
@@ -174,14 +174,14 @@ fi
 #
 # THERE USED TO BE A THIRD RULE HERE, AND IT WAS EXCUSING A REAL DEFECT. It read: *a path rooted at
 # bare `docs/` is not measured at all — that spelling names the target's bundle, and this repo would
-# spell its own `.docs/`*. The premise is false. `/.docs/standards/architecture/bundle-root.md` fixes
-# the bundle at `/.docs/` **in the target repository**, not only here, so `docs/` names no repo's
-# bundle at all. What the rule actually did was silence 95 links and prose paths the 2026-08-06
+# spell its own `.knowledge/`*. The premise is false. `/.knowledge/standards/architecture/bundle-root.md`
+# fixes the bundle at `/.knowledge/` **in the target repository**, not only here, so `docs/` names no
+# repo's bundle at all. What the rule actually did was silence 95 links and prose paths the 2026-08-06
 # root migration left un-migrated inside the shipped trees — a target that scaffolded from them got
 # an `index.md` whose every cross-home link resolved nowhere. `cq knowledge validate` never saw it
 # either: measured on both bundles, it reports 0 errors, because it does not resolve absolute
-# cross-home links. The skeleton and the moulds now spell `/.docs/`, and the rule is gone with the
-# thing it was hiding.
+# cross-home links. The skeleton and the moulds now spell `/.knowledge/`, and the rule is gone with
+# the thing it was hiding.
 #
 # None of this is an allowlist: no path is exempted by being on a list, and every exclusion is a
 # statement about which repository a tree is describing.
@@ -203,22 +203,22 @@ commands_dir = os.path.join(plugin, "commands")
 # `${CLAUDE_PLUGIN_ROOT}/<path>`, and the same path spelled absolute in a command body — both name a
 # file under the plugin. The absolute form appears because ${CLAUDE_PLUGIN_ROOT} is expanded when
 # a body is loaded, and the expansion is what gets copied into prose.
-PLUGIN_ROOT_RE = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
-MD_LINK_RE     = re.compile(r"\]\(([^)\s]+)\)")
-REPO_PATH_RE   = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
-DOCS_PATH_RE   = re.compile(r"(?<![A-Za-z0-9_./-])/?(\.docs/[A-Za-z0-9_./-]+)")
+PLUGIN_ROOT_RE    = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
+MD_LINK_RE        = re.compile(r"\]\(([^)\s]+)\)")
+REPO_PATH_RE      = re.compile(r"(?<![A-Za-z0-9_./-])(plugins/quenching/[A-Za-z0-9_./-]+)")
+KNOWLEDGE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])/?(\.knowledge/[A-Za-z0-9_./-]+)")
 # Both citation forms. The Skill tool takes the bare `quenching:<ns>:<cmd>`; a human types the slash.
-CMD_RE         = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
+CMD_RE            = re.compile(r"/?(quenching(?::[a-z][a-z0-9-]*){2,})")
 
 # Content the plugin ships for a target checkout to hold, plus the fixture data that names files
 # on purpose absent. See the header: these say which repo a tree describes, they exempt no path.
-SHIPPED = (plugin + "/assets/docs/", plugin + "/assets/templates/", plugin + "/tests/fixtures/")
+SHIPPED = (plugin + "/assets/knowledge/", plugin + "/assets/templates/", plugin + "/tests/fixtures/")
 
 def unmeasurable(p):
     return (not p) or any(c in p for c in "*?<>${}|") or "..." in p \
         or p.startswith(("http:", "https:", "mailto:", "#"))
 
-# A `describes_target(target)` guard used to sit here, keeping any path that contained `/.docs/`
+# A `describes_target(target)` guard used to sit here, keeping any path that contained `/.knowledge/`
 # out of the measurement. `in_bundle` below already carries that rule and carries it the right way
 # round — as a statement about the citing FILE, not a substring test on the cited path — so the
 # guard is gone. A substring rule over paths is exactly how a spelling nobody had migrated stayed
@@ -264,18 +264,18 @@ for rel in sys.stdin.buffer.read().split(b"\x00"):
         continue
 
     here = os.path.dirname(rel)
-    # Two bundles live in this repo: the real one at .docs/, and the skeleton the plugin SHIPS at
-    # assets/docs/, whose `/.docs/` links name the bundle of the repo that installs it and
-    # therefore never resolve from here. `knowledge validate` governs both, and the repo gate
+    # Two bundles live in this repo: the real one at .knowledge/, and the skeleton the plugin SHIPS
+    # at assets/knowledge/, whose `/.knowledge/` links name the bundle of the repo that installs it
+    # and therefore never resolve from here. `knowledge validate` governs both, and the repo gate
     # already runs it over each. Same test, both trees — which is only possible now that they
     # spell the root the same way.
-    in_bundle = rel.startswith(".docs/") or rel.startswith(SHIPPED)
+    in_bundle = rel.startswith(".knowledge/") or rel.startswith(SHIPPED)
     in_plugin = rel.startswith(plugin + "/")
     candidates = []
     candidates += [(m, [os.path.join(plugin, trim(m))]) for m in PLUGIN_ROOT_RE.findall(text)]
     candidates += [(m, [trim(m)]) for m in REPO_PATH_RE.findall(text)]
     if not in_bundle:
-        candidates += [(m, [trim(m)]) for m in DOCS_PATH_RE.findall(text)]
+        candidates += [(m, [trim(m)]) for m in KNOWLEDGE_PATH_RE.findall(text)]
     # A citation is a claim that a file exists, not a claim about which base it is written from:
     # this repo writes links relative to the citing file AND relative to the repo root, and spells
     # the repo root with a leading slash as often as without. Trying every base and failing only
