@@ -37,10 +37,9 @@ human on the same screen; the human's OK is the run's authorization.
   cycle-authorization contract — one confirmation at run start authorizes the run; narration
   replaces each stage's plan gate; code-coupled items and irreversible cycle actions still gate
   individually.
-- [orchestration-gears.md](/.knowledge/standards/automation/orchestration-gears.md) §What a gear is
-  §Deriving the gears plan §Re-evaluating a gear — the repo's gears contract: the three ways a
-  stage runs, how `complexity` derives the plan, and the signals that move a gear up. A repo that
-  does not carry it has no gears to derive: say so and stop before the plan.
+- [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-orchestrate/gears.md) §What a gear is
+  §Deriving the gears plan §Re-evaluating a gear — the gears contract: the three ways a
+  stage runs, how `complexity` derives the plan, and the signals that move a gear up.
 - [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §Derived stages §Frontmatter §The `cq specs` tool surface — the derived stage is the dispatch,
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface

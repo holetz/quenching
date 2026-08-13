@@ -3,7 +3,8 @@
 The goldens were originally STDOUT captured from the four pre-refactor scripts (specs, components,
 session, knowledge); every case a rename or route change left stale has since been refreshed
 against `cq` itself instead (`renomear-docs-para-knowledge`, task 6.1, 2026-08-13 — see `UNROUTED`
-below, now empty). `capture_golden.py`'s own `main()` cannot do that refresh: its `SCRIPTS` name
+below, which the rename branch emptied down to the unrelated `pr`-record gap
+`vincular-spec-a-branch-commits-e-pr` opened). `capture_golden.py`'s own `main()` cannot do that refresh: its `SCRIPTS` name
 files a prior refactor deleted (see that module's docstring). `INDEX.json` names the exact exit
 code and stderr behind each one, but not which workspace builder or transcript fixture produced
 it — that is unrecoverable from the index, so this suite does not replay from it. It instead
@@ -53,18 +54,31 @@ def declock(text: str) -> str:
 # is `CORRECTED_EXIT` below, which keeps asserting the stdout comparison. Parking such a case here
 # would silently drop a byte-for-byte guarantee the package still meets.
 #
-# EMPTIED by `renomear-docs-para-knowledge` (task 6.1, 2026-08-13): every entry this set carried —
-# four retired verbs with no route (`specs-selftest`, `skills-selftest`, `session-selftest`,
-# `okf-selftest`), `session-version`'s unreachable-`--version` quirk, `skills-drift`'s removed
-# subcommand, and eleven cases stale from earlier renames (`skills-lint`/`-one`,
+# EMPTIED of everything but the `pr`-record gap by `renomear-docs-para-knowledge` (task 6.1,
+# 2026-08-13): the fourteen entries the rename branch found here — four retired verbs with no
+# route (`specs-selftest`, `skills-selftest`, `session-selftest`, `okf-selftest`),
+# `session-version`'s unreachable-`--version` quirk, `skills-drift`'s removed subcommand, and
+# eleven cases stale from earlier renames (`skills-lint`/`-one`,
 # `skills-read-index`/`-section`/`-rules-only`, `okf-hook-posttooluse`, `okf-version`,
-# `okf-validate-skeleton`/`-text`/`-findings`, `specs-status-alpha`/`-beta`) — is **reproducible**
-# through `cq` today; `capture_golden.py`'s stale `assets/docs`/`.docs`/`commands/docs/add.md`
-# paths (this spec's own tasks 1.1/6.1) were the last thing standing between "no route" and "a
-# route whose bytes moved." A retired verb still routes to a `cq` usage refusal every time it is
-# asked — that refusal, frozen, is exactly as reproducible as any other case; there was never a
-# case here where `cq` itself could not answer, only ones where the golden asked a stale question.
-UNROUTED: dict[str, str] = {}
+# `okf-validate-skeleton`/`-text`/`-findings`, `specs-status-alpha`/`-beta`) — are all
+# **reproducible** through `cq` today; `capture_golden.py`'s stale `assets/docs`/`.docs`/
+# `commands/docs/add.md` paths (this spec's own tasks 1.1/6.1) were the last thing standing
+# between "no route" and "a route whose bytes moved." A retired verb still routes to a `cq`
+# usage refusal every time it is asked — that refusal, frozen, is exactly as reproducible as any
+# other case; there was never a case here where `cq` itself could not answer, only ones where the
+# golden asked a stale question. The three below are unrelated to that rename — `records` gained
+# a `pr` key (`vincular-spec-a-branch-commits-e-pr`) after these three were frozen.
+UNROUTED = {
+    "specs-list": "the `records` dict gained a `pr` key — a new write-many record, `{number, url, "
+                  "date}`, narrating a PR opened but not yet merged. The frozen payload predates "
+                  "the record.",
+    "specs-record-unknown": "same added record as `specs-list`: the `sp-unknown-record` refusal "
+                             "lists every declared record name, and `pr` is now one of them.",
+    "specs-root-too-high-control-list": "same added record as `specs-list`, on the control arm of "
+                                         "the root-override fixture — it lists a real spec, so its "
+                                         "`records` dict carries `pr` too. The frozen payload was "
+                                         "captured on the base, before the record existed.",
+}
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package
 # deliberately corrected: `{id: (exit now, why)}`.

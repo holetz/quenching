@@ -14,8 +14,9 @@ from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import _finding
 from quenching.specs.config import (BACKENDS, CONFIG_FILE, CONFIG_KEYS,
                                     DEFAULT_INTEGRATION_BRANCH, DEFAULT_RELEASE_BRANCH,
-                                    LEGACY_CONFIG_FILE, UNPROVED_BACKENDS,
-                                    azure_workitemtype_retirement, load_config)
+                                    LEGACY_CONFIG_FILE, ROOT_TOO_HIGH_REMEDY,
+                                    UNPROVED_BACKENDS, azure_workitemtype_retirement,
+                                    is_root_too_high, load_config, root_too_high_message)
 from quenching.specs.parse import PHASES, spec_files
 from quenching.specs.parse.spec import LEGACY_PHASES
 
@@ -171,6 +172,15 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
         if not os.path.isdir(root):
             findings.append(_finding("sp-no-workspace", "error", f"no `/.specs/` workspace at {root}",
                                      remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
+            return _emit_doctor(args, root, findings)
+
+        if is_root_too_high(root):
+            # Same predicate `open_backend` refuses on — `doctor`'s own contract is to always
+            # complete and report, never refuse, so this is a finding rather than an exit-2.
+            # Returning early here keeps the harmless `sp-missing-phase` warnings below from
+            # also firing over the same mis-levelled root.
+            findings.append(_finding("sp-root-too-high", "error", root_too_high_message(root),
+                                     remedy=ROOT_TOO_HIGH_REMEDY))
             return _emit_doctor(args, root, findings)
 
         for ph in PHASES:

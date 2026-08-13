@@ -47,7 +47,7 @@ sentence, and **link out** rather than explaining in full here.
   therefore the only surface cost paid whether or not a command runs.
 - [**Anchorless strategy**](../standards/workflows/plan-git-record.md) — a merge strategy that
   produces **no merge commit** — `fast-forward` and `rebase` — so the **Merge record** has nothing
-  to name and carries an explicit none instead of a fabricated pointer. Under both, the per-task
+  to name and carries an explicit none instead of a fabricated pointer. Under both, the per-section
   commits land on the base directly and their subjects resolve there, which is why a merge pointer
   would add nothing rather than being merely unavailable. `cq specs validate` reports the mismatch
   in **both** directions (`sp-bad-merge`): an anchorless strategy carrying a real subject, and a
@@ -89,15 +89,16 @@ sentence, and **link out** rather than explaining in full here.
   integração** (`develop`), de onde `plan/<slug>` é cortada e para onde mergeia. O gatilho da
   publicação é a demanda do mantenedor, nunca uma cadência, e a rota é sempre um merge local.
 - [**Branch record**](../standards/workflows/plan-git-record.md) — the `branch: {base, work}`
-  frontmatter entry stamped by `/quenching:specs:execute` for **any** branch that is not the repo's base —
-  the one it cut and the one a human already had open alike — write-once. `work` is derivable
-  while the branch is checked out; **`base` is not** — after the merge, git
-  cannot say what the branch was cut from, which is the whole reason the record exists and why it
-  is captured while still true. Work done on the base stamps nothing, because a record whose `base`
-  equals its `work` states no fact. **The record is never the signal**: anything asking whether a
-  spec is in flight asks git whether the ref is alive — the record's `work`, falling back to
-  `plan/<slug>` — since a human may cut a branch with no record and a record outlives the branch
-  it names.
+  frontmatter entry stamped by `/quenching:specs:execute` once the work ref is resolved, write-once —
+  for **any** branch that is not the repo's base (the one it cut and the one a human already had
+  open alike), and for work done in place, where `work` equals `base`. `work` is derivable while
+  the branch is checked out; **`base` is not** — after the merge, git cannot say what the branch
+  was cut from, which is the whole reason the record exists and why it is captured while still
+  true. **The record is never the signal**: anything asking whether a spec is in flight asks git
+  whether the ref is alive — the record's `work`, falling back to `plan/<slug>` — since a human may
+  cut a branch with no record and a record outlives the branch it names. **`work == base` is the
+  one exception**, and only because that ref cannot die: the base is alive in every repository, so
+  liveness would answer *yes, in flight* forever, and the record has to be read instead.
 - [**Bundle density**](../standards/quality/bundle-verification.md) — the figures `/quenching:knowledge:status`
   prints alongside conformance (concept docs per home, empty homes shown as `0`, glossary size,
   which `standards/` subjects hold anything), carrying **no finding code** by design: coding them
@@ -138,7 +139,9 @@ sentence, and **link out** rather than explaining in full here.
   action of `/quenching:specs:conclude`. Nothing is inscribed into the message as a trailer: the recorded
   subject is whatever the target repo's own convention produced. A spec built before this change
   carries `commit: <sha>` and resolves by sha; both forms are read forever and neither is
-  backfilled.
+  backfilled. Squashed to one commit per **Section boundary**, every task the section held is
+  re-stamped onto that one surviving commit's subject — the anchor narrows to section granularity,
+  never loses resolvability.
 - [**Context (components)**](../standards/naming/command-surface.md) — one of the four sibling
   contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
   for the artifact it mints, none a sub-type of another. A front-level verb sits at the front's own
@@ -164,7 +167,11 @@ sentence, and **link out** rather than explaining in full here.
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry
   point can drift from.
-- [**Gear**](/.knowledge/standards/automation/orchestration-gears.md) — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from `priority.complexity`
+- **Gear** — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a
+  sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from
+  `priority.complexity`. The contract now lives in the plugin's own `specs-orchestrate/gears.md`
+  reference — retired with `automation/orchestration-gears.md`
+  (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
 - [**Generated listing**](../standards/architecture/generated-listings.md) — a file, or a marked
   zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
   of a fact the disk already carries, so it earns its keep only where nothing else derives that
@@ -192,7 +199,7 @@ sentence, and **link out** rather than explaining in full here.
   **on the work branch before the merge** — which is what makes the merge that command's last
   action and leaves nothing to be committed to the base after it. The strategy was a human choice
   and the subject names the merge commit it is about to produce; recording both is what tells a
-  future reader whether the per-task subjects still resolve from the base. An **anchorless
+  future reader whether the per-section subjects still resolve from the base. An **anchorless
   strategy** carries an explicit none here. `pr` exists only on the **pull-request route** and
   names the pull request the merge went through — absent on every local conclusion, and refused
   under `fast-forward`, which `gh pr merge` cannot perform (`sp-merge-pr-no-route`).
@@ -241,6 +248,14 @@ sentence, and **link out** rather than explaining in full here.
   for, and a tool that cannot prove it implements the rule does not get the rule. Severity is
   **warn**, because a deliberate comment and lost prose are byte-identical — the tool states a
   suspicion it cannot resolve. Delivered by an **anomaly sidecar**.
+- [**Payload**](../standards/architecture/plugin-layout.md) — everything the plugin carries for use
+  **inside a target repo**, as opposed to a fact about this repo. Two disjoint halves: the
+  *installed* payload an align copies whole or per insert (`assets/docs/` `assets/specs/`
+  `assets/claude/` `assets/templates/`), and the *read* payload a command loads at runtime by
+  `${CLAUDE_PLUGIN_ROOT}` and never installs (`assets/references/`). Both are payload because
+  neither is graded against this repo — which is what decides reference over standard
+  (§A contract a command reads at runtime is a reference, not a standard). Not to be confused with
+  the **JSON payload** a `cq` verb emits, the unrelated sense used of tool output.
 - [**Phantom command**](../standards/architecture/plugin-layout.md) — a non-entry-point file left
   under `commands/`, which registers as a real `/` entry that does nothing; it does not error, so
   the only thing that catches it is `sk-no-description`, and it is why shared procedure lives under
@@ -267,6 +282,16 @@ sentence, and **link out** rather than explaining in full here.
   `azurePlacement.areaPath`, neither of which has a default because the project itself defines
   them, and whose absence refuses instead of guessing; every other way it can be wrong comes back
   as a field for `doctor` to judge.
+- [**PR record**](../standards/workflows/plan-git-record.md) — the `pr: {number, url, date}`
+  frontmatter entry stamped by `/quenching:specs:conclude` the moment `gh pr create` returns, on the
+  PR route only, and **write-many** where the other git records are write-once: a PR may be closed
+  and reopened, or force-pushed to a fresh number, and each is a new fact rather than a
+  falsification of the old one. It is not `merge.pr`, which is stamped only once the merge is
+  about to happen — under `/quenching:specs:orchestrate`'s **minimal gear** the PR route deliberately
+  stops at the open PR and leaves the merge to human review, so `merge` never lands and this is the
+  spec's only record of the pull request. On backend `github` it is also what makes the branch
+  visible on the issue: the PR body's `Refs #<issue>` line populates the Development panel at no
+  extra call, which a branch alone cannot do (`createLinkedBranch` only ever creates a NEW branch).
 - [**Probe**](../standards/architecture/align-surface.md) — the opening run of a front's own
   verifier (`cq knowledge validate`, `cq specs doctor`, `cq components doctor`) whose exit code
   decides whether an align inventories anything at all, making a no-op align cost a couple of tool
@@ -365,11 +390,13 @@ sentence, and **link out** rather than explaining in full here.
   narrower suffices is stated where it is wired. `cq components` holds rung 1 and rung 2 to the same
   checks from one implementation.
 - [**Section boundary**](../standards/automation/context-discipline.md) — the moment a `## N.`
-  section's last task commits with another section still ahead: a clean point for a build to
-  **offer** to stop, because the resumption trail (`## Handoff`, `git log`, the recorded commit
-  subjects) is already maintained for other reasons, which is what makes the cut nearly free. The
-  trigger is **that event, never a window size** — a threshold invented before it is measured fixes
-  the answer. It offers and never imposes, never ends a run itself, and writes no new state.
+  section's last task commits with none of its tasks blocked: the section's own per-task commits
+  squash into one (execution.md §The section squash) before a build **offers** to stop — a clean
+  point, because the resumption trail (`##
+  Handoff`, `git log`, the recorded commit subjects) is already maintained for other reasons, which
+  is what makes the cut nearly free. The trigger is **that event, never a window size** — a
+  threshold invented before it is measured fixes the answer. It offers and never imposes, never
+  ends a run itself, and writes no new state.
 - [**Section reader**](../standards/automation/context-discipline.md) — the verb that resolves the
   `§X` address the prose was already writing: `cq components read <path> --sections "§A"` over free
   markdown, `cq specs section <slug> "A,B"` over a spec's fourteen canonical headings. Both take a
@@ -383,6 +410,16 @@ sentence, and **link out** rather than explaining in full here.
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
   cited by its full title; `cq specs` splits unconditionally, which is unreachable there because
   the fourteen canonical headings carry no comma and it refuses any name outside them.
+- [**Section squash**](../standards/workflows/task-execution.md) — the local `git reset --soft`
+  plus recommit that collapses a `## N.` section's own per-task commits into one, at that
+  section's own **Section boundary**, provided none of its tasks is `[!]`. The per-task chain that
+  verifies, ticks and commits stays exactly what it always was — this is what buys resumability
+  *while the section runs*; the squash only ever reaches back into commits its own section just
+  made, never a prior section's or anything already shared, which is the narrow, explicit exception
+  to "never rewrite an earlier commit." Every task the section held is re-stamped onto the
+  surviving commit's subject (or sha) in the same step — the **Commit record**'s granularity
+  narrows to the section, never loses resolvability. Distinct from the squash-**merge** strategy
+  `/quenching:specs:conclude` offers, which is a different mechanism at a different moment.
 - [**Report mold**](../standards/architecture/report-mold.md) — a seção única que possui a forma em
   que **todos** os comandos de uma frente imprimem seu relatório, citada por cada corpo, que declara
   só o próprio delta. Três bandas fixas (cabeçalho · corpo · próximo passo), blocos declarados fixos

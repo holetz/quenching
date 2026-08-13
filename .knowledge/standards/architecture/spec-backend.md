@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Spec backend interface
-description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, and the in-memory fake that turns "identical" into a checked property
+description: Where a repo's specs live is configurable, and the interface that makes every backend behave identically — five primitives over the canonical document rather than one method per CLI verb, a single shared derivation, the selected backend as sole source of truth, hybrid serialisation confined to each external implementation with the whole document (not just the parts it models) as its reassembly obligation, rendering derived state onto a native surface as a third category beside projection and storage, a relation to a git artifact (branch, commit, PR) as a fourth — attempted once, never atomic with the document — the receipt a tolerant slug resolution owes every payload and why it is folded in at a choke point rather than written verb by verb, and the in-memory fake that turns "identical" into a checked property
 resource: plugins/quenching/assets/bin/quenching/specs/backends/**, plugins/quenching/assets/references/specs-develop/spec-driven.md
 tags: [architecture, specs, backend, interface, serialization]
-timestamp: 2026-08-11
+timestamp: 2026-08-12
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass; §Placement is declared, and reaffirmed on every write and §Granular reading is about context, not I/O both rewritten by reduzir-as-chamadas-az-por-escrita-no-azure-boards (task 5.1), after one `azure-boards` section edit was measured spending nine `az` calls and 8,5s — four of them writes to the same work item — and the sentence claiming those fields cost 'never a round trip of their own' turned out to be a description that had been false for a year; §What this standard does not yet cover updated by the same plan (task 6.1), whose live run found four ways a write was not idempotent that no offline check could have seen; §What is declared stops at placement — never at the connection distilled from the same plan's §Alternatives Considered at its conclude, where declaring the organisation and project in `azurePlacement` was rejected as a second source of truth that fails silently by writing into somebody else's board; §Armazenado não é projetado extended by suportar-tipo-workitem-azure-por-tags (task 6.2) for `workItemType`, a fifth first-level key that fails the twin test on purpose — the abstract catalogue key and the concrete native name differ by a translation table — and stays in the document on every backend while its native name rides a write-only, never-read-back projection at creation; §What this standard does not yet cover extended by the same plan's conclude review (task 4.3), after a live run against a board that does not accept a spec's type measured `create_spec` leaving an unfiled item behind before `_resolve_board_field` refuses — a pre-existing gap, made reachable per spec rather than per repository once the type varies by create
+source: configurable-spec-backend plan (task 2.5); §What "the canonical document" covers added by fix-github-backend-tasks-fidelity (task 3.2), after the `github` backend was measured dropping every `### N.` group heading it stored; the `## Tasks`→sub-issue mapping retired by migrate-this-repo-to-github-backend, after 689 task sub-issues against 68 spec issues were measured serving a projection nothing ever read back; the issue title turned from a projection into storage, and the criterion refusing the capture date's, by evaluate-spec-creation-flow (tasks 2.2-2.3, 5.4) — 68 of 70 dates would have been rewritten to the migration's own day; §Rendering derived state is a third category added by labels-historico-spec-issue (task 6.1), after the `spec:` label/tag reconciliation it documents was measured live against a throwaway issue, catching an order-sensitive comparison that cost an extra round trip on every write; §Placement is declared, and reaffirmed on every write added by provar-e-posicionar-o-backend-azure-boards (task 2.7), measured against the `azure-boards` backend's own `azurePlacement`; §Armazenado não é projetado added by the same plan (task 3.6), after `not found` was measured on this repository's own tracker for a label GitHub does not already have, and reconciled with the third category above at that plan's conclude, when the two mechanisms met on the same field; §What this standard does not yet cover updated by the same plan (task 7.3), after task 6.3 ran `azure-boards` end to end against a real Azure DevOps project; §A tolerant resolution announces itself added by anunciar-resolucao-aproximada-em-todos-os-verbos (task 2.1), after the count of verbs owing the receipt was measured moving three times — six at capture, ten at design, eleven at build — and the structural guard it describes was proved firing on a reintroduced bypass; §Placement is declared, and reaffirmed on every write and §Granular reading is about context, not I/O both rewritten by reduzir-as-chamadas-az-por-escrita-no-azure-boards (task 5.1), after one `azure-boards` section edit was measured spending nine `az` calls and 8,5s — four of them writes to the same work item — and the sentence claiming those fields cost 'never a round trip of their own' turned out to be a description that had been false for a year; §What this standard does not yet cover updated by the same plan (task 6.1), whose live run found four ways a write was not idempotent that no offline check could have seen; §What is declared stops at placement — never at the connection distilled from the same plan's §Alternatives Considered at its conclude, where declaring the organisation and project in `azurePlacement` was rejected as a second source of truth that fails silently by writing into somebody else's board; §Armazenado não é projetado extended by suportar-tipo-workitem-azure-por-tags (task 6.2) for `workItemType`, a fifth first-level key that fails the twin test on purpose — the abstract catalogue key and the concrete native name differ by a translation table — and stays in the document on every backend while its native name rides a write-only, never-read-back projection at creation; §What this standard does not yet cover extended by the same plan's conclude review (task 4.3), after a live run against a board that does not accept a spec's type measured `create_spec` leaving an unfiled item behind before `_resolve_board_field` refuses — a pre-existing gap, made reachable per spec rather than per repository once the type varies by create; §A record renders onto a native surface too added by vincular-spec-a-branch-commits-e-pr (tasks 5.1-5.4), the first time the twin test was applied to a RECORD (`branch`, the new write-many `pr`) rather than a first-level state key — `github`'s own GraphQL schema measured, live against issue 917, to admit no mapping for an already-existing branch (`createLinkedBranch` creates one, never attaches one); `azure-boards`' `ArtifactLink` proved live (org `unicredbr`, project `TI`, a throwaway work item against the `hello-world-java` repository) to need a second, independent field — `attributes.name` — beside the vstfs `url` a correct URL alone was measured refused without
 maintainer: quenching
 ---
 
@@ -398,6 +398,67 @@ never again — `az boards work-item update` has no `--type` flag, so nothing in
 recompute it on a later write even if it wanted to. It is the projection `title:` used to be,
 before something read it back turned it into storage — the difference is that nothing here ever
 will, because a spec's type is fixed for its whole life.
+
+## A record renders onto a native surface too — branch, PR and per-task commits
+
+Everything above applies the twin test — §A native value is the same fact, or it is not a mapping
+at all — to first-level STATE keys (`tags`, `assignee`, `start`, `target`, `workItemType`). The
+same test applies to a **record**: `branch` (once building) and `pr` (once a PR is open, distinct
+from `merge`'s own `pr` field, which is stamped only once the merge already happened) both name a
+git fact a host may already have a native slot for. Whether it does, and what that slot costs,
+differs by backend — measured, not assumed, per `vincular-spec-a-branch-commits-e-pr` (tasks
+5.1-5.4).
+
+**`github` has no mapping for `branch.work` — not a missing feature, a platform fact.** The
+GraphQL mutation that links a branch to an issue, `createLinkedBranch`, is introspectable, and its
+own schema says what it does: `oid` is "the commit SHA to base the **new** branch on", `name` is
+"the name of the **new** branch." There is no argument that attaches a branch already in
+existence, which is always this plugin's case — `/quenching:specs:execute` creates or adopts the branch
+long before `branch:` is ever stamped. MEASURED live against this repository's own issue #917: the
+mutation refuses (`UNPROCESSABLE`) for a fresh name and for the already-existing one alike; the
+porcelain `gh issue develop --name <already-existing>` does not refuse, but does not attach either
+— it creates a second, DIVERGENT branch on the remote under the same name, off the repository's
+default branch, which is worse than a refusal because it looks like it worked. `branch.work` stays
+document-only on `github`, permanently, not pending a future API.
+
+**The PR gets a native surface for free, and it is what carries the branch along with it.** Once
+`/quenching:specs:conclude`'s PR route opens a PR whose body ends with `Refs #<issue>`, GitHub's own
+cross-reference populates the issue's Development panel with both the PR and the branch it was
+opened from — no dedicated call, because the call was already being made. This is the same shape
+`workItemType`'s native name already is: a projection resolved once, at the moment the fact
+becomes true, never re-read and never recomputed on a later write.
+
+**`azure-boards` can map `branch.work` and a task's commit, but only once the code repository
+itself is declared.** §Placement already establishes that a board's project and a code
+repository are independent facts here; extending that to artifact links needed a name for
+`repository`, `azurePlacement.repository` — no default, the same shape `areaPath` already has, and
+its absence is never a refusal: most `azure-boards` targets keep their code somewhere other than
+Azure Repos, this plugin's own repository among them, so the ordinary case is simply that no native
+link is attempted. The PR is **not** admitted on this backend, on the same twin test that admits
+the branch and the commit: Azure Repos' own `PullRequestId` artifact scheme names a pull request
+that is itself in Azure Repos, and `pr`/`merge.pr` always name a `github` one — linking one to the
+other would not be a mapping, it would be a false claim about which system reviewed the change.
+
+**A relation is a fourth shape, next to projection, storage and rendering — attempted once, never
+atomic with the document.** An `ArtifactLink` has no field this backend's ordinary read already
+returns; seeing one back would cost `$expand=relations` on every load, for a fact that changes on
+maybe two writes in a spec's whole life. So the relation is attempted exactly once — diffed against
+the PRE-WRITE `info` every backend already receives, never against a second Azure read — and in its
+own `az rest` call, separate from the document's PATCH: Azure's PATCH is all-or-nothing, and a
+rejected relation must never take the record it describes down with it. A refusal here is raised
+loudly rather than swallowed, the same shape `GitHubBackend._set_type` already uses for its own
+secondary write: the document already saved successfully by the time the relation is attempted, so
+nothing already true is undone by a relation that fails.
+
+**MEASURED, and worth stating because nothing in Microsoft's own `az` help text says it:** a
+relation whose `rel` is `ArtifactLink` and whose `url` is a correct vstfs URI still answers 400
+("Artifact links must have a valid name specified") without a second, independent field —
+`attributes: {name: "Branch"}` / `{name: "Fixed in Commit"}`. The url disambiguates WHICH artifact;
+the name is Azure's own display label for the relation, and the two are not derivable from each
+other. Proved live: org `unicredbr`, project `TI`, a throwaway work item linked against the
+`hello-world-java` repository (this plugin's own code lives on `github`, so no Azure Repos
+repository of its own exists to link against) — both a branch and a commit relation written and
+read back correctly via `--expand relations` once `attributes.name` was added, refused without it.
 
 ## Granular reading is about context, not I/O
 

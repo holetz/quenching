@@ -4,10 +4,10 @@ title: Plan lifecycle contract
 description: The single-folder lifecycle — plans/ plus archive/ — the derived ready stage and the approved record, the rule that frontmatter records human judgments while the filesystem, git and section presence record everything else, the append-only archive rule for facts that did not exist at the move, and the moment a follow-up becomes a spec — definition parks it as a Discoveries line, close-out mints it
 resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/**, plugins/quenching/assets/references/specs-develop/questions.md, /.specs/**
 tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
-timestamp: 2026-08-11
+timestamp: 2026-08-12
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5)
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it
 maintainer: quenching
 ---
 
@@ -42,22 +42,26 @@ always allowed, because open tasks are what closing out unbuilt work looks like.
 
 `archive/` is history, and nothing revises it. The one thing that may be added is a fact that
 **came into being after the move** — which is not a revision of what the spec claimed, but a
-record of what happened to it. There are exactly two, both written by `/quenching:specs:conclude` onto the
-spec that run is closing, and both before the merge:
+record of what happened to it. There are exactly three, all written by `/quenching:specs:conclude` onto the
+spec that run is closing, and none of them after the merge:
 
 | Append | Why it cannot be written earlier |
 | --- | --- |
 | `merge: {strategy, subject, pr}` | the subject names a merge commit that does not exist yet, and — on the PR route — `pr` names a pull request that does not exist until it is opened; stamping any of it *after* the merge would mean a write on the base branch, the exact thing the merge-last ordering exists to prevent |
 | the distillation's one line per minted doc, appended to `## Outcome` | `## Outcome` is drafted at the archive gate, before the distillation pass knows what it minted; the paths do not exist until the harvest runs |
+| `pr: {number, url, date}`, on the PR route | the number does not exist until `gh pr create` returns, which is after the archive move by construction. It is not `merge.pr` restated: under the orchestrator's minimal gear the run **stops** at the open PR, so `merge` is never stamped at all and this is the spec's only record of the PR — the fact would otherwise have no home anywhere |
 
 The shape of the test is what generalizes, not the count: an append is permitted only when the
 fact is **unavailable at promote time and unwritable anywhere else**. The distillation line
 qualifies on the second clause too — `/.knowledge/log.md` used to carry that provenance, and with the
 log retired the archived spec is the only honest home left for "this doc came from this spec".
 
-**A third exception is argued for, never assumed from these two.** Two precedents are how a
-bounded rule becomes an unbounded one; if a future run wants to write into `archive/`, the case is
-that the fact meets both clauses, not that the archive was already written to twice. A spec other
+**A further exception is argued for, never assumed from the ones already here.** Precedents are how
+a bounded rule becomes an unbounded one; if a future run wants to write into `archive/`, the case is
+that the fact meets both clauses, not that the archive was already written to before. The `pr:`
+row is what that demand looks like when it is met: it was added by a spec that had to show the
+number is unavailable at promote time *and* that no other record could hold it, rather than
+pointing at the two rows above it. A spec other
 than the one being closed is never touched, and a spec archived by an earlier run is never
 revisited.
 
@@ -103,15 +107,19 @@ record:
 | `refined: {mode, date}` | `develop` | no | that a real interrogation happened, and in which mode |
 | `approved: {date}` | `develop`, or `execute` inline | yes | that a human said go |
 | `branch: {base, work}` | `execute` | yes | after a merge, git cannot say what the base was |
+| `pr: {number, url, date}` | `conclude` | no | which pull request carries this spec, before any merge decides its fate — restampable because a PR may be reopened or recreated |
 | `reviewed: {date}` | `conclude` | no | that a human read the whole branch diff |
 | `merge: {strategy, subject, pr}` | `conclude` | yes | the strategy was a choice; the subject names the merge it produced; `pr` names the pull request on the PR route, unwritable before it exists |
 | `outcome: done \| abandoned` | `conclude` | yes | the verdict on whether the work completed |
 
 Read top to bottom, the records narrate the spec's history in order: ranked, interrogated,
-approved, isolated, reviewed, merged, closed. **Not** "built" — `branch` narrates that isolation
-was taken (a worktree or a branch cut, `base` and `work` recorded), never that the work
-finished; "built" is the derived stage `executing` (`stages.derived`, keyed off task state or a
-filled `## Handoff`), which a spec built in place, with no `branch` record at all, still reaches.
+approved, isolated (or explicitly not), PR opened, reviewed, merged, closed. **Not** "built" —
+`branch` narrates which work ref was resolved, taken (a worktree or a branch cut) or declined
+(`work` equal to `base`), never that the work finished; "built" is the derived stage `executing`
+(`stages.derived`, keyed off task state or a filled `## Handoff`), which a spec built in place
+reaches exactly the same way an isolated one does. **`work == base` is a record about isolation,
+not a live work ref** — the base branch never dies, so anything asking git whether that ref is
+alive gets *yes* forever ([plan-git-record.md](plan-git-record.md) §Three frontmatter records).
 `writeOnce: true` marks an irreversible transition —
 rewriting the value would falsify a fact that already happened; the restampable three each carry
 their own `date` because their owning command may legitimately re-judge. In neither case may a

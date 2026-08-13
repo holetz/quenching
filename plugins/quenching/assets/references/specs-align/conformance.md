@@ -63,7 +63,8 @@ can produce.
 `.claude/quenching.json`, at the **repo root** — the `backend` key naming which store holds the
 specs. Read by `cq specs config --json`, which exits 0 whether or not anything is declared; the
 recognised keys, their defaults, and every way the file can be wrong are owned by
-[plugin-configuration.md](/.knowledge/standards/workflows/plugin-configuration.md) §The recognised keys.
+[plugin-configuration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/plugin-configuration.md)
+§The recognised keys.
 It is **not** `specs/config.json` any more — a stranded copy is named (`sp-config-legacy-location`),
 never merged, and deliberately exempt from `sp-stray-file`.
 

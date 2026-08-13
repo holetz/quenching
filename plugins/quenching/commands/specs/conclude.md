@@ -96,6 +96,7 @@ is already set is **reported and skipped**, not repeated:
 | archive | the file is in `archive/` with `outcome:` stamped | skip the move; go to distil |
 | distil | no record — it is offered once per conclude | offer it; an empty harvest is a valid answer |
 | release obligations | the branch diff already carries what the standard requires | report it satisfied; re-read the standard only if the diff grew |
+| PR opened, not merged | a `pr:` record present, `merge:` absent | never re-open a second PR — read `gh pr view <number> --json state` for the number `pr:` names; `MERGED` → stamp `merge:` now with the strategy step 4 would have chosen and continue from step 7; still `OPEN` → report the link and stop again, exactly the minimal-gear stopping point, unless the human now asks to merge it |
 | merge stamp | a `merge:` record in frontmatter | skip the stamp; the merge itself may still be pending |
 | validation gate | no record — it is a verdict on the tree as it stands *now* | always re-run it; a green run from before the last commit proves nothing |
 | merge | `git branch --merged` lists the work branch | skip; never merge twice |
@@ -112,9 +113,17 @@ is a **finding to report**, never a value to overwrite.
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
-Take the slug from the input, or run `cq specs list --json` and ask. Establish the outcome —
-**ask if it was not stated**, via **AskUserQuestion**: *done* (it shipped) or *abandoned* (it will
-not be built).
+A slug in the input → use it. **No slug given → try auto-discovery first**, off the current
+branch's own marking:
+[auto-discover.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/auto-discover.md)
+§Reading the marking §Filtering to valid slugs §Resolving what remains, cited rather than
+restated. One valid slug resolves it silently, naming the marking as the source; more than one asks
+which, via **AskUserQuestion**. No valid marking → §The fallback there measures the diff and always
+asks whether to materialize a minimal spec — accepted, its new slug is used from here on exactly
+like a marked one. **Declined, headless completion — closing with no spec file at all — is not yet
+built**: say so, record it with `cq specs discover`, and fall back to `cq specs list --json` and
+ask, exactly as before this spec. Establish the outcome — **ask if it was not stated**, via
+**AskUserQuestion**: *done* (it shipped) or *abandoned* (it will not be built).
 ```bash
 cq specs status --spec "<slug>" --json
 ```
@@ -142,8 +151,9 @@ Present the findings. Fixes go in as ordinary commits on the branch, before the 
 the record — `cq specs record "<slug>" reviewed --set date=<today>`, never by editing the
 frontmatter.
 
-No `branch` record (the work was done in place), or no git → say so and skip to step 4; there is no
-branch diff to read.
+**The test is `branch.work != branch.base`, never the record's presence** — in-place work stamps
+one too (`git.md` §Where a branch comes from). No record, `work` equal to `base`, or no git → say
+so and skip to step 4; there is no branch diff to read.
 **Done when:** the diff was read and `reviewed` is stamped, or the run recorded why there was
 nothing to review.
 
@@ -165,12 +175,12 @@ A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → 
 no bundle.
 
 ### 4. Choose the merge strategy and route, then write `## Outcome` and archive
-For `done` with a `branch` record, offer the strategies in
+For `done` with a work ref of its own (`branch.work != branch.base` — in place there is nothing to merge), offer the strategies in
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
-delete the branch** — a squash collapses every per-task commit, so each task's recorded `subject:`
-resolves only while the branch survives. Say that plainly rather than deleting and discovering it
-later.
+delete the branch** — a squash collapses every per-section commit, so each task's recorded
+`subject:` resolves only while the branch survives. Say that plainly rather than deleting and
+discovering it later.
 
 **Then, separately, offer the route** — pull request, or local — per
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
@@ -242,10 +252,9 @@ cq specs record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)"
 ```
 
-**PR route, stamp nothing here** — step 6's push/PR block stamps `strategy`, `subject` and `pr`
-together, in one call, once the PR exists and the gate has already passed. Either way the record is
-write-once: a spec already carrying one refuses (exit 2) with the value it holds — the finding
-§Resuming describes, never a value to edit past.
+**PR route, stamp nothing here** — step 6 stamps `pr:` the moment the PR exists, then `merge:` if
+that same run merges. `merge` is write-once: a spec already carrying one refuses (exit 2) with the
+value it holds — the finding §Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
 none — see
@@ -253,10 +262,9 @@ none — see
 §When there is no merge commit to name. `cq specs validate` reports a record that gets this
 backwards either way (`sp-bad-merge`).
 
-The archived spec now lives in `archive/`, so stamping it is one of the two edits this command
-makes to a file already there — the other is the distillation's append to `## Outcome` above.
-Both are permitted because they touch *this* spec, closing *this* run, and because the
-alternative is a write on the base after the merge. Commit them on the branch.
+The archived spec now lives in `archive/`, so stamping it is one of the three edits this command
+makes to a file already there — §Invariants names all three. Each touches *this* spec, closing
+*this* run, and the alternative is a write on the base after the merge. Commit them on the branch.
 
 For `abandoned` nothing is merged, so nothing is stamped **and no release obligation is settled** —
 a version nobody adopted is a claim the history should not carry. The distillation above still runs.
@@ -304,10 +312,8 @@ being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. The repo's own
-[surface-verification.md](../../../../.knowledge/standards/quality/surface-verification.md)
-§The five preconditions a check must satisfy is where that distinction is defined for the command
-surface.
+it. The repo's own [surface-verification.md](../../../../.knowledge/standards/quality/surface-verification.md)
+§The five preconditions a check must satisfy is where that distinction is defined for the command surface.
 
 **Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
 one, so a check with a `--only`-style selector gets the subset this branch can actually break — the
@@ -343,28 +349,45 @@ finding** — never repaired with another commit, because a commit on the base a
 exact thing this ordering exists to prevent. If something must be fixed, say so and let the human
 start a new change.
 
-**PR route.** Push, open the PR, stamp the merge record now that it exists, and merge it — **one
-consented block**, per
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
-Show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
-choosing the PR route in step 4 was not this consent:
+**PR route.** Push and open the PR, stamping `pr:` the moment it exists. Under the orchestrator's
+minimal-gear authorization this part asks nothing — irreversible cycle actions do not gate under
+that gear. Every other run asks first, in the **same consented block** as the merge below, per
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route:
+show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
+choosing the PR route in step 4 was not this consent.
+
+**On backend `github`, the body always ends with a `Refs #<issue>` line** — the spec's own locator
+names the issue. The cross-reference puts both the PR and its branch in the issue's Development
+panel at zero extra calls, which a branch alone can never buy (`spec-backend.md` §A record renders
+onto a native surface too). Other backends have no issue to reference.
 
 ```bash
 git push -u origin plan/<slug>
-gh pr create --base <base> --title "<title>" --body "<body>"
+gh pr create --base <base> --title "<title>" --body "<body>
+
+Refs #<issue-number>"
+cq specs record "<slug>" pr --set number=<the PR's number> --set url=<the PR's URL> --set date=<today>
+```
+
+**Running under `/quenching:specs:orchestrate`'s minimal-gear authorization → stop here.** Do not
+call `gh pr merge` and do not stamp `merge:` — report the PR link and end the run. The merge waits
+on human review, exactly as convergence.md §The PR route promises; a later `conclude` run, or a
+human merging by hand, finishes it — §Resuming's "PR opened, not merged" row is the resume path.
+
+**Every other run → merge now**, in the same consented block as the push and the PR above:
+
+```bash
 cq specs record "<slug>" merge --set strategy=<chosen in step 4> \
   --set subject="plan/<slug>: merge (<strategy>)" --set pr=<the PR's URL>
 gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<strategy>)"
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch — which stays `main`
-([branching.md](/.knowledge/standards/git/branching.md) §O consumidor não muda nada — depends on it
-never moving — see `## Out of Scope` in the spec that introduced the develop/main
-flow). `<base>` here is this spec's own resolved base — the same one the local route's merge
-targets — so a spec whose base is the declared integration branch opens its PR against that
-branch, never against the publication one, without any GitHub repository setting having to
-change.
+default branch, which stays `main`
+([branching.md](/.knowledge/standards/git/branching.md) §O consumidor não muda nada). `<base>` is
+this spec's own resolved base — the one the local route merges into — so a spec cut from the
+declared integration branch opens its PR there, never against the publication one, with no GitHub
+setting having to change.
 
 `fast-forward` never reaches this block — step 4 already ruled the PR route out under it, so
 `gh pr merge`'s missing fast-forward mode is never a live gap. `cq specs record` refuses `pr:` set
@@ -410,7 +433,8 @@ For `abandoned`, do not merge and do not remove the worktree. Offer to keep the 
 delete it, and record the choice in the report.
 **Done when:** the gate ran green on the branch and the merge landed with its subject asserted, any
 worktree was removed or its refusal reported, or the run recorded why nothing was merged — a red
-gate among them.
+gate among them, or (PR route, minimal-gear authorization) the PR opened and `pr:` was stamped with
+the merge deliberately left for later.
 
 ### 7. Report
 
@@ -422,8 +446,8 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 Emit §The report mold. The single-spec header line carries the archived locator and the outcome; four
 body blocks:
 
-1. **At close** — fixed. Task progress, `reviewed` / `merge` / `branch` as they now stand, and — for
-   an abandonment — that nothing was adopted.
+1. **At close** — fixed. Task progress, `reviewed` / `pr` / `merge` / `branch` as they now stand,
+   and — for an abandonment — that nothing was adopted.
 2. **The review** — fixed. What it found and what was done about it, the docs written in step 3 and
    step 5, and what the pre-merge gate returned. §Quoting a tool's own output governs the gate's
    result, which means **a check that came back inconclusive is named as such, never counted as
@@ -471,10 +495,12 @@ block are all reported.
   states — a bump nobody asked for is a release claim this command had no authority to make.
 - Never bulk-copy a spec into `/.knowledge/`; only what outlives it crosses.
 - Never distil an abandoned spec's decisions as adopted knowledge; `background` is the ceiling.
-- Never edit or delete anything already in `archive/`, with exactly two exceptions, both in
-  step 5 and both onto the spec this run is closing: the `merge:` stamp, and the distillation's
-  one-line-per-doc append to `## Outcome`. Both record facts that only exist after the archive
-  move; neither revises what the spec claimed. Never touch a spec other than that one, and never
-  revise an archived spec from an earlier run.
+- Never edit or delete anything already in `archive/`, with exactly three exceptions, all onto the
+  spec this run is closing: the distillation's `## Outcome` append and the `merge:` stamp in step
+  5, and the `pr:` stamp in step 6 on the PR route. Each records a fact that did not exist at the
+  archive move and has nowhere earlier to live — the two-clause test in
+  [plan-lifecycle.md](/.knowledge/standards/workflows/plan-lifecycle.md) §The archive is append-only,
+  which a further exception is argued against, never assumed into. None revises what the spec
+  claimed. Never touch a spec other than that one, nor an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.

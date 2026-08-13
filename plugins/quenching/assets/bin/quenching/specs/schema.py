@@ -51,7 +51,7 @@ DEFAULT_SCHEMA: dict = {
     },
     "frontmatter": {
         "required": ["slug", "title", "date"],
-        "optional": ["verification", "priority", "refined", "approved", "branch", "reviewed",
+        "optional": ["verification", "priority", "refined", "approved", "branch", "pr", "reviewed",
                      "merge", "outcome", "workItemType", "tags", "assignee", "start", "target"],
         "verification": list(VERIFICATION_POLICIES),
         "outcome": list(OUTCOMES),
@@ -68,6 +68,8 @@ DEFAULT_SCHEMA: dict = {
                          "label": "spec:approved"},
             "branch": {"fields": ["base", "work"],
                        "writtenBy": "execute", "writeOnce": True},
+            "pr": {"fields": ["number", "url", "date"],
+                   "writtenBy": "conclude", "writeOnce": False},
             "reviewed": {"fields": ["date"],
                          "writtenBy": "conclude", "writeOnce": False,
                          "label": "spec:reviewed"},

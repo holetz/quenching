@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 
+from quenching.common.git import _git
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.hybrid import (hybrid_project, hybrid_split, hybrid_title_join,
                                              hybrid_unwrap, hybrid_wrap)
@@ -431,6 +432,26 @@ def azure_patch_culprit(ops: list[dict], said: str) -> str | None:
     return None
 
 
+def azure_artifact_url(kind: str, project_id: str, repo_id: str, value: str) -> str:
+    """The `vstfs:///Git/...` URI an `ArtifactLink` relation's `url` carries — Microsoft's own
+    fixed encoding, `<projectId>%2F<repositoryId>%2F<value>`, one scheme per artifact kind.
+    `kind='pr'` is deliberately not admitted here: the `PullRequestId` scheme names a Pull
+    Request that is itself in Azure Repos, and this plugin's `pr`/`merge.pr` records always
+    name a `github` one — not the same artifact, so not a mapping (## Design)."""
+    scheme = {"branch": "Ref", "commit": "Commit"}[kind]
+    tail = f"GB{value}" if kind == "branch" else value
+    return f"vstfs:///Git/{scheme}/{project_id}%2F{repo_id}%2F{tail}"
+
+
+# `attributes.name` per relation — MEASURED live (task 5.4) against a throwaway work item
+# (org `unicredbr`, project `TI`): `rel: "ArtifactLink"` alone answers 400 "Artifact links
+# must have a valid name specified", regardless of what the `url` scheme already says. The
+# url disambiguates WHICH artifact; this name is Azure's own display label for the relation
+# and is a second, independent requirement — read back and confirmed via `--expand relations`
+# on the same probe.
+AZURE_ARTIFACT_LINK_NAME = {"branch": "Branch", "commit": "Fixed in Commit"}
+
+
 class AzureBoardsBackend(SpecBackend):
     """Specs as Azure Boards work items, reached through `az boards` in a subprocess.
 
@@ -482,6 +503,7 @@ class AzureBoardsBackend(SpecBackend):
                 work_item_type: str | None = None, iteration_path: str | None = None,
                 parent_id: int | None = None, team: str | None = None,
                 board_column: str | None = None,
+                repository: str | None = None,
                 column_map: dict[str, str] | None = None,
                 tag_catalog: dict[str, str] | None = None,
                 types: dict[str, dict] | None = None) -> None:
@@ -507,6 +529,13 @@ class AzureBoardsBackend(SpecBackend):
         self.parent_id = parent_id
         self.team = team
         self.board_column = board_column
+        # `azurePlacement.repository` — the Azure Repos repository name backing this target's
+        # CODE, declared because §Design's own `resolve_azure_project` already established
+        # that a board project and a code repository are independent facts here. `None` on
+        # every target whose code is not in Azure Repos, which is the ordinary case — never a
+        # refusal, only the absence of the branch/commit `ArtifactLink` below.
+        self.repository = repository
+        self._repo_ids: tuple[str, str] | None = None
         self.column_map = column_map or {}
         self.tag_catalog = tag_catalog or {}
         # WEF_<guid>_Kanban.Column, per work-item-type — a process resolving specs of more
@@ -929,7 +958,67 @@ class AzureBoardsBackend(SpecBackend):
                                parent=parent)
         if ops:
             self._az_patch(f"updating work item {item_id}", item_id, ops)
+        if self.repository:
+            self._link_new_artifacts(item_id, info, fresh)
         self._invalidate()
+
+    def _link_new_artifacts(self, item_id: int, old_info: dict, fresh: dict) -> None:
+        """`branch`/task-commit `ArtifactLink`s, attempted only for what THIS write actually
+        changed — an internal diff against `old_info` (the pre-write read every caller already
+        hands `write_spec`), never a second Azure read. §Design: a relation has no field this
+        backend already reads back, so the alternative would be `$expand=relations` on every
+        load; comparing the document to itself is what makes one attempt per real change cost
+        nothing on every OTHER write."""
+        old_branch = (old_info["frontmatter"].get("branch") or {}).get("work")
+        new_branch = (fresh["frontmatter"].get("branch") or {}).get("work")
+        if new_branch and new_branch != old_branch:
+            self._link_artifact(item_id, "branch", new_branch)
+        old_subjects = {t.get("id"): t.get("subject") for t in old_info["tasks"]}
+        for task in fresh["tasks"]:
+            subject = task.get("subject")
+            if not subject or subject == old_subjects.get(task.get("id")):
+                continue
+            sha = _git(os.getcwd(), "log", "--fixed-strings", "--grep", subject,
+                      "--format=%H", "-1").strip()
+            if sha:
+                self._link_artifact(item_id, "commit", sha)
+
+    def _resolve_repo_ids(self) -> tuple[str, str]:
+        """`(projectId, repositoryId)` for `self.repository` — cached the same way the
+        project's own name already is (§Granular reading), keyed under it so more than one
+        repository in the same project resolves independently."""
+        cached = (azure_cache_read(self.org, self.project).get("repos") or {}).get(
+            self.repository)
+        if cached:
+            return cached["projectId"], cached["repositoryId"]
+        repo = self._az_raw("resolving `azurePlacement.repository`", "repos", "show",
+                            "--repository", self.repository, "--project", self.project)
+        project_id = ((repo or {}).get("project") or {}).get("id")
+        repo_id = (repo or {}).get("id")
+        if not (project_id and repo_id):
+            raise BackendRefusal({
+                "code": "sp-az-repo-unresolved", "exit": 2, "repository": self.repository,
+                "message": f"`azurePlacement.repository` ('{self.repository}') does not "
+                           f"resolve against project '{self.project}' — no native link was "
+                           f"attempted; the record itself is already saved",
+            })
+        repos = azure_cache_read(self.org, self.project).get("repos") or {}
+        repos[self.repository] = {"projectId": project_id, "repositoryId": repo_id}
+        azure_cache_write(self.org, self.project, repos=repos)
+        return project_id, repo_id
+
+    def _link_artifact(self, item_id: int, kind: str, value: str) -> None:
+        """Add ONE `ArtifactLink` relation, in its OWN `az rest` call — never folded into the
+        document PATCH above. Raises on refusal, the same shape `GitHubBackend._set_type`
+        already uses for its own secondary, best-effort write: the document already saved
+        successfully by the time this runs, so a refusal here is reported loudly rather than
+        swallowed, and never undoes what already landed."""
+        project_id, repo_id = self._resolve_repo_ids()
+        url = azure_artifact_url(kind, project_id, repo_id, value)
+        self._az_patch(f"linking {kind} '{value}' to work item {item_id}", item_id,
+                       [{"op": "add", "path": "/relations/-",
+                         "value": {"rel": "ArtifactLink", "url": url,
+                                   "attributes": {"name": AZURE_ARTIFACT_LINK_NAME[kind]}}}])
 
     def create_spec(self, phase: str, filename: str, text: str) -> str:
         announce_unproved(self.name)
@@ -1250,6 +1339,7 @@ def open_azure_backend(root: str) -> tuple[SpecBackend | None, dict]:
                               iteration_path=placement.get("iterationPath"),
                               team=placement.get("team"),
                               board_column=placement.get("boardColumn"),
+                              repository=placement.get("repository"),
                               column_map=cfg["azureColumns"],
                               tag_catalog=cfg["tagCatalog"],
                               types=cfg["workItemTypes"]), {}
