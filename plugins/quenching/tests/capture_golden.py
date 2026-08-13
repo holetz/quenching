@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Freeze the `--json` contract of the four shipped scripts as golden outputs.
 
-`python3 plugins/quenching/tests/capture_golden.py` rebuilds
-`tests/fixtures/golden/` from scratch: one file per captured invocation, plus an
-`INDEX.json` naming the exact argv, cwd and exit code behind each one.
+DO NOT RUN THIS FILE DIRECTLY. `SPECS_PY`/`SKILLS_PY`/`SESSION_PY`/`OKF_PY` name the
+four pre-refactor scripts `plan/modularizar-specs-knowledge-components` (task 10.1)
+deleted. `main()` still deletes every existing golden first, then shells out to
+those paths; each `Capture.run` gets an empty stdout back (`python3: can't open
+file ...`, exit 2, recorded in `INDEX.json` but never checked), and `main()`
+reports success regardless. Running it today does not regenerate the goldens —
+it silently empties them.
 
-The capture only exists while `specs.py`, `skills.py`, `session.py` and
-`okf-validate.py` are the four separate scripts it shells out to. A refactor that
-merges them into a package cannot regenerate these goldens — it can only be
-measured against them.
+The four `capture_*` functions below are still live: `test_golden.Replay` imports
+and reuses them, pointed at `cq` instead of `SCRIPTS`, to both compare against and
+(`renomear-docs-para-knowledge`, task 6.1, 2026-08-13) refresh the frozen bytes.
+`main()` itself has had no working target since that refactor; fix `SCRIPTS` before
+ever invoking it again.
 
 Everything that varies between machines or runs goes through `normalize`, which
 the regression suite re-imports so both sides of a comparison are normalized by
