@@ -136,7 +136,7 @@ def run_hook() -> int:
             has_block, well_formed = frontmatter_block(content)
             if not has_block or not well_formed or not _nonempty(fm, "type"):
                 _emit_deny(f"[{TAG}] this concept doc needs parseable frontmatter with a non-empty `type` "
-                           "(OKF requirement). Add the `type` before writing, or use `quenching-docs-add`.")
+                           "(OKF requirement). Add the `type` before writing, or use `quenching-knowledge-add`.")
                 return OK
         return OK
 
