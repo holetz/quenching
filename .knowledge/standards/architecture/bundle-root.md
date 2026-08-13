@@ -4,7 +4,7 @@ title: The bundle root is the fixed `/.knowledge/` convention
 description: The OKF bundle of a target repo lives at the fixed `/.knowledge/` root and a files-backend specs workspace at the fixed `/.specs/` root — no configuration file names either, because an LLM executor runs command bodies literally and a root it must resolve from configuration is a root it can resolve wrong
 resource: /.knowledge/**, /.specs/**
 tags: [architecture, bundle, okf, convention, config]
-timestamp: 2026-08-06
+timestamp: 2026-08-13
 audience: both
 authority: current
 source: docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — proved by the migration itself: the bundle and the workspace moved to the fixed roots and every shipped reader updated in the same branch
@@ -55,6 +55,15 @@ target's choice, so no target ever needs to point the plugin at it.
 - **The harness line cites it.** The root harness's one-line language declaration points at
   `/.knowledge/standards/agents/communication.md` — a citation that is the same string in every repo
   only because the root is fixed ([communication.md](../agents/communication.md)).
+
+## Changing a fixed root — one route only
+
+A fixed root is not immutable — it changed once already: the bundle root was `/.docs/` until
+`renomear-docs-para-knowledge` (2026-08-13) moved it to `/.knowledge/`. **The only way either
+fixed root above changes between plugin releases** is the procedure in
+[root-migration.md](root-migration.md) — detected structurally, site by site, never gated on
+`okf_version`. Nothing else moves a root: not a config key (there is none to add), not a
+convention drifting in prose, not a target improvising its own path.
 
 ## Nothing else contradicts it
 
