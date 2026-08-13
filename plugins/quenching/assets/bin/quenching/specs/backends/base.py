@@ -55,7 +55,7 @@ class SpecBackend:
     # nothing ever called it or overrode it, because the reconciliation belongs INSIDE
     # `write_spec`: it has to ride the store call's own request to satisfy the "costs zero
     # calls beyond the write already being made" condition
-    # (/.docs/standards/architecture/spec-backend.md §Rendering derived state). A hook that
+    # (/.knowledge/standards/architecture/spec-backend.md §Rendering derived state). A hook that
     # every implementer must fold into `write_spec` anyway is a sixth primitive that does
     # nothing, and this interface stays five.
 

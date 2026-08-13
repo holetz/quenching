@@ -59,7 +59,7 @@ Read it as this skill's doctrine. What follows is only what is **specific to `.c
   `/quenching:components:command:new` run would cost N sessions to reach a verdict none of them can reach.
   The edit still gates on its own OK, and a **trigger phrase is never deleted here** — that is
   `/quenching:components:command:eval`'s, on a measured miss.
-- **This front is honestly short, and says so.** `/.docs/` and `/.specs/` each have an out-of-band
+- **This front is honestly short, and says so.** `/.knowledge/` and `/.specs/` each have an out-of-band
   store to drain; this one has none, and the migration is idempotent — so the loop reaches a
   fixpoint in **1–2 passes**, essentially always. It is not ceremony: a rename in the migration
   shifts the registry and can dangle a reference, and re-probing catches that in the same run. But
@@ -80,7 +80,8 @@ Resolve `cq components` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**Every shell grant is scoped**, per `automation/skills.md`
+**Every shell grant is scoped**, per
+[`/.knowledge/standards/automation/skills.md`](../../../../.knowledge/standards/automation/skills.md)
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
 blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
@@ -124,7 +125,7 @@ place, every boundary present — while the surface pays for prose about *how* e
 §8's review a parser can decide, for one call; the prose no parser names, §8 cuts by the read.
 
 An **empty** surface (no commands, no skills) also stops: scaffolding a taxonomy for zero commands
-is ceremony. Note whether an OKF bundle exists (`/.docs/index.md` with `okf_version`) and say so once
+is ceremony. Note whether an OKF bundle exists (`/.knowledge/index.md` with `okf_version`) and say so once
 — without one the rule and registry stay out of scope, while the migration still applies.
 
 The registry zone is deliberately **not** probed: `registry reindex` has no dry run, and it is one
@@ -146,9 +147,9 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
-→ unroutable). Read `/.docs/standards/automation/skills.md` if present — it governs; note whether
-the rule and the registry (`/.docs/documentation/reference/automation.md`) exist, and whether
-the rule and the registry (`/.docs/documentation/reference/automation.md`) exist.
+→ unroutable). Read `/.knowledge/standards/automation/skills.md` if present — it governs; note whether
+the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist, and whether
+the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist.
 **Done when:** the inventory table (item · classification · `sk-*` gap) covers every item in the
 working set, and no file changed.
 
@@ -260,7 +261,7 @@ sweep.
 against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-(`automation/skills.md` §The admission criterion). The split is
+([skills.md](../../../../.knowledge/standards/automation/skills.md) §The admission criterion). The split is
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in

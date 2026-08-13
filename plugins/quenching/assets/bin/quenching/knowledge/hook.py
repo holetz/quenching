@@ -8,13 +8,13 @@ answered".
 HOOK  (reads the hook JSON on stdin)
 Dispatches on `hook_event_name`:
 - **PostToolUse** (matcher `Write|Edit`): validates the single touched
-  `/.docs/**` file and, on a finding, **PROPOSES** the fix via
+  `/.knowledge/**` file and, on a finding, **PROPOSES** the fix via
   `additionalContext` (exit 0). With `blockOnFail: true` it escalates to
   `decision: block` (the reason is fed back to Claude). It also touches the
   **dirty marker** (a stamp file in the system temp dir) so the Stop sweep
   knows the bundle changed this session.
 - **Stop**: with `stopScan: "dirty"` (the default), exits immediately when
-  the dirty marker is absent — a turn that touched no `/.docs/**` file costs
+  the dirty marker is absent — a turn that touched no `/.knowledge/**` file costs
   one stat, not a full-bundle scan. When the marker is present (or
   `stopScan: "always"`), validates the whole bundle in a SINGLE read pass
   and PROPOSES residual gaps (`additionalContext`, exit 0); the marker is
@@ -25,6 +25,11 @@ Dispatches on `hook_event_name`:
   only the two hard violations — writing an `index.md` that carries a concept
   `type`, or writing a concept doc with no non-empty `type`. This is the single
   hard gate; everything else proposes. Off by default (proposes, never blocks).
+  It never consults `validate_file`/`validate_tree` — so an `okf-legacy-*` finding
+  (raised only by those two, and only when a write already lands under the CURRENT
+  root) can never reach this gate; measured against a discard bundle in the old
+  layout, a write under the old root is invisible to `_under_docs` too, so nothing
+  denies it either. `okf-legacy-*` is declared `error` on that basis.
 
 EVERY PATH RETURNS `OK`. The hook signals through the JSON on stdout — `_emit_block`,
 `_emit_deny`, `_emit_additional_context` — and never through the exit code, which is why
@@ -98,7 +103,7 @@ def run_hook() -> int:
     if cfg.get("enabled") is False:
         return OK
     event = data.get("hook_event_name") or ""
-    docs_dir = ".docs"
+    docs_dir = ".knowledge"
     bundle_root = os.path.join(project, docs_dir)
     started = time.monotonic()
     deadline = float(cfg.get("deadlineMs", DEFAULTS["deadlineMs"])) / 1000.0
@@ -131,7 +136,7 @@ def run_hook() -> int:
             has_block, well_formed = frontmatter_block(content)
             if not has_block or not well_formed or not _nonempty(fm, "type"):
                 _emit_deny(f"[{TAG}] this concept doc needs parseable frontmatter with a non-empty `type` "
-                           "(OKF requirement). Add the `type` before writing, or use `quenching-docs-add`.")
+                           "(OKF requirement). Add the `type` before writing, or use `quenching-knowledge-add`.")
                 return OK
         return OK
 
@@ -161,7 +166,7 @@ def run_hook() -> int:
         if data.get("stop_hook_active"):
             return OK
         if str(cfg.get("stopScan", "dirty")) != "always" and not os.path.exists(_marker_path(project)):
-            return OK  # no docs/** edit since the last completed scan — 1 stat, no walk
+            return OK  # no .knowledge/** edit since the last completed scan — 1 stat, no walk
         findings = validate_tree(bundle_root, deadline=started + deadline, ignore_globs=ignore_globs)
         if findings is None:
             return OK  # deadline expired mid-walk — abort silently, KEEP the marker for next turn

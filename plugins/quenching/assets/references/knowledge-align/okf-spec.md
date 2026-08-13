@@ -35,7 +35,7 @@ the plugin enforces; [conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/kn
 - Type values are **not** registered centrally. Producers **SHOULD** pick descriptive,
   self-explanatory values; consumers **MUST** tolerate unknown types gracefully.
 - This plugin fixes a **descriptive vocabulary** per home (`standard`, `system`, `schema`,
-  `table`, `vision`, `documentation`, `knowledge`, `reference`,
+  `table`, `vision`, `documentation`, `concept`, `external`,
   `sidecar`) so the surface is uniform and greppable.
 
 ## Normative rules
@@ -84,23 +84,23 @@ keys, broken links, or a missing `index.md`.
 OKF is permissive; this plugin narrows it into a portable **signature** (all still
 OKF-valid — additive keys, descriptive types, reserved-file structures):
 
-1. **`index.md` carries no frontmatter** — except the **root** `docs/index.md`, which carries
+1. **`index.md` carries no frontmatter** — except the **root** `.knowledge/index.md`, which carries
    **only** `okf_version: "0.1"`.
 2. **`type` is mandatory and drawn from the fixed vocabulary** per home (see
    [taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/taxonomy.md)).
 3. **`resource` is derived, never invented** — for standards a comma-separated **glob set** of
    what the doc governs (`*`/`**` only, repo-root-relative); for catalog/reference the asset URI.
    Empty is disallowed, and so is self-pointing (`resource-self`) — except a **bundle-level
-   aggregate** whose scope contains the bundle root, which `knowledge/glossary.md` legitimately
+   aggregate** whose scope contains the bundle root, which `glossary.md` legitimately
    is. A glob states what the doc governs and is the input the staleness check reads; a
    `file:line` states only where a rule happens to be written today.
 4. **`log.md` is retired** — nothing in this plugin creates one, appends to one, or checks
    one. It stays a **reserved** name all the same: a log left over from an earlier alignment
    is still recognized, so it is never read as a malformed concept doc and never blocked.
    Unreserving it is a different and much worse change than retiring it — see
-   `docs/standards/architecture/retiring-a-reserved-artifact.md`. Provenance that used to
+   `.knowledge/standards/architecture/retiring-a-reserved-artifact.md`. Provenance that used to
    land here now lands in the archived spec's `## Outcome`.
-5. **Links:** relative within a home, absolute `/.docs/...` across homes.
+5. **Links:** relative within a home, absolute `/.knowledge/...` across homes.
 6. **Canonical English structure** — folder names **and concept-doc file slugs**, keys, enum
    values, and the `type` vocabulary. Frontmatter is English; **body prose MAY follow the repo's
    language**. Identifier-derived slugs (catalog tables/schemas, repo names)

@@ -192,7 +192,7 @@ Both folds share two guarantees:
 ## Migrating a legacy `openspec/` workspace (`sp-legacy-workspace`)
 
 The only place `openspec/` is touched: `openspec/` → `specs/`; each
-`openspec/specs/<capability>/spec.md` folded into `docs/standards/` by a **human-chosen** cut (no
+`openspec/specs/<capability>/spec.md` folded into `knowledge/standards/` by a **human-chosen** cut (no
 OKF bundle → the fold stops and `/quenching:knowledge:align` is suggested first); `config.yaml` removed; the delta
 folders discarded once folded or confirmed obsolete; non-diverged shadow copies and `/opsx:*`
 wrappers removed. **Interop with the external OpenSpec CLI is lost — say so before applying.** A
@@ -211,7 +211,7 @@ to another command).
 | `sp-stray-heading` | A `##` heading outside the canonical fourteen | The human — folding a stray into a canonical section is a judgment about what it *meant*. |
 | `sp-overview-missing` | A spec meets the whole ready gate but carries an empty `## Overview` | `/quenching:specs:develop` — written last, once every other section has settled. |
 | `sp-handoff-empty` | A spec being executed has an empty `## Handoff` | `/quenching:specs:execute`, which refreshes it on four events — a pause, a blocked task, a recorded discovery, the run's last commit. |
-| `sp-impact-uncovered` | A `docs/standards/**.md` path declared under `## Impact` that no `## Tasks` item names | The human — add the task, or drop the declaration. Which of the two is correct is a judgment, so the sweep never picks. |
+| `sp-impact-uncovered` | A `knowledge/standards/**.md` path declared under `## Impact` that no `## Tasks` item names | The human — add the task, or drop the declaration. Which of the two is correct is a judgment, so the sweep never picks. |
 | `sp-unrefined` | A spec meets the whole ready gate but carries no `refined` record | `/quenching:specs:develop`'s adversarial bank. **Never gates** — a spec may always be built unrefined. |
 | `sp-no-outcome` | An `archive/` spec carries no `outcome:` | The human — `done` and `abandoned` are opposite facts, and nothing can infer which was meant. |
 | `sp-spec-complete` | Every `## Tasks` box in a spec is `- [x]` | `/quenching:specs:conclude`. This sweep never archives. |
@@ -232,7 +232,9 @@ the only promote left is the gated one into `archive/`.
 A spec carries `slug`/`title`/`verification` and deliberately **no OKF `type:`**.
 
 `plans/index.md` is a **retired artifact**. The sweep neither creates nor deletes a surviving copy
-in a target repo (`retiring-a-reserved-artifact.md` §The consequence for disposition).
+in a target repo
+([`retiring-a-reserved-artifact.md`](/.knowledge/standards/architecture/retiring-a-reserved-artifact.md)
+§The consequence for disposition).
 
 <!-- rationale -->
 There is no listing here for it to check, and there never was a spec file it could judge. A spec is
@@ -260,5 +262,6 @@ an already-aligned workspace stops on two tool calls.
 GENERATED zone matches disk". Nothing computed it — `cq specs` never emitted a `changed` field for
 a command to read — so the one clause that could actually rot was the one left to a human's eye,
 and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
-`generated-listings.md`; the narrower lesson belongs here. A clause a program cannot evaluate is
-not a stricter standard, it is an unverified one.
+[`generated-listings.md`](/.knowledge/standards/architecture/generated-listings.md); the narrower lesson
+belongs here. A clause a program cannot evaluate is not a stricter standard, it is an unverified
+one.

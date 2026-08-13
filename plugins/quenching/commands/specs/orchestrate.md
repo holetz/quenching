@@ -127,9 +127,8 @@ on), declaring the authorization as step 3's sentence — the minimal-gear form 
 the minimal gear. Under the minimal gear, `conclude` is invoked with the **pull-request route**
 against the declared `integrationBranch`: the route was chosen and approved in the gears plan,
 never rediscussed at the stage. A stage whose gear is `sub-agent` runs isolated and returns its
-summary per the gears contract (§What a gear is): delegate when the returned summary is much
-smaller than the work that produced it; keep a stage in-session when its output would be as large
-as itself.
+summary per the gears contract (§What a gear is); the contract's test that the summary is much
+smaller than the work is [agents.md](/.knowledge/standards/automation/agents.md).
 **Done when:** the stage finished (or was skipped with a stated reason) and its outcome is
 recorded.
 

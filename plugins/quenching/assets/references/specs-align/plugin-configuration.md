@@ -39,5 +39,5 @@ active in half the projects it ran against.
 
 The checker's own settings (`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`,
 `ignoreGlobs`) and the bundle root never lived in this file — they come from the target's own
-`.claude/hooks/hooks-config.json`, and the bundle root is the fixed `/.docs/` convention no
+`.claude/hooks/hooks-config.json`, and the bundle root is the fixed `/.knowledge/` convention no
 configuration names.

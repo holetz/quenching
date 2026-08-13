@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "root": "<REPO>/plugins/quenching/commands/docs",
+  "root": "<REPO>/plugins/quenching/commands/knowledge",
   "commandCount": 1,
   "referenceCount": 0,
   "findings": [

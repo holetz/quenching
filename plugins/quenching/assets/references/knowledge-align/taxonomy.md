@@ -11,8 +11,9 @@ The single source of the tree `/quenching:knowledge:align` installs and `/quench
 ## The canonical tree (locked)
 
 ```
-docs/                          # OKF bundle root
+knowledge/                     # OKF bundle root
   index.md                     # ONLY index.md with frontmatter — okf_version: "0.1" + home listing
+  glossary.md                  # the repo's A–Z term lookup — bundle-root file, not inside a home
   standards/                   # "how WE do it" (current) — a conformant sub-bundle
     index.md                   # reserved listing + DERIVED "Current docs" tables (BEGIN/END GENERATED)
     CLAUDE.md                  # thin agent-facing pointer (auto-loaded; harness file, not a concept)
@@ -21,10 +22,9 @@ docs/                          # OKF bundle root
                                #   agents/ = how we INSTRUCT agents, not agent definitions
   catalog/                     # our data — <system>/{index.md, access.md} · <catalog>/<schema>.md · <schema>/<table>.md
   vision/                      # direction by area — <area>.md (type: vision)
-  documentation/               # product docs (Diátaxis prose) — getting-started/ how-to/ reference/ concepts/ (type: documentation)
-  knowledge/                   # generic knowledge we hold — subject subfolders (type: knowledge)
-                               #   ships one FIXED file: glossary.md (the A–Z term lookup)
-  reference/                   # what we consume — tools/ libraries/ regulations/ (type: reference; PDFs via sidecar)
+  documentation/               # product docs (Diátaxis prose) — tutorials/ how-to/ reference/ explanation/ (type: documentation)
+  concepts/                    # generic knowledge we hold — subject subfolders (type: concept)
+  external/                    # what we consume — tools/ libraries/ regulations/ (type: external; PDFs via sidecar)
 ```
 
 ## The `type` vocabulary (the greppable signature)
@@ -38,10 +38,10 @@ docs/                          # OKF bundle root
 | `catalog/**/<schema>.md` | `schema` | consolidated index |
 | `catalog/**/<schema>/<table>.md` | `table` | detailed page |
 | `vision/` | `vision` | `<area>.md` |
-| `documentation/**` | `documentation` | `getting-started/`·`how-to/`·`reference/`·`concepts/` |
-| `knowledge/` | `knowledge` | subject subfolders |
-| `reference/` | `reference` | `tools/`·`libraries/`·`regulations/` |
-| `reference/regulations/` (extracts) | `sidecar` | one per binary |
+| `documentation/**` | `documentation` | `tutorials/`·`how-to/`·`reference/`·`explanation/` |
+| `concepts/` | `concept` | subject subfolders |
+| `external/` | `external` | `tools/`·`libraries/`·`regulations/` |
+| `external/regulations/` (extracts) | `sidecar` | one per binary |
 
 Reserved `index.md` carries **no** `type`; `CLAUDE.md`/`AGENTS.md` are exempt. `log.md` is
 reserved too but **retired** — the tree above no longer grows one, and nothing checks one that
@@ -66,21 +66,21 @@ survived an earlier alignment.
   see `/quenching:specs:create`); what became reality → `standards/`.
 - **`documentation/`** — prose documentation for human readers, Diátaxis-structured; the
   home rendered as the product's documentation site (`type: documentation`). Four fixed
-  subfolders: `getting-started/` (tutorial), `how-to/` (task recipes — absorbs the former
-  `guides/`), `reference/` (our product's own reference), `concepts/` (explanation).
-  Boundary: a published-site page → here; internal team understanding → `knowledge/`; a
+  subfolders: `tutorials/` (tutorial), `how-to/` (task recipes — absorbs the former
+  `guides/`), `reference/` (our product's own reference), `explanation/` (explanation).
+  Boundary: a published-site page → here; internal team understanding → `concepts/`; a
   current contract → `standards/`. `audience: human`, `authority: current` by default.
-- **`knowledge/`** — generic, cross-cutting understanding the team holds (`type: knowledge`):
+- **`concepts/`** — generic, cross-cutting understanding the team holds (`type: concept`):
   domain concepts, glossaries, mental models, explanations, learnings — the Diátaxis
   **explanation** quadrant raised to a home, subject subfolders welcome. Non-binding and
   usually `authority: background`. Boundary: it is **not** a contract (→ `standards/`), **not**
-  a fact about a named external asset we consume (→ `reference/`), and **not** a procedure
+  a fact about a named external asset we consume (→ `external/`), and **not** a procedure
   (→ `documentation/how-to/`). If understanding hardens into a rule for how we build, it distills into
-  `standards/` and leaves. Ships **one fixed file** — `knowledge/glossary.md`, the repo's A–Z
-  term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
+  `standards/` and leaves. Ships **one fixed file** — the bundle-root `glossary.md`, the repo's
+  A–Z term lookup (a flat, alphabetically sorted bullet list in the same syntax every `index.md`
   uses — the one deliberate exception to "one concept per file", and the one place an
   unlinked entry is a valid permanent state). `/quenching:knowledge:align` installs the seed.
-- **`reference/`** — external facts we consume (`type: reference`, usually
+- **`external/`** — external facts we consume (`type: external`, usually
   `authority: background`); a regulation's PDF lives here via a **sidecar**, while *our*
   implementation of it lives in `standards/`.
 - **`catalog/`** — the data: `system → catalog → schema → table`. `<system>/index.md` is a
@@ -91,7 +91,7 @@ survived an earlier alignment.
 
 - **The folder carries the subject — the filename does not repeat it.** In `naming/`, the doc
   is `columns.md`, not `naming-columns.md`. Kebab-case, no accents, one concept per file. **The
-  one exception is `knowledge/glossary.md`** — a glossary is inherently a multi-term aggregate.
+  one exception is the bundle-root `glossary.md`** — a glossary is inherently a multi-term aggregate.
 - **Folders over prefix-clusters — favor a folder when it earns its keep.** A run of sibling
   files sharing a subject prefix (`nomenclatura-classes.md`, `nomenclatura-funcoes.md`,
   `nomenclatura-modulos.md`, …) is the same "filename repeats the subject" smell one level up:
@@ -104,9 +104,9 @@ survived an earlier alignment.
   `nomenclatura-variaveis.md` → `naming/variables.md`. Which language the body prose is
   written in is owned by `standards/agents/communication.md` in this same
   bundle. **Identifier-derived slugs are verbatim, never translated:**
-  a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>` the
+  a catalog `<schema>`/`<table>` mirrors the real object, `external/repositories/<repo>` the
   real repo — translating them would break the greppable tie to the asset.
-- **Links:** relative **within** a home; absolute from the bundle root (`/.docs/...`) when
+- **Links:** relative **within** a home; absolute from the bundle root (`/.knowledge/...`) when
   leaving for another home — so cross-links survive a home move/migration.
 - A directory that holds concept docs carries a reserved, frontmatter-free `index.md` listing
   its real children (the validator's `dir-no-index`/`index-broken-link`/`index-orphan` checks

@@ -4,7 +4,7 @@ Moved verbatim out of the pre-refactor OKF validator script. It is its own modul
 reason it was its own banner there: the trust note turns on this being the one write, and
 a reader auditing that claim should find the whole of it in one file.
 
-`PostToolUse` touches it whenever a `/.docs/**` file changes, so the `Stop` sweep knows the
+`PostToolUse` touches it whenever a `/.knowledge/**` file changes, so the `Stop` sweep knows the
 bundle moved this session; a completed scan clears it, and a scan the deadline aborted
 keeps it for the next turn.
 """
