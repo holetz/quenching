@@ -6,7 +6,7 @@ allowed-tools: Read, Grep, Glob, Write, Edit
 
 # /quenching:knowledge:add — add new knowledge, OKF-conformant
 
-**Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, reference, …).
+**Input**: `$ARGUMENTS` (the piece of information to file — a standard, catalog table, announcement, external asset, …).
 
 Files one new piece of knowledge into the canonical OKF bundle so it lands in the right home
 with a complete stamp. Assumes the bundle already exists (run `/quenching:knowledge:align` first if not). The
@@ -24,14 +24,14 @@ vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
   concept **inside that subfolder** (`code/symbol-naming/enums.md`), never as a `symbol-naming-*`
   flat file — extend the folder the aligner would have folded.
 - **English slug on technical homes; identifier slugs verbatim.** The file slug is canonical
-  English on `standards/`·`vision/`·`documentation/`·`reference/` (as are
+  English on `standards/`·`vision/`·`documentation/`·`external/` (as are
   folder names, frontmatter keys, and enum values). **Exception:** an identifier-derived name is
-  verbatim — a catalog `<schema>`/`<table>` mirrors the real object, `reference/repositories/<repo>`
+  verbatim — a catalog `<schema>`/`<table>` mirrors the real object, `external/repositories/<repo>`
   the real repo. Body prose may be the repo's language.
 - **`type` mandatory; `resource` derived, never invented.** For a standard, `resource` is the
   **glob set** naming what the doc governs — comma-separated, `*`/`**` only, repo-root-relative;
-  for catalog/reference, the asset URI. Empty is disallowed, and so is self-pointing
-  (`resource-self`) — except a bundle-level aggregate like `knowledge/glossary.md`. A glob says
+  for catalog/external, the asset URI. Empty is disallowed, and so is self-pointing
+  (`resource-self`) — except a bundle-level aggregate like `glossary.md`. A glob says
   *what this doc governs* and is what the staleness check reads; a `file:line` says only where a
   rule was written, and rots on the next insertion above it.
 - **Anti-fabrication.** A standard that is **not yet proven** in the code enters as
@@ -41,7 +41,7 @@ vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
 - **Keep the listing honest.** Every insert updates the folder's `index.md`; a lying index is
   drift.
 - **Feed the glossary.** A capture that introduces a repo-specific term ends by adding its entry
-  to `knowledge/glossary.md` (the fixed A–Z term lookup) — the tail step every knowledge skill
+  to `glossary.md` (the fixed A–Z term lookup) — the tail step every knowledge skill
   shares, so the term is resolvable the moment the doc lands.
 
 ## Workflow
@@ -49,7 +49,7 @@ vocabulary, and conformance rules are shared with `/quenching:knowledge:align`
 ### 1. Classify → home + `type` + mold
 Apply the boundary rules ([knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)):
 `standards` = "how **we** do it" (an agreed-but-unproven rule is a `standard` with
-`authority: background`) · `reference` = "what we **consume**" · `catalog` = "our
+`authority: background`) · `external` = "what we **consume**" · `catalog` = "our
 **data**". Pick the home, its `type`, and the matching mold.
 
 ### 2. Determine identity (path)
@@ -67,7 +67,7 @@ unproven standard is `authority: background`.
 
 ### 4. Write the concept doc
 Write the file with `Write`. Favor structural markdown (headings, lists, tables). Cross-home
-links absolute (`/.docs/...`); within-home links relative.
+links absolute (`/.knowledge/...`); within-home links relative.
 
 ### 5. Update the folder's `index.md`
 Add a bullet-link with the doc's `description` (`* [<title>](<rel-path>.md) — <description>`).
@@ -77,7 +77,7 @@ hand-edit inside the markers. Never add frontmatter to an `index.md`.
 
 ### 6. Enrich the glossary
 If the new concept introduced a **repo-specific term**, add or sharpen its entry in
-`knowledge/glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
+`glossary.md` per **Enriching the glossary** in [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 (the tail step every capture runs; on-demand counterpart `/quenching:knowledge:define`, bulk counterpart
 `/quenching:knowledge:glossary-backfill`).
 
@@ -96,4 +96,4 @@ the same checks the installed `cq knowledge hook` (if wired) machine-verifies on
 - **Catalog table with descriptions** → detailed `table.md`; without → keep it a row in the
   consolidated `<schema>.md`. Never create an empty detailed page.
 - **Binary (a regulation PDF we consume)** → write a `sidecar.md` extract under
-  `reference/regulations/` (`type: sidecar`), never ingest the binary.
+  `external/regulations/` (`type: sidecar`), never ingest the binary.

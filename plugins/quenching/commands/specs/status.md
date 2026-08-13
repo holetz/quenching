@@ -78,7 +78,7 @@ cq specs list --json
 ```
 `list --json` carries each spec's seven `records` already, so **there is no per-spec file to
 open** — asking the tool is also the only form that survives a backend where the specs are issues
-and `/.specs/plans/*.md` does not exist. Then read `/.docs/index.md` for `okf_version`, and — only
+and `/.specs/plans/*.md` does not exist. Then read `/.knowledge/index.md` for `okf_version`, and — only
 under a suspected legacy migration — `Glob` the `openspec/` tree and the shadow copies
 (`.claude/skills/openspec-*/SKILL.md`, `.claude/commands/opsx/*.md`).
 
