@@ -11,7 +11,7 @@ PARSE HONESTY (per-doc; WARN — this checker naming its own misread)
   continuation read as empty, or a duplicate top-level key that silently last-wins. It
   reports a suspicion it cannot resolve rather than letting the consequence surface as a
   content finding (`missing-type`, a missing recommended field). The YAML subset, the
-  comment rule and the canonical case list are `/.docs/standards/code/frontmatter-parser.md`.
+  comment rule and the canonical case list are `/.knowledge/standards/code/frontmatter-parser.md`.
 
   The set it reports SHRANK when the three parsers collapsed into
   `quenching.common.frontmatter`: that parser reads inline lists, block lists, block

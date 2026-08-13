@@ -26,7 +26,7 @@ def _is_ignored_path(rel_path: str, patterns: tuple[str, ...]) -> bool:
     dir-prefix (`rel_path == pattern` or `rel_path` starts with `pattern + "/"`)
     or, failing that, as an `fnmatch` glob — per `ignoreGlobs` in hooks-config.json
     (regenerable/vendored trees like the gitignored mirrors under
-    `reference/repositories/` are not authored OKF knowledge)."""
+    `external/repositories/` are not authored OKF knowledge)."""
     for pat in patterns:
         pat = str(pat).strip("/")
         if not pat:
