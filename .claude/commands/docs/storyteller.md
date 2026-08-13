@@ -8,7 +8,7 @@ description: >-
   mais engajante", "organizar a navegação dos docs", "criar landing da doc",
   "rodar/subir o mkdocs local", "documentação que um LLM consiga reutilizar",
   "make the docs a joy to read", "docs studio", "score the docs". Not for: the
-  quenching bundle's own site layer over docs/documentation →
+  quenching bundle's own site layer over /.knowledge/documentation →
   /quenching:knowledge:documentation:build.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---

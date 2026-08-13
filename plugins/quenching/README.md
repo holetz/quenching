@@ -2,7 +2,7 @@
 
 An **OKF-centric knowledge-base aligner** for the Claude Code surface of any
 repository. It carries one canonical **Open Knowledge Format (OKF v0.1)** bundle
-of `/.docs/` and the tools to install it, force an existing base into conformance,
+of `/.knowledge/` and the tools to install it, force an existing base into conformance,
 insert new knowledge, capture terms into a fixed glossary, drain the project's Claude
 Code memory into it, import external sources into it, keep the repo's `CLAUDE.md` a thin pointer over it, and organize
 the repo's own **automation surface** (`.claude/skills/` + `.claude/commands/`) under one
@@ -23,7 +23,7 @@ Every front has exactly ONE align, and one more spans all three:
 
 | Front | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
-| `/.docs/` — the OKF bundle | `/quenching:knowledge:*` | `/quenching:knowledge:align` |
+| `/.knowledge/` — the OKF bundle | `/quenching:knowledge:*` | `/quenching:knowledge:align` |
 | `/.specs/` — the native spec-driven workspace | `/quenching:specs:*` | `/quenching:specs:align` |
 | `.claude/` — the automation surface | `/quenching:components:*` | `/quenching:components:align` |
 | **all three** | *(root)* | **`/align`** |
@@ -50,7 +50,7 @@ ONE spec — create, develop, execute, conclude — in one run on one authorizat
 derived stage, invoking each stage as the command that owns it, and writing nothing itself. It
 shares the cycle-authorization contract with `/align`, and derives its run from the spec's
 `priority.complexity` per the gears contract
-([`orchestration-gears.md`](/.docs/standards/automation/orchestration-gears.md)).
+([`orchestration-gears.md`](/.knowledge/standards/automation/orchestration-gears.md)).
 
 Every entry point shares one contract: any item whose blast radius reaches **product code**
 confirms on its own, always — and inside a conducted run, so does every **irreversible close**.
@@ -62,7 +62,7 @@ That contract lives once, in
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
 there is no `skills/` tree and no wrapper. The twenty-six split by front: `/quenching:knowledge:*` for the ten
-that act on the OKF `/.docs/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
+that act on the OKF `/.knowledge/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
 `/quenching:specs:*` for the nine that act on the native `/.specs/` workspace (the ninth —
 `/quenching:specs:orchestrate` — conducts the whole cycle of one spec), `/quenching:components:*` for the six that
 act on the target's `.claude/` automation surface (two nested: `/quenching:components:agent:new`,
@@ -75,9 +75,9 @@ auto-routes to a command by its `description`; typing the command is the explici
 
 ### `quenching-knowledge-align` — structure (installer + force-aligner + validator)
 
-Derives the target's current `/.docs/` shape, maps every existing section to a
+Derives the target's current `/.knowledge/` shape, maps every existing section to a
 canonical **home**, and produces an **alignment plan**: which homes to scaffold,
-which variant names to migrate (a non-English `/.docs/<arquitetura>/` → `/.docs/standards/`), which
+which variant names to migrate (a non-English `/.knowledge/<arquitetura>/` → `/.knowledge/standards/`), which
 misfiled docs to relocate, which frontmatter to stamp/normalize, which `index.md`
 to (re)generate, and the blast radius of any rename that reaches product code. It
 presents the **full plan** and executes on **one**
@@ -86,7 +86,7 @@ imports, docstrings) is its **own** confirmation item — never folded into the 
 OK. After executing it re-runs the conformance checker on the output.
 
 Triggers: *"align the knowledge base to OKF"*, *"install the docs structure"*,
-*"force OKF conformance"*, *"migrate /.docs/ to the standard"*.
+*"force OKF conformance"*, *"migrate /.knowledge/ to the standard"*.
 
 ### `quenching-knowledge-add` — content (insertion tool)
 
@@ -103,7 +103,7 @@ Triggers: *"insert new information into the base"*, *"add a standard/table/annou
 
 The prioritization sweep over `/.specs/plans/`: reads every spec's
 frontmatter and derived stage **directly** (no sub-agents — a front is small by nature) plus
-`/.docs/vision/` when present, and builds **ONE** ordered table with a one-line reason per row —
+`/.knowledge/vision/` when present, and builds **ONE** ordered table with a one-line reason per row —
 re-ranks of already-ranked specs only with an explicit reason, staleness flags, duplicate-merge
 suggestions. **One OK** applies the whole plan (a rejected plan applies nothing; a human-set
 ranking is never silently clobbered), writing each spec's
@@ -130,28 +130,28 @@ the target's code; secrets/PII/transient chatter are never ingested. Additive on
 mints and merges, never deletes. Requires an existing OKF bundle (run `quenching-knowledge-align` first).
 
 Triggers: *"import/ingest a source into the base"*, *"enrich the knowledge base from X"*,
-*"generate OKF docs from these files/URLs"*, *"pull this doc/site into /.docs/"*.
+*"generate OKF docs from these files/URLs"*, *"pull this doc/site into /.knowledge/"*.
 
 ### `quenching-knowledge-learn` — capture generic knowledge
 
 Files one piece of understanding the human states — a concept, glossary term,
-explanation, mental model, or learning — into the `knowledge/` home, with a
-`type: knowledge` stamp, the OKF recommended fields, `resource` derived from what
+explanation, mental model, or learning — into the `concepts/` home, with a
+`type: concept` stamp, the OKF recommended fields, `resource` derived from what
 the knowledge concerns, and an updated `index.md`. If the information is really a
 contract / decision / procedure / external-asset fact, it
 routes to its home via `quenching-knowledge-add`. As a tail step it **enriches the glossary**
-(`knowledge/glossary.md`) whenever the concept introduces a repo-specific term.
+(`glossary.md`) whenever the concept introduces a repo-specific term.
 
 Triggers: *"add this knowledge"*, *"record what we learned"*, *"capture this concept /
 glossary term"*, *"put this in the knowledge base"*.
 
 ### `quenching-knowledge-glossary-backfill` — backfill the glossary from the whole bundle
 
-Sweeps the **entire** `/.docs/` bundle — not just a fresh capture — for repo-specific terms
+Sweeps the **entire** `/.knowledge/` bundle — not just a fresh capture — for repo-specific terms
 that already exist in the docs but were never fed into the glossary. Lists doc paths
 cheaply, slices the bundle by home, fans a sub-agent out per slice (each returning compact
 candidate terms, never full bodies), merges every slice into **one** consolidated plan, and
-writes the backfill to `knowledge/glossary.md` on a single confirmation — the orchestrator
+writes the backfill to `glossary.md` on a single confirmation — the orchestrator
 alone edits the glossary. The bulk, retroactive counterpart of the tail step the other
 knowledge skills run per capture.
 
@@ -160,7 +160,7 @@ bundle for missing terms"*, *"find terms we never added to the glossary"*.
 
 ### `quenching-knowledge-define` — add/refine one glossary term
 
-Adds or refines **one** entry in the fixed glossary — `knowledge/glossary.md`, the repo's
+Adds or refines **one** entry in the fixed glossary — `glossary.md`, the repo's
 A–Z lookup of terms, acronyms, and domain vocabulary (a flat, alphabetically sorted bullet
 list in the same syntax every `index.md` uses; the one deliberate exception to "one concept
 per file"). Confirms the term is repo-specific, derives the link to the concept doc that
@@ -175,8 +175,8 @@ to the glossary"*, *"update the glossary"*.
 ### `quenching-knowledge-import-memory` — drain project memory into the bundle
 
 Migrates the durable facts in the project's Claude Code memory
-(`~/.claude/projects/<cwd>/memory/`) — promoting each memory into a `standard` or `knowledge`
-doc in the `/.docs/` bundle, or a spec (always untriaged) in `/.specs/plans/` — then
+(`~/.claude/projects/<cwd>/memory/`) — promoting each memory into a `standard` or `concept`
+doc in the `/.knowledge/` bundle, or a spec (always untriaged) in `/.specs/plans/` — then
 **clears each memory once its doc has landed and passed the
 conformance check**. Presents one migration plan and executes on a single
 confirmation; a `user` memory or an unroutable fact is flagged and kept, never
@@ -191,15 +191,15 @@ Refactors a repo's **harness files** — the root `CLAUDE.md`, every subfolder
 `CLAUDE.md`, and `AGENTS.md` — into thin, honest navigation pointers over the bundle.
 Inventories every harness file, classifies each unit (**KEEP** the harness-operational —
 build/run/test commands, env, etiquette needed every turn; **MOVE** durable knowledge
-into its `/.docs/` home via `quenching-knowledge-add`, leaving a citing pointer; **DEDUPE** what
-`/.docs/` already holds; **FLAG** contradictions; keep-and-report the unroutable), presents
+into its `/.knowledge/` home via `quenching-knowledge-add`, leaving a citing pointer; **DEDUPE** what
+`/.knowledge/` already holds; **FLAG** contradictions; keep-and-report the unroutable), presents
 one refactor plan, executes on a single confirmation (a product-code edit confirms on its
 own), rewrites each file from the harness molds, and **self-verifies every pointer
 resolves** — the validator exempts `CLAUDE.md`/`AGENTS.md`, so pointer honesty is checked
 here. Move, never copy: after the run each fact lives in exactly one place.
 
 Triggers: *"refactor CLAUDE.md"*, *"slim down CLAUDE.md"*, *"move CLAUDE.md content into
-docs"*, *"make CLAUDE.md point to the knowledge base"*, *"align CLAUDE.md/AGENTS.md with /.docs/"*.
+docs"*, *"make CLAUDE.md point to the knowledge base"*, *"align CLAUDE.md/AGENTS.md with /.knowledge/"*.
 
 ### `quenching-knowledge-status` — read the bundle, change nothing
 
@@ -223,11 +223,11 @@ docs dashboard"*, *"what would /quenching:knowledge:align do"*, *"is the bundle 
 Owns the thin **site layer** that renders the bundle's `documentation/` home as an
 mkdocs-material site (invoked as `/quenching:knowledge:documentation:build`, the one wrapper nested a level
 below its namespace, because it acts on one home rather than the bundle). That layer is the
-`mkdocs.yml` + `requirements.txt` at the repo **root** — outside `/.docs/` — plus one
+`mkdocs.yml` + `requirements.txt` at the repo **root** — outside `/.knowledge/` — plus one
 `awesome-pages` `.pages` nav file per section, inside it. The skill inventories the layer
 read-only, reports every finding under a `site-*` code (config absent, unfilled
 `<placeholder>`, a section with no `.pages`, a stale nav, a `docs_dir` aimed elsewhere,
-an absolute `/.docs/<other-home>/…` link that dies in the built HTML), presents **one** plan,
+an absolute `/.knowledge/<other-home>/…` link that dies in the built HTML), presents **one** plan,
 and applies on one OK — **MERGE, never clobber**: a customized `mkdocs.yml` gets only its
 missing required keys, always shown as a diff, and re-aiming `docs_dir` confirms on its own.
 It closes with a real `mkdocs build --strict` into a throwaway dir, and reports `unverified`
@@ -251,9 +251,9 @@ named as the flattened folder path + verb, `communications-teams-create`, and mi
 by a thin command wrapper at `.claude/commands/communications/teams/create.md` →
 `/communications:teams:create`) or **generic** (serves the repo as a whole; named
 verb-object, never mirrored). Two OKF artifacts anchor the family in the bundle:
-the **rule** at `/.docs/standards/automation/skills.md` (`type: standard`, born
+the **rule** at `/.knowledge/standards/automation/skills.md` (`type: standard`, born
 `authority: background`) and the **registry** at
-`/.docs/documentation/reference/automation.md` (`type: documentation`), whose
+`/.knowledge/documentation/reference/automation.md` (`type: documentation`), whose
 `<!-- GENERATED:BEGIN/END -->` zone is derived from `.claude/skills/*/SKILL.md`
 frontmatter and written only by these two skills — the same anti-drift pattern as
 `backlog/index.md`. The doctrine lives once, in
@@ -286,18 +286,18 @@ commands to the monorepo"*, *"standardize the automation surface"*.
 
 The **structural** cross-front conductor: where the front conductors loop, this one runs the
 *one* align of each of the **three** fronts, once, in dependency order — `quenching-knowledge-align`
-(`/.docs/`) →
+(`/.knowledge/`) →
 `quenching-specs-align` (`/.specs/`) → `quenching-components-align` (`.claude/`). One read-only probe of
 the three fronts → **one** OK authorizes the whole run under the shared cycle-authorization
 contract → each sweep runs under its own doctrine, narrating its own plan → one consolidated
 report.
 
-The order is a **dependency, not a preference**: `/.docs/` first because the other two write OKF
-artifacts *into* the bundle (the skill front's rule + registry, the `/.docs/standards/` docs a
+The order is a **dependency, not a preference**: `/.knowledge/` first because the other two write OKF
+artifacts *into* the bundle (the skill front's rule + registry, the `/.knowledge/standards/` docs a
 spec's distillation mints); `/.specs/` before `.claude/` matters **only in a migration** — a
 legacy `openspec/` repo carries CLI-generated `openspec-*` skill + `opsx/` command shadow copies that
 `quenching-specs-align` clears before `quenching-components-align` would otherwise inventory them.
-**Front presence decides the pass** — an absent `/.docs/` bundle is what the plugin installs, so
+**Front presence decides the pass** — an absent `/.knowledge/` bundle is what the plugin installs, so
 Front 1 always runs; an absent `/.specs/` workspace is what `quenching-specs-align` scaffolds (from
 the native `assets/specs/` payload, no external tool); an empty `.claude/` surface skips Front 3
 with a note. It **conducts, never reimplements**, never loops a front to force a clean result, and
@@ -319,7 +319,7 @@ findings · `2` refusal) rather than a path. `files` and `github` are validated 
 repository; `azure-boards` ships implemented but **without an end-to-end run against a real
 Azure DevOps project** — `doctor`'s `sp-backend-unproved` finding, plus a one-line stderr warning
 on its first write each process, name that gap every time it is selected. Every command on this
-front reads the `/.docs/` bundle
+front reads the `/.knowledge/` bundle
 as context going in and distils durable knowledge back out when a spec closes.
 
 The **unit of work is a spec** — ONE canonical markdown document for its whole pre-archive life.
@@ -339,7 +339,7 @@ edit on the tracker IS the spec's new value. `.claude/quenching.json` is where a
 `backend`, the per-backend placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
 project's own `subjects`/`tagCatalog` — the closed sets `/quenching:specs:create` proposes a spec's subject
 and tags from, confirmed by a human, never picked silently. Because a spec writes its durable rule
-**directly into `/.docs/standards/`** (honestly `authority`-graded), there is no second store to
+**directly into `/.knowledge/standards/`** (honestly `authority`-graded), there is no second store to
 bridge to:
 isolation-while-building is a real git **branch or worktree** (offered inline by `/quenching:specs:execute`
 when it starts from the base branch, recorded as `branch: {base, work}`, each task committed alone
@@ -353,14 +353,14 @@ names for losing access to an external backend.
 | `/quenching:specs:status` | The front's only **read-only** view: specs by derived stage with task progress, the frontmatter records as the history they narrate, the verifier results — split into what `/quenching:specs:align` would fix, what a cycle command closes, and what neither closes. |
 | `/quenching:specs:create` | ONE spec in `plans/` — effort proportional to input, never an interrogation. A sentence becomes `## Problem` alone; a Claude Code plan file becomes every section it actually supports, mapped and never invented. |
 | `/quenching:specs:develop` | Questions grouped by dependency — independent ones in one `AskUserQuestion` call, sequential where an answer changes the next — each with an inline recommendation, the bank chosen by the spec's derived stage: generative shaping, adversarial interrogation (recording `refined:`), gate-gap filling, discovery resolution, and the `approved` stamp offer. Never edits code. |
-| `/quenching:specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/.docs/standards/` a task explicitly names; everything else is one `cq specs discover` line. Stops at the last commit. |
-| `/quenching:specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/.docs/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Nothing is committed to the base after it. |
+| `/quenching:specs:execute` | Builds `## Tasks` one verified commit at a time: clean tree required, isolation offered inline when it starts from the base branch, `verify:` run under the spec's declared policy, four-item diff self-review, then the box ticked with the subject of the commit it is about to make (`cq specs task --check --subject`) so code and box land in ONE commit. Writes only the `/.knowledge/standards/` a task explicitly names; everything else is one `cq specs discover` line. Stops at the last commit. |
+| `/quenching:specs:conclude` | Closes a spec out, resumable, **merging last**: whole-branch review (`reviewed:`), the emergent `/.knowledge/`, the archive with `outcome: done` (refuses on open boxes unless forced) or `abandoned` (always allowed), ONE distillation pass, the release obligations your standards attach to the merge itself (a version bump, a changelog entry — never a spec task) and the `merge: {strategy, subject, pr}` stamp — all on the work branch — and only then the merge, by the **route** you chose alongside the strategy: local, or a pull request where `gh` resolves the repo (pushed, opened and merged in one consented block, with `pr:` recorded). Nothing is committed to the base after it. |
 | `/quenching:specs:triage` | Ranks the whole front in ONE confirmed table, writing `priority: {level, criticality, complexity, date}` per spec and nothing else — merging, never clobbering a human's ranking. |
 | `/quenching:specs:align` | The front's align + installer — see below. |
 | `/quenching:specs:orchestrate` | The **cycle conductor**: conducts the four stages of ONE spec — create, develop, execute, conclude — in one run on one authorization, entering at the derived stage, invoking each stage as the command that owns it, never reimplementing any. Presents ONE gears plan derived from `priority.complexity` before any write; re-evaluates the gear at the end of every stage and asks for a fresh authorization when it moves up. Typed-only — a whole lifecycle is a human's choice. |
 
 The shared facts live once — the layout, the fourteen canonical sections, the gates, the record
-vocabulary, the `cq specs` surface, and the `/.specs/`↔`/.docs/` boundary in
+vocabulary, the `cq specs` surface, and the `/.specs/`↔`/.knowledge/` boundary in
 [`specs-develop/spec-driven.md`](assets/references/specs-develop/spec-driven.md),
 the execution mechanics in
 [`specs-execute/execution.md`](assets/references/specs-execute/execution.md),
@@ -390,21 +390,22 @@ auto-closed: it never authors a spec, never moves one to `archive/`, and never i
 [`specs-align/conformance.md`](assets/references/specs-align/conformance.md).
 
 
-## The signature: a canonical OKF bundle of `/.docs/`
+## The signature: a canonical OKF bundle of `/.knowledge/`
 
 The plugin installs **the same tree** in every repo (adapted to what fits — a repo
 without data gets no `catalog/`):
 
 ```
-/.docs/                    # OKF bundle root
+/.knowledge/               # OKF bundle root
   index.md               # the ONLY index.md with frontmatter: okf_version: "0.1" + home listing
+  glossary.md            # the fixed A–Z term lookup, bundle root — not inside a home
   standards/             # "how WE do it" (current) — architecture/ code/ naming/ data-modeling/
                          #   ci-cd/ workflows/ mlops/ quality/ platform/  (type: standard)
   catalog/               # our data — <system>/index.md · <schema>.md · <schema>/<table>.md
   vision/                # direction by area (type: vision)
   documentation/         # product docs site — Diátaxis prose (type: documentation)
-  knowledge/             # generic knowledge we hold (type: knowledge) — ships fixed glossary.md (A–Z term lookup)
-  reference/             # what we consume — tools/ libraries/ regulations/ (type: reference)
+  concepts/              # generic knowledge we hold (type: concept)
+  external/              # what we consume — tools/ libraries/ regulations/ (type: external)
 ```
 
 The **spec workspace** lives **outside** this bundle, at `/.specs/` (`plans/` +
@@ -417,13 +418,13 @@ agreed-but-unproven decision is a `standard` with `authority: background` (there
 **OKF-strict rules the plugin enforces:**
 
 - `index.md` is **reserved** — a listing, **no frontmatter** (the one exception is the
-  root `/.docs/index.md`, which carries **only** `okf_version: "0.1"`).
+  root `/.knowledge/index.md`, which carries **only** `okf_version: "0.1"`).
 - Every concept doc (non-`index.md`/`log.md`) carries **non-empty `type`** from the
   fixed vocabulary above, plus the OKF recommended fields and the method's extra keys.
 - `log.md` is **retired**: nothing creates one, appends to one, or checks one. The name
   stays reserved so a log surviving an earlier alignment is recognized rather than flagged
   as a malformed concept doc — retired is not unreserved.
-- Links are **relative** within a home, **absolute from the bundle root** (`/.docs/...`)
+- Links are **relative** within a home, **absolute from the bundle root** (`/.knowledge/...`)
   across homes.
 - Folder names **and concept-doc file slugs**, frontmatter keys/enums, and the `type`
   vocabulary are **canonical English** (cross-repo greppable); **body prose may follow the
@@ -476,9 +477,9 @@ graded and with a should-not-trigger arm.
 | `/quenching:knowledge:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
 | `/quenching:components:command:new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
 | `/quenching:components:align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |
-| `/quenching:specs:develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each bank's declared stop condition, not by a model tier. One **read-only** sub-agent is permitted, and only for the adversarial and gate banks: it sweeps the code and the `/.docs/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
+| `/quenching:specs:develop` | **`model: opus`** — the whole command *is* judgment: generating the questions a spec never answered, recommending an answer to each, and deciding when the interrogation is done. There is nothing mechanical here to downgrade, and a cheap model that asks generic questions produces exactly the refinement theatre the command exists to replace. Cost is bounded by each bank's declared stop condition, not by a model tier. One **read-only** sub-agent is permitted, and only for the adversarial and gate banks: it sweeps the code and the `/.knowledge/standards/` the spec declares and returns one table (`assets/references/specs-develop/questions.md` §Gathering the evidence). It reads; it never asks, writes, or decides — every question, every `cq specs` call and every confirmation stays with the orchestrator. **This is not `context: fork`**, which cannot ask a question at all, so the never-fork rule is untouched |
 | `/quenching:specs:continue` | no pin, no sub-agents — one `cq specs next --front` call and a hand-off; the ranking logic lives in the tool, not the model |
-| `/quenching:specs:execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `/.docs/` — pinned to the **session model, never `haiku`**; with this command pinned, *session model* means `sonnet` for those executors (it writes production code, the same rationale that protects `/quenching:knowledge:import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `cq specs task --check`/`--block`, every `/.docs/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `cq specs parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
+| `/quenching:specs:execute` | **`model: sonnet`** — the loop is write · verify · self-review · tick · commit against a spec that already decided what to build, and the judgment it does keep is gated by a human at every confirmation. A per-task **executor sub-agent is permitted** when the task declares `files:` and touches no `/.knowledge/` — pinned to the **session model, never `haiku`**; with this command pinned, *session model* means `sonnet` for those executors (it writes production code, the same rationale that protects `/quenching:knowledge:import-memory`'s executors). The orchestrator keeps spec selection, every confirmation, every `cq specs task --check`/`--block`, every `/.knowledge/standards/` write, the commit, and the pause decision. Two tasks run concurrently only when `cq specs parallel` reports the `[P]` group eligible; serial is the default. **This is not `context: fork`** — the orchestrator stays in the live conversation, so the never-fork rule is untouched (`assets/references/specs-execute/execution.md` §This is not `context: fork`) |
 | `/quenching:specs:orchestrate` | **no pin** — typed-only (`disable-model-invocation: true`): a whole lifecycle is a human's choice, so the description pays no routed budget; the plan gate and every nested confirmation stay in the conducting session, and each stage runs under its own policy row |
 
 Two rules are deliberate and must survive any future "optimization":
@@ -492,7 +493,7 @@ Two rules are deliberate and must survive any future "optimization":
   `/quenching:knowledge:import-memory` — a misclassification becomes a wrong memory deletion.
 
 **Enforcement hook cost.** The `Stop` sweep is **dirty-gated** by default
-(`stopScan: "dirty"`): a turn that edits no `/.docs/**` file costs one stat (<5 ms); a dirty
+(`stopScan: "dirty"`): a turn that edits no `/.knowledge/**` file costs one stat (<5 ms); a dirty
 turn triggers ONE single-pass read of the bundle (each `.md` read exactly once), bounded by
 `deadlineMs` checked inside the walk. `stopScan: "always"` restores the unconditional
 every-turn sweep. The installed script is versioned (`cq knowledge validate --version`, lockstep
@@ -534,9 +535,9 @@ repository's own `/release` command (`.claude/commands/release.md` — not shipp
 drives it: run once, deliberately, at the **`develop → main` merge**, never at a spec's own
 conclude, it reads what accumulated on `develop` since the last release, proposes a patch/minor/major
 bump with its reasoning, and gates on one confirmation before merging, bumping, tagging and pushing.
-See [`/.docs/standards/ci-cd/versioning-release.md`](/.docs/standards/ci-cd/versioning-release.md) for
+See [`/.knowledge/standards/ci-cd/versioning-release.md`](/.knowledge/standards/ci-cd/versioning-release.md) for
 why each half of the lockstep matters, and
-[`/.docs/standards/git/branching.md`](/.docs/standards/git/branching.md) for the `develop`/`main` split
+[`/.knowledge/standards/git/branching.md`](/.knowledge/standards/git/branching.md) for the `develop`/`main` split
 `/release` publishes into.
 
 - **4.2.0:** **nothing is written after the thing it describes, so the merge is last.** The
