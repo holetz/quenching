@@ -73,6 +73,7 @@ auto-closed. The rightmost column is also what the probe reads: a run whose only
 | Un-stamped / mis-stamped frontmatter, `summary:`→`description:`, enum drift | stage 1 | Yes |
 | Prefix-cluster to fold (`nomenclatura-*.md`), non-English slug to translate | stage 1 | Yes |
 | `dir-no-index` / `index-broken-link` / `index-orphan` (validator WARN) | stage 1 | Yes |
+| `okf-legacy-root` / `okf-legacy-home` / `okf-legacy-doc-quadrant` / `okf-legacy-glossary` — the bundle's own root/home/quadrant/glossary sits in a pre-rename layout | stage 1 | Yes |
 | Undrained facts in `~/.claude/projects/<cwd>/memory/` | `/quenching:knowledge:import-memory` | Yes |
 | Fat harness — durable knowledge inlined in `CLAUDE.md`/`AGENTS.md` | `/quenching:components:harness:align` | Yes (MOVE, via `/quenching:knowledge:add`) |
 | Broken / lying harness pointer | `/quenching:components:harness:align` | Yes |

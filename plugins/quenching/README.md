@@ -545,7 +545,7 @@ why each half of the lockstep matters, and
   commit exists — which let two writes move ahead of the events they record. `/quenching:specs:execute` now
   ticks the box with `cq specs task --check --subject` and commits code and box together, so one
   task is literally one commit and the per-task bookkeeping commit is gone. `/quenching:specs:conclude`
-  reordered: the branch review, the emergent `/.docs/`, the archive, the distillation and the
+  reordered: the branch review, the emergent `/.knowledge/`, the archive, the distillation and the
   `merge: {strategy, subject}` stamp all land on the work branch, and **the merge is its last
   action** — one merge carries the spec's whole footprint and nothing is committed to the base
   after it. Rebase stops destroying the record, since a subject survives a rewrite; the squash
@@ -569,7 +569,7 @@ why each half of the lockstep matters, and
   `/quenching:components:harness:align` and `/quenching:knowledge:glossary-backfill` and priced in the body of the two that keep it,
   frontmatter `hooks:` blocks on `/quenching:knowledge:add`/`/quenching:knowledge:learn`/`/quenching:knowledge:define`, and a collection-only
   `Task` for `/quenching:components:align`'s doctrine audit — `sk-unscoped-bash` 8 → 5, every survivor stating
-  its reason. `/.docs/standards/automation/hooks.md` graduated to `authority: current` on that
+  its reason. `/.knowledge/standards/automation/hooks.md` graduated to `authority: current` on that
   adopting surface; `agents.md` stayed `background` because there is no `.claude/agents/` anywhere
   to follow it. A proposed `components package` verb was **dismissed on a real packaging run**: four mechanical
   operations, then six fields that came back requiring a human. Still twenty-four commands.
@@ -583,7 +583,7 @@ why each half of the lockstep matters, and
   `/quenching:specs:align` into a target's `.claude/hooks/`. The **unit of work is a plan**
   (`/.specs/<plan-name>/`: `proposal.md`, `design.md`, `tasks.md`, `.specs.json`), not an
   "OpenSpec change" — and because a plan writes its durable rule **straight into
-  `/.docs/standards/`**, honestly `authority`-graded, there is nothing to sync: isolation-while-building
+  `/.knowledge/standards/`**, honestly `authority`-graded, there is nothing to sync: isolation-while-building
   is a real git **branch or worktree** (offered by `/specs:apply`), not a markdown delta. The
   `specs`-front conductor pipeline drops to **3 stages** (align → plan-archive → backlog-triage) —
   the old sync stage and `openspec-sync-specs` skill are **removed**. Commands moved from `/opsx:*`
@@ -594,7 +594,7 @@ why each half of the lockstep matters, and
   **`/specs:from-claude`** turns a `~/.claude/plans/*.md`
   file into an archivable plan so ad-hoc work gains the archive-time distillation. `/quenching:specs:align`
   **migrates a legacy `openspec/` workspace one-way** (flatten, fold main specs into
-  `/.docs/standards/`, drop `config.yaml`/deltas, clear the CLI shadow copies) — interop with the
+  `/.knowledge/standards/`, drop `config.yaml`/deltas, clear the CLI shadow copies) — interop with the
   external CLI is lost by design. Still **twenty-seven** skills; the skill↔wrapper bijection holds
   at 27↔27.
 - **0.19.0:** **the `openspec/` front's lifecycle closed, and the sweep contract given one
@@ -617,12 +617,12 @@ why each half of the lockstep matters, and
   exception, blast radius, MERGE-never-clobber, never-delete-on-a-guess,
   align-conformance-report-the-cycle — now lives once in
   [`align/sweep-doctrine.md`](assets/references/align/sweep-doctrine.md),
-  and each align states only its own front's deltas. The `openspec/` ↔ `/.docs/` boundary is
+  and each align states only its own front's deltas. The `openspec/` ↔ `/.knowledge/` boundary is
   declared normatively once, in the specs-develop skill's `openspec.md` §Boundary (retired along
   with `openspec/` support itself in 1.0.0). The backlog's
   prose "self-check" is gone: `cq knowledge validate` gained **`--listing-root`** and now checks
   `openspec/backlog/` for real (`type: task` is also exempted from the `resource` recommendation,
-  since the mold omits it on purpose) — the same checker that guards `/.docs/`, pointed at a tree
+  since the mold omits it on purpose) — the same checker that guards `/.knowledge/`, pointed at a tree
   the bundle root never covers.
   **Performance.** `/specs:align-and-update` hands its assessment inventory down to
   `/quenching:specs:align` instead of making it re-collect against an untouched disk (a pass paid for
@@ -658,13 +658,13 @@ why each half of the lockstep matters, and
   (`knowledge:converge` → `knowledge:align-and-update`, both retired since) — clean cut, no compatibility alias. New
   **`specs:align-and-update`** (retired since) drives the cycle actions
   `/quenching:specs:align` only reports: align → archive each complete change (syncing specs and
-  distilling into `/.docs/`) → sync leftover deltas → triage the inbox, looped; **each archive
+  distilling into `/.knowledge/`) → sync leftover deltas → triage the inbox, looped; **each archive
   confirms on its own**. New **`quenching-components-align-and-update`** (`components:align-and-update`, retired since)
   adds the one thing the align is forbidden to do — a **read-only doctrine audit of every skill
   body**, reported with the `/quenching:components:command:new` that fixes it, never rewritten. New
   **`quenching-align-and-update-all`** (root `/align-and-update`) loops all three fronts,
   because they feed each other (an archive's distillation is glossary work; the skill front's
-  registry is a `/.docs/` listing). **Architectural fix:** the cycle-authorization + convergence
+  registry is a `/.knowledge/` listing). **Architectural fix:** the cycle-authorization + convergence
   contract left `quenching-converge/references/cycle.md` — where it had become misplaced, being
   cited by every conductor — for its own neutral owner,
   `quenching-align-and-update-all/references/convergence.md`; each front's `cycle.md` now holds
@@ -674,16 +674,16 @@ why each half of the lockstep matters, and
   run still costs exactly one OK. Twenty-one skills → **twenty-four** (fourteen `quenching-*` +
   ten `openspec-*`); the skill↔wrapper bijection holds at 24↔24.
 - **0.17.0:** **one interface across the three fronts.** The plugin acts on three surfaces —
-  `/.docs/`, `openspec/`, `.claude/` — but only two had an align sweep. New **`/quenching:specs:align`**
+  `/.knowledge/`, `openspec/`, `.claude/` — but only two had an align sweep. New **`/quenching:specs:align`**
   (quenching-native) gives the `openspec/` workspace the same
   install-and-force-conformance entry point: scaffold via `openspec init`, doctor/validate,
   canonical change + archive names, the `backlog/` inbox and its derived zone, `config.yaml`'s
-  `context:` thinned into a pointer at `/.docs/`, and removal of the CLI-generated
+  `context:` thinned into a pointer at `/.knowledge/`, and removal of the CLI-generated
   `.claude/skills/openspec-*` + `.claude/commands/opsx/` shadow copies — with cycle actions
   (archive, triage, sync, boundary smells) **reported, never driven**. Its contract lives in
   the new `specs-align/references/conformance.md`; `quenching-components-align` now explicitly
   leaves the `openspec-*`/`opsx/` surface to it. New **`quenching-align-all`** (root `/align`)
-  is the second conductor: the three aligns in dependency order (`/.docs/` → `openspec/` →
+  is the second conductor: the three aligns in dependency order (`/.knowledge/` → `openspec/` →
   `.claude/`) on **one** confirmation, orthogonal to `quenching-knowledge-align-and-update` (which loops the
   `docs` front alone to a fixpoint). The cycle-authorization contract in
   `quenching-knowledge-align-and-update/references/cycle.md` is now the shared normative home for **both**
@@ -713,13 +713,13 @@ why each half of the lockstep matters, and
   naming, mirrored command wrapper, writing doctrine, OKF tail) and
   `quenching-components-align` (migrate the existing `.claude/skills/` + `.claude/commands/`
   surface to the taxonomy in one plan → one OK). Two OKF artifacts now maintained in
-  target repos: the rule `/.docs/standards/automation/skills.md` (born
-  `authority: background`) and the registry `/.docs/documentation/reference/automation.md`
+  target repos: the rule `/.knowledge/standards/automation/skills.md` (born
+  `authority: background`) and the registry `/.knowledge/documentation/reference/automation.md`
   with a GENERATED zone only the pair writes. New `assets/templates/automation/` molds
   (skill, command wrapper, registry, standard). Fourteen quenching skills → **twenty** in
   all.
 - **0.13.0:** straightened the work pipeline to `openspec/backlog/` (task) →
-  `openspec/changes/…` (design records the decision) → `/.docs/standards/` (proven rule), with no
+  `openspec/changes/…` (design records the decision) → `/.knowledge/standards/` (proven rule), with no
   middle element. **Moved the backlog out of the OKF bundle** to `openspec/backlog/` — a
   quenching-managed sibling of `/.specs/`/`changes/`, no longer scanned by `cq knowledge validate`, and
   `type: task` left the OKF `type` vocabulary; `quenching-backlog`/`-triage` still own capture,
