@@ -10,10 +10,17 @@ from __future__ import annotations
 import os
 import pathlib
 
-from quenching.knowledge.checks import check_concept, check_index
+from quenching.knowledge.checks import (
+    check_concept,
+    check_index,
+    check_legacy_doc_quadrant,
+    check_legacy_glossary,
+    check_legacy_home,
+    check_legacy_root,
+)
 from quenching.knowledge.corpus import _build_corpus
 from quenching.knowledge.resource import check_resource
-from quenching.knowledge.schema import EXEMPT
+from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LEGACY_ROOT_NAME
 from quenching.knowledge.stale import check_stale
 from quenching.knowledge.structure import validate_structure
 
@@ -69,7 +76,9 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     findings: list[tuple[str, str, str, str]] = []
     root = pathlib.Path(bundle_root)
     if not root.is_dir():
-        return [("ERROR", str(bundle_root), "no-bundle", "bundle root is not a directory")]
+        legacy_root = os.path.join(os.path.dirname(bundle_root) or ".", LEGACY_ROOT_NAME)
+        legacy = check_legacy_root(os.path.isdir(legacy_root), legacy_root)
+        return legacy or [("ERROR", str(bundle_root), "no-bundle", "bundle root is not a directory")]
     corpus = _build_corpus(bundle_root, deadline, ignore_globs)
     if corpus is None:
         return None
@@ -82,6 +91,19 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     # bundle-level SHOULDs
     if not (root / "index.md").exists():
         findings.append(("WARN", "index.md", "bundle-no-index", "bundle root has no `index.md`"))
+    # pre-rename layout debt — each site independent and idempotent (## Design §A migração
+    # detecta por estrutura, sítio a sítio — nunca por versão)
+    root_entries = {p.name for p in root.iterdir() if p.is_dir()}
+    findings.extend(check_legacy_home(root_entries))
+    doc_dir = root / "documentation"
+    if doc_dir.is_dir():
+        quadrant_entries = {p.name for p in doc_dir.iterdir() if p.is_dir()}
+        findings.extend(check_legacy_doc_quadrant(quadrant_entries))
+    glossary_rels = sorted({
+        os.path.relpath(p, bundle_root).replace(os.sep, "/")
+        for p in corpus if os.path.basename(p) == "glossary.md"
+    })
+    findings.extend(check_legacy_glossary(glossary_rels, GLOSSARY_REL))
     # whole-tree structural integrity (missing/broken/orphaned listings)
     findings.extend(validate_structure(bundle_root, corpus))
     return findings

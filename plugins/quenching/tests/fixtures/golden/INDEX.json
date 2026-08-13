@@ -1,7 +1,7 @@
 {
-  "capturedFromVersion": "5.0.0",
+  "capturedFromVersion": "6.0.0",
   "notes": [
-    "Captured by tests/capture_golden.py while specs.py, skills.py, session.py and okf-validate.py are four separate scripts. A later refactor cannot recapture these — it can only be measured against them.",
+    "Originally captured by tests/capture_golden.py while specs.py, skills.py, session.py and okf-validate.py were four separate scripts. Those scripts are gone (plan/modularizar-specs-knowledge-components, task 10.1); every case a rename or route change left stale since has been refreshed against cq itself instead, most recently by renomear-docs-para-knowledge task 6.1 (2026-08-13) — see UNROUTED in tests/test_golden.py. capture_golden.py's own main() cannot perform that refresh: its SCRIPTS constants name the deleted files, and running it directly empties this fixture set rather than regenerating it.",
     "Every golden holds the normalized STDOUT of one invocation; the exit code and the normalized stderr live in this index, because the command bodies branch on the exit code (0 ok / 1 findings / 2 refusal) as much as on the payload.",
     "Paths are normalized to <REPO> and <WS>, the plugin version to <VERSION>, and the capture date to <TODAY>. Re-import capture_golden.normalize to compare."
   ],
@@ -436,8 +436,8 @@
       ],
       "cwd": "<REPO>/plugins/quenching",
       "stdin": null,
-      "exit": 0,
-      "stderr": ""
+      "exit": 2,
+      "stderr": "usage: cq specs [-h] [--root ROOT] [--version]\n                {new,list,status,show,section,verification,tags,assignee,start,target,record,promote,task,next,parallel,find,discover,validate,config,release,doctor,migrate,export}\n                ...\ncq specs: error: argument cmd: invalid choice: 'selftest' (choose from 'new', 'list', 'status', 'show', 'section', 'verification', 'tags', 'assignee', 'start', 'target', 'record', 'promote', 'task', 'next', 'parallel', 'find', 'discover', 'validate', 'config', 'release', 'doctor', 'migrate', 'export')\n"
     },
     {
       "golden": "specs-migrate-noop.json",
@@ -826,8 +826,8 @@
       ],
       "cwd": "<REPO>/plugins/quenching",
       "stdin": null,
-      "exit": 0,
-      "stderr": ""
+      "exit": 2,
+      "stderr": "usage: cq components [-h] [--root ROOT]\n                     {lint,doctor,registry,read,session} ...\ncq components: error: argument cmd: invalid choice: 'selftest' (choose from 'lint', 'doctor', 'registry', 'read', 'session')\n"
     },
     {
       "golden": "skills-drift.json",
@@ -840,8 +840,8 @@
       ],
       "cwd": "<REPO>/plugins/quenching",
       "stdin": null,
-      "exit": 0,
-      "stderr": ""
+      "exit": 2,
+      "stderr": "usage: cq components [-h] [--root ROOT]\n                     {lint,doctor,registry,read,session} ...\ncq components: error: argument cmd: invalid choice: 'drift' (choose from 'lint', 'doctor', 'registry', 'read', 'session')\n"
     },
     {
       "golden": "skills-read-index.json",
@@ -947,8 +947,8 @@
       ],
       "cwd": "<REPO>",
       "stdin": null,
-      "exit": 0,
-      "stderr": ""
+      "exit": 2,
+      "stderr": "usage: cq components session [-h] {list,digest} ...\ncq components session: error: argument session_cmd: invalid choice: 'selftest' (choose from 'list', 'digest')\n"
     },
     {
       "golden": "session-list.json",
@@ -1011,7 +1011,7 @@
       ],
       "cwd": "<WS>",
       "stdin": null,
-      "exit": 0,
+      "exit": 1,
       "stderr": ""
     },
     {
@@ -1054,7 +1054,7 @@
       "script": "plugins/quenching/assets/hooks/okf-validate.py",
       "argv": [],
       "cwd": "<WS>",
-      "stdin": "{\"hook_event_name\": \"PostToolUse\", \"cwd\": \"<WS>\", \"tool_name\": \"Write\", \"tool_input\": {\"file_path\": \"<WS>/.docs/knowledge/golden-fixture-bad.md\"}}",
+      "stdin": "{\"hook_event_name\": \"PostToolUse\", \"cwd\": \"<WS>\", \"tool_name\": \"Write\", \"tool_input\": {\"file_path\": \"<WS>/.knowledge/concepts/golden-fixture-bad.md\"}}",
       "exit": 0,
       "stderr": ""
     },

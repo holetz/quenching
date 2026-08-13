@@ -33,7 +33,7 @@ def derive_labels(info: dict, schema: dict | None = None) -> list[str]:
     One label per present record (`record_keys(schema)` order, skipping any without a
     `label:`), plus `spec:built` when the already-derived `info["stage"]` matches the
     labelled stage rule. A unidirectional projection: recomputed here on every write, never
-    read back — see /.docs/standards/architecture/spec-backend.md §Granular reading is about
+    read back — see /.knowledge/standards/architecture/spec-backend.md §Granular reading is about
     context, not I/O for the sibling rule this one extends.
 
     MEASURED on 2026-08-05, against this repository's own `github` backend, per

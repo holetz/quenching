@@ -20,12 +20,12 @@ auto-loads — `CLAUDE.md` repo-wide, a subfolder `CLAUDE.md` only when working 
 OKF-strict point 7 ([knowledge-align/okf-spec.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/okf-spec.md))
 says they are **not** OKF concepts, and the validator (`cq knowledge validate`) **skips them entirely**
 — including link checks (`index-broken-link` runs only on `index.md`). The target shape is the
-shipped exemplar [docs/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/docs/standards/CLAUDE.md)
+shipped exemplar [knowledge/standards/CLAUDE.md](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/standards/CLAUDE.md)
 ("thin pointer, never a copy").
 
 <!-- rationale -->
 So a CLAUDE.md that inlines a rule or lies about a link is **machine-invisible**: it escapes
-validation, is invisible to anyone browsing `docs/`, and drifts from the real doc.
+validation, is invisible to anyone browsing `knowledge/`, and drifts from the real doc.
 
 ## 2. Content units
 
@@ -53,17 +53,17 @@ units.
 | build / run / test / lint commands, env vars, ports | **KEEP** | stays in the harness file |
 | agent etiquette, permissions, tool rules | **KEEP** | stays — *unless* it is a team-wide process rule proven beyond the agent ⇒ **MOVE** `standards/workflows/` (`standard`) |
 | environment quirk needed every turn | **KEEP** | stays in the harness file |
-| architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `knowledge/<subject>/` (`knowledge`) if non-binding |
+| architecture description / module map | **MOVE** | `standards/architecture/` (`standard`; unproven ⇒ `authority: background`), or `concepts/<subject>/` (`concept`) if non-binding |
 | coding / naming conventions | **MOVE** | `standards/code/` · `standards/naming/` (`standard`) |
 | "we chose X because Y" — agreed / proven | **MOVE** | `standards/` (`standard`; agreed-but-unproven ⇒ `authority: background`, proven ⇒ `current`) — no separate decision home |
 | roadmap / TODO / next-steps item (raw, unscoped) | **MOVE** | a spec in `specs/plans/` (via `/quenching:specs:create`, outside the OKF bundle — unranked until `/quenching:specs:triage` says otherwise), or `vision/` (`vision`) for settled direction with no deadline |
 | step-by-step procedure / onboarding | **MOVE** | `documentation/how-to/` (`documentation`) |
-| facts about an external tool / lib / service | **MOVE** | `reference/{tools,libraries,regulations}/` (`reference`) |
-| domain concept / glossary term | **MOVE** | `knowledge/<subject>/` (`knowledge`) |
+| facts about an external tool / lib / service | **MOVE** | `external/{tools,libraries,regulations}/` (`external`) |
+| domain concept / glossary term | **MOVE** | `concepts/<subject>/` (`concept`) |
 | schema / table descriptions | **MOVE** | `catalog/…` (`schema` / `table`) |
 | restates a fact an existing doc already holds | **DEDUPE** | cite the existing doc; cut + leave a pointer |
 | contradicts an existing doc | **FLAG** | per-item: fix the doc, fix the file, or both — resolve, never auto-pick |
-| secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `docs/` |
+| secrets / credentials / personal notes / `CLAUDE.local.md` | **UNROUTABLE** | stays + reported; secrets urged out-of-band, NEVER into shared `knowledge/` |
 | no documentary home | **UNROUTABLE** | stays + reported |
 
 **Tie-breakers** are `/quenching:knowledge:add`'s — see
@@ -85,7 +85,7 @@ The validator won't check harness files, so this skill does:
 
 ## 6. Nesting rules
 
-- **Root `CLAUDE.md`** = repo-wide operations + the `docs/` home map. Auto-loads on every turn.
+- **Root `CLAUDE.md`** = repo-wide operations + the `knowledge/` home map. Auto-loads on every turn.
 - **Subfolder `CLAUDE.md`** = nearest-file navigation (auto-loads only under that folder): the
   folder's local commands/quirks + a pointer to the home that **covers** it. **Never duplicate the
   root.**
@@ -107,7 +107,7 @@ The validator won't check harness files, so this skill does:
   `site-packages`/vendored dependency trees, and anything gitignored as a build artifact (verify
   with `git check-ignore`). A folder that only holds data or
   output earns no harness.
-- `/quenching:knowledge:align`'s skeleton already owns `docs/standards/CLAUDE.md`.
+- `/quenching:knowledge:align`'s skeleton already owns `knowledge/standards/CLAUDE.md`.
 
 ## 7. AGENTS.md
 

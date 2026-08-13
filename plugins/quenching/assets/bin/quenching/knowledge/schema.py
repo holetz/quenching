@@ -22,7 +22,7 @@ Exempt (skipped): `CLAUDE.md`/`AGENTS.md` (harness pointers, never OKF concepts)
   in an already-aligned bundle is recognized rather than read as a malformed concept
   doc. Retired is not unknown.
 
-The bundle root is the fixed `/.docs/` convention — no knob names it, and no config moves it.
+The bundle root is the fixed `/.knowledge/` convention — no knob names it, and no config moves it.
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ TAG = "okf"
 RESERVED = ("index.md", "log.md")
 # The bundle's one fixed concept doc, at a path the OKF contract pins. Its links are
 # its content, so it is link-checked alongside the reserved listings.
-GLOSSARY_REL = "knowledge/glossary.md"
+GLOSSARY_REL = "glossary.md"
 # Navigation/payload files — never OKF concepts, never required to carry a `type`.
 # `CLAUDE.md`/`AGENTS.md` are agent-pointers auto-loaded by the harness. Skip both.
 EXEMPT = ("CLAUDE.md", "AGENTS.md")
@@ -66,6 +66,11 @@ GIT_TIMEOUT_S = 10
 ASSET_DIRS = ("img", "imgs", "images", "assets", "static", "media", "node_modules", "__pycache__")
 # Markdown inline-link target: capture what sits between `](` and the closing `)`.
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
+# Pre-rename layout `okf-legacy-*` recognizes as migration debt — never a current OKF
+# name, only ever compared against to find a target that has not run `knowledge:align` yet.
+LEGACY_ROOT_NAME = ".docs"
+LEGACY_HOMES = {"knowledge": "concepts", "reference": "external"}
+LEGACY_QUADRANTS = {"getting-started": "tutorials", "concepts": "explanation"}
 
 
 def _nonempty(fm: dict, key: str) -> bool:

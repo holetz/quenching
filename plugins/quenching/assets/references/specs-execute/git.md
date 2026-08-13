@@ -19,12 +19,12 @@ somebody else's history.
 Before the first commit of a run, look for the target's own conventions — **once**, and cheaply:
 
 ```bash
-ls docs/standards/git/ 2>/dev/null
+ls .knowledge/standards/git/ 2>/dev/null
 ```
 
 | What is found | What governs |
 | --- | --- |
-| one or more `docs/standards/git/**.md` | **the target's docs**, read and followed verbatim |
+| one or more `.knowledge/standards/git/**.md` | **the target's docs**, read and followed verbatim |
 | nothing | the defaults below |
 | a doc that covers only part (e.g. commit subjects but not merges) | the target's for what it covers, the defaults for the rest |
 
@@ -272,7 +272,7 @@ identically whether the isolation taken was **Worktree** or plain **Branch**.
 
 `/quenching:specs:conclude`, without a `--spec` argument, reads this same line to resolve which spec(s)
 built the branch it is closing —
-[plan-git-record.md](/.docs/standards/workflows/plan-git-record.md) is the contract this mechanism
+[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) is the contract this mechanism
 answers to.
 
 <!-- rationale -->
@@ -379,7 +379,7 @@ strictly worse rather than merely narrower.
 land on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
 Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
-`plan-git-record.md` already state. `## Outcome` is
+[plan-git-record.md](../../../../../.knowledge/standards/workflows/plan-git-record.md) already state. `## Outcome` is
 written before the merge and says what the run **delivered** — an open, unmerged PR archived as
 `done` would assert something that has not happened yet. And `merge:` is stamped before the merge
 so that it is the run's last action; a run that ends before the merge leaves the record stamped and
@@ -512,9 +512,10 @@ gh pr create --base <base> --title "<title>" --body "<body>"
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch, and in a repo running the develop/main flow (`git/branching.md`) that default
-deliberately stays the publication branch — see that standard's own reasoning for why. `<base>` is
-this spec's own resolved base, the same value the local route's merge targets.
+default branch, and in a repo running the develop/main flow
+([knowledge/standards/git/branching.md](/.knowledge/standards/git/branching.md)) that default deliberately
+stays the publication branch — see that standard's own reasoning for why. `<base>` is this spec's
+own resolved base, the same value the local route's merge targets.
 
 **The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
 in the same block, before the run reports done:
@@ -542,7 +543,7 @@ the strategy and subject a local conclusion already carries.
 
 This file owns two prohibitions, and both are about **whose** conventions win:
 
-- **Never install `docs/standards/git/**` into a target.** See §The read-if-present rule. A default
+- **Never install `knowledge/standards/git/**` into a target.** See §The read-if-present rule. A default
   written into the repo stops being a default.
 - **Never apply a convention the target did not declare and this file does not name.** A commit
   style inferred from reading `git log` is a guess, and a guess about house style is worse than the
@@ -557,11 +558,11 @@ ones in this file.
 
 <!-- rationale -->
 
-Writing `docs/standards/git/**` into a repository that
+Writing `knowledge/standards/git/**` into a repository that
 never asked for it is `/quenching:specs:*` reaching into `/quenching:knowledge:align`'s territory, and it converts a default
 this file *offers* into a rule the repo now *declares* — which then wins over this file forever,
 without anyone having agreed to it.
 
-**On reporting which governed.** "Read the repo's `docs/standards/git/commit-messages.md`"
+**On reporting which governed.** "Read the repo's `knowledge/standards/git/commit-messages.md`"
 and "used the plugin default" are different facts about the same commit, and only one of them means
 the human's convention was honoured.

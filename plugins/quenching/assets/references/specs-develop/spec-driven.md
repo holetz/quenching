@@ -5,7 +5,7 @@ of the spec-driven facts** — the `specs/` layout, the spec file's format, the 
 derived stages, the executor contract, the `cq specs` tool surface, and the shape every
 `/quenching:specs:*` command reports in — and every
 `/quenching:specs:*` command cites these sections instead of restating them. The OKF bridge (what
-durable knowledge crosses from a spec into `docs/` and how) lives with the close-out command
+durable knowledge crosses from a spec into `knowledge/` and how) lives with the close-out command
 ([specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)).
 
 **Where a spec is stored is declared, not fixed.** A target repo names its backend in
@@ -17,7 +17,7 @@ than a path.
 
 What every backend owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and the refusal that never falls back to `files` — is owned by
-`spec-backend.md` and never restated here.
+[spec-backend.md](/.knowledge/standards/architecture/spec-backend.md) and never restated here.
 
 ## Contents
 
@@ -28,7 +28,7 @@ canonical document on read, and the refusal that never falls back to `files` —
 <!-- rules -->
 
 **One spec is ONE markdown file for its entire lifecycle.** Phases enrich it; they never split it.
-The front lives at the target repo root (never inside `docs/`):
+The front lives at the target repo root (never inside `knowledge/`):
 
 ```
 specs/
@@ -44,13 +44,13 @@ two declared sources of one fact will diverge, and a folder cannot lie. There is
 transition left — `plans/` → `archive/`, a `git mv` performed by `cq specs promote` — so `git log`
 narrates the close-out.
 
-`plans/` is **not** part of the OKF `docs/` bundle, and `cq knowledge validate` is never pointed at it:
+`plans/` is **not** part of the OKF `knowledge/` bundle, and `cq knowledge validate` is never pointed at it:
 a spec carries no OKF `type:`, and `cq specs validate` is its contract — the on-write check for
 this front, and the whole of it. The folder carries **no listing file** — `cq specs list` derives
 what it holds from disk on demand.
 
 Isolation-while-building is what a **branch or worktree** provides, with real merge, history, and
-reversion (what crosses into `docs/`: §Boundary).
+reversion (what crosses into `knowledge/`: §Boundary).
 
 The layout above is the `files` backend's. It is the reference implementation and not the only one:
 under an external backend there may be **no `specs/` folder at all**, the phase is the issue's own
@@ -142,7 +142,7 @@ backend has a faithful native counterpart — issue labels/assignees on `github`
 `azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
 document too, so a human's edit on the tracker is the spec's new value on the next read.
 `start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
-`date:` does everywhere (`docs/standards/architecture/spec-backend.md` §Armazenado não é
+`date:` does everywhere (`knowledge/standards/architecture/spec-backend.md` §Armazenado não é
 projetado has the full test).
 
 ## The fourteen sections
@@ -151,7 +151,7 @@ projetado has the full test).
 
 The canonical set, in canonical order. **Headings are a parsed contract** — canonical English, like
 frontmatter keys. A heading outside this set is a **stray** and `validate` flags it. Which language
-the body prose is written in is owned by the bundle's `docs/standards/agents/communication.md`.
+the body prose is written in is owned by the bundle's `knowledge/standards/agents/communication.md`.
 
 | # | Heading | Phase | Moment |
 | --- | --- | --- | --- |
@@ -270,12 +270,12 @@ on every call.
 `## Impact` is declared scope for human review, with exactly one machine-checked part:
 
 ```markdown
-### Standards this spec will write into docs/standards/
+### Standards this spec will write into knowledge/standards/
 
-- `docs/standards/auth/session-tokens.md` — how a session token is minted and revoked
+- `knowledge/standards/auth/session-tokens.md` — how a session token is minted and revoked
 ```
 
-`parse_impact_standards()` reads the `docs/standards/**.md` paths bulleted under **that heading and
+`parse_impact_standards()` reads the `knowledge/standards/**.md` paths bulleted under **that heading and
 only that heading**, and `validate` emits `sp-impact-uncovered` (warn) for any path no `## Tasks`
 item names.
 
@@ -285,9 +285,9 @@ write), and an unfilled `<placeholder>` declares nothing. A spec with no such su
 nothing and is never flagged — **the check is opt-in by writing the heading**.
 
 A bullet may carry a `§`address beside its path —
-`docs/standards/automation/skills.md §The verifier` — naming exactly which sections of that
+`knowledge/standards/automation/skills.md §The verifier` — naming exactly which sections of that
 standard the task must honor. `parse_impact_standards()` already tolerates it: the regex matches
-only the `docs/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
+only the `knowledge/standards/**.md` path and ignores the rest of the line, addressed or not. Without an
 address, `/quenching:specs:execute` step 4 reads the file whole — the address is an
 assertion the spec's own author makes, never an economy the executor infers on its own.
 
@@ -338,7 +338,7 @@ it.
 - its task line (with `files:` / `verify:` / `pattern:`),
 - `## Handoff`'s global block plus the `### N.` block of its own section — never a
   section that already closed, and never the whole `## Handoff`,
-- the touched subjects' `docs/standards/` contracts.
+- the touched subjects' `knowledge/standards/` contracts.
 
 It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
@@ -428,7 +428,7 @@ Owned by
 `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs`, with **no fallback and no manual rung**. Invoke with
 `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`).
 
-## Boundary: `specs/` vs the OKF `docs/` bundle
+## Boundary: `specs/` vs the OKF `knowledge/` bundle
 
 <!-- rules -->
 
@@ -438,14 +438,14 @@ this section.
 - `specs/plans/` — **the in-flight unit of work**: a spec's problem, design, and task checklist
   while it is being defined and built. Owned by the `/quenching:specs:*` commands; leaves for `archive/` when
   it is concluded.
-- `docs/standards/` — **how WE build** (binding contracts: naming, architecture, code);
-  `docs/knowledge/` — generic understanding. A spec writes its durable rule **directly** into
-  `docs/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching:specs:conclude`
+- `knowledge/standards/` — **how WE build** (binding contracts: naming, architecture, code);
+  `knowledge/concepts/` — generic understanding. A spec writes its durable rule **directly** into
+  `knowledge/standards/` (`authority`-graded) **when a task explicitly names it**, and `/quenching:specs:conclude`
   routes what the work merely *revealed*
   ([distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)) — never by bulk
   copy.
 
-The spec **is** the change: what it proves out lands in `docs/` as it is built, honestly graded
+The spec **is** the change: what it proves out lands in `knowledge/` as it is built, honestly graded
 (`authority: background` for an agreed-but-unproven rule, `current` for one the spec implemented
 and proved). There is no second store for it to duplicate.
 
@@ -464,8 +464,8 @@ Measured across the eight bodies before this section existed: two rendered a lit
 described their report in prose, producing six different closing verbs, no shared glyph, an `Age`
 column with no declared source, and `title` unused by every table although `cq specs` had been
 emitting it all along. A shape restated in eight bodies is the fan-out
-`computed-fact-prose-fanout.md` describes — it ages in seven the moment it changes in one, with
-every checker green.
+[/.knowledge/standards/quality/computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md)
+describes — it ages in seven the moment it changes in one, with every checker green.
 
 ### The three bands
 
@@ -570,7 +570,7 @@ prose-only code is never presented as tool output.
 <!-- rules -->
 
 One row per finding, for the split by what closes each that a read-only view owes
-(`read-only-views.md`):
+([/.knowledge/standards/architecture/read-only-views.md](/.knowledge/standards/architecture/read-only-views.md)):
 
 ```
 | Spec | Code | What it is | Closed by |
@@ -638,7 +638,7 @@ where acting on a false green is unrecoverable, but not the only one that runs c
 <!-- rules -->
 
 This file is English; **the report a command prints is not**. It follows the target repo's declared
-tag ([/.docs/standards/agents/communication.md](/.docs/standards/agents/communication.md) §What it
+tag ([/.knowledge/standards/agents/communication.md](/.knowledge/standards/agents/communication.md) §What it
 governs). So each column has a **canonical name**, which is its address above, and a **printed
 label**, which follows the tag.
 

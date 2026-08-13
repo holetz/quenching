@@ -49,7 +49,7 @@ makes legal. Writing fourteen `- none` headings here would make a fresh capture 
 the heading absent or write an explicit none that *says* the source was silent.
 - **Kebab slug in the repo's declared language.** `slugify` folds accents (`criação` → `criacao`)
 and `SLUG_RE` refuses (exit 2) on a bad one — derive it in the language
-[communication.md](/.docs/standards/agents/communication.md) §Declaring it declares.
+[communication.md](/.knowledge/standards/agents/communication.md) §Declaring it declares.
 - **MERGE, never clobber.** `cq specs new` refuses (exit 2) on an existing slug. Take that as the
 answer: sharpen the existing spec instead, or pick a different slug.
 - **Compute `complexity`, never ask for it.** The level derives from the classification (step 1),
@@ -117,10 +117,12 @@ falls back to it on its own where nothing was resolved, but a human still chose 
 work this is and gets the same say `subjects` already gets.
 
 **A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
-documentation, written for exactly this judgment — and propose zero or more that fit the input, in
-the SAME question as the subject and the type where all apply, or its own `AskUserQuestion`
-otherwise. A tag outside the declared catalog is never proposed: `tagCatalog` is the closed set
-this judgment draws from.
+documentation, written for exactly this judgment
+([plugin-configuration.md](/.knowledge/standards/workflows/plugin-configuration.md) §Three keys are
+prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
+question as the subject and the type where all apply, or its own `AskUserQuestion` otherwise. A
+tag outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment
+draws from.
 
 **The write is always the deterministic verb, never this command inventing its own.** The chosen
 subject's key is carried to step 5's `--subject`, the chosen type's key to step 5's `--type`; any
@@ -237,7 +239,7 @@ Close on §The next-step block: `/quenching:specs:develop <slug>` to take it fur
 - **Never carry a plan's merge obligations into `## Tasks`.** On the plan-file path a native plan's
   "Etapas" routinely end in a version bump, a changelog entry or *update the docs*; none of them
   converts, because what the release *is* is unknowable until the last task lands.
-  `/quenching:specs:conclude` owns them, along with the `/.docs/` the work *reveals* and the cycle's
+  `/quenching:specs:conclude` owns them, along with the `/.knowledge/` the work *reveals* and the cycle's
   own closing actions. A standard the plan declares the spec will write still becomes a checkbox.
 - Never work around `cq specs new`'s exit 2 by inventing a slug variant.
 - Never interrogate the human for `complexity` — compute it from the input and propose it; a

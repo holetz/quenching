@@ -24,11 +24,11 @@ this skill owns all three, and `/quenching:components:align` cites them. Molds l
 ## Doctrine
 
 - **The rule governs; the plan proposes.** In a target repo the taxonomy rule is
-  `/.docs/standards/automation/skills.md` — read it before classifying and follow it when
+  `/.knowledge/standards/automation/skills.md` — read it before classifying and follow it when
   present (a repo-specific delta there beats the plugin default). Absent + OKF bundle
   present → the plan offers creating it from the mold, born `authority: background`;
   never created without the OK.
-- **No bundle, no tail — but the mint proceeds.** `/.docs/index.md` without `okf_version`
+- **No bundle, no tail — but the mint proceeds.** `/.knowledge/index.md` without `okf_version`
   (or absent) means: write the command file only, skip registry/glossary/log silently, and
   suggest `/quenching:knowledge:align` **once**.
 - **One plan, one OK, nothing before.** Classification, names, every file to be written,
@@ -52,8 +52,8 @@ Resolve `cq components` per
 ## Workflow
 
 ### 1. Read the rule
-Read `/.docs/standards/automation/skills.md` and confirm the bundle
-(`/.docs/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
+Read `/.knowledge/standards/automation/skills.md` and confirm the bundle
+(`/.knowledge/index.md` carries `okf_version`). Rule present → it governs. Rule absent, bundle
 present → add "create the rule from `automation/skills-standard.md`" to the plan. No
 bundle → note the tail as skipped and plan the `/quenching:knowledge:align` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
@@ -109,7 +109,7 @@ Write the command file from `automation/command.md` — frontmatter and body in 
 write the rule if planned. **Done when:** every planned file exists with its planned content.
 
 ### 8. OKF tail (bundle present)
-Create `/.docs/documentation/reference/automation.md` from `automation/registry.md` first if it is
+Create `/.knowledge/documentation/reference/automation.md` from `automation/registry.md` first if it is
 absent (it was in the plan) — `registry reindex` refuses a missing doc (`sk-no-registry`) or a
 doc with no markers (`sk-no-zone`) rather than placing a table at a guessed anchor in curated
 prose. Then regenerate the zone:
@@ -118,7 +118,7 @@ cq components registry reindex --json
 ```
 Update `documentation/reference/`'s `index.md` per the procedure in
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md). If the
-command coined a new repo-specific term, **offer** ONE `knowledge/glossary.md` entry — the user
+command coined a new repo-specific term, **offer** ONE `glossary.md` entry — the user
 decides. **Done when:** `registry reindex` exits 0 and the index is honest.
 
 ### 9. Self-check

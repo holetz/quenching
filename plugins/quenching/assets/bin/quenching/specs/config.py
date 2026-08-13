@@ -362,12 +362,12 @@ def load_config(root: str) -> dict:
 
 def infer_base_branch(cfg: dict, origin_head: str | None, init_default: str | None) -> str:
     """An unstamped spec's `base`, stopping at the first that answers — the chain
-    /.docs/standards/workflows/plan-git-record.md declares once its own `branch.base`
+    /.knowledge/standards/workflows/plan-git-record.md declares once its own `branch.base`
     record is absent, and the caller's own git facts (`origin_head`, `init_default`)
     already resolved: this function decides only the ORDER, never runs git itself.
 
     A DECLARED `integrationBranch` must win over `origin_head`. Under the develop/main
-    flow (/.docs/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
+    flow (/.knowledge/standards/git/branching.md) `origin/HEAD` resolves to `main` — the
     PUBLICATION branch — so falling through to it by default would merge an unstamped
     spec into the one branch that must only ever receive a deliberate release. Left
     undeclared, this function changes nothing: most repositories have no `develop`

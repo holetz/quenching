@@ -21,26 +21,26 @@ Ask **"what IS this, relative to us?"**:
 | a rule for **how WE build** (proven, or agreed-but-unproven) | `standards/<subject>/` | `standard` | `standard-front.md` | `<subject>/<concept>.md` |
 | **direction** for an area (no deadline) | `vision/` | `vision` | `vision/area.md` | `<area>.md` |
 | a **how-to / task recipe** (product usage) | `documentation/how-to/` | `documentation` | `concept-front.md` | `how-to/<slug>.md` |
-| a **tutorial** (learning-oriented) | `documentation/getting-started/` | `documentation` | `concept-front.md` | `getting-started/<slug>.md` |
-| **product reference / explanation** (site page) | `documentation/{reference,concepts}/` | `documentation` | `concept-front.md` | `<section>/<slug>.md` |
-| **generic understanding we hold** (concept / explanation / learning) | `knowledge/<subject>/` | `knowledge` | `concept-front.md` | `<subject>/<slug>.md` |
-| a **fact about an external** tool/lib/regulation | `reference/{tools,libraries,regulations}/` | `reference` | `concept-front.md` | `<slug>.md` |
+| a **tutorial** (learning-oriented) | `documentation/tutorials/` | `documentation` | `concept-front.md` | `tutorials/<slug>.md` |
+| **product reference / explanation** (site page) | `documentation/{reference,explanation}/` | `documentation` | `concept-front.md` | `<section>/<slug>.md` |
+| **generic understanding we hold** (concept / explanation / learning) | `concepts/<subject>/` | `concept` | `concept-front.md` | `<subject>/<slug>.md` |
+| a **fact about an external** tool/lib/regulation | `external/{tools,libraries,regulations}/` | `external` | `concept-front.md` | `<slug>.md` |
 | **our data** — a system / schema / table | `catalog/<system>/…` | `system`/`schema`/`table` | `catalog/{system,schema,table}.md` | see below |
-| a **regulation PDF / binary we consume** (extract) | `reference/regulations/` | `sidecar` | `sidecar.md` | `<slug>.md` (+ `binary:`) |
+| a **regulation PDF / binary we consume** (extract) | `external/regulations/` | `sidecar` | `sidecar.md` | `<slug>.md` (+ `binary:`) |
 
 ### Boundary tie-breakers
-- **standards vs reference:** "how **WE** do it" (standards) vs "a fact about what **WE
-  CONSUME**" (reference). Our implementation of a regulation is a `standard`; the regulation
-  itself is a `reference` sidecar.
-- **knowledge vs its neighbors:** `knowledge/` is **generic understanding** (a concept,
+- **standards vs external:** "how **WE** do it" (standards) vs "a fact about what **WE
+  CONSUME**" (external). Our implementation of a regulation is a `standard`; the regulation
+  itself is an `external` sidecar.
+- **concepts vs its neighbors:** `concepts/` is **generic understanding** (a concept,
   glossary, mental model, learning) — non-binding. A binding rule for how we build is a
-  `standard`; a fact about a **named** external dependency is `reference`; a set of steps for using the
+  `standard`; a fact about a **named** external dependency is `external`; a set of steps for using the
   product is a `documentation` how-to. When understanding hardens into a rule, it distills
   into `standards/` and leaves
-  `knowledge/`.
-- **documentation vs knowledge:** a **published-site page** (narrative, for a human reading
+  `concepts/`.
+- **documentation vs concepts:** a **published-site page** (narrative, for a human reading
   the docs) is `documentation/`; **internal team understanding** (mental model, learning,
-  glossary) is `knowledge/`.
+  glossary) is `concepts/`.
 - **standards & agreed rules:** a **proven, current** rule for how we build is a `standard`
   (`authority: current`); an **agreed-but-not-yet-proven** rule is a `standard` with
   `authority: background` until proven. There is **no separate decision home** — a decision's
@@ -49,7 +49,7 @@ Ask **"what IS this, relative to us?"**:
 - **spec vs vision:** a **parked unit of work** is a **spec** and does **not** belong in this
   bundle at all — it lives at `specs/plans/`, outside it, so route the capture to
   `/quenching:specs:create`. A **settled direction** with no deadline is a `vision` and stays here. The
-  full `specs/` ↔ `docs/` boundary is owned once by
+  full `specs/` ↔ `knowledge/` boundary is owned once by
   [`specs-develop/spec-driven.md`](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
   §Boundary.
 - **standards vs catalog:** the *rule* for modeling data (grain/keys) is a `standard`
@@ -93,7 +93,7 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-impor
 <!-- rules -->
 
 - Add `* [<title>](<relative-path>.md) — <description>` under the right section. Keep links
-  relative within the home, absolute (`/.docs/...`) across homes.
+  relative within the home, absolute (`/.knowledge/...`) across homes.
 - If the doc **creates a new folder**, create that folder's `index.md` too (a frontmatter-free
   listing) and link it from the parent — a folder of concepts without one is a `dir-no-index`
   gap, and an unlisted doc is an `index-orphan`.
@@ -108,7 +108,7 @@ contract is [sources.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-impor
 
 <!-- rules -->
 
-The `knowledge/` home ships one fixed file, [`knowledge/glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/docs/knowledge/glossary.md):
+The bundle root ships one fixed file, [`glossary.md`](${CLAUDE_PLUGIN_ROOT}/assets/knowledge/glossary.md):
 the repo's A–Z term lookup, a flat alphabetical bullet list in the same syntax every
 `index.md` uses (the one deliberate exception to "one concept per file") — `* [<Term>]
 (<path>.md) — <one-sentence definition>` when a concept doc exists, or `* **<Term>** —
@@ -120,11 +120,11 @@ term that belongs in the glossary** and, if so, enrich it:
   jargon a newcomer would not know (a domain entity, an internal codename, a term of
   art). Skip generic English and terms already listed.
 - **How to add it (MERGE, never clobber).** Insert the term in **alphabetical** position,
-  in the linked bullet form, pointing at the concept doc you just wrote (`/.docs/<path>.md`,
+  in the linked bullet form, pointing at the concept doc you just wrote (`/.knowledge/<path>.md`,
   absolute across homes). If an entry for the term already exists, sharpen its definition
   or add the link — never overwrite a filled definition or a filled link.
 - **Only the entry.** The depth stays in the concept doc; the glossary points to it. Do not
-  touch `knowledge/index.md` for this — the glossary is already listed there.
+  touch `concepts/index.md` for this — the glossary is already listed there.
 
 ## Self-check before finishing
 

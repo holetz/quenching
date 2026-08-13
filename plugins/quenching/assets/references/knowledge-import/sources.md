@@ -101,7 +101,7 @@ the reading was, and that costs a sentence in the body rather than a second key 
 2. **Against the existing bundle.** Before minting, look for the doc that already covers this
    unit — in this order:
 
-   1. **Exact, by origin.** `grep -rn 'source_uri: <the unit's URI>' docs/`. A hit is a doc
+   1. **Exact, by origin.** `grep -rn 'source_uri: <the unit's URI>' knowledge/`. A hit is a doc
       minted from *this very unit* — on an earlier run, or earlier in this one when a previous
       slice already minted it. Two **overlapping seeds** are not this case: they carry different
       URIs, so this lookup can never match them.

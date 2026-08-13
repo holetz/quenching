@@ -5,7 +5,7 @@ current branch's own `quenching-slugs:` marking — written by `/quenching:specs
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Marking the branch with the
 specs it built — filtering it to what still resolves, and falling back to a diff-based offer when
 nothing does. The contract this file answers to is
-[plan-git-record.md](/.docs/standards/workflows/plan-git-record.md).
+[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md).
 
 ## Reading the marking
 
@@ -55,7 +55,7 @@ surfaced as a choice, and never assumed to be the answer because it was the only
    by repository, and the question is already cheap.
    - **Accepted** → the new spec is minted, and its slug threads into the rest of `conclude` exactly
      as a marked one would.
-   - **Declined** → `conclude` runs **headless**: the branch review, the emergent `/.docs/`, and the
+   - **Declined** → `conclude` runs **headless**: the branch review, the emergent `/.knowledge/`, and the
      distillation still happen, but there is no spec file — `## Outcome` has nowhere to land, so the
      run's report carries that summary instead.
 
