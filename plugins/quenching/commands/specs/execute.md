@@ -96,9 +96,9 @@ it. Anything short of being **on** the ref falls through to the branches below.
 record, when one already exists; else the repo's own declared `integrationBranch` (already read
 above, from `cq specs config --json`); else `git symbolic-ref refs/remotes/origin/HEAD` (already
 read above); else `git config init.defaultBranch`, and then `main`. **The declared integration
-branch is consulted before `origin/HEAD`, never after** — under the develop/main flow
-([branching.md](/.knowledge/standards/git/branching.md)) `origin/HEAD` resolves to `main`, the
-publication branch, and falling through to it first would merge an unstamped spec there by
+branch is consulted before `origin/HEAD`, never after** — under the develop/main flow `origin/HEAD`
+resolves to `main`, the publication branch, and falling through to it first would merge an unstamped
+spec there by
 default. Left undeclared, this step answers nothing and the chain is exactly as it was.
 
 **Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
@@ -338,9 +338,8 @@ g. **Announce the declared hook for this event, and move on.** Once the task has
    name, the declared command, and the prompt whoever executes the hook must follow — then move
    on. Announcing is not executing: never invoke the declared command, never wait for it, never
    integrate its result. The step-2 read already filtered `enabled: false` hooks out, so this
-   announces exactly what the read returned, whether or not the hook was written for this repo
-   ([extension-points.md](/.knowledge/standards/automation/extension-points.md) §The body announces —
-   name, command and prompt — and moves on):
+   announces exactly what the read returned, whether or not the hook was written for this repo —
+   the body announces name, command and prompt, and moves on:
 
    ```text
    after_specs_execute_task — declared hook: /my:security-review
