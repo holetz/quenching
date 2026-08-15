@@ -44,6 +44,9 @@ human on the same screen; the human's OK is the run's authorization.
   §Derived stages §Frontmatter §The `cq specs` tool surface — the derived stage is the dispatch,
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface
   this command reads.
+- [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+  §Resolving the tool — how the `cq` written bare below is resolved, and what to write when it
+  does not resolve. Branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Doctrine
 
@@ -84,6 +87,7 @@ nothing to conduct: say so and stop.
 **Done when:** one spec in `plans/` is resolved.
 
 ### 2. Read the state in one call
+Resolve `cq` per the contracts block above before the first call.
 ```bash
 cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
 cq specs config --json                  # backend, integrationBranch

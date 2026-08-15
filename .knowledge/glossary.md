@@ -156,7 +156,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the four self-contained scripts each
   front used to ship separately. Invoked as `cq <pilar> <subcomando>…` — `cq knowledge …`,
-  `cq specs …`, `cq components …` — one command per front.
+  `cq specs …`, `cq components …` — one command per front. **Two doors, one file:** `bin/cq`, a
+  shim in the directory Claude Code appends to `PATH`, is what lets a body write the name bare; the
+  plugin path is what it falls to wherever the PATH does not hold — including work on the quenching
+  repository itself, where that entry names the *installed* checkout.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than

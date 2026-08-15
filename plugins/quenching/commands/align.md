@@ -39,6 +39,11 @@ It **owns** the two contracts every align shares, and they live beside each othe
   cycle-authorization contract, the convergence condition, the anti-spin guards, and why per-item
   commands are never stages.
 
+Resolve `cq` — written bare in the probe below — per
+[tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool, the third file in that folder. Branch on the **exit code**
+(0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
+
 They live here because this is the command that spans all three fronts; each align cites them as
 its doctrine and states only its own front's deltas. A change to how a sweep behaves is one edit
 here, not three edits that must stay in agreement.
@@ -89,7 +94,7 @@ here, not three edits that must stay in agreement.
 Presence and rough scale only — **not** a full inventory, which each align does for itself, and
 each already probes before paying for one:
 - **`/.knowledge/`** — does the bundle root exist (`/.knowledge/index.md` with `okf_version`)? Run
-  `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate /.knowledge --json` and keep
+  `cq knowledge validate /.knowledge --json` and keep
   the finding counts; note whether the project memory dir
   (`~/.claude/projects/<cwd>/memory/`) holds files and which harness files exist.
 - **`/.specs/`** — does a `/.specs/` root exist? If yes, `cq specs doctor --json` and
