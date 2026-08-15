@@ -171,9 +171,11 @@ cq specs section <slug> Problem --write   # body on stdin
 
 **Sentence path: stop here.** Write nothing into any other heading.
 
-**Plan-file path:** additionally write each section the plan actually supports, via
-`cq specs section <slug> "<Heading>" --write`. Where the plan was silent on a section you are
-writing others around, write `- none — <what the source did not record>`. Never fabricate.
+**Plan-file path:** additionally write every section the plan actually supports, in ONE call —
+`cq specs section <slug> "<Heading>,<Heading>…" --write`, the bodies on stdin delimited by their
+own `## <Heading>` lines, the set matching what was declared. Where the plan was silent on a
+section you are writing others around, write `- none — <what the source did not record>`. Never
+fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
 ### 6. Compute and propose `complexity`

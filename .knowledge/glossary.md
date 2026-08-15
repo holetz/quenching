@@ -405,6 +405,12 @@ sentence, and **link out** rather than explaining in full here.
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
   same **Canonical set**, `SECTION_CASES` — which pins the *sectioning* rule the two answer
   identically, and therefore not the ladder below, a CLI-argument rule only the first has.
+  `cq specs section --write` is plural on the same terms, and its delimiter is the reader's **own
+  output**: bodies arrive on stdin under the `## <Heading>` lines the plural read prints, so the
+  pair round-trips and no second grammar was invented to say where one body ends. A write side that
+  goes plural inherits the read side's format rather than inventing a separator; the headings named
+  on the command line stay required as the guard, and a set that disagrees with the stream refuses
+  before writing any of them.
   **They take that list differently, deliberately.** `cq components` resolves each value whole before
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
   cited by its full title; `cq specs` splits unconditionally, which is unreachable there because
