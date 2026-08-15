@@ -67,9 +67,7 @@ answer in one word — in a grouped call, the recommended option is listed **fir
 > absorb a flaky test or a missing import, short enough that a genuinely wrong approach stops
 > burning tokens. Agree, or is this suite slow enough that five is too many?"
 
-Use **AskUserQuestion** when the answer space is genuinely a small set of options (it renders as
-choices and takes one click); ask in prose when the answer is open-ended. Grouping never applies to
-prose questions — there is no way to answer four of them in one word each.
+Use **AskUserQuestion** when relevant.
 
 <!-- rationale -->
 The rule this replaced was *never batch* — absolute, and stronger than its own reason. That reason
