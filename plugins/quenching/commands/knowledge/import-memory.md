@@ -98,6 +98,10 @@ the home boundaries, `type` vocabulary, molds, and index/log procedure are share
 self-checked. Nothing else in this command needs a shell — the reconnaissance is `Read`/`Glob`
 and the edits are `Write`/`Edit`.
 
+Resolve `cq` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
+
 ## Workflow
 
 ### 1. Locate the memory dir
