@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# citation-check.sh — the two halves of a rename, over the whole repository, blind.
+# citation-check.sh — every citation this repository makes, against the base that citation claims.
 #
 # A rename has two halves, and the cheap one is the trap. Half 1 measures that the OLD name died.
 # Half 2 measures that the NEW name was born. A repository in which every citation points at
@@ -7,8 +7,14 @@
 # is silent: the command registry is rebuilt at SESSION START, so the session that moves a body
 # is structurally incapable of observing the breakage it caused.
 #
-#   usage:  ./citation-check.sh [--half 1|2] [/path/to/repo]
-#   exit :  0 both halves passed
+# Half 3 asks half 2's question of the prose this plugin SHIPS, against the base that prose is
+# actually read from. A command body and a reference are loaded inside a TARGET checkout, whose
+# whole bundle is the skeleton under `assets/knowledge/` — so a markdown link to a
+# `/.knowledge/standards/**` the skeleton does not carry resolves here and nowhere else. Half 2
+# cannot see it by construction: it resolves against THIS checkout, where every standard exists.
+#
+#   usage:  ./citation-check.sh [--half 1|2|3] [/path/to/repo]
+#   exit :  0 every selected half passed
 #           1 a half failed — a dead name survives, or a citation resolves to nothing
 #           2 nothing could be measured — no verdict, do not read it as a pass
 #
@@ -43,7 +49,7 @@
 # Established by the `modularizar-specs-knowledge-components` spec, task 1.2.
 set -uo pipefail
 
-HALF="1,2"
+HALF="1,2,3"
 REPO=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -343,9 +349,86 @@ sys.exit(1 if bad else 0)
   echo
 fi
 
+# --------------------------------------------------------------------------- #
+# Half 3 — the shipped prose promises only what the skeleton delivers.
+#
+# One assertion: every markdown link to a `/.knowledge/**.md` written in prose the plugin SHIPS
+# resolves against the published skeleton, `plugins/quenching/assets/knowledge/`.
+#
+# WHY THIS IS NOT A CORRECTION OF HALF 2. Half 2 is right that a shipped tree describes another
+# repository — it exempts `assets/knowledge/` and `assets/templates/` for exactly that reason. It
+# just never applied the same reading to `commands/**` and `assets/references/**`, which are shipped
+# the same way and read inside the target with the target paths. So half 2 resolves those links
+# against THIS checkout, where every standard exists, and reports a link that is dead in every other
+# repository as fine. The two halves measure the same text against different bases and neither
+# subsumes the other: half 2 catches a link to a standard that exists nowhere, half 3 a link to one
+# that exists only here.
+#
+# ONLY LINKS ARE MEASURED, AND THAT IS THE RULE RATHER THAN A GAP. The spelling carries the claim: a
+# markdown link promises a destination, so it must resolve in a target; a path written as plain
+# inline code names a doc the target may or may not have written, and the sentence around it has to
+# stand without it. That distinction is already the repository's practice — every conditional
+# citation is spelled bare today, several saying so in the sentence itself ("follow it when
+# present") — and measuring the bare form too would turn every honest conditional mention into a
+# finding, leaving a rule that reads "never name a standard the target owns".
+#
+# Both spellings of the same promise are one claim: rooted at the repo (`/.knowledge/...`) and
+# written relative to the citing file (`../../../../.knowledge/...`) normalize to the same tail.
+#
+# The instrument does not measure itself: this file is under `assets/checks/`, outside the two
+# trees swept, by construction rather than by exception.
+# --------------------------------------------------------------------------- #
+if want 3; then
+  echo "3. the shipped prose promises only what the skeleton delivers"
+  git ls-files -z -- 'plugins/quenching/commands' 'plugins/quenching/assets/references' | python3 -c '
+import os, re, sys
+
+skeleton = "plugins/quenching/assets/knowledge"
+# A markdown link whose target names a file in the bundle, in either spelling. The optional `#frag`
+# is an address inside the page, never part of the claim that the page exists.
+LINK_RE = re.compile(r"\]\(([^)\s#]*\.knowledge/[A-Za-z0-9_./-]+\.md)(?:#[^)\s]*)?\)")
+
+findings, checked = [], 0
+for rel in sys.stdin.buffer.read().split(b"\x00"):
+    rel = rel.decode("utf-8", "replace")
+    if not rel.endswith(".md"):
+        continue
+    with open(rel, encoding="utf-8", errors="replace") as handle:
+        for number, line in enumerate(handle, 1):
+            for cited in LINK_RE.findall(line):
+                checked += 1
+                tail = cited.split(".knowledge/", 1)[1]
+                if not os.path.exists(os.path.join(skeleton, tail)):
+                    findings.append((rel, number, cited))
+
+for rel, number, cited in findings[:200]:
+    print("         %s:%d: %s" % (rel, number, cited))
+if len(findings) > 200:
+    print("         … and %d more" % (len(findings) - 200))
+
+# A run that extracted no link measured nothing, and would otherwise report the empty corpus as
+# clean — the same arming proof halves 1 and 2 each carry in their own shape.
+if checked == 0:
+    print("  no link was extracted — the corpus is empty or the pathspec excludes everything")
+    print("  nothing could be measured — this is not a pass")
+    sys.exit(2)
+if findings:
+    print("  FAIL   shipped bundle links: %d of %d resolve in no repository but this one"
+          % (len(findings), checked))
+    sys.exit(1)
+print("  ok     shipped bundle links: %d checked, all resolve against the skeleton" % checked)
+'
+  case $? in
+    0) ;;
+    2) echo; echo "  half 3 could not be measured"; exit 2 ;;
+    *) FAIL=$((FAIL+1)) ;;
+  esac
+  echo
+fi
+
 if [ "$FAIL" -gt 0 ]; then
   echo "  $FAIL failing assertion(s)"
   exit 1
 fi
-echo "  both halves clean"
+echo "  every half selected is clean"
 exit 0

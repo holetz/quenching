@@ -1,23 +1,24 @@
 ---
 type: standard
 title: Citation verification
-description: How citation-check.sh proves a rename's two halves both landed — the old name died and the new name was born, blind and with no allowlist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
+description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
 resource: plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
-timestamp: 2026-08-12
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: revisar-politica-de-assets-checks spec (task 1.1)
+source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3)
 maintainer: quenching
 ---
 
 # Citation verification
 
-What it takes to claim a rename actually finished. The sibling
+What it takes to claim a citation resolves. The sibling
 [surface-verification.md](surface-verification.md) covers whether a changed command **loads**;
-this standard covers a narrower and cheaper question — whether every citation to a renamed name,
-anywhere in the tracked tree, still resolves. `assets/checks/citation-check.sh` is the
-implementation.
+this standard covers a narrower and cheaper question — whether every citation, anywhere in the
+tracked tree, still resolves **against the base it claims**. `assets/checks/citation-check.sh` is
+the implementation, in three halves: two about a rename inside this checkout, and one about the
+prose this repository ships into other people's.
 
 ## The two halves, and why the cheap one is the trap
 
@@ -57,6 +58,51 @@ moment either one is edited alone:
 None of the three is an allowlist: no path is exempted by being on a list, and each is a statement
 about what a tree is describing (the present vs. a frozen or historical record), not an exception
 carved out for convenience.
+
+## Half 3 — the shipped prose promises only what the skeleton delivers
+
+Halves 1 and 2 ask their question of **this** checkout. Half 3 asks half 2's question of the prose
+this repository **ships**, against the base that prose is actually read from.
+
+A command body under `plugins/quenching/commands/**` and a reference under
+`plugins/quenching/assets/references/**` are loaded inside a **target** checkout, with the target's
+paths. The only bundle content the plugin delivers is the skeleton under
+`plugins/quenching/assets/knowledge/` — index files and a single leaf standard. So a markdown link
+to a `/.knowledge/standards/**` the skeleton does not carry resolves here and in no other
+repository.
+
+**Half 2 cannot see this, and is not wrong to miss it.** Its header already states that a shipped
+tree describes another repository, which is why it exempts `assets/knowledge/` and
+`assets/templates/`. It simply never applied that reading to `commands/**` and
+`assets/references/**`, which are shipped the same way — so it resolves their bundle links against
+this checkout, where every standard exists. The two halves measure the same text against different
+bases and neither subsumes the other: **half 2 catches a link to a standard that exists nowhere,
+half 3 a link to one that exists only here.**
+
+### The spelling carries the promise
+
+Half 3 measures **markdown links only**, and that is the rule rather than a gap:
+
+- a **markdown link** to `/.knowledge/**.md` promises a destination, so it is honest only where the
+  published skeleton carries the file;
+- a path written as **bare inline code** names a doc the target may or may not have written, and
+  obliges the sentence around it to stand without it.
+
+The distinction was **read from the repository, not invented for it**. Every conditional citation
+in the shipped prose was already spelled bare, several saying so in the sentence itself — *"follow
+it when present"*, *"if present"*, *"absent + OKF bundle present → the plan offers"* — while the
+binding ones were spelled as links. What was missing was never the convention; it was the
+instrument. Measuring the bare form too would turn every honest conditional mention into a finding
+and leave a rule that reads *never name a standard the target owns*, which is worse than the
+problem.
+
+Both spellings of the same promise are one claim: rooted at the repo (`/.knowledge/...`) and written
+relative to the citing file (`../../../../.knowledge/...`) normalize to the same tail before the
+skeleton is consulted.
+
+Half 3 carries its own arming proof, in the shape halves 1 and 2 each have: extracting **zero**
+links is exit **2**, "nothing could be measured", never a pass — an empty corpus is how a sweep
+reports a repository as clean over nothing.
 
 ## Who runs it, and when
 
@@ -106,4 +152,9 @@ happens, and the rule above is revisited only on that evidence.
 - **The `/.knowledge/` bundle's own internal link integrity.** `cq knowledge validate` covers a bundle
   citing itself, run as the `verify:` of the docs sweep; `citation-check.sh` measures the bundle
   citing the *plugin*, which has no other instrument — see
-  [bundle-verification.md](bundle-verification.md) for the former.
+  [bundle-verification.md](bundle-verification.md) for the former. The opposite direction — the
+  *plugin* citing a bundle it does not ship — is half 3's, and has no other instrument either.
+- **Whether a bare inline-code path tells the truth.** Half 3 measures links, by the spelling rule
+  above. A bare path that names a standard as though the target had it, in a sentence that does not
+  stand without it, passes. Tightening the rule waits on the first real case of one misleading a
+  reader inside a target — evidence, not a schedule.

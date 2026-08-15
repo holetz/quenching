@@ -81,7 +81,7 @@ retired.
 | --- | --- |
 | `references/` | the **shared procedure** — owned once, cited by absolute path from the command bodies rather than restated. One folder per owning command, named for that command's path with `/` → `-`; other commands may cite it (`references/align/` serves seven). |
 | `evals/` | the **measured case sets** written by `/quenching:components:command:eval` — `evals.json` plus a timestamped run directory. The tree mirrors the command's path with the slashes kept, so `commands/components/hook/new.md` ↔ `evals/components/hook/new/`, and renaming a command renames its eval folder in the same step. |
-| `checks/` | the **harnesses that grade this checkout** out of process — `functional-checks.sh` (the command registry is built at session start, so no change under `commands/**` is testable in the session that writes it), `conclude-order-check.sh` (order is a property only a real git history exhibits), and `citation-check.sh` (a rename's two halves — the old name dead, the new one born — cannot be seen by the session that moved it). Never installed, outside the lockstep. |
+| `checks/` | the **harnesses that grade this checkout** out of process — `functional-checks.sh` (the command registry is built at session start, so no change under `commands/**` is testable in the session that writes it), `conclude-order-check.sh` (order is a property only a real git history exhibits), and `citation-check.sh` (a rename's old name dead and its new name born cannot be seen by the session that moved the body, and a third half measures that the prose shipped into a target promises only what the published skeleton delivers). Never installed, outside the lockstep. |
 
 ## The signature
 
