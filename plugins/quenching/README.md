@@ -246,11 +246,15 @@ the docs nav"*, *"build the documentation site"*, *"the site is missing the new 
 
 Where the other skills organize a repo's *knowledge*, this pair organizes its
 **automation surface**: the repo's own `.claude/skills/` and `.claude/commands/`. One
-taxonomy axis governs everything — a skill is **domain-bound** (serves ONE folder;
-named as the flattened folder path + verb, `communications-teams-create`, and mirrored
-by a thin command wrapper at `.claude/commands/communications/teams/create.md` →
-`/communications:teams:create`) or **generic** (serves the repo as a whole; named
-verb-object, never mirrored). Two OKF artifacts anchor the family in the bundle:
+taxonomy axis governs everything, asked as up to two questions — first the
+**category/subject** the command belongs to (`git`, `deploy`, ..., when one is evident; a
+`commit` command under `git` lives at `.claude/commands/git/commit.md` → `/git:commit`), then
+the older test read against it: **domain-bound** (serves ONE folder; pathed after that folder
+plus a verb, `.claude/commands/communications/teams/create.md` → `/communications:teams:create`)
+or **generic** (serves the repo as a whole; a flat `verb-object`). With both a category and a
+real folder, that folder either nests inside the category or is replaced by it, per the
+convention already in force for that category in that repo. Two OKF artifacts anchor the family
+in the bundle:
 the **rule** at `/.knowledge/standards/automation/skills.md` (`type: standard`, born
 `authority: background`) and the **registry** at
 `/.knowledge/documentation/reference/automation.md` (`type: documentation`), whose

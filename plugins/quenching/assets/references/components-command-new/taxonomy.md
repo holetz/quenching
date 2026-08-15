@@ -64,7 +64,7 @@ repo.
 | No category, generic | verb-object (or the object alone when the verb is implied), no folder path | `release-notes`, `generate-changelog` |
 | Category, no folder tied | `<categoria>/<verb>` (or `<categoria>/<verb-object>`) | `git` + commit → `git/commit` |
 | Category, folder nests | `<categoria>/<folder-path>/<verb>` | `deploy` + `infra/terraform/` + apply → `deploy/infra/terraform/apply` |
-| Category, folder replaced | `<categoria>/<verb>` | `git` + commit (see above) — the category takes the folder's place in the path |
+| Category, folder replaced | `<categoria>/<verb>` | `deploy` + `infra/terraform/` + apply → `deploy/apply` — the category takes the folder's place |
 
 The path alone tells where the command acts: a reader scanning `.claude/commands/`
 reconstructs the monorepo map from the domain-bound and category paths, and anything at the

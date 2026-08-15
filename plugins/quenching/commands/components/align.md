@@ -148,7 +148,6 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `/.knowledge/standards/automation/skills.md` if present — it governs; note whether
-the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist, and whether
 the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist.
 
 **Where an item classifies with an evident category, also read the nest-vs-replace convention**
@@ -157,6 +156,13 @@ convention): `Glob` `.claude/commands/<categoria>/**` and infer it from what alr
 Derive the canonical path the classification produces and diff it against the item's current
 path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
 never a new plan section or a new confirmation of its own.
+
+**A category whose convention is not readable yields no candidate.** Nothing under
+`.claude/commands/<categoria>/` yet, or the two shapes already mixed, means there is no
+established convention to diverge from — record the item's classification and move on. The
+"ask the human once" branch belongs to the mint (`/quenching:components:command:new`), where a
+single command is in play and the answer becomes the convention; a sweep that asked it would be
+inventing the convention for a whole surface out of one confirmation.
 **Done when:** the inventory table (item · classification · canonical path if it diverges ·
 `sk-*` gap) covers every item in the working set, and no file changed.
 
