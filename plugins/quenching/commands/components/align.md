@@ -150,8 +150,15 @@ test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/
 → unroutable). Read `/.knowledge/standards/automation/skills.md` if present — it governs; note whether
 the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist, and whether
 the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist.
-**Done when:** the inventory table (item · classification · `sk-*` gap) covers every item in the
-working set, and no file changed.
+
+**Where an item classifies with an evident category, also read the nest-vs-replace convention**
+already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
+convention): `Glob` `.claude/commands/<categoria>/**` and infer it from what already sits there.
+Derive the canonical path the classification produces and diff it against the item's current
+path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
+never a new plan section or a new confirmation of its own.
+**Done when:** the inventory table (item · classification · canonical path if it diverges ·
+`sk-*` gap) covers every item in the working set, and no file changed.
 
 ### 3. Sweep the blast radius
 Run the shared procedure in
