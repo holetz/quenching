@@ -2,12 +2,12 @@
 type: standard
 title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json
+resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json, plugins/quenching/bin/**
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-08-11
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.knowledge/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.knowledge/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.knowledge/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.knowledge/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down; §`bin/` is the third tree added by the cq-nao-resolve-como-comando-nu spec (2026-08-15), which measured the PATH injection the second-tree paragraph had only anticipated — two `<pluginRoot>/bin` entries in one session's PATH, one per enabled plugin, neither directory existing — and with it the execute-bit and self-location-from-`__file__` rules that a tree the host executes needs and the other two do not
 maintainer: quenching
 ---
 
@@ -47,6 +47,30 @@ would otherwise swallow a file Claude Code is specifically meant to find. And th
 there is the same one that governs `commands/`: **the path is the identity**, fixed by the host,
 not chosen by us. A third such path added by Claude Code later inherits this paragraph without
 amending the `assets/` inventory below.
+
+### `bin/` is the third tree, and Claude Code puts it on `PATH`
+
+The paragraph above anticipated a third path; this is it. **Claude Code appends `<pluginRoot>/bin`
+to `PATH` for every enabled plugin, whether or not the directory exists** — measured 2026-08-15 on
+a session with two plugins enabled, whose `PATH` tail held exactly two such directories, one per
+plugin, neither of them present on disk. So `plugins/quenching/bin/` inherits the paragraph above
+verbatim: the path is the identity, fixed by the host; it sits outside both other trees; and it is
+not filed under `assets/`.
+
+It holds one file, `bin/cq`, and two of its properties are load-bearing:
+
+- **the execute bit.** The host resolves it off `PATH` and executes it, so a `100644` mode is not a
+  cosmetic slip — it is the whole feature missing, and silently: the PATH entry is built at session
+  start, so the session that breaks the mode cannot observe the breakage it caused.
+- **self-location from `__file__`.** Never from `${CLAUDE_PLUGIN_ROOT}`, which is substituted into a
+  command body's *text* and is **empty in a shell**. An executable that read it to find its own
+  plugin would resolve to `/assets/bin/…`. This binds anything executable the plugin ever ships,
+  not only this file.
+
+`bin/cq` is a shim, not a move: the entry point stays at `assets/bin/cq`, where the command
+surface, `hooks/hooks.json` and the golden fixtures cite it. The two are one file reached two ways,
+and the order between them is
+`plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool.
 
 ## Where it goes instead: `assets/`
 

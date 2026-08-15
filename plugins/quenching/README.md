@@ -520,12 +520,20 @@ claude --plugin-dir ./plugins/quenching
 
 All skills reach the shared payload via `${CLAUDE_PLUGIN_ROOT}/assets/...`.
 
+The tool itself is reached through **two doors onto one file**. `bin/cq` is a shim in the directory
+Claude Code appends to `PATH` for every enabled plugin, which is what lets a command body write
+`cq specs …` bare. `assets/bin/cq` is the entry point itself, invoked with the plugin root written
+out wherever the PATH does not hold — a restricted `allowed-tools`, a hook, or work on **this**
+repository, where the PATH entry names the *installed* checkout rather than the one being edited.
+The order between them, and why `${CLAUDE_PLUGIN_ROOT}` is empty in a shell, are in
+[`assets/references/align/tool-resolution.md`](assets/references/align/tool-resolution.md).
+
 ## Upgrade
 
-Resolution is **plugin-first, with no install and no fallback** — every command reaches its tool
-at `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` — so a version bump reaches every consumer the moment
-Claude Code applies the plugin upgrade; there is nothing installed to compare against and nothing
-to sync.
+Resolution is **plugin-first, with no install and no third rung** — every command reaches its tool
+either bare through `bin/cq` on the PATH or at `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, and both are
+the same file inside the plugin — so a version bump reaches every consumer the moment Claude Code
+applies the plugin upgrade; there is nothing installed to compare against and nothing to sync.
 
 Publishing the bump itself is mechanized, not a manual edit. `cq specs release <version>` moves the
 four version-carrying files together and creates the tag in one act: `.claude-plugin/plugin.json`,
