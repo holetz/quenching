@@ -41,6 +41,10 @@ descreviam o report em prosa produziram seis formas diferentes.
   toda execução.
 - **Um conjunto ordenado de colunas**, do qual cada comando toma um subconjunto — nunca reordenando,
   nunca inventando. Cada coluna declara a **fonte** de onde sai e quando vale `—`.
+- **Um molde com coluna de código só serve saída cujo código um contrato define.** Afrouxar essa
+  coluna para acomodar uma saída que não tem código tira dos demais citadores a garantia que faz o
+  molde valer. Saída sem código pede molde próprio — outra sub-seção da mesma seção — nunca um
+  código inventado nem uma coluna relaxada.
 - **Executável como impresso vale para qualquer coluna que nomeie um comando** — o argumento real
   substituído; um `<slug>` literal na saída é defeito, e um nome de comando sem o argumento que ele
   exige também. A regra nasceu no bloco de próximo passo e vale igual em toda coluna que aponte o
