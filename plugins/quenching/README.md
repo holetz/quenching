@@ -492,15 +492,6 @@ Two rules are deliberate and must survive any future "optimization":
 - **Never downgrade classification or executor agents to haiku** in
   `/quenching:knowledge:import-memory` — a misclassification becomes a wrong memory deletion.
 
-**Enforcement hook cost.** The `Stop` sweep is **dirty-gated** by default
-(`stopScan: "dirty"`): a turn that edits no `/.knowledge/**` file costs one stat (<5 ms); a dirty
-turn triggers ONE single-pass read of the bundle (each `.md` read exactly once), bounded by
-`deadlineMs` checked inside the walk. `stopScan: "always"` restores the unconditional
-every-turn sweep. The installed script is versioned (`cq knowledge validate --version`, lockstep
-with `VERSION`), and `/quenching:knowledge:align` step 6 offers the **upgrade** — overwrite the script
-only, preserving the target's `hooks-config.json`. Details:
-[`assets/hooks/README.md`](assets/hooks/README.md).
-
 **External backend cost — network, not tokens.** `github`/`azure-boards` reach the vendor through
 `subprocess` over `gh`/`az`, never a bundled HTTP client, so every write and every list is one
 process spawn plus one network round trip, cached only for the lifetime of the running

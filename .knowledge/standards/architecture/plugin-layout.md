@@ -2,12 +2,12 @@
 type: standard
 title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
-resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/hooks/hooks.json, plugins/quenching/bin/**
+resource: plugins/quenching/commands/**, plugins/quenching/assets/**, plugins/quenching/bin/**
 tags: [architecture, plugin, commands, layout, claude-code]
 timestamp: 2026-08-15
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.knowledge/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.knowledge/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down; §`bin/` is the third tree added by the cq-nao-resolve-como-comando-nu spec (2026-08-15), which measured the PATH injection the second-tree paragraph had only anticipated — two `<pluginRoot>/bin` entries in one session's PATH, one per enabled plugin, neither directory existing — and with it the execute-bit and self-location-from-`__file__` rules that a tree the host executes needs and the other two do not
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.knowledge/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.knowledge/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down; §`bin/` is the second tree added by the cq-nao-resolve-como-comando-nu spec (2026-08-15), which measured the PATH injection — two `<pluginRoot>/bin` entries in one session's PATH, one per enabled plugin, neither directory existing — and with it the execute-bit and self-location-from-`__file__` rules that a tree the host *executes* needs and an entry-point tree does not; it also rehomed the outside-both-trees paragraph, which the same branch's merge of develop had deleted along with the retired `hooks/hooks.json` tree it was written for
 maintainer: quenching
 ---
 
@@ -30,34 +30,23 @@ This is not a style preference. Before the collapse the question could not arise
 folder rather than by file. Moving bodies into `commands/` made the adjacency illegal, and
 nothing in the repo said so.
 
-### `hooks/hooks.json` is the second tree Claude Code reads by convention
+### `bin/` is the second tree Claude Code reads, and it puts it on `PATH`
 
 `commands/**` is the only tree that becomes an **entry point**, which is what the heading above is
-about — but it is not the only path Claude Code loads from a plugin by name.
-`plugins/quenching/hooks/hooks.json` is read at plugin-load time and its `hooks` block is wired for
-every repo that has the plugin installed, with `${CLAUDE_PLUGIN_ROOT}` substituted at load. That is
-why the OKF checker needs no copy in a target's `.claude/hooks/` and no merge into a target's
-`.claude/settings.json`; the contract is
-[../automation/hooks.md](../automation/hooks.md) §What this repo's own surface does under it.
+about — but it is not the only path Claude Code loads from a plugin by name. **Claude Code appends
+`<pluginRoot>/bin` to `PATH` for every enabled plugin, whether or not the directory exists** —
+measured 2026-08-15 on a session with two plugins enabled, whose `PATH` tail held exactly two such
+directories, one per plugin, neither of them present on disk.
 
-**Two consequences for this standard.** A convention-named file at the plugin's top level is
-neither an entry point nor an asset, so it sits *outside* both trees rather than being filed under
-`assets/` — the `assets/` definition ("everything Claude Code must not surface as an entry point")
-would otherwise swallow a file Claude Code is specifically meant to find. And the reason it may sit
-there is the same one that governs `commands/`: **the path is the identity**, fixed by the host,
-not chosen by us. A third such path added by Claude Code later inherits this paragraph without
-amending the `assets/` inventory below.
+A convention-named path at the plugin's top level is neither an entry point nor an asset, so it
+sits *outside* both trees rather than being filed under `assets/` — the `assets/` definition
+("everything Claude Code must not surface as an entry point") would otherwise swallow a directory
+Claude Code is specifically meant to find. And the reason it may sit there is the same one that
+governs `commands/`: **the path is the identity**, fixed by the host, not chosen by us. A further
+such path added by Claude Code later inherits this paragraph without amending the `assets/`
+inventory below.
 
-### `bin/` is the third tree, and Claude Code puts it on `PATH`
-
-The paragraph above anticipated a third path; this is it. **Claude Code appends `<pluginRoot>/bin`
-to `PATH` for every enabled plugin, whether or not the directory exists** — measured 2026-08-15 on
-a session with two plugins enabled, whose `PATH` tail held exactly two such directories, one per
-plugin, neither of them present on disk. So `plugins/quenching/bin/` inherits the paragraph above
-verbatim: the path is the identity, fixed by the host; it sits outside both other trees; and it is
-not filed under `assets/`.
-
-It holds one file, `bin/cq`, and two of its properties are load-bearing:
+`bin/` holds one file, `bin/cq`, and two of its properties are load-bearing:
 
 - **the execute bit.** The host resolves it off `PATH` and executes it, so a `100644` mode is not a
   cosmetic slip — it is the whole feature missing, and silently: the PATH entry is built at session
@@ -67,10 +56,10 @@ It holds one file, `bin/cq`, and two of its properties are load-bearing:
   plugin would resolve to `/assets/bin/…`. This binds anything executable the plugin ever ships,
   not only this file.
 
-`bin/cq` is a shim, not a move: the entry point stays at `assets/bin/cq`, where the command
-surface, `hooks/hooks.json` and the golden fixtures cite it. The two are one file reached two ways,
-and the order between them is
-`plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool.
+`bin/cq` is a shim, not a move: the entry point stays at `assets/bin/cq`, where the command surface
+and the golden fixtures cite it. The two are one file reached two ways, and the order between them
+is `plugins/quenching/assets/references/align/tool-resolution.md` §Resolving the tool.
+
 
 ## Where it goes instead: `assets/`
 
@@ -107,25 +96,28 @@ folder needed was the fourth reason **named and given its own subtree**, which i
 
 The rule that decides where an executable sits, made explicit by the same move: **by how it is
 invoked, not by whether it ships.** It placed by invocation only as long as each invocation kind
-had its own file: the knowledge checker sat in `hooks/` because it was the one tool a **hook event**
-fired rather than a command body, and the specs/components tools sat in `bin/` because commands were
-what invoked them. One entry point serving both kinds is the case that rule did not anticipate.
+had its own file: while the plugin still shipped `hooks/hooks.json`, the knowledge checker sat in
+`hooks/` because it was the one tool a **hook event** fired rather than a command body, and the
+specs/components tools sat in `bin/` because commands were what invoked them. One entry point
+serving both kinds was the case that rule did not anticipate.
 
-**The rule as amended: `hooks/` holds a handler dedicated to a hook event; an entry that serves
-both a command body and a hook lives in `bin/`.** `cq` answers `hooks/hooks.json`'s
+**The rule as amended: `hooks/` would hold a handler dedicated to a hook event; an entry that
+serves both a command body and a hook lives in `bin/`.** `cq` answered `hooks/hooks.json`'s
 `PostToolUse`/`Stop` wiring (`cq knowledge hook`) *and* every pillar's own command bodies (`cq
-specs …`, `cq components …`), so it sits in `bin/` — the invocation that is not exclusive to the
-hook path wins the placement, and `hooks/` is left to hold what actually is hook-exclusive:
-`hooks/hooks.json` itself, which is wiring, not a handler, and does not move.
+specs …`, `cq components …`), so it sat in `bin/` — the invocation that was not exclusive to the
+hook path won the placement. `hooks/hooks.json` was later retired outright, along with the `hook`
+event it wired: the plugin answers no hook event at all now, so `hooks/` has no member left to
+hold and `cq` stays in `bin/` on the same invocation reasoning, now the only reasoning left to
+state.
 
-**The adjacency that used to justify a hook handler sitting beside its config is gone too.** The
-original reasoning was that the knowledge checker had to sit beside the `hooks-config.json` it loaded
-*from its own directory*, so separating the pair would break config loading in every installed
-copy. Both halves are now false: the knowledge pillar reads the **target's**
+**The adjacency that used to justify a hook handler sitting beside its config was already gone
+before that retirement.** The original reasoning was that the knowledge checker had to sit beside
+the `hooks-config.json` it loaded *from its own directory*, so separating the pair would break
+config loading in every installed copy. Both halves were already false by the time
+`hooks/hooks.json` was retired: the knowledge pillar reads the **target's**
 `.claude/hooks/hooks-config.json` and nothing else — the bundle root it validates is the fixed
-`/.knowledge/` convention, which no configuration names ([bundle-root.md](bundle-root.md)) — and there
-are no installed copies left to break. `hooks/hooks.json` itself is unaffected: it is wiring read
-at plugin-load time, addressed by the heading above, never by this one.
+`/.knowledge/` convention, which no configuration names ([bundle-root.md](bundle-root.md)) — and
+there were no installed copies left to break.
 
 Current subtrees, by the reason each is here:
 
@@ -133,7 +125,7 @@ Current subtrees, by the reason each is here:
 | --- | --- |
 | payload copied whole by an align | `docs/` `specs/` `claude/` `mkdocs/` |
 | payload applied per insert (molds) | `templates/` |
-| tool the plugin executes | `bin/cq` (its four retired predecessors, unwired, still sit under `bin/` and `hooks/` until removed) |
+| tool the plugin executes | `bin/cq` (its four retired predecessors, unwired, still sit under `bin/` until removed) |
 | artifact of developing this repository | `references/` `evals/` `checks/` |
 
 Four rows is one past what the warning above tolerates, so the warning needs restating rather

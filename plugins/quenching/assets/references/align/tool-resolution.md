@@ -12,16 +12,16 @@ shells out to the same single entry point, `cq`, naming its pillar (`specs`, `kn
    the plugin ships an executable `bin/cq` there. This is why command bodies write `cq specs …`
    and not a path; where the PATH holds, it is the whole answer.
 2. **`python3 "<pluginRoot>/assets/bin/cq" …`**, with the root written out in full. Use it wherever
-   route 1 does not resolve — a restricted `allowed-tools`, a hook, a shell that never got the
-   session's PATH — and **always when working on the quenching repository itself**: the PATH entry
-   names the *installed* checkout, so a bare `cq` there runs the plugin the session loaded rather
-   than the code being written.
+   route 1 does not resolve — a restricted `allowed-tools`, a shell that never got the session's
+   PATH — and **always when working on the quenching repository itself**: the PATH entry names the
+   *installed* checkout, so a bare `cq` there runs the plugin the session loaded rather than the
+   code being written.
 
-Either route is followed by the pillar and its subcommand: `cq specs …`, `cq knowledge …`,
-`cq components …` (the plugin's own `hooks/hooks.json` wires `cq knowledge hook` the same way).
-**There is no third rung**: never look for a copy under a target's `.claude/hooks/`, never install
-one there, never merge anything into a target's `.claude/settings.json` to make a tool resolve. The
-two routes are one file reached two ways, never two installations.
+Either route is followed by the pillar and its subcommand: `cq specs ...`, `cq knowledge ...`,
+`cq components ...`. **There is no third rung**: never look for a copy under a target's
+`.claude/hooks/`, never install one there, never merge anything into a target's
+`.claude/settings.json` to make a tool resolve. The two routes are one file reached two ways, never
+two installations.
 
 Branch on the **exit code** (0 ok · 1 findings · 2 refusal) and the `--json` payload, never on
 prose.
