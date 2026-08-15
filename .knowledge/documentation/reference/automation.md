@@ -4,10 +4,10 @@ title: Automation registry
 description: The repo's local Claude Code automation surface — every command, derived from .claude/commands/
 resource: .claude/commands/
 tags: [automation, commands]
-timestamp: 2026-08-11
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: quenching-components-align first run
+source: quenching-components-align first run + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the axis's first question
 maintainer: Israel Holetz
 ---
 
@@ -17,9 +17,11 @@ This repository's **own** automation surface is small by design: it is the marke
 hosts the `quenching` plugin, so nearly every command a session here reaches for is
 *contributed* rather than local. The two local commands are development instruments for
 building this repo's documentation and diagrams, classified on the single axis the rule
-defines — a **domain-bound** command is pathed after the one folder it serves
+defines. Neither carries an evident category, so both are read on the axis's second question
+alone — a **domain-bound** command is pathed after the one folder it serves
 (`/docs:storyteller` acts on `/.knowledge/`), a **generic** one is a flat `verb-object` at the top
-level (`/skill-map` maps whatever it is pointed at, so no single folder claims it). The rule
+level (`/skill-map` maps whatever it is pointed at, so no single folder claims it). A command
+that did belong to a subject would path under it instead (`/git:commit`). The rule
 itself is [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md).
 
 The `quenching` plugin installed from this marketplace contributes the twenty-six

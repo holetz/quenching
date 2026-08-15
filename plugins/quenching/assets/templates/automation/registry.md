@@ -14,8 +14,8 @@ maintainer: <owner>
 # Automation registry
 
 <Curated prose — one short paragraph: how this repo's automation surface is organized
-(the single axis: domain-bound commands pathed after their folder, generic commands named
-verb-object), a link to the rule at [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md),
+(the single axis — category/subject first, then domain-bound commands pathed after their
+folder and generic commands named verb-object), a link to the rule at [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md),
 and, when relevant, a pointer to installed plugins whose commands extend the surface
 (they stay out of the table below).>
 
