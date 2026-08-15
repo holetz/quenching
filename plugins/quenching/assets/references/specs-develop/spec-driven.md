@@ -424,9 +424,10 @@ and HTML comments, with any example inside a comment or written as a `<placehold
 
 Owned by
 [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
-§Resolving the tool, §Write the resolved path literally on every invocation: the plugin path
-`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs`, with **no fallback and no manual rung**. Invoke with
-`python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`).
+§Resolving the tool, §Write the resolved path literally on every invocation: bare `cq specs` where
+the `bin/` shim is on `PATH`, else the plugin path `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq specs`
+invoked with `python3` or `py` (`allowed-tools: Bash(python3:*), Bash(py:*)`) — **two doors onto one
+file, and no third rung**.
 
 ## Boundary: `specs/` vs the OKF `knowledge/` bundle
 
