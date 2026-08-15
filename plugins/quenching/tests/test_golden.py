@@ -111,8 +111,9 @@ def to_cq_argv(script: str, argv: list[str]) -> list[str]:
     `--root`, so nothing about the rest of `argv` changes crossing into `cq specs …` /
     `cq components …` — `argparse.REMAINDER` forwards it untouched. The pre-refactor session
     script mounts under `components` and carries no `--root` of its own, and the pre-refactor
-    knowledge validator's CLI/hook split becomes the declared verb `cq knowledge` now routes
-    on explicitly (see that pillar's `main`)."""
+    knowledge validator's `validate`/`--version` forms become the declared verb `cq knowledge`
+    routes on explicitly (see that pillar's `main`) — the validator's retired `hook` mode has
+    no golden case left to translate."""
     if script == "specs":
         return ["specs", *argv]
     if script == "skills":
@@ -122,8 +123,6 @@ def to_cq_argv(script: str, argv: list[str]) -> list[str]:
     if script == "okf":
         if argv[:1] == ["--version"]:
             return ["knowledge", "--version"]
-        if not argv:
-            return ["knowledge", "hook"]
         return ["knowledge", "validate", *argv]
     raise ValueError(f"unknown script key: {script!r}")
 
