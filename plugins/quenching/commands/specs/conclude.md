@@ -312,8 +312,8 @@ being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. Where the repo keeps `standards/quality/surface-verification.md`, its §The five preconditions a
-check must satisfy is where that distinction is defined for the command surface.
+it. Where the repo keeps `/.knowledge/standards/quality/surface-verification.md`, its §The five
+preconditions a check must satisfy is where that distinction is defined for the command surface.
 
 **Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
 one, so a check with a `--only`-style selector gets the subset this branch can actually break — the
