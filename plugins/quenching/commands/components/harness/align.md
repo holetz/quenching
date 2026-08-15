@@ -57,6 +57,10 @@ molds live at `${CLAUDE_PLUGIN_ROOT}/assets/templates/harness/`.
   by design — pointer honesty (every link resolves, every pointer describes what its target really
   holds) is verified **HERE**, in step 8.
 
+Resolve `cq` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
+
 ## Workflow
 
 ### 1. Inventory the harness surface (read-only)

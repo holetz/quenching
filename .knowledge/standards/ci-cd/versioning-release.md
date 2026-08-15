@@ -4,10 +4,10 @@ title: Versioning and release — the four-artifact lockstep
 description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, at the develop → main merge, never at conclude and never as a task
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
-timestamp: 2026-08-11
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: modularizar-specs-knowledge-components spec, tasks 9.2 and 10.2 — rewritten for the one-package, one-entry-point (`cq`) architecture; the lockstep target dropped from seven artifacts to four once a single `common/version.py` constant answered for every pillar and `cq specs release` (task 10.2) was narrowed to match; the legacy-copy detector this standard used to document (`notice-installed-tool-version-drift` task 4.1) was retired the same spec, task 10.3, once the four scripts it compared against stopped existing to be compared against (moved from CLAUDE.md; plugin-first rewrite 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks; bump moved to release by configurable-branch-strategy task 1.2, 2026-08-04)
+source: modularizar-specs-knowledge-components spec, tasks 9.2 and 10.2 — rewritten for the one-package, one-entry-point (`cq`) architecture; the lockstep target dropped from seven artifacts to four once a single `common/version.py` constant answered for every pillar and `cq specs release` (task 10.2) was narrowed to match; the legacy-copy detector this standard used to document (`notice-installed-tool-version-drift` task 4.1) was retired the same spec, task 10.3, once the four scripts it compared against stopped existing to be compared against (moved from CLAUDE.md; plugin-first rewrite 2026-08-03, enxugar-create-e-eliminar-o-rung-hooks; bump moved to release by configurable-branch-strategy task 1.2, 2026-08-04); artifact 4's resolution sentence corrected by the cq-nao-resolve-como-comando-nu spec's branch review (2026-08-15), which found it still asserting "no fallback and no manual rung" after that branch replaced the rule with two doors onto one file and a prohibition on any third
 maintainer: quenching
 ---
 
@@ -37,7 +37,8 @@ one without the other and the upgrade either never fires or fires against a plug
 version it does not have.
 
 **Artifact 4 is the *tool identity*, now held once.** Nothing installs a tool standalone any more —
-every command invokes `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq` with no fallback and no manual rung
+every command invokes the plugin's own `cq`, bare through the `bin/` shim on `PATH` or at
+`${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, with no third rung
 ([align/tool-resolution.md](/plugins/quenching/assets/references/align/tool-resolution.md)
 §Resolving the tool) — so a bump no longer *delivers* anything. What the one constant still does is
 answer `--version` for every pillar alike. Four scripts each carrying their own copy of this
@@ -80,9 +81,10 @@ in this front.
 
 ## What a bump does not need to do any more
 
-Resolution is **plugin-first with no fallback and no manual rung**, so a bump reaches every repo
-the moment the plugin upgrades — nothing installs a tool standalone, so there is no installed copy
-left running an old version for a bump to miss. Earlier plugin generations shipped as separate
+Resolution is **plugin-first with no third rung**, so a bump reaches every repo the moment the
+plugin upgrades — nothing installs a tool standalone, and the two doors that do exist (`bin/cq` on
+`PATH`, the plugin path) are the same file inside the plugin, so there is no installed copy left
+running an old version for a bump to miss. Earlier plugin generations shipped as separate
 scripts an align could copy into a target's `.claude/hooks/`, which meant a bump could leave a
 stale, still-executing copy behind; a dedicated detector (`cq components drift`) existed for
 exactly that gap. Neither the copying nor the gap exists any more — a target repository holds
