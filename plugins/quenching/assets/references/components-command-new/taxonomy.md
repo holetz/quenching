@@ -11,30 +11,64 @@ restated threshold.
 
 ## The single axis
 
-Every skill is classified on **exactly one axis** with two values:
+Every skill is classified on **exactly one axis: what it acts on** — asked as up to two
+questions, in order, each with a single honest answer. The first question is a
+subject/category; the second is the older domain-bound-vs-generic test, now read against
+that category instead of standing alone.
 
-- **Domain-bound** — the skill serves ONE folder subtree of the repo: its reads/writes and
-  its subject matter concentrate under that folder (`communications/teams/`,
-  `pipelines/ingest/`).
-- **Generic** — the skill serves the repo as a whole (release notes, changelog, test
-  sweep); no single folder claims it.
+**1. Category/subject — the first question.** Name the one subject the skill belongs to
+(`git`, `deploy`, `tests`, ...). A clean, evident answer wins. No evident subject, or
+several unrelated ones, means there is no category: fall straight through to the second
+question exactly as if this step did not exist — **categorization only applies when it
+fits; it is never forced.**
 
-**The classification test:** name the one folder the skill acts on. If exactly one folder
-answers, it is domain-bound to that folder. If the honest answer is "the repo", it is
-generic. If several unrelated folders answer at once, it fits **neither** — keep it
-untouched and report it as unroutable with the observed reason (keep-and-report); a forced
-classification is worse than none.
+**2. Domain-bound vs generic — the second question, read against the category.**
+- **No category** — unchanged from before this rule: **domain-bound** when the skill
+  serves ONE folder subtree of the repo (`communications/teams/`, `pipelines/ingest/`);
+  **generic** when it serves the repo as a whole; **neither** (keep-and-report) when
+  several unrelated folders answer at once.
+- **Category, no single real folder tied to the skill** — e.g. `git` for a `commit`
+  skill: a subject, not a repo folder. The skill nests flat under the category.
+- **Category, and a real folder tied to the skill** — the folder either **nests** inside
+  the category or is **replaced** by it, per the convention already established for that
+  category in *that* target repo (below). Several unrelated folders still fit neither and
+  keep-and-report, exactly as the no-category case.
+
+No category is ever invented to force a classification a skill does not otherwise earn —
+the same keep-and-report exit the old single test used still applies whenever the honest
+answer is "several" or "none".
+
+### Reading the nest-vs-replace convention
+
+The convention lives entirely inside the **target repo's own** `.claude/commands/<categoria>/`
+— never in the plugin, and never in a dedicated registry file of its own:
+
+- Files already sitting under `.claude/commands/<categoria>/<folder-path>/` (the real
+  folder present as a subpath) → the convention already in force is **nest**.
+- Files already sitting directly under `.claude/commands/<categoria>/` with no real-folder
+  subpath → the convention already in force is **replace**.
+- The category has no files yet in that repo, or the two shapes are already mixed
+  (ambiguous) → ask the human once. The physical structure that first answer produces
+  *becomes* the record — reused in silence for every later skill of that category in that
+  repo, with nothing else written down anywhere.
+
+Two repos may read opposite conventions for the same category name without conflict: the
+convention is never shared, catalogued, or asked twice for the same category in the same
+repo.
 
 ## Naming
 
-| Axis value | Name pattern | Example |
+| Case | Name pattern | Example |
 | --- | --- | --- |
-| Domain-bound | flattened folder path + verb, kebab-case | `communications/teams/` + create → `communications-teams-create` |
-| Generic | verb-object (or the object alone when the verb is implied), no folder path | `release-notes`, `generate-changelog` |
+| No category, domain-bound | flattened folder path + verb, kebab-case | `communications/teams/` + create → `communications-teams-create` |
+| No category, generic | verb-object (or the object alone when the verb is implied), no folder path | `release-notes`, `generate-changelog` |
+| Category, no folder tied | `<categoria>/<verb>` (or `<categoria>/<verb-object>`) | `git` + commit → `git/commit` |
+| Category, folder nests | `<categoria>/<folder-path>/<verb>` | `deploy` + `infra/terraform/` + apply → `deploy/infra/terraform/apply` |
+| Category, folder replaced | `<categoria>/<verb>` | `git` + commit (see above) — the category takes the folder's place in the path |
 
 The path alone tells where the command acts: a reader scanning `.claude/commands/`
-reconstructs the monorepo map from the domain-bound paths, and anything at the top level is
-repo-wide by declaration.
+reconstructs the monorepo map from the domain-bound and category paths, and anything at the
+top level is repo-wide by declaration.
 
 ## Placement — the path IS the identity
 
@@ -42,12 +76,17 @@ repo-wide by declaration.
 - **One file per entry point.** A `.claude/commands/<path>.md` carries both the description
   that routes to it and the body that runs: a command's path is its whole identity, and
   nothing derives a second name that could disagree with it.
-- **A domain-bound command lives at** `.claude/commands/<folder-path>/<verb>.md`, invocable
-  as `/<folder>:<subfolder>:<verb>` — Claude Code's native `:` separator maps one `:` per
-  path segment (a `::` in older notes maps to `:`). Mold:
-  `assets/templates/automation/command.md`.
-- **A generic command is a flat** `.claude/commands/<verb-object>.md`, never nested under a
-  folder path it does not serve.
+- **A domain-bound command with no evident category lives at**
+  `.claude/commands/<folder-path>/<verb>.md`, invocable as `/<folder>:<subfolder>:<verb>` —
+  Claude Code's native `:` separator maps one `:` per path segment (a `::` in older notes
+  maps to `:`). Mold: `assets/templates/automation/command.md`.
+- **A command with an evident category lives at** `.claude/commands/<categoria>/<verb>.md`
+  when no real folder ties it, or when that category's established convention in this repo
+  is to replace the folder; at `.claude/commands/<categoria>/<folder-path>/<verb>.md` when
+  the convention is to nest. Invocable as `/<categoria>:<verb>` or
+  `/<categoria>:<subfolder>:<verb>` respectively.
+- **A generic command with no evident category is a flat** `.claude/commands/<verb-object>.md`,
+  never nested under a folder or category it does not serve.
 
 **`commands/**` is the only tree Claude Code registers**, so nothing that is not an entry
 point lives there — shared procedure, references, fixtures and eval cases sit outside it and
