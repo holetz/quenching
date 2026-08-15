@@ -4,7 +4,7 @@ title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
 resource: .claude/settings.json, plugins/quenching/commands/**, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-08-10
+timestamp: 2026-08-15
 audience: both
 authority: current
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the knowledge checker's dirty-gate precedent. Graduated to current on an adopting surface, and the components pillar enforces both rungs from one implementation (8 selftest cases, since ported to the test suite). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
@@ -73,6 +73,21 @@ the plugin installed. The capability was discontinued outright (`descontinuar-ho
 spec), not merely rescoped: nothing in this repo answers a hook event any more, and
 `/quenching:components:hook:new` is how a hook — a future one of this repo's own, or a target's —
 gets minted, under the two ladders above.
+
+**The three bundle-writing commands hold no rung, and rely on their own Self-check.**
+`/quenching:knowledge:add`, `/quenching:knowledge:learn` and `/quenching:knowledge:define` each
+carried a rung-1 frontmatter block running `cq knowledge validate` on its own `Write`/`Edit`. All
+three were removed on 2026-08-03 (`enxugar-create-e-eliminar-o-rung-hooks` spec) as redundant with
+the wiring above — which was then discontinued along with it. **Nothing replaced them**: each
+command's own *Self-check against the conformance core* step, run against
+`plugins/quenching/assets/references/knowledge-align/conformance.md`, is the whole of the
+conformance check at the moment of the write, and it is a step the body executes rather than an
+event anything answers. Restoring the rung would be a **mint, not a revert** — through
+`/quenching:components:hook:new`, under the two ladders above and behind the missing-handler guard
+this standard requires, since `cq` may not be installed in the target being written into. Stated
+here because the claim is otherwise re-derived from the removal's own rationale, which the
+discontinuation invalidated: the plugin manual asserted the three blocks as live for two releases
+after they were gone.
 
 **The lesson the old wiring left behind, still worth keeping.** A target that once accepted an
 older install offer could carry a frozen, dead copy of the checker alongside the live one — this
