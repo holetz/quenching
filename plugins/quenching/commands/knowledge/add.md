@@ -84,7 +84,7 @@ If the new concept introduced a **repo-specific term**, add or sharpen its entry
 ### 7. Self-check against the conformance core
 Verify every file you touched against
 [knowledge-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/conformance.md) —
-the same checks the installed `cq knowledge hook` (if wired) machine-verifies on write;
+the same checks `cq knowledge validate` machine-verifies;
 `/quenching:knowledge:align` re-validates the whole bundle on demand.
 
 ## Special cases

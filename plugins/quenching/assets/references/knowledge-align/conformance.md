@@ -43,8 +43,8 @@ steps **cite this file** rather than restating the rules. Severities: **ERROR** 
 
 <!-- rules -->
 
-No codes. The validator recognizes the name, emits nothing about the file, and never blocks a
-write to it under `hardBlock`. Retired is not unreserved.
+No codes. The validator recognizes the name and emits nothing about the file. Retired is not
+unreserved.
 
 <!-- rationale -->
 
@@ -68,8 +68,8 @@ declared roots (the bundle root moved from `docs/` to `knowledge/` once — see
 [migration.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-align/migration.md) §1g). Each
 finding looks at exactly one site and is **idempotent** — migrating that one site clears it, whether
 or not the others have migrated yet. **ERROR**, decided in `renomear-docs-para-knowledge` `##
-Open Decisions`: the `PreToolUse` hard block never reads `validate_file`/`validate_tree` output, so
-this severity can never deny a write.
+Open Decisions`: nothing enforces it as a block — the plugin's self-installed enforcement hook, the
+one thing that could have denied a write on it, was retired.
 
 - **ERROR `okf-legacy-root`** — the new root is absent and the pre-rename root sits where it
   should be.
@@ -135,13 +135,14 @@ A doc that is provably **lying about itself**. These join the structural set the
 
 **It is advisory and is NOT part of any verify gate** (why → §Verify gate).
 
-It runs in **CLI mode only** — never `PostToolUse`, never `Stop`. A tree that is not a git
-checkout **skips it silently** rather than reporting a finding it cannot compute.
+It shells out to `git` once per doc. A tree that is not a git checkout **skips it silently**
+rather than reporting a finding it cannot compute.
 
 <!-- rationale -->
 
-It shells out to `git` once per doc, which is fine on demand and unacceptable under the `Stop`
-deadline.
+Shelling out to `git` per doc is fine on demand, which is the only way this check ever runs now
+that the plugin's self-installed enforcement hook — the one caller with a latency deadline to miss
+— was retired.
 
 ## Running it
 
@@ -152,10 +153,9 @@ python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.knowledge
 python3 ${CLAUDE_PLUGIN_ROOT}/assets/bin/cq knowledge validate <repo>/.knowledge --json # machine-readable findings
 ```
 
-As a hook (stdin JSON): **PostToolUse**/**Stop** PROPOSE fixes via `additionalContext`;
-opt-in **PreToolUse** (`hardBlock: true`) denies writing an `index.md` with a `type` or a
-concept doc with no `type`. Config block `okfValidate` in `hooks-config.json`
-(`warnAsError`/`blockOnFail`/`hardBlock`/`deadlineMs`).
+Config block `okfValidate` in `hooks-config.json` (`warnAsError`, plus `ignoreGlobs` alongside it)
+tunes the CLI's own behaviour — treating a warning as a failure, and pruning regenerable/vendored
+paths from the scan.
 
 ## Verify gate (Step 5 of /quenching:knowledge:align)
 

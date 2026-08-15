@@ -59,13 +59,15 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | `workItemTypes` | `{"<key>": {description, azure, github, default}, …}` | `{}` | `/quenching:specs:create`'s type proposal, `cq specs new --type`, and every backend's `create_spec` |
 
 **The checker's settings never lived in this file, and the bundle root is not one either.**
-`warnAsError`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan` and `ignoreGlobs` come from the
-target's own `.claude/hooks/hooks-config.json`, which the target maintains by hand — nothing
-installs one any more. The bundle root the checker validates is the fixed `/.knowledge/` convention,
-which no configuration names ([bundle-root.md](../architecture/bundle-root.md)) — the
-key that used to say where the bundle lives is gone rather than relocated. Whether the other six
-deserve a home in this file is **open** — they are currently reachable only by a target
-hand-writing a file no command creates.
+`warnAsError` and `ignoreGlobs` come from the target's own `.claude/hooks/hooks-config.json`,
+which the target maintains by hand — nothing installs one any more. The block held five more keys
+(`enabled`, `blockOnFail`, `hardBlock`, `deadlineMs`, `stopScan`) while the checker still answered
+a hook event; those were retired with the hook itself (`descontinuar-hooks-do-plugin` spec), and
+the two that remain govern the CLI checker alone. The bundle root the checker validates is the
+fixed `/.knowledge/` convention, which no configuration names
+([bundle-root.md](../architecture/bundle-root.md)) — the key that used to say where the bundle
+lives is gone rather than relocated. Whether the other two deserve a home in this file is **open**
+— they are currently reachable only by a target hand-writing a file no command creates.
 
 `worktreeSetup` keeps the contract it had in its old home unchanged — who runs it, with which cwd,
 what a failure means, and why the consent is the isolation offer rather than a prompt of its own,
