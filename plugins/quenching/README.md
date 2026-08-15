@@ -246,11 +246,15 @@ the docs nav"*, *"build the documentation site"*, *"the site is missing the new 
 
 Where the other skills organize a repo's *knowledge*, this pair organizes its
 **automation surface**: the repo's own `.claude/skills/` and `.claude/commands/`. One
-taxonomy axis governs everything — a skill is **domain-bound** (serves ONE folder;
-named as the flattened folder path + verb, `communications-teams-create`, and mirrored
-by a thin command wrapper at `.claude/commands/communications/teams/create.md` →
-`/communications:teams:create`) or **generic** (serves the repo as a whole; named
-verb-object, never mirrored). Two OKF artifacts anchor the family in the bundle:
+taxonomy axis governs everything, asked as up to two questions — first the
+**category/subject** the command belongs to (`git`, `deploy`, ..., when one is evident; a
+`commit` command under `git` lives at `.claude/commands/git/commit.md` → `/git:commit`), then
+the older test read against it: **domain-bound** (serves ONE folder; pathed after that folder
+plus a verb, `.claude/commands/communications/teams/create.md` → `/communications:teams:create`)
+or **generic** (serves the repo as a whole; a flat `verb-object`). With both a category and a
+real folder, that folder either nests inside the category or is replaced by it, per the
+convention already in force for that category in that repo. Two OKF artifacts anchor the family
+in the bundle:
 the **rule** at `/.knowledge/standards/automation/skills.md` (`type: standard`, born
 `authority: background`) and the **registry** at
 `/.knowledge/documentation/reference/automation.md` (`type: documentation`), whose
@@ -460,7 +464,7 @@ graded and with a should-not-trigger arm.
 
 | Surface | Policy |
 | --- | --- |
-| `/quenching:knowledge:define` | **no pin** — the edit is mechanical, but an inline `effort: low` is part of the session's prompt-cache key, so it recomputes every input token on the next request ([`capabilities.md`](assets/references/components-command-new/capabilities.md) §Model and effort). A single-entry edit does not buy that back. Carries a frontmatter `hooks:` block instead — `cq knowledge validate` on its own `Write`/`Edit`, the scope ladder's narrowest rung, costing nothing to any other operation |
+| `/quenching:knowledge:define` | **no pin** — the edit is mechanical, but an inline `effort: low` is part of the session's prompt-cache key, so it recomputes every input token on the next request ([`capabilities.md`](assets/references/components-command-new/capabilities.md) §Model and effort). A single-entry edit does not buy that back. **No hook either** — the rung-1 frontmatter block this row once described was removed when the plugin's own wiring covered the same case, and that wiring was later discontinued outright, so nothing answers a write event here any more (`/.knowledge/standards/automation/hooks.md`). What checks conformance at write time is the body's own **Self-check against the conformance core** step, run by the command, not fired by anything |
 | `/quenching:specs:create` | **`model: sonnet`** — the capture is mechanical and effort-proportional, so the tier it does not need is the expensive one. Zero interrogation, no sub-agents. The pin is paid for once, in the **cache trap** ([`capabilities.md`](assets/references/components-command-new/capabilities.md) §Model and effort): an inline `model:` is part of the session's prompt-cache key, so **changing** it recomputes every input token on the next request. A pin left alone costs nothing after the first run, which is what makes a stable pin affordable and pin-churn expensive |
 | `/quenching:specs:triage` | **`model: opus`**, no `effort` override — the *reading* is cheap (a few small frontmatter blocks) but the *output* is a ranking grounded in `vision/`, which is exactly the judgment the top tier exists for; the human plan-gate contains misjudgment but should not have to catch it. No sub-agents |
 | `/quenching:specs:status` | **no pin**, no sub-agents, **no `Write`/`Edit` in `allowed-tools`** — it classifies against a fixed finding vocabulary it does not own, and `cq specs status` is scoped to full-progress plans rather than run per plan. The former `effort: low` was dropped for the cache trap: a read-only view is not worth invalidating the session's prompt cache |
@@ -473,7 +477,7 @@ graded and with a should-not-trigger arm.
 | `/align` | no pin, no sub-agents — the front probe is a handful of globs and two CLI calls, and every write belongs to the sweep it invokes (which carries its own policy row) |
 | `/quenching:specs:align` | no pin; `Bash` scoped to `python3` / `py` / `mkdir` / `cp` / `mv` / `git mv` / `rm` — the asset copy, the confirmed renames and the approved shadow-copy deletions of step 6, and nothing wider (it previously granted bare `Bash` *alongside* those scopes, which made them dead). **Two** repo scans cover the whole rename set (never two per rename — [`sweep-doctrine.md`](assets/references/align/sweep-doctrine.md) §3), and only the bucketing of a large hit list is delegable to one read-only `haiku` + `effort: low` collector, after the scans. `cq specs status` runs only for full-progress plans, and the conductor hands down its inventory instead of making align re-collect it. Every classification, `cq specs`-stated-repair judgment, and the fix-vs-report split stays with the orchestrator |
 | `/quenching:knowledge:import` | extraction/executor sub-agents may run `model: haiku` + `effort: low` — import **deletes nothing**, so a misclassification only misfiles a doc (correctable); the orchestrator keeps each `index.md` honest and resolves cross-slice dedup |
-| `/quenching:knowledge:add` / `/quenching:knowledge:learn` | no pin — they inherit the session model (they classify, route, and gate operations). Both carry a frontmatter `hooks:` block running `cq knowledge validate` on their own `Write`/`Edit` — rung 1 of the scope ladder and rung 1 of the handler ladder, firing only while the command runs |
+| `/quenching:knowledge:add` / `/quenching:knowledge:learn` | no pin — they inherit the session model (they classify, route, and gate operations). **Neither carries a frontmatter hook block** — the rung-1 blocks these two once carried were removed when the plugin's own wiring covered the same case, and that wiring was later discontinued outright, so no hook fires on their writes (`/.knowledge/standards/automation/hooks.md`). Each body's own **Self-check against the conformance core** step is the conformance check at write time: a step the command runs, not a rung anything enforces |
 | `/quenching:knowledge:documentation:build` | no pin, no sub-agents — the inventory is a handful of globs plus one config parse, and the expensive step is an external `mkdocs build`, not tokens; the config **merge** and the fix-vs-report split are exactly the judgment the plan gate exists to contain. `Bash` stays unrestricted **and is now priced in the body**: it drives a toolchain the plugin does not own, reachable through `pip`, `uv` or a bare `python -m` |
 | `/quenching:components:command:new` | no pin, no sub-agents — classification on the axis, doctrine-grade drafting, and the plan gates inherit the session model |
 | `/quenching:components:align` | no pin. Its §7 doctrine audit **may delegate collection** to read-only `Task` collectors — one per slice, reporting *what each body contains* (which levers its frontmatter carries, what it cites, where its steps end) on a surface large enough that reading every body would bury the conversation. Every verdict stays with the orchestrator: "this body has no positive prescription" is a claim about behaviour, and the read that makes it must also weigh the fix |

@@ -12,7 +12,9 @@ import sys
 from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.commands.task import _find_task
-from quenching.specs.parse.edit import _match_heading, upsert_section, write_handoff_block
+from quenching.specs.parse import derive_info
+from quenching.specs.parse.edit import (_match_heading, split_section_stream, upsert_section,
+                                        write_handoff_block)
 from quenching.specs.parse.sections import section_state, stray_headings
 from quenching.specs.schema import canonical_headings, headings_for_moment, section_guidance
 
@@ -23,13 +25,19 @@ def cmd_section(args, root: str, out: Emitter) -> int:
     An executor is handed a task line and `## Handoff`, never the whole spec; this is the
     command that slices it without an LLM re-reading and rewriting the file.
 
-    **The read form is plural, and that is half the saving, not a convenience.** Every turn
+    **Both forms are plural, and that is half the saving, not a convenience.** Every turn
     re-sends the whole conversation, so a cost has two factors — tokens AND the turns that
     follow it. Six headings fetched over six turns can lose to the one `Read` this command
     replaced. Comma-separated, one call, back in the order asked.
 
-    `--write` stays singular: it takes stdin, and there is no unambiguous way to split one
-    stream across several sections.
+    `--write` is plural through the stream itself: the bodies arrive delimited by the same
+    `## <Heading>` lines the plural read prints, so the two round-trip and nothing new had to
+    be invented to say where one body ends (`split_section_stream`). A stream that does not
+    open on a canonical heading is one raw body under the one heading declared — the singular
+    form, unchanged. The declared list stays required either way: it is the guard that turns a
+    heading mistyped in the stream into a named refusal instead of a section written in the
+    wrong place, and the N splices land as ONE `write_spec`, which is N fewer API round trips
+    on a remote backend.
 
     The document comes from the BACKEND, never from a path: this is the reader every other
     front calls, so a backend that could not serve it would leave the whole surface tied to
@@ -67,12 +75,6 @@ def cmd_section(args, root: str, out: Emitter) -> int:
                   "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
                  f"error: not a canonical heading: {', '.join(stray)}")
         return 2
-    if args.write and len(headings) != 1:
-        out.emit(args.json,
-                 {"ok": False, "code": "sp-write-plural", "stray": headings,
-                  "message": "--write takes exactly one heading — stdin is one stream"},
-                 "error: --write takes exactly one heading")
-        return 2
     if not args.write:
         rows = [{"heading": h, "state": section_state(info["sections"], h),
                  "body": info["sections"].get(h, {}).get("body", "")} for h in headings]
@@ -91,29 +93,82 @@ def cmd_section(args, root: str, out: Emitter) -> int:
                 else:
                     print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
         return 0 if not absent else 1
-    heading = headings[0]
     scope = getattr(args, "scope", None)
-    if scope and heading != "Handoff":
+    if scope and headings != ["Handoff"]:
+        # `--scope` replaces ONE block of one section, so it is singular by what it means and
+        # not merely by how stdin arrives — a plural request under it has no reading at all.
         out.emit(args.json,
-                 {"ok": False, "code": "sp-scope-not-handoff", "heading": heading,
-                  "message": "--scope only applies to ## Handoff — every other section is "
-                             "written whole"},
-                 "error: --scope only applies to ## Handoff")
+                 {"ok": False, "code": "sp-scope-not-handoff", "heading": headings[0],
+                  "declared": headings,
+                  "message": "--scope only applies to ## Handoff, one heading at a time — "
+                             "every other section is written whole"},
+                 "error: --scope only applies to ## Handoff, one heading at a time")
         return 2
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
     if scope:
         new_text, action = write_handoff_block(info, scope, content)
+        results = [{"heading": "Handoff", "action": action}]
     else:
-        block = (f"## {heading}\n\n{content.strip()}\n"
-                 if content.strip() else section_guidance(heading))
-        new_text, action = upsert_section(info, heading, block)
+        # EVERY refusal is settled before the first splice, so a rejected call writes nothing
+        # at all. The old failure mode this replaces was N separate invocations, where the one
+        # that broke left the previous k already on disk.
+        blocks = split_section_stream(content, canonical_headings())
+        unresolved = [i for i, (h, _) in enumerate(blocks, 1) if h is None]
+        if unresolved:
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-stray-heading", "source": "stream",
+                      "unresolvedBlocks": unresolved, "canonical": canonical_headings(),
+                      "message": "the stream carries a `## ` heading that is not one of the "
+                                 "fourteen canonical ones, at block(s) "
+                                 f"{', '.join(str(i) for i in unresolved)}"},
+                     f"error: non-canonical `## ` heading at stream block(s) "
+                     f"{', '.join(str(i) for i in unresolved)}")
+            return 2
+        carried = [h for h, _ in blocks]
+        if len(set(carried)) != len(carried):
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-write-duplicate-heading", "stream": carried,
+                      "message": "the stream carries the same heading twice — which body "
+                                 "wins is not derivable"},
+                     "error: the stream carries the same heading twice")
+            return 2
+        # No blocks under exactly one declared heading is the SINGULAR form: a raw body, no
+        # heading in the stream, written whole — what every caller did before this was plural.
+        # It is the ONE case the set check cannot govern, because the stream declares nothing
+        # for it to be checked against.
+        singular = not blocks and len(headings) == 1
+        if not singular and set(carried) != set(headings):
+            out.emit(args.json,
+                     {"ok": False, "code": "sp-write-set-mismatch", "declared": headings,
+                      "stream": carried,
+                      "message": "the headings declared on the command line and the ones the "
+                                 "stream carries are not the same set"},
+                     f"error: declared {', '.join(headings)}; stream carries "
+                     f"{', '.join(carried) or 'none'}")
+            return 2
+        # `upsert_section` splices by the line numbers of the info it was handed, so each
+        # section's write invalidates the next one's offsets — re-derive between them, and
+        # hand the backend the one text they all landed in.
+        new_text, results, cur = info["text"], [], info
+        for heading, body in (blocks or [(headings[0], content)]):
+            block = (f"## {heading}\n\n{body.strip()}\n"
+                     if body.strip() else section_guidance(heading))
+            new_text, action = upsert_section(cur, heading, block)
+            results.append({"heading": heading, "action": action})
+            cur = derive_info(cur, new_text)
     backend.write_spec(info, new_text)
+    # ONE heading answers in the shape it always answered — `heading` and `action`, flat —
+    # so no caller written against the singular write has to learn a second reading of it.
+    # `sections` is what the plural form ADDS, and only it.
+    shape = {"heading": results[0]["heading"], "action": results[0]["action"]} \
+        if len(results) == 1 else {"sections": results}
     out.emit(args.json,
-             {"ok": True, "slug": info["slug"], "heading": heading, "action": action,
+             {"ok": True, "slug": info["slug"], **shape,
               "scope": scope, "path": display_locator(info["path"], root)},
-             f"{action} ## {heading}{f' ({scope})' if scope else ''} in "
-             f"{info['phase']}/{info['file']}")
+             "\n".join(f"{r['action']} ## {r['heading']}"
+                       f"{f' ({scope})' if scope else ''} in "
+                       f"{info['phase']}/{info['file']}" for r in results))
     return 0
 
 

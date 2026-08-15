@@ -17,7 +17,7 @@ than a path.
 
 What every backend owes that model — the five primitives, the obligation to reassemble the whole
 canonical document on read, and the refusal that never falls back to `files` — is owned by
-[spec-backend.md](/.knowledge/standards/architecture/spec-backend.md) and never restated here.
+`/.knowledge/standards/architecture/spec-backend.md` and never restated here.
 
 ## Contents
 
@@ -387,7 +387,7 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 | `cq specs new <slug> [--title T] [--verification P] [--subject KEY]` | scaffold `plans/<slug>.md` with `## Problem` as its only section; the capture date is stamped into `date:` here and never again. `--subject` applies a declared `subjects.<KEY>`'s parent (where the backend has one) and fixed tags |
 | `cq specs list [--json]` | every spec, by folder and derived stage |
 | `cq specs status --spec <slug> [--json]` | sections present, derived stage, task progress with recorded subjects, the records, and the outstanding gates |
-| `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` takes exactly one heading (stdin is one stream) and creates it in canonical position |
+| `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
 | `cq specs show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `cq specs record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
 | `cq specs tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
@@ -465,8 +465,8 @@ Measured across the eight bodies before this section existed: two rendered a lit
 described their report in prose, producing six different closing verbs, no shared glyph, an `Age`
 column with no declared source, and `title` unused by every table although `cq specs` had been
 emitting it all along. A shape restated in eight bodies is the fan-out
-[/.knowledge/standards/quality/computed-fact-prose-fanout.md](/.knowledge/standards/quality/computed-fact-prose-fanout.md)
-describes — it ages in seven the moment it changes in one, with every checker green.
+`/.knowledge/standards/quality/computed-fact-prose-fanout.md` describes — it ages in seven the
+moment it changes in one, with every checker green.
 
 ### The three bands
 
@@ -571,7 +571,7 @@ prose-only code is never presented as tool output.
 <!-- rules -->
 
 One row per finding, for the split by what closes each that a read-only view owes
-([/.knowledge/standards/architecture/read-only-views.md](/.knowledge/standards/architecture/read-only-views.md)):
+(`/.knowledge/standards/architecture/read-only-views.md`):
 
 ```
 | Spec | Code | What it is | Closed by |
@@ -584,6 +584,43 @@ One row per finding, for the split by what closes each that a read-only view owe
 Every code is one
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
 defines — never invented, never softened. A front-wide finding leaves `Spec` as `—`.
+
+### The observations table
+
+<!-- rules -->
+
+What a sweep **noticed but does not rank** — a near-duplicate pair, an overlap of scope between two
+specs, a sequencing one spec imposes on another, a finding another spec has already fixed. It
+carries no `sp-` code, so it is never a row of §The findings table: every code there is one
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+defines, and inventing one to fill the column puts a finding the align does not fix into the align's
+own vocabulary.
+
+```
+| Observation | Specs | Recommended action |
+| --- | --- | --- |
+| one root cause, three specs | fix-load-config-root-argument, corrigir-load-config-resolvendo-repo-pelo-cwd | `/quenching:specs:conclude corrigir-load-config-resolvendo-repo-pelo-cwd` |
+| overlapping scope | reduce-execute-conclude-cost, cut-conclude-run-cost | `/quenching:specs:develop cut-conclude-run-cost` |
+| the original defect is already fixed | isolate-functional-checks-probes | nobody — a human decides whether it still has a subject |
+```
+
+- **`Observation` is what the sweep noticed, in one phrase** — the *kind* of thing it is, taken from
+  the sweep's own reading of the front, never a retelling of the other two columns. It never reads
+  `—`: an observation with nothing to say is not a row.
+- **`Recommended action` is runnable as printed**, exactly as §The next-step block is: the
+  plugin-prefixed slash spelling
+  ([align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7)
+  **with its real argument substituted**. A literal `<slug>` reaching the output is a defect, and so
+  is a bare command name whose argument the reader has to reconstruct from the rest of the row.
+- **An observation no command closes says what a human must decide** — `nobody — <the decision>` —
+  rather than naming a command that does not fit it.
+- **`Specs` carries every spec the observation spans**, comma-separated. An observation over three
+  specs that names one has lost the fact that made it an observation; a front-wide one reads `—`.
+- The block is **optional**: omitted whole when there are none, never printed empty.
+
+Which of the two tables a row belongs to is decided by the code, never by the command emitting it: a
+finding carrying an `sp-` code goes to §The findings table, and anything the sweep merely noticed
+comes here.
 
 ### The next-step block
 

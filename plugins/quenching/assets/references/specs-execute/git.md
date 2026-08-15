@@ -271,9 +271,8 @@ The description is tied to the **ref**, not to a worktree's physical directory, 
 identically whether the isolation taken was **Worktree** or plain **Branch**.
 
 `/quenching:specs:conclude`, without a `--spec` argument, reads this same line to resolve which spec(s)
-built the branch it is closing —
-[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) is the contract this mechanism
-answers to.
+built the branch it is closing — the record git alone cannot reproduce once the branch is merged and
+deleted.
 
 <!-- rationale -->
 
@@ -378,8 +377,8 @@ strictly worse rather than merely narrower.
 **On `fast-forward` and `rebase` recording an explicit none.** Under both, the per-section commits
 land on the base directly and their subjects resolve there, so a merge pointer would add nothing.
 
-Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file and
-[plan-git-record.md](../../../../../.knowledge/standards/workflows/plan-git-record.md) already state. `## Outcome` is
+Stopping at the open PR is simpler and is wrong for two reasons, both contracts this file already
+states. `## Outcome` is
 written before the merge and says what the run **delivered** — an open, unmerged PR archived as
 `done` would assert something that has not happened yet. And `merge:` is stamped before the merge
 so that it is the run's last action; a run that ends before the merge leaves the record stamped and
@@ -512,9 +511,8 @@ gh pr create --base <base> --title "<title>" --body "<body>"
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch, and in a repo running the develop/main flow
-([knowledge/standards/git/branching.md](/.knowledge/standards/git/branching.md)) that default deliberately
-stays the publication branch — see that standard's own reasoning for why. `<base>` is this spec's
+default branch, and in a repo running the develop/main flow that default deliberately stays the
+publication branch rather than the integration one. `<base>` is this spec's
 own resolved base, the same value the local route's merge targets.
 
 **The PR route concludes the merge; it does not stop at the PR being opened.** `gh pr merge` runs
