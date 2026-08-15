@@ -64,10 +64,12 @@ copy of the same standard legitimately differ in wording.
 | --- | --- | --- |
 | `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching:components:command:retro` | **no** — the plugin's own `hooks/hooks.json` and every command body invoke it by `${CLAUDE_PLUGIN_ROOT}` |
 
-**`cq` is not installed anywhere.** Resolution is plugin-first with no fallback and no manual rung
-([references/align/tool-resolution.md](references/align/tool-resolution.md)), so a copy under a
-target's `.claude/hooks/` is legacy debris from before that change — reported by `cq components
-drift` and offered for removal by the matching align, never overwritten.
+**`cq` is not installed anywhere.** Resolution is plugin-first with **no third rung**
+([references/align/tool-resolution.md](references/align/tool-resolution.md)): bare, through the
+`bin/cq` shim Claude Code puts on `PATH`, or at the plugin path — two doors onto one file inside the
+plugin, never a third installation. A copy under a target's `.claude/hooks/` is legacy debris from
+before that change — reported by `cq components drift` and offered for removal by the matching
+align, never overwritten.
 
 **One entry point now serves every event.** A hook event and a command body both shell out to
 `bin/cq`; `hooks/hooks.json` names `cq knowledge hook` at `PostToolUse` and `Stop`, and every
