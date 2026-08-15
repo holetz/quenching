@@ -584,6 +584,40 @@ Every code is one
 [specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
 defines — never invented, never softened. A front-wide finding leaves `Spec` as `—`.
 
+### The observations table
+
+<!-- rules -->
+
+What a sweep **noticed but does not rank** — a near-duplicate pair, an overlap of scope between two
+specs, a sequencing one spec imposes on another, a finding another spec has already fixed. It
+carries no `sp-` code, so it is never a row of §The findings table: every code there is one
+[specs-align/conformance.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-align/conformance.md)
+defines, and inventing one to fill the column puts a finding the align does not fix into the align's
+own vocabulary.
+
+```
+| Observation | Specs | Recommended action |
+| --- | --- | --- |
+| one root cause, three specs | fix-load-config-root-argument, corrigir-load-config-resolvendo-repo-pelo-cwd | `/quenching:specs:conclude corrigir-load-config-resolvendo-repo-pelo-cwd` |
+| overlapping scope | reduce-execute-conclude-cost, cut-conclude-run-cost | `/quenching:specs:develop cut-conclude-run-cost` |
+| the original defect is already fixed | isolate-functional-checks-probes | nobody — a human decides whether it still has a subject |
+```
+
+- **`Recommended action` is runnable as printed**, exactly as §The next-step block is: the
+  plugin-prefixed slash spelling
+  ([align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7)
+  **with its real argument substituted**. A literal `<slug>` reaching the output is a defect, and so
+  is a bare command name whose argument the reader has to reconstruct from the rest of the row.
+- **An observation no command closes says what a human must decide** — `nobody — <the decision>` —
+  rather than naming a command that does not fit it.
+- **`Specs` carries every spec the observation spans**, comma-separated. An observation over three
+  specs that names one has lost the fact that made it an observation; a front-wide one reads `—`.
+- The block is **optional**: omitted whole when there are none, never printed empty.
+
+Which of the two tables a row belongs to is decided by the code, never by the command emitting it: a
+finding carrying an `sp-` code goes to §The findings table, and anything the sweep merely noticed
+comes here.
+
 ### The next-step block
 
 <!-- rules -->
