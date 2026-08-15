@@ -1,10 +1,10 @@
 ---
 type: standard
 title: O report de uma frente é um mold, possuído uma vez
-description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e um bloco de próximo passo executável como impresso — porque um formato reescrito em oito corpos envelhece em sete e nenhum checker vê
+description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e toda coluna que nomeie um comando executável como impressa — porque um formato reescrito em oito corpos envelhece em sete e nenhum checker vê
 resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md
 tags: [architecture, commands, report, output, references, specs]
-timestamp: 2026-08-11
+timestamp: 2026-08-15
 audience: both
 authority: current
 source: branch holetz/specs-report (2026-08-04) — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/knowledge/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
@@ -41,9 +41,12 @@ descreviam o report em prosa produziram seis formas diferentes.
   toda execução.
 - **Um conjunto ordenado de colunas**, do qual cada comando toma um subconjunto — nunca reordenando,
   nunca inventando. Cada coluna declara a **fonte** de onde sai e quando vale `—`.
-- **Um bloco de próximo passo por último, executável como impresso** — o slug real substituído, um
-  `<slug>` literal na saída sendo defeito. Exatamente uma linha recomendada, e a cauda de motivo só
-  quando há mais de uma linha.
+- **Executável como impresso vale para qualquer coluna que nomeie um comando** — o argumento real
+  substituído; um `<slug>` literal na saída é defeito, e um nome de comando sem o argumento que ele
+  exige também. A regra nasceu no bloco de próximo passo e vale igual em toda coluna que aponte o
+  leitor para um comando: uma ação que o leitor tem de completar não é uma ação, é um lembrete.
+- **Um bloco de próximo passo por último**, sob a regra acima. Exatamente uma linha recomendada, e a
+  cauda de motivo só quando há mais de uma linha.
 
 ## Por que uma seção, e não prosa em cada corpo
 
