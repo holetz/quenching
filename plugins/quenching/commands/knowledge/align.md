@@ -192,12 +192,6 @@ plan was rejected and nothing was written.
 ### 5. Install the language declaration and the site layer — pass 1 only, offered
 Both are one-shot scaffolding, not loop stages; skip this step entirely on later passes.
 
-**The enforcement hook needs no install.** The plugin's own `hooks/hooks.json` wires
-`cq knowledge hook` on `PostToolUse`/`Stop` automatically, from the plugin path — nothing is copied
-into the target's `.claude/hooks/` and nothing is merged into its `.claude/settings.json`. Never
-offer to install, overwrite or refresh a copy there — the plugin path is the only wiring now. The
-bundle root is the fixed `/.knowledge/` convention — no config names it.
-
 **The language declaration.** Ask **once**, and only when the target's **root** harness file
 (`CLAUDE.md` / `AGENTS.md`) carries no declaration yet. Ask for one BCP-47 tag — `pt-BR`, `en`,
 `ja` — and write a single line into that root file:
