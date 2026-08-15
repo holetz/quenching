@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-08-10
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02)
+source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic
 maintainer: quenching
 ---
 
@@ -29,15 +29,47 @@ identity.
 
 ## Single-axis classification
 
-Every command is classified on **exactly one axis**, and its path derives from it:
+Every command is classified on **exactly one axis: what it acts on** — asked as up to two
+questions, in order, each with a single honest answer. The first question is a
+subject/category; the second is the older domain-bound-vs-generic test, now read against
+that category instead of standing alone.
 
-- **Domain-bound** — serves one folder subtree / one front. Pathed after that folder plus a verb
-  (see [command-surface.md](../naming/command-surface.md)).
-- **Generic** — serves the surface as a whole. A flat command named verb-object.
+**1. Category/subject — the first question.** Name the one subject the command belongs to
+(`git`, `deploy`, `tests`, ...). A clean, evident answer wins. No evident subject, or
+several unrelated ones, means there is no category: fall straight through to the second
+question exactly as if this step did not exist — categorization only applies when it fits;
+it is never forced.
 
-The classification test is naming the one folder/front the command acts on: exactly one answer
-means domain-bound; "the whole surface" means generic; several unrelated targets means the command
-is kept as-is and reported, never forced onto the axis.
+**2. Domain-bound vs generic — the second question, read against the category.**
+- **No category** — unchanged from before this rule: **domain-bound** when the command
+  serves one folder subtree / one front, pathed after that folder plus a verb (see
+  [command-surface.md](../naming/command-surface.md)); **generic** when it serves the
+  surface as a whole, a flat command named verb-object; **neither** (kept as-is and
+  reported) when several unrelated targets answer at once.
+- **Category, no single real folder tied to the command** — e.g. `git` for a `commit`
+  command: a subject, not a repo folder. The command nests flat under the category.
+- **Category, and a real folder tied to the command** — the folder either **nests** inside
+  the category or is **replaced** by it, per the convention already established for that
+  category in *that* target repo (below). Several unrelated folders still fit neither and
+  are kept as-is and reported, exactly as the no-category case.
+
+### Reading the nest-vs-replace convention
+
+The convention lives entirely inside the **target repo's own** `.claude/commands/<categoria>/`
+— never in the plugin, and never in a dedicated registry file of its own:
+
+- Files already sitting under `.claude/commands/<categoria>/<folder-path>/` (the real
+  folder present as a subpath) → the convention already in force is **nest**.
+- Files already sitting directly under `.claude/commands/<categoria>/` with no real-folder
+  subpath → the convention already in force is **replace**.
+- The category has no files yet in that repo, or the two shapes are already mixed
+  (ambiguous) → ask the human once. The physical structure that first answer produces
+  *becomes* the record — reused in silence for every later command of that category in that
+  repo, with nothing else written down anywhere.
+
+Two repos may read opposite conventions for the same category name without conflict: the
+convention is never shared, catalogued, or asked twice for the same category in the same
+repo.
 
 **A technique is a parameter of a verb, not a new axis.** Variants of one action — different
 elicitation scripts, different depths, different output shapes — become an argument to a single
