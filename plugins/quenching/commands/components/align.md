@@ -80,8 +80,7 @@ Resolve `cq components` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**Every shell grant is scoped**, per
-[`/.knowledge/standards/automation/skills.md`](../../../../.knowledge/standards/automation/skills.md)
+**Every shell grant is scoped**, per `/.knowledge/standards/automation/skills.md`
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
 blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
@@ -261,7 +260,7 @@ sweep.
 against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-([skills.md](../../../../.knowledge/standards/automation/skills.md) §The admission criterion). The split is
+(`/.knowledge/standards/automation/skills.md` §The admission criterion). The split is
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in

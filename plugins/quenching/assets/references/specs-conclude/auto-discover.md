@@ -4,8 +4,8 @@ How `/quenching:specs:conclude` resolves the slug to close when it is called wit
 current branch's own `quenching-slugs:` marking — written by `/quenching:specs:execute`, per
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Marking the branch with the
 specs it built — filtering it to what still resolves, and falling back to a diff-based offer when
-nothing does. The contract this file answers to is
-[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md).
+nothing does. The marking exists because it is the fact the base branch's history cannot reproduce
+once the branch is gone.
 
 ## Reading the marking
 
