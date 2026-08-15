@@ -1050,15 +1050,6 @@
       "stderr": ""
     },
     {
-      "golden": "okf-hook-posttooluse.json",
-      "script": "plugins/quenching/assets/hooks/okf-validate.py",
-      "argv": [],
-      "cwd": "<WS>",
-      "stdin": "{\"hook_event_name\": \"PostToolUse\", \"cwd\": \"<WS>\", \"tool_name\": \"Write\", \"tool_input\": {\"file_path\": \"<WS>/.knowledge/concepts/golden-fixture-bad.md\"}}",
-      "exit": 0,
-      "stderr": ""
-    },
-    {
       "golden": "specs-root-too-high-list.json",
       "script": "plugins/quenching/assets/bin/cq",
       "argv": [

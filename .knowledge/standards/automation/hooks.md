@@ -2,9 +2,9 @@
 type: standard
 title: Scoped hooks
 description: Where a hook may be installed, what each scope and handler costs, and the policy defaults every hook obeys
-resource: .claude/settings.json, plugins/quenching/hooks/hooks.json, plugins/quenching/assets/hooks/**, plugins/quenching/commands/**, plugins/quenching/assets/bin/quenching/components/**
+resource: .claude/settings.json, plugins/quenching/commands/**, plugins/quenching/assets/bin/quenching/components/**
 tags: [automation, hooks, performance, budget]
-timestamp: 2026-08-10
+timestamp: 2026-08-15
 audience: both
 authority: current
 source: skill-front capability research (2026-07-27) — hookify/plugin-dev + official docs; the knowledge checker's dirty-gate precedent. Graduated to current on an adopting surface, and the components pillar enforces both rungs from one implementation (8 selftest cases, since ported to the test suite). The adopting surface changed shape (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec): the plugin's own hooks/hooks.json wires the checker for every repo, so the three rung-1 frontmatter blocks it replaced were removed; the dead-rung paragraph gained this repo's own measurement (2026-08-06) after its frozen 4.4.5 copy was caught reporting `bundle root is not a directory` against a bundle the shipped 4.13.0 passed clean
@@ -26,8 +26,10 @@ OK, inventoried (report-only) by `/quenching:components:align`.
 2. **Operation-scoped** — a `settings.json` hook with an event + `matcher` (+ `if` gate);
    fires only on matched tool calls.
 3. **Gated wide event** — a `Stop`/`UserPromptSubmit` hook made cheap by construction:
-   dirty-gated by a marker file (an untouched turn costs one stat) or `once: true`. The
-   shipped checker's `stopScan: "dirty"` gate (`cq knowledge hook`) is this repo's standing example.
+   dirty-gated by a marker file (an untouched turn costs one stat) or `once: true`. No live
+   example in this repo today — the plugin's own dirty-gated `Stop` hook, once the standing
+   example, was retired along with the capability it checked (§What this repo's own surface
+   does under it).
 4. **Unmatched session-wide** — a finding (`sk-hook-unmatched`) unless the reason nothing
    narrower suffices is stated where the hook is wired.
 
@@ -64,38 +66,37 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 
 ## What this repo's own surface does under it
 
-**The plugin wires the checker itself, at rungs 2 and 3, for every repo that has it.**
-`plugins/quenching/hooks/hooks.json` — loaded from the plugin's own tree, never merged into a
-target's `.claude/settings.json` — carries a `PostToolUse` hook matched to `Write|Edit` (rung 2,
-operation-scoped, `timeout` 10) and an unmatched `Stop` hook (rung 3, `timeout` 15), both invoking
-`python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" knowledge hook`. Nothing is installed and nothing is
-offered: the wiring travels with the plugin, which is why no command needs a rung-1 frontmatter
-`hooks:` block of its own any more — the three that carried one (`/quenching:knowledge:add`, `/quenching:knowledge:learn`,
-`/quenching:knowledge:define`) had it removed as redundant.
+**This repo wires no hook of its own today.** It once wired the OKF checker itself, at rungs 2 and
+3, via `plugins/quenching/hooks/hooks.json` — a `PostToolUse` hook matched to `Write|Edit` and a
+`stopScan: "dirty"`-gated `Stop` sweep, both invoking `cq knowledge hook` — for every repo that had
+the plugin installed. The capability was discontinued outright (`descontinuar-hooks-do-plugin`
+spec), not merely rescoped: nothing in this repo answers a hook event any more, and
+`/quenching:components:hook:new` is how a hook — a future one of this repo's own, or a target's —
+gets minted, under the two ladders above.
 
-The `Stop` hook is the rung-3 example in the flesh rather than in the abstract — it is only
-affordable because the shipped `stopScan: "dirty"` gate makes a turn that touched no `/.knowledge/**` file
-cost one stat. The opt-in `PreToolUse` deny gate is deliberately **not** wired: `hardBlock` stays
-`false`, so the checker proposes and never blocks. Note the second-order cost this repo pays and a
-target repo does not — `plugins/quenching/assets/knowledge/` is a bundle skeleton, so an edit there fires
-the same `Write|Edit` hook against payload that is deliberately a template rather than a live
-bundle.
+**The three bundle-writing commands hold no rung, and rely on their own Self-check.**
+`/quenching:knowledge:add`, `/quenching:knowledge:learn` and `/quenching:knowledge:define` each
+carried a rung-1 frontmatter block running `cq knowledge validate` on its own `Write`/`Edit`. All
+three were removed on 2026-08-03 (`enxugar-create-e-eliminar-o-rung-hooks` spec) as redundant with
+the wiring above — which was then discontinued along with it. **Nothing replaced them**: each
+command's own *Self-check against the conformance core* step, run against
+`plugins/quenching/assets/references/knowledge-align/conformance.md`, is the whole of the
+conformance check at the moment of the write, and it is a step the body executes rather than an
+event anything answers. Restoring the rung would be a **mint, not a revert** — through
+`/quenching:components:hook:new`, under the two ladders above and behind the missing-handler guard
+this standard requires, since `cq` may not be installed in the target being written into. Stated
+here because the claim is otherwise re-derived from the removal's own rationale, which the
+discontinuation invalidated: the plugin manual asserted the three blocks as live for two releases
+after they were gone.
 
-**A target that once accepted the old install offer carries a second, dead rung.** Its
-`.claude/settings.json` still names its installed copy under `${CLAUDE_PROJECT_DIR}/.claude/hooks/`, so the
-same checker fires twice — once from the plugin at the current version, once from a copy frozen at
-whatever it was installed at. That is legacy debris, removed by `/quenching:knowledge:align`, not a
-second opinion worth keeping.
-
-**This repository carried that dead rung until 2026-08-06, and it was not silent.** The frozen copy
-was 4.4.5 against a shipped 4.13.0, and 4.4.5 still resolved its bundle root from a `docsDir`
-config key defaulting to `docs` — while the root had become the fixed `/.knowledge/` convention. So the
-dead rung reported `bundle root is not a directory` on every `Stop` sweep, against a bundle the
-current checker passed with zero errors. The lesson is the sharper half of the rule above: a frozen
-duplicate is not merely redundant, because the contract it was frozen against can move underneath
-it, and then it reports **failures of its own staleness as findings about your repo**. Removing the
-`hooks` block from `.claude/settings.json` and the two copies under `.claude/hooks/` left the
-plugin's own wiring as the only rung, which is what the paragraph above already prescribed.
+**The lesson the old wiring left behind, still worth keeping.** A target that once accepted an
+older install offer could carry a frozen, dead copy of the checker alongside the live one — this
+repo carried exactly that until 2026-08-06, a copy frozen at `4.4.5` against a shipped `4.13.0`,
+still resolving its bundle root from a retired `docsDir` config key. The dead copy reported
+`bundle root is not a directory` on every sweep, against a bundle the current checker passed
+clean: a frozen duplicate does not merely go redundant, because the contract it was frozen against
+can move underneath it, and it then reports **failures of its own staleness as findings about your
+repo**. `/quenching:knowledge:align` removes that class of debris on sight.
 
 The full pricing doctrine lives once, in
 [capabilities.md](/plugins/quenching/assets/references/components-command-new/capabilities.md) §Hooks;

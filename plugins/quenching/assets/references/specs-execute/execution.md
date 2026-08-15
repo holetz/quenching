@@ -404,12 +404,13 @@ scoped to `python3`/`py` because they only ever talk to `cq specs`.
 When `cq` does not resolve, the body falls back to `Read`ing the cited file whole and says so in
 the report — because that is the run's context cost changing, not a cosmetic difference.
 
-There is exactly **one** rung above that fallback, and it is the plugin's own path. This sentence
-used to name a second — "the target's `.claude/hooks/cq`" — which
-[align/tool-resolution.md](../align/tool-resolution.md) §Resolving the tool forbids outright: *there
-is no fallback and no manual rung*, never a copy under a target's `.claude/hooks/`. A copy that
-lives there is never executed by anything the plugin runs, so a body that reached for it would have
-been reaching for a file nobody keeps current.
+Every rung above that fallback is the plugin's own file — bare `cq` through the `bin/` shim on
+`PATH`, or the plugin path — and nothing else is one. This sentence used to name a rung outside the
+plugin, "the target's `.claude/hooks/cq`", which
+[align/tool-resolution.md](../align/tool-resolution.md) §Resolving the tool forbids outright:
+*there is no third rung*, never a copy under a target's `.claude/hooks/`. A copy that lives there is
+never executed by anything the plugin runs, so a body that reached for it would have been reaching
+for a file nobody keeps current.
 
 ### Why the declared files, never their folder
 
