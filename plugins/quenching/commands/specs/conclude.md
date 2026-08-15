@@ -230,10 +230,16 @@ One plan, one OK. Every write goes through
 silently. Commit what it writes **on the work branch**.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
-OKF bundle present, read the `/.knowledge/standards/` subjects the branch diff touched and apply what they
-require *of the merge* rather than of any one task — a version bumped across artifacts a standard
-says must move together, a changelog entry, a manifest re-stamped. This is the only correct moment
-for that class of edit: the whole branch is written, so what the release *is* is finally knowable,
+OKF bundle present, derive the standards this branch is answerable to as an **aggregate in the
+shell**, from the branch diff's own paths — never by walking `/.knowledge/standards/<subject>/`, which
+is a folder, not a question — then read exactly those files under
+[align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md)
+§1 §2, section-addressed off each file's own heading index where it answers narrower. **Which**
+standards are consulted does not change; only how they are found and how much of each is paid for.
+Apply what they require *of the merge* rather than of any one task — a version bumped across
+artifacts a standard says must move together, a changelog entry, a manifest re-stamped. This is the
+only correct moment for that class of edit: the whole branch is written, so what the release *is*
+is finally knowable,
 and a bump made here starts from the base the branch is actually merging into rather than colliding
 with a sibling spec that bumped to the same number days ago.
 
