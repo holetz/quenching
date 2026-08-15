@@ -117,9 +117,8 @@ falls back to it on its own where nothing was resolved, but a human still chose 
 work this is and gets the same say `subjects` already gets.
 
 **A declared `tagCatalog`:** read each tag's description — this prose is prompt material, not
-documentation, written for exactly this judgment
-([plugin-configuration.md](/.knowledge/standards/workflows/plugin-configuration.md) §Three keys are
-prompt material, not documentation) — and propose zero or more that fit the input, in the SAME
+documentation, written for exactly this judgment — and propose zero or more that fit the input, in
+the SAME
 question as the subject and the type where all apply, or its own `AskUserQuestion` otherwise. A
 tag outside the declared catalog is never proposed: `tagCatalog` is the closed set this judgment
 draws from.
@@ -171,9 +170,11 @@ cq specs section <slug> Problem --write   # body on stdin
 
 **Sentence path: stop here.** Write nothing into any other heading.
 
-**Plan-file path:** additionally write each section the plan actually supports, via
-`cq specs section <slug> "<Heading>" --write`. Where the plan was silent on a section you are
-writing others around, write `- none — <what the source did not record>`. Never fabricate.
+**Plan-file path:** additionally write every section the plan actually supports, in ONE call —
+`cq specs section <slug> "<Heading>,<Heading>…" --write`, the bodies on stdin delimited by their
+own `## <Heading>` lines, the set matching what was declared. Where the plan was silent on a
+section you are writing others around, write `- none — <what the source did not record>`. Never
+fabricate.
 **Done when:** `## Problem` is filled, and no section beyond what the input supported exists.
 
 ### 6. Compute and propose `complexity`

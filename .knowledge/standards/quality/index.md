@@ -38,6 +38,9 @@ the checks that hold it honest. The *modeling* that defines data lives in
   the text it leaves behind, not only the text it never opened — the hard wrap makes the line a unit
   the sentence does not respect, an orphaned continuation is promoted under the neighbouring bullet,
   and a grant's justification outlives the use that earned it.
+* [prose-verify-pins-wording.md](prose-verify-pins-wording.md) — um `verify:` que faz grep de prosa
+  não prova a prosa, prende-a à frase que o check nomeou: as duas leituras honestas de uma falha, a
+  terceira que nunca é permitida, e como escrever a asserção prendendo o mínimo de redação.
 * [selftest-mutation.md](selftest-mutation.md) — a test that has never been observed to fail is
   untested: the authoring-time mutation pass, one mutation per rule the fixture exists to prove,
   and the gate the repo's tests/ suite has not yet cleared, rule by rule.

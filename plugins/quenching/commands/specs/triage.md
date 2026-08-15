@@ -117,7 +117,7 @@ Rules for the table:
 - `complexity` is left blank rather than guessed.
 - Anything the sweep noticed but does not rank — a near-duplicate pair, a stub going nowhere, a
   ranking whose grounds have expired — is listed **below** the table as an observation naming the
-  command that would act on it. Never as a row.
+  command **and the exact argument** that would act on it, runnable as printed. Never as a row.
 **Done when:** one table covers every spec in scope, with contiguous levels and a reason per change.
 
 ### 3. One OK
@@ -161,8 +161,9 @@ Emit §The report mold. Two body blocks:
    with the four proposal columns dropped and `Priority` showing the value now on disk, so the
    report is the approved table rather than a prose retelling of it. Specs that stayed unranked keep
    their row, `Priority` reading `—`.
-2. **Observations** — optional, omitted whole when there are none. §The findings table, each row's
-   `Closed by` naming the command that would act on it.
+2. **Observations** — optional, omitted whole when there are none. §The observations table, each
+   row's `Recommended action` **runnable as printed**: the command with its real argument
+   substituted, never a bare command name the reader has to complete.
 
 Then §The next-step block, whose recommended line is `/quenching:specs:continue` — the consumer of
 what this just wrote.
@@ -185,3 +186,7 @@ what this just wrote.
   same listing from disk on demand.
 - Never fan out sub-agents, and never re-implement a check in prose — run `cq specs validate` and
   report what it says.
+- **Never print an observation whose `Recommended action` is not runnable as printed** — a bare
+  command name, or a literal `<slug>` reaching the output, is a defect. The row exists so the next
+  step can be copied; one the reader has to complete is the gap §The observations table was given
+  its own mold to close.
