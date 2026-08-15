@@ -32,6 +32,10 @@ The delegation economics and the definition contract live in
 - **An agent's description is always-on context.** The same two caps as a command's, counted
   on the parsed value; a definition earns its standing cost the way a command does.
 
+Resolve `cq` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
+
 ## Workflow
 
 ### 1. Read the rule

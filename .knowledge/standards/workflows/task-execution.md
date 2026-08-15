@@ -4,10 +4,10 @@ title: Task execution contract
 description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
 resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-08-11
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11); the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15)
 maintainer: quenching
 ---
 
@@ -58,6 +58,37 @@ never guesses and never interrupts the human mid-task to ask.
 A task with no `verify:` falls back to the spec's `## Validation`, then to the repo's own
 checks. **No verification available at all is reported, never silently passed** — a checkbox must
 not imply a proof that never happened.
+
+#### The mirror case: a `verify:` that can never pass
+
+The three above are false greens. The fourth is a false **red**, and it is the mirror rather than a
+variant: the check never had the power to say *pass*, for a reason that has nothing to do with the
+task. Measured twice on one spec — `references-citam-standards-fora-do-esqueleto`, whose two
+occurrences were authored minutes apart:
+
+**A path that does not resolve from the declared `cwd:`.** A task declared
+`cwd: plugins/quenching` and `verify: … cq knowledge validate .knowledge`. The bundle is at the
+repository root, so from that directory the command exits 1 with `no-bundle` whether the task is
+done or not.
+
+**A scope wider than the task's own blast radius.** A task declared the whole of
+`citation-check.sh` as its gate, when its section could only touch what one half of that script
+measures. Another half was already red on pre-existing residue in three files the branch never
+opened, so the gate reported the section as failing for work done before it started. This is the
+same rule as *scoped at authoring time, never filtered at the gate* below, seen from its failure
+side.
+
+**Why this is worth its own entry rather than a footnote to the three.** A false green ships a lie
+quietly. A false red does something worse: it puts pressure on the executor at exactly the moment
+the hard rules forbid relief — *never edit the `verify:`, the test, or the assertion so it stops
+failing*. An executor that yields writes a weaker check and calls the task proved; one that does not
+yields a task blocked on a defect that was never in the code. Neither outcome is the task's fault,
+and both are authoring defects the falsification step catches for free.
+
+**The falsification step catches all four, and it is one run.** Executing the `verify:` once against
+the unfixed tree answers both questions at once: a line that exits 0 there is a false green, and a
+line that cannot exit 0 anywhere is a false red. Authoring a `verify:` without running it is what
+the four cases share.
 
 ### A task's `cwd:` says where `verify:` runs
 

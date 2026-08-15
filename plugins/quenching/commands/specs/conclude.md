@@ -230,12 +230,12 @@ One plan, one OK. Every write goes through
 silently. Commit what it writes **on the work branch**.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
-OKF bundle present, read the `/.knowledge/standards/` subjects the branch diff touched and apply what they
-require *of the merge* rather than of any one task — a version bumped across artifacts a standard
-says must move together, a changelog entry, a manifest re-stamped. This is the only correct moment
-for that class of edit: the whole branch is written, so what the release *is* is finally knowable,
-and a bump made here starts from the base the branch is actually merging into rather than colliding
-with a sibling spec that bumped to the same number days ago.
+OKF bundle present, derive which standards the branch diff's own paths answer to — an aggregate in
+the shell, never a walk of `/.knowledge/standards/<subject>/` — and read exactly those, per
+[align/evidence-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/evidence-doctrine.md)
+§1 §2. Apply what they require *of the merge* rather than of any one task — a version bumped across
+artifacts a standard says must move together, a changelog entry, a manifest re-stamped. This is the
+only correct moment for it: the whole branch is written, so what the release *is* is knowable.
 
 Nothing is invented. A repo whose standards attach nothing to a merge gets nothing, silently, and
 so does a repo with no bundle. What a standard *does* require is presented as ONE plan with the
@@ -312,8 +312,8 @@ being merged.
 
 **An inconclusive result is not a green one.** A check that cannot tell "this failed" from "this
 could not be measured" has returned no verdict — say which it was, and ask, rather than merging on
-it. The repo's own [surface-verification.md](../../../../.knowledge/standards/quality/surface-verification.md)
-§The five preconditions a check must satisfy is where that distinction is defined for the command surface.
+it. Where the repo keeps `/.knowledge/standards/quality/surface-verification.md`, its §The five
+preconditions a check must satisfy is where that distinction is defined for the command surface.
 
 **Run the scope the diff justifies.** A harness that spawns fresh agent sessions bills for every
 one, so a check with a `--only`-style selector gets the subset this branch can actually break — the
@@ -383,8 +383,7 @@ gh pr merge <number> --merge|--squash|--rebase --subject "plan/<slug>: merge (<s
 ```
 
 **`--base <base>` is never omitted.** `gh pr create` without it targets the repository's GitHub
-default branch, which stays `main`
-([branching.md](/.knowledge/standards/git/branching.md) §O consumidor não muda nada). `<base>` is
+default branch, which in a repo running the develop/main flow deliberately stays `main`. `<base>` is
 this spec's own resolved base — the one the local route merges into — so a spec cut from the
 declared integration branch opens its PR there, never against the publication one, with no GitHub
 setting having to change.
@@ -498,9 +497,7 @@ block are all reported.
 - Never edit or delete anything already in `archive/`, with exactly three exceptions, all onto the
   spec this run is closing: the distillation's `## Outcome` append and the `merge:` stamp in step
   5, and the `pr:` stamp in step 6 on the PR route. Each records a fact that did not exist at the
-  archive move and has nowhere earlier to live — the two-clause test in
-  [plan-lifecycle.md](/.knowledge/standards/workflows/plan-lifecycle.md) §The archive is append-only,
-  which a further exception is argued against, never assumed into. None revises what the spec
-  claimed. Never touch a spec other than that one, nor an archived spec from an earlier run.
+  archive move and has nowhere earlier to live — the two-clause test a further exception is argued
+  against, never assumed into. None revises what the spec claimed. Never touch a spec other than that one, nor an archived spec from an earlier run.
 - Never rewrite history: no amend of a task commit, no force-push, no `--no-verify` and no
   `--no-gpg-sign` on the commits this command makes.

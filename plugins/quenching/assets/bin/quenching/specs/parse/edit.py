@@ -7,7 +7,7 @@ from __future__ import annotations
 from quenching.specs.parse.handoff import (current_handoff_section, parse_handoff,
                                            task_section_title)
 from quenching.specs.parse.tasks import parse_tasks
-from quenching.specs.parse.text import body_after_frontmatter
+from quenching.specs.parse.text import FENCE_RE, HEADING_RE, body_after_frontmatter
 from quenching.specs.schema import canonical_headings, section_guidance
 
 
@@ -43,6 +43,62 @@ def _match_heading(heading: str) -> str | None:
     so the FILE always carries canonical English — but a human typing `cq specs section x
     validation` should not get a stray section for their trouble."""
     return resolve_heading_name(heading, canonical_headings())
+
+
+def split_section_stream(text: str, candidates: list[str]) -> list[tuple[str | None, str]]:
+    """One stdin stream cut into the sections it carries, in the order it carries them.
+
+    **The delimiter is the document's own `## <Heading>` line** — the exact form the plural
+    read already prints — so writing N sections needs no syntax the file does not already
+    have, and read and write round-trip.
+
+    **Self-describing or not at all.** A stream declares itself by OPENING on a canonical
+    `## <Heading>`; anything else — prose first, a heading that resolves to nothing — makes it
+    one raw body, and the empty list says so. The caller then writes it whole into the single
+    heading it was given, which is the behaviour every caller had before this function
+    existed, byte for byte. Once a stream has declared itself, every later `## ` in it must
+    resolve too: there the unresolved name is a refusal, not a reason to re-read the whole
+    stream as prose.
+
+    **Cut by MEMBERSHIP, never by position** — each block's name goes through
+    `resolve_heading_name` against the candidate set the caller passes in, exactly as
+    `_match_heading` resolves a name typed on the command line, and an unresolved one comes
+    back as `None` for the caller to refuse by name. The candidate set is an argument for the
+    reason `/.knowledge/standards/code/canonical-set-parsing.md` gives: the cases prove the
+    function that ships, not a copy of its rule.
+
+    **A fenced block is never read as a heading** — the rule `parse_sections` and the
+    components reader already hold, and the one that keeps a `## Design` inside a ```` ``` ````
+    example from cutting the body that quotes it.
+
+    Deliberately NOT `parse_sections`: that reader answers a different question — one entry
+    per heading, keyed, three-state — and it collapses a repeated heading onto the first.
+    Here the repeat is the finding, so the blocks stay a list and every one of them survives.
+    """
+    heads: list[str | None] = []
+    bodies: list[list[str]] = []
+    buf: list[str] = []
+    fence: str | None = None
+    for line in text.splitlines():
+        m = FENCE_RE.match(line)
+        if m:
+            mark = m.group(1)
+            if fence is None:
+                fence = mark[0] * len(mark)
+            elif mark[0] == fence[0] and len(mark) >= len(fence):
+                fence = None
+        elif fence is None:
+            h = HEADING_RE.match(line)
+            if h and len(h.group(1)) == 2:
+                name = resolve_heading_name(h.group(2).strip(), candidates)
+                if not heads and (name is None or any(prev.strip() for prev in buf)):
+                    return []
+                heads.append(name)
+                buf = []
+                bodies.append(buf)
+                continue
+        buf.append(line)
+    return [(h, "\n".join(b).strip("\n")) for h, b in zip(heads, bodies)]
 
 
 def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:

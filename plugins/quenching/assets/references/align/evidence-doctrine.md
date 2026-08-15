@@ -61,6 +61,16 @@ assertion the citing text makes deliberately, the same way
 §Read what the tasks must satisfy already narrows a spec's own `## Impact`-declared standards when
 the bullet carries a `§`address.
 
+**A `§`address is only as stable as the file it points at.** Against this plugin's own
+`assets/references/**` it is stable by construction — the reference ships in the same commit as the
+body that cites it. A target's `/.knowledge/` carries no such guarantee: the standard a target holds
+may have been born from `assets/templates/automation/skills-standard.md` and never touched, or
+evolved past it, and the two heading sets differ — `§Single-axis classification` exists only in the
+evolved one. An unresolved section is a **refusal**, not a degradation: `cq components read` exits
+with 2, naming the headings the file does have. So a command body may hardcode a `§`address against
+a target's `/.knowledge/` only where it also says what to do on that exit 2. A path discovered at
+runtime and read whole is unaffected — there is no address to be wrong.
+
 <!-- rationale -->
 
 The mechanism already generalizes — nothing about `cq components read` is specific to the plugin's
@@ -68,3 +78,7 @@ own `assets/references/`, and a doctrine site that still reaches for the plain f
 a target's `/.knowledge/` is paying for that gap, not for a real constraint. A rule two sections long
 costs the same to read narrow as it does to read whole; only the surrounding rules that were not
 in question stop being paid for.
+
+The exit 2 is the useful half of the stability constraint: it names the headings the file actually
+has, so a body that plans for it recovers in one call. What the constraint forbids is the silent
+assumption that a target's bundle is shaped like this repository's.

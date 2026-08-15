@@ -1,7 +1,10 @@
-"""Two renderings of one finding list — the operator's report and the agent's proposal.
+"""One rendering of one finding list — the operator's report.
 
 Moved verbatim out of the pre-refactor OKF validator script, with ONE adjustment: `VERSION` is
 imported from `quenching.common.version` rather than declared here.
+
+The agent's proposal rendering (`_render_proposal`, feeding a hook's `additionalContext`) was
+retired along with the `hook` mode it served.
 
 `_split` is the severity partition every caller branches on, and it is why this pillar
 never grew a refusal step: findings are errors or warnings, and the exit code
@@ -10,7 +13,6 @@ never grew a refusal step: findings are errors or warnings, and the exit code
 from __future__ import annotations
 
 from quenching.common.version import VERSION
-from quenching.knowledge.schema import TAG
 
 
 def _split(findings):
@@ -31,13 +33,3 @@ def _render_text(findings, bundle_root: str) -> str:
     if not findings:
         lines.append("  OK — bundle conforms.")
     return "\n".join(lines)
-
-
-def _render_proposal(findings) -> str:
-    errors, warns = _split(findings)
-    shown = (errors + warns)[:20]
-    body = "\n".join(f"  - [{sev}] {rel}: {msg}" for sev, rel, code, msg in shown)
-    return (f"[{TAG}] OKF conformance findings ({len(errors)} error(s), {len(warns)} warning(s)):\n"
-            f"{body}\n"
-            "Fix with the `quenching-knowledge-align` / `quenching-knowledge-add` skill (stamp `type`, keep `index.md` a "
-            "frontmatter-free listing).")

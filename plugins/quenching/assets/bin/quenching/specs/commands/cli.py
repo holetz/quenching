@@ -77,7 +77,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="the WHOLE document — never the default, because every caller "
                          "that did not need it pays for it in context on every later turn")
 
-    sp = add_json(sub.add_parser("section", help="read N sections, or write ONE"))
+    sp = add_json(sub.add_parser("section", help="read or write N sections in ONE call"))
     sp.add_argument("spec")
     sp.add_argument("heading", nargs="?",
                     help="one canonical heading, or several comma-separated; returned in "
@@ -86,7 +86,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="read every canonical section declared this moment, in canonical "
                          "order, instead of an enumerated heading list")
     sp.add_argument("--write", action="store_true",
-                    help="replace the section from stdin, creating it in canonical position")
+                    help="replace one or more headings from stdin, creating each in "
+                         "canonical position. Several: open the stream on `## <Heading>` "
+                         "lines, one per body, and the set must match what was declared "
+                         "here; a stream carrying no heading is one raw body under the one "
+                         "heading declared")
     sp.add_argument("--scope", choices=["global", "current"],
                     help="with --write on ## Handoff only: replace just the evergreen "
                          "global block, or just the ### N. block matching the next "

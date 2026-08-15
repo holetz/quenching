@@ -44,6 +44,9 @@ human on the same screen; the human's OK is the run's authorization.
   §Derived stages §Frontmatter §The `cq specs` tool surface — the derived stage is the dispatch,
   and the records (`priority.complexity`, `approved`, `branch`, `merge`) and the tool surface
   this command reads.
+- [align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+  §Resolving the tool — how the `cq` written bare below is resolved, and what to write when it
+  does not resolve. Branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
 
 ## Doctrine
 
@@ -84,6 +87,7 @@ nothing to conduct: say so and stop.
 **Done when:** one spec in `plans/` is resolved.
 
 ### 2. Read the state in one call
+Resolve `cq` per the contracts block above before the first call.
 ```bash
 cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
 cq specs config --json                  # backend, integrationBranch
@@ -127,8 +131,8 @@ on), declaring the authorization as step 3's sentence — the minimal-gear form 
 the minimal gear. Under the minimal gear, `conclude` is invoked with the **pull-request route**
 against the declared `integrationBranch`: the route was chosen and approved in the gears plan,
 never rediscussed at the stage. A stage whose gear is `sub-agent` runs isolated and returns its
-summary per the gears contract (§What a gear is); the contract's test that the summary is much
-smaller than the work is [agents.md](/.knowledge/standards/automation/agents.md).
+summary per the gears contract (§What a gear is), whose test is that the returned summary is much
+smaller than the work that produced it.
 **Done when:** the stage finished (or was skipped with a stated reason) and its outcome is
 recorded.
 

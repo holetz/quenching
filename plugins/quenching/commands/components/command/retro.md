@@ -27,9 +27,10 @@ and that evidence is discarded when the session ends. This command reads it back
 **Counting is the extractor's job, never yours.** `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq components session`
 reads the transcript JSONL and returns a bounded digest; you read the digest and judge it. It
 resolves the transcript itself (explicit path, bare session id, or the newest session for this
-cwd), so this body never globs `~/.claude/projects/**`. Invoke it by its literal resolved path
-with `python3`/`py`, and branch on the **exit code** — 0 read clean · 1 read with an anomaly
-against it · 2 refusal — never on prose.
+cwd), so this body never globs `~/.claude/projects/**`. Resolve `cq` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool §Write the resolved path literally on every invocation, and branch on the
+**exit code** — 0 read clean · 1 read with an anomaly against it · 2 refusal — never on prose.
 
 **This command reports. It never edits a command body**, and it never claims a measured delta:
 a retro has one arm and no control, which is what separates it from `/quenching:components:command:eval`.
