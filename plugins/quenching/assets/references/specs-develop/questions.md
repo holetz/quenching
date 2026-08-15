@@ -372,9 +372,8 @@ compact table** and no trail:
 | gate | terms the spec uses in a sense `glossary.md` does not |
 | gate | `## Impact` paths no `## Tasks` item names, and tasks naming paths `## Impact` never declared |
 
-It follows the verifier shape of [agents.md](/.knowledge/standards/automation/agents.md) §The verifier
-shape: it **inspects and reports, never edits**, and it states an explicit *not checked here* list,
-which is the false-positive control.
+It follows the verifier shape: it **inspects and reports, never edits**, and it states an explicit
+*not checked here* list, which is the false-positive control.
 
 **The orchestrator keeps every question, every write and every confirmation.** The sub-agent never
 talks to the human and never touches the spec. Its findings are material for questions the
@@ -386,9 +385,8 @@ Two things that look like this and are not available. **`context: fork` cannot a
 `sk-fork-gate` is an error, and a fork beside an `AskUserQuestion` grant is incoherent by
 construction ([capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md)
 §`context: fork`); a bank is nothing but questions. And a sub-agent **does not share the session's
-prompt cache** — it runs on a cold context and pays the full first read of every file it touches
-([context-discipline.md](/.knowledge/standards/automation/context-discipline.md) §What a delegated
-executor costs), so delegation here is never a cache play.
+prompt cache** — it runs on a cold context and pays the full first read of every file it touches, so
+delegation here is never a cache play.
 
 What it *is* is the delegation test met exactly: the returned table is far smaller than the sweep
 that produced it, and the sweep's file reads stay out of the long context that the interrogation

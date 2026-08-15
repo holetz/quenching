@@ -232,9 +232,8 @@ the only promote left is the gated one into `archive/`.
 A spec carries `slug`/`title`/`verification` and deliberately **no OKF `type:`**.
 
 `plans/index.md` is a **retired artifact**. The sweep neither creates nor deletes a surviving copy
-in a target repo
-([`retiring-a-reserved-artifact.md`](/.knowledge/standards/architecture/retiring-a-reserved-artifact.md)
-§The consequence for disposition).
+in a target repo — a retired artifact is left exactly as it was found, neither reinstated nor
+cleaned up.
 
 <!-- rationale -->
 There is no listing here for it to check, and there never was a spec file it could judge. A spec is
@@ -262,6 +261,5 @@ an already-aligned workspace stops on two tool calls.
 GENERATED zone matches disk". Nothing computed it — `cq specs` never emitted a `changed` field for
 a command to read — so the one clause that could actually rot was the one left to a human's eye,
 and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
-[`generated-listings.md`](/.knowledge/standards/architecture/generated-listings.md); the narrower lesson
-belongs here. A clause a program cannot evaluate is not a stricter standard, it is an unverified
-one.
+`standards/architecture/generated-listings.md`; the narrower lesson belongs here. A clause a program
+cannot evaluate is not a stricter standard, it is an unverified one.
