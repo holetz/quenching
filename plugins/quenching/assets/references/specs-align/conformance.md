@@ -261,5 +261,5 @@ an already-aligned workspace stops on two tool calls.
 GENERATED zone matches disk". Nothing computed it — `cq specs` never emitted a `changed` field for
 a command to read — so the one clause that could actually rot was the one left to a human's eye,
 and a listing wrong on disk passed every checker in the stack. The rule that came out of it is
-`standards/architecture/generated-listings.md`; the narrower lesson belongs here. A clause a program
-cannot evaluate is not a stricter standard, it is an unverified one.
+`/.knowledge/standards/architecture/generated-listings.md`; the narrower lesson belongs here. A
+clause a program cannot evaluate is not a stricter standard, it is an unverified one.

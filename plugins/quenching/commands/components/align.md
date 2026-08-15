@@ -260,7 +260,7 @@ sweep.
 against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-(`standards/automation/skills.md` §The admission criterion). The split is
+(`/.knowledge/standards/automation/skills.md` §The admission criterion). The split is
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in
