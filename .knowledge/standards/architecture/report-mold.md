@@ -90,6 +90,12 @@ contexto; é a troca de oito descrições divergentes e não checáveis por uma 
 esta regra deve medir e dizer o número, nunca estimá-lo
 ([../automation/context-discipline.md](../automation/context-discipline.md)).
 
+**Uma banda nova chega sozinha a quem já cita o mold.** `cq components read --sections "§The report
+mold"` devolve as sub-seções `###` junto com a seção-pai, então acrescentar uma sub-seção ao mold não
+exige tocar o carregamento de corpo nenhum — muda só o corpo que vai *usá-la*, para declarar o seu
+delta. É o argumento acima levado adiante: o mold como seção de um arquivo compartilhado custa zero
+chamadas hoje e zero chamadas quando cresce.
+
 Sete dos oito corpos citam o arquivo hospedeiro pelo **caminho nu** e portanto o leem inteiro, o que
 é por si só deriva contra a regra de citar por `§`-endereço. Estreitá-las cortaria bem mais do que o
 mold acrescenta, e é trabalho próprio com medição própria — não foi feito aqui.
