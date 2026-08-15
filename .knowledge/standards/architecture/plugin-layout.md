@@ -4,10 +4,10 @@ title: Plugin layout — what may live under commands/
 description: commands/** is the only tree Claude Code registers, so everything that is not an entry point lives under assets/ and is cited by absolute path
 resource: plugins/quenching/commands/**, plugins/quenching/assets/**
 tags: [architecture, plugin, commands, layout, claude-code]
-timestamp: 2026-08-11
+timestamp: 2026-08-15
 audience: both
 authority: current
-source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.knowledge/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.knowledge/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down
+source: collapse-skills-into-commands spec (2026-07-26) — proved by the migration itself; the self-contained-mold rule from the verify-allowed-tools-enforcement spec (2026-07-28); the boundary-reminder test from the collapse-remaining-language-clause-restatements spec (2026-07-31), whose narrowing case is the one defect it caught; §A mold cites nothing it does not also install re-justified on the mechanical reason (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) — the load-path test generalizes to the pasted-payload bash-block case the old does-a-copy-leave-the-plugin test missed; §hooks/hooks.json and the invocation rule's re-justification added by that spec's branch review, which caught the standard silent about a tree the same branch created and still resting the hooks/ placement on a hooks-config.json adjacency the same branch removed; the invocation rule amended by modularizar-specs-knowledge-components task 9.6 once `cq` became one entry serving both a hook event and every command body, the case the by-invocation rule had not anticipated; §A plugin body cites the target's bundle only where the align installs it — the sibling rule for the opposite direction, added by the marchas-do-orquestrador-vivem-no-plugin spec (2026-08-11) once the gears contract moved out of `/.knowledge/standards/` and the 23-line `## Impact` sweep showed the mold rule had never covered an ordinary command or reference body citing a fixed `/.knowledge/` path; the form-is-not-the-rule paragraph added by that spec's branch review (2026-08-11), which found five relative-form citations left standing in the payload the absolute-form sweep had just declared clean, two of them in files the same sweep had already edited; §A contract a command reads at runtime is a reference, not a standard distilled from that spec's `## Design` §1 at conclude (2026-08-11) — the criterion that overrode the shrunken-standard precedent of skills.md and plan-artifacts.md, which nothing had written down; §A mold cites nothing it does not also install gained the form-is-not-the-rule clause at alocar-comandos-skills-por-categoria's branch review (2026-08-15), which found that spec's axis rewrite had reached the standard and both command bodies but not `skills-standard.md`, the mold that installs the same rule into a target repo — every gate green over it
 maintainer: quenching
 ---
 
@@ -193,6 +193,23 @@ alongside it. This is why a mold and the plugin's own copy of the same standard 
 in wording: `skills.md` may point at the measurement behind a rule, while
 `skills-standard.md` states the rule and stops. That difference is the rule being obeyed, not
 drift — do not "reconcile" them.
+
+**What may diverge is the form, never the rule.** A change to what a rule *says* lands in the mold
+in the same commit as the standard: the pair is one rule kept in two places, not two documents
+about one subject. Missing that is not stale prose — it is the command **installing into a target
+repo a rule it will then refuse to follow there**, because that installed copy is the one the
+target's own `/.knowledge/` makes governing. Whoever edits a standard the plugin also ships as a
+mold owns both halves; `grep -rl` the rule's own words across `assets/templates/**` before
+declaring the change complete.
+
+The alocar-comandos-skills-por-categoria spec (2026-08-15) rewrote the command classification axis
+across `automation/skills.md` and both consuming command bodies, and left
+`assets/templates/automation/skills-standard.md` declaring the axis the change had just replaced.
+Its `## Impact` had enumerated the consumers and the mold was not among them, `cq components lint`
+and `doctor` were both green over it, and the paragraph above — read as protecting the pair from
+reconciliation — is what made leaving it look correct. Only the branch review caught it. The
+distinction was always implied by "differ in wording"; nothing had said it out loud, and one
+sentence of ambiguity survived every gate this repo owns.
 
 ### A plugin body cites the target's bundle only where the align installs it
 
