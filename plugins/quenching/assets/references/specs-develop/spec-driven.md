@@ -603,6 +603,9 @@ own vocabulary.
 | the original defect is already fixed | isolate-functional-checks-probes | nobody — a human decides whether it still has a subject |
 ```
 
+- **`Observation` is what the sweep noticed, in one phrase** — the *kind* of thing it is, taken from
+  the sweep's own reading of the front, never a retelling of the other two columns. It never reads
+  `—`: an observation with nothing to say is not a row.
 - **`Recommended action` is runnable as printed**, exactly as §The next-step block is: the
   plugin-prefixed slash spelling
   ([align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7)
