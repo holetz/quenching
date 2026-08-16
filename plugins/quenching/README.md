@@ -69,13 +69,14 @@ That contract lives once, in
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
-there is no `skills/` tree and no wrapper. The twenty-eight split by front: `/quenching:knowledge:*` for the ten
+there is no `skills/` tree and no wrapper. The twenty-eight split by front: `/quenching:knowledge:*` for the nine
 that act on the OKF `/.knowledge/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
 `/quenching:specs:*` for the eleven that act on the native `/.specs/` workspace (three of them
 conduct more than one stage — `/quenching:specs:cycle` over one spec, `/quenching:specs:execute-queue`
-and `/quenching:specs:develop-batch` over N), `/quenching:components:*` for the six that
-act on the target's `.claude/` automation surface (two nested: `/quenching:components:agent:new`,
-`/quenching:components:hook:new`), and the root `/align` for the one that spans all three fronts. Claude
+and `/quenching:specs:develop-batch` over N), `/quenching:components:*` for the seven that
+act on the target's `.claude/` automation surface (all but `/quenching:components:align` nested
+under one of the four contexts — `agent/`, `command/`, `hook/`, `harness/`), and the root `/align`
+for the one that spans all three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
 
 > The per-command prose below predates the v3 `specs` fold and the align fold — the surface

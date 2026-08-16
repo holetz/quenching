@@ -1,5 +1,5 @@
 ---
-description: Develop an existing spec. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec". Not for: creating a spec or executing one.
+description: Develop an existing spec. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec". Not for: defining N specs at once → /quenching:specs:develop-batch; creating a spec or executing one.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus

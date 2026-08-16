@@ -142,12 +142,13 @@ sentence, and **link out** rather than explaining in full here.
   backfilled. Squashed to one commit per **Section boundary**, every task the section held is
   re-stamped onto that one surviving commit's subject — the anchor narrows to section granularity,
   never loses resolvability.
-- [**Contaminating block**](../standards/workflows/spec-queue.md) — a block whose pending decision
-  changes the specs *after* it in a queue, as opposed to a **local** one that stops only its own
-  spec. The classification is the executor's to declare, because only it knows what the decision
-  touches: a local block marks `[!]` and the queue moves on, a contaminating one stops the run and
-  asks. A red declared gate stops the queue whichever was declared, and the blocked spec leaves the
-  branch's `quenching-slugs:` mark so the pull request never implies it carries what it does not
+- [**Contaminating block**](/plugins/quenching/assets/references/specs-fanout/fanout.md) — a block
+  whose pending decision changes the specs *after* it in a queue, as opposed to a **local** one that
+  stops only its own spec. The classification is the executor's to declare, because only it knows
+  what the decision touches: a local block marks `[!]` and the queue moves on, a contaminating one
+  stops the run and asks. A red declared gate stops the queue whichever was declared, and the
+  blocked spec leaves the branch's `quenching-slugs:` mark so the pull request never implies it
+  carries what it does not.
 - [**Context (components)**](../standards/naming/command-surface.md) — one of the four sibling
   contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
   for the artifact it mints, none a sub-type of another. A front-level verb sits at the front's own
@@ -336,12 +337,12 @@ sentence, and **link out** rather than explaining in full here.
   it is the ONE hop a spec ever makes: the `backlog/` → `ready/` promote is retired, and the human
   OK it used to carry is the **Approved record** instead. Promoting as `done` refuses
   while `- [ ]` boxes remain unless forced; `abandoned` is always allowed.
-- [**Recursive return**](../standards/workflows/spec-queue.md) — a fan-out run absorbing the specs
-  it promoted out of `## Discoveries`, in one of three forms: no recursion, one generation, or an
-  unbounded fixpoint. All three are always presented in the authorization plan, with the chosen one
-  and the human's stopping criterion. What bounds the third is the entry contract, not a counter: a
-  promoted spec at `complexity: medium` or above needs `ready`/`approved`, and therefore never
-  enters a return on its own
+- [**Recursive return**](/plugins/quenching/assets/references/specs-fanout/fanout.md) — a fan-out
+  run absorbing the specs it promoted out of `## Discoveries`, in one of three forms: no recursion,
+  one generation, or an unbounded fixpoint. All three are always presented in the authorization
+  plan, with the chosen one and the human's stopping criterion. What bounds the third is the entry
+  contract, not a counter: a promoted spec at `complexity: medium` or above needs `ready`/`approved`,
+  and therefore never enters a return on its own.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
@@ -465,7 +466,7 @@ sentence, and **link out** rather than explaining in full here.
   single isolation — one branch, one pull request, no chaining — rather than concurrently, because
   the specs' declared files collide at a density the doc measures. Serializing buys a second
   property outright: spec N's gate runs over the result of 1..N−1. Its counterpart, defining N
-  specs, fans out for real and is a **batch**, never a queue — nothing it runs takes a branch
+  specs, fans out for real and is a **batch**, never a queue — nothing it runs takes a branch.
 - [**Typed-only command**](../standards/automation/skills.md) — a command carrying
   `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
   every session's context. Residency and content are
