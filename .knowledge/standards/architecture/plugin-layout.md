@@ -135,7 +135,7 @@ whole into `assets/references/` and the standard is **retired**, under
 [retiring-a-standard.md](../workflows/retiring-a-standard.md), never kept as a stub. A stub that
 restates the reference is the second copy the delegation existed to prevent, now with the two
 halves graded by different validators. `automation/orchestration-gears.md` is the worked case:
-every sentence in it was procedure `/quenching:specs:orchestrate` reads mid-run, so shrinking it
+every sentence in it was procedure `/quenching:specs:cycle` reads mid-run, so shrinking it
 would have left a pointer and nothing else.
 
 Read the precedent by what it **kept**, never by its shape: a shrunken standard is evidence that a

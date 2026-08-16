@@ -1,10 +1,18 @@
-# The gears contract — how `/quenching:specs:orchestrate` derives its run
+# The gears contract — how `/quenching:specs:cycle` derives its run
 
-[orchestrate.md](${CLAUDE_PLUGIN_ROOT}/commands/specs/orchestrate.md) conducts ONE spec's whole
-lifecycle in one run. This file is the contract it derives that run from: what a gear is, how the
-`complexity` field on the `priority` record becomes the ONE gears plan the run presents before any
-write, and how the gear is re-evaluated at the end of every stage — with a fresh authorization when
-it moves up.
+[cycle.md](${CLAUDE_PLUGIN_ROOT}/commands/specs/cycle.md) conducts ONE spec's lifecycle, in two
+halves authorized separately. This file is the contract it derives each half from: what a gear is,
+how the `complexity` field on the `priority` record becomes the ONE gears plan a half presents
+before any write, and how the gear is re-evaluated at the end of every stage — with a fresh
+authorization when it moves up.
+
+**A gear governs the stages of ONE spec, and nothing about N.** Conducting N specs, the form a
+run's recursive return takes, how a block in one spec is classified against the ones after it, and
+the deliberate absence of a cap on N all belong to
+[fanout.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-fanout/fanout.md) §The two regimes
+§The queue's shape §The entry contract §Classifying a block §The recursive return, which
+`/quenching:specs:execute-queue` and `/quenching:specs:develop-batch` derive their runs from.
+Neither of them has a gear, and nothing here is theirs to read.
 
 This contract lives in the plugin, never in a target's bundle: it is procedure a command needs
 while running inside a target, not a fact about that target, so it is cited by
@@ -30,6 +38,10 @@ A gear changes **how** a stage runs, never **what** it writes. The per-task comm
 `## Outcome` and the archiving are never skipped in any gear — the stages write them, and no gear
 waives them.
 
+**Capture is the one stage whose gear is not derived.** A spec that does not exist yet carries no
+`priority` record, so there is nothing to derive a plan from; `create` runs in-session on its own
+gate, and the `complexity` it proposes is what the first gears plan is then derived from.
+
 **The sub-agent gear's own test:** delegate when the returned summary is **much smaller than the
 work** that produced it (a repo-wide sweep, a many-file audit, a read that ends in one table), when
 slices run in parallel, or when the tool set must be narrower than the conversation's. Keep work
@@ -43,11 +55,17 @@ in-session.
 
 <!-- rules -->
 
-ONE gears plan is presented before any write. The level on the `priority` record's `complexity`
-field derives it; every stage appears in the plan — its gear, and what the gear changes; the human
-adjusts it on the same screen, and the OK of the plan is the run's authorization, per
+**Two halves, two plans, two authorizations.** Defining (`develop`) and building (`execute` →
+`conclude`) are authorized separately, and no level of the scale below collapses the seam — the
+building half is authorized after the spec is `ready`, on a plan derived from the `complexity` then
+on disk.
+
+ONE gears plan is presented before a half's first write. The level on the `priority` record's
+`complexity` field derives it; every stage of that half — and no other — appears in the plan, with
+its gear and what the gear changes; the human adjusts it on the same screen, and the OK of the plan
+is that half's authorization and no more, per
 [convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The
-cycle-authorization contract: one confirmation at run start authorizes the run, narration replaces
+cycle-authorization contract: one confirmation authorizes the run it opens, narration replaces
 each stage's plan gate, and code-coupled items and irreversible cycle actions still gate
 individually.
 
@@ -55,15 +73,15 @@ The scale — four levels, each changing some gear, so no level is vocabulary wi
 
 | Level | What it changes in the gears plan |
 | --- | --- |
-| `low` | the whole cycle runs in one session on a single authorization and ends opening a PR |
+| `low` | each half runs in one session on its own authorization, and building ends opening a PR |
 | `medium` | the larger stages run isolated in sub-agents |
 | `high` | the stage-by-stage stops and confirmations are kept |
 | `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
 
 `complexity` is written by `triage`, `create` and `develop` — never silently: every write is
 proposed with the scale in front of the human and lands on a confirmation, under a record whose
-owner stays `triage`. The orchestrator derives its whole plan from this level before the build,
-when the sections that would evidence the size do not exist yet — which is why the field lives in
+owner stays `triage`. The defining half derives its plan from this level before the build, when the
+sections that would evidence the size do not exist yet — which is why the field lives in
 frontmatter at all.
 
 ## Re-evaluating a gear
@@ -78,10 +96,11 @@ gear is re-evaluated against what the stage just revealed. Three signals move a 
 - **a `- [!]` task** — work that started and stopped, which a plan made from the input could not
   have predicted.
 
-A gear that moved up returns to the plan: a new gears plan and a fresh authorization — the run's OK
-covers the gear the plan presented, never the one above it. A stage that changed no size keeps its
-gear; the level on disk remains the latest word on it.
+A gear that moved up returns to the plan of the half the run is in: a new gears plan and a fresh
+authorization — that half's OK covers the gear its plan presented, never the one above it. A stage
+that changed no size keeps its gear; the level on disk remains the latest word on it.
 
-The re-evaluation is what keeps the gear honest. Derived from `complexity` at the start, the gear
-is a bet placed with the input's information; the stages that ran are newer information, and a run
-that never re-checked would execute the whole cycle under a bet it already outgrew.
+The re-evaluation is what keeps the gear honest. Derived from `complexity` at the start of a half,
+the gear is a bet placed with the information that half opened on; the stages that ran are newer
+information, and a run that never re-checked would execute the rest of the half under a bet it
+already outgrew.
