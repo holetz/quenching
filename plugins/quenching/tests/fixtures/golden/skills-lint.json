@@ -1,7 +1,7 @@
 {
   "ok": true,
   "root": "<REPO>/plugins/quenching",
-  "commandCount": 27,
+  "commandCount": 34,
   "referenceCount": 33,
   "findings": [
     {
@@ -30,6 +30,14 @@
       "covered": 6,
       "command": "/components:hook:new",
       "path": "commands/components/hook/new.md"
+    },
+    {
+      "code": "sk-unscoped-bash",
+      "severity": "warn",
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/git:branch",
+      "path": "commands/git/branch.md"
     },
     {
       "code": "sk-step-criterion",
