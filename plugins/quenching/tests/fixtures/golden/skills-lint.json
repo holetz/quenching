@@ -1,14 +1,14 @@
 {
   "ok": true,
   "root": "<REPO>/plugins/quenching",
-  "commandCount": 26,
+  "commandCount": 25,
   "referenceCount": 28,
   "findings": [
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1049 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1049,
+      "message": "description is 1047 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1047,
       "cap": 1024,
       "command": "/align",
       "path": "commands/align.md"
@@ -139,8 +139,8 @@
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1065 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1065,
+      "message": "description is 1059 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1059,
       "cap": 1024,
       "command": "/specs:execute",
       "path": "commands/specs/execute.md"
@@ -156,8 +156,8 @@
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1057 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1057,
+      "message": "description is 1045 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1045,
       "cap": 1024,
       "command": "/specs:orchestrate",
       "path": "commands/specs/orchestrate.md"
