@@ -345,14 +345,18 @@ Emit §The report mold. The single-spec header line carries the stage **after** 
    offered, so nothing else in this report names it, and an unreported one is indistinguishable from
    a finding the pass dropped.
 
-Close on §The next-step block — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
-for the next bank, or `/quenching:specs:cycle <slug>` to carry it to the end in one run.
+Close on §The next-step block — `/quenching:git:branch <slug>` once `approved` is stamped, naming it
+the natural moment to isolate before `/quenching:specs:execute <slug>` writes any code;
+`/quenching:specs:develop <slug>` again for the next bank; or `/quenching:specs:cycle <slug>` to
+carry it to the end in one run, which takes its own isolation inline and needs neither named
+separately.
 
-**Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
-tree, so the human may want it on a branch — when they ask, name `/quenching:specs:execute <slug>` as the
-next command: its inline offer owns the branch name and the `branch: {base, work}` record. Never
-raise it unprompted; this command's job is questions, and a prompt about git in the middle of one
-is friction for everyone.
+**Isolation is named, never taken.** An interrogation that rewrites half a spec dirties the tree, so
+the human may want it on a branch before the next pass or before `execute` — naming
+`/quenching:git:branch <slug>` in the next-step block is that suggestion, stated once at the close
+and never asked as a question mid-pass; this command's own job is questions, and one about git in
+the middle of an interrogation is friction for everyone. `execute` no longer owns an inline offer of
+its own to fall back on — it hands off to the same command.
 **Done when:** the summary is shown.
 
 ## Invariants to never violate
