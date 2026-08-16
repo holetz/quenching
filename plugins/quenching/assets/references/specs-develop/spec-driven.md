@@ -552,7 +552,6 @@ Which command carries which:
 | Command | Columns |
 | --- | --- |
 | `/quenching:specs:status` | `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State` |
-| `/quenching:specs:continue` | `Spec` `Title` `Stage` `Tasks` `Priority` `Age` `State` |
 | `/quenching:specs:triage`, the proposal | the above, `Priority` showing the **current** value, plus `Proposed level` `Criticality` `Complexity` `Reason` |
 | `/quenching:specs:triage`, the report | the same without the four proposal columns, `Priority` now showing the approved value |
 | `/quenching:specs:align` | none — it reports findings, not front state |
@@ -646,8 +645,8 @@ Next step
   [align/sweep-doctrine.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/sweep-doctrine.md) §7,
   which this mold selects from rather than restates.
 - **The block is a suggestion, never an offer.** `/quenching:specs:status` and `/quenching:specs:align` print it and
-  stop — no plan, no "shall I". `/quenching:specs:continue` and `/quenching:specs:execute` at 100% print the same block
-  and *then* open the `AskUserQuestion`. The form is identical; only what follows it differs.
+  stop — no plan, no "shall I". `/quenching:specs:execute` at 100% prints the same block
+  and *then* opens the `AskUserQuestion`. The form is identical; only what follows it differs.
 
 <!-- rationale -->
 

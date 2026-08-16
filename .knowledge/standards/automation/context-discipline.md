@@ -78,8 +78,8 @@ Three rules, in descending order of what they were measured to be worth:
    `cq specs section <slug> "A,B"` for a spec's fourteen canonical headings. **Only the first
    implements the ladder** — the fourteen canonical headings carry no comma and `cq specs` refuses
    any name outside them, so the defect is unreachable there and the asymmetry is deliberate.
-   Eight command bodies are converted to this shape today — `/quenching:specs:execute`,
-   `/quenching:specs:develop`, and the six `specs/*` commands (`align`, `conclude`, `continue`,
+   Seven command bodies are converted to this shape today — `/quenching:specs:execute`,
+   `/quenching:specs:develop`, and the five `specs/*` commands (`align`, `conclude`,
    `create`, `status`, `triage`). Seventeen remain: `docs/` (ten bodies), `skill/` (six bodies),
    and the root `align` command (one body).
 3. **N sections in ONE call.** Turns are the *other* factor. Five sections fetched over five turns

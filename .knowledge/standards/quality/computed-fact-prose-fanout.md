@@ -2,12 +2,12 @@
 type: standard
 title: A computed fact's prose fan-out
 description: Any fact a tool computes and prose restates — a schema's fields, a surface's command count — fans out the moment it changes, and no checker sees it: why the validators are blind by construction, the two independent measurements this rule was set from, the grep on the fact's spelled-out form that finds the sites while the change is still cheap, a doc's own `description` as the nearest instance with its two listing consumers (one hand-maintained, one a GENERATED zone that is stale between sweeps by design), and why it belongs to the task that makes the change rather than to a later sweep
-resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/**
+resource: plugins/quenching/assets/specs/schema.json, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/**, plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, schema, records, documentation, sweeps]
 timestamp: 2026-08-16
 audience: both
 authority: current
-source: rework-specs-isolate-flow plan (2026-08-03), from two independent measurements on one branch — `merge:` gained one field, `pr`, and four prose sites still spelled the record as `{strategy, subject}` in four homes; the same branch retired one command, and ten sites across four files still counted twenty-six. Every checker green in both cases; the `description` instance and its two listing consumers added by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.1 — `automation/context-discipline.md` went from two ways to three and both copies still read two
+source: rework-specs-isolate-flow plan (2026-08-03), from two independent measurements on one branch — `merge:` gained one field, `pr`, and four prose sites still spelled the record as `{strategy, subject}` in four homes; the same branch retired one command, and ten sites across four files still counted twenty-six. Every checker green in both cases; the `description` instance and its two listing consumers added by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.1 — `automation/context-discipline.md` went from two ways to three and both copies still read two; narrowed for the retired-command case by the descontinuar-comando-specs-continue spec (2026-08-16), where `citation-check.sh` half 2 went green→red across three files the branch never opened and the declared gate saw nothing
 maintainer: quenching
 ---
 
@@ -105,3 +105,48 @@ worth-a-look belongs nowhere
 This standard is the sibling of that one, and the failures are opposite: `prose-sweeps.md` is the
 sweep you **ran**, corrupting the sentences that talk *about* the form. This is the sweep you
 **never ran** over the sentences that talk about the shape.
+
+## Retiring a named thing narrows the rule: change the FORM, keep the FACT
+
+<!-- rules -->
+
+The section above says historical mentions stay, and it is right about the **fact**. It is not a
+licence to keep the **spelling**. When the thing that went stale is not a field name but a
+*retired command*, a second instrument enters: `assets/checks/citation-check.sh` half 2 asserts
+that every cited `/quenching:<ns>:<cmd>` resolves to a body under `commands/**`. That assertion
+and "historical mentions stay, verbatim" cannot both hold — a retired command leaves its name in
+changelogs and in the rationale of standards, and every one of those reads to the check as a
+citation with no body.
+
+So the rule for a retirement is narrower than the rule for a renamed field:
+
+- **The fact is preserved, always.** What a past release shipped, and what a past measurement
+  observed, is true and is not deleted or softened.
+- **The spelling stops being a live citation.** Name the retired thing as retired — the house
+  idiom is already in the plugin's own changelog: *"A **25th command** (an isolation command,
+  since retired)"*. `the front router (since retired)` carries the same fact as its old slash-path
+  did, and cites nothing. **This section obeys its own rule**, which is why it never spells that
+  path out: a standard that quoted the dead name as an example would fail the very check it
+  documents.
+- **Tense follows.** A sentence about a command that no longer exists is past tense.
+
+**Derive the sites with TWO greps, never one.** The command's own path spelling misses every
+sentence that names it in prose or inside an enumeration — measured on the retirement below, one
+grep found 18 files and missed four more: both plugin manifests (which wrote
+`with continue routing between them`), a shell check whose regex listed the bare name inside an
+alternation, and a standard that enumerated it among `` `align`, `conclude`, `continue` ``.
+
+<!-- rationale -->
+
+MEASURED on the `descontinuar-comando-specs-continue` spec (2026-08-16). `citation-check.sh` half
+2 read `cited commands: 986 checked, all resolve` on the integration branch and
+`1 distinct FAIL` on the work branch — the branch turned a green assertion red, and it did so
+through three files it never opened, each holding a legitimately historical sentence. The declared
+gate (`components doctor`/`lint`, the unit suite, `knowledge validate`) stayed green throughout;
+only this check saw it.
+
+The same run also shows why the two-grep rule is not belt-and-braces: the spec's own `## Impact`
+declared the class *and* the derivation, exactly as
+[withdrawn-contract-residue.md](withdrawn-contract-residue.md) §`## Impact` must name the class
+requires — and the class still had four members past what the first grep enumerated. A derivation
+is only as wide as its widest spelling.
