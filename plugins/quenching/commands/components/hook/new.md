@@ -33,6 +33,10 @@ ladder, and the policy defaults live in
   block) is chosen by the human in the plan, per rule — and an intrusive rule is born
   disabled, its body saying when to enable it.
 
+Resolve `cq` per
+[align/tool-resolution.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/tool-resolution.md)
+§Resolving the tool; branch on the **exit code** (0 ok · 1 findings · 2 refusal), never on prose.
+
 ## Workflow
 
 ### 1. Read the rule

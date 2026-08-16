@@ -7,7 +7,7 @@ tags: [naming, commands, taxonomy]
 timestamp: 2026-08-16
 audience: both
 authority: current
-source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `/quenching:specs:orchestrate` → `cycle` rename found five citing files its `## Impact` had not named
+source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `orchestrate` → `cycle` command rename found five citing files its `## Impact` had not named
 maintainer: quenching
 ---
 

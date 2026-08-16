@@ -58,22 +58,39 @@ present → add "create the rule from `automation/skills-standard.md`" to the pl
 bundle → note the tail as skipped and plan the `/quenching:knowledge:align` suggestion.
 **Done when:** the governing rule (or its planned creation, or the no-bundle note) is fixed.
 
-### 2. Classify on the axis
-Apply the classification test ([components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis):
-name the one folder the skill acts on — one folder → domain-bound; "the repo" → generic;
-several unrelated folders → stop and ask the user which folder it serves (or whether it is
-generic) instead of forcing a value. For an **edit**, re-derive the classification and diff
-it against the skill's current name. **Done when:** the axis value (and bound folder, if
-any) is fixed.
+### 2. Classify — category first, then the axis
+Apply the classification test ([components-command-new/taxonomy.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis) in order:
+
+- **Category/subject.** `Glob` `.claude/commands/*/` for the top-level names already in use in
+  this repo target, and ask which one this command belongs to (`git`, `deploy`, `tests`, ...) —
+  offering the existing names, and free text for a new one. No clean, evident subject → there is
+  no category; the rest of this step runs exactly as before this rule.
+- **The axis.** Name the one folder the command acts on — one folder → domain-bound; "the repo"
+  → generic; several unrelated folders → stop and ask the user which folder it serves (or
+  whether it is generic) instead of forcing a value.
+- **Nest vs replace, only with both a category and a bound folder.** Read the convention already
+  established for this category in this repo (taxonomy.md §Reading the nest-vs-replace
+  convention): `Glob` `.claude/commands/<categoria>/**` and infer **nest** (a real-folder subpath
+  already present) or **replace** (files already sitting flat) from what is already there.
+  Nothing there yet, or the two shapes are mixed → ask the human once — the first command minted
+  under that answer becomes the convention for every later command of the same category in this
+  repo, with nothing else recorded.
+
+For an **edit**, re-derive category, axis and (if both apply) the nest-vs-replace read, and diff
+them against the command's current path. **Done when:** the category (or its absence), the axis
+value and bound folder (if any), and the nest-vs-replace read (if it applies) are fixed.
 
 ### 3. Derive the path — which is the name
-Domain-bound → `.claude/commands/<folder-path>/<verb>.md` → `/<folder>:<subfolder>:<verb>`.
-Generic → a flat `.claude/commands/<verb-object>.md`. There is no second name to derive: the
-path is it. `Glob` `.claude/commands/**` for collisions — an existing path is a MERGE target
-(edit), never silently overwritten. Nothing but entry points goes under `commands/`: shared
-procedure lives outside it and is cited by absolute path, because a file parked there registers
-as a phantom command (`sk-no-description`). **Done when:** the path to be written is fixed,
-collision-free or resolved as an edit.
+No category: domain-bound → `.claude/commands/<folder-path>/<verb>.md` →
+`/<folder>:<subfolder>:<verb>`; generic → a flat `.claude/commands/<verb-object>.md`. Category, no
+bound folder, or the convention reads **replace** → `.claude/commands/<categoria>/<verb>.md` →
+`/<categoria>:<verb>`. Category, bound folder, convention reads **nest** →
+`.claude/commands/<categoria>/<folder-path>/<verb>.md` → `/<categoria>:<subfolder>:<verb>`. There
+is no second name to derive: the path is it. `Glob` `.claude/commands/**` for collisions — an
+existing path is a MERGE target (edit), never silently overwritten. Nothing but entry points goes
+under `commands/`: shared procedure lives outside it and is cited by absolute path, because a file
+parked there registers as a phantom command (`sk-no-description`). **Done when:** the path to be
+written is fixed, collision-free or resolved as an edit.
 
 ### 4. Choose the execution profile
 Walk [components-command-new/capabilities.md](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/capabilities.md):

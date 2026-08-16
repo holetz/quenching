@@ -162,9 +162,11 @@ sentence, and **link out** rather than explaining in full here.
   beats shortening the reads.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the four self-contained scripts each
-  front used to ship separately. Invoked as `cq <pilar> <subcomando>…`; the plugin's own
-  `hooks/hooks.json` resolves through it exactly like every command body does — `cq knowledge hook`
-  for the hook event, `cq specs …` / `cq components …` for a command's own front.
+  front used to ship separately. Invoked as `cq <pilar> <subcomando>…` — `cq knowledge …`,
+  `cq specs …`, `cq components …` — one command per front. **Two doors, one file:** `bin/cq`, a
+  shim in the directory Claude Code appends to `PATH`, is what lets a body write the name bare; the
+  plugin path is what it falls to wherever the PATH does not hold — including work on the quenching
+  repository itself, where that entry names the *installed* checkout.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
@@ -174,6 +176,14 @@ sentence, and **link out** rather than explaining in full here.
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry
   point can drift from.
+- **Esqueleto publicado** *(published skeleton)* — the OKF bundle the plugin SHIPS, at
+  `plugins/quenching/assets/knowledge/`: index files plus a single leaf standard
+  (`standards/agents/communication.md`). It is scaffolding a target fills in, never this
+  repository's own library — so it is **not** the same thing as this repo's `/.knowledge/` bundle,
+  and the gap between them is what makes a citation resolve here and nowhere else. The prose the
+  plugin ships is read against the skeleton, which is why `citation-check.sh`'s half 3 measures
+  shipped markdown links against it rather than against this checkout
+  (`/.knowledge/standards/quality/citation-verification.md` §Half 3).
 - **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
   a sub-agent, or skipped, set by the ONE gears plan the command derives from
   `priority.complexity`. Governs the stages of ONE spec only — conducting N of them is the
@@ -420,6 +430,12 @@ sentence, and **link out** rather than explaining in full here.
   nothing is a **refusal that names it**, never an empty answer. Both prove the rule against the
   same **Canonical set**, `SECTION_CASES` — which pins the *sectioning* rule the two answer
   identically, and therefore not the ladder below, a CLI-argument rule only the first has.
+  `cq specs section --write` is plural on the same terms, and its delimiter is the reader's **own
+  output**: bodies arrive on stdin under the `## <Heading>` lines the plural read prints, so the
+  pair round-trips and no second grammar was invented to say where one body ends. A write side that
+  goes plural inherits the read side's format rather than inventing a separator; the headings named
+  on the command line stay required as the guard, and a set that disagrees with the stream refuses
+  before writing any of them.
   **They take that list differently, deliberately.** `cq components` resolves each value whole before
   reading it as a list, so a heading carrying its own comma — `## What crosses, what stays` — is
   cited by its full title; `cq specs` splits unconditionally, which is unreachable there because

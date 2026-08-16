@@ -525,21 +525,6 @@ def capture_okf(cap: Capture) -> None:
     (bundle / "concepts" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
     cap.run("okf-validate-findings", "okf", [str(bundle), "--json"], cwd=proj, ws=proj)
 
-    # Hook mode reads the bundle at `<project>/.knowledge` and never at a path argument,
-    # so it needs its own copy under that name.
-    hook_proj = cap.tmp / "ws-okf-hook"
-    hook_proj.mkdir(parents=True)
-    shutil.copytree(PLUGIN_ROOT / "assets" / "knowledge", hook_proj / ".knowledge")
-    bad = hook_proj / ".knowledge" / "concepts" / "golden-fixture-bad.md"
-    bad.write_text(bad_body, encoding="utf-8")
-    payload = json.dumps({
-        "hook_event_name": "PostToolUse",
-        "cwd": str(hook_proj),
-        "tool_name": "Write",
-        "tool_input": {"file_path": str(bad)},
-    })
-    cap.run("okf-hook-posttooluse", "okf", [], cwd=hook_proj, ws=hook_proj, stdin=payload)
-
 
 # --------------------------------------------------------------------------- #
 # main

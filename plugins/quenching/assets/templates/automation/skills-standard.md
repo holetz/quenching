@@ -18,17 +18,49 @@ maintainer: <owner>
 runs. There is no `SKILL.md` half and no wrapper: **the command's path IS its identity**, so
 nothing derives a second name that could disagree with it.
 
-Every command in `.claude/commands/` is classified on **one axis**:
+Every command in `.claude/commands/` is classified on **one axis: what it acts on** — asked as
+up to two questions, in order, each with a single honest answer.
 
-- **Domain-bound** — serves ONE folder subtree of this repo. Pathed after that folder plus a
-  verb (`communications/teams/` + create → `.claude/commands/communications/teams/create.md`,
-  invocable as `/communications:teams:create`).
-- **Generic** — serves the repo as a whole. A flat command named verb-object
-  (`.claude/commands/release-notes.md` → `/release-notes`).
+**1. Category/subject — the first question.** Name the one subject the command belongs to
+(`git`, `deploy`, `tests`, ...). A clean, evident answer wins. No evident subject, or several
+unrelated ones, means there is no category: fall straight through to the second question
+exactly as if this step did not exist — categorization only applies when it fits; it is never
+forced.
 
-The classification test: name the one folder the command acts on — exactly one answer means
-domain-bound to that folder; "the repo" means generic; several unrelated folders means the
-command is kept as-is and reported, never forced onto the axis.
+**2. Domain-bound vs generic — the second question, read against the category.**
+
+- **No category** — **domain-bound** when the command serves ONE folder subtree of this repo,
+  pathed after that folder plus a verb (`communications/teams/` + create →
+  `.claude/commands/communications/teams/create.md`, invocable as
+  `/communications:teams:create`); **generic** when it serves the repo as a whole, a flat
+  command named verb-object (`.claude/commands/release-notes.md` → `/release-notes`);
+  **neither** (kept as-is and reported, never forced onto the axis) when several unrelated
+  folders answer at once.
+- **Category, no single real folder tied to the command** — e.g. `git` for a `commit` command:
+  a subject, not a repo folder. The command nests flat under the category
+  (`.claude/commands/git/commit.md` → `/git:commit`).
+- **Category, and a real folder tied to the command** — the folder either **nests** inside the
+  category (`.claude/commands/<categoria>/<folder-path>/<verb>.md`) or is **replaced** by it
+  (`.claude/commands/<categoria>/<verb>.md`), per the convention already established for that
+  category in this repo (below). Several unrelated folders still fit neither and are kept
+  as-is and reported, exactly as the no-category case.
+
+### Reading the nest-vs-replace convention
+
+The convention lives entirely inside this repo's own `.claude/commands/<categoria>/` — never in
+a dedicated registry file of its own:
+
+- Files already sitting under `.claude/commands/<categoria>/<folder-path>/` (the real folder
+  present as a subpath) → the convention already in force is **nest**.
+- Files already sitting directly under `.claude/commands/<categoria>/` with no real-folder
+  subpath → the convention already in force is **replace**.
+- The category has no files yet, or the two shapes are already mixed (ambiguous) → ask the
+  human once. The physical structure that first answer produces *becomes* the record — reused
+  in silence for every later command of that category here, with nothing else written down
+  anywhere.
+
+The convention is never shared between repos, catalogued, or asked twice for the same category
+in this one.
 
 Directory-scoped surfaces (`<folder>/.claude/commands/`) are an **accepted variation** for
 expressing domain-binding.
