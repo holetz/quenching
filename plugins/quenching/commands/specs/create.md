@@ -18,7 +18,7 @@ The layout, the fourteen canonical sections, the gates, the front's on-write che
 `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The fourteen sections §The gates and the stage-scoped explicit-none rule
-§The `cq specs` tool surface §The report mold, which owns the shape step 8 prints in.
+§The `cq specs` tool surface §The report mold, which owns the shape step 9 prints in.
 
 ## The one rule: effort proportional to input
 
@@ -31,7 +31,7 @@ what you were given, and nothing more.**
 | a sentence              | `## Problem`, alone                      |
 | a Claude Code plan file | every section the plan actually supports |
 
-The same richness decides the `complexity` this command computes and proposes (step 6): a
+The same richness decides the `complexity` this command computes and proposes (step 7): a
 sentence is the smallest problem a capture can hold, and a plan file is the largest — the
 levels in between are the develop pass's to re-evaluate when it closes.
 
@@ -193,7 +193,7 @@ around, write `- none — <what the source did not record>`. Never fabricate.
 **Done when:** `## Problem` and `## Overview` are filled, and no section beyond what the input
 supported exists.
 
-### 6. Compute and propose `complexity`
+### 7. Compute and propose `complexity`
 
 The level this command writes is the orchestrator's own input — each one changes the gears
 plan the orchestrator will present for this spec. It answers how much a human needs to be part of
@@ -225,12 +225,12 @@ The tool merges — `level`, `criticality` and any earlier fields survive, and `
 record's own, never the capture `date:`. A rejection writes nothing and stops.
 **Done when:** `complexity` is on disk with the human's level, or the human declined and
 nothing was written.
-### 7. Check
+### 8. Check
 
 Run `cq specs validate --spec <slug>` — the spec's own conformance, and the whole check.
 **Done when:** the check is clean, or the residue is reported verbatim.
 
-### 8. Report
+### 9. Report
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md \
