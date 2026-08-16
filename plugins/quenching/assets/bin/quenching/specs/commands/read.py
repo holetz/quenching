@@ -24,10 +24,8 @@ def cmd_list(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    specs = backend.list_specs()
     phase = getattr(args, "phase", None)
-    if phase:
-        specs = [s for s in specs if s["phase"] == phase]
+    specs = backend.list_specs(phase)
     rows = []
     for s in specs:
         # ASKED OF THE BACKEND, never of the path. This was the last command reading
