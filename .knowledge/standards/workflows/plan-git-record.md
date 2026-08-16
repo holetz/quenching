@@ -2,7 +2,7 @@
 type: standard
 title: Plan git record contract
 description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records, the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route with the write-many `pr` record it alone writes and the minimal-gear run that stops at the open PR without ever stamping `merge`, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.knowledge/standards/git/
-resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
+resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-12
 audience: both
@@ -15,7 +15,7 @@ maintainer: quenching
 
 What links a plan's checkboxes to the commits that implemented them, which git facts are recorded
 in the spec, and whose conventions govern the commits themselves. The procedures implementing this
-live in `assets/references/specs-execute/git.md` and `.../specs-execute/execution.md`; this
+live in `assets/references/git/**` and `.../specs-execute/execution.md`; this
 standard is the contract they answer to.
 
 ## Every record is written before the thing it describes
@@ -153,8 +153,8 @@ same admission test — a fact no derivation can reproduce:
   before stamping, because the record is write-once and that is the only moment disagreeing with
   it is cheap. **Never `git merge-base` or `--fork-point`** — both answer a commit, not a branch
   name, and a commit ancestral to three branches identifies none of them. The mechanics live in
-  [git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Recording the isolation,
-  cited rather than restated.
+  [git/isolation.md](/plugins/quenching/assets/references/git/isolation.md) §Recording the
+  isolation, cited rather than restated.
 - **`pr: {number, url, date}`** — stamped by `conclude` the moment `gh pr create` returns, on the
   PR route only, and **write-many** where the other two are write-once: a PR may be closed and
   reopened, or force-pushed to a fresh number, and each is a new fact rather than a falsification
@@ -202,8 +202,8 @@ Beside `branch:`, `pr:` and `merge:` above, `/quenching:specs:execute` writes on
 **not** a frontmatter record: a recognizable line in the branch's own description —
 `quenching-slugs: <slug1>,<slug2>` — rewritten, never duplicated, after every task's commit, and
 never written when the spec runs `In place`. The mechanism is
-[git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Marking the branch with the
-specs it built, owned by `execute`.
+[git/isolation.md](/plugins/quenching/assets/references/git/isolation.md) §Marking the branch with
+the specs it built, owned by `execute`.
 
 `/quenching:specs:conclude` reads it to resolve which spec(s) built the branch it is closing when
 called with no `--spec`: one valid slug resolves silently, more than one asks, and a slug the

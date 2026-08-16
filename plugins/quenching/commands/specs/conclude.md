@@ -32,10 +32,12 @@ everything else. A second call reads both and skips what already happened — se
 
 The distillation doctrine — what crosses into `/.knowledge/`, what stays, and how it is graded — lives in
 [specs-conclude/distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
-§What crosses, what stays. The merge strategies, the squash caveat and the **read-if-present**
-rule for a target's `/.knowledge/standards/git/**` live in
-[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
-§Merge strategies §The squash caveat §The read-if-present rule. The layout, the gates and the
+§What crosses, what stays. The merge strategies and the squash caveat live in
+[git/merge.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md)
+§Merge strategies §The squash caveat; the **read-if-present** rule for a target's
+`/.knowledge/standards/git/**` lives in
+[git/conventions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md)
+§The read-if-present rule. The layout, the gates and the
 `cq specs` surface live in
 [specs-develop/spec-driven.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-driven.md)
 §The `specs/` layout §The gates and the stage-scoped explicit-none rule §The `cq specs` tool
@@ -176,14 +178,14 @@ no bundle.
 
 ### 4. Choose the merge strategy and route, then write `## Outcome` and archive
 For `done` with a work ref of its own (`branch.work != branch.base` — in place there is nothing to merge), offer the strategies in
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies with
+[git/merge.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md) §Merge strategies with
 **AskUserQuestion**, and state the trade in one line each. **When squash is chosen, offer NOT to
 delete the branch** — a squash collapses every per-section commit, so each task's recorded
 `subject:` resolves only while the branch survives. Say that plainly rather than deleting and
 discovering it later.
 
 **Then, separately, offer the route** — pull request, or local — per
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route.
+[git/pr.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/pr.md) §The pull-request route.
 Offer it only where `gh` resolves the repository (`gh repo view` exits 0); with no route to offer,
 say nothing and proceed local, silently — a repo with no GitHub remote is the ordinary case, not a
 finding. **Under `fast-forward`, do not ask** — `gh pr merge` has no fast-forward mode, so the
@@ -258,7 +260,7 @@ value it holds — the finding §Resuming describes, never a value to edit past.
 
 Under `fast-forward` and `rebase` there is no merge commit to name, so the subject is an explicit
 none — see
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
+[git/merge.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md)
 §When there is no merge commit to name. `cq specs validate` reports a record that gets this
 backwards either way (`sp-bad-merge`).
 
@@ -352,7 +354,7 @@ start a new change.
 **PR route.** Push and open the PR, stamping `pr:` the moment it exists. Under the cycle's
 minimal-gear authorization this part asks nothing — irreversible cycle actions do not gate under
 that gear. Every other run asks first, in the **same consented block** as the merge below, per
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route:
+[git/pr.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/pr.md) §The pull-request route:
 show the remote, the name the branch pushes under, and the PR's title and body, and ask there —
 choosing the PR route in step 4 was not this consent.
 
