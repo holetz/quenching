@@ -21,7 +21,7 @@ from types import SimpleNamespace
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.git.base import (_init_default_branch, _is_host_default, _origin_head_branch,
                                 resolve_base)
-from quenching.git.conventions import _declared_docs
+from quenching.git.conventions import STANDARDS_DIR, _declared_docs
 from quenching.git.slugs import _read_slugs, cmd_slugs
 from quenching.git.stale import _gone_branches, _merged_branches, _orphan_worktrees
 
@@ -188,7 +188,7 @@ class Conventions(RepoCase):
         with open(os.path.join(d, "commit-messages.md"), "w", encoding="utf-8") as f:
             f.write("---\ntype: standard\nauthority: background\n---\n# x\n")
         self.assertEqual(_declared_docs(self.repo),
-                         [{"path": ".knowledge/standards/git/commit-messages.md",
+                         [{"path": f"{STANDARDS_DIR}/commit-messages.md",
                            "authority": "background"}])
 
     def test_index_md_is_excluded_as_the_bundle_own_listing(self):
