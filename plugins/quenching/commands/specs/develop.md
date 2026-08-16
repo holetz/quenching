@@ -286,7 +286,7 @@ Emit §The report mold. The single-spec header line carries the stage **after** 
    a finding the pass dropped.
 
 Close on §The next-step block — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
-for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
+for the next bank, or `/quenching:specs:orchestrate <slug>` to carry it to the end in one run.
 
 **Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
 tree, so the human may want it on a branch — when they ask, name `/quenching:specs:execute <slug>` as the

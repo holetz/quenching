@@ -9,7 +9,7 @@ description: >-
   moves it up and asks for a fresh authorization; the per-task commit, `## Outcome` and the
   archiving are never skipped in any gear. Typed-only: a whole lifecycle is a human's choice, so
   this description pays no routed budget. Not for: one stage only → /quenching:specs:create,
-  /quenching:specs:develop, /quenching:specs:execute, /quenching:specs:conclude; the next action on one spec → /quenching:specs:continue;
+  /quenching:specs:develop, /quenching:specs:execute, /quenching:specs:conclude; reading the front without changing it → /quenching:specs:status;
   aligning one front → /quenching:knowledge:align, /quenching:specs:align, /quenching:components:align.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion, Skill
