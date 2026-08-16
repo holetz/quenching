@@ -191,6 +191,12 @@ sentence, and **link out** rather than explaining in full here.
   plugin ships is read against the skeleton, which is why `citation-check.sh`'s half 3 measures
   shipped markdown links against it rather than against this checkout
   (`/.knowledge/standards/quality/citation-verification.md` §Half 3).
+- [**Fan-out floor**](/plugins/quenching/assets/references/specs-fanout/fanout.md) —
+  `fanoutMinComplexity`, the `.claude/quenching.json` key §The entry contract measures a
+  candidate's `priority.complexity` against: below it, a spec joins the defining regime; at or
+  above it, the spec must already be `ready`/`approved` to join the building regime. Declared,
+  read through `cq specs config --json`, default `medium` — the fixed cutoff the contract used
+  before the floor existed, so an undeclared floor changes nothing.
 - **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
   a sub-agent, or skipped, set by the ONE gears plan the command derives from
   `priority.complexity`. Governs the stages of ONE spec only — conducting N of them is the
