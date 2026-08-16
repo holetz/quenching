@@ -166,7 +166,7 @@ becomes a file.
 raised 4–6 follow-up candidates each — well over a hundred — and the same `cq specs` defects
 surfaced independently in three or four agents that could not see one another. A definition-time
 offer scales with what the pass *imagines*, and the queue it fills is charged again to every
-`cq specs next --front` ranking, `/quenching:specs:continue` table and `/quenching:specs:triage` read that has to walk
+`cq specs next --front` ranking, `/quenching:specs:status` view and `/quenching:specs:triage` read that has to walk
 past it. Duplicates arriving through that door are turned away at it: the discoveries bank's
 `promoted:` resolution reads the front first and resolves a line an open spec already covers as
 `dismissed: already covered by {slug}` — still three resolutions, never a fourth token.
