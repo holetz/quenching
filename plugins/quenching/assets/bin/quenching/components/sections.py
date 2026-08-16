@@ -32,7 +32,7 @@ def _strip_frontmatter(lines: list[str]) -> list[str]:
 def markdown_sections(text: str) -> list[dict]:
     """Every heading of a markdown file, in order, each with the body it owns.
 
-    Two rules, and both are the reason this is code rather than an `awk` in 26 command
+    Two rules, and both are the reason this is code rather than an `awk` in 25 command
     bodies:
 
     - **A section ends at the next heading of the same level or shallower.** So
