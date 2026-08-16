@@ -10,13 +10,16 @@ Migrated from the pre-refactor specs script's `_failures()` suites — `slug_cas
 """
 import ast
 import inspect
+import json
+import os
+import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.text import slugify
 from quenching.specs.commands.cli import DISPATCH, main
 from quenching.specs.commands.output import Emitter
-from quenching.specs.config import infer_base_branch, resolve_subject
+from quenching.specs.config import infer_base_branch, load_config, resolve_subject
 from quenching.specs.parse.derive import derive_info
 from quenching.specs.parse.edit import write_handoff_block
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
@@ -66,6 +69,35 @@ class InferBaseBranch(unittest.TestCase):
         for cfg, origin_head, init_default, want in self.CASES:
             with self.subTest(cfg=cfg, origin_head=origin_head, init_default=init_default):
                 self.assertEqual(infer_base_branch(cfg, origin_head, init_default), want)
+
+
+class LoadConfigFanoutMinComplexity(unittest.TestCase):
+    """`fanoutMinComplexity` — the fan-out floor `redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out`
+    adds beside `backend`/`unknownBackend`, same shape: absent or invalid falls back to the
+    default (`medium`, today's fixed cutoff) rather than to no floor at all, and an invalid
+    declared value is kept, not discarded, so `doctor` can quote it back."""
+
+    def _load(self, declared: dict) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, ".claude"))
+            with open(os.path.join(tmp, ".claude", "quenching.json"), "w") as f:
+                json.dump(declared, f)
+            return load_config(os.path.join(tmp, ".specs"))
+
+    def test_absent_falls_back_to_the_default_floor(self):
+        cfg = self._load({})
+        self.assertEqual(cfg["fanoutMinComplexity"], "medium")
+        self.assertIsNone(cfg["unknownFanoutMinComplexity"])
+
+    def test_a_declared_level_reflects(self):
+        cfg = self._load({"fanoutMinComplexity": "low"})
+        self.assertEqual(cfg["fanoutMinComplexity"], "low")
+        self.assertIsNone(cfg["unknownFanoutMinComplexity"])
+
+    def test_a_value_outside_the_four_levels_keeps_the_default_and_is_quoted_back(self):
+        cfg = self._load({"fanoutMinComplexity": "yolo"})
+        self.assertEqual(cfg["fanoutMinComplexity"], "medium")
+        self.assertEqual(cfg["unknownFanoutMinComplexity"], "yolo")
 
 
 class ResolveSubject(unittest.TestCase):
