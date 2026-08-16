@@ -11,7 +11,7 @@ This repository is a **plugin marketplace**. The plugin itself lives in
 
 ## What it does
 
-Twenty-six commands acting on three fronts of a target repository — the `docs/` OKF bundle
+Twenty-five commands acting on three fronts of a target repository — the `docs/` OKF bundle
 (`knowledge`), the native `specs/` spec-driven workspace (`specs`), and the target's own
 `.claude/` automation surface (`components`) — plus root `/align`, which spans all three on one
 confirmation. Every front has exactly one **align**: probe-first, so a
@@ -45,7 +45,7 @@ Then, inside a target repository, use the `/` menu — every command is
 `/quenching:<front>:<verb>` when installed as a plugin (`/quenching:knowledge:align`,
 `/quenching:specs:execute`, `/quenching:components:command:new`, …); the bare `/<front>:<verb>`
 form only resolves in a repo that vendored the file into its own `.claude/commands/`. The full,
-current list — twenty-six commands, one file per entry point — is the
+current list — twenty-five commands, one file per entry point — is the
 [plugin README](plugins/quenching/README.md), never duplicated here.
 
 Or add this marketplace and enable the plugin the usual way (see the
