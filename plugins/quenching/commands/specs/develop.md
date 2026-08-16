@@ -83,27 +83,71 @@ there is no second store to bridge to: nothing here writes a delta and nothing l
   `/quenching:specs:create` instead of quietly rewriting what was already agreed.
 - **`complexity` is re-evaluated when a pass closes, never mid-bank.** The level
   `/quenching:specs:create` computed from the input is stale the moment this pass writes what the
-  input could not support. The re-evaluation rides the consolidated plan (step 5): the evidence
-  that moved it is named, the new level recommended, and the human's one OK applies it. A pass
-  that changed no size proposes nothing — the level on disk is still the latest word on it.
+  input could not support. The re-evaluation is the bank's **last question** (step 5): the evidence
+  that moved it is named, the new level recommended, and the human's answer applies it. A pass
+  that changed no size asks nothing — the level on disk is still the latest word on it.
+
+## The batching contract
+
+Every turn re-sends the whole conversation, so a pass costs Σ(context per turn) and the turn count
+is the multiplier — not the size of any one turn. Three points of the workflow below are therefore
+**one call each**, and running them as two is the defect this contract names:
+
+| Where | The one call |
+| --- | --- |
+| steps 1+2 | `cq specs status --spec <slug> --json`, which also carries the `path` step 1 announces. Only a slug that must be *chosen* splits this: `cq specs list --json` runs first, because the question depends on its output |
+| step 3b | the bank's own section and the spec sections it reads — `cq components read` and `cq specs section` together, never one call per source |
+| step 6 | the entire application — the section write, every `cq specs discover` line, every `cq specs record`, `cq specs verification`, and the closing `cq specs validate` (plus `cq specs parallel` where `## Tasks` moved) |
+
+A call splits only where the next command's **input** depends on the previous one's output. Splitting
+for tidiness, or to report progress between two commands, buys nothing and is paid by every turn
+after it.
+
+**No turn exists only to announce what the next tool call will do.** "Now I'll load the bank", "next
+I'll write the sections" — a turn whose entire content is the call that follows it says nothing the
+call's own output will not say, and costs a re-send of the whole conversation to say it. Narration
+that carries content is not this: the bank and its stop condition (step 3), the consolidated plan
+(step 5), the report (step 8) all stay. What is forbidden is the empty announcement, never the
+narration.
+
+**A recommendation rides inside the question, never in a turn before it.** Where a choice is
+genuinely the human's, the recommendation and the reasoning behind it go in the **AskUserQuestion**
+payload — the recommended option first and marked "(Recommended)", the reasoning in its description
+— so the human answers in one word and no turn was spent setting the question up.
+
+**This contract stops at the edge of how questions are grouped.**
+[questions.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md) §The four shared
+mechanics §1 is the only authority there: a question travels with the ones whose answers cannot
+change it, and alone otherwise. "Fewer turns" is a rule about tool calls and about prose turns; it
+is never a licence to put two dependent questions into one call.
 
 ## Workflow
 
-### 1. Resolve the spec
+### 1. Resolve the spec, and announce where it lives
 Take the slug from the input, infer it from the conversation, or run `cq specs list --json` and ask
 with **AskUserQuestion** (most recently modified marked "(Recommended)"). Announce it and how to
 override. Two matches for one slug is exit 2 — report both paths and stop, never guess which was
 meant. An archived spec has nothing to develop: say so and stop.
-**Done when:** one spec in `plans/` is resolved.
+
+**Announce the spec's URL in the backend along with it.** It is the `path` field of the
+`cq specs status --spec <slug> --json` payload step 2 takes in this same call, so nothing extra is
+invoked to obtain it — an issue or work-item URL under an external backend, the file's path under
+`files`. The announcement is load-bearing rather than decorative: with the plan narrated instead of
+submitted (step 5), the backend is the window the human watches the pass through and the place a
+correction is given, so it is stated before anything is read and repeated in the report (step 8).
+**Done when:** one spec in `plans/` is resolved and its backend URL has been announced.
 
 ### 2. Read the spec's STATE — not its body
 ```bash
-cq specs status --spec <slug> --json      # stage, section states, records, tasks, gate
+cq specs status --spec <slug> --json      # stage, section states, records, tasks, gate, path
 ```
+**This is the same call as step 1** — §The batching contract's first row. The slug either came in
+the input or was inferred, and the payload answers both steps at once.
+
 That is the whole of this step. **No section body is pulled here**, because nothing has chosen the
 bank yet and a body read before the choice is a body read for a bank that may not want it — at the
 gate that is ten sections against the discoveries bank's one.
-**Done when:** the spec's stage, section states, records and gate are in hand.
+**Done when:** the spec's stage, section states, records, gate and backend URL are in hand.
 
 ### 3. Select the bank
 Look the **derived stage** up in
@@ -118,7 +162,8 @@ say which bank the spec's state calls for, offer the requested one anyway, and l
 **Done when:** exactly one bank is named back to the user with its stop condition.
 
 ### 3b. Load what THIS bank needs — and nothing more
-Now that the bank is known, and in **one call per source**:
+Now that the bank is known, and in **one call** — §The batching contract's second row, both
+commands together:
 
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/questions.md \
@@ -159,7 +204,7 @@ Nothing is written to the spec during this step. Keep a running list of
 `(question, answer, target section)`.
 **Done when:** the bank's stop condition is met, or the user calls it.
 
-### 5. Present ONE consolidated edit → one OK
+### 5. Consolidate the edit, and narrate it
 Load the authoring doctrine now — the `artifacts.md` sections step 3b's table names for **this**
 bank, in one call:
 
@@ -168,17 +213,23 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifac
   --sections "§The explicit-none rule" --sections "§`## Tasks`"
 ```
 
-Show every accumulated answer as a single plan: per section, what changes and the answer it came
-from, drafted under the doctrine just loaded. Anything that
-turned out to belong outside the spec is shown here as well: a durable rule or a term as a
-**routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
+**The consolidation stays; the confirmation goes.** Show every accumulated answer as a single plan
+— per section, what changes and the answer it came from, drafted under the doctrine just loaded —
+and then write it in step 6. The plan is **narrated, never submitted**: do not ask for a
+confirmation of it and do not wait for one. Invoking this command is the authorization, because a
+command that edits no code and takes no irreversible cycle action has nothing to confirm, and the
+window the human watches the pass through is the spec's own URL in the backend.
+
+Anything that turned out to belong outside the spec is narrated here too: a durable rule or a term
+as a **routed offer**, not an edit, and an **out-of-scope follow-up as the one `## Discoveries` line
 this edit will park** — a line, not an offer, because parking creates nothing to consent to
 (§Invariants).
 
-**A pass that changed the spec's size re-evaluates `complexity` in this same plan.** The
-evidence that moved it — the `## Tasks` a gate bank just wrote, a scope the adversarial bank
-widened — is named, and the level it recommends is proposed with the scale in front of the
-human:
+**A pass that changed the spec's size re-evaluates `complexity`, and that re-evaluation is the
+bank's last question** — a real question, not a gate on the plan, asked alone because its content
+depends on every answer before it. The evidence that moved it — the `## Tasks` a gate bank just
+wrote, a scope the adversarial bank widened — is named, and the level it recommends leads the
+options with the scale in front of the human:
 
 | Level | What it changes in the gears plan |
 | --- | --- |
@@ -187,15 +238,17 @@ human:
 | `high` | the stage-by-stage stops and confirmations are kept |
 | `xhigh` | at least one judgment stage (adversarial review, premortem) joins the plan |
 
-A pass that changed no size proposes nothing — the level on disk is still the latest word on
-it.
-
-Wait. Declined → nothing is written, and the questions and answers are still reported so the
-thinking is not lost.
-**Done when:** the user has answered.
+A pass that changed no size asks nothing — the level on disk is still the latest word on it.
+**Done when:** the plan has been narrated in full, and `complexity`, where the pass moved it, has
+been answered.
 
 ### 6. Apply, and record what the pass earned
-Write the confirmed sections with `cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies
+**Every write of this step is ONE call** — §The batching contract's third row: the section write,
+the `## Discoveries` lines, the records, `verification`, and the closing `validate`. None of them
+needs another to have printed first. The one legitimate split is the doctrine read below, which
+decides *which* record this bank earned and therefore has to precede the stamping.
+
+Write the narrated sections with `cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies
 on stdin) — it creates each heading in canonical position on first write, so creating and revising
 are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
 heading.
@@ -263,11 +316,16 @@ Report what it says either way; a `[P]` nobody proved is a promise execution wil
 **Done when:** the sections are written, the records this bank earned are stamped, and validate —
 plus `parallel`, where `## Tasks` moved — has been re-run.
 
-### 7. Re-derive, and offer the next bank
-Run `cq specs status --spec <slug> --json` again. The stage is now a fact about disk. If it selects
-a different bank, name it and what it would ask — then wait. Accepted → return to step 3. Declined,
-or the same bank selected again with nothing left to ask → go to step 8.
-**Done when:** the human has taken or declined the next bank.
+### 7. Re-derive, and cross into the next bank
+Run `cq specs status --spec <slug> --json` again. The stage is now a fact about disk, and the pass
+follows it: it selects a different bank → name the bank and what it will ask, and return to step 3.
+**The crossing is narrated, never offered.** The stage chose it off what step 6 just wrote, so an
+offer here asks the human to re-decide what the disk already answered. The same bank selected again
+with nothing left to ask → go to step 8.
+
+Every bank the pass crosses into still asks its own questions, and the `approval` bank still ends
+in a real go/no-go — the crossing being automatic never makes a bank's questions automatic.
+**Done when:** the re-derived stage has sent the pass back to step 3 or ended it at step 8.
 
 ### 8. Report
 
@@ -278,9 +336,11 @@ cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/spec-dr
 
 Emit §The report mold. The single-spec header line carries the stage **after** the pass; two body blocks:
 
-1. **The pass** — fixed. The bank(s) that ran; how many questions were asked and answered; the
-   sections edited; the records stamped; the routed offers and whether each was taken; the stage
-   before and after.
+1. **The pass** — fixed. The spec's URL in the backend, repeated from step 1 off the same `path`
+   field and never re-fetched; the bank(s) that ran; how many questions were asked and answered;
+   the sections edited; the records stamped; the routed offers and whether each was taken; the
+   stage before and after. The URL closes the pass the way it opened it: a pass that wrote without
+   a plan gate ends by pointing at the one place that writing can be read and corrected.
 2. **Parked into `## Discoveries`** — optional, and every line **quoted**. A parked line was never
    offered, so nothing else in this report names it, and an unreported one is indistinguishable from
    a finding the pass dropped.
@@ -316,7 +376,9 @@ is friction for everyone.
   not an offer: nothing is created, so there is nothing to ask for.
 - **Inside a develop pass, `cq specs new` runs only as the discoveries bank's `promoted:`
   resolution.** Nothing else here mints a spec.
-- Never write a section without showing it and getting the human's word first.
+- **Never write a section that was not narrated first.** The consolidated plan is shown in full
+  (step 5) and then applied; what left this command is the wait, never the showing. A section that
+  reaches the spec without appearing in a narrated plan is unreviewable by anyone, gate or no gate.
 - Never write anything mid-bank — accumulate, then apply once.
 - **Never group two questions whose answers can change each other**, and never ask alone what could
   have travelled with them. Grouping is by dependence, never by convenience, and every question
@@ -327,7 +389,9 @@ is friction for everyone.
 - **Never open a cited reference as a file.** `§X` is an address, loaded through
   `cq components read --sections`; and never hoist into the preamble what only one branch reads.
 - Never derive the stage from what this pass intends to write — only from disk.
-- Never cross into another bank without offering it first.
+- Never cross into another bank silently — name it and what it will ask before running it. The
+  crossing itself is narrated, not offered: the re-derived stage picks the bank, and a human who
+  wants the pass to stop says so.
 - Never delete a heading to signal that nothing applies — write `- none — <reason>`.
 - Never invent an explicit none the human did not give, and never invent an answer to an
   unanswered question: it goes in `## Open Decisions` with how it will be decided, which is a

@@ -89,26 +89,31 @@ the work rather than done it — the command is supposed to arrive with an opini
 
 <!-- rules -->
 **Nothing is written while a bank is running.** Keep a running list of
-`(question, answer, target section)` and write it all at once, as a single edit the human confirms
-once.
+`(question, answer, target section)` and write it all at once, as a single narrated edit. The
+accumulation and the one-edit-per-bank shape are the mechanic; the confirmation that used to gate
+them is not. Invoking the command is the authorization, and the human's window on the edit is the
+spec's own URL in the backend.
 
-The edit lands per **bank**, not per pass. A pass that crosses two boundaries produces two
-confirmed edits, and the stage between them is real.
+The edit lands per **bank**, not per pass. A pass that crosses two boundaries produces two edits,
+and the stage between them is real. That boundary is also the width of the exposure: an abandoned
+pass can leave a spec half-written between two banks, never between two sections of one bank.
 
 Every bank's consolidated edit also refreshes `## Overview` to match whatever the bank just
 changed — it is authored **last** within that one edit, after every other section has settled,
 because it can only be correct once they have. It still sits first in the file; only its authoring
-order within the pass is last. Present the refreshed Overview to the human as its own labelled
-before → after block, separate from the list of other section diffs, and this rides inside the same
-one-OK edit the bank already produces, not a second confirmation.
+order within the pass is last. Present the refreshed Overview as its own labelled before → after
+block, separate from the list of other section diffs, inside the same one edit the bank already
+produces rather than as a second write.
 
 <!-- rationale -->
-- A pass abandoned halfway leaves the spec **exactly** as it was — no half-filled `## Design` whose
-  decisions contradict a `## Proposal` that was never updated.
 - Later answers routinely revise earlier ones. Writing answer 2 before hearing answer 6 means
   editing the same paragraph twice, and the intermediate state is never reviewed by anyone.
-- One diff is reviewable. Six scattered edits are not, and the human's single OK is what authorizes
-  the whole bank.
+- One diff is readable. Six scattered edits are not — and that one diff is what the human reads in
+  the backend afterwards.
+- The gate left when it was priced: this command edits no code and takes no irreversible cycle
+  action, so the pair of turns each bank spent waiting protected nothing the backend's own edit
+  history does not now carry. Its one real guarantee — a pass abandoned halfway left the spec
+  **exactly** as it was — is narrowed by the per-bank boundary above, not recovered.
 
 ### 3. A declared stop condition
 
