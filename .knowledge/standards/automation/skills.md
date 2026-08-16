@@ -7,7 +7,7 @@ tags: [automation, commands, taxonomy, authoring]
 timestamp: 2026-08-16
 audience: both
 authority: current
-source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself
+source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself; the directional-boundary rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the two new fan-out entries naming their neighbours while no neighbour named them back — a one-directional surface no lint code can see
 maintainer: quenching
 ---
 
@@ -92,6 +92,12 @@ interrogation do not.
   when a bundle-carrying repo lacks it.
 - **One plan → one OK**: classification, names, files to write, and the OKF tail presented as a
   single plan, applied on one confirmation.
+- **The `Not for:` boundary is directional, so a mint edits the neighbours too.** Writing the new
+  command's own boundary points *outward*; until the commands it competes with name it back, a
+  spoken request still lands on whichever of them already claims the phrasing. Nothing grades this:
+  `sk-no-boundary` sees an absent boundary, never an incomplete one, and `doctor` only asserts that
+  no two commands resolve to the same path. The mint's plan therefore carries the return edge — the
+  competitor set, and the clause each of them gains — as part of the one confirmation.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 

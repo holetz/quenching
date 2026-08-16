@@ -84,11 +84,11 @@ spec whose tasks are all checked may still be waiting on a deploy.
 <!-- rules -->
 The minimal gear differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
-run, always; under the orchestrator's minimal gear
-([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-orchestrate/gears.md) §Deriving the
-gears plan, the `low` row) neither stops — the whole cycle runs in one session on a single authorization
-and ends opening a pull request, so the human review the gates would have hosted moves to the PR
-instead: opened against the integration branch declared in `.claude/quenching.json`
+run, always; under the cycle's minimal gear
+([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
+gears plan, the `low` row) neither stops — the building half runs in one session on its own
+authorization and ends opening a pull request, so the human review the gates would have hosted
+moves to the PR instead: opened against the integration branch declared in `.claude/quenching.json`
 (`integrationBranch`), where the merge waits on review and on the checks before it lands. The
 trade is said out loud: if the PR is merged unread, no gate was left anywhere on the path — which
 is what the gear re-evaluation exists to bound, as a run that outgrows the minimal gear climbs

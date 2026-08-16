@@ -1,5 +1,5 @@
 ---
-description: Read the whole `specs` front and report where it stands — writes nothing, ever. Triggers on "specs status", "how is the specs front", "what is in plans", "show me the specs workspace", "is specs conformant", "what would align fix", "dry run the specs sweep". Reports every finding in the sweep's own sp- vocabulary, split into what /quenching:specs:align would fix on one OK, what a cycle command closes, and what neither closes because it needs a human. Shows each spec's frontmatter records as the history they narrate — ranked, interrogated, approved, isolated, reviewed, merged, closed. Near-free by construction, no sub-agents and no per-spec fan-out, so it doubles as an honest dry run before a sweep is authorized. Not for: fixing anything → /quenching:specs:align; being handed the single next action → /quenching:specs:continue; ranking the front → /quenching:specs:triage; sharpening a spec → /quenching:specs:develop.
+description: Read the whole `specs` front and report where it stands — writes nothing, ever. Triggers on "specs status", "how is the specs front", "what is in plans", "show me the specs workspace", "is specs conformant", "what would align fix", "dry run the specs sweep". Reports every finding in the sweep's own sp- vocabulary, split into what /quenching:specs:align would fix on one OK, what a cycle command closes, and what neither closes because it needs a human. Shows each spec's frontmatter records as the history they narrate — ranked, interrogated, approved, isolated, reviewed, merged, closed. Near-free by construction, no sub-agents and no per-spec fan-out, so it doubles as an honest dry run before a sweep is authorized. Not for: fixing anything → /quenching:specs:align; running one spec's whole cycle → /quenching:specs:cycle; ranking the front → /quenching:specs:triage; sharpening a spec → /quenching:specs:develop.
 argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 ---
@@ -9,9 +9,10 @@ allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*)
 **Input**: `$ARGUMENTS` (optionally a spec slug to detail; omit to read the whole front).
 
 The **read-only** view of the `specs` front. Every other command here either fixes something
-(`/quenching:specs:align`), advances one spec a human named, or hands you the next action
-(`/quenching:specs:continue`). This one only looks — and because it looks at exactly what the sweep looks at,
-it is also the sweep's honest preview: the plan you would be authorizing, before you authorize it.
+(`/quenching:specs:align`) or advances one spec a human named — up to
+`/quenching:specs:cycle`, which conducts a whole lifecycle. This one only looks — and because
+it looks at exactly what the sweep looks at, it is also the sweep's honest preview: the plan you
+would be authorizing, before you authorize it.
 
 **Near-free by construction.** Three tool calls, whatever the size of the front. It
 reads the same two payloads `/quenching:specs:align`'s probe reads, which is what lets the two agree: a
@@ -131,8 +132,9 @@ disappears — in this order:
    copy, and any stale spec. State plainly that **none of these gates anything**, so a reader never
    mistakes a warning for a blocker.
 
-Then §The next-step block — usually the single line `/quenching:specs:continue`. Here it is a
-suggestion and never an offer, which is the mold's rule for this command.
+Then §The next-step block — usually the single line `/quenching:specs:cycle <slug>` for the
+spec this report puts first. Here it is a suggestion and never an offer, which is the mold's rule
+for this command.
 **Done when:** all five blocks are reported and no file has changed.
 
 ## Invariants to never violate

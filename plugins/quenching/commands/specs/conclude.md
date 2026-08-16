@@ -349,7 +349,7 @@ finding** — never repaired with another commit, because a commit on the base a
 exact thing this ordering exists to prevent. If something must be fixed, say so and let the human
 start a new change.
 
-**PR route.** Push and open the PR, stamping `pr:` the moment it exists. Under the orchestrator's
+**PR route.** Push and open the PR, stamping `pr:` the moment it exists. Under the cycle's
 minimal-gear authorization this part asks nothing — irreversible cycle actions do not gate under
 that gear. Every other run asks first, in the **same consented block** as the merge below, per
 [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §The pull-request route:
@@ -369,7 +369,7 @@ Refs #<issue-number>"
 cq specs record "<slug>" pr --set number=<the PR's number> --set url=<the PR's URL> --set date=<today>
 ```
 
-**Running under `/quenching:specs:orchestrate`'s minimal-gear authorization → stop here.** Do not
+**Running under `/quenching:specs:cycle`'s minimal-gear authorization → stop here.** Do not
 call `gh pr merge` and do not stamp `merge:` — report the PR link and end the run. The merge waits
 on human review, exactly as convergence.md §The PR route promises; a later `conclude` run, or a
 human merging by hand, finishes it — §Resuming's "PR opened, not merged" row is the resume path.
@@ -459,7 +459,7 @@ body blocks:
    this moment.
 
 Close on §The next-step block. `/quenching:specs:develop <slug>` when block 4 has rows,
-`/quenching:specs:continue` to be handed the next spec — the front has moved on, and this is the
+`/quenching:specs:status` to see where the front now stands — it has moved on, and this is the
 moment a human most needs telling where.
 **Done when:** path, outcome, records, the worktree's fate, both `/.knowledge/` passes and the next-step
 block are all reported.

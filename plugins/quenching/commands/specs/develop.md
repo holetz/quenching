@@ -1,5 +1,5 @@
 ---
-description: Develop an existing spec. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec". Not for: creating a spec or executing one.
+description: Develop an existing spec. Triggers on "develop this spec", "refine the spec", "fill in the missing sections", "approve this spec". Not for: defining N specs at once → /quenching:specs:develop-batch; creating a spec or executing one.
 argument-hint: [slug-or-description]
 allowed-tools: Read, Grep, Glob, Edit, Bash(python3:*), Bash(py:*), AskUserQuestion, Task
 model: opus
@@ -346,7 +346,7 @@ Emit §The report mold. The single-spec header line carries the stage **after** 
    a finding the pass dropped.
 
 Close on §The next-step block — `/quenching:specs:execute <slug>` once `approved` is stamped, `/quenching:specs:develop <slug>` again
-for the next bank, or `/quenching:specs:continue` to be told what the whole front wants next.
+for the next bank, or `/quenching:specs:cycle <slug>` to carry it to the end in one run.
 
 **Isolation is forwarded, never offered.** An interrogation that rewrites half a spec dirties the
 tree, so the human may want it on a branch — when they ask, name `/quenching:specs:execute <slug>` as the
