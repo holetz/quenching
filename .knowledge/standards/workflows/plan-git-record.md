@@ -161,7 +161,7 @@ same admission test — a fact no derivation can reproduce:
   of the old one — which is why it carries its own `date`.
 
   It is distinct from `merge.pr` below, and the distinction is the whole reason it exists. `merge`
-  is stamped only once the merge is about to happen; under `/quenching:specs:orchestrate`'s minimal
+  is stamped only once the merge is about to happen; under `/quenching:specs:cycle`'s minimal
   gear the PR route deliberately **stops** at the open PR, leaving the merge to human review. With
   only `merge.pr` to write into, that run had no honest way to record the PR it had just opened —
   stamping the write-once `merge` for a merge that had not been decided would have burned the one
