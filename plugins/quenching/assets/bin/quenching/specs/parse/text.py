@@ -57,3 +57,27 @@ def has_real_content(text: str) -> bool:
         if re.search(r"[A-Za-z0-9]", residue):
             return True
     return False
+
+
+EXPLICIT_NONE_RE = re.compile(r"^[-*+]\s*none\b", re.IGNORECASE)
+
+
+def real_prose_or_none(text: str) -> str | None:
+    """The body's own trimmed prose, or `None` for the three states that are not an answer:
+    absent, a body with nothing but the shipped template, and an explicit `- none — <reason>`.
+
+    `has_real_content` counts an explicit none as filled, by design — it exists for the gate,
+    where an omission and a null must both block. This is the field-value counterpart, for a
+    field projected as data (`overview` in `cq specs list --json`), where a null has to read
+    back as `None` rather than as the literal bullet."""
+    body = strip_comments(text)
+    for line in body.splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        if EXPLICIT_NONE_RE.match(s):
+            return None
+        residue = PLACEHOLDER_RE.sub("", s)
+        if re.search(r"[A-Za-z0-9]", residue):
+            return body.strip()
+    return None

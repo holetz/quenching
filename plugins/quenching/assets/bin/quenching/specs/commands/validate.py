@@ -74,6 +74,16 @@ def validate_spec(backend: SpecBackend, s: dict) -> list[dict]:
                             f"{where}: verification `{pol}` is not one of "
                             f"{', '.join(VERIFICATION_POLICIES)}", spec=s["slug"], path=where,
                             remedy=f"set verification to one of {', '.join(VERIFICATION_POLICIES)}"))
+    priority = fm.get("priority")
+    if isinstance(priority, dict):
+        levels = (schema.get("frontmatter", {}).get("records", {}).get("priority", {})
+                  .get("complexity", {}).get("levels", []))
+        comp = str(priority.get("complexity", "")).strip().lower()
+        if comp and levels and comp not in levels:
+            out.append(_finding("sp-bad-complexity", "warn",
+                                f"{where}: priority.complexity `{comp}` is not one of "
+                                f"{', '.join(levels)}", spec=s["slug"], path=where,
+                                remedy=f"set priority.complexity to one of {', '.join(levels)}"))
 
     for h in stray_headings(sections, schema):
         out.append(_finding("sp-stray-heading", "warn",
@@ -217,7 +227,8 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
     backend, err = open_backend(root)
     if err:
         return out.emit_err(args.json, err)
-    specs = backend.list_specs()
+    phase = getattr(args, "phase", None)
+    specs = backend.list_specs(phase)
     findings: list[dict] = []
 
     seen: dict[str, list[str]] = {}
@@ -231,7 +242,7 @@ def cmd_validate(args, root: str, out: Emitter) -> int:
                                      remedy="rename one — a slug is an identity, and two "
                                             "matches makes every command refuse"))
 
-    for ph in PHASES:
+    for ph in ([phase] if phase else PHASES):
         d = os.path.join(root, ph)
         if not os.path.isdir(d):
             continue
