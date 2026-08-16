@@ -179,7 +179,7 @@ same admission test — a fact no derivation can reproduce:
 
 **The record is never the signal.** A human may cut `plan/<slug>` by hand and stamp nothing, and a
 record outlives the branch it names. Anything asking whether a spec is in flight asks git for a
-live ref — which is what `cq specs next --front` does, and why `/quenching:specs:continue` demotes a spec
+live ref — which is what `cq specs next --front` does, and why that ranking demotes a spec
 whose branch is alive but checked out elsewhere.
 
 **`work == base` is the one exception, and it exists because that ref cannot die.** The rule above
@@ -190,7 +190,7 @@ record IS the signal.
 
 MEASURED, and the reason this is written rather than assumed: when in-place work began stamping
 the pair, `cq specs next` still ranked on liveness alone, and every spec built in place rose to the
-top of `/quenching:specs:continue` with the reason *"you are on this branch"* whenever the session
+top of that ranking with the reason *"you are on this branch"* whenever the session
 stood on the base. The guard the code already carried — *a record whose ref is gone stops
 counting* — could not fire, because nothing was ever going to remove `develop`. The shape
 generalizes past this record: **an expiry condition that the sentinel value can never satisfy is

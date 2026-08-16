@@ -68,7 +68,7 @@ not an offer, because two checkouts building one spec fork it.
 trade is deliberate: the offer costs a confirmation, and the stage where it reliably pays is the one
 about to write code.
 
-**Asking "am I isolated?" writes nothing and is answered elsewhere.** `/quenching:specs:continue`
+**Asking "am I isolated?" writes nothing and is answered elsewhere.** `cq specs next --front`
 reads the live ref and reports it, and demotes a spec whose branch is checked out somewhere else.
 `/quenching:specs:status` reads the frontmatter records and deliberately never asks git.
 
@@ -116,7 +116,7 @@ plan/<slug>
 
 The **suggested default** when the inline offer cuts a new branch or worktree — kebab-case, no
 date prefix, no id. `cq specs next --front` ranks on whether
-`plan/<slug>` is **alive**, so a branch named to the default is what tells `/quenching:specs:continue` this
+`plan/<slug>` is **alive**, so a branch named to the default is what tells that ranking this
 spec is already under way without a stamped `branch` record.
 
 **The name is a suggestion, never a contract.** When `/quenching:specs:execute` starts on a branch that is not

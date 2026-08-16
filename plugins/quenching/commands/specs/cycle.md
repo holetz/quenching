@@ -10,8 +10,7 @@ description: >-
   lifecycle is a human's choice, so this description pays no routed budget. Not for: N specs in one
   build queue → /quenching:specs:execute-queue; N specs defined at once →
   /quenching:specs:develop-batch; one stage only → /quenching:specs:develop,
-  /quenching:specs:execute, /quenching:specs:conclude; the next action on one spec →
-  /quenching:specs:continue.
+  /quenching:specs:execute, /quenching:specs:conclude.
 argument-hint: [slug-or-description]
 allowed-tools: Bash(python3:*), Bash(py:*), AskUserQuestion, Task, Skill
 disable-model-invocation: true

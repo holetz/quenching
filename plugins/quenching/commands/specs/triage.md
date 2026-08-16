@@ -1,5 +1,5 @@
 ---
-description: Rank the whole plans/ front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads every spec's frontmatter and derived stage directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes the priority record — level, criticality, complexity, date — and nothing else. Never removes a spec, never infers completion, never treats staleness as abandonment. Not for: closing a spec out or abandoning it → /quenching:specs:conclude; resolving a spec's discoveries → /quenching:specs:develop; being handed the single next action → /quenching:specs:continue; the conformance view of the workspace → /quenching:specs:status.
+description: Rank the whole plans/ front — ONE ordered list the human confirms, written back as a priority record on each spec. Triggers on "triage the specs", "prioritize the front", "rank the plans", "what matters most", "re-rank these", "order the plans", "which of these first". Reads every spec's frontmatter and derived stage directly, no sub-agents; proposes one table with a one-line reason per row; applies only what was approved, merging and never clobbering a human's ranking. Writes the priority record — level, criticality, complexity, date — and nothing else. Never removes a spec, never infers completion, never treats staleness as abandonment. Not for: closing a spec out or abandoning it → /quenching:specs:conclude; resolving a spec's discoveries → /quenching:specs:develop; building the top-ranked spec → /quenching:specs:cycle; the conformance view of the workspace → /quenching:specs:status.
 argument-hint: [optional-slug]
 allowed-tools: Read, Grep, Glob, Bash(python3:*), Bash(py:*), AskUserQuestion
 model: opus
@@ -14,7 +14,7 @@ The prioritization sweep. It reads every spec in
 `/.specs/plans/`, proposes ONE ordered list, and — on a single
 confirmation — writes each spec's `priority` record.
 
-**This is the only command that ranks.** `/quenching:specs:continue` consumes what this writes: with no
+**This is the only command that ranks.** `cq specs next --front` consumes what this writes: with no
 `priority` anywhere and nothing in flight, its ordering falls back to age alone, which is an
 ordering and not a judgment. Triage is what turns it into one.
 
@@ -165,8 +165,8 @@ Emit §The report mold. Two body blocks:
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
 
-Then §The next-step block, whose recommended line is `/quenching:specs:continue` — the consumer of
-what this just wrote.
+Then §The next-step block, whose recommended line is `/quenching:specs:cycle <slug>` for the
+spec the approved ranking put first — the first thing the `priority` this just wrote decides.
 **Done when:** both blocks and the next-step block are shown.
 
 ## Invariants to never violate

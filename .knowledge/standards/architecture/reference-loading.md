@@ -53,7 +53,7 @@ passo obrigava a sessão a abri-la antes de escrever.
 A correção não foi reescrever a prosa do preâmbulo — ela já dizia a verdade sobre onde a regra mora,
 e apagá-la perderia a explicação de por quê. A correção foi inserir, dentro de cada um dos oito
 passos de report, a chamada que os dois corpos que já reportavam de forma consistente
-(`/quenching:specs:continue` e `/quenching:specs:execute`, antes desta spec) já continham: a
+(o roteador do front, desde retirado, e `/quenching:specs:execute`, antes desta spec) já continham: a
 invocação literal, no ponto exato em que o bloco carregado é usado.
 
 ## Onde a citação de preâmbulo continua certa
