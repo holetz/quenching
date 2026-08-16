@@ -63,6 +63,13 @@ because a partially-ranked front should still sort, not because it is an easier 
 The record is `writeOnce: false`: a later sweep re-ranks, and each write restamps `date`. Only this
 command writes it.
 
+**`complexity` answers a different question than `level`.** It is never about how big or how
+important the change is — that is what `level` and `criticality` already answer. Propose it
+against the criterion
+[gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears plan
+states: how much a human needs to be part of the process, from `low` (the LLM can carry it with
+close to no supervision) to `xhigh` (a judgment stage joins the plan).
+
 ## Doctrine
 
 - **Propose, don't invent.** Every proposed position traces to something readable — the spec's own
