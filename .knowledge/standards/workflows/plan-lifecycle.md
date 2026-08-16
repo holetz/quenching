@@ -7,7 +7,7 @@ tags: [workflows, specs, lifecycle, stages, frontmatter, records, discoveries]
 timestamp: 2026-08-16
 audience: both
 authority: current
-source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it; the parking row's edit de-qualified from "confirmed" to "consolidated" by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), which removed `/quenching:specs:develop`'s plan gate while leaving the one-edit-per-bank mechanic the row actually depends on
+source: specs-flow-consolidation plan (sections 1-2); the merge record's form and branch's owner amended by the move-conclude-merge-last plan (task 5.2); the append-only archive rule from the retire-docs-log plan's branch review; `date` moved from derived-from-the-basename to declared by evaluate-spec-creation-flow (task 5.6), after an external backend left the derivation with nothing to derive from; `branch`'s owner moved from the retired isolation command to `execute`, and `merge` gained `pr`, by the rework-specs-isolate-flow plan (task 3.4); the follow-up parking rule from the stop-develop-offering-follow-up-specs plan (task 2.1); the records-narration line corrected from "built" to "isolated" by labels-historico-spec-issue (task 7.1), which had read `branch` as narrating the derived `executing` stage it does not write; `complexity`'s own writers (`[triage, create, develop]`) and its exit from the frontmatter admission test by the fluxo-rapido-para-problemas-simplorios plan (task 1.5); the `pr` record, the third append and the isolation narration corrected for the in-place `work == base` pair by vincular-spec-a-branch-commits-e-pr at its conclude — the third append argued against both clauses of the test above, as this section demands, rather than assumed from the two that preceded it; the parking row's edit de-qualified from "confirmed" to "consolidated" by revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), which removed `/quenching:specs:develop`'s plan gate while leaving the one-edit-per-bank mechanic the row actually depends on; the criterion `complexity` measures — how much a human needs to be part of the process, never size or scope — and the `fanoutMinComplexity` consumer that reads it as a configurable floor, by redefinir-o-que-complexity-mede-e-configurar-o-limiar-do-fan-out (2026-08-16)
 maintainer: quenching
 ---
 
@@ -96,6 +96,16 @@ this level before the build, when the sections that would evidence it do not exi
 file, filesystem or git state carries the level in the discrete scale the gears plan needs. So the
 field declares its own writers — `[triage, create, develop]` — under a record whose owner stays
 `triage`, and the admission test keeps its shape for every other key.
+
+**What the level measures is not the size of the change.** `complexity` answers how much a human
+needs to be part of the process — `low` says the LLM can carry it with close to no supervision,
+`medium` accepts some real risk in leaving stage-by-stage judgment to it alone, `high` and `xhigh`
+escalate the need for a human's presence — never the size, scope or difficulty of the input, which
+`triage`'s `level`/`criticality` pair already answers on its own axis. `/quenching:specs:execute-queue` and
+`/quenching:specs:develop-batch` read the level against a configurable floor, `fanoutMinComplexity`
+(`.claude/quenching.json`, via `cq specs config --json`, default `medium`): a spec below the floor
+joins the defining regime and runs through to the end; at or above it, the spec must already be
+`ready`/`approved` to join the building regime.
 
 Beyond the declared identity (`slug`, `title`, `date`) and the optional `verification` — absent
 means the default, applied on read, never stamped to make it explicit — every optional key is one

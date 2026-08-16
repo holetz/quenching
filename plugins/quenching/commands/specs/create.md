@@ -180,7 +180,10 @@ fabricate.
 ### 6. Compute and propose `complexity`
 
 The level this command writes is the orchestrator's own input — each one changes the gears
-plan the orchestrator will present for this spec:
+plan the orchestrator will present for this spec. It answers how much a human needs to be part of
+that plan, never the size or difficulty of the input
+([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears
+plan states the criterion):
 
 | Level | What it changes in the gears plan |
 | --- | --- |
