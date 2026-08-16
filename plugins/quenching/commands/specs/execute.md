@@ -300,12 +300,9 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
-     --sections "§The read-if-present rule"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md \
-     --sections "§Commit messages" --sections "§The subject is the anchor"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
-     --sections "§Marking the branch with the specs it built"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md --sections "§The read-if-present rule"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md --sections "§Marking the branch with the specs it built"
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
