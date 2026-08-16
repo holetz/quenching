@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records, the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route with the write-many `pr` record it alone writes and the minimal-gear run that stops at the open PR without ever stamping `merge`, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, and the read-if-present contract for a target's own /.knowledge/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records, the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, the pull-request route with the write-many `pr` record it alone writes and the minimal-gear run that stops at the open PR without ever stamping `merge`, why every record is written before the thing it describes, where a record lands when there is no merge to carry it, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, why a branch is deleted with `-d` and never `-D`, and the read-if-present contract for a target's own /.knowledge/standards/git/
 resource: plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md
 tags: [workflows, specs, git, commits, records]
-timestamp: 2026-08-12
+timestamp: 2026-08-16
 audience: both
 authority: background
-source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die
+source: specs-flow-consolidation plan (sections 2-3); rewritten around the subject anchor by the move-conclude-merge-last plan (task 5.1); the git -C merge and the post-merge worktree removal added by the prefer-worktree-isolation plan (task 4.1); rewritten around the sha anchor by the configurable-spec-backend plan (task 4.5); the always-stamp rule and the adopted-branch base inference added by the rework-specs-isolate-flow plan (task 2.3) — background pending proof in a live adoption; the pull-request route and `merge.pr` added by that same plan's branch review at conclude, which found the `## Impact` path declared for this file and written only in plan-lifecycle.md; the declared-integration-branch step added ahead of origin/HEAD by the configurable-branch-strategy plan (task 2.3, 2026-08-04), proved in code by `infer_base_branch`'s `selftest` fixture; the section squash and its narrowing of the task→commit anchor to section granularity by the reduzir-commits-por-secao spec (2026-08-11); the `quenching-slugs:` branch mark and the auto-discover fallback added by the conclude-detecta-slug-por-marcacao-de-worktree plan (task 3.1, 2026-08-12); the `pr` record, the in-place `work == base` pair and the liveness exception it forces added by vincular-spec-a-branch-commits-e-pr at its conclude — this file was never named under that spec's `## Impact`, and the branch review is what found it contradicted, after `cq specs next` was measured ranking every in-place spec as permanently in flight on a base branch that cannot die; the place rule (§Every record is written where it needs to survive) and the branch-deletion counterpart to the worktree rule (§A branch is deleted with `-d`, never `-D`) added by the fix-conclude-abandoned-branch-harvest plan (task 4.1, 2026-08-16) — proved, not merely agreed: `conclude-order-check.sh`'s `abandoned` arm (task 3.1 of that same plan) builds the fixture, deletes the branch with `-D`, and asserts the closing survives
 maintainer: quenching
 ---
 
@@ -39,6 +39,29 @@ Two consequences, and they are why the anchor changed:
 
 A record that cannot be written beforehand is a record that forces a write afterwards, and a write
 after the merge lands where the spec's own branch cannot account for it.
+
+## Every record is written where it needs to survive
+
+The order rule above answers *when*; this one answers *where*, and the two are independent. A
+record lands in whichever checkout will still exist to carry it forward.
+
+**When there is a merge, that checkout is the branch** — the merge carries it, which is the whole
+mechanism the order rule above depends on. **When there is no merge, that checkout is the base's
+own** — `/quenching:specs:conclude`'s `--outcome abandoned` path never merges, so a record written on the
+branch would depend on a branch nobody adopted to still exist. It lands instead in the checkout
+already holding `<base>`, located the same way the merge itself locates it below (§The merge runs in
+the checkout that already holds the base) — `git worktree list --porcelain`, then `git -C <that
+path>`.
+
+This does not contradict "nothing is written after the merge" (§Three frontmatter records carry the
+underivable git facts, `merge`). Under `abandoned` there is no merge: "after the merge" is
+vacuously satisfied, and there is no reversion property to protect either, because none was ever
+earned. A commit into the base checkout under this outcome describes only itself — never something a
+merge was supposed to carry.
+
+A spec built **in place** (`branch.work == branch.base`) needs no version of this rule: the checkout
+it is already standing in is both the branch and the base, so there is nowhere else a record could
+go.
 
 ## The task→commit link is the commit's own sha, where the spec no longer shares a branch with it
 
@@ -312,6 +335,21 @@ disk silently; a refusal is reported with the path and git's own output, and the
 Three bounds keep this from being destructive: it runs **only** after a merge verified at exit 0,
 it **never** runs for an abandoned plan, and it does **not** delete the branch — that stays the
 separate, offered decision it already was.
+
+## A branch is deleted with `-d`, never `-D`
+
+The same shape as the worktree rule above: git's own refusal is the safety, not a prompt this
+contract adds on top of it. `git branch -d <ref>` refuses a branch not fully merged into the one it
+is deleted from — the one case worth fearing, and git already declines it on its own. `-D` is never
+passed, by any command in this front, under any outcome: on a refusal, report git's own output
+verbatim and keep the branch.
+
+This is proven, not merely agreed. `assets/checks/conclude-order-check.sh`'s `abandoned` arm builds
+a spec through create → isolate → execute → conclude(`--outcome abandoned`), deletes the branch with
+`git branch -D` from the base checkout, and asserts that everything the closing wrote — the archive
+move, the `outcome:` stamp, the distillation's background note — still resolves on the base
+afterwards. The assertion that failed before §Every record is written where it needs to survive
+existed is exactly this one.
 
 ## The target's git conventions win — read if present, never installed
 
