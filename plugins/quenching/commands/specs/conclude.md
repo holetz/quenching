@@ -110,6 +110,16 @@ from a merge this command did not make, and is a finding to report.
 `merge` and `outcome` are `writeOnce: true` — if either is already set and reality disagrees, that
 is a **finding to report**, never a value to overwrite.
 
+**For `abandoned`, the archive row above is read from the checkout holding `<base>`, never from
+wherever this run happens to stand.** Steps 3, 4 and 5 commit that outcome's every write into that
+checkout, not the branch, so the branch's own copy of the spec never carries the `outcome:` stamp
+and is not a signal to trust — reading it there is reading a fact that was deliberately never
+written. Locate `<base>`'s checkout the same way step 3 does, and read the archive signal from it —
+`cq specs --root <that path>/.specs status --spec "<slug>" --json`, in place of the bare form. Every
+other row keeps reading from wherever this run stands: `reviewed` is still a branch fact (step 2
+never moved), and the remaining rows either do not apply to `abandoned` (no merge, no PR, no release
+obligations) or read git directly, which already answers correctly regardless of which checkout asks.
+
 ## Workflow
 
 ### 1. Resolve the spec, the outcome, and what already happened
@@ -169,10 +179,30 @@ Decide what crosses with the table in
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
 `authority` honestly. Present them as ONE plan and take one confirmation.
 
-These land **on the branch**, in their own commit, so the rule ships with the code that proved it.
+**`done` — these land on the branch**, in their own commit, so the rule ships with the code that
+proved it. **`abandoned` — nothing is merged, so the branch cannot carry it**: locate the checkout
+that already has `<base>` checked out, the same way step 6 already locates it for the merge, and
+commit there instead — never on the work branch:
+
+```bash
+git worktree list --porcelain              # which checkout has <base> checked out
+git -C <that path> status --porcelain      # must be empty before writing anything
+git -C <that path> add <the paths just written>      # never -A
+git -C <that path> commit -m "<subject>"
+```
+
+No checkout holds `<base>` → say so and stop, the same refusal step 6 already makes when nothing has
+the base checked out; nothing is fabricated. **`git -C <that path> status --porcelain` non-empty →
+refuse**: report it verbatim and stop without writing anything — the checkout may be what the human
+is using for something else right now, and there is no task here to separate an unrelated edit from.
+**Stage only the paths this step itself just wrote, never `git add -A`** — the same contamination
+`/quenching:specs:execute`'s own precondition refuses at the start of a build, now guarded on someone else's
+tree instead of this run's own. This clean check and this staging rule govern every write this
+outcome makes into that checkout — steps 4 and 5 below reuse both, not just the path.
+
 A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → skip silently.
-**Done when:** the emergent docs are written and committed, or the offer was declined, or there is
-no bundle.
+**Done when:** the emergent docs are written and committed — on the branch, or in the checkout
+holding `<base>` for `abandoned` — or the offer was declined, or there is no bundle.
 
 ### 4. Choose the merge strategy and route, then write `## Outcome` and archive
 For `done` with a work ref of its own (`branch.work != branch.base` — in place there is nothing to merge), offer the strategies in
@@ -204,14 +234,22 @@ reader can resolve and a merged PR is where the review and the checks still live
 the reason it will not be built is the whole content.
 
 A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
-let the human decide; **never pass `--force` on your own initiative.** Commit the move on the
-branch.
+let the human decide; **never pass `--force` on your own initiative.**
+
+**`done` — commit the move on the branch.** **`abandoned` — the move is computed here, where the
+spec's data lives, but it is never committed here**: in the checkout holding `<base>` located in
+step 3, mirror what `cq specs promote` just did in this tree — `archive/<slug>.md` written there,
+`plans/<slug>.md` removed there if that checkout still has it — and commit it in that checkout, not
+this one.
 **Done when:** the strategy is chosen, the file is in `archive/` with its `outcome:` stamped and
-committed, or the run stopped at a refusal the human declined to override.
+committed — on the branch, or in the checkout holding `<base>` for `abandoned` — or the run stopped
+at a refusal the human declined to override.
 
 ### 5. Distil, settle the release obligations, and stamp the merge record — all on the work branch
-This is the last writing step, and everything it writes lands on the **work branch**, before any
-merge. Three things happen here, in this order.
+This is the last writing step. For `done` everything it writes lands on the **work branch**, before
+any merge. For `abandoned` there is no merge and no work branch to land on — the one thing this step
+still does, the distillation's background note, lands in the checkout holding `<base>` located in
+step 3, the same as steps 3 and 4. Three things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `/.knowledge/`, per
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
@@ -227,7 +265,8 @@ merge. Three things happen here, in this order.
 One plan, one OK. Every write goes through
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
-silently. Commit what it writes **on the work branch**.
+silently. **`done` — commit what it writes on the work branch.** **`abandoned` — commit it in the
+checkout holding `<base>`**, exactly as steps 3 and 4 already do.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
 OKF bundle present, derive which standards the branch diff's own paths answer to — an aggregate in
@@ -428,8 +467,26 @@ This runs only after a merge verified at exit 0 — a merge that failed or was r
 the worktree exactly where it is. Removing the worktree does not delete the branch: that stays the
 separate offer it already was.
 
-For `abandoned`, do not merge and do not remove the worktree. Offer to keep the branch (default) or
-delete it, and record the choice in the report.
+For `abandoned`, do not merge and do not remove the worktree. The closing itself already survives —
+steps 3, 4 and 5 committed it into the checkout holding `<base>`, never onto this branch — so what
+the branch still carries is only the partial work nobody adopted. State that split before asking:
+name the commits the branch would take with it (`git log <base>..plan/<slug> --oneline`) and that
+the closing itself is already safe on `<base>` regardless of what happens to the branch next.
+
+**Check `git worktree list --porcelain` before offering anything.** When it lists `plan/<slug>` as
+checked out somewhere — the ordinary case, since worktree is the isolation this front recommends
+and an abandoned outcome never removes that worktree — `git branch -d` fails with "Cannot delete
+branch checked out at" before it even reaches the "not fully merged" question this offer exists to
+ask. **Declare that instead of offering it**: name the worktree path, and say the branch stays until
+that worktree is removed by hand or the human deletes it from there. Only when the branch is checked
+out nowhere does the offer below apply. Then offer, default **keep**:
+
+```bash
+git branch -d plan/<slug>
+```
+
+**Never `-D`.** On a refusal from git — "not fully merged" — report git's own output verbatim and
+keep the branch; never retry forced. Record the choice made, and the branch's fate, in the report.
 **Done when:** the gate ran green on the branch and the merge landed with its subject asserted, any
 worktree was removed or its refusal reported, or the run recorded why nothing was merged — a red
 gate among them, or (PR route, minimal-gear authorization) the PR opened and `pr:` was stamped with
@@ -472,6 +529,9 @@ block are all reported.
   `git worktree remove` never pass it **at all**: git's refusal over modified or untracked files is
   the safety, and forcing past it destroys uncommitted work at the moment the human is least
   watching.
+- **Never `git branch -D`, at all** — mirrors the rule above: git's refusal over a branch not fully
+  merged is the safety, and forcing past it destroys the only copy of commits nobody adopted at the
+  exact moment nobody is watching for them.
 - Never merge an abandoned spec's branch, and never merge without the human choosing the strategy.
 - **Never `git checkout <base>` to merge.** Merge into the checkout that already holds the base with
   `git -C`; when none does, stop and say so rather than manufacturing one.
