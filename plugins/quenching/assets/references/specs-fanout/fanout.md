@@ -145,7 +145,7 @@ A run may absorb the work it revealed. The **only** source is specs promoted out
 | --- | --- | --- |
 | **no recursion** | what the run reveals waits in `plans/` for the next one | there is no return |
 | **one generation** | absorbs the specs promoted on this pass, then stops | a second generation is never offered |
-| **unbounded fixpoint** | repeats until a pass promotes nothing | the entry contract filters: `medium` or above requires `ready`/`approved`, so it **never enters a return on its own** |
+| **unbounded fixpoint** | repeats until a pass promotes nothing | the entry contract filters: at or above the fan-out floor requires `ready`/`approved`, so it **never enters a return on its own** |
 
 All three are **always presented** in the authorization plan, alongside the chosen form and the
 human's own stopping criterion. Which arrives pre-marked is not settled: until a real run absorbs a

@@ -358,8 +358,8 @@ sentence, and **link out** rather than explaining in full here.
   run absorbing the specs it promoted out of `## Discoveries`, in one of three forms: no recursion,
   one generation, or an unbounded fixpoint. All three are always presented in the authorization
   plan, with the chosen one and the human's stopping criterion. What bounds the third is the entry
-  contract, not a counter: a promoted spec at `complexity: medium` or above needs `ready`/`approved`,
-  and therefore never enters a return on its own.
+  contract, not a counter: a promoted spec at or above the fan-out floor (`fanoutMinComplexity`,
+  default `medium`) needs `ready`/`approved`, and therefore never enters a return on its own.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.

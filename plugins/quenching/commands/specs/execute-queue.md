@@ -198,8 +198,8 @@ The form was chosen in step 2:
 - **one generation** → queue the specs promoted on this pass, once. A second generation is never
   offered.
 - **unbounded fixpoint** → repeat until a pass promotes nothing. The entry contract is the bound:
-  a promoted spec at `medium` or above needs `ready`/`approved`, so it leaves the return rather
-  than extending it.
+  a promoted spec at or above the fan-out floor needs `ready`/`approved`, so it leaves the return
+  rather than extending it.
 
 A return re-enters step 4 **on the same branch** — never a second isolation, never a second pull
 request. Announce each generation as it opens: which specs it absorbed, and which of the two
