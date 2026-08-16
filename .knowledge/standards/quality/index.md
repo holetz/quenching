@@ -29,7 +29,8 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [computed-fact-prose-fanout.md](computed-fact-prose-fanout.md) — any fact a tool computes and
   prose restates ages every site that spells it out, and no checker sees it: why each validator is
   blind by construction, the two measurements the rule was set from, the grep on the fact's literal
-  form that finds the sites, and why it belongs to the task that makes the change.
+  form that finds the sites, a doc's own `description` as the nearest instance with its two listing
+  consumers, and why it belongs to the task that makes the change.
 * [withdrawn-contract-residue.md](withdrawn-contract-residue.md) — the sibling case where nothing
   computes the fact: a *removed* contract's residue has no canonical spelling to grep, so `## Impact`
   must name the class of documents asserting it and derive the list mechanically — the five misses
