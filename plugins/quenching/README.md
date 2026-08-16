@@ -380,7 +380,7 @@ vocabulary, the `cq specs` surface, and the `/.specs/`↔`/.knowledge/` boundary
 the execution mechanics in
 [`specs-execute/execution.md`](assets/references/specs-execute/execution.md),
 the git defaults (read-if-present, never installed) in
-[`specs-execute/git.md`](assets/references/specs-execute/git.md),
+[`git/conventions.md`](assets/references/git/conventions.md),
 the distillation doctrine in
 [`specs-conclude/distill.md`](assets/references/specs-conclude/distill.md).
 The per-spec commands are never conducted by any sweep, because each needs fresh human intent a

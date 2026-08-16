@@ -124,7 +124,7 @@ that the commits will land there.
 that name the branch and record the isolation, then read what the workspace declares:
 
 ```bash
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
   --sections "§Branch and worktree names" --sections "§Recording the isolation"
 cq specs config --json        # `worktreeSetup`, or null — exit 0 either way
 ```
@@ -300,8 +300,12 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
-     --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor" --sections "§Marking the branch with the specs it built"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md \
+     --sections "§The read-if-present rule"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md \
+     --sections "§Commit messages" --sections "§The subject is the anchor"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
+     --sections "§Marking the branch with the specs it built"
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -309,7 +313,7 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    chain commits is already the reviewed version.
 
 e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
-   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages, or the
+   [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) §Commit messages, or the
    target's own convention where it declares one — and put it in both places it appears:
 
    ```bash

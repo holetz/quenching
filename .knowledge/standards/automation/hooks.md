@@ -67,7 +67,7 @@ deterministic 95% may share a matcher with a `prompt` rung for the judgment tail
 ## What this repo's own surface does under it
 
 **This repo wires no hook of its own today.** It once wired the OKF checker itself, at rungs 2 and
-3, via `plugins/quenching/hooks/hooks.json` — a `PostToolUse` hook matched to `Write|Edit` and a
+3, via a `hooks.json` shipped under this plugin's own `hooks/` — a `PostToolUse` hook matched to `Write|Edit` and a
 `stopScan: "dirty"`-gated `Stop` sweep, both invoking `cq knowledge hook` — for every repo that had
 the plugin installed. The capability was discontinued outright (`descontinuar-hooks-do-plugin`
 spec), not merely rescoped: nothing in this repo answers a hook event any more, and

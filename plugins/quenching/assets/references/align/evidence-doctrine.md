@@ -53,7 +53,7 @@ govern its decision, address them the same way this plugin already addresses its
 reading the whole file through the plain file-reading tool is never the default once the file's
 own heading index would have answered narrower.
 
-A doctrine text that says "read `/.knowledge/standards/X.md`" without naming a section is instructing a
+A doctrine text that says "read `/.knowledge/standards/<subject>.md`" without naming a section is instructing a
 whole-file read on purpose — a short file with one governing rule throughout, or a step that
 genuinely needs all of it. That default never changes on its own; narrowing to a section is an
 assertion the citing text makes deliberately, the same way
