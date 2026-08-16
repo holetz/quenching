@@ -61,6 +61,15 @@ gate.
 **Narration replaces the gate, not the plan** — an authorized stage still presents its full plan
 table before writing; the user watching the session sees everything and types nothing.
 
+**A command with no plan gate has nothing to dispense, and the sentence is not sent to it.**
+`/quenching:specs:develop` is the standing case: it narrates its consolidated plan and writes,
+waiting on nobody, whether an align invoked it or a human typed it. Declaring the exception at it
+would announce the waiver of a gate that does not exist — noise in the invocation, and a reader
+left believing the command has a stop it never had. This is not an exemption from the contract:
+the two protected classes do not occur there, because the command edits no code and takes no
+irreversible cycle action. What still stops it stops it in either mode — the questions its own
+banks ask, and the go/no-go that is the sole origin of an `approved` record.
+
 **Nesting is one level of authorization, not two gates.** When `/align` invokes a front align, the
 front align does **not** ask for its own OK — it inherits the authorization and passes it down
 verbatim to its own stages. The human confirms once for the whole repo; only code-coupled and
