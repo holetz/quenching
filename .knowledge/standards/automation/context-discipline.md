@@ -1,28 +1,38 @@
 ---
 type: standard
-title: Context discipline — open less, and run for less time
-description: The two halves of a run's integral `tokens × turns remaining` and the only two ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention) and run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
+title: Context discipline — open less, run for less time, and emit fewer turns
+description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-10
+timestamp: 2026-08-16
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute; the third axis — emit fewer turns per unit of work — added by revisar-fluxo-do-develop-custo-e-gates (2026-08-16), measured on session c56cff41-e5b1-43f0-85dc-eca1b17e03d0 by summing cache_read_input_tokens + cache_creation_input_tokens + input_tokens over the assistant turns of its .jsonl: 9.73M tokens of context read across 100 turns, 4.44M of it 100 re-reads of a 44.4k base
 maintainer: quenching
 ---
 
-# Context discipline — open less, and run for less time
+# Context discipline — open less, run for less time, and emit fewer turns
 
 Every turn re-sends the whole conversation. A block of context loaded once is therefore paid once
 for **each turn that follows it**, and a run's true cost is `tokens × turns remaining`, not
 `tokens`. The measurement history behind the integral, 344-turn run included, retired with
 context-budget.md; this file owns what to *do* about it.
 
-There are exactly two factors, so there are exactly two ways to cut it: **open less** and **run for
-less time**. Nothing else is available, and a proposal that does neither is not an optimisation.
+There are exactly two factors, and three ways to reach them: **open less**, **run for less time**,
+and **emit fewer turns per unit of work**. The first attacks the tokens; the other two attack the
+count from opposite ends — one ends the run sooner, the other buys the same work with fewer turns
+inside it. Nothing else is available, and a proposal that does none of the three is not an
+optimisation.
 
-Born `authority: background`: the counts below are this repository's own, taken once. They graduate
-when a second adopting repo reproduces the shape.
+Born `authority: background`, and still there. The counts below are this repository's own, and the
+declared graduation condition is a **second adopting repo** reproducing the shape.
+
+**Re-evaluated 2026-08-16** against session `c56cff41-e5b1-43f0-85dc-eca1b17e03d0` (§Emit fewer
+turns per unit of work), the first measurement here taken from a *live run* rather than from a
+static count of files on disk. It confirms the central claim numerically — the integral really is
+dominated by the turn count — and the grade stays `background` anyway, because the grade was never
+about whether the mechanism is real. It is about whether **these numbers** hold outside this
+repository, and a second measurement in the same repository is not a second repository.
 
 ## Open less: read the narrowest thing that answers the question
 
@@ -206,6 +216,45 @@ closing sections — almost entirely the record of sections that had already clo
 boundary was already the point where a run may stop; `scope-the-handoff-rewrite` is the same
 boundary applied to what a rewrite sends, closing a section's block the moment that boundary is
 crossed rather than resending it to every task built after.
+
+## Emit fewer turns per unit of work
+
+<!-- rules -->
+
+The axis above shortens the run; this one makes the same work cost fewer turns inside it. Two
+rules, both about turns rather than tokens:
+
+- **Batch by dependency, never for tidiness.** Consecutive tool calls go in ONE call unless the
+  next command's *input* depends on the previous one's output. A body with several such points
+  states them as a **batching contract** — a named block naming which calls are one call — so the
+  rule is checkable against the body instead of re-judged every run.
+- **No turn exists only to announce what the next tool call will do.** "Now I'll load X", "next
+  I'll write Y": a turn whose entire content is the call that follows it says nothing that call's
+  own output will not say, and costs a re-send of the whole conversation to say it. Narration that
+  carries content — a plan, a report, a stop condition — is not this.
+
+Where a turn must carry a recommendation, the recommendation lives **inside the question's own
+payload** — an option marked "(Recommended)", the reasoning in its description — never in a turn of
+prose set in front of the question.
+
+**Neither rule reaches how questions are grouped.** Two questions whose answers can change each
+other are asked separately whatever this axis costs. That limit is owned by the command surface's
+own contract and is not negotiable against a turn count.
+
+<!-- rationale -->
+
+Measured on session `c56cff41-e5b1-43f0-85dc-eca1b17e03d0` — two `/quenching:specs:develop` passes
+over one spec — by summing `cache_read_input_tokens + cache_creation_input_tokens + input_tokens`
+over the assistant turns of the session's `.jsonl`: **9.73M tokens of context read across 100
+turns**. Of that, **4.44M is a single 44.4k base re-read 100 times** — ~46% of the session spent
+re-sending what was already known. The command body is ~7k of that base, so **shrinking the body
+buys ~7% of the session**, while halving the turn count halves the base term and cuts the
+accumulated growth by ~4×.
+
+That arithmetic is what ranks the three axes against each other, and it is why this one is separate
+rather than a footnote to "open less": that command had *already* been converted to read by section,
+and the session still spent nearly half its budget on re-reads — because the turn count had never
+been the thing under attack.
 
 ## Two things measured and refused
 
