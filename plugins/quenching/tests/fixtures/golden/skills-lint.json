@@ -1,14 +1,14 @@
 {
   "ok": true,
   "root": "<REPO>/plugins/quenching",
-  "commandCount": 28,
+  "commandCount": 27,
   "referenceCount": 29,
   "findings": [
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1049 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1049,
+      "message": "description is 1041 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1041,
       "cap": 1024,
       "command": "/align",
       "path": "commands/align.md"

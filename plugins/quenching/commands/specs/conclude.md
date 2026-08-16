@@ -459,7 +459,7 @@ body blocks:
    this moment.
 
 Close on §The next-step block. `/quenching:specs:develop <slug>` when block 4 has rows,
-`/quenching:specs:continue` to be handed the next spec — the front has moved on, and this is the
+`/quenching:specs:status` to see where the front now stands — it has moved on, and this is the
 moment a human most needs telling where.
 **Done when:** path, outcome, records, the worktree's fate, both `/.knowledge/` passes and the next-step
 block are all reported.

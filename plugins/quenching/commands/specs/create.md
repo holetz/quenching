@@ -228,7 +228,7 @@ source file was **read, never moved or deleted**. A one-line capture has none of
 is omitted whole rather than printed empty.
 
 Close on §The next-step block: `/quenching:specs:develop <slug>` to take it further, or
-`/quenching:specs:continue` to be told what to do next across the whole front.
+`/quenching:specs:cycle <slug>` to run its whole lifecycle from here on one authorization.
 
 **Done when:** the summary is shown.
 
