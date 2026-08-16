@@ -553,7 +553,7 @@ why each half of the lockstep matters, and
   after it. Rebase stops destroying the record, since a subject survives a rewrite; the squash
   caveat stands. A **25th command** (an isolation command, since retired) extracts the git *action* — branch or
   worktree, at **any** stage rather than only at build time — and `cq specs next --front` became
-  branch-aware, so `/quenching:specs:continue` returns the spec whose branch you are standing on and demotes
+  branch-aware, so the front router (since retired) returned the spec whose branch you were standing on and demoted
   one alive elsewhere. `parse_frontmatter` learned block mappings (indent-scoped), which is what
   lets an explicit-none merge record wrap or carry a comma. New `assets/checks/conclude-order-check.sh`
   asserts the ordering on a real history — the one claim no in-process check can see. The always-on
