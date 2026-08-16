@@ -24,7 +24,7 @@ python3 assets/bin/cq --version
 # the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
 python3 assets/bin/cq knowledge validate assets/knowledge                 # 0 error(s); stale-doc warns are advisory
 # the command surface
-python3 assets/bin/cq --root . components doctor --json                  # 25 commands, no findings
+python3 assets/bin/cq --root . components doctor --json                  # 27 commands, no findings
 python3 assets/bin/cq --root . components lint --json                    # exit 0 (warnings reported, not fatal)
 # the test suite — stdlib-only, no external dependency, asserted by AST
 python3 -m unittest discover -s tests
@@ -61,14 +61,17 @@ boundary arm; check 3 is a worse copy kept opt-in. Full reasoning →
 
 ### Two rules that must survive any refactor
 
-- **Never add `context: fork` to these commands — save the orchestrator's minimal gear.** Every
+- **Never add `context: fork` to these commands — save one narrow admission.** Every
   sweep command gates on a mid-flow confirmation (one plan → one OK) when run standalone — and
   even a cycle-authorized run (`assets/references/align/convergence.md` §cycle-authorization)
   must still surface code-coupled confirmations mid-flow, which a forked context cannot present.
-  The one admission is `/quenching:specs:orchestrate` under its minimal gear, where no mid-flow
-  confirmation exists to present: neither protected class stops that run and the human review
-  lives in the PR it opens (§The PR route). Any gear above the minimal brings the code-coupled
-  gates back, and with them the prohibition.
+  The **only** admission is `/quenching:specs:cycle` under its minimal gear **entering at
+  building**, where no mid-flow confirmation exists to present: neither protected class stops that
+  run and the human review lives in the PR it opens (§The PR route). A run that also carries the
+  defining half holds the building authorization mid-flow, so the prohibition holds there; so does
+  any gear above the minimal. **The two fan-out entries — `/quenching:specs:execute-queue` and
+  `/quenching:specs:develop-batch` — are never admitted at any gear**: both stop mid-flow on a
+  contaminating block and on a `complexity` rise, which is exactly what a fork cannot present.
 - **Never downgrade classification or executor sub-agents to `haiku` in `/quenching:knowledge:import-memory`.**
   A misclassification there becomes a wrong memory deletion — see the model-policy table in
   [README.md](plugins/quenching/README.md#model-policy) for which sub-agent calls elsewhere are safe
@@ -105,7 +108,7 @@ this file thin.
 
 ## The plugin itself
 
-What the twenty-five commands are, what each front gets, the cost model and the install/upgrade
+What the twenty-seven commands are, what each front gets, the cost model and the install/upgrade
 path are the **product's own documentation**, not repo standards — do not restate them here:
 
 - [plugins/quenching/README.md](plugins/quenching/README.md) — the command-by-command manual, the

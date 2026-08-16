@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Align surface — one align per front, probe first
-description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the two conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:orchestrate` conducts the four stages of one spec, and neither reimplements what it conducts
-resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/orchestrate.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/references/align/**
+description: The 1×4 align column that replaced the 2×4 matrix — one align per front carrying its content stages, the probe-before-inventory rule that makes a no-op align cost a couple of tool calls, the rule that no sweep records itself: an align's account of its own run goes in the report, never into the bundle, and the conductor categories sharing the cycle-authorization contract — `/align` conducts the three fronts, `/quenching:specs:cycle` the four stages of one spec, and the two fan-out entries N specs each; none reimplements what it conducts
+resource: plugins/quenching/commands/align.md, plugins/quenching/commands/knowledge/align.md, plugins/quenching/commands/specs/align.md, plugins/quenching/commands/specs/cycle.md, plugins/quenching/commands/specs/execute-queue.md, plugins/quenching/commands/specs/develop-batch.md, plugins/quenching/commands/components/align.md, plugins/quenching/assets/references/align/**, plugins/quenching/assets/references/specs-fanout/**
 tags: [architecture, aligns, commands, probe, convergence]
-timestamp: 2026-08-11
+timestamp: 2026-08-16
 audience: both
 authority: current
-source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
+source: specs-flow-consolidation plan (section 4); the cross-front drift probe added by the notice-installed-tool-version-drift spec, 2026-07-28, and retired by modularizar-specs-knowledge-components task 10.3 once the four scripts it compared a legacy copy against stopped existing; the no-sweep-records-itself rule from the retire-docs-log spec's branch review, 2026-07-29; the probe's subject rewritten from stale-copy to legacy-copy (2026-08-03, enxugar-create-e-eliminar-o-rung-hooks spec) once no align installed a tool any more; the two conductor categories and the drop of "cited by `/align` alone" by the fluxo-rapido-para-problemas-simplorios plan (task 2.4); retired with orchestration-gears.md (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11); the third and fourth conductor rows, and the N-is-the-only-difference rule, by orquestrar-specs-em-paralelo (task 4.3), which also carried the orchestrate → cycle rename through
 maintainer: quenching
 ---
 
@@ -42,30 +42,38 @@ cross-front pass, because the fronts feed each other (a spec's distillation is g
 components front's registry is a `/.knowledge/` listing). The conductor contract — one human OK
 authorizing the whole run, nesting one
 level, with code-coupled confirmations still surfacing individually — lives in
-`align/convergence.md`, shared by both conductors and never restated by either (§Two conductor
+`align/convergence.md`, shared by every conductor and restated by none (§The conductor
 categories).
 
-## Two conductor categories
+## The conductor categories
 
-The conductor contract is shared, never owned by a single command. Two conductors exist, told
-apart by what they conduct:
+The conductor contract is shared, never owned by a single command. Conductors are told apart by
+**what** they conduct, and the axis is one: fronts, stages, or specs.
 
 | The conductor | What it conducts | The contract |
 | --- | --- | --- |
 | `/align` | the three fronts, in dependency order, on one nested OK | `align/convergence.md` — cited, never restated |
-| `/quenching:specs:orchestrate` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan (`specs-orchestrate/gears.md`, retired with `orchestration-gears.md` — see below) |
+| `/quenching:specs:cycle` | the four stages of ONE spec — create, develop, execute, conclude — in one run, entering at the derived stage | `align/convergence.md`, plus its own gears plan (`specs-cycle/gears.md`, retired with `orchestration-gears.md` — see below) |
+| `/quenching:specs:execute-queue` | N specs, serially, over one isolation — one branch, one pull request | `align/convergence.md`, plus `specs-fanout/fanout.md` |
+| `/quenching:specs:develop-batch` | N specs to the `ready` gate, in real parallel | `align/convergence.md`, plus `specs-fanout/fanout.md` |
 
-The spec orchestrator is a conductor, not an align: it conducts no front, so it earns no row in
-the 1×4 column. It conducts the lifecycle of one spec, invoking each stage as the command that
-owns it — the same conduct-never-reimplement rule that binds `/align` — and derives its run from
-the `complexity` the spec's `priority` record carries, per the gears contract. Both open on one
-human OK that authorizes the whole run, nest one level, and surface code-coupled confirmations
-individually; the clause that once limited the contract to `/align` is gone.
+**None of the three spec conductors is an align**: they conduct no front, so none earns a row in
+the 1×4 column. They conduct a lifecycle — one spec's four stages, or N specs through one of them —
+invoking each stage as the command that owns it, the same conduct-never-reimplement rule that binds
+`/align`. All four open on one human OK that authorizes the whole run, nest one level, and surface
+code-coupled confirmations individually; the clause that once limited the contract to `/align` is
+gone.
 
-The gears contract itself lives in the plugin's own `assets/references/specs-orchestrate/gears.md`,
-never in this bundle — procedure a command needs while running inside a target is payload, not a
-fact about the target, so it is cited by `${CLAUDE_PLUGIN_ROOT}` the same way from every repo —
-retired with `orchestration-gears.md` (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11).
+**What separates the cycle from the two fan-out entries is N, and nothing else.** The cycle derives
+its run from the `complexity` on the spec's `priority` record, per the gears contract; the fan-out
+entries derive **where each spec enters** from that same field, and everything about conducting more
+than one — the serial-versus-parallel split, the recursion form, cross-spec block classification —
+is `specs-fanout/fanout.md`'s and never a gear's.
+
+Both contracts live in the plugin's own `assets/references/`, never in this bundle — procedure a
+command needs while running inside a target is payload, not a fact about the target, so it is cited
+by `${CLAUDE_PLUGIN_ROOT}` the same way from every repo. `specs-cycle/gears.md` is retired with
+`orchestration-gears.md` (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11).
 
 ## Probe before the inventory
 
