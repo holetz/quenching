@@ -65,6 +65,13 @@ sentence, and **link out** rather than explaining in full here.
   frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
   `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
   refusing an unapproved spec.
+- [**Batching contract**](../standards/automation/context-discipline.md) — a named block in a
+  command body naming which of its consecutive tool calls are ONE call, so the batching rule is
+  checkable against the body instead of re-judged every run. Calls split only where the next
+  command's *input* depends on the previous one's output; splitting for tidiness, or to report
+  progress between two commands, buys nothing and is paid by every turn after it. It is the first
+  of the two rules on the **Context integral**'s third axis, emit fewer turns per unit of work;
+  `/quenching:specs:develop` carries the standing example, with three such points.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `cq specs next` skips it and the reason stays legible to whoever
@@ -156,10 +163,10 @@ sentence, and **link out** rather than explaining in full here.
   (`/quenching:components:command:new`).
 - [**Context integral**](../standards/automation/context-discipline.md) — a run's true cost,
   `tokens × turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block
-  loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
-  exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
-  neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
-  beats shortening the reads.
+  loaded once is paid once for each turn that follows it. It has exactly two factors, and three ways
+  to reach them — **open less**, **run for less time**, and **emit fewer turns per unit of work** —
+  and a proposal that does none of the three is not an optimisation. Because it is quadratic in the
+  turn count, shortening the window beats shortening the reads.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the four self-contained scripts each
   front used to ship separately. Invoked as `cq <pilar> <subcomando>…` — `cq knowledge …`,
