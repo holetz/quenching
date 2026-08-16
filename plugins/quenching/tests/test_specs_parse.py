@@ -8,10 +8,14 @@ Migrated from the pre-refactor specs script's `_failures()` suites — `slug_cas
 `canonical_case_failures` lives in `test_frontmatter.py`; `section_case_failures` lives in
 `test_sections.py`.
 """
+import argparse
 import ast
+import contextlib
 import inspect
+import io
 import json
 import os
+import re
 import tempfile
 import unittest
 
@@ -25,7 +29,8 @@ from quenching.specs.parse.edit import write_handoff_block
 from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.spec import resolve_one
 from quenching.specs.parse.tasks import _files_bad_annotation, parse_tasks
-from quenching.specs.parse.text import body_after_frontmatter
+from quenching.specs.parse.text import body_after_frontmatter, real_prose_or_none
+from quenching.specs.schema import capture_form
 
 
 class Slugify(unittest.TestCase):
@@ -443,6 +448,113 @@ class WriteHandoffBlock(unittest.TestCase):
         text, _ = write_handoff_block(info, "current", "Bloco da seção 3.")
         parsed = parse_handoff(body_after_frontmatter(text))
         self.assertEqual([b["section"] for b in parsed["blocks"]], [2, 3])
+
+
+class PhaseCutsListAndValidate(unittest.TestCase):
+    """`--phase` on `list` and `validate` narrows the sweep to one phase — the fix for the
+    measured session that received 140 rows and 7 foreign findings when it wanted `plans/`
+    alone. `getattr(args, "phase", None)` is what lets a caller built before the flag existed
+    (no `phase` attribute at all) keep behaving exactly as it always did."""
+
+    def _write(self, root, phase_dir, slug):
+        os.makedirs(os.path.join(root, phase_dir), exist_ok=True)
+        doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
+               .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
+        with open(os.path.join(root, phase_dir, f"{slug}.md"), "w") as f:
+            f.write(doc)
+
+    def _workspace(self, root):
+        self._write(root, "plans", "alpha")
+        self._write(root, "archive", "beta")
+
+    def _dispatch(self, verb, root, args):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            DISPATCH[verb](args, root, Emitter())
+        return json.loads(buf.getvalue())
+
+    def test_list_phase_cuts_the_row_count(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._workspace(root)
+            everyone = self._dispatch("list", root, argparse.Namespace(json=True, phase=None))
+            plans_only = self._dispatch("list", root,
+                                        argparse.Namespace(json=True, phase="plans"))
+            self.assertEqual(everyone["count"], 2)
+            self.assertEqual(plans_only["count"], 1)
+            self.assertEqual(plans_only["specs"][0]["slug"], "alpha")
+
+    def test_validate_phase_excludes_findings_from_the_other_phase(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._workspace(root)
+            everyone = self._dispatch(
+                "validate", root, argparse.Namespace(json=True, spec=None, phase=None))
+            plans_only = self._dispatch(
+                "validate", root, argparse.Namespace(json=True, spec=None, phase="plans"))
+            self.assertIn("beta", [f.get("spec") for f in everyone["findings"]])
+            self.assertNotIn("beta", [f.get("spec") for f in plans_only["findings"]])
+            self.assertIn("alpha", [f.get("spec") for f in plans_only["findings"]])
+
+    def test_a_caller_built_before_the_flag_existed_is_unaffected(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._workspace(root)
+            listed = self._dispatch("list", root, argparse.Namespace(json=True))
+            validated = self._dispatch(
+                "validate", root, argparse.Namespace(json=True, spec=None))
+            self.assertEqual(listed["count"], 2)
+            self.assertIn("beta", [f.get("spec") for f in validated["findings"]])
+
+
+class RealProseOrNone(unittest.TestCase):
+    """The four states `overview` (`cq specs list --json`) projects from `## Overview`'s own
+    body — three of them null, because `has_real_content` alone counts an explicit none as
+    filled (by design, for the gate) and cannot tell it apart from real prose on its own."""
+
+    def test_an_absent_body_is_null(self):
+        self.assertIsNone(real_prose_or_none(""))
+
+    def test_a_body_with_nothing_but_the_guidance_comment_is_null(self):
+        self.assertIsNone(real_prose_or_none("\n<!-- MOMENT: decision. Written last. -->\n"))
+
+    def test_an_explicit_none_is_null(self):
+        self.assertIsNone(real_prose_or_none("- none — nada a conectar ainda"))
+
+    def test_real_prose_is_returned_trimmed(self):
+        body = "\nConecta o Problem à Proposal para quem não segura o spec inteiro na cabeça.\n"
+        self.assertEqual(real_prose_or_none(body),
+                         "Conecta o Problem à Proposal para quem não segura o spec inteiro na cabeça.")
+
+
+class ListProjectsOverview(unittest.TestCase):
+    """`cq specs list --json` carries `overview` per row, from the same `read_spec()` document
+    `cmd_list` already holds for the other seven fields — never a second read. One spec per
+    state: heading absent, present-and-empty, an explicit none, and real prose."""
+
+    def _write(self, root, slug, overview_block):
+        os.makedirs(os.path.join(root, "plans"), exist_ok=True)
+        doc = (capture_form().replace("<SLUG>", slug).replace("<TITLE>", slug.title())
+               .replace("<DATE>", "2026-01-01").replace("<VERIFICATION>", "per-task"))
+        if overview_block is not None:
+            # `.replace` on the bare heading text would also match `` `## Problem` `` inside
+            # the template's own explanatory prose above it — anchor on the real heading LINE.
+            doc = re.sub(r"^## Problem$", overview_block + "\n## Problem", doc,
+                        count=1, flags=re.MULTILINE)
+        with open(os.path.join(root, "plans", f"{slug}.md"), "w") as f:
+            f.write(doc)
+
+    def test_the_three_nulls_and_the_real_case(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "absent", None)
+            self._write(root, "empty", "## Overview\n\n")
+            self._write(root, "explicit", "## Overview\n\n- none — nada a conectar ainda\n\n")
+            self._write(root, "real", "## Overview\n\nConecta as outras seções.\n\n")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                DISPATCH["list"](argparse.Namespace(json=True, phase=None), root, Emitter())
+            rows = {r["slug"]: r["overview"] for r in json.loads(buf.getvalue())["specs"]}
+            self.assertIsNone(rows["absent"])
+            self.assertIsNone(rows["empty"])
+            self.assertIsNone(rows["explicit"])
+            self.assertEqual(rows["real"], "Conecta as outras seções.")
 
 
 if __name__ == "__main__":

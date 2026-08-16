@@ -62,7 +62,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                     help="a key from `workItemTypes` — recorded as `workItemType:` in the "
                          "new spec's frontmatter; omit to resolve one later, at build time")
 
-    add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
+    sp = add_json(sub.add_parser("list", help="every spec, by folder and derived stage"))
+    sp.add_argument("--phase", choices=list(PHASES),
+                    help="cut the listing to one phase (default: every phase)")
 
     sp = add_json(sub.add_parser("status", help="one spec's sections, stage, tasks, gates"))
     sp.add_argument("--spec", required=True)
@@ -170,6 +172,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
     sp = add_json(sub.add_parser("validate", help="the canonical set, the gates, the sp-* codes"))
     sp.add_argument("--spec", help="one slug (default: every spec)")
+    sp.add_argument("--phase", choices=list(PHASES),
+                    help="cut the sweep to one phase (default: every phase)")
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
