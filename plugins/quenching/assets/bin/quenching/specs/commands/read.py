@@ -14,9 +14,9 @@ from quenching.specs.parse import PHASES, derive_info, titleize
 from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import (gate_report, ready_report, section_state,
                                             stray_headings)
-from quenching.specs.parse.text import real_prose_or_none
 from quenching.specs.parse.spec import LEGACY_PHASES, PHASE_DIRS
 from quenching.specs.parse.tasks import task_progress
+from quenching.specs.parse.text import real_prose_or_none
 from quenching.specs.schema import canonical_headings, load_schema
 
 
