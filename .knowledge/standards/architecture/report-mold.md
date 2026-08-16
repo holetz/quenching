@@ -24,11 +24,11 @@ mais visível da frente inteira, e é a única parte que nenhum validador inspec
 
 para a frente `specs` essa seção é
 [/plugins/quenching/assets/references/specs-develop/spec-driven.md](/plugins/quenching/assets/references/specs-develop/spec-driven.md)
-§The report mold, citada pelos oito comandos `/quenching:specs:*`.
+§The report mold, citada por sete dos oito comandos `/quenching:specs:*`.
 
 O mold é **literal**: ele carrega o bloco renderizado que o corpo copia e substitui, não uma
 descrição do que o bloco deveria conter. Essa escolha não é estética — os dois únicos comandos que
-já tinham saída consistente antes deste trabalho (`/quenching:specs:continue` e
+já tinham saída consistente antes deste trabalho (o roteador do front, desde retirado, e
 `/quenching:specs:execute`) eram exatamente os dois que carregavam um bloco literal, e os seis que
 descreviam o report em prosa produziram seis formas diferentes.
 

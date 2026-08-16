@@ -24,7 +24,7 @@ python3 assets/bin/cq --version
 # the shipped skeleton is conformant by construction — read as ZERO ERRORS, never as a warning total
 python3 assets/bin/cq knowledge validate assets/knowledge                 # 0 error(s); stale-doc warns are advisory
 # the command surface
-python3 assets/bin/cq --root . components doctor --json                  # 26 commands, no findings
+python3 assets/bin/cq --root . components doctor --json                  # 25 commands, no findings
 python3 assets/bin/cq --root . components lint --json                    # exit 0 (warnings reported, not fatal)
 # the test suite — stdlib-only, no external dependency, asserted by AST
 python3 -m unittest discover -s tests
@@ -105,7 +105,7 @@ this file thin.
 
 ## The plugin itself
 
-What the twenty-six commands are, what each front gets, the cost model and the install/upgrade
+What the twenty-five commands are, what each front gets, the cost model and the install/upgrade
 path are the **product's own documentation**, not repo standards — do not restate them here:
 
 - [plugins/quenching/README.md](plugins/quenching/README.md) — the command-by-command manual, the
