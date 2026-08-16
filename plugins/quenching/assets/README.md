@@ -64,10 +64,12 @@ copy of the same standard legitimately differ in wording.
 | --- | --- | --- |
 | `bin/cq` | every pillar's deterministic rails — `specs`, `knowledge` (the OKF v0.1 conformance checker, CLI **and** hook) and `components` (the `.claude/` front's `doctor` / `lint` / `drift`), plus `components session`, which reads a session transcript as evidence for `/quenching:components:command:retro` | **no** — the plugin's own `hooks/hooks.json` and every command body invoke it by `${CLAUDE_PLUGIN_ROOT}` |
 
-**`cq` is not installed anywhere.** Resolution is plugin-first with no fallback and no manual rung
-([references/align/tool-resolution.md](references/align/tool-resolution.md)), so a copy under a
-target's `.claude/hooks/` is legacy debris from before that change — reported by `cq components
-drift` and offered for removal by the matching align, never overwritten.
+**`cq` is not installed anywhere.** Resolution is plugin-first with **no third rung**
+([references/align/tool-resolution.md](references/align/tool-resolution.md)): bare, through the
+`bin/cq` shim Claude Code puts on `PATH`, or at the plugin path — two doors onto one file inside the
+plugin, never a third installation. A copy under a target's `.claude/hooks/` is legacy debris from
+before that change — reported by `cq components drift` and offered for removal by the matching
+align, never overwritten.
 
 **One entry point now serves every event.** A hook event and a command body both shell out to
 `bin/cq`; `hooks/hooks.json` names `cq knowledge hook` at `PostToolUse` and `Stop`, and every
@@ -81,7 +83,7 @@ retired.
 | --- | --- |
 | `references/` | the **shared procedure** — owned once, cited by absolute path from the command bodies rather than restated. One folder per owning command, named for that command's path with `/` → `-`; other commands may cite it (`references/align/` serves seven). |
 | `evals/` | the **measured case sets** written by `/quenching:components:command:eval` — `evals.json` plus a timestamped run directory. The tree mirrors the command's path with the slashes kept, so `commands/components/hook/new.md` ↔ `evals/components/hook/new/`, and renaming a command renames its eval folder in the same step. |
-| `checks/` | the **harnesses that grade this checkout** out of process — `functional-checks.sh` (the command registry is built at session start, so no change under `commands/**` is testable in the session that writes it), `conclude-order-check.sh` (order is a property only a real git history exhibits), and `citation-check.sh` (a rename's two halves — the old name dead, the new one born — cannot be seen by the session that moved it). Never installed, outside the lockstep. |
+| `checks/` | the **harnesses that grade this checkout** out of process — `functional-checks.sh` (the command registry is built at session start, so no change under `commands/**` is testable in the session that writes it), `conclude-order-check.sh` (order is a property only a real git history exhibits), and `citation-check.sh` (a rename's old name dead and its new name born cannot be seen by the session that moved the body, and a third half measures that the prose shipped into a target promises only what the published skeleton delivers). Never installed, outside the lockstep. |
 
 ## The signature
 

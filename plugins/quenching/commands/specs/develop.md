@@ -195,20 +195,33 @@ thinking is not lost.
 **Done when:** the user has answered.
 
 ### 6. Apply, and record what the pass earned
-Write each confirmed section with `cq specs section <slug> "<Heading>" --write` (body on stdin) —
-it creates the heading in canonical position on first write, so creating and revising are the same
-call. An emptied section becomes an explicit `- none — <reason>`, never a deleted heading.
+Write the confirmed sections with `cq specs section <slug> "<Heading>[,<Heading>…]" --write` (bodies
+on stdin) — it creates each heading in canonical position on first write, so creating and revising
+are the same call. An emptied section becomes an explicit `- none — <reason>`, never a deleted
+heading.
 
-**The body goes on stdin as a heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
-are three turns buying what one already does:
+**The bodies go on stdin as one heredoc, in the same call** — a scratch file, a `mkdir` and a `cat`
+are three turns buying what one already does, and a bank that filled six sections over six calls
+paid six round trips for one edit:
 
 ```bash
-cq specs section "<slug>" "<Heading>" --write <<'BODY'
+cq specs section "<slug>" "<Heading>,<Other Heading>" --write <<'BODY'
+## <Heading>
+
 <the drafted section, verbatim>
+
+## <Other Heading>
+
+<the other drafted section, verbatim>
 BODY
 ```
 
 Quote the delimiter (`<<'BODY'`) so nothing in the prose is expanded by the shell.
+
+The `## <Heading>` lines in the stream are the delimiter, and the set they carry must equal the set
+declared on the command line — a mismatch, a repeat, or a heading outside the canonical fourteen
+refuses (exit 2) **without writing any of them**, so a rejected edit leaves the spec exactly as it
+was. One heading with a raw body and no `## ` line is the singular form and is unchanged.
 
 Every follow-up the plan parked is written in this same edit — `cq specs discover <slug>
 "<finding>"`, one call per line — and never mid-bank, which

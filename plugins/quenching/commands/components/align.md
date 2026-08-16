@@ -80,8 +80,7 @@ Resolve `cq components` per
 §Resolving the tool §Write the resolved path literally on every invocation; branch on the
 **exit code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 
-**Every shell grant is scoped**, per
-[`/.knowledge/standards/automation/skills.md`](../../../../.knowledge/standards/automation/skills.md)
+**Every shell grant is scoped**, per `/.knowledge/standards/automation/skills.md`
 §`allowed-tools` is always scoped: `python3`/`py` for the tool, `git grep` and `grep` for the
 blast-radius sweep (§3), `mkdir`/`mv` for the renames, `rm` for a
 confirmed legacy tool copy. This skill touches no repo toolchain, so it has no claim to an
@@ -148,10 +147,23 @@ Set aside every legacy `openspec-*` skill and `opsx/` wrapper — they are `/que
 Then add the half the tool cannot: for each remaining item, the **axis classification** per the
 test ([taxonomy](${CLAUDE_PLUGIN_ROOT}/assets/references/components-command-new/taxonomy.md) §The single axis — several unrelated folders
 → unroutable). Read `/.knowledge/standards/automation/skills.md` if present — it governs; note whether
-the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist, and whether
 the rule and the registry (`/.knowledge/documentation/reference/automation.md`) exist.
-**Done when:** the inventory table (item · classification · `sk-*` gap) covers every item in the
-working set, and no file changed.
+
+**Where an item classifies with an evident category, also read the nest-vs-replace convention**
+already established for that category in this repo (taxonomy.md §Reading the nest-vs-replace
+convention): `Glob` `.claude/commands/<categoria>/**` and infer it from what already sits there.
+Derive the canonical path the classification produces and diff it against the item's current
+path — a mismatch is a relocation candidate, fed into §4's existing renames row like any other,
+never a new plan section or a new confirmation of its own.
+
+**A category whose convention is not readable yields no candidate.** Nothing under
+`.claude/commands/<categoria>/` yet, or the two shapes already mixed, means there is no
+established convention to diverge from — record the item's classification and move on. The
+"ask the human once" branch belongs to the mint (`/quenching:components:command:new`), where a
+single command is in play and the answer becomes the convention; a sweep that asked it would be
+inventing the convention for a whole surface out of one confirmation.
+**Done when:** the inventory table (item · classification · canonical path if it diverges ·
+`sk-*` gap) covers every item in the working set, and no file changed.
 
 ### 3. Sweep the blast radius
 Run the shared procedure in
@@ -261,7 +273,7 @@ sweep.
 against it, nothing routes from its prose, and nothing ever loads it — so there is nothing to buy by
 shortening it and no trigger to demand. Its description keeps all three slots at full length for the
 human picking it out of the `/` menu, who has no routing to fall back on
-([skills.md](../../../../.knowledge/standards/automation/skills.md) §The admission criterion). The split is
+(`/.knowledge/standards/automation/skills.md` §The admission criterion). The split is
 read from the frontmatter this stage reads anyway — never guessed.
 
 Judge each description against the three slots and the competitor test in
