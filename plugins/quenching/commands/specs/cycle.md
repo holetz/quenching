@@ -37,9 +37,8 @@ a gear. This command is the N=1 case and never conducts a second spec.
 
 **Every stage runs in a gear** — in-session, isolated in a sub-agent, or skipped because the
 derived stage has already passed it — and every gear derives from `priority.complexity`. A stage
-whose gear is `sub-agent` runs isolated and returns its summary per §What a gear is; the contract's
-test that the summary is much smaller than the work is
-[agents.md](/.knowledge/standards/automation/agents.md).
+whose gear is `sub-agent` runs isolated and returns its summary per §What a gear is, whose test is
+that the returned summary is much smaller than the work that produced it.
 
 **The contracts, owned once:**
 
