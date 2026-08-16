@@ -93,13 +93,21 @@ result rather than a loss.
 
 <!-- rules -->
 
-Where a spec joins derives from the `complexity` field on its `priority` record, and from nothing
-else — no invocation flag, no menu:
+Where a spec joins derives from the `complexity` field on its `priority` record, measured against
+**the fan-out floor**, and from nothing else — no invocation flag, no menu:
 
-| `complexity` | Where the spec enters |
+| `complexity`, against the floor | Where the spec enters |
 | --- | --- |
-| `low` | at defining, and runs through to the end |
-| `medium` or above | requires `ready`/`approved`; it is built only |
+| below the floor | at defining, and runs through to the end |
+| at or above the floor | requires `ready`/`approved`; it is built only |
+
+**The floor is `fanoutMinComplexity`**, declared in `.claude/quenching.json` and read through
+`cq specs config --json`; a repository that declares nothing gets `medium` — the fixed cutoff this
+contract used before the floor existed. The four levels order `low < medium < high < xhigh`, the
+same order [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
+gears plan already scales by; an unrecognised declared floor reports the same way an unrecognised
+`backend` does (`unknownFanoutMinComplexity`, the effective floor staying at `medium`) rather than
+refusing.
 
 A spec whose `complexity` **rises mid-run** leaves the run and asks for a fresh authorization,
 under the same contract as

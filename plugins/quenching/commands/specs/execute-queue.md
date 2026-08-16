@@ -64,7 +64,7 @@ Read the front and the workspace in one call:
 
 ```bash
 cq specs next --front --json    # the ranked candidates, each with stage, priority, branch liveness
-cq specs config --json          # backend, integrationBranch, worktreeSetup
+cq specs config --json          # backend, integrationBranch, worktreeSetup, fanoutMinComplexity
 ```
 
 Slugs given → resolve each against that payload, in the order the human typed them; one that does

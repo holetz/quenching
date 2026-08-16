@@ -73,16 +73,19 @@ code** (0 ok · 1 findings · 2 refusal) and the `--json`, never on prose.
 ## Workflow
 
 ### 1. Resolve the candidate set
-Take the slugs from `$ARGUMENTS`, or take the whole front. One call carries the selection:
+Take the slugs from `$ARGUMENTS`, or take the whole front. Two calls carry the selection and the
+fan-out floor §The entry contract measures every candidate against:
 
 ```bash
 cq specs list --json      # every spec's derived stage AND its records, priority.complexity included
+cq specs config --json    # fanoutMinComplexity — the floor §2's split reads
 ```
 
 Both fields admission needs are on every row, so no per-spec read runs here. A slug matching two
 specs is exit 2 — report both and stop, never guess which was meant. **One spec resolved is not a
 batch:** name `/quenching:specs:develop <slug>` and stop.
-**Done when:** two or more candidates are in hand, each with its stage and its `complexity`.
+**Done when:** two or more candidates are in hand, each with its stage and its `complexity`, and
+the floor is known.
 
 ### 2. Split the candidates by the entry contract
 Apply §The entry contract to every candidate, and put each in exactly one group:
