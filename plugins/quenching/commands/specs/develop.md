@@ -229,7 +229,10 @@ this edit will park** — a line, not an offer, because parking creates nothing 
 bank's last question** — a real question, not a gate on the plan, asked alone because its content
 depends on every answer before it. The evidence that moved it — the `## Tasks` a gate bank just
 wrote, a scope the adversarial bank widened — is named, and the level it recommends leads the
-options with the scale in front of the human:
+options with the scale in front of the human. The level answers how much a human needs to be part
+of the gears plan, never the size of what just changed
+([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears
+plan states the criterion):
 
 | Level | What it changes in the gears plan |
 | --- | --- |

@@ -191,6 +191,12 @@ sentence, and **link out** rather than explaining in full here.
   plugin ships is read against the skeleton, which is why `citation-check.sh`'s half 3 measures
   shipped markdown links against it rather than against this checkout
   (`/.knowledge/standards/quality/citation-verification.md` §Half 3).
+- [**Fan-out floor**](/plugins/quenching/assets/references/specs-fanout/fanout.md) —
+  `fanoutMinComplexity`, the `.claude/quenching.json` key §The entry contract measures a
+  candidate's `priority.complexity` against: below it, a spec joins the defining regime; at or
+  above it, the spec must already be `ready`/`approved` to join the building regime. Declared,
+  read through `cq specs config --json`, default `medium` — the fixed cutoff the contract used
+  before the floor existed, so an undeclared floor changes nothing.
 - **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
   a sub-agent, or skipped, set by the ONE gears plan the command derives from
   `priority.complexity`. Governs the stages of ONE spec only — conducting N of them is the
@@ -358,8 +364,8 @@ sentence, and **link out** rather than explaining in full here.
   run absorbing the specs it promoted out of `## Discoveries`, in one of three forms: no recursion,
   one generation, or an unbounded fixpoint. All three are always presented in the authorization
   plan, with the chosen one and the human's stopping criterion. What bounds the third is the entry
-  contract, not a counter: a promoted spec at `complexity: medium` or above needs `ready`/`approved`,
-  and therefore never enters a return on its own.
+  contract, not a counter: a promoted spec at or above the fan-out floor (`fanoutMinComplexity`,
+  default `medium`) needs `ready`/`approved`, and therefore never enters a return on its own.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
