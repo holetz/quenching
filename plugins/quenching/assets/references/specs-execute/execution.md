@@ -62,7 +62,7 @@ route around it with `--no-verify`. No `.claude/settings.json`, or nothing wired
 Taking a branch or a worktree, naming it, and stamping `branch: {base, work}` all happen inline in
 the command body's own step 2 — not a separate command it dispatches to. The convention it applies
 lives in
-[git/isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md)
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §Recording the isolation, cited rather than restated.
 
 **The offer fires only when `HEAD` is on the repository's base branch.** Anywhere else, the human
@@ -188,7 +188,7 @@ If the commit **fails** — a rejecting hook, nothing staged — undo the tick
 report the failure.
 
 The **subject line format** is the target repo's to declare. Read
-[git/commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md)
+[specs-execute/git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md)
 §Commit messages: a repo with `knowledge/standards/git/**` owns the format outright and this contract defers to it; with nothing
 declared, the plugin's default is `plan/<slug>: <task-id> <task title>`. Never install a git
 standard into a target to create the answer.

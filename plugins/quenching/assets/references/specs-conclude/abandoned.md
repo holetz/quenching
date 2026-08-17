@@ -6,16 +6,16 @@ lands in the checkout that already holds `<base>`, never on the work branch. The
 carry a branch commit home, so a record left on the branch would depend on a branch nobody adopted
 still existing.
 
-`/.knowledge/standards/workflows/plan-git-record.md` §Every record is written where it needs to
-survive is the contract, where a target repo keeps one; this file is the mechanics `conclude.md`'s
-steps 3, 4, 5 and 6 cite rather than restate.
+[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §Every record is written
+where it needs to survive is the contract; this file is the mechanics `conclude.md`'s steps 3, 4, 5
+and 6 cite rather than restate.
 
 ## Locating the checkout and writing into it
 
 <!-- rules -->
 
 Found the same way the merge itself is found
-([merge.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/merge.md) §Merge strategies):
+([git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Merge strategies):
 
 ```bash
 git worktree list --porcelain              # which checkout has <base> checked out
@@ -67,5 +67,5 @@ and say the branch stays until the worktree is removed or the human deletes it f
 the branch is checked out nowhere does the offer below apply.
 
 Then offer, default **keep** —
-`/.knowledge/standards/workflows/plan-git-record.md` §A branch is deleted with `-d`, never `-D`,
-where a target repo keeps one, governs the offer itself and the refusal.
+[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §A branch is deleted with
+`-d`, never `-D` governs the offer itself and the refusal.

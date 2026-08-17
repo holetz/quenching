@@ -1,13 +1,13 @@
 ---
 type: external
 title: GitHub CLI measured behaviour
-description: Measured facts about `gh` and the GitHub REST API's issue endpoints — the REST create's silent handling of an invalid Issue Type versus the porcelain commands' loud refusal for the same name, where Issue Types are actually defined, and why `closingIssuesReferences` stays empty for a PR that targets an integration branch
+description: Measured facts about `gh` and the GitHub REST API's issue endpoints — the REST create's silent handling of an invalid Issue Type versus the porcelain commands' loud refusal for the same name, and where Issue Types are actually defined
 resource: plugins/quenching/assets/bin/quenching/specs/**
-tags: [github, gh-cli, rest-api, issue-types, closing-keywords, tooling]
-timestamp: 2026-08-16
+tags: [github, gh-cli, rest-api, issue-types, tooling]
+timestamp: 2026-08-07
 audience: both
 authority: background
-source: suportar-tipo-workitem-azure-por-tags spec (tasks 3.3, 3.4) — measured against holetz/claude-quenching#898, a personal-account repository, with `gh` as installed on 2026-08-07; pilar-git-e-specs-agnosticas-ao-git spec (task 1.1) — measured against holetz/claude-quenching PRs #925 and #926 and issue #816, on 2026-08-16
+source: suportar-tipo-workitem-azure-por-tags spec (tasks 3.3, 3.4) — measured against holetz/claude-quenching#898, a personal-account repository, with `gh` as installed on 2026-08-07
 maintainer: quenching
 ---
 
@@ -45,28 +45,3 @@ above was the only branch reachable in that account — there was no valid name 
 accepting path against. An organization repository with Issue Types configured is expected to
 accept a declared name and refuse an undeclared one identically through either porcelain command;
 that branch was not independently measured here.
-
-## `closingIssuesReferences` stays empty when the PR's base is not the repository's default branch
-
-**A `Closes #<n>` line in a PR body only populates `closingIssuesReferences` — and only auto-closes
-the issue on merge — when the pull request's base branch is the repository's default branch.**
-Against a PR opened with any other base (an integration branch, say), the same keyword still
-creates a plain cross-reference (visible on the issue's timeline as a `cross-referenced` event) but
-never a closing link: `gh pr view --json closingIssuesReferences` and the equivalent GraphQL field
-both come back an empty list, `gh api .../issues/<n>/timeline` shows the issue's `closed` event with
-no `source` and no `commit_id` attached, and the issue itself has to be closed some other way.
-
-Measured against two merged PRs in `holetz/claude-quenching` — a repository whose default branch is
-`main` but whose PRs are opened against `develop`
-([standards/git/branching.md](/.knowledge/standards/git/branching.md)): PR #926's body reads
-`Closes #816`, PR #925's reads `Closes #902`, both target `develop`, and both report
-`"closingIssuesReferences": []`. Issue #816's timeline carries a `cross-referenced` event sourced
-from #926 and a `closed` event with `"source": null` — the mention linked, the close did not.
-
-**The practical consequence: a plugin that reads `closingIssuesReferences` back to learn whether a
-PR closes a spec's issue gets a structurally empty answer for any repository whose specs merge into
-an integration branch rather than the default branch** — which is exactly the shape
-[standards/git/branching.md](/.knowledge/standards/git/branching.md) prescribes (`develop` integrates,
-`main` publishes) and this repository's own history already follows. The keyword still documents
-intent in the PR body and still cross-references the issue; it does not, by itself, give a caller
-anything to read back on that class of repository.

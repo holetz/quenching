@@ -1,5 +1,5 @@
 ---
-description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; hands off to /quenching:git:branch for isolation; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit. Not for: building N specs in one run → /quenching:specs:execute-queue; writing or sharpening a spec → /quenching:specs:develop; creating one → /quenching:specs:create; the branch review, the merge, the archive and any release obligation like a version bump → /quenching:specs:conclude; the whole cycle in one run → /quenching:specs:cycle.
+description: Build ONE spec task by task — write, verify, self-review, tick, commit. Triggers on "execute this spec", "build it", "implement the tasks", "apply the plan", "start working on it", "continue building", "run the next task", "work through the tasks". Requires a clean tree; offers isolation inline; verifies under the spec's own declared policy; ticks each box with the subject of the commit it is about to make, so code and box land in one commit per task, squashed into one commit per section at that section's own boundary. Writes the /.knowledge/standards/ a task explicitly names, and records what else the work reveals as a one-line discovery. Stops at the last commit. Not for: building N specs in one run → /quenching:specs:execute-queue; writing or sharpening a spec → /quenching:specs:develop; creating one → /quenching:specs:create; the branch review, the merge, the archive and any release obligation like a version bump → /quenching:specs:conclude; the whole cycle in one run → /quenching:specs:cycle.
 argument-hint: [slug]
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, AskUserQuestion, Task, Skill
 model: sonnet
@@ -120,31 +120,60 @@ one exists, is write-once and already true, and a ref cut by hand with no record
 `base` cannot honestly be inferred for from here. Declining leaves the run on the base; say plainly
 that the commits will land there.
 
-**On the base branch, with nothing to check out → hand off to `/quenching:git:branch`.** The offer's
-shape — worktree leading, unconditionally, with its cost stated in the same block as the ask;
-`worktreeSetup` run and reported; the `branch:` record and the branch's own `quenching-slugs:`
-marking stamped — belongs to that command now, cited rather than copied a second time:
-
-```
-Skill("quenching:git:branch", "<slug>")
-```
-
-It runs its own **AskUserQuestion**, still mid-flow and still gated — invoking it here is not
-`context: fork`, so nothing about this loop skips a confirmation by delegating it. When it returns,
-re-read the state it left:
+**On the base branch, with nothing to check out → offer isolation here, inline.** Load the rules
+that name the branch and record the isolation, then read what the workspace declares:
 
 ```bash
-cq specs status --spec "<slug>" --json
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+  --sections "§Branch and worktree names" --sections "§Recording the isolation"
+cq specs config --json        # `worktreeSetup`, or null — exit 0 either way
 ```
 
-`branch.work` now set → the chosen form was taken, or **In place** was chosen and stamped `work`
-equal to `base`; continue the loop from wherever this checkout now stands. No record at all → the
-git command it ran failed (a name already taken, a dirty path, a locked worktree) and nothing was
-stamped — report it verbatim and stop; building onto the base with nothing recorded is exactly the
-outcome the offer exists to prevent.
+State in one block: the spec, the base branch, the branch name that will be created, the worktree
+path, what will be stamped, and — when `worktreeSetup` is non-null — **the setup command verbatim**,
+exactly as read, never paraphrased or reformatted. **That block is the consent.** Choosing
+**Worktree** IS the OK for the command shown, and there is no second prompt and no remembered
+"this repo is authorised" state: the human judges the command on the same screen where they choose
+the form. Nothing declared → say nothing; an absent config is the normal case, not a finding.
 
-Recommend isolation before building, and never impose it — that recommendation is `/quenching:git:branch`'s
-to make, not restated here.
+Then ask with **AskUserQuestion**:
+
+- **Worktree** *(default, recommended)* — `git worktree add ../<repo>-<slug> -b plan/<slug>`, a
+  separate checkout beside the repo, leaving this one untouched. State its cost **in the offer**:
+  a fresh checkout carries only what git tracks — no `node_modules/`, no `.venv/`, no `.env`, no
+  build output — so a repo with installed dependencies needs them installed again there;
+- **Branch** — `git checkout -b plan/<slug>`, work continues in this checkout;
+- **In place** — declines isolation. Nothing is created, and `branch` is stamped honestly with
+  `work` equal to `base`: `cq specs record "<slug>" branch --set base=<base> --set work=<base>`.
+
+Worktree leads **unconditionally** — never on a heuristic that sniffs the target for
+`package.json` or `.venv/`. A recommendation that changes from repo to repo cannot be documented in
+one sentence, and guessing somebody else's build is how the recommended path becomes a silent trap.
+The cost above is stated instead, so choosing **Branch** is a decision the human read rather than a
+discovery at the first `verify:` that fails.
+
+Run the one command for the chosen form. If it fails — a name already taken, a dirty path, a locked
+worktree — report the git error verbatim and stop without stamping. **Then, on a worktree with a
+`worktreeSetup` declared**, run it once with **cwd inside the new worktree**, which is the whole
+point: it is the tree that lacks the dependencies. Report its output and its exit code. **A failing
+setup does not undo the worktree** — say plainly which of the two it is, and report a command whose
+first token does not resolve inside the worktree as not run, for that reason, rather than executing
+it and blaming the shell.
+
+Then stamp what was taken:
+
+```bash
+cq specs record "<slug>" branch --set base=<what was checked out> --set work=plan/<slug>
+```
+
+`base` is captured **now**, while it is still true: after the merge git cannot say what the branch
+was cut from, which is the whole reason the record exists. The record is write-once and the tool
+enforces it — one already present refuses (exit 2) naming the value it holds. **Read it, never
+rewrite it**, and never edit the frontmatter to get past the refusal. Stamp nothing for work done
+in place, because a record whose `base` equals its `work` states no fact.
+
+Recommend isolation before building, and never impose it. A human who declines gets no branch, no
+record, and no second prompt.
 
 Not a git repo → no isolation and no commits; say so once and run the loop normally. Never force
 isolation, never `git init` on the human's behalf, and never rewrite history.
@@ -271,9 +300,8 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
      --sections "§The verification policy" --sections "§The validation loop" \
      --sections "§The diff self-review" --sections "§The commit" --sections "§The section squash"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/conventions.md --sections "§The read-if-present rule"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md --sections "§Commit messages" --sections "§The subject is the anchor"
-   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md --sections "§Marking the branch with the specs it built"
+   cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
+     --sections "§The read-if-present rule" --sections "§Commit messages" --sections "§The subject is the anchor" --sections "§Marking the branch with the specs it built"
    ```
 
    **Self-review the task's diff** on the four items — reuse · useless defense · obvious comment ·
@@ -281,7 +309,7 @@ d. **On the first pass through 5d–5e, load the rules the chain runs under — 
    chain commits is already the reviewed version.
 
 e. **Then run verify, tick and commit as ONE chained call.** Decide the subject first — it follows
-   [commit.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/commit.md) §Commit messages, or the
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Commit messages, or the
    target's own convention where it declares one — and put it in both places it appears:
 
    ```bash
@@ -448,10 +476,9 @@ front of you before the loop starts:
 ## Invariants to never violate
 
 - Require a clean tree before the first code change; **isolated means this checkout is ON the work
-  ref**, never that the ref exists somewhere — and where it is not, offer to take a live ref inline
-  or hand off to `/quenching:git:branch` to cut one, recommending isolation either way and never
-  imposing it. Checking the right thing is what keeps the offer from being asked twice *and* from
-  being skipped onto the base.
+  ref**, never that the ref exists somewhere — and where it is not, offer isolation inline (taking
+  a live ref, or cutting one), recommend it, and never impose it. Checking the right thing is what
+  keeps the offer from being asked twice *and* from being skipped onto the base.
 - Drive off `cq specs status` / `next` / `task` and their exit codes. Never assume a path, never
   choose the next task by reading `## Tasks`, and never hand-edit a `- [ ]` / `- [x]` character.
 - Verify per the spec's **declared** policy. Never decide mid-build when to test, and never ask the
