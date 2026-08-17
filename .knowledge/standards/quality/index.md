@@ -23,6 +23,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
   it as a content gap: the sidecar that adds the signal without changing a return type, why the
   finding is a warn, and why a lossy transform never ships without the diagnostic for it.
+* [finding-remedy-applicability.md](finding-remedy-applicability.md) — um `remedy` declarado nomeia
+  uma ação que a superfície que emitiu o finding realmente oferece: o caso medido em que a mesma CLI
+  recusava as duas ações que aconselhava, por que um remédio inaplicável gasta a confiança de toda a
+  saída e não só a daquele item, e a recusa própria que um caso sem caminho ainda deve dar.
 * [prose-sweeps.md](prose-sweeps.md) — a mechanical find-and-replace over prose corrupts exactly the
   sentences that talk *about* the form being swept, the checker that guards the sweep reports them
   clean, and the mitigation is to write a mention as a placeholder rather than an instance.

@@ -377,6 +377,10 @@ sentence, and **link out** rather than explaining in full here.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
+- [**Remedy**](../standards/quality/finding-remedy-applicability.md) — o campo `remedy` que todo
+  finding dos verificadores carrega, e o contrato que ele assume: nomear uma ação que a superfície
+  que emitiu o finding realmente oferece. Um remédio que descreve o estado desejado, ou uma ação que
+  a mesma CLI recusa, gasta a confiança de toda a saída — não só a do item que o carrega.
 - [**Reserved tag prefix**](../standards/architecture/spec-backend.md) — `spec:`, the half of a
   tracker's native tag surface (`github` issue labels, `azure-boards` `System.Tags`) that belongs
   to the TOOL rather than to the document, and the rule that lets **storage** and **rendering**
