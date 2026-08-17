@@ -69,8 +69,13 @@ LEGACY_CONFIG_FILE = "config.json"
 CONFIG_KEYS = ("backend", "specsBranch", "worktreeSetup", "azureStates",
                "integrationBranch", "releaseBranch", "hooks", "profiles",
                "azurePlacement", "azureColumns", "subjects", "tagCatalog",
-               "workItemTypes")
+               "workItemTypes", "fanoutMinComplexity")
 BACKENDS = ("files", "github", "azure-boards")
+# Mirrors `schema.py`'s declared `priority.complexity` levels. Redeclared rather than imported —
+# `config.py` and `schema.py` do not import each other today, and a four-word tuple does not earn
+# that coupling.
+DEFAULT_FANOUT_MIN_COMPLEXITY = "medium"
+COMPLEXITY_LEVELS = ("low", "medium", "high", "xhigh")
 # `azurePlacement`'s recognised sub-keys. Only `areaPath` is required, and its absence is a
 # REFUSAL rather than a default — the same argument `azureStates` already carries, applied to
 # where a spec is born rather than what state it reads as. `open_azure_backend` is where that
@@ -198,6 +203,7 @@ def load_config(root: str) -> dict:
            "integrationBranch": None, "releaseBranch": None,
            "azurePlacement": {}, "azureColumns": {}, "subjects": {}, "tagCatalog": {},
            "workItemTypes": {},
+           "fanoutMinComplexity": DEFAULT_FANOUT_MIN_COMPLEXITY, "unknownFanoutMinComplexity": None,
            "legacyPath": legacy if os.path.isfile(legacy) else None}
     if not out["present"]:
         return out
@@ -232,6 +238,15 @@ def load_config(root: str) -> dict:
     integration = obj.get("integrationBranch")
     if isinstance(integration, str) and integration.strip():
         out["integrationBranch"] = integration.strip()
+
+    fanout_floor = obj.get("fanoutMinComplexity")
+    if isinstance(fanout_floor, str) and fanout_floor.strip():
+        if fanout_floor.strip() in COMPLEXITY_LEVELS:
+            out["fanoutMinComplexity"] = fanout_floor.strip()
+        else:
+            # Same shape as `unknownBackend` above: the declared value is kept, not discarded,
+            # and the effective floor stays at the default rather than at no floor at all.
+            out["unknownFanoutMinComplexity"] = fanout_floor.strip()
 
     release = obj.get("releaseBranch")
     if isinstance(release, str) and release.strip():

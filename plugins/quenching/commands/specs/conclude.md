@@ -77,6 +77,10 @@ repo's own checks to prove the pre-merge gate. Its read-only siblings are scoped
   default to keeping. This is the one branch-disposal decision that stays inline here rather than
   moving to `/quenching:git:cleanup` — it is this run's own report of what became of the work it
   just closed, not a later sweep over branches nobody is thinking about right now.
+- **Everything `abandoned` writes lands in the checkout holding `<base>`, never this branch** — see
+  [specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md).
+  There is no merge to carry a branch commit home, so a record left on the branch would depend on a
+  branch nobody adopted still existing.
 - **Declared rules were already written.** The `/.knowledge/standards/` a task explicitly named went in
   during execution, honestly graded. What lands here is what the work *revealed* — and there is no
   delta and no second store to sync either way.
@@ -108,7 +112,8 @@ is already set is **reported and skipped**, not repeated:
 `reviewed` is `writeOnce: false` on purpose: a diff that changed and was read again is a new fact.
 `outcome` is `writeOnce: true` — if it is already set and reality disagrees, that is a **finding to
 report**, never a value to overwrite. `merge` and `pr` are no longer this command's to write at
-all — reading either is only ever to answer the "already merged" row above.
+all — reading either is only ever to answer the "already merged" row above, and for `abandoned`
+that read happens from the base checkout (Doctrine), never wherever this run stands.
 
 ## Workflow
 
@@ -170,7 +175,7 @@ Decide what crosses with the table in
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check, stamping
 `authority` honestly. Present them as ONE plan and take one confirmation.
 
-These land **on the branch**, in their own commit, so the rule ships with the code that proved it.
+These land on the branch, in their own commit — or, for `abandoned`, the base checkout (Doctrine).
 A `## Discoveries` line that gets a doc is resolved in place. No OKF bundle → skip silently.
 **Done when:** the emergent docs are written and committed, or the offer was declined, or there is
 no bundle.
@@ -189,13 +194,13 @@ whole content.
 
 A refusal (exit 2) lists exactly what is missing or which boxes are open — surface it verbatim and
 let the human decide; **never pass `--force` on your own initiative.** Commit the move on the
-branch.
+branch — or, for `abandoned`, computed here but committed into the base checkout (Doctrine).
 **Done when:** the file is in `archive/` with its `outcome:` stamped and committed, or the run
 stopped at a refusal the human declined to override.
 
 ### 5. Distil, and settle the release obligations — all on the work branch
-This is the last writing step, and everything it writes lands on the **work branch**. Two things
-happen here, in this order.
+This is the last writing step, and everything it writes lands on the **work branch** — or, for
+`abandoned`, the base checkout (Doctrine above). Two things happen here, in this order.
 
 **First, the distillation pass** — the single bridge into `/.knowledge/`, per
 [distill.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/distill.md)
@@ -211,7 +216,7 @@ happen here, in this order.
 One plan, one OK. Every write goes through
 [knowledge-add/homes.md](${CLAUDE_PLUGIN_ROOT}/assets/references/knowledge-add/homes.md)
 §The frontmatter stamp §Updating `index.md` §Enriching the glossary §Self-check. No bundle → skip
-silently. Commit what it writes **on the work branch**.
+silently, landing per Doctrine: the work branch for `done`, the base checkout for `abandoned`.
 
 **Then settle the release obligations the repo's standards attach to the merge itself.** With an
 OKF bundle present, derive which standards the branch diff's own paths answer to — an aggregate in
@@ -290,8 +295,11 @@ gh repo view --json name 2>&1 || echo "NO-ROUTE"
 `/quenching:git:merge` directly for a local merge — the human picks, and neither is invoked from
 here. Name the branch and the base so the recommendation is copy-pasteable.
 
-For `abandoned`, there is nothing to hand off toward — offer to keep the branch (default) or
-delete it, and record the choice in the report.
+For `abandoned`, there is nothing to hand off toward — do not remove any worktree; frame and make
+the branch-delete offer per
+[specs-conclude/abandoned.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-conclude/abandoned.md)
+§The branch-delete offer, informed rather than defensive, default **keep**, and record the choice
+and fate in the report.
 **Done when:** the gate ran green on the branch and the handoff was named, or the run recorded why
 nothing could be handed off — a red gate, or (abandoned) the branch's own fate decided instead.
 
@@ -327,6 +335,9 @@ reported.
 - Never treat staleness as evidence of abandonment.
 - Never pass `--force` unprompted — a refusal is information, not an obstacle.
 - Never hand off an abandoned spec's branch toward a merge — offer to keep or delete it instead.
+- **Never `git branch -D`, at all**, when framing the abandoned branch-delete offer — git's own
+  refusal over a not-fully-merged branch is the safety, and forcing past it destroys the only copy
+  of work nobody adopted.
 - **Never hand off past a red `## Validation` gate**, and never count an inconclusive check as a
   green one. The gate runs on the branch precisely so that a failure still has somewhere to be
   fixed — recommending a merge command anyway spends that.

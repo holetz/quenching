@@ -93,13 +93,21 @@ result rather than a loss.
 
 <!-- rules -->
 
-Where a spec joins derives from the `complexity` field on its `priority` record, and from nothing
-else — no invocation flag, no menu:
+Where a spec joins derives from the `complexity` field on its `priority` record, measured against
+**the fan-out floor**, and from nothing else — no invocation flag, no menu:
 
-| `complexity` | Where the spec enters |
+| `complexity`, against the floor | Where the spec enters |
 | --- | --- |
-| `low` | at defining, and runs through to the end |
-| `medium` or above | requires `ready`/`approved`; it is built only |
+| below the floor | at defining, and runs through to the end |
+| at or above the floor | requires `ready`/`approved`; it is built only |
+
+**The floor is `fanoutMinComplexity`**, declared in `.claude/quenching.json` and read through
+`cq specs config --json`; a repository that declares nothing gets `medium` — the fixed cutoff this
+contract used before the floor existed. The four levels order `low < medium < high < xhigh`, the
+same order [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
+gears plan already scales by; an unrecognised declared floor reports the same way an unrecognised
+`backend` does (`unknownFanoutMinComplexity`, the effective floor staying at `medium`) rather than
+refusing.
 
 A spec whose `complexity` **rises mid-run** leaves the run and asks for a fresh authorization,
 under the same contract as
@@ -137,7 +145,7 @@ A run may absorb the work it revealed. The **only** source is specs promoted out
 | --- | --- | --- |
 | **no recursion** | what the run reveals waits in `plans/` for the next one | there is no return |
 | **one generation** | absorbs the specs promoted on this pass, then stops | a second generation is never offered |
-| **unbounded fixpoint** | repeats until a pass promotes nothing | the entry contract filters: `medium` or above requires `ready`/`approved`, so it **never enters a return on its own** |
+| **unbounded fixpoint** | repeats until a pass promotes nothing | the entry contract filters: at or above the fan-out floor requires `ready`/`approved`, so it **never enters a return on its own** |
 
 All three are **always presented** in the authorization plan, alongside the chosen form and the
 human's own stopping criterion. Which arrives pre-marked is not settled: until a real run absorbs a

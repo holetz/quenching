@@ -25,6 +25,10 @@ its own `index.md`, rather than a run of `symbol-naming-*.md` files. Each standa
 * [frontmatter-parser.md](frontmatter-parser.md) — the YAML subset `common/frontmatter.py` reads:
   the comment rule, the canonical case list its tests hold it to, and the anomaly sidecar — one
   parser now, reading the union of what the three retired scripts used to read separately.
+* [optional-payload-fields.md](optional-payload-fields.md) — a `cq specs` JSON field answering
+  "is there a usable value here" reads `null` for all three not-an-answer states (absent,
+  present-and-empty, an explicit `- none`), never a sentinel or the literal bullet — one shared
+  three-state detector, never replicated per consumer.
 * [root-override-validation.md](root-override-validation.md) — an explicit `--root`/config-path
   override that resolves to the container of a phased workspace, not the workspace itself, must
   refuse (`exit 2`, `sp-root-too-high`) instead of reading as merely empty — one shared predicate,
@@ -62,3 +66,5 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
   every pillar's own `common/frontmatter.py` import holds to, rather than a convention within one.
 - **Present:** `file-relative-path-resolution` — likewise off the list: it governs one construct
   across every module, not a convention inside one.
+- **Present:** `optional-payload-fields` — off the list for the same reason: it governs the shape
+  of one JSON field a payload projects, not a code convention that spans this package.

@@ -9,11 +9,17 @@
 #
 # Only a history exhibits that. So this builds a throwaway git repo, walks one spec through
 # create -> isolate -> execute -> conclude -> merge using the SAME `cq specs` calls the command
-# bodies specify, and then asserts three properties of the resulting history.
+# bodies specify, and then asserts three properties of the resulting history. A SECOND spec then
+# walks the same create -> isolate -> execute path into conclude(--outcome abandoned), where the
+# claim inverts: nothing is EVER committed to the branch, and everything conclude writes reaches
+# the base directly — proved even against `git branch -D`, which the command itself never runs but
+# a human might.
 #
 # WHAT THIS PROVES: that the tool supports the ordering, and that a history built to it has the
-# claimed shape — the merge is last, a task's box rides inside that task's own commit, and every
-# recorded subject resolves to exactly one commit.
+# claimed shape — the merge is last, a task's box rides inside that task's own commit, every
+# recorded subject resolves to exactly one commit, and — for `abandoned` — the archive move, the
+# `outcome:` stamp and the distillation's background note all land on the base with no merge
+# involved, and survive the branch being destroyed.
 #
 # WHAT THIS DOES NOT PROVE: that a live `/quenching:specs:execute` or `/quenching:specs:conclude` session follows the
 # ordering. Nothing automated can: both bodies gate on AskUserQuestion, which `claude -p` cannot
@@ -33,7 +39,9 @@
 # repo's own `/.knowledge/standards/quality/surface-verification.md` §The five preconditions a check must
 # satisfy is the rule; `citation-check.sh` already spells the same three rungs.
 #
-# Established by the `move-conclude-merge-last` spec, task 6.1.
+# Established by the `move-conclude-merge-last` spec, task 6.1. The `abandoned` arm — the fixture
+# from "conclude --outcome abandoned" onward, and its seven assertions — was added by the
+# `fix-conclude-abandoned-branch-harvest` spec, task 3.1.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -216,6 +224,139 @@ PY
 n=$(git log --grep="$SUBJ_MERGE" --fixed-strings --format=%H | wc -l)
 if [ "$n" -eq 1 ]; then r=yes; else r=no; fi
 check "$r" "the merge record's subject -> $n commit(s)"
+
+# --------------------------------------------------------------------------- #
+# Build a SECOND spec through create -> isolate -> execute -> conclude(--outcome abandoned)
+# --------------------------------------------------------------------------- #
+echo
+echo "conclude --outcome abandoned"
+SLUG2=order-check-abandoned
+SUBJ_TASK2="plan/$SLUG2: 1.1 Add the gadget"
+
+git checkout -q main
+if ! "$PY" "$CQ" specs new "$SLUG2" --title "Order check abandoned" >/dev/null </dev/null; then
+  unmeasurable "cq specs new refused — the abandoned fixture has no spec to walk through the cycle"
+fi
+FILE2=$(ls .specs/plans/"$SLUG2".md 2>/dev/null) \
+  || unmeasurable "no spec file at .specs/plans/$SLUG2.md after cq specs new"
+
+for h in Proposal "Out of Scope" Impact Validation Design "Alternatives Considered" \
+         "Open Decisions" Risks Handoff Tasks; do
+  "$PY" "$CQ" specs section "$SLUG2" "$h" --write >/dev/null </dev/null
+done
+"$PY" - "$FILE2" <<'PY'
+import io, re, sys
+p = sys.argv[1]
+s = io.open(p, encoding='utf-8').read()
+s = re.sub(r'(?m)^(## (?!Tasks)[A-Z][^\n]*)\n\n(?=(?:<!--|## |\Z))', r'\1\n\n- none — fixture\n\n', s)
+head = re.split(r'(?m)^## Tasks[ \t]*$', s)[0]
+io.open(p, 'w', encoding='utf-8', newline='').write(
+    head + "## Tasks\n\n### 1. The work\n\n- [ ] 1.1 Add the gadget\n      files: src2/gadget.txt\n")
+PY
+git add -A && git commit -qm "plan/$SLUG2: record the spec"
+
+if ! "$PY" "$CQ" specs next --spec "$SLUG2" --json 2>/dev/null | grep -q '"task": "1.1"'; then
+  unmeasurable "cq specs cannot see task 1.1 — the abandoned assertions below would be vacuous"
+fi
+
+# isolate — the branch, then the record
+git checkout -q -b "plan/$SLUG2"
+"$PY" - "$FILE2" <<'PY'
+import io, sys
+p = sys.argv[1]
+s = io.open(p, encoding='utf-8').read()
+s = s.replace("verification:", "branch: {base: main, work: plan/order-check-abandoned}\nverification:", 1)
+io.open(p, 'w', encoding='utf-8', newline='').write(s)
+PY
+git add -A && git commit -qm "plan/$SLUG2: record the isolation"
+
+# execute — the one task, one commit, on the branch
+mkdir -p src2 && echo "gadget" > src2/gadget.txt
+"$PY" "$CQ" specs task --spec "$SLUG2" --check 1.1 --subject "$SUBJ_TASK2" >/dev/null
+git add src2/gadget.txt "$FILE2" && git commit -qm "$SUBJ_TASK2"
+
+# conclude --outcome abandoned — THE FIX UNDER TEST. Everything below is computed HERE, on the
+# branch, where the spec's data lives — and none of it is committed here. It carries across to
+# the checkout that already holds <base> the same way any uncommitted change does when the
+# branch under it is switched: nothing this outcome writes from here on lands on plan/$SLUG2.
+echo "background: learned by not building it" > docs/distilled-abandoned.md
+"$PY" "$CQ" specs section "$SLUG2" Outcome --write >/dev/null <<'OUT'
+## Outcome
+
+Abandoned for the order check.
+OUT
+"$PY" "$CQ" specs promote "$SLUG2" --to archive --outcome abandoned >/dev/null
+[ -f ".specs/archive/$SLUG2.md" ] \
+  || unmeasurable "no archived spec at .specs/archive/$SLUG2.md after cq specs promote (abandoned)"
+
+MAIN_BEFORE2=$(git rev-parse main)
+git checkout -q main
+git add docs/distilled-abandoned.md
+git commit -qm "plan/$SLUG2: distil (background)"
+git add .specs/archive/"$SLUG2".md
+git rm -q .specs/plans/"$SLUG2".md
+git commit -qm "plan/$SLUG2: archive (abandoned)"
+
+# --------------------------------------------------------------------------- #
+# 4. the archive move reached the base
+# --------------------------------------------------------------------------- #
+echo "4. the archive move reached the base"
+if git cat-file -e "main:.specs/archive/$SLUG2.md" 2>/dev/null; then r=yes; else r=no; fi
+check "$r" "main:.specs/archive/$SLUG2.md resolves"
+
+# --------------------------------------------------------------------------- #
+# 5. the spec left plans/ on the base
+# --------------------------------------------------------------------------- #
+echo "5. the spec left plans/ on the base"
+if git cat-file -e "main:.specs/plans/$SLUG2.md" 2>/dev/null; then r=no; else r=yes; fi
+check "$r" "main:.specs/plans/$SLUG2.md does not resolve"
+
+# --------------------------------------------------------------------------- #
+# 6. outcome: abandoned is on the base's own copy, not only the branch's
+# --------------------------------------------------------------------------- #
+echo "6. outcome: abandoned is on the base's own copy"
+if git show "main:.specs/archive/$SLUG2.md" | grep -q '^outcome: abandoned'; then r=yes; else r=no; fi
+check "$r" "the base's archived copy carries outcome: abandoned"
+
+# --------------------------------------------------------------------------- #
+# 7. the distillation's background note resolves on the base
+# --------------------------------------------------------------------------- #
+echo "7. the distillation's background note resolves on the base"
+if git cat-file -e "main:docs/distilled-abandoned.md" 2>/dev/null; then r=yes; else r=no; fi
+check "$r" "main:docs/distilled-abandoned.md resolves"
+
+# --------------------------------------------------------------------------- #
+# 8. the base's own branch --merged does not list the branch — nothing was merged
+# --------------------------------------------------------------------------- #
+echo "8. the branch was never merged"
+if git branch --merged main | grep -q "plan/$SLUG2"; then r=no; else r=yes; fi
+check "$r" "git branch --merged does not list plan/$SLUG2"
+
+# --------------------------------------------------------------------------- #
+# 9. no commit this outcome made on the base is a merge in disguise — one parent each
+# --------------------------------------------------------------------------- #
+echo "9. nothing landed by way of a merge commit"
+ALLONE=yes
+for c in $(git rev-list "$MAIN_BEFORE2"..main); do
+  p=$(git rev-list --parents -n 1 "$c" | wc -w)
+  [ "$p" -eq 2 ] || { ALLONE=no; break; }
+done
+check "$ALLONE" "every commit made on the base while closing has exactly one parent"
+
+# --------------------------------------------------------------------------- #
+# 10. THE assertion that fails today — it survives deleting the branch, even with -D
+# --------------------------------------------------------------------------- #
+echo "10. it survives deleting the branch, even with -D"
+git branch -D "plan/$SLUG2" >/dev/null
+if git cat-file -e "main:.specs/archive/$SLUG2.md" 2>/dev/null \
+   && ! git cat-file -e "main:.specs/plans/$SLUG2.md" 2>/dev/null \
+   && git show "main:.specs/archive/$SLUG2.md" | grep -q '^outcome: abandoned' \
+   && git cat-file -e "main:docs/distilled-abandoned.md" 2>/dev/null; then
+  r=yes
+else
+  r=no
+fi
+check "$r" "assertions 4, 5, 6 and 7 above all still hold after git branch -D"
 
 echo
 echo "  $PASS passed, $FAIL failed"

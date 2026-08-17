@@ -535,16 +535,17 @@ One ordered column set. **A command omits any column, never reorders, and never 
 | `Stage` | `list[].stage` — one of the nine derived stages | never |
 | `Tasks` | `tasks.checked`/`tasks.total`, then `· N blocked` | `total` is 0 |
 | `Priority` | `records.priority.level` and `.criticality` | the record is unset |
+| `Complexity` | `records.priority.complexity` — how much a human must be in the loop | the spec was never ranked |
 | `Records` | which of the seven are set | none is |
 | `Age` | `next --front[].ageDays`, **or** days since `list[].date` | never |
 | `State` | `sp-spec-complete`, `sp-spec-blocked`, `sp-spec-stale`, the branch fact, else `—` | nothing to say |
 
 ```
-| Spec | Title | Stage | Tasks | Priority | Age | State |
-| --- | --- | --- | --- | --- | --- | --- |
-| → session-tokens | Budget tokens per session | executing | 5/9 | 1 · high | 3d | on this branch |
-| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | 9d | ready to build |
-| webhook-retries | Retry failed webhooks | proposed | — | — | 21d | — |
+| Spec | Title | Stage | Tasks | Priority | Complexity | Age | State |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| → session-tokens | Budget tokens per session | executing | 5/9 | 1 · high | medium | 3d | on this branch |
+| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | low | 9d | ready to build |
+| webhook-retries | Retry failed webhooks | proposed | — | — | — | 21d | — |
 ```
 
 Which command carries which:
@@ -552,9 +553,19 @@ Which command carries which:
 | Command | Columns |
 | --- | --- |
 | `/quenching:specs:status` | `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State` |
-| `/quenching:specs:triage`, the proposal | the above, `Priority` showing the **current** value, plus `Proposed level` `Criticality` `Complexity` `Reason` |
-| `/quenching:specs:triage`, the report | the same without the four proposal columns, `Priority` now showing the approved value |
+| `/quenching:specs:triage`, the proposal | the above, `Priority` and `Complexity` showing the **current** values, plus `Proposed level` `Proposed criticality` `Proposed complexity` `Reason` |
+| `/quenching:specs:triage`, the report | the same without the four proposal columns, `Priority` and `Complexity` now showing the approved values |
 | `/quenching:specs:align` | none — it reports findings, not front state |
+
+**`Complexity` is its own column because it answers its own question.** `level` and `criticality`
+rank a spec against the others; `complexity` says how much a human has to be in the loop while it is
+built — the criterion
+[specs-cycle/gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
+gears plan states. Folding it into the `Priority` cell would read as a third rank, and a reader
+scanning for which specs cannot be run unattended would have to parse three axes out of one field.
+The two empty together, never one without the other: `/quenching:specs:triage` floors a guess at
+`medium` rather than omitting it, so a `—` here means the spec was never ranked at all — never that
+it is easy.
 
 **`Age` names the call it came from.** `list --json` has no `ageDays` and `next --front` does; both
 are days since the spec's `date`, and `date` is in `list`, so either derives it — but say which,
