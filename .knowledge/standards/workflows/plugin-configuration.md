@@ -2,7 +2,7 @@
 type: standard
 title: Plugin configuration contract
 description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the recognised keys and their defaults, the two keys that deliberately have none and refuse instead, the two keys with two consumers each — the release verb and the base-inference chain — the three keys whose prose is prompt material an agent reads to decide, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
-resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/references/specs-align/conformance.md
+resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/git/isolation.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, backend, plugin]
 timestamp: 2026-08-11
 audience: both

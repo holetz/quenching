@@ -26,8 +26,10 @@ An align asks for ONE human confirmation, at run start, that authorizes the enti
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
 it: the `knowledge/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
-`specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), and the three front aligns when `/align`
-invokes them.
+`specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), the three front aligns when `/align`
+invokes them, and — under `/quenching:specs:cycle`'s minimal gear only —
+`/quenching:git:pr:create`, the one stage this contract's grantor is a conductor rather than an
+align.
 
 **What the authorization covers** — every routine write a stage performs: frontmatter stamps,
 new concept docs, index/log/glossary entries, align's routine doc/folder renames, variant
@@ -94,13 +96,15 @@ trade is said out loud: if the PR is merged unread, no gate was left anywhere on
 is what the gear re-evaluation exists to bound, as a run that outgrows the minimal gear climbs
 back into a run with gates before it reaches the PR.
 
-The route already exists — nothing new is built for it. `conclude` offers pull request or local
-alongside the strategy, and the `pr` record names the pull request the moment it is opened — the
-fact the base branch's history cannot reproduce: which PR carries this spec, and where the review
-and the checks still live once the branch is gone. Under this gear that record is the only one the
-run writes: it stops at the open PR, so `merge` — whose own `pr` field names the same PR once a
-merge is decided — is never stamped at all (§Three frontmatter records carry the underivable git
-facts).
+The route already exists — nothing new is built for it. `conclude` reviews, distils, archives and
+proves the pre-merge gate green, then stops, naming `/quenching:git:pr:create` as the human's own
+next command; under this gear alone, `/quenching:specs:cycle` invokes that command itself, under
+the same authorization, rather than leaving the name for a human to act on. `git:pr:create` stamps
+the write-many `pr` record the moment the PR is opened — the fact the base branch's history cannot
+reproduce: which PR carries this spec, and where the review and the checks still live once the
+branch is gone. Under this gear that record is the only one the run writes: it stops at the open
+PR, so `merge` — whose own `pr` field names the same PR once a merge is decided — is never stamped
+at all (§Three frontmatter records carry the underivable git facts).
 
 No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
 classes gating individually, item by item, in the session, exactly as when the stage runs

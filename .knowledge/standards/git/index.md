@@ -29,7 +29,7 @@ Per-subject ledger the verify gate reads. A subject is "done" only when every ca
 - `branching` — **present**: [branching.md](branching.md).
 - `commit-conventions` — **deferred, not applicable.** Sem um `/.knowledge/standards/git/**` de
   mensagens de commit, `/quenching:specs:execute` já aplica o default do plugin
-  ([specs-execute/git.md](/plugins/quenching/assets/references/specs-execute/git.md) §Commit
+  ([commit.md](/plugins/quenching/assets/references/git/commit.md) §Commit
   messages); escrever um aqui converteria esse default num contrato deste repositório sem que
   ninguém tenha pedido isso.
 - `tagging` — **deferred, coberto por `versioning-release.md`.** A tag é criada pelo mesmo verbo

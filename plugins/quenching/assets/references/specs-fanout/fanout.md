@@ -80,7 +80,7 @@ changes is the number the human types next run, not a rule in a command body.
 
 Every spec the queue builds appends its slug to the branch's own `quenching-slugs:` line, by the
 read-merge-write in
-[git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Marking the branch with the
+[isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md) §Marking the branch with the
 specs it built — one line, rewritten and never duplicated. `/quenching:specs:conclude` with no
 `--spec` reads that line to resolve the whole set, which is the queue's only handoff to it.
 
