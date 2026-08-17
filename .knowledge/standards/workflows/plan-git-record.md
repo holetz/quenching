@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Plan git record contract
-description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records — `pr:` stamped by `/quenching:git:pr:create` and `merge:` by `/quenching:git:merge`, each on its own confirmation, read-on-demand rather than a mandatory stamp once `cq git base` reports the resolved base is the host's own default branch, the write-many `pr` record and the minimal-gear run that stops at the open PR without ever stamping `merge`, where a record lands when there is no merge to carry it — the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain a declared integration branch now wins ahead of origin/HEAD, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, why a branch is deleted with `-d` and never `-D`, and the read-if-present contract for a target's own /.knowledge/standards/git/
+description: How a plan's work is recorded in git — the commit sha as the task→commit anchor where the spec no longer shares a branch with the code, the commit subject as the anchor a co-branching spec still needs, one commit per task while its section is open squashed to one commit per section at that section's boundary and what that does to the anchor's granularity, the branch, pr and merge frontmatter records — `pr:` stamped by `/quenching:git:pr:create` and `merge:` by `/quenching:git:merge`, each on its own confirmation, read-on-demand rather than a mandatory stamp once `cq git base` reports the resolved base is the host's own default branch, the write-many `pr` record and the minimal-gear run that stops at the open PR without ever stamping `merge`, where a record lands when there is no merge to carry it — the in-place pair `work == base` and the single case where the record rather than git liveness is the signal because that ref can never die, the git-native `quenching-slugs:` branch mark that lets `conclude` self-discover its spec with no frontmatter involved, the base-inference chain `origin/HEAD → init.defaultBranch → main`, why every record is written before the thing it describes, the squash-merge caveat, the merge that runs via git -C in the base's own checkout and the worktree removed after it, why a branch is deleted with `-d` and never `-D`, and the read-if-present contract for a target's own /.knowledge/standards/git/
 resource: plugins/quenching/assets/references/git/**, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-conclude/auto-discover.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/git/**, plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/commands/git/merge.md, plugins/quenching/commands/git/pr/create.md
 tags: [workflows, specs, git, commits, records]
 timestamp: 2026-08-16
@@ -161,18 +161,13 @@ same admission test — a fact no derivation can reproduce:
   nothing stamped leaves `conclude` unable to diff the right range and leaves `git:merge` unable to
   say what it merges into. `base` is then **inferred**
   rather than observed, stopping at the first that answers: the spec's own `branch.base` record,
-  when one already exists; the repo's own **declared** `integrationBranch`
-  ([plugin-configuration.md](plugin-configuration.md), read via `cq specs config --json`);
-  `git symbolic-ref refs/remotes/origin/HEAD`; `git config init.defaultBranch`; then `main`.
+  when one already exists; `git symbolic-ref refs/remotes/origin/HEAD`;
+  `git config init.defaultBranch`; then `main`.
 
-  **A declared integration branch must be consulted before `origin/HEAD`, never after.** Under the
-  develop/main flow ([branching.md](../git/branching.md)) `origin/HEAD` resolves to `main` — the
-  publication branch — so an unstamped spec would infer `main` and merge into it by default the
-  moment `origin/HEAD` answered first. `infer_base_branch` in `cq specs`, proved by
+  `infer_base_branch` in `cq specs`, proved by
   `tests/test_specs_parse.py`'s `InferBaseBranch` fixture, decides only the order; the git facts
   `origin/HEAD` and `init.defaultBranch` resolve are
-  still read by the orchestrator, exactly as before. Left undeclared, the chain is unchanged —
-  most repositories have no `develop` branch at all.
+  still read by the orchestrator, exactly as before.
 
   The inference is shown on the same line as the confirmation,
   before stamping, because the record is write-once and that is the only moment disagreeing with

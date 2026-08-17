@@ -13,10 +13,113 @@ from quenching.specs.backends import open_backend
 from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.commands.task import _find_task
 from quenching.specs.parse import derive_info
-from quenching.specs.parse.edit import (_match_heading, split_section_stream, upsert_section,
-                                        write_handoff_block)
+from quenching.specs.parse.edit import (_match_heading, fold_stray_heading,
+                                        resolve_heading_name, split_section_stream,
+                                        upsert_section, write_handoff_block)
+from quenching.specs.parse.handoff import current_handoff_section, parse_handoff
 from quenching.specs.parse.sections import section_state, stray_headings
+from quenching.specs.parse.text import body_after_frontmatter
 from quenching.specs.schema import canonical_headings, headings_for_moment, section_guidance
+
+
+# One message for both sides of `--scope`, because one flag has two contracts: a READ narrows the
+# `## Handoff` slice and merely needs the heading among the ones asked for, while a WRITE replaces
+# ONE block and is singular by what it means.
+SCOPE_REFUSAL = ("--scope only applies to ## Handoff — a read must ask for it among its headings; "
+                 "a write replaces ONE block and takes it alone")
+
+
+def _refuse_scope(args, out: Emitter, headings: list[str]) -> int:
+    out.emit(args.json,
+             {"ok": False, "code": "sp-scope-not-handoff", "heading": headings[0],
+              "declared": headings, "message": SCOPE_REFUSAL},
+             f"error: {SCOPE_REFUSAL}")
+    return 2
+
+
+def _scoped_handoff(info: dict, scope: str) -> str:
+    """`## Handoff` cut to the block(s) a reader at THIS point in the plan still needs — the
+    evergreen one under `global`, plus the `### N.` of the next actionable task's section under
+    `current`.
+
+    The cut is `write_handoff_block`'s own, read backwards: the same `parse_handoff` split, the
+    same `current_handoff_section` match by leading numeral, and the same `\\n\\n` assembly — so a
+    block written by one comes back byte-identical from the other. No section already closed is
+    ever handed to a reader, which is what turns `artifacts.md` §`## Handoff`'s rule from agent
+    discipline into a tool guarantee.
+
+    No current section (a spec with no `## Tasks` yet) degrades to the global block alone — the
+    same "nothing to scope to" the write side already treats as a no-op."""
+    parsed = parse_handoff(body_after_frontmatter(info["text"]))
+    parts = [parsed["global"]]
+    if scope == "current":
+        n = current_handoff_section(info["tasks"])
+        block = next((b for b in parsed["blocks"] if b["section"] == n), None)
+        if block:
+            parts.append(f"### {block['title']}\n\n{block['body'].strip(chr(10))}")
+    return "\n\n".join(p.strip("\n") for p in parts if p.strip())
+
+
+def _fold_stray(args, backend, info: dict, root: str, out: Emitter) -> int:
+    """`--fold` — the ONE path on this surface that admits a heading outside the fourteen.
+
+    `validate` emits `sp-stray-heading` with a remedy ("fold it into a canonical one") that
+    nothing could apply: `cmd_section` resolves every requested heading against the canonical
+    list and exits 2 on the first that misses, *before* looking at `--write`, so a stray could
+    not even be NAMED. This is that exit, opened exactly once and exactly here.
+
+    **The admission is local, and the negative pair is the proof.** The stray is resolved
+    against the strays the DOCUMENT actually carries — never against the canonical list — so
+    nothing here widens what any other path accepts, and the `sp-stray-heading` the stream
+    write raises stays untouched.
+
+    Three refusals, each with its own code, because they are fixed by different things: a
+    canonical heading handed to `--fold` is not a stray; a name matching no stray in this
+    document is a typo the candidate list answers; and a stray with no canonical section above
+    it has no honest host — inventing one is worse than the refusal, so it writes nothing."""
+    beside = [flag for flag, val in (("--moment", args.moment), ("--write", args.write),
+                                     ("--scope", getattr(args, "scope", None)),
+                                     ("a heading", args.heading)) if val]
+    if beside:
+        msg = f"--fold takes the stray heading alone; drop {', '.join(beside)}"
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-fold-exclusive", "beside": beside, "message": msg},
+                 f"error: {msg}")
+        return 2
+
+    strays = stray_headings(info["sections"])
+    hit = resolve_heading_name(args.fold, strays)
+    if hit is None:
+        canonical = _match_heading(args.fold)
+        if canonical:
+            msg = (f"`## {canonical}` is one of the fourteen canonical headings — --fold "
+                   "closes a stray, and a canonical section is never one")
+            code = "sp-fold-not-stray"
+        else:
+            msg = (f"no stray heading matching '{args.fold}' in this spec — "
+                   f"strays: {', '.join(strays) or 'none'}")
+            code = "sp-fold-unknown-stray"
+        out.emit(args.json,
+                 {"ok": False, "code": code, "heading": args.fold, "strays": strays,
+                  "message": msg},
+                 f"error: {msg}")
+        return 2
+
+    new_text, host = fold_stray_heading(info, hit)
+    if host is None:
+        msg = (f"`## {hit}` has no canonical section before it — there is nothing to fold it "
+               "into, and picking a host would invent an owner for the text")
+        out.emit(args.json,
+                 {"ok": False, "code": "sp-fold-no-anchor", "heading": hit, "message": msg},
+                 f"error: {msg}")
+        return 2
+
+    backend.write_spec(info, new_text)
+    out.emit(args.json,
+             {"ok": True, "slug": info["slug"], "heading": hit, "action": "folded",
+              "host": host, "path": display_locator(info["path"], root)},
+             f"folded ## {hit} into ## {host} in {info['phase']}/{info['file']}")
+    return 0
 
 
 def cmd_section(args, root: str, out: Emitter) -> int:
@@ -48,6 +151,8 @@ def cmd_section(args, root: str, out: Emitter) -> int:
     info, err = read_one(backend, args.spec, out)
     if err:
         return out.emit_err(args.json, err)
+    if getattr(args, "fold", None):
+        return _fold_stray(args, backend, info, root, out)
     if args.moment:
         wanted = headings_for_moment(args.moment)
         if not wanted:
@@ -75,14 +180,21 @@ def cmd_section(args, root: str, out: Emitter) -> int:
                   "message": f"not one of the fourteen canonical headings: {', '.join(stray)}"},
                  f"error: not a canonical heading: {', '.join(stray)}")
         return 2
+    scope = getattr(args, "scope", None)
     if not args.write:
+        # A read COMPOSES `--scope` with a plural request — `--moment build` above all — so the
+        # neighbouring headings come back whole and one call still answers a whole moment. Only
+        # asking for `## Handoff` and then not scoping it is unreadable, which is the refusal.
+        if scope and "Handoff" not in headings:
+            return _refuse_scope(args, out, headings)
         rows = [{"heading": h, "state": section_state(info["sections"], h),
-                 "body": info["sections"].get(h, {}).get("body", "")} for h in headings]
+                 "body": _scoped_handoff(info, scope) if scope and h == "Handoff"
+                 else info["sections"].get(h, {}).get("body", "")} for h in headings]
         absent = [r["heading"] for r in rows if r["state"] == "absent"]
         if args.json:
             one = rows[0] if len(rows) == 1 else {}
             print(json.dumps({"ok": not absent, "slug": info["slug"],
-                              **one, "sections": rows, "absent": absent},
+                              **one, "sections": rows, "absent": absent, "scope": scope},
                              indent=2, ensure_ascii=False))
         else:
             for r in rows:
@@ -93,17 +205,10 @@ def cmd_section(args, root: str, out: Emitter) -> int:
                 else:
                     print(f"## {r['heading']}\n\n{r['body'].strip()}\n")
         return 0 if not absent else 1
-    scope = getattr(args, "scope", None)
     if scope and headings != ["Handoff"]:
-        # `--scope` replaces ONE block of one section, so it is singular by what it means and
-        # not merely by how stdin arrives — a plural request under it has no reading at all.
-        out.emit(args.json,
-                 {"ok": False, "code": "sp-scope-not-handoff", "heading": headings[0],
-                  "declared": headings,
-                  "message": "--scope only applies to ## Handoff, one heading at a time — "
-                             "every other section is written whole"},
-                 "error: --scope only applies to ## Handoff, one heading at a time")
-        return 2
+        # A write under `--scope` replaces ONE block of one section, so it is singular by what it
+        # means and not merely by how stdin arrives — a plural request under it has no reading.
+        return _refuse_scope(args, out, headings)
 
     content = sys.stdin.read() if not sys.stdin.isatty() else ""
     if scope:

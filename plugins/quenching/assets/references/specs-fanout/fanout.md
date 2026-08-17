@@ -61,7 +61,7 @@ The queue **invokes and never reimplements**. `/quenching:specs:execute` stops a
 the branch review, the merge and the archive belong to `conclude` — which is exactly where a queue
 needs it to stop.
 
-One branch, one pull request, against the declared `integrationBranch`. **Nothing is chained**: no
+One branch, one pull request, against the primary branch. **Nothing is chained**: no
 stacked branches, no stacked PRs, no merge queue with rebase-on-green. Chaining trades a merge
 conflict for a rebase conflict and couples the specs' fates in sequence.
 

@@ -314,7 +314,7 @@ def report(kind, rows, checked, fmt):
     # the terminal. A truncated tail says how much it dropped: a silent cap would read as coverage.
     seen, shown = set(), 0
     for row in rows:
-        key = row[1:]
+        key = row
         if key in seen:
             continue
         seen.add(key)

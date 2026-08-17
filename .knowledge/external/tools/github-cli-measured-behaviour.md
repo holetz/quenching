@@ -1,13 +1,13 @@
 ---
 type: external
 title: GitHub CLI measured behaviour
-description: Measured facts about `gh` and the GitHub REST API's issue endpoints — the REST create's silent handling of an invalid Issue Type versus the porcelain commands' loud refusal for the same name, where Issue Types are actually defined, and why `closingIssuesReferences` stays empty for a PR that targets an integration branch
+description: Measured facts about `gh` and the GitHub REST API's issue endpoints — the REST create's silent handling of an invalid Issue Type versus the porcelain commands' loud refusal for the same name, where Issue Types are actually defined, why `closingIssuesReferences` stays empty for a PR that targets an integration branch, and the three shapes a `--paginate --slurp` listing can take (`[[]]` for a genuinely empty one, `[]` for zero pages, and no output at all) plus the free `issues.totalCount` that corroborates them
 resource: plugins/quenching/assets/bin/quenching/specs/**
-tags: [github, gh-cli, rest-api, issue-types, closing-keywords, tooling]
-timestamp: 2026-08-16
+tags: [github, gh-cli, rest-api, issue-types, closing-keywords, pagination, tooling]
+timestamp: 2026-08-17
 audience: both
 authority: background
-source: suportar-tipo-workitem-azure-por-tags spec (tasks 3.3, 3.4) — measured against holetz/claude-quenching#898, a personal-account repository, with `gh` as installed on 2026-08-07; pilar-git-e-specs-agnosticas-ao-git spec (task 1.1) — measured against holetz/claude-quenching PRs #925 and #926 and issue #816, on 2026-08-16
+source: 'suportar-tipo-workitem-azure-por-tags spec (tasks 3.3, 3.4) — measured against holetz/claude-quenching#898, a personal-account repository, with `gh` as installed on 2026-08-07; pilar-git-e-specs-agnosticas-ao-git spec (task 1.1) — measured against holetz/claude-quenching PRs #925 and #926 and issue #816, on 2026-08-16; falha-de-leitura-do-backend-vira-front-vazio spec (task 4.2) — measured against holetz/claude-quenching and holetz/nixos with `gh 2.97.0 (2026-07-31)`, on 2026-08-17'
 maintainer: quenching
 ---
 
@@ -70,3 +70,39 @@ an integration branch rather than the default branch** — which is exactly the 
 `main` publishes) and this repository's own history already follows. The keyword still documents
 intent in the PR body and still cross-references the issue; it does not, by itself, give a caller
 anything to read back on that class of repository.
+
+## `--paginate --slurp` distinguishes "no pages" from "one empty page", and `gh` can exit 0 printing nothing
+
+**A listing that legitimately holds nothing comes back as `[[]]` — one page, empty — and never as
+`[]`.** `--slurp` wraps each page in an outer array, so the outer array's length is the number of
+HTTP responses that arrived, not the number of items found. Zero pages therefore means zero
+responses: not an empty front, but a response that did not happen.
+
+Measured on `gh 2.97.0 (2026-07-31)`, against `holetz/claude-quenching`:
+
+| Command | Output |
+| --- | --- |
+| `gh api --paginate --slurp "repos/holetz/claude-quenching/issues?state=all&per_page=100&labels=zzz-nao-existe"` | `[[]]` — one page, empty |
+| `gh api --paginate --slurp "repos/holetz/claude-quenching/issues?state=all&per_page=100"` | two pages, 100 and 95 items |
+
+Re-confirmed on a second repository the same day: `holetz/nixos`, which has no issues at all,
+answers `[[]]` for the unfiltered listing too.
+
+**The third shape is the one no output can carry: `gh` exiting 0 having printed nothing at all.**
+Any caller that parses with the `json.loads(out or "null")` idiom turns that into a valid `null`,
+and a `null` iterated as a listing yields zero items — a failed read laundered into the statement
+that there is nothing there. The exit code says success, so nothing downstream has any reason to
+doubt it.
+
+Together the three shapes are what make the emptiness *decidable* on this transport: `None` and
+`[]` prove a fault, `[[]]` does not. The rule built on them is
+[standards/quality/empty-response-honesty.md](/.knowledge/standards/quality/empty-response-honesty.md);
+the measurement is here because it is a fact about `gh`, and it holds only for the version it was
+taken against.
+
+**`gh repo view --json issues` answers `issues.totalCount` on the call that already resolves the
+repository name**, and it counts issues only — GitHub's `issues` connection excludes pull requests.
+Measured the same day: `gh repo view --json nameWithOwner,issues` on `holetz/claude-quenching`
+returns `{"issues":{"totalCount":38},"nameWithOwner":"holetz/claude-quenching"}`, and 38 is exactly
+what `gh issue list --state open` reports. A caller that already makes that call can corroborate an
+empty listing at no extra round trip.

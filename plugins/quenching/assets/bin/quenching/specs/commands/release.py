@@ -5,15 +5,15 @@ import os
 
 from quenching.common.git import _git, _git_run
 from quenching.specs.commands.output import Emitter
-from quenching.specs.config import DEFAULT_INTEGRATION_BRANCH, load_config
+from quenching.specs.config import infer_base_branch, load_config
 from quenching.specs.release import RELEASE_ARTIFACTS, SEMVER_RE, bump_release_artifacts
 
 
 def cmd_release(args, root: str, out: Emitter) -> int:
     """Move the plugin's seven version-carrying artifacts to ONE new version, commit them,
     and tag that commit — the MECHANICAL half of a release. Judging what the number should
-    be, whether a lone merge on `develop` is a release or a habit, and the `develop -> main`
-    merge itself all belong to the command that calls this; see
+    be, whether a lone PR on the primary branch is a release or a habit, and the
+    publication itself all belong to the command that calls this; see
     /.knowledge/standards/git/branching.md.
 
     Refuses (exit 2) rather than guessing: a version not shaped X.Y.Z, a repository that is
@@ -38,20 +38,25 @@ def cmd_release(args, root: str, out: Emitter) -> int:
                                         "message": "this is not the plugin's own repository — "
                                                    "missing: " + ", ".join(missing)})
 
-    # The bump must land on the INTEGRATION branch: the deliberate `develop -> main` merge
-    # is the moment that carries the version (versioning-release.md), so committing the
-    # bump from any other checkout would publish a number `main` never received. The repo
-    # above came from `os.getcwd()`; this guards which branch that checkout is on.
-    integration = load_config(root)["integrationBranch"] or DEFAULT_INTEGRATION_BRANCH
+    # The bump must land on the PRIMARY branch: the release is a deliberate local act that
+    # publishes from the branch the repository publishes to, so committing the bump from
+    # any other checkout would tag a number the primary branch never received. The repo
+    # above came from `os.getcwd()`; this guards which branch that checkout is on. The
+    # primary branch resolves the same chain `infer_base_branch` declares: `origin/HEAD`,
+    # else `init.defaultBranch`, else `main`.
+    cfg = load_config(root)
+    origin_ref = _git(repo, "symbolic-ref", "refs/remotes/origin/HEAD").strip()
+    origin_head = origin_ref.rsplit("/", 1)[-1] if origin_ref else None
+    init_default = _git(repo, "config", "init.defaultBranch").strip() or None
+    primary = infer_base_branch(cfg, origin_head, init_default)
     current = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
-    if current != integration:
+    if current != primary:
         return out.emit_err(args.json, {"code": "sp-release-wrong-branch", "exit": 2,
-                                        "branch": current, "integrationBranch": integration,
+                                        "branch": current, "primaryBranch": primary,
                                         "message": f"this checkout is on '{current}', not the "
-                                               f"integration branch '{integration}' — the "
-                                               f"bump must be committed on the integration "
-                                               f"branch so the develop -> main merge "
-                                               f"carries it"})
+                                               f"primary branch '{primary}' — the "
+                                               f"bump must be committed on the primary "
+                                               f"branch so the release tag carries it"})
 
     result = bump_release_artifacts(repo, new_version)
     if not result["ok"]:
@@ -78,7 +83,7 @@ def cmd_release(args, root: str, out: Emitter) -> int:
 
     out.emit(args.json,
              {"ok": True, "oldVersion": result["oldVersion"], "newVersion": new_version,
-              "branch": integration, "commit": commit_hash,
+              "branch": primary, "commit": commit_hash,
               "artifacts": result["artifacts"], "tag": new_version, "subject": subject},
              f"release: {result['oldVersion']} -> {new_version}, tagged {new_version}")
     return 0

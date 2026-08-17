@@ -88,6 +88,59 @@ date: 2026-08-15
 O problema.
 """
 
+# The six `build` sections plus a `## Handoff` already split into its evergreen block and one block
+# per `### N.`, over a `## Tasks` whose section 1 is closed and whose section 2 is open — so
+# `current_handoff_section` answers 2 and the block a reader must NEVER be handed is section 1's.
+HANDOFF_SPEC = """---
+slug: alpha
+title: Alpha
+date: 2026-08-15
+---
+
+# Alpha
+
+## Proposal
+
+A proposta.
+
+## Out of Scope
+
+Fora.
+
+## Impact
+
+O impacto.
+
+## Design
+
+O desenho.
+
+## Handoff
+
+O bloco evergreen.
+
+### 1. Primeira seção
+
+Fechada — nenhum leitor deve receber isto.
+
+### 2. Segunda seção
+
+O que a seção corrente precisa.
+
+## Tasks
+
+### 1. Primeira seção
+
+- [x] 1.1 Feita
+
+### 2. Segunda seção
+
+- [ ] 2.1 Aberta
+"""
+
+GLOBAL_BLOCK = "O bloco evergreen."
+CURRENT_BLOCK = "### 2. Segunda seção\n\nO que a seção corrente precisa."
+
 
 class _Args:
     """`cmd_section`'s argparse namespace, with the defaults the parser gives it."""
@@ -102,8 +155,11 @@ class _Args:
         self.__dict__.update(kw)
 
 
-class TheWritePath(unittest.TestCase):
-    """The command over a files-backend workspace — the whole ladder, refusals included."""
+class _Workspace(unittest.TestCase):
+    """A files-backend workspace holding ONE spec — the fixture the read and the write cases
+    share, so `cmd_section` is exercised the same way from either side."""
+
+    spec_text = SPEC
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -111,8 +167,11 @@ class TheWritePath(unittest.TestCase):
         self.root = os.path.join(self.tmp.name, ".specs")
         self.file = os.path.join(self.root, "plans", "alpha.md")
         os.makedirs(os.path.dirname(self.file))
+        self.write_spec(self.spec_text)
+
+    def write_spec(self, text):
         with open(self.file, "w", encoding="utf-8") as f:
-            f.write(SPEC)
+            f.write(text)
 
     def run_section(self, stdin=None, **kw):
         """`cmd_section` as the CLI calls it, returning (exit code, parsed payload).
@@ -127,6 +186,10 @@ class TheWritePath(unittest.TestCase):
 
     def state(self, heading):
         return self.run_section(heading=heading)[1]["sections"][0]["state"]
+
+
+class TheWritePath(_Workspace):
+    """The command over a files-backend workspace — the whole ladder, refusals included."""
 
     def test_two_sections_land_in_one_call_and_read_back(self):
         code, obj = self.run_section(heading="Proposal,Risks", write=True,
@@ -195,6 +258,69 @@ class TheWritePath(unittest.TestCase):
                                      stdin="## Proposal\n\nA\n\n## Risks\n")
         self.assertEqual(code, 0, obj)
         self.assertEqual(self.state("Risks"), "empty")
+
+
+class TheScopedRead(_Workspace):
+    """`--scope` on the READ path — the cut `/quenching:specs:execute` step 4 depends on.
+
+    The write side is singular by what it means and takes `## Handoff` alone; the read side
+    composes with everything else asked for, because step 4 is ONE call over the whole `build`
+    moment and splitting it in two would pay a turn to save tokens."""
+
+    spec_text = HANDOFF_SPEC
+
+    def handoff(self, **kw):
+        return self.run_section(heading="Handoff", **kw)[1]["body"]
+
+    def test_current_carries_the_global_block_and_only_the_open_section_s(self):
+        self.assertEqual(self.handoff(scope="current"),
+                         f"{GLOBAL_BLOCK}\n\n{CURRENT_BLOCK}")
+
+    def test_global_carries_the_evergreen_block_alone(self):
+        self.assertEqual(self.handoff(scope="global"), GLOBAL_BLOCK)
+
+    def test_no_scope_still_returns_the_whole_raw_body(self):
+        """The regression that matters: an audit read, and every caller written before this,
+        must still see the closed section's block."""
+        body = self.handoff()
+        self.assertIn("### 1. Primeira seção", body)
+        self.assertIn("Fechada", body)
+
+    def test_a_plural_read_scopes_handoff_and_returns_its_neighbours_whole(self):
+        code, obj = self.run_section(heading="Design,Handoff", scope="current")
+        self.assertEqual(code, 0, obj)
+        self.assertEqual([s["heading"] for s in obj["sections"]], ["Design", "Handoff"])
+        self.assertEqual(obj["sections"][0]["body"].strip(), "O desenho.")
+        self.assertEqual(obj["sections"][1]["body"], f"{GLOBAL_BLOCK}\n\n{CURRENT_BLOCK}")
+
+    def test_the_build_moment_is_still_one_call_and_arrives_already_cut(self):
+        """What the whole spec is for: step 4 reads the six `build` sections in ONE call and
+        the closed section's Handoff block never enters the executor's context."""
+        code, obj = self.run_section(moment="build", scope="current")
+        self.assertEqual(code, 0, obj)
+        bodies = {s["heading"]: s["body"] for s in obj["sections"]}
+        self.assertEqual(bodies["Handoff"], f"{GLOBAL_BLOCK}\n\n{CURRENT_BLOCK}")
+        self.assertNotIn("### 1. Primeira seção", bodies["Handoff"])
+        self.assertIn("A proposta.", bodies["Proposal"])
+        self.assertIn("- [x] 1.1 Feita", bodies["Tasks"])
+
+    def test_the_payload_says_the_body_came_cut(self):
+        """Mirroring the write's own `scope` key, so a caller knows without comparing sizes."""
+        self.assertEqual(self.run_section(heading="Handoff", scope="current")[1]["scope"],
+                         "current")
+        self.assertIsNone(self.run_section(heading="Handoff")[1]["scope"])
+
+    def test_a_read_without_handoff_among_its_headings_refuses(self):
+        code, obj = self.run_section(heading="Design,Proposal", scope="current")
+        self.assertEqual(code, 2)
+        self.assertEqual(obj["code"], "sp-scope-not-handoff")
+        self.assertEqual(obj["declared"], ["Design", "Proposal"])
+
+    def test_no_current_section_degrades_to_the_global_block(self):
+        """A spec with no `## Tasks` has nothing to scope to — the same no-op the write side
+        already treats as "nothing to target", read as the evergreen block alone."""
+        self.write_spec(HANDOFF_SPEC[:HANDOFF_SPEC.index("## Tasks")])
+        self.assertEqual(self.handoff(scope="current"), GLOBAL_BLOCK)
 
 
 if __name__ == "__main__":

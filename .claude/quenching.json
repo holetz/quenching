@@ -1,7 +1,5 @@
 {
   "backend": "github",
-  "integrationBranch": "develop",
-  "releaseBranch": "main",
   "hooks": {
     "after_specs_execute_task": [
       { "command": "/my:security-review", "optional": true }

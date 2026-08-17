@@ -82,9 +82,7 @@ def normalize(text: str, ws: str | pathlib.Path | None = None) -> str:
 # fixture workspace
 # --------------------------------------------------------------------------- #
 QUENCHING_JSON = """{
-  "backend": "files",
-  "integrationBranch": "develop",
-  "releaseBranch": "main"
+  "backend": "files"
 }
 """
 
@@ -522,7 +520,40 @@ def capture_okf(cap: Capture) -> None:
 
     bad_body = "# Golden Fixture Bad\n\nA concept doc carrying no frontmatter at all.\n"
     (bundle / "concepts" / "golden-fixture-bad.md").write_text(bad_body, encoding="utf-8")
+    _stale_the_generated_zone(bundle)
     cap.run("okf-validate-findings", "okf", [str(bundle), "--json"], cwd=proj, ws=proj)
+
+
+def _stale_the_generated_zone(bundle: pathlib.Path) -> None:
+    """Make `standards/index.md`'s GENERATED zone disagree with disk, in both modes at once.
+
+    The skeleton is conformant by construction, so `okf-validate-findings` would never reach
+    `generated-listing-missing`/`-drift` without this — the golden would freeze a contract the
+    capture never exercised (`validar-a-zona-generated-contra-o-disco`, `## Risks`). Each edit
+    reproduces one measured mode, and neither touches the zone itself, because the zone going
+    unregenerated IS the failure:
+
+    - a doc lands on disk and is cited by its subject index — so `index-orphan` never sees it,
+      exactly as `architecture/bundle-root.md` was never seen;
+    - a doc's own `description:` is edited, leaving the row that quotes it behind.
+
+    Runs AFTER the `okf-validate-skeleton` captures, which freeze the clean bundle.
+    """
+    subject = bundle / "standards" / "agents"
+    (subject / "conduct.md").write_text(
+        "---\ntype: standard\ntitle: Conduct\n"
+        "description: A doc that landed after the zone was last rebuilt\n"
+        "resource: .knowledge/glossary.md\ntimestamp: 2026-08-13\n---\n\n# Conduct\n",
+        encoding="utf-8")
+    index = subject / "index.md"
+    index.write_text(index.read_text(encoding="utf-8")
+                     + "- [conduct.md](conduct.md) — cited here, never listed in the zone (present)\n",
+                     encoding="utf-8")
+    doc = subject / "communication.md"
+    doc.write_text(doc.read_text(encoding="utf-8").replace(
+        "description: The language a repo declares",
+        "description: Edited after the zone was rebuilt — the language a repo declares", 1),
+        encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- #

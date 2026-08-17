@@ -1,7 +1,7 @@
 ---
 type: standard
 title: Versioning and release — the four-artifact lockstep
-description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, at the develop → main merge, never at conclude and never as a task
+description: Every version string the plugin ships must be bumped together, because two different consumers read two different halves — Claude Code decides an upgrade from the manifest pair, and the one shared version module is what every pillar's --version reads — bumped once per release, on the primary branch, never at conclude and never as a task
 resource: plugins/quenching/VERSION, plugins/quenching/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, plugins/quenching/assets/bin/quenching/common/version.py
 tags: [release, versioning, lockstep, plugin, distribution]
 timestamp: 2026-08-15
@@ -48,36 +48,36 @@ forced, back when each pillar shipped as its own script
 internal imports has no such constraint: `common/version.py` is read by every pillar's `--version`,
 not duplicated by it.
 
-## When the bump happens — once, at the release, before the develop → main merge
+## When the bump happens — once, at the release, on the primary branch
 
-The four move **once per release, on `develop`, immediately before the `develop → main` merge that
-publishes it** — see [branching.md](../git/branching.md). A version bump is never a task in a
+The four move **once per release, on the primary branch, as the deliberate act that publishes
+it** — see [branching.md](../git/branching.md). A version bump is never a task in a
 spec's `## Tasks`, `/quenching:specs:execute` never makes one, and `/quenching:specs:conclude` no longer makes one
-either: a spec's own conclude merges into `develop` with the lockstep untouched, and the artifacts
-move only when the release command runs `cq specs release`.
+either: a spec's own conclude merges into the primary branch with the lockstep untouched, and the
+artifacts move only when the release command runs `cq specs release`.
 
 **Why not a task, and why not conclude either.** Three things break when the bump is scheduled as
 anything other than the release's own act:
 
 - **What the release *is* is not knowable at task 1, or even at one spec's conclude.** Whether the
-  change is patch, minor or major depends on everything `develop` has accumulated since the last
-  tag — which may be several specs, not just the one concluding — and the task list inside any one
-  of them is routinely revised mid-build. A number chosen at the top of a branch, or at that
+  change is patch, minor or major depends on everything the primary branch has accumulated since
+  the last tag — which may be several specs, not just the one concluding — and the task list inside
+  any one of them is routinely revised mid-build. A number chosen at the top of a branch, or at that
   branch's own conclude, is a guess nothing downstream re-checks.
-- **Two specs concluding into `develop` no longer collide.** Under the old rule both bumped from the
-  same base to the same number, and the second to merge resolved a conflict in `plugin.json`,
-  `marketplace.json` and the version module by hand. With the bump moved to the release, no
-  conclude touches the lockstep at all — `develop` accumulates any number of specs with nothing to
-  conflict on, and the collision this section used to warn about does not arise.
+- **Two specs concluding into the primary branch no longer collide.** Under the old rule both
+  bumped from the same base to the same number, and the second to merge resolved a conflict in
+  `plugin.json`, `marketplace.json` and the version module by hand. With the bump moved to the
+  release, no conclude touches the lockstep at all — the primary branch accumulates any number of
+  specs with nothing to conflict on, and the collision this section used to warn about does not
+  arise.
 - **A spec that is abandoned or descoped carries no version claim to unwind.** Nothing in its own
   conclude touched the lockstep, so there is nothing to revert beyond the merge itself.
 
-**Why the release, specifically.** That is the one moment everything accumulated on `develop` is
-about to become the published state of `main`, so the single `develop → main` merge carries the
-version together with whatever the release actually ships — and reverting that merge reverts the
-version claim with it. A bump committed to `main` after that merge would be the one thing the
-release forbids outright, the same way a post-merge commit to the base is forbidden everywhere else
-in this front.
+**Why the release, specifically.** That is the one moment everything accumulated on the primary
+branch is about to be tagged and published: the bump commit IS the published state, and the tag
+points at it, contained in the primary branch. A bump committed after the tag would be the one
+thing the release forbids outright, the same way a post-merge commit to the base is forbidden
+everywhere else in this front.
 
 ## What a bump does not need to do any more
 

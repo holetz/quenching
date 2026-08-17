@@ -1,6 +1,7 @@
 {
   "ok": true,
   "dryRun": true,
+  "backend": "files",
   "root": "<WS>/.specs",
   "migrated": [
     {
