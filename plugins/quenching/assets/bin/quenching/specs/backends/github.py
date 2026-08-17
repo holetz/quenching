@@ -123,6 +123,51 @@ def gh_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
     }
 
 
+# The version the shapes below were measured against. It travels INSIDE the refusal message
+# because the discriminant is a property of `gh`'s own `--paginate --slurp`, not of the API:
+# a human reading the refusal on a future `gh` needs to know which version was asserted.
+GH_MEASURED_VERSION = "gh 2.97.0 (2026-07-31)"
+
+GH_EMPTY_LISTING_REMEDY = (
+    "re-run the command — this is a transport fault, not a state; if it repeats, run "
+    "`gh api --paginate --slurp \"repos/<owner>/<name>/issues?state=all&per_page=100\"` by "
+    "hand and compare what it prints against the shapes above"
+)
+
+
+def empty_listing_refusal(action: str, pages) -> dict | None:
+    """The exit-2 refusal for a paginated listing that did not come back, or `None` when the
+    payload has the shape a listing legitimately has.
+
+    THREE SHAPES, AND TWO OF THEM PROVE A FAULT. Measured on this repository:
+
+    - `None` — `gh` exited 0 and printed nothing, which `_api`'s `json.loads(out or "null")`
+      turns into a valid `null`. That is a response that never arrived, laundered into data.
+    - `[]` — zero pages. A front that genuinely holds nothing answers `[[]]`, ONE page that
+      is empty; zero pages is a response that did not happen.
+    - `[[]]` — one empty page: a genuinely empty front, which passes. Suspicion about THAT
+      state is the `stderr`/`doctor` half, never a refusal, because a repository whose specs
+      have not been created yet is exactly it and is legitimate.
+
+    THE CALLER ASKS, AND NEVER `_api`. `_api` is shared with the writes, and one of those is
+    a DELETE whose legitimate GitHub answer is 204 No Content — `gh` prints nothing there and
+    `null` is the RIGHT answer. Only the caller knows which shape it asked for. It is the
+    same line `az_refusal` already draws for its own transport, and this is the sibling the
+    `gh` side was missing."""
+    if isinstance(pages, list) and pages:
+        return None
+    observed = "no output at all (`gh` exited 0 and printed nothing)" if pages is None \
+        else f"`{json.dumps(pages)}`"
+    return {
+        "code": "sp-gh-empty-listing", "exit": 2, "action": action, "observed": observed,
+        "message": f"`gh api` exited 0 while {action} but returned {observed} — a front that "
+                   f"legitimately holds nothing answers with ONE empty page (`[[]]`), never "
+                   f"with zero pages, so this response was cut short and is not an empty "
+                   f"front (measured on {GH_MEASURED_VERSION}); nothing was read",
+        "remedy": GH_EMPTY_LISTING_REMEDY,
+    }
+
+
 GH_REMOTE_RE = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
 
 
@@ -293,11 +338,19 @@ class GitHubBackend(SpecBackend):
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
         # is not a JSON document. state=all: `archive` is the closed half of the tracker,
         # so a default (open-only) listing would report every archived spec as missing.
-        pages = self._api("listing the repository's issues", "--paginate", "--slurp",
+        action = "listing the repository's issues"
+        pages = self._api(action, "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
+        # THE SHAPE IS ASSERTED HERE and nowhere else: this is the one caller that knows it
+        # asked for a list of pages, and the whole front is derived from what it returns —
+        # a listing that silently comes back empty reports every spec in the repository as
+        # missing, with `ok: true` and exit 0.
+        refusal = empty_listing_refusal(action, pages)
+        if refusal:
+            raise BackendRefusal(refusal)
         rows: list[tuple[dict, int, str, int, str, list[str]]] = []
         legacy: list[tuple[int, str, str, int, str]] = []
-        for page in (pages or []):
+        for page in pages:
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
                     # GitHub models a pull request AS an issue, so `/issues` answers with

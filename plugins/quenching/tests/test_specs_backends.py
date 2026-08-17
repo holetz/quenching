@@ -19,15 +19,17 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
 from quenching.specs.backends import backend_root
+from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.files import FilesBackend
 from quenching.specs.backends.github import (GH_MISSING, GH_NOT_AUTHENTICATED, GitHubBackend,
-                                             gh_refusal)
+                                             empty_listing_refusal, gh_refusal)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, HYBRID_TITLE_MAX,
                                              hybrid_join, hybrid_project, hybrid_short_title,
                                              hybrid_split, hybrid_title_join, hybrid_title_split,
@@ -240,6 +242,51 @@ class GhBodyCeiling(unittest.TestCase):
         self.backend._write_api("creating an issue", "POST", "repos/owner/repo/issues",
                                 {"title": "x", "body": "a" * GH_BODY_MAX})
         self.assertEqual(len(self.calls), 1)
+
+
+# --------------------------------------------------------------------------- #
+# a listing that never arrived, told apart from a front that is genuinely empty
+# --------------------------------------------------------------------------- #
+class GhEmptyListing(unittest.TestCase):
+    """The incident this guard exists for, as an assertion: a listing that fails to arrive
+    must refuse, never report itself as an empty front with `ok: true` and exit 0.
+
+    `_gh_run` is what gets patched, never `_api` — the laundering under test IS `_api`'s own
+    `json.loads(out or "null")`, the line that turns "gh printed nothing" into data, and a
+    stub one level higher would step straight over it. No network and no `gh`."""
+
+    def setUp(self):
+        self.backend = GitHubBackend("owner/repo", os.getcwd())
+
+    def _load_returning(self, stdout: str):
+        with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, stdout, "")):
+            return self.backend._load()
+
+    def test_empty_stdout_with_exit_0_refuses_instead_of_reporting_an_empty_front(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._load_returning("")
+        self.assertEqual(ctx.exception.err.get("code"), "sp-gh-empty-listing")
+        self.assertEqual(ctx.exception.err.get("exit"), 2)
+
+    def test_zero_pages_refuses_because_an_empty_front_answers_with_one_empty_page(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._load_returning("[]")
+        self.assertEqual(ctx.exception.err.get("code"), "sp-gh-empty-listing")
+
+    def test_one_empty_page_is_a_genuinely_empty_front_and_does_not_refuse(self):
+        self.assertEqual(self._load_returning("[[]]"), [])
+
+    def test_a_write_whose_legitimate_answer_is_empty_still_does_not_refuse(self):
+        # The DELETE of a stale continuation comment: GitHub answers 204 No Content, `gh`
+        # prints nothing, and `None` is the RIGHT answer there. This case is the whole
+        # reason the guard belongs to the caller and never to `_api`.
+        with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, "", "")):
+            self.assertIsNone(self.backend._api(
+                "deleting a stale continuation comment on #1",
+                "-X", "DELETE", "repos/owner/repo/issues/comments/1"))
+
+    def test_a_healthy_listing_passes_the_predicate_untouched(self):
+        self.assertIsNone(empty_listing_refusal("listing", [[{"number": 1}], [{"number": 2}]]))
 
 
 # --------------------------------------------------------------------------- #
