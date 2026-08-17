@@ -52,7 +52,7 @@ priority:
 | --- | --- | --- |
 | `level` | this spec's **position in one ordered list** — 1 is next | an integer, unique across the front. This is what ranks. |
 | `criticality` | a coarse word: `critical` · `high` · `medium` · `low` | the fallback that still ranks a half-filled record. Never the primary answer. |
-| `complexity` | one of `low` · `medium` · `high` · `xhigh`, never a numeric size — see below | proposed **only** when the spec is concrete enough to judge; otherwise left out |
+| `complexity` | one of `low` · `medium` · `high` · `xhigh`, never a numeric size — see below | proposed on **every** ranked row. `low` needs concrete grounds; without them the floor is `medium` |
 | `date` | when the ranking was made | stamped on every write, because a ranking ages |
 
 **`level` is a position, not a label.** Five specs marked "high" is not a ranking — it is the
@@ -69,6 +69,21 @@ against the criterion
 [gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the gears plan
 states: how much a human needs to be part of the process, from `low` (the LLM can carry it with
 close to no supervision) to `xhigh` (a judgment stage joins the plan).
+
+**Every ranked row gets one, and `medium` is the floor for a guess.** A spec too thin to judge — a
+`captured` one with a `## Problem` and no `## Proposal` — still leaves this sweep carrying
+`medium`, never blank and never `low`.
+
+Blank loses twice: it reads as *easy* to anyone scanning the column, and it strands the consumer the
+field exists for — `/quenching:specs:cycle` derives its gears plan from `complexity`, so a spec that
+answers nothing gets its gear by accident rather than by judgement.
+
+The floor is asymmetric because the two errors are. `low` is a positive claim — *this can run almost
+unattended* — and the one that costs when wrong: an unsupervised run on work that needed a human
+produces a branch somebody has to unpick. `medium` only keeps the human in the loop one beat longer.
+So `low` is **earned** from something readable — a written `## Proposal`, a precedent already in the
+tree, a decision the spec records as closed — and everything else floors at `medium`. Guessing
+upward is free; guessing downward is not.
 
 ## Doctrine
 
@@ -114,15 +129,20 @@ command owns.
 §The spec table, in its proposal form — the shared columns carrying each spec's **current** state,
 then the four this command adds:
 
-| Spec | Title | Stage | Tasks | Priority | Proposed `level` | `criticality` | `complexity` | Reason |
+| Spec | Title | Stage | Tasks | Priority | Complexity | Proposed `level` | Proposed `criticality` | Proposed `complexity` | Reason |
 
 Rules for the table:
 - **Every spec in scope gets a row** — including "stays unranked, because …".
 - `level` values are **contiguous from 1** across the ranked rows. A gap or a duplicate is a bug in
   the proposal, not a nuance.
 - A spec already carrying a `priority` appears with its current value and a **stated reason** for
-  any change; no reason means no change.
-- `complexity` is left blank rather than guessed.
+  any change; no reason means no change. `Complexity` and `Proposed complexity` are two columns for
+  that reason: the value on disk and the value being proposed sit side by side, so a re-judgement is
+  visible as one and an unchanged row repeats itself.
+- **Every ranked row proposes a `complexity`** — `medium` when the spec is too thin to judge, and
+  the reason column says which of the two it is ("floored at `medium`, no `## Proposal` yet" reads
+  differently from "`medium` — the pattern is proven in the tree"). `low` appears only where the
+  reason names the grounds that earned it.
 - Anything the sweep noticed but does not rank — a near-duplicate pair, a stub going nowhere, a
   ranking whose grounds have expired — is listed **below** the table as an observation naming the
   command **and the exact argument** that would act on it, runnable as printed. Never as a row.
@@ -141,19 +161,19 @@ what blew past a 120s timeout in the measured session — `xargs -P 8`, the same
 session already improvised on the read side, generalized here to the write:
 ```bash
 printf '%s\0' \
-  'cq specs record <slug1> priority --set level=<n1> --set criticality=<word1> [--set complexity=<level1>] --set date=<today>' \
-  'cq specs record <slug2> priority --set level=<n2> --set criticality=<word2> [--set complexity=<level2>] --set date=<today>' \
+  'cq specs record <slug1> priority --set level=<n1> --set criticality=<word1> --set complexity=<word1> --set date=<today>' \
+  'cq specs record <slug2> priority --set level=<n2> --set criticality=<word2> --set complexity=<word2> --set date=<today>' \
   ... \
 | xargs -0 -P 8 -I{} sh -c '{}'
 ```
-One fully-formed `cq specs record` line per approved row — `--set complexity` present or omitted
-per row, exactly as §The record this command owns already says — piped NUL-delimited so no
-argument inside a line is ever split. `sh -c '{}'` runs each line as its own command, up to 8 at
+One fully-formed `cq specs record` line per approved row — all four `--set` on every line, because
+§The record this command owns floors `complexity` at `medium` rather than omitting it — piped
+NUL-delimited so no argument inside a line is ever split. `sh -c '{}'` runs each line as its own command, up to 8 at
 once. The tool merges: a field not named survives, and `slug`, `title`, `date`, `verification` and the
 other six records are never in reach of this write. Stamp the record's own `date` on every write —
-it is a different key from the spec's capture `date:`. Leave `--set complexity` off
-rather than guessing it. Editing the frontmatter by hand would do the same thing only while the
-backend is `files` — against a backend whose specs are issues there is no file to edit.
+it is a different key from the spec's capture `date:`. Editing the frontmatter by hand would do the
+same thing only while the backend is `files` — against a backend whose specs are issues there is no
+file to edit.
 **Done when:** each approved row is on disk and no unapproved row was touched.
 
 ### 5. Check
@@ -181,9 +201,14 @@ Emit §The report mold. Two body blocks:
    cq specs list --phase plans --json | python3 -c '
    import json, sys
    rows = json.load(sys.stdin)["specs"]
-   print("| Spec | Title | Stage | Tasks | Priority |")
-   print("| --- | --- | --- | --- | --- |")
-   for s in rows:
+   def rank(s):
+       try:
+           return (0, int((s["records"].get("priority") or {}).get("level")))
+       except (TypeError, ValueError):
+           return (1, 0)
+   print("| Spec | Title | Stage | Tasks | Priority | Complexity |")
+   print("| --- | --- | --- | --- | --- | --- |")
+   for s in sorted(rows, key=rank):
        slug, title, stage = s["slug"], s["title"], s["stage"]
        t = s["tasks"]
        checked, total, blocked = t["checked"], t["total"], t["blocked"]
@@ -191,12 +216,19 @@ Emit §The report mold. Two body blocks:
        p = s["records"].get("priority") or {}
        level, crit = p.get("level", "—"), p.get("criticality", "—")
        priority = "—" if not p else f"{level} · {crit}"
-       print(f"| {slug} | {title} | {stage} | {tasks} | {priority} |")
+       complexity = p.get("complexity") or "—"
+       print(f"| {slug} | {title} | {stage} | {tasks} | {priority} | {complexity} |")
    '
    ```
-   §The spec table, the four proposal columns dropped and `Priority` showing the value now on
-   disk — this is the same shape, printed by the tool instead of retyped by the model. Specs that
-   stayed unranked keep their row, `Priority` reading `—`.
+   §The spec table, the four proposal columns dropped, `Priority` and `Complexity` showing the
+   values now on disk — this is the same shape, printed by the tool instead of retyped by the model.
+   Specs that stayed unranked keep their row, `Priority` and `Complexity` both reading `—` — the two
+   empty together, because a row this sweep could not place is the only row that carries neither.
+
+   **`sorted(rows, key=rank)` is the point of the block, not a flourish.** `list --json` returns the
+   front in slug order, and a block titled *the ranking as it now stands* that prints alphabetically
+   has shown the reader everything except the ranking. Unranked specs sort last, together, where
+   they read as the tail the sweep could not place.
 2. **Observations** — optional, omitted whole when there are none. §The observations table, each
    row's `Recommended action` **runnable as printed**: the command with its real argument
    substituted, never a bare command name the reader has to complete.
@@ -212,6 +244,9 @@ spec the approved ranking put first — the first thing the `priority` this just
   explicit approval.
 - Never propose duplicate or non-contiguous `level` values, and never force a rank onto a spec the
   sweep cannot honestly place.
+- Never write a ranked row without a `complexity`, and never guess one below `medium`. `low` is a
+  claim that the work can run almost unattended, so it is written only where the reason names what
+  earned it.
 - Never write a field outside the `priority` record. This command ranks; it does not develop,
   execute, or conclude.
 - Never edit a spec's frontmatter directly. `cq specs record` is the writer, and it is what keeps
