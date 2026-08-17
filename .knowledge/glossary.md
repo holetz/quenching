@@ -187,6 +187,13 @@ sentence, and **link out** rather than explaining in full here.
   COMPUTED from which headings are filled and which records frontmatter carries rather than
   declared in a field, so it regresses on its own when a section empties instead of going stale;
   resolution is last-match-wins, which is why `executing` sorts last.
+- [**Empty-response honesty**](../standards/quality/empty-response-honesty.md) — a obrigação de
+  separar, num payload vazio vindo de um processo de terceiro, a resposta que **não chegou** da que
+  legitimamente **não tem nada**: recusa exit 2 no choke point de leitura onde existe discriminante
+  estrutural medido (para o `gh`, zero páginas `[]` contra uma página vazia `[[]]`), finding `warn`
+  mais uma linha em `stderr` onde há só suspeita corroborada, e a guarda no chamador e nunca no
+  transporte compartilhado, cuja resposta vazia pode ser a correta (um DELETE 204). É o irmão de
+  **Parse honesty** um nível abaixo: aquele governa o transform com perda, este o payload que chegou.
 - [**Entry point**](../standards/naming/command-surface.md) — one `commands/<path>.md` file, whose
   path IS its identity (`commands/knowledge/add.md` → `/quenching:knowledge:add`); since Claude
   Code merged commands into skills there is no second file to mirror, so there is nothing an entry

@@ -20,6 +20,11 @@ the checks that hold it honest. The *modeling* that defines data lives in
   allowlist — the three scope rules read from the script's own header, that it runs manually and
   is documented rather than gated automatically, and why the "every red is a harness defect"
   precedent stays scoped to `functional-checks.sh` alone.
+* [empty-response-honesty.md](empty-response-honesty.md) — uma resposta vazia de um transporte de
+  terceiro são dois estados e só um se prova: a recusa exit 2 no choke point de leitura onde há
+  discriminante estrutural medido, o finding `warn` mais a linha em `stderr` onde há apenas suspeita
+  corroborada, por que a guarda é do chamador e nunca do transporte compartilhado, e por que o
+  diagnóstico completa sempre.
 * [parse-honesty.md](parse-honesty.md) — a verifier names its own parse failure instead of reporting
   it as a content gap: the sidecar that adds the signal without changing a return type, why the
   finding is a warn, and why a lossy transform never ships without the diagnostic for it.
