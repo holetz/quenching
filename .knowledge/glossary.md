@@ -321,7 +321,7 @@ sentence, and **link out** rather than explaining in full here.
   `specs` / `skill` que competiam antes da fusão em um só pacote.
 - [**Plugin config**](../standards/workflows/plugin-configuration.md) — `.claude/quenching.json`, the
   single file a target repository uses to declare anything to this plugin: `backend`, `specsBranch`,
-  `worktreeSetup`, `azureStates`, `integrationBranch`, `releaseBranch`, `azurePlacement`,
+  `worktreeSetup`, `azureStates`, `azurePlacement`,
   `azureColumns`, `subjects`, `tagCatalog` and `workItemTypes`. It replaced `/.specs/config.json`,
   whose home stopped working once a repository could have no `/.specs/` folder at all. Absence
   yields the documented defaults, never a null and never a refusal — except `azureStates` and

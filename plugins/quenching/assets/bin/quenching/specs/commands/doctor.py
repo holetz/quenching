@@ -19,7 +19,6 @@ from quenching.specs.commands.migrate import _v1_leftovers
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.commands.validate import _finding
 from quenching.specs.config import (BACKENDS, COMPLEXITY_LEVELS, CONFIG_FILE, CONFIG_KEYS,
-                                    DEFAULT_INTEGRATION_BRANCH, DEFAULT_RELEASE_BRANCH,
                                     LEGACY_CONFIG_FILE, ROOT_TOO_HIGH_REMEDY,
                                     UNPROVED_BACKENDS, azure_workitemtype_retirement,
                                     is_root_too_high, load_config, root_too_high_message)
@@ -41,11 +40,7 @@ def cmd_config(args, root: str, out: Emitter) -> int:
              "  hooks: " + (", ".join(f"{event}: {len(entries)}" for event, entries in cfg["hooks"].items())
                             if cfg["hooks"] else "(none declared)"),
              "  profiles: " + (", ".join(cfg["profiles"]["installed"])
-                               if cfg["profiles"] else "(none declared)"),
-             "  integrationBranch: " + (cfg["integrationBranch"]
-                                        or f"(none declared, defaults to {DEFAULT_INTEGRATION_BRANCH})"),
-             "  releaseBranch: " + (cfg["releaseBranch"]
-                                    or f"(none declared, defaults to {DEFAULT_RELEASE_BRANCH})")]
+                               if cfg["profiles"] else "(none declared)")]
     if cfg["legacyPath"]:
         lines.append(f"  legacy config still on disk, unread: {cfg['legacyPath']}")
     out.emit(args.json, {"ok": True, **front_fields(root), **cfg}, "\n".join(lines))

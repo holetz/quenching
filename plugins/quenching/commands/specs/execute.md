@@ -93,13 +93,8 @@ commit onto the base itself — the exact outcome the offer exists to prevent, r
 it. Anything short of being **on** the ref falls through to the branches below.
 
 **Resolve the base branch next**, stopping at the first that answers: the spec's own `branch.base`
-record, when one already exists; else the repo's own declared `integrationBranch` (already read
-above, from `cq specs config --json`); else `git symbolic-ref refs/remotes/origin/HEAD` (already
-read above); else `git config init.defaultBranch`, and then `main`. **The declared integration
-branch is consulted before `origin/HEAD`, never after** — under the develop/main flow `origin/HEAD`
-resolves to `main`, the publication branch, and falling through to it first would merge an unstamped
-spec there by
-default. Left undeclared, this step answers nothing and the chain is exactly as it was.
+record, when one already exists; else `git symbolic-ref refs/remotes/origin/HEAD` (already read
+above); else `git config init.defaultBranch`, and then `main`.
 
 **Not on the base → adopt the current branch, and skip the offer.** `git branch --show-current`
 disagreeing with the resolved base means the human already answered the isolation question at

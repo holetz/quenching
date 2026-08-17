@@ -46,8 +46,8 @@ surfaced as a choice, and never assumed to be the answer because it was the only
 
 1. **Measure the diff.** `git diff <base>...HEAD --stat`, where `<base>` resolves the same chain
    [isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md) §Recording the isolation
-   already uses: the branch's own `branch.base` record if one exists, else the declared
-   `integrationBranch`, else `origin/HEAD`, else `init.defaultBranch`, else `main`.
+   already uses: the branch's own `branch.base` record if one exists, else `origin/HEAD`, else
+   `init.defaultBranch`, else `main`.
 2. **Always ask — never a size threshold.** Show the measurement and ask, with
    **AskUserQuestion**, whether to materialize a minimal spec from this diff before concluding:
    `cq specs new`, with a title and `## Problem` drafted from the diff summary. No diff size skips

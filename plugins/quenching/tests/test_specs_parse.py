@@ -57,15 +57,12 @@ class Slugify(unittest.TestCase):
 
 class InferBaseBranch(unittest.TestCase):
     """The chain `plan-git-record.md` declares once a spec's own `branch.base` record is
-    absent. A DECLARED `integrationBranch` must win over `origin_head` even where
-    `origin_head` already answers `main` — the realistic collision this function exists to
-    break, since `origin/HEAD` resolves to the publication branch under develop/main. Left
-    undeclared, the OLD chain — `origin_head`, then `init_default`, then the literal `main`
-    — is untouched."""
+    absent: `origin_head`, then `init_default`, then the literal `main` — the primary
+    branch, where an unstamped spec's work belongs. `cfg` is passed for signature stability
+    (the callers still hand it in) and has no effect on the chain."""
 
     CASES = (
-        ({"integrationBranch": "develop"}, "main", "main", "develop"),
-        ({"integrationBranch": None}, "origin-main", "init-main", "origin-main"),
+        ({}, "origin-main", "init-main", "origin-main"),
         ({}, None, "init-main", "init-main"),
         ({}, None, None, "main"),
     )

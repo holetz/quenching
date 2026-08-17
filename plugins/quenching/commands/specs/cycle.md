@@ -89,8 +89,8 @@ belongs to a stage it invokes — which is why no `Read`/`Grep`/`Glob` is grante
 - **The minimal gear runs a half on that half's one OK, and pays for it outside the session.**
   Under it neither protected class stops the run — code-coupled items and irreversible closes
   included — and the building half ends with this command itself opening a pull request, via
-  `/quenching:git:pr:create` invoked under the same authorization, against the declared
-  `integrationBranch`, never with a direct merge: the human review lives in the PR (§The PR route).
+  `/quenching:git:pr:create` invoked under the same authorization, against the primary branch,
+  never with a direct merge: the human review lives in the PR (§The PR route).
   A half that outgrows the minimal gear climbs back into a run with gates before it reaches the PR.
 - **Typed-only: a human chooses this command.** It conducts a whole lifecycle, so no spoken trigger
   reaches it and the description pays no routed budget.
@@ -115,7 +115,7 @@ invocation carries no declaration and `create` keeps its own gate.
 ### 2. Read the state in one call
 ```bash
 cq specs status --spec <slug> --json    # derived stage, records, tasks, gate, verification
-cq specs config --json                  # backend, integrationBranch
+cq specs config --json                  # backend
 ```
 The derived stage says which halves this run still has:
 
@@ -158,8 +158,8 @@ building half is never authorized over a spec that is not ready.
 Present a **second** gears plan, derived the same way from the `complexity` on disk — which the
 defining pass may have moved: `/quenching:specs:execute` and `/quenching:specs:conclude`, each with
 its gear, plus the base branch and the isolation form. **Under the minimal gear only**, the plan
-also names `/quenching:git:pr:create` as a third stage this half runs, against the declared
-`integrationBranch` — every other gear ends this half at `conclude`'s own handoff, and the PR or the
+also names `/quenching:git:pr:create` as a third stage this half runs, against the primary
+branch — every other gear ends this half at `conclude`'s own handoff, and the PR or the
 merge is the human's separate, later command. Step 3's OK does not reach here, and a run that
 entered at building has this plan as its first.
 

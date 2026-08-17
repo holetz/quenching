@@ -82,9 +82,7 @@ def normalize(text: str, ws: str | pathlib.Path | None = None) -> str:
 # fixture workspace
 # --------------------------------------------------------------------------- #
 QUENCHING_JSON = """{
-  "backend": "files",
-  "integrationBranch": "develop",
-  "releaseBranch": "main"
+  "backend": "files"
 }
 """
 
