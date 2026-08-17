@@ -242,7 +242,7 @@ Progress as it happens, not a report — the mold governs step 7, this governs t
 are §The report mold's and mean the same, and this banner prints plain text, never a heading:
 
 ```
-Queue: 4 specs → plan/<first slug> → PR against develop
+Queue: 4 specs → plan/<first slug> → PR against the primary branch
 
 [2/4] <slug> — executing · 6 tasks
 ✓ execute: 6/6 checked, 2 commits
