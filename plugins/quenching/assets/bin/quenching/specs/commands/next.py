@@ -252,6 +252,19 @@ def _print_table(ranked: list[dict], columns: list[str]) -> None:
               f"written yet. `cq specs summary <slug> \"<one line>\"` fills one.")
 
 
+def _resolve_columns(requested: str | None) -> tuple[list[str], list[str]]:
+    """The columns to print, and any name that is not one — `spec-driven.md` §The spec table
+    says a command OMITS columns and never reorders them, so the declared order always wins
+    over the order they were typed."""
+    if not requested:
+        return list(TABLE_COLUMNS), []
+    asked = [c.strip().lower() for c in requested.split(",") if c.strip()]
+    unknown = [c for c in asked if c not in TABLE_COLUMNS]
+    if unknown:
+        return [], unknown
+    return [c for c in TABLE_COLUMNS if c in asked], []
+
+
 def _order_key(order: str):
     """`rank` is the four-factor ordering this module owns; `priority` is the human's ranking
     alone, which is what a triage table proposes against. Nothing else ranks a front."""
@@ -286,18 +299,12 @@ def _next_front(args, root: str, out: Emitter) -> int:
             "code": "sp-table-not-json", "exit": 2,
             "message": "--table is the human rendering; drop --json for the table, "
                        "or drop --table for the payload"})
-    columns = TABLE_COLUMNS
-    if table and getattr(args, "columns", None):
-        columns = [c.strip().lower() for c in args.columns.split(",") if c.strip()]
-        unknown = [c for c in columns if c not in TABLE_COLUMNS]
-        if unknown:
-            return out.emit_err(args.json, {
-                "code": "sp-unknown-column", "exit": 2,
-                "message": f"unknown column(s) {', '.join(unknown)} — the set is "
-                           f"{', '.join(TABLE_COLUMNS)}"})
-        # Declared order wins over the order they were typed: a caller omits columns, never
-        # reorders them (spec-driven.md §The spec table).
-        columns = [c for c in TABLE_COLUMNS if c in columns]
+    columns, unknown = _resolve_columns(getattr(args, "columns", None) if table else None)
+    if unknown:
+        return out.emit_err(args.json, {
+            "code": "sp-unknown-column", "exit": 2,
+            "message": f"unknown column(s) {', '.join(unknown)} — the set is "
+                       f"{', '.join(TABLE_COLUMNS)}"})
 
     schema = load_schema()
     heads, current = _git_refs(root)
