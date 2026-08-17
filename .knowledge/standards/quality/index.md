@@ -59,6 +59,10 @@ the checks that hold it honest. The *modeling* that defines data lives in
   standing fact as a verifier finding and the moment-of-risk line once per process on stderr, why a
   per-operation warning is a permanent context tax and silence is not the alternative, and the one
   edit that retires both together.
+* [unanswerable-verify-lines.md](unanswerable-verify-lines.md) — um `verify:` cujo veredito é
+  decidido pela própria grafia antes de qualquer coisa ser medida: o padrão com crases que a shell
+  desfigura, o escalar YAML que o `#` trunca, o ponto de entrada morto que sai 0 sem executar nada,
+  e a regra de exercitar a linha nos dois sentidos na hora em que ela é escrita.
 * [surface-verification.md](surface-verification.md) — how a change to the command surface is
   proven: a fresh process because the registry is built at session start, assertions on captured
   `tool_use` rather than prose, and the five preconditions a functional check must satisfy.
