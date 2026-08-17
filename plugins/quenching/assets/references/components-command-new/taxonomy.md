@@ -28,7 +28,12 @@ fits; it is never forced.**
   **generic** when it serves the repo as a whole; **neither** (keep-and-report) when
   several unrelated folders answer at once.
 - **Category, no single real folder tied to the skill** — e.g. `git` for a `commit`
-  skill: a subject, not a repo folder. The skill nests flat under the category.
+  skill: a subject, not a repo folder. The skill nests flat under the category. **This
+  example stays valid even in a repo that also has this plugin installed** — a target's own
+  bare-cited `git`-category `commit` command and this plugin's `/quenching:git:commit` coexist
+  rather than collide, because the citation forms already separate them
+  (`naming/command-surface.md` §Three citation forms): the example is about the target's own
+  category, and this plugin's commands are never bare-cited in a repo that did not vendor them.
 - **Category, and a real folder tied to the skill** — the folder either **nests** inside
   the category or is **replaced** by it, per the convention already established for that
   category in *that* target repo (below). Several unrelated folders still fit neither and
