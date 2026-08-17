@@ -4,10 +4,10 @@ title: Bundle verification
 description: What the knowledge front machine-checks versus what it leaves to a skill's prose self-check, when an invariant is owed a deterministic check, where an accepted gap is recorded, and the resource glob-set format
 resource: plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/knowledge-align/conformance.md, plugins/quenching/commands/knowledge/status.md
 tags: [quality, verification, okf, validator, conformance]
-timestamp: 2026-08-10
+timestamp: 2026-08-17
 audience: both
 authority: current
-source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19
+source: docs-verification-layer plan (sections 2-4); the grep-reach rule from collapse-remaining-language-clause-restatements (2026-07-31) — a census invariant that returned 14 against a real population of 19; the generated-listing pair from validar-a-zona-generated-contra-o-disco (2026-08-17)
 maintainer: quenching
 ---
 
@@ -122,7 +122,7 @@ makes the remaining hole *known* rather than merely unfilled.
 | --- | --- | --- | --- |
 | Structure | `no-frontmatter`, `broken-frontmatter`, `missing-type`, `index-has-type`, `index-has-frontmatter`, `log-has-type` | ERROR | fails conformance |
 | Recommended fields | `missing-title` / `-description` / `-resource` / `-timestamp` | WARN | no |
-| Structural integrity | `dir-no-index`, `index-broken-link`, `index-orphan`, `glossary-broken-link` | WARN | **yes**, in the skills' verify gate |
+| Structural integrity | `dir-no-index`, `index-broken-link`, `index-orphan`, `glossary-broken-link`, `generated-listing-missing`, `generated-listing-drift` | WARN | **yes**, in the skills' verify gate |
 | Resource integrity | `resource-unresolved`, `resource-self` | WARN | **yes**, in the skills' verify gate |
 | Staleness | `stale-doc` | WARN | **no** — advisory |
 
@@ -135,6 +135,17 @@ worth keeping, because the two audiences differ.
 **No new check is introduced at ERROR.** A check born at ERROR makes previously passing target
 repos start failing on upgrade, for docs nobody touched. Convergence over accommodation governs
 what a **sweep fixes**, not what a **validator escalates**.
+
+**The generated listing is checked against disk, and a neighbouring citation does not excuse it.**
+`generated-listing-missing` and `generated-listing-drift` compare the `<!-- BEGIN GENERATED -->`
+zone of `standards/index.md` to the docs it claims to list — membership one way, each row's
+description against that doc's own `description:` the other. They sit in Structural integrity
+because that is what they are: the zone is the `standards/` layer's only navigation, and a doc
+outside it is unreachable by browsing whatever else links it. `index-orphan` does not cover this
+and never could — it asks whether **any** `.md` links the doc, so a single sibling citation
+disarms it. Measured 2026-08-13: `architecture/bundle-root.md` was cited by four docs, absent
+from the listing, and the validator was green throughout, alongside six rows whose descriptions
+their own docs had outgrown. A proxy any neighbour can disarm is not a check of the listing.
 
 **Advisory is a real category, and must stay small.** `stale-doc` reports a doc that *may* still be
 correct — code moves under a rule that did not change. Folding it into the must-fix set would make
