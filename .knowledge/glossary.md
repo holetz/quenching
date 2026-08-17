@@ -474,7 +474,11 @@ sentence, and **link out** rather than explaining in full here.
   the fourteen canonical headings carry no comma and it refuses any name outside them.
 - [**Section squash**](../standards/workflows/task-execution.md) — the local `git reset --soft`
   plus recommit that collapses a `## N.` section's own per-task commits into one, at that
-  section's own **Section boundary**, provided none of its tasks is `[!]`. The per-task chain that
+  section's own **Section boundary**, provided none of its tasks is `[!]`. Its target is a **sha
+  captured when the section opened** — derived from the first task's own anchor on a run that
+  resumed mid-section, and never a branch name, whose tip can move under the run — and
+  `git merge-base --is-ancestor` runs before the reset, refusing any target not ancestral to
+  `HEAD`. The per-task chain that
   verifies, ticks and commits stays exactly what it always was — this is what buys resumability
   *while the section runs*; the squash only ever reaches back into commits its own section just
   made, never a prior section's or anything already shared, which is the narrow, explicit exception
