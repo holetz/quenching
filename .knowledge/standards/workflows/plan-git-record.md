@@ -161,18 +161,13 @@ same admission test — a fact no derivation can reproduce:
   nothing stamped leaves `conclude` unable to diff the right range and leaves `git:merge` unable to
   say what it merges into. `base` is then **inferred**
   rather than observed, stopping at the first that answers: the spec's own `branch.base` record,
-  when one already exists; the repo's own **declared** `integrationBranch`
-  ([plugin-configuration.md](plugin-configuration.md), read via `cq specs config --json`);
-  `git symbolic-ref refs/remotes/origin/HEAD`; `git config init.defaultBranch`; then `main`.
+  when one already exists; `git symbolic-ref refs/remotes/origin/HEAD`;
+  `git config init.defaultBranch`; then `main`.
 
-  **A declared integration branch must be consulted before `origin/HEAD`, never after.** Under the
-  develop/main flow ([branching.md](../git/branching.md)) `origin/HEAD` resolves to `main` — the
-  publication branch — so an unstamped spec would infer `main` and merge into it by default the
-  moment `origin/HEAD` answered first. `infer_base_branch` in `cq specs`, proved by
+  `infer_base_branch` in `cq specs`, proved by
   `tests/test_specs_parse.py`'s `InferBaseBranch` fixture, decides only the order; the git facts
   `origin/HEAD` and `init.defaultBranch` resolve are
-  still read by the orchestrator, exactly as before. Left undeclared, the chain is unchanged —
-  most repositories have no `develop` branch at all.
+  still read by the orchestrator, exactly as before.
 
   The inference is shown on the same line as the confirmation,
   before stamping, because the record is write-once and that is the only moment disagreeing with
