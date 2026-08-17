@@ -16,17 +16,21 @@ probe-first, so a clean front costs a couple of tool calls — that forces the s
 shape and carries that front's content stages. Read the next section and you know the whole
 plugin.
 
-## The three fronts and the one align per front
+## The three fronts, the fourth pillar, and the one align per front
 
 The plugin acts on **three** surfaces of a repository, and the interface is the **same on each**.
-Every front has exactly ONE align, and one more spans all three:
+Every front has exactly ONE align, and one more spans all three. A fourth axis, `git`, is a
+**pillar** rather than a front — it converges no tree of its own, so it carries no align at all
+(see [`architecture/align-surface.md`](../../.knowledge/standards/architecture/align-surface.md)
+§The fourth pillar has no align):
 
-| Front | Namespace | **align** — probe-first, structure + content |
+| Front / pillar | Namespace | **align** — probe-first, structure + content |
 | --- | --- | --- |
 | `/.knowledge/` — the OKF bundle | `/quenching:knowledge:*` | `/quenching:knowledge:align` |
 | `/.specs/` — the native spec-driven workspace | `/quenching:specs:*` | `/quenching:specs:align` |
 | `.claude/` — the automation surface | `/quenching:components:*` | `/quenching:components:align` |
-| **all three** | *(root)* | **`/align`** |
+| *(pillar)* — a repository's own git facts | `/quenching:git:*` | **none** |
+| **all three fronts** | *(root)* | **`/align`** |
 
 **The probe comes before the inventory.** Each align opens by running its front's own verifier
 (`cq knowledge validate`, `cq specs doctor`/`validate`, `cq components doctor`/`lint`) and stops when it
@@ -65,19 +69,45 @@ confirms on its own, always — and inside a conducted run, so does every **irre
 That contract lives once, in
 [`align/convergence.md`](assets/references/align/convergence.md).
 
-## The twenty-seven commands
+## The thirty-four commands
 
 **One file per entry point** — Claude Code merged custom commands into skills, so each
 `commands/<path>.md` carries both the description that routes to it and the body that runs;
-there is no `skills/` tree and no wrapper. The twenty-seven split by front: `/quenching:knowledge:*` for the nine
+there is no `skills/` tree and no wrapper. Measured by `cq components doctor --json`, never
+transcribed by hand — a number written into prose goes stale the first time a command is minted
+([`naming/command-surface.md`](../../.knowledge/standards/naming/command-surface.md) §The surface
+invariant). The thirty-four split by front and pillar: `/quenching:knowledge:*` for the nine
 that act on the OKF `/.knowledge/` bundle (one nested a level deeper at `/quenching:knowledge:documentation:build`),
 `/quenching:specs:*` for the ten that act on the native `/.specs/` workspace (three of them
 conduct more than one stage — `/quenching:specs:cycle` over one spec, `/quenching:specs:execute-queue`
 and `/quenching:specs:develop-batch` over N), `/quenching:components:*` for the seven that
 act on the target's `.claude/` automation surface (six of them nested a level deeper, only
-`/quenching:components:align` flat), and the root `/align` for the one that spans all three
-fronts. Claude
+`/quenching:components:align` flat), `/quenching:git:*` for the **seven** that act on a
+repository's own git facts — `branch`, `commit`, `pr:create`, `merge`, `sync`, `cleanup`,
+`pr:review` — none of them nested more than the two `pr:` verbs, none of them carrying an
+`align` (§The three fronts, the fourth pillar, and the one align per front, above), and the
+root `/align` for the one that spans the three fronts. Claude
 auto-routes to a command by its `description`; typing the command is the explicit entry point.
+
+### The `git` pillar — a repository's own git facts, minted alongside the three fronts
+
+| Command | Does |
+| --- | --- |
+| `/quenching:git:branch` | Takes isolation for a build — worktree, branch, or in place — recommending a worktree, stating its cost, and stamping the `branch:` record. |
+| `/quenching:git:commit` | Commits what is already staged, under the target's own convention when one is declared. Never `git add -A`. |
+| `/quenching:git:pr:create` | Pushes and opens a pull request, with `Closes #<n>` when an issue is named, reporting plainly whether that keyword will actually close it. |
+| `/quenching:git:merge` | Merges a branch home on one of four strategies, offered and never chosen for the human. |
+| `/quenching:git:sync` | Rebases a work branch onto the latest base, with `--update-refs` so a stacked branch is not orphaned. |
+| `/quenching:git:cleanup` | Prunes branches merged or gone and worktrees git still registers with no directory on disk — nothing pruned the human did not pick from that report. |
+| `/quenching:git:pr:review` | Works through a PR's unresolved review threads, one confirmation per thread. |
+
+None of the seven carries an `align`: the pillar converges no tree, only answers questions about
+the target's own live git state, so there is nothing a probe could find drifted
+([`architecture/align-surface.md`](../../.knowledge/standards/architecture/align-surface.md) §The
+fourth pillar has no align). The `specs` front hands off to this pillar rather than executing git
+itself — `/quenching:specs:execute` invokes `git:branch` for isolation, `/quenching:specs:conclude`
+reviews, distils, archives and proves the pre-merge gate green, then **names**
+`git:pr:create`/`git:merge` as the human's own next command instead of running either.
 
 > The per-command prose below predates the v3 `specs` fold and the align fold — the surface
 > facts above and in `CLAUDE.md` win where they disagree; a full rewrite is parked as its own
@@ -380,7 +410,7 @@ vocabulary, the `cq specs` surface, and the `/.specs/`↔`/.knowledge/` boundary
 the execution mechanics in
 [`specs-execute/execution.md`](assets/references/specs-execute/execution.md),
 the git defaults (read-if-present, never installed) in
-[`specs-execute/git.md`](assets/references/specs-execute/git.md),
+[`git/conventions.md`](assets/references/git/conventions.md),
 the distillation doctrine in
 [`specs-conclude/distill.md`](assets/references/specs-conclude/distill.md).
 The per-spec commands are never conducted by any sweep, because each needs fresh human intent a

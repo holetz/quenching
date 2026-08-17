@@ -1,0 +1,68 @@
+"""`cq git base` — the base-branch chain, and the second fact every PR/merge caller needs
+before deciding whether `pr:`/`merge:` are read on demand or still a required stamp.
+
+Reuses `infer_base_branch` from `quenching.specs.config` rather than a second copy of the
+chain: `declared integrationBranch -> origin/HEAD -> init.defaultBranch -> main` does not
+change with which pillar asks, only the git facts fed into it do.
+
+MEASURED for GitHub: a PR whose base is not the repository's own default branch never
+populates `closingIssuesReferences`, even with `Closes #<n>` in the body — see
+`/.knowledge/external/tools/github-cli-measured-behaviour.md`. The Azure DevOps call below
+follows the same shape on an unmeasured hypothesis (`## Design` §Quando o vínculo é lido de
+volta, e quando não é of the `pilar-git-e-specs-agnosticas-ao-git` spec) until a live run
+proves or breaks it — task 1.2 there is why it stays a hypothesis rather than a second
+measurement."""
+from __future__ import annotations
+
+import os
+import subprocess
+
+from quenching.common.git import _git
+from quenching.common.output import emit
+from quenching.specs.config import infer_base_branch, load_config
+
+
+def _origin_head_branch(cwd: str) -> str | None:
+    ref = _git(cwd, "symbolic-ref", "refs/remotes/origin/HEAD").strip()
+    return ref.rsplit("/", 1)[-1] if ref else None
+
+
+def _init_default_branch(cwd: str) -> str | None:
+    return _git(cwd, "config", "init.defaultBranch").strip() or None
+
+
+def _is_host_default(cwd: str, backend: str, base: str) -> bool:
+    """Whether `base` is the host's own default branch. `files` has no host and is always
+    `False`; a host CLI that is missing, unauthenticated, or answers with no remote to name
+    reads the same way `_git` reads git's own absence — as "unknown", not as an error."""
+    if backend == "github":
+        argv = ["gh", "repo", "view", "--json", "defaultBranchRef",
+                "-q", ".defaultBranchRef.name"]
+    elif backend == "azure-boards":
+        argv = ["az", "repos", "show", "--query", "defaultBranch", "-o", "tsv"]
+    else:
+        return False
+    try:
+        out = subprocess.run(argv, capture_output=True, text=True, timeout=10, cwd=cwd)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
+    if out.returncode != 0:
+        return False
+    default = out.stdout.strip().rsplit("/", 1)[-1]
+    return bool(default) and default == base
+
+
+def resolve_base(cwd: str) -> tuple[str, bool]:
+    """The base branch, and whether it is the host's own default — the one pair `git stale`
+    (task 3.3) also needs, factored out so a second caller is an import rather than a second
+    chain."""
+    cfg = load_config(cwd)
+    base = infer_base_branch(cfg, _origin_head_branch(cwd), _init_default_branch(cwd))
+    return base, _is_host_default(cwd, cfg["backend"], base)
+
+
+def cmd_base(args) -> int:
+    base, is_default = resolve_base(os.getcwd())
+    human = f"base: {base}\ndefault branch: {'yes' if is_default else 'no'}"
+    emit(args.json, {"ok": True, "base": base, "isDefault": is_default}, human)
+    return 0

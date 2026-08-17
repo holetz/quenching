@@ -4,7 +4,7 @@
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" [--root PATH] <pillar> <subcommand> ...
     python3 "${CLAUDE_PLUGIN_ROOT}/assets/bin/cq" --version
 
-Three pillars, each answering with the same contract its launcher answered with — the
+Four pillars, each answering with the same contract its launcher answered with — the
 subcommands, the `--json` payloads and the exit codes (0 ok · 1 findings · 2 refusal) are
 the ones frozen in `tests/fixtures/golden/`. This file routes; it decides nothing else.
 
@@ -65,6 +65,9 @@ PILLARS: dict[str, Pillar] = {
     "components": Pillar(
         "quenching.components.commands.cli", True,
         "the .claude/ command surface — lint, doctor, registry, read, session"),
+    "git": Pillar(
+        "quenching.git", False,
+        "a repository's git facts — the base branch, and whether it is the host's own default"),
 }
 
 

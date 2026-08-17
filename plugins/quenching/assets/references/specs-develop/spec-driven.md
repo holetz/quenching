@@ -134,9 +134,10 @@ merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`.
 
-**Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
-first-level frontmatter key with its own deterministic verb (`cq specs tags|assignee|start|target
-<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. Where a
+**Five more keys — `tags`, `assignee`, `start`, `target`, `summary` — are STATE, never records.**
+Each is a first-level frontmatter key with its own deterministic verb
+(`cq specs tags|assignee|start|target|summary <slug> [value]`), not a `{field: value}` record and
+not owned by one lifecycle command. Where a
 backend has a faithful native counterpart — issue labels/assignees on `github`,
 `System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
 `azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
@@ -144,6 +145,16 @@ document too, so a human's edit on the tracker is the spec's new value on the ne
 `start`/`target` have no such counterpart on `github` and stay in the document there, exactly as
 `date:` does everywhere (`knowledge/standards/architecture/spec-backend.md` §Armazenado não é
 projetado has the full test).
+
+**`summary:` is ONE line, and it is the only short thing a spec carries.** `title:` names the
+change; `## Overview` explains it to a newcomer; `summary:` is what a listing prints when it has
+one row per spec and no room to explain anything. It exists because every consumer that needed
+that line used to build it by reading the spec — measured on a 45-spec front, three commands had
+three different hand-written renderings of the same ranked table, and each one paid to read what
+none of them stored. Written at capture from `## Problem`, refreshed by every
+`/quenching:specs:develop` bank in the same edit that refreshes `## Overview`, and never inferred:
+a listing with no `summary:` falls back to `title:` and **says how many rows did**, so the gap is
+visible rather than silently papered over.
 
 ## The fourteen sections
 
@@ -390,16 +401,16 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 | `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
 | `cq specs show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `cq specs record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
-| `cq specs tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
+| `cq specs tags\|assignee\|start\|target\|summary <slug> [value]` | read one of the five STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append; `summary` is ONE line, the précis every ranked listing prints |
 | `cq specs verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
 | `cq specs config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
 | `cq specs promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
 | `cq specs next --spec <slug> [--json]` | THE single next action, carrying the task's `verify`/`files`/`pattern`/`[P]`; skips `[!]` |
-| `cq specs next --front [--json]` | the **ranked candidate list** — the only place ordering logic lives |
+| `cq specs next --front [--json] [--table] [--columns C,C] [--order rank\|priority]` | the **ranked candidate list** — the only place ordering logic lives. `--table` prints §The spec table itself, so a command quotes a rendering instead of re-aggregating a payload; `--columns` omits columns, never reorders them; `--order priority` swaps the four-factor ranking for the human's `priority.level` alone. `--table` with `--json` refuses (exit 2) — a table IS the human rendering |
 | `cq specs task --spec <slug> --check ID [--subject LINE] [--commit SHA] \| --uncheck ID \| --block ID --reason MSG` | flip, record, or block a checkbox mechanically; `--commit` is **additive** to `--subject`, never its replacement |
 | `cq specs discover <slug> <text>` | append one line to `## Discoveries` |
 | `cq specs parallel --spec <slug> [--json]` | verify each `[P]` group's `files:` sets are disjoint — **exit 1** when any group is ineligible |
-| `cq specs validate [--spec <slug>]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary |
+| `cq specs validate [--spec <slug>] [--by-code]` | the canonical heading set, the stage-scoped rule, filename conformance, the `sp-*` vocabulary. `--by-code` renders the same sweep as one line per `(code, severity)` with the count and the specs — grouped, never filtered |
 | `cq specs doctor` | workspace shape — the two folders, strays, older layouts; remedies **declared** for the command to apply |
 | `cq specs migrate` | one-way fold to the current layout (`backlog/` + `ready/` → `plans/`, and v1 three-file folders → one file); **exit 2** when there is nothing to migrate; `specs/archive/**` never touched |
 | `cq specs export --spec <slug> \| --all [--out DIR]` | dump the canonical markdown to disk — **write-only**; nothing reads it back and nothing syncs it, so it is a rescue copy for an external backend and never a second store |
@@ -528,33 +539,45 @@ A body that prints a path the backend never wrote sends a human to a file that d
 
 One ordered column set. **A command omits any column, never reorders, and never invents one.**
 
+**The tool renders it; a command quotes what the tool printed.**
+`cq specs next --front --table [--columns C,C] [--order rank|priority]` prints this table, and
+`--columns` is the mechanism for the omission rule above — the order is the tool's, so a subset
+cannot come back reordered. A command that composes these cells itself is a second renderer of one
+ranking, which is the fan-out
+`knowledge/standards/architecture/report-mold.md` forbids and which this table had three of before
+the flag existed.
+
 | Column | Source | `—` when |
 | --- | --- | --- |
-| `Spec` | `list[].slug`, `next --front .candidates[].slug` | never |
-| `Title` | `list[].title` (the tool already falls back to a titleized slug) | never |
-| `Stage` | `list[].stage` — one of the nine derived stages | never |
+| `Spec` | `next --front .candidates[].slug`, `list[].slug` | never |
+| `Summary` | `summary:` — the spec's own one line, falling back to `title:` where none is written, with the count of rows that fell back printed under the table | never |
+| `Stage` | `.stage` — one of the nine derived stages | never |
 | `Tasks` | `tasks.checked`/`tasks.total`, then `· N blocked` | `total` is 0 |
 | `Priority` | `records.priority.level` and `.criticality` | the record is unset |
 | `Complexity` | `records.priority.complexity` — how much a human must be in the loop | the spec was never ranked |
 | `Records` | which of the seven are set | none is |
 | `Age` | `next --front[].ageDays`, **or** days since `list[].date` | never |
-| `State` | `sp-spec-complete`, `sp-spec-blocked`, `sp-spec-stale`, the branch fact, else `—` | nothing to say |
+| `State` | `sp-spec-blocked`, `sp-spec-complete`, the branch fact, `sp-spec-stale` with the age, else `—` | nothing to say |
 
 ```
-| Spec | Title | Stage | Tasks | Priority | Complexity | Age | State |
+| Spec | Summary | Stage | Tasks | Priority | Complexity | Age | State |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| → session-tokens | Budget tokens per session | executing | 5/9 | 1 · high | medium | 3d | on this branch |
-| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | low | 9d | ready to build |
-| webhook-retries | Retry failed webhooks | proposed | — | — | — | 21d | — |
+| → session-tokens | Sessions never expire, so a stolen token is good forever | executing | 5/9 | 1 · high | medium | 3d | on this branch |
+| rate-limit-api | Rate limit the public API | ready | 0/12 | 2 · high | low | 9d | — |
+| webhook-retries | A failed webhook is dropped and nobody is told | proposed | — | — | — | 21d | — |
 ```
+
+**`Summary` is the old `Title` column, re-sourced.** Two columns would print the same string on
+every spec whose `summary:` is unwritten, which on adoption is most of them — so there is one
+column, with the fallback declared and counted rather than hidden.
 
 Which command carries which:
 
 | Command | Columns |
 | --- | --- |
-| `/quenching:specs:status` | `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State` |
-| `/quenching:specs:triage`, the proposal | the above, `Priority` and `Complexity` showing the **current** values, plus `Proposed level` `Proposed criticality` `Proposed complexity` `Reason` |
-| `/quenching:specs:triage`, the report | the same without the four proposal columns, `Priority` and `Complexity` now showing the approved values |
+| `/quenching:specs:status` | `Spec` `Summary` `Stage` `Tasks` `Records` `Age` `State` |
+| `/quenching:specs:triage`, the proposal | `Spec` `Summary` `Stage` `Tasks`, `Priority` and `Complexity` showing the **current** values, plus `Proposed level` `Proposed criticality` `Proposed complexity` `Reason` — the four proposal columns are the model's judgment and the only ones it composes |
+| `/quenching:specs:triage`, the report | `--order priority`, the four proposal columns dropped, `Priority` and `Complexity` now showing the approved values |
 | `/quenching:specs:align` | none — it reports findings, not front state |
 
 **`Complexity` is its own column because it answers its own question.** `level` and `criticality`

@@ -44,15 +44,15 @@
       },
       "branch": {
         "fields": ["base", "work"],
-        "writtenBy": "execute",
+        "writtenBy": "execute, or git:branch",
         "writeOnce": true,
         "why": "after a merge, git cannot say what the base was"
       },
       "pr": {
         "fields": ["number", "url", "date"],
-        "writtenBy": "conclude",
+        "writtenBy": "git:pr:create",
         "writeOnce": false,
-        "why": "a PR opened before it is merged — distinct from `merge.pr`, which is stamped only once the merge already happened. `conclude`'s PR route stamps this the moment `gh pr create` returns; running under the orchestrator's minimal-gear authorization, the route stops there rather than merging in the same block, so this is the only record of the PR until a later run (or a human) merges it and `merge` is stamped. Restamped if the PR is recreated — closed and reopened, or force-pushed to a fresh number — which is why it carries its own `date` rather than being writeOnce"
+        "why": "a PR opened before it is merged — distinct from `merge.pr`, which is stamped only once the merge already happened. `git:pr:create` stamps this the moment `gh pr create` returns; under `specs:cycle`'s minimal-gear authorization, that command runs and stops there rather than merging in the same block, so this is the only record of the PR until a later run (or a human) merges it and `merge` is stamped. `specs:conclude` never opens a PR or writes this record itself — it stops before either and names `git:pr:create` in its own handoff. Restamped if the PR is recreated — closed and reopened, or force-pushed to a fresh number — which is why it carries its own `date` rather than being writeOnce"
       },
       "reviewed": {
         "fields": ["date"],
@@ -66,10 +66,10 @@
         "strategies": ["merge-commit", "squash", "rebase", "fast-forward"],
         "anchorless": ["rebase", "fast-forward"],
         "noPr": ["fast-forward"],
-        "writtenBy": "conclude",
+        "writtenBy": "git:merge",
         "writeOnce": true,
         "label": "spec:merged",
-        "why": "the strategy was a choice and the subject names the merge it produced. The subject is known BEFORE the merge, so the record is stamped on the work branch and the merge is the last action of the run — nothing is written to the base after it. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none. A spec archived before this change carries `{strategy, commit}` and is read as-is, never backfilled: a recorded sha describes a commit that exists. `pr:` is optional and absent on every local conclusion; `gh pr merge --merge|--squash|--rebase` maps onto three of the four strategies, so `pr:` under `fast-forward` — which has no `gh` equivalent — is refused."
+        "why": "the strategy was a choice and the subject names the merge it produced. The subject is known BEFORE the merge, so the record is stamped on the work branch and the merge is the last action of `git:merge`'s own run — nothing is written to the base after it. Under `rebase` and `fast-forward` no merge commit exists, so the subject is an explicit none. A spec archived before this change carries `{strategy, commit}` and is read as-is, never backfilled: a recorded sha describes a commit that exists. `pr:` is optional and absent on every local merge; `gh pr merge --merge|--squash|--rebase` maps onto three of the four strategies, so `pr:` under `fast-forward` — which has no `gh` equivalent — is refused. `specs:conclude` never stamps this record; it stops before the merge and names `git:merge` in its own handoff."
       },
       "outcome": {
         "valuesFrom": "frontmatter.outcome",
