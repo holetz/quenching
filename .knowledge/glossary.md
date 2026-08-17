@@ -65,6 +65,13 @@ sentence, and **link out** rather than explaining in full here.
   frontmatter entry recording that a human said go, the one fact the retired `backlog/` → `ready/`
   `git mv` carried that no derivation reproduces; `execute` asks inline and stamps it rather than
   refusing an unapproved spec.
+- [**Batching contract**](../standards/automation/context-discipline.md) — a named block in a
+  command body naming which of its consecutive tool calls are ONE call, so the batching rule is
+  checkable against the body instead of re-judged every run. Calls split only where the next
+  command's *input* depends on the previous one's output; splitting for tidiness, or to report
+  progress between two commands, buys nothing and is paid by every turn after it. It is the first
+  of the two rules on the **Context integral**'s third axis, emit fewer turns per unit of work;
+  `/quenching:specs:develop` carries the standing example, with three such points.
 - [**Blocked task marker**](../standards/workflows/task-execution.md) — the `- [!] <id> <title> —
   blocked: <reason>` line implementation writes when attempts stop converging, replacing the
   earlier hidden attempt counter; `cq specs next` skips it and the reason stays legible to whoever
@@ -142,6 +149,13 @@ sentence, and **link out** rather than explaining in full here.
   backfilled. Squashed to one commit per **Section boundary**, every task the section held is
   re-stamped onto that one surviving commit's subject — the anchor narrows to section granularity,
   never loses resolvability.
+- [**Contaminating block**](/plugins/quenching/assets/references/specs-fanout/fanout.md) — a block
+  whose pending decision changes the specs *after* it in a queue, as opposed to a **local** one that
+  stops only its own spec. The classification is the executor's to declare, because only it knows
+  what the decision touches: a local block marks `[!]` and the queue moves on, a contaminating one
+  stops the run and asks. A red declared gate stops the queue whichever was declared, and the
+  blocked spec leaves the branch's `quenching-slugs:` mark so the pull request never implies it
+  carries what it does not.
 - [**Context (components)**](../standards/naming/command-surface.md) — one of the four sibling
   contexts under the `components` front — `command/`, `agent/`, `hook/`, `harness/` — each named
   for the artifact it mints, none a sub-type of another. A front-level verb sits at the front's own
@@ -149,10 +163,10 @@ sentence, and **link out** rather than explaining in full here.
   (`/quenching:components:command:new`).
 - [**Context integral**](../standards/automation/context-discipline.md) — a run's true cost,
   `tokens × turns remaining`, not `tokens`: every turn re-sends the whole conversation, so a block
-  loaded once is paid once for each turn that follows it. It has exactly two factors, so there are
-  exactly two ways to cut it — **open less** and **run for less time** — and a proposal that does
-  neither is not an optimisation. Because it is quadratic in the turn count, shortening the window
-  beats shortening the reads.
+  loaded once is paid once for each turn that follows it. It has exactly two factors, and three ways
+  to reach them — **open less**, **run for less time**, and **emit fewer turns per unit of work** —
+  and a proposal that does none of the three is not an optimisation. Because it is quadratic in the
+  turn count, shortening the window beats shortening the reads.
 - [**cq**](/plugins/quenching/assets/references/align/tool-resolution.md) — the plugin's one entry
   point, `${CLAUDE_PLUGIN_ROOT}/assets/bin/cq`, replacing the four self-contained scripts each
   front used to ship separately. Invoked as `cq <pilar> <subcomando>…` — `cq knowledge …`,
@@ -177,11 +191,18 @@ sentence, and **link out** rather than explaining in full here.
   plugin ships is read against the skeleton, which is why `citation-check.sh`'s half 3 measures
   shipped markdown links against it rather than against this checkout
   (`/.knowledge/standards/quality/citation-verification.md` §Half 3).
-- **Gear** — the execution mode of one lifecycle stage in the spec orchestrator: in-session, in a
-  sub-agent, or skipped, set by the ONE gears plan the orchestrator derives from
-  `priority.complexity`. The contract now lives in the plugin's own `specs-orchestrate/gears.md`
-  reference — retired with `automation/orchestration-gears.md`
-  (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
+- [**Fan-out floor**](/plugins/quenching/assets/references/specs-fanout/fanout.md) —
+  `fanoutMinComplexity`, the `.claude/quenching.json` key §The entry contract measures a
+  candidate's `priority.complexity` against: below it, a spec joins the defining regime; at or
+  above it, the spec must already be `ready`/`approved` to join the building regime. Declared,
+  read through `cq specs config --json`, default `medium` — the fixed cutoff the contract used
+  before the floor existed, so an undeclared floor changes nothing.
+- **Gear** — the execution mode of one lifecycle stage in `/quenching:specs:cycle`: in-session, in
+  a sub-agent, or skipped, set by the ONE gears plan the command derives from
+  `priority.complexity`. Governs the stages of ONE spec only — conducting N of them is the
+  [spec queue](../standards/workflows/spec-queue.md)'s subject, not a gear's. The contract now
+  lives in the plugin's own `specs-cycle/gears.md` reference — retired with
+  `automation/orchestration-gears.md` (marchas-do-orquestrador-vivem-no-plugin, 2026-08-11)
 - [**Generated listing**](../standards/architecture/generated-listings.md) — a file, or a marked
   zone inside one, that a command rebuilds from what a directory holds. Always a **second source**
   of a fact the disk already carries, so it earns its keep only where nothing else derives that
@@ -297,7 +318,7 @@ sentence, and **link out** rather than explaining in full here.
   PR route only, and **write-many** where the other git records are write-once: a PR may be closed
   and reopened, or force-pushed to a fresh number, and each is a new fact rather than a
   falsification of the old one. It is not `merge.pr`, which is stamped only once the merge is
-  about to happen — under `/quenching:specs:orchestrate`'s **minimal gear** the PR route deliberately
+  about to happen — under `/quenching:specs:cycle`'s **minimal gear** the PR route deliberately
   stops at the open PR and leaves the merge to human review, so `merge` never lands and this is the
   spec's only record of the pull request. On backend `github` it is also what makes the branch
   visible on the issue: the PR body's `Refs #<issue>` line populates the Development panel at no
@@ -339,6 +360,12 @@ sentence, and **link out** rather than explaining in full here.
   it is the ONE hop a spec ever makes: the `backlog/` → `ready/` promote is retired, and the human
   OK it used to carry is the **Approved record** instead. Promoting as `done` refuses
   while `- [ ]` boxes remain unless forced; `abandoned` is always allowed.
+- [**Recursive return**](/plugins/quenching/assets/references/specs-fanout/fanout.md) — a fan-out
+  run absorbing the specs it promoted out of `## Discoveries`, in one of three forms: no recursion,
+  one generation, or an unbounded fixpoint. All three are always presented in the authorization
+  plan, with the chosen one and the human's stopping criterion. What bounds the third is the entry
+  contract, not a counter: a promoted spec at or above the fan-out floor (`fanoutMinComplexity`,
+  default `medium`) needs `ready`/`approved`, and therefore never enters a return on its own.
 - [**Refinement record**](../standards/workflows/plan-artifacts.md) — the `refined: {mode, date}`
   entry a spec's **frontmatter** gains once it has been interrogated, whose absence raises the
   non-gating `sp-unrefined` warning.
@@ -464,6 +491,11 @@ sentence, and **link out** rather than explaining in full here.
   code and cannot diverge between targets. The selected backend is the sole source of truth: there
   is no shadow local store, and a declared-but-unimplemented backend refuses rather than falling
   back to `files`.
+- [**Spec queue**](../standards/workflows/spec-queue.md) — building N specs **serially** over a
+  single isolation — one branch, one pull request, no chaining — rather than concurrently, because
+  the specs' declared files collide at a density the doc measures. Serializing buys a second
+  property outright: spec N's gate runs over the result of 1..N−1. Its counterpart, defining N
+  specs, fans out for real and is a **batch**, never a queue — nothing it runs takes a branch.
 - [**Typed-only command**](../standards/automation/skills.md) — a command carrying
   `disable-model-invocation: true`, reached only by a human typing it; its `description` leaves
   every session's context. Residency and content are

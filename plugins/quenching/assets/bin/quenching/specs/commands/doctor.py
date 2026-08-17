@@ -12,7 +12,7 @@ from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.commands.migrate import _v1_leftovers
 from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import _finding
-from quenching.specs.config import (BACKENDS, CONFIG_FILE, CONFIG_KEYS,
+from quenching.specs.config import (BACKENDS, COMPLEXITY_LEVELS, CONFIG_FILE, CONFIG_KEYS,
                                     DEFAULT_INTEGRATION_BRANCH, DEFAULT_RELEASE_BRANCH,
                                     LEGACY_CONFIG_FILE, ROOT_TOO_HIGH_REMEDY,
                                     UNPROVED_BACKENDS, azure_workitemtype_retirement,
@@ -77,6 +77,15 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                  f"is in effect instead",
                                  path=CONFIG_FILE, backend=cfg["unknownBackend"],
                                  remedy=f"the implemented backend(s): {', '.join(BACKENDS)}"))
+    if cfg["unknownFanoutMinComplexity"]:
+        findings.append(_finding("sp-config-unknown-fanout-min-complexity", "warn",
+                                 f"{CONFIG_FILE} declares fanoutMinComplexity "
+                                 f"`{cfg['unknownFanoutMinComplexity']}`, which is not one of "
+                                 f"the four levels — `{cfg['fanoutMinComplexity']}` is in "
+                                 f"effect instead",
+                                 path=CONFIG_FILE,
+                                 fanoutMinComplexity=cfg["unknownFanoutMinComplexity"],
+                                 remedy=f"the recognised level(s): {', '.join(COMPLEXITY_LEVELS)}"))
     # The permanent half of the "warn or stay silent" answer, and the reason it is a finding
     # and not a line on every call: a backend that was never run against a real target is a
     # fact about the CONFIGURATION, unchanged between operations, so it belongs where a

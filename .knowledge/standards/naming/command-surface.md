@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Command surface naming
-description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
+description: How the plugin's commands are named and namespaced — one file per entry point, where the path is the identity; the fourth namespace (`git`, a pillar rather than a front) and its coexistence with a target's own `git` category; the components front's four sibling contexts, each named for the artifact it mints, and the rule that keeps a front-level verb off an artifact-level context
 resource: plugins/quenching/commands/**
 tags: [naming, commands, taxonomy]
-timestamp: 2026-08-11
+timestamp: 2026-08-16
 audience: both
 authority: current
-source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact
+source: rename-command-surface change (2026-07-21) + the specs-native refactor (2026-07-24) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31); the `.claude/` front renamed `components` and split into four artifact-named contexts by modularizar-specs-knowledge-components (task 9.7, 2026-08-10), inheriting the split's own design from the retired restructure-claude-front-namespace spec — the split is orthogonal to the front's name and survived the rename intact; the declare-the-class rule for a rename's citation residual added by the orquestrar-specs-em-paralelo branch review (2026-08-16), whose `orchestrate` → `cycle` command rename found five citing files its `## Impact` had not named; the fourth namespace (`git`) and its coexistence with a target's own `git` category added by pilar-git-e-specs-agnosticas-ao-git (task 6.2)
 maintainer: quenching
 ---
 
@@ -64,9 +64,22 @@ The surface is partitioned by the artifact each front's commands touch:
 - **`/quenching:knowledge:`** — the OKF `/.knowledge/` bundle.
 - **`/quenching:specs:`** — the native spec-driven workspace.
 - **`/quenching:components:`** — the target repo's `.claude/` automation surface.
-- **root `/align`** — deliberately outside the three namespaces, because it is the one command that
-  spans all three fronts. Under the old rule it was an exception the linter had to be told about;
-  now it is simply a command at the top of the tree.
+- **`/quenching:git:`** — the fourth namespace, and the odd one out: it names a **pillar**, not a
+  front. The other three converge a tree toward a canonical shape; `git` answers questions about
+  the target repository's own live git state instead, which is why it carries no `align` verb of
+  its own — see [../architecture/align-surface.md](../architecture/align-surface.md) §The fourth
+  pillar has no align.
+- **root `/align`** — deliberately outside the three front namespaces, because it is the one
+  command that spans all three fronts. Under the old rule it was an exception the linter had to be
+  told about; now it is simply a command at the top of the tree.
+
+**A target repo's own `git` category coexists with this namespace, and never collides with it.**
+A target may mint its own `/git:commit` or `/git:cleanup` under its own `.claude/commands/git/` —
+`components-command-new/taxonomy.md`'s own canonical category example — naming a convention that
+repo declared for itself. §Three citation forms is what keeps the two apart: the plugin's own
+`git` commands are always spelled `/quenching:git:<verb>` (or bare, only inside this repo's own
+`.claude/commands/`, which does not hold one), so a target's bare `/git:<verb>` names its own
+command and nothing this plugin ships, on every repo that installs it.
 
 This clause named a second root, `/align-and-update`, until the specs-flow-consolidation spec
 deleted it from all four fronts — see
@@ -136,6 +149,13 @@ holding no skills: a name that lies is forbidden of the surface this standard go
   own confirmation. The collapse took this literally at the largest scale the repo has seen: no
   `skills/` shim, no dual registration, no transitional period — the same discipline the `docs`/
   `skill` → `knowledge`/`components` rename applied to itself.
+- **A rename's `## Impact` declares the *class* of citing files, never the list.** The list is the
+  one thing the author cannot hold: `orquestrar-specs-em-paralelo` named the files its tasks
+  rewrote and missed five more carrying the old name — a sibling command body, two standards, a
+  GENERATED zone and a golden fixture — which the sweep dragged in anyway because its gate demanded
+  a zero-result grep. Declare the class and make that grep the gate, exactly as
+  [../workflows/retiring-a-standard.md](../workflows/retiring-a-standard.md) already requires of a
+  retired standard; a `## Impact` that enumerates instead is a list that will be short.
 
 ## Why there is no longer a wrapper
 

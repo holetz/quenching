@@ -26,8 +26,10 @@ An align asks for ONE human confirmation, at run start, that authorizes the enti
 the pass cap or convergence. Every command
 an align invokes as a stage carries **one** exception sentence pointing here and never restates
 it: the `knowledge/` stages (`/quenching:knowledge:import-memory`, `/quenching:components:harness:align`, `/quenching:knowledge:glossary-backfill`), the
-`specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), and the three front aligns when `/align`
-invokes them.
+`specs/` stages (`/quenching:specs:conclude`, `/quenching:specs:triage`), the three front aligns when `/align`
+invokes them, and — under `/quenching:specs:cycle`'s minimal gear only —
+`/quenching:git:pr:create`, the one stage this contract's grantor is a conductor rather than an
+align.
 
 **What the authorization covers** — every routine write a stage performs: frontmatter stamps,
 new concept docs, index/log/glossary entries, align's routine doc/folder renames, variant
@@ -61,6 +63,15 @@ gate.
 **Narration replaces the gate, not the plan** — an authorized stage still presents its full plan
 table before writing; the user watching the session sees everything and types nothing.
 
+**A command with no plan gate has nothing to dispense, and the sentence is not sent to it.**
+`/quenching:specs:develop` is the standing case: it narrates its consolidated plan and writes,
+waiting on nobody, whether an align invoked it or a human typed it. Declaring the exception at it
+would announce the waiver of a gate that does not exist — noise in the invocation, and a reader
+left believing the command has a stop it never had. This is not an exemption from the contract:
+the two protected classes do not occur there, because the command edits no code and takes no
+irreversible cycle action. What still stops it stops it in either mode — the questions its own
+banks ask, and the go/no-go that is the sole origin of an `approved` record.
+
 **Nesting is one level of authorization, not two gates.** When `/align` invokes a front align, the
 front align does **not** ask for its own OK — it inherits the authorization and passes it down
 verbatim to its own stages. The human confirms once for the whole repo; only code-coupled and
@@ -75,23 +86,25 @@ spec whose tasks are all checked may still be waiting on a deploy.
 <!-- rules -->
 The minimal gear differs from the contract in exactly one point, and pays for it outside the
 session. The contract requires a code-coupled item and an irreversible cycle action to stop the
-run, always; under the orchestrator's minimal gear
-([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-orchestrate/gears.md) §Deriving the
-gears plan, the `low` row) neither stops — the whole cycle runs in one session on a single authorization
-and ends opening a pull request, so the human review the gates would have hosted moves to the PR
-instead: opened against the integration branch declared in `.claude/quenching.json`
+run, always; under the cycle's minimal gear
+([gears.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-cycle/gears.md) §Deriving the
+gears plan, the `low` row) neither stops — the building half runs in one session on its own
+authorization and ends opening a pull request, so the human review the gates would have hosted
+moves to the PR instead: opened against the integration branch declared in `.claude/quenching.json`
 (`integrationBranch`), where the merge waits on review and on the checks before it lands. The
 trade is said out loud: if the PR is merged unread, no gate was left anywhere on the path — which
 is what the gear re-evaluation exists to bound, as a run that outgrows the minimal gear climbs
 back into a run with gates before it reaches the PR.
 
-The route already exists — nothing new is built for it. `conclude` offers pull request or local
-alongside the strategy, and the `pr` record names the pull request the moment it is opened — the
-fact the base branch's history cannot reproduce: which PR carries this spec, and where the review
-and the checks still live once the branch is gone. Under this gear that record is the only one the
-run writes: it stops at the open PR, so `merge` — whose own `pr` field names the same PR once a
-merge is decided — is never stamped at all (§Three frontmatter records carry the underivable git
-facts).
+The route already exists — nothing new is built for it. `conclude` reviews, distils, archives and
+proves the pre-merge gate green, then stops, naming `/quenching:git:pr:create` as the human's own
+next command; under this gear alone, `/quenching:specs:cycle` invokes that command itself, under
+the same authorization, rather than leaving the name for a human to act on. `git:pr:create` stamps
+the write-many `pr` record the moment the PR is opened — the fact the base branch's history cannot
+reproduce: which PR carries this spec, and where the review and the checks still live once the
+branch is gone. Under this gear that record is the only one the run writes: it stops at the open
+PR, so `merge` — whose own `pr` field names the same PR once a merge is decided — is never stamped
+at all (§Three frontmatter records carry the underivable git facts).
 
 No gear above the minimal changes the contract: a run that stops stage by stage keeps the two
 classes gating individually, item by item, in the session, exactly as when the stage runs

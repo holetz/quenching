@@ -24,7 +24,7 @@ level (`/skill-map` maps whatever it is pointed at, so no single folder claims i
 that did belong to a subject would path under it instead (`/git:commit`). The rule
 itself is [/.knowledge/standards/automation/skills.md](/.knowledge/standards/automation/skills.md).
 
-The `quenching` plugin installed from this marketplace contributes the twenty-six
+The `quenching` plugin installed from this marketplace contributes the twenty-five
 `/quenching:knowledge:*`, `/quenching:specs:*`, `/quenching:components:*` and `/align` commands. Those are the **product's** surface,
 documented in [plugins/quenching/README.md](/plugins/quenching/README.md), and they stay out
 of the table below — the zone lists only what this repository itself ships in
