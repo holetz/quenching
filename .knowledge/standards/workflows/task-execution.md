@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/specs-execute/git.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
-timestamp: 2026-08-15
+timestamp: 2026-08-16
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11); the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15)
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11); the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15); its third cause — a phrase the target file's own language standard forbids, which no correct implementation can satisfy and which the falsification run cannot see, since a grep for an absent phrase exits non-zero exactly as a healthy check does — and the `files:` rule for derived artifacts, both from revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.3 (a pt-BR literal demanded of an English-only command body) and task 2.2 (a golden fixture broken and re-captured while declared nowhere)
 maintainer: quenching
 ---
 
@@ -63,8 +63,9 @@ not imply a proof that never happened.
 
 The three above are false greens. The fourth is a false **red**, and it is the mirror rather than a
 variant: the check never had the power to say *pass*, for a reason that has nothing to do with the
-task. Measured twice on one spec — `references-citam-standards-fora-do-esqueleto`, whose two
-occurrences were authored minutes apart:
+task. Three causes, measured on two specs — the first two on
+`references-citam-standards-fora-do-esqueleto`, whose occurrences were authored minutes apart, the
+third on `revisar-fluxo-do-develop-custo-e-gates`:
 
 **A path that does not resolve from the declared `cwd:`.** A task declared
 `cwd: plugins/quenching` and `verify: … cq knowledge validate .knowledge`. The bundle is at the
@@ -78,17 +79,39 @@ opened, so the gate reported the section as failing for work done before it star
 same rule as *scoped at authoring time, never filtered at the gate* below, seen from its failure
 side.
 
+**A phrase the target file's own language standard forbids.** A task declared
+``verify: test "$(grep -c 'campo `path`' plugins/quenching/commands/specs/develop.md)" -ge 1`` —
+a pt-BR literal demanded of a command body that
+[/.knowledge/standards/agents/communication.md](../agents/communication.md) §What it governs forces
+to be English. No correct implementation could satisfy it: greening the check meant breaking the
+communication standard, and honouring the standard meant a red gate forever. The two above are
+authoring slips about *where* the check runs and *how wide* it reaches; this one is a collision
+between two written rules, and it is the only one of the three that is settled by reading the
+standards that govern the file rather than by reading the check.
+
+**This third cause is the one the falsification step does not catch**, which qualifies the claim
+below rather than joining it. A `grep` for an absent phrase exits non-zero against the unfixed tree
+— exactly what a healthy check does there — so the one run says *pass* about a line that can never
+say pass. The `cwd:` case announces itself (`no-bundle` on stderr) and the over-wide case fails on
+files the branch never opened; a language collision has no signature at all before the fix. It is
+caught by asking, at authoring time, which language standard governs the path the check names.
+[/.knowledge/standards/quality/prose-verify-pins-wording.md](../quality/prose-verify-pins-wording.md)
+is the neighbour: there the pinned wording *could* have been written, and the failure is ambiguous
+between a wrong text and a wrong check. Here it could not, and the check is wrong with certainty.
+
 **Why this is worth its own entry rather than a footnote to the three.** A false green ships a lie
 quietly. A false red does something worse: it puts pressure on the executor at exactly the moment
 the hard rules forbid relief — *never edit the `verify:`, the test, or the assertion so it stops
 failing*. An executor that yields writes a weaker check and calls the task proved; one that does not
 yields a task blocked on a defect that was never in the code. Neither outcome is the task's fault,
-and both are authoring defects the falsification step catches for free.
+and both are authoring defects — caught for free wherever the falsification step can see them.
 
-**The falsification step catches all four, and it is one run.** Executing the `verify:` once against
-the unfixed tree answers both questions at once: a line that exits 0 there is a false green, and a
-line that cannot exit 0 anywhere is a false red. Authoring a `verify:` without running it is what
-the four cases share.
+**The falsification step catches all four but one, and it is one run.** Executing the `verify:` once
+against the unfixed tree answers both questions at once: a line that exits 0 there is a false green,
+and a line that cannot exit 0 anywhere is a false red. Authoring a `verify:` without running it is
+what the four cases share. The single exception is the language collision above, whose pre-fix exit
+is indistinguishable from a healthy check's — that one is caught by reading, not by running, and it
+is the reason the run is not the whole of authoring a check.
 
 ### A task's `cwd:` says where `verify:` runs
 
@@ -213,6 +236,28 @@ disjunction over it. `(new)` stays the one reserved annotation, meaning "a path 
 create"; parentheses in the middle of a path are not an annotation. The failure this refuses is
 silent by construction — an executor cannot tell an invented piece from a path the task will
 create — which is exactly why it is refused instead of normalised or dropped.
+
+### `files:` names the derived artifacts the edit invalidates, not only the files it opens
+
+A golden fixture that snapshots a file's shape is **part of that file's blast radius**, and the task
+that edits the file is the task that re-captures the golden. Declare it in `files:` — and in
+`## Impact`, where the spec names what it touches — the same way the edited file itself is declared.
+
+Measured on `revisar-fluxo-do-develop-custo-e-gates` (task 2.2, 2026-08-16): a section added to
+`assets/references/align/convergence.md` broke
+`plugins/quenching/tests/fixtures/golden/skills-read-index.json`, which freezes that reference's
+per-section character counts. The re-capture was correct and sanctioned by `test_golden.py`'s own
+docstring, but the fixture appeared in no task's `files:` and in no `## Impact` line, so the task
+that owned the change did not own the artifact the change invalidated.
+
+This is the machine-checked half of the fan-out
+[computed-fact-prose-fanout.md](../quality/computed-fact-prose-fanout.md) describes, and it inverts
+that doc's problem rather than repeating it: a golden **is** the checker prose never gets, so the
+stale copy is caught within one test run. What it does not buy is the declaration — a red suite
+tells the executor something broke, at the point where the diff is already written, while a declared
+`files:` entry tells the author what the change reaches before it is made. A task whose `files:`
+omits the fixture also loses the delegation gate and the `parallel` disjunction proof over it, both
+of which read `files:` and neither of which reads the test suite.
 
 ## A blocked task is a visible marker, not a hidden counter
 

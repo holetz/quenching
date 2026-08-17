@@ -78,6 +78,17 @@ UNROUTED = {
                                          "the root-override fixture — it lists a real spec, so its "
                                          "`records` dict carries `pr` too. The frozen payload was "
                                          "captured on the base, before the record existed.",
+    "specs-status-alpha": "the `status --json` payload gained `summary` — the spec's ONE-line "
+                          "précis, a declared frontmatter scalar the frozen payload predates. "
+                          "Additive: every other key is byte-identical.",
+    "specs-status-beta": "same added field as `specs-status-alpha`, on the second status fixture.",
+    "specs-next-front": "each candidate gained `summary`, `records` and `state` — the three cells "
+                        "§The spec table needs that the frozen payload never carried, so that "
+                        "`--table` renders the mold instead of each command re-deriving it. "
+                        "Additive: the ranking, its order and every pre-existing key are "
+                        "unchanged.",
+    "specs-selftest": "`cq specs --help` lists its subcommands, and `summary` is now one of them. "
+                      "The drift is in stderr's usage line, not in any payload.",
 }
 
 # Golden ids whose STDOUT still reproduces byte-for-byte but whose EXIT CODE the package

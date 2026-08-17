@@ -1,14 +1,14 @@
 {
   "ok": true,
   "root": "<REPO>/plugins/quenching",
-  "commandCount": 26,
-  "referenceCount": 28,
+  "commandCount": 34,
+  "referenceCount": 33,
   "findings": [
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1049 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1049,
+      "message": "description is 1041 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1041,
       "cap": 1024,
       "command": "/align",
       "path": "commands/align.md"
@@ -30,6 +30,14 @@
       "covered": 6,
       "command": "/components:hook:new",
       "path": "commands/components/hook/new.md"
+    },
+    {
+      "code": "sk-unscoped-bash",
+      "severity": "warn",
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/git:branch",
+      "path": "commands/git/branch.md"
     },
     {
       "code": "sk-step-criterion",
@@ -122,8 +130,8 @@
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1062 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1062,
+      "message": "description is 1114 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1114,
       "cap": 1024,
       "command": "/specs:conclude",
       "path": "commands/specs/conclude.md"
@@ -139,8 +147,8 @@
     {
       "code": "sk-description-portable",
       "severity": "warn",
-      "message": "description is 1065 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1065,
+      "message": "description is 1037 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
+      "characters": 1037,
       "cap": 1024,
       "command": "/specs:execute",
       "path": "commands/specs/execute.md"
@@ -154,13 +162,12 @@
       "path": "commands/specs/execute.md"
     },
     {
-      "code": "sk-description-portable",
+      "code": "sk-unscoped-bash",
       "severity": "warn",
-      "message": "description is 1057 characters, over the 1024 limit of the Agent Skills standard — the command is not portable outside Claude Code",
-      "characters": 1057,
-      "cap": 1024,
-      "command": "/specs:orchestrate",
-      "path": "commands/specs/orchestrate.md"
+      "message": "`Bash` is granted unscoped — scope it to the commands the workflow runs, or state the reason in the body",
+      "tool": "Bash",
+      "command": "/specs:execute-queue",
+      "path": "commands/specs/execute-queue.md"
     }
   ]
 }

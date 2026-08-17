@@ -1,7 +1,14 @@
 """`next` — THE single next action, and the ranking behind `--front`.
 
 The ranking lives here and nowhere else: four lexicographic factors, plus a live `plan/<slug>`
-ref that outranks all four in both directions."""
+ref that outranks all four in both directions.
+
+`--spec` has three live consumers — `/quenching:specs:execute`, the gate bank of
+`/quenching:specs:develop`, and `assets/checks/conclude-order-check.sh`. `--front` was kept
+deliberately through a period with none, because the front's ordering logic exists nowhere else;
+`--table` gave it two — `/quenching:specs:status` prints it as its whole spec block, and
+`/quenching:specs:triage` prints it under `--order priority` as its closing ranking. Both quote the
+rendering; neither re-sorts or re-tallies it."""
 from __future__ import annotations
 
 import datetime
@@ -14,12 +21,39 @@ from quenching.specs.backends.base import SpecBackend
 from quenching.specs.commands.output import Emitter, display_locator, read_one
 from quenching.specs.parse import derive_info, titleize
 from quenching.specs.parse.derive import derive_stage
+from quenching.specs.parse.records import spec_records
 from quenching.specs.parse.sections import ready_report
 from quenching.specs.parse.tasks import _files_bad_annotation, task_progress
 from quenching.specs.schema import load_schema
 
 
 CRITICALITY_RANK = {"critical": 0, "high": 1, "medium": 2, "normal": 2, "low": 3}
+
+# `sp-spec-stale`'s own threshold, per specs-align/conformance.md. Read here so the table
+# reports the same age the sweep would raise a finding at.
+STALE_DAYS = 90
+
+
+def _state(tasks: dict, ready: bool, branch: dict, age: int) -> str | None:
+    """The one thing worth saying about this spec beyond its stage — in the sweep's own
+    vocabulary where a `sp-*` code covers it, and as the branch fact where none does.
+
+    Ordered as `spec-driven.md` §The spec table declares the column: a blocked task or a
+    finished checklist outranks where the work is sitting, because they are what a human
+    acts on. `None` is a not-yet, never a defect."""
+    if tasks["blocked"]:
+        return "sp-spec-blocked"
+    if tasks["total"] and tasks["checked"] == tasks["total"]:
+        return "sp-spec-complete"
+    if branch["current"]:
+        return "on this branch"
+    if branch["live"]:
+        return f"in flight on {branch['work']}"
+    # Staleness needs open work to mean anything: a spec nobody has started is not rotting,
+    # it is waiting, and the ready gate says which of the two it is.
+    if age >= STALE_DAYS and (ready or tasks["total"]):
+        return f"sp-spec-stale ({age}d)"
+    return None
 
 
 def _priority_rank(rec) -> tuple[float, str]:
@@ -87,7 +121,7 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
                current: str | None, root: str) -> dict:
     # ASKED OF THE BACKEND, never of the path. Against GitHub the locator is an issue URL, so
     # every candidate derived from an EMPTY document — the whole front ranked as `captured`
-    # with no title, no tasks and nothing executing, and `/quenching:specs:continue` handed out its
+    # with no title, no tasks and nothing executing, and `--front` handed out its
     # single next action from exactly that.
     info, rerr = backend.read_spec(s["slug"])
     unreadable = (rerr or {}).get("code")
@@ -112,17 +146,25 @@ def _candidate(backend: SpecBackend, s: dict, schema: dict, heads: set[str],
     # way round — its ref cannot go, so nothing would ever stop it counting.
     on_it = live and work == current
     branch_rank = 0 if on_it else (2 if live else 1)
+    tasks = {"checked": checked, "blocked": blocked, "total": total}
+    branch = {"work": work, "live": live, "current": on_it}
+    age = _days_since(info["date"])
     return {
         "slug": s["slug"], "folder": s["folder"], "file": s["file"], "date": info["date"],
         "title": fm.get("title", titleize(s["slug"])), "stage": stage,
-        "tasks": {"checked": checked, "blocked": blocked, "total": total},
+        "summary": fm.get("summary") or None,
+        "tasks": tasks,
         "progress": round(progress, 3),
         "readyGateMet": ready["ok"],
         "approved": fm.get("approved") or None,
         "priority": fm.get("priority") or None,
-        "ageDays": _days_since(info["date"]),
+        # `spec_records` rather than a second enumeration, so this listing and `cq specs list`
+        # cannot disagree about which records a spec carries.
+        "records": spec_records(fm),
+        "ageDays": age,
+        "state": _state(tasks, ready["ok"], branch, age),
         "unreadable": unreadable,
-        "branch": {"work": work, "live": live, "current": on_it},
+        "branch": branch,
         "path": display_locator(s["path"], root),
         "_key": (branch_rank, 0 if executing else 1, -progress, prank,
                  info["date"], s["slug"]),
@@ -150,6 +192,87 @@ def _rank_reason(c: dict) -> str:
     return f"{c['stage']}, {c['ageDays']}d old"
 
 
+# `spec-driven.md` §The spec table's ordered column set, plus the `Summary` this spec added.
+# A caller OMITS columns with `--columns`; it never reorders them and never invents one, which
+# is why the order lives here and not in the flag.
+# `summary` IS the mold's `Title` column, re-sourced: the field where one is written, the
+# title where none is. Two columns would print the same string on every spec without a
+# `summary:`, which today is most of them.
+TABLE_COLUMNS = ["spec", "summary", "stage", "tasks", "priority", "complexity",
+                 "records", "age", "state"]
+SUMMARY_WIDTH = 120
+
+
+def _cell(value: str | None) -> str:
+    """One markdown cell. `—` is a not-yet, never a defect."""
+    if not value:
+        return "—"
+    return str(value).replace("\n", " ").replace("|", r"\|").strip()
+
+
+def _table_row(c: dict, recommended: bool) -> tuple[dict, bool]:
+    """A candidate as the mold's cells, and whether `Summary` fell back to the title.
+
+    The fallback is reported rather than hidden: a table that silently prints the title as a
+    summary makes an unwritten `summary:` look written, and nobody ever notices the field is
+    not being filled."""
+    t, p = c["tasks"], (c["priority"] or {})
+    tasks = f"{t['checked']}/{t['total']}" if t["total"] else ""
+    if t["blocked"]:
+        tasks += f" · {t['blocked']} blocked"
+    level, crit = str(p.get("level", "")).strip(), str(p.get("criticality", "")).strip()
+    summary, fellback = c["summary"], not c["summary"]
+    if fellback:
+        summary = c["title"]
+    elif len(summary) > SUMMARY_WIDTH:
+        summary = summary[:SUMMARY_WIDTH - 1].rstrip() + "…"
+    return {
+        "spec": ("→ " if recommended else "") + c["slug"],
+        "summary": summary,
+        "stage": c["stage"],
+        "tasks": tasks,
+        "priority": " · ".join(x for x in (level, crit) if x),
+        "complexity": str(p.get("complexity", "")).strip(),
+        "records": ", ".join(k for k, v in (c["records"] or {}).items() if v),
+        "age": f"{c['ageDays']}d",
+        "state": c["state"],
+    }, fellback
+
+
+def _print_table(ranked: list[dict], columns: list[str]) -> None:
+    rows = [_table_row(c, i == 0) for i, c in enumerate(ranked)]
+    heads = [col.capitalize() for col in columns]
+    print("| " + " | ".join(heads) + " |")
+    print("| " + " | ".join("---" for _ in columns) + " |")
+    for cells, _ in rows:
+        print("| " + " | ".join(_cell(cells[col]) for col in columns) + " |")
+    fellback = sum(1 for _, f in rows if f)
+    if fellback and "summary" in columns:
+        print(f"\n  {fellback} of {len(rows)} rows show the title in `Summary` — no `summary:` "
+              f"written yet. `cq specs summary <slug> \"<one line>\"` fills one.")
+
+
+def _resolve_columns(requested: str | None) -> tuple[list[str], list[str]]:
+    """The columns to print, and any name that is not one — `spec-driven.md` §The spec table
+    says a command OMITS columns and never reorders them, so the declared order always wins
+    over the order they were typed."""
+    if not requested:
+        return list(TABLE_COLUMNS), []
+    asked = [c.strip().lower() for c in requested.split(",") if c.strip()]
+    unknown = [c for c in asked if c not in TABLE_COLUMNS]
+    if unknown:
+        return [], unknown
+    return [c for c in TABLE_COLUMNS if c in asked], []
+
+
+def _order_key(order: str):
+    """`rank` is the four-factor ordering this module owns; `priority` is the human's ranking
+    alone, which is what a triage table proposes against. Nothing else ranks a front."""
+    if order == "priority":
+        return lambda c: (_priority_rank(c["priority"])[0], c["date"], c["slug"])
+    return lambda c: c["_key"]
+
+
 def _next_front(args, root: str, out: Emitter) -> int:
     """The ranked candidate list — THE only place ranking logic lives.
 
@@ -168,6 +291,21 @@ def _next_front(args, root: str, out: Emitter) -> int:
     untouched specs — offering it would send a second run at work already under way
     somewhere else. The signal is the ref, never the `branch:` record: a human may cut a
     branch with no record, and a record outlives the branch it names."""
+    table = getattr(args, "table", False)
+    if table and args.json:
+        # A table IS the human rendering. Emitting both would put the same ranking on two
+        # surfaces that can drift, which is the defect `--table` exists to remove.
+        return out.emit_err(args.json, {
+            "code": "sp-table-not-json", "exit": 2,
+            "message": "--table is the human rendering; drop --json for the table, "
+                       "or drop --table for the payload"})
+    columns, unknown = _resolve_columns(getattr(args, "columns", None) if table else None)
+    if unknown:
+        return out.emit_err(args.json, {
+            "code": "sp-unknown-column", "exit": 2,
+            "message": f"unknown column(s) {', '.join(unknown)} — the set is "
+                       f"{', '.join(TABLE_COLUMNS)}"})
+
     schema = load_schema()
     heads, current = _git_refs(root)
     backend, err = open_backend(root)
@@ -175,7 +313,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
         return out.emit_err(args.json, err)
     cands = [_candidate(backend, s, schema, heads, current, root)
              for s in backend.list_specs("plans")]
-    cands.sort(key=lambda c: c["_key"])
+    cands.sort(key=_order_key(getattr(args, "order", "rank")))
     ranked = []
     for c in cands:
         c = dict(c)
@@ -203,9 +341,13 @@ def _next_front(args, root: str, out: Emitter) -> int:
     if not ranked:
         print(f"no active specs under {root} — nothing to continue")
         return 0
-    print(f"specs front — {len(ranked)} active, ranked")
-    for i, c in enumerate(ranked, 1):
-        print(f"  {i}. {c['slug']:<32} {c['reason']}")
+    order = getattr(args, "order", "rank")
+    print(f"specs front — {len(ranked)} active, ranked by {order}")
+    if table:
+        _print_table(ranked, columns)
+    else:
+        for i, c in enumerate(ranked, 1):
+            print(f"  {i}. {c['slug']:<32} {c['reason']}")
     if needs_triage:
         print("\n  nothing is in flight and nothing carries a priority record — this order "
               "is age alone.\n  `cq specs`-driven triage would give it something to stand on.")

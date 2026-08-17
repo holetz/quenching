@@ -4,10 +4,10 @@ title: Command authoring and alignment
 description: How the plugin's commands are classified, authored, named, and swept into conformance — one file per entry point, including the admission criterion that decides whether a command's description stays resident in context or goes typed-only
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**
 tags: [automation, commands, taxonomy, authoring]
-timestamp: 2026-08-15
+timestamp: 2026-08-16
 audience: both
 authority: current
-source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic
+source: the skill-authoring + skill-alignment change that first paired a skill with its wrapper (predates collapse-skills-into-commands) + collapse-skills-into-commands (2026-07-26) + correct-command-citation-form (2026-07-31) + route-commands-without-always-on-descriptions (2026-08-02), which measured the disable-model-invocation claim this doc had asserted unmeasured and added the routed/typed-only admission criterion + the surface-wide description review added to /quenching:components:align (2026-08-02) + alocar-comandos-skills-por-categoria (2026-08-15), which made category/subject the primary classification test ahead of domain-bound/generic + revisar-fluxo-do-develop-custo-e-gates (2026-08-16), which widened the `context: fork` prohibition from "gates a mid-flow confirmation" to "asks the human anything mid-flow", aligning the written rule with the `sk-fork-gate` check that had always graded the `AskUserQuestion` grant itself; the directional-boundary rule added by the orquestrar-specs-em-paralelo branch review (2026-08-16), which found the two new fan-out entries naming their neighbours while no neighbour named them back — a one-directional surface no lint code can see
 maintainer: quenching
 ---
 
@@ -92,6 +92,12 @@ interrogation do not.
   when a bundle-carrying repo lacks it.
 - **One plan → one OK**: classification, names, files to write, and the OKF tail presented as a
   single plan, applied on one confirmation.
+- **The `Not for:` boundary is directional, so a mint edits the neighbours too.** Writing the new
+  command's own boundary points *outward*; until the commands it competes with name it back, a
+  spoken request still lands on whichever of them already claims the phrasing. Nothing grades this:
+  `sk-no-boundary` sees an absent boundary, never an incomplete one, and `doctor` only asserts that
+  no two commands resolve to the same path. The mint's plan therefore carries the return edge — the
+  competitor set, and the clause each of them gains — as part of the one confirmation.
 - **OKF tail** on every mint: regenerate the derived registry's GENERATED zone, offer a glossary
   entry for any coined term, append a log entry, and self-check.
 
@@ -189,10 +195,17 @@ must be. On a small surface it may admit nobody, and that is a legitimate outcom
 failure to economise.
 
 `context: fork` runs the command in a separate context. It is **forbidden** on any command that
-gates on a mid-flow confirmation — a forked context cannot present the plan whose OK the run
-depends on; a fork beside an `AskUserQuestion` grant is `sk-fork-gate`, an error. A command that
-only reads and reports may fork freely, and that is the lever's home: self-contained, noisy,
-summary-out work whose trail would otherwise sit in the main context forever.
+asks the human anything mid-flow — a plan whose OK the run waits on, or a plain question one of its
+steps puts to them. A forked context presents neither, so the run either hangs or answers itself.
+The test is the interaction, never the interaction's weight, and that is already what the instrument
+checks: a fork beside an `AskUserQuestion` grant is `sk-fork-gate`, an error, whatever the command
+does with the grant.
+
+**Dropping a plan gate does not buy a command the fork.** `/quenching:specs:develop` writes its
+consolidated edit without confirming it and stays forbidden all the same, because its banks still
+ask and its `approval` bank still waits on a go. A command earns the lever by asking nothing at
+all — one that only reads and reports may fork freely, and that is the lever's home: self-contained,
+noisy, summary-out work whose trail would otherwise sit in the main context forever.
 
 ## The execution profile
 
