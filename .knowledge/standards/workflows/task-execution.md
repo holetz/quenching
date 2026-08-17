@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Task execution contract
-description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary, the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
-resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md
+description: How a spec's task is executed — the verification policies, `verify:` scoped at authoring, the three causes of a check that can never pass (one of them invisible to the falsification run), `files:` naming the derived artifacts an edit invalidates, the failure budget, one commit per task while a section is open squashed to one commit per section at its boundary — onto a sha captured when the section opened, behind an ancestry guard — the two-level review split, the four-event Handoff refresh cadence, and the delegation and [P] disjunction rules
+resource: plugins/quenching/commands/specs/execute.md, plugins/quenching/commands/specs/conclude.md, plugins/quenching/assets/references/specs-execute/execution.md, plugins/quenching/assets/references/specs-develop/artifacts.md, plugins/quenching/assets/references/git/commit.md, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/specs/templates/spec.md, plugins/quenching/assets/checks/section-squash-check.sh
 tags: [workflows, specs, execution, verification, commits, delegation, handoff]
 timestamp: 2026-08-17
 audience: both
 authority: current
-source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11); the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15); its third cause — a phrase the target file's own language standard forbids, which no correct implementation can satisfy and which the falsification run cannot see, since a grep for an absent phrase exits non-zero exactly as a healthy check does — and the `files:` rule for derived artifacts, both from revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.3 (a pt-BR literal demanded of an English-only command body) and task 2.2 (a golden fixture broken and re-captured while declared nowhere); the no-`files:` arm of the anchor rule — a task that declares no `files:` ticks without `--subject` and attempts no commit — by cq-specs-task-check-stale-subject-sem-commit (2026-08-17), on the unresolvable `subject:` that arm left on task 5.1 of the archived revisar-politica-de-assets-checks (issue 902) under the `github` backend
+source: refine-and-execute-specs-flow plan (sections 5-6); the review split re-homed by the specs-flow-consolidation plan; the tick-before-commit ordering by the move-conclude-merge-last plan (task 5.3), with the task→commit anchor moved from the subject to the sha by the configurable-spec-backend plan (task 4.4); the falsifiable-verify rule measured by the verify-allowed-tools-enforcement spec (2026-07-28); the four-event Handoff cadence by the cut-specs-execute-turns spec, measured on a 13-task run (transcript 985b372b, 2026-07-30); the inline-markup arm of the falsifiable-verify rule found twice while building that same spec (2026-07-31); the zero-errors-not-warnings arm measured on the stop-develop-offering-follow-up-specs branch (2026-08-03); the declared `cwd:` key by the declarar-o-cwd-de-uma-linha-verify spec (2026-08-05), proved by that same spec's own mixed-cwd `verify:` lines; the closed `files:` grammar by the fix-the-files-field-parser-splitting-on-commas-inside-parentheses spec (2026-08-06), whose repro was found in the route-commands-without-always-on-descriptions archive (2026-08-02); the failing-exit arm of the zero-errors rule added by reduzir-as-chamadas-az-por-escrita-no-azure-boards at its conclude, after a `verify:` asserting `cq specs validate` exit 0 was measured unsatisfiable on the day it was authored — the target workspace already carried seven warnings, and `validate` exits 1 on any finding; the section squash — one commit per section, the per-task chain and its retry safety net unchanged while the section is open — by the reduzir-commits-por-secao spec (2026-08-11); the false-red mirror of the falsifiable-verify rule — a `verify:` that can never pass, by a path that does not resolve from the declared `cwd:` or by a scope wider than the task's blast radius — measured twice on the references-citam-standards-fora-do-esqueleto spec (2026-08-15); its third cause — a phrase the target file's own language standard forbids, which no correct implementation can satisfy and which the falsification run cannot see, since a grep for an absent phrase exits non-zero exactly as a healthy check does — and the `files:` rule for derived artifacts, both from revisar-fluxo-do-develop-custo-e-gates at its branch review (2026-08-16), measured on that spec's own task 1.3 (a pt-BR literal demanded of an English-only command body) and task 2.2 (a golden fixture broken and re-captured while declared nowhere); the no-`files:` arm of the anchor rule — a task that declares no `files:` ticks without `--subject` and attempts no commit — by cq-specs-task-check-stale-subject-sem-commit (2026-08-17), on the unresolvable `subject:` that arm left on task 5.1 of the archived revisar-politica-de-assets-checks (issue 902) under the `github` backend; the captured-sha squash target and the `git merge-base --is-ancestor` guard that runs before the reset, by the squash-de-secao-deve-resetar-para-um-sha spec (task 3.1) and proved by `assets/checks/section-squash-check.sh`, after three section squashes on the holetz/fast-status branch resolved `develop` as a ref while another checkout fast-forwarded it and declared the removal of 17 files the branch had never opened (2026-08-16)
 maintainer: quenching
 ---
 
@@ -329,12 +329,46 @@ each task that built it.
 and commits it — [execution.md](/plugins/quenching/assets/references/specs-execute/execution.md)
 §The commit — is unchanged: retrying, blocking and resuming a task mid-section reads off a real,
 individual commit, exactly as before. Only once the section's last task commits clean, with none of
-the section `[!]`, does it collapse — a local `git reset --soft` to the commit standing before the
-section, plus one recommit, per
+the section `[!]`, does it collapse — a local `git reset --soft` to the **sha captured when the
+section opened**, plus one recommit, per
 [execution.md](/plugins/quenching/assets/references/specs-execute/execution.md) §The section squash
 — never touching a prior section's commits, never anything already shared. The isolation taken at
 the start still buys everything it always did: what changes is which commit survives, never whether
 the work was proved before it landed.
+
+### The squash target is a captured sha, and ancestry is checked before the reset
+
+**The target of a `reset` that rewrites history is always a sha — never a ref, and never a
+hand-counted `HEAD~n`.** A ref is resolved at the moment it is used, and the moment it is used is
+after everything that can move it.
+
+- **Capture** it once, with `git rev-parse HEAD^{commit}`, *before* the section's first task
+  commits. That is the commit the section found; on a plan's first section it is the tip the branch
+  already carried.
+- **Derive** it, for a run that resumed mid-section with no capture in hand, from the anchor the
+  first task's line already carries — `commit:` where the backend records a sha, else
+  `git log --grep "<its recorded subject>" --fixed-strings --format=%H` — and then that commit's
+  parent. The two answer the same commit; the derivation exists because the capture lives in the
+  session's head and a section can be interrupted mid-way.
+- **Guard** the reset with `git merge-base --is-ancestor <section-base-sha> HEAD`, whose exit 0 is
+  the reset's condition. A target outside the branch's own history is a finding, reported with the
+  section's per-task commits left intact.
+
+**Measured on 2026-08-16**, branch `holetz/fast-status`, spec `listagem-ranqueada-nativa-no-cq-specs`.
+The prose named the target by description — *"the commit immediately BEFORE this section's first
+task"* — and on a first section that commit **is** the base's tip, so the executor reached for the
+cheapest ref that satisfied it: `develop`. Another checkout fast-forwarded `develop` mid-run; three
+section squashes resolved the ref to the **new** tip, and the three commits went on to declare the
+removal of 17 files and the reversion of 45 more the branch had never opened. Nothing caught it —
+the tree was clean before and after, the spec validated, and the suite passed, because the deleted
+files belonged to another front with no test reaching them.
+
+The capture fixes the naming; the guard fixes the class, since on that run the base's new tip was
+**not** an ancestor of the work branch. `assets/checks/section-squash-check.sh` is the proof: the
+claim is about history, not about any file's contents, so it is verified by building a history
+whose base advances mid-section rather than by reading the command bodies —
+[surface-verification.md](../quality/surface-verification.md) §An ordering property is verified by
+running the cycle, not by reading the commands.
 
 ### The anchor is the sha, where no backend co-branches with the code
 
