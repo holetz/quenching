@@ -174,6 +174,14 @@ sentence, and **link out** rather than explaining in full here.
   shim in the directory Claude Code appends to `PATH`, is what lets a body write the name bare; the
   plugin path is what it falls to wherever the PATH does not hold — including work on the quenching
   repository itself, where that entry names the *installed* checkout.
+- [**Declared root / resolved root**](../standards/architecture/spec-backend.md) — the pair the
+  shared layer of `cq specs` must never confuse. The **declared** root is the configuration entry
+  (`--root`, `SPECS_ROOT`, the default) — not an address: under an external backend it points at
+  nothing, and under `files` with the specs worktree in use it points at the directory the backend
+  does not write to. The **resolved** root is where documents actually land, known only to the
+  backend that stored them. Shared code deriving a path from the declared one is the single cause
+  behind a destination check that could not see the destination, a diagnostic reporting a workspace
+  nobody has, and a `root` payload field naming a folder that does not exist.
 - [**Derived stage**](../standards/workflows/plan-lifecycle.md) — a spec's position in its life
   (`captured` → `proposed` → `designed` → `refined` → `ready` → `approved` → `executing`),
   COMPUTED from which headings are filled and which records frontmatter carries rather than
