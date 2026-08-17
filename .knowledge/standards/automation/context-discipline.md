@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Context discipline — open less, run for less time, and emit fewer turns
-description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
+description: The two halves of a run's integral `tokens × turns remaining` and the three ways to cut it — open less (the declared files rather than the folder, the cited sections rather than the file, N sections in ONE call, the block rather than the section where a section has blocks, and the rules/rationale marker convention), run for less time (the section boundary as a legitimate stopping point, triggered by an event and never by a threshold), and emit fewer turns per unit of work (the batching contract, and the ban on a turn that exists only to announce the next tool call); plus the two things measured and refused, segmenting the bundle into more files and deleting rationale to compact it
 resource: plugins/quenching/commands/**, plugins/quenching/assets/references/**, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**
 tags: [automation, context, reading, cost, commands, references]
-timestamp: 2026-08-16
+timestamp: 2026-08-17
 audience: both
 authority: background
-source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute; the third axis — emit fewer turns per unit of work — added by revisar-fluxo-do-develop-custo-e-gates (2026-08-16), measured on session c56cff41-e5b1-43f0-85dc-eca1b17e03d0 by summing cache_read_input_tokens + cache_creation_input_tokens + input_tokens over the assistant turns of its .jsonl: 9.73M tokens of context read across 100 turns, 4.44M of it 100 re-reads of a 44.4k base
+source: read-by-section-not-by-file spec, then narrow-the-execute-preamble — every figure below is a static count of files on disk plus arithmetic over the integral, measured while building the spec that wrote it; the integral's measurement history, 344-turn run included, retired with context-budget.md (extensible-surface-and-budget-retirement, 2026-08-06); the second converted body (`/quenching:specs:develop`, 2026-08-04) came with a corpus measurement of the cost the rule addresses — 107 whole-file reference reads against 13 sectioned ones across 159 transcripts, 34.6M token-turns, half of it in the three references that one command cited by bare path; scope-the-handoff-rewrite adds the `## Handoff` section-block measurement below, taken on a real 29-task, 7-section run predating that redesign; the fourth half of rule 2 (the address-then-list ladder) comes from the skills-py-sections-comma-split-bug spec, measured on 146 comma-carrying headings and a 14,944-value simulation over this repo's own markdown; the third triage result — the consumerless citation that leaves, with its rule at the file's own grade — added by alinhar-citacoes-de-preambulo-do-execute (task 2.2, 2026-08-06), which triaged the eighteen preamble citations of /quenching:specs:execute; the third axis — emit fewer turns per unit of work — added by revisar-fluxo-do-develop-custo-e-gates (2026-08-16), measured on session c56cff41-e5b1-43f0-85dc-eca1b17e03d0 by summing cache_read_input_tokens + cache_creation_input_tokens + input_tokens over the assistant turns of its .jsonl: 9.73M tokens of context read across 100 turns, 4.44M of it 100 re-reads of a 44.4k base; rule 4 of §Open less — the block rather than the section — added by escopar-a-leitura-por-task (2026-08-17), which put the cut in `cq specs section --scope` on the READ path and is declared rather than measured, leaning on the ~79,556-char figure §Run for less time already owns
 maintainer: quenching
 ---
 
@@ -38,7 +38,9 @@ repository, and a second measurement in the same repository is not a second repo
 
 <!-- rules -->
 
-Three rules, in descending order of what they were measured to be worth:
+Four rules. The first three are in descending order of what they were measured to be worth; the
+fourth extends the same philosophy one level deeper and is a **qualitative estimate** until a real
+run measures its cut.
 
 1. **Read the files a spec *declares*, never the folder they sit in.** `## Impact` names the
    `/.knowledge/standards/` paths a spec expects to touch; those, plus whatever the current task's own text
@@ -86,6 +88,22 @@ Three rules, in descending order of what they were measured to be worth:
    trades tokens for turns and can lose to reading the whole file, because a turn spent early is
    repaid by every turn after it. Both readers take a list for this reason; it is half the result,
    not a convenience.
+4. **Where a section is built out of blocks, the block is the unit — and the cut is opt-in.**
+   `## Handoff` is the one canonical section with internal blocks, one per `### N.` of `## Tasks`,
+   so a reader taking it whole loads the record of every section already closed. `cq specs section
+   <slug> --moment build --scope current` asks for the evergreen global block plus the block of the
+   section the next actionable task sits in, and returns the other `build` sections whole — which
+   is what keeps rule 3 intact: the narrower read costs no extra turn. Two halves make it safe to
+   generalize:
+   1. **The cut is asked for, never applied silently.** Without `--scope`, the raw body comes back
+      whole, exactly as before — the same opt-in precedent `--rules-only` set. A read that got
+      quieter by itself would be indistinguishable from a section that had emptied.
+   2. **The payload says it was cut** (`"scope": "current"`), so a caller never infers it by
+      comparing sizes.
+
+   The floor is the block, not the byte: a section with no blocks is already its own narrowest
+   unit, and inventing sub-block addressing for it would buy nothing — see §Two things measured and
+   refused, which is the same refusal at file granularity.
 
 A section is the right unit because the files are already the right size. Counted on this bundle:
 **315 `##` sections across 488,149 chars, averaging 1,549 chars (~387 tokens)**. Reading
@@ -117,6 +135,21 @@ surface for a case precedence already settles, and dropping the comma split outr
 a documented form whose `--help` promises it — though the same sweep found **zero** callers passing
 a comma to the short form today, which is what makes that form a retirement candidate rather than a
 constraint.
+
+**Rule 4 is declared, not measured — and says so.** The nearest figure this file owns is §Run for
+less time's: on a real 29-task, 7-section run the flat `## Handoff` resent **~79,556 chars
+(~19,900 tokens)**, peaking at ~5,680 per task, almost all of it sections that had already closed.
+`scope-the-handoff-rewrite` closed that leak on what a *rewrite sends*; this rule closes the same
+leak on what a *reader takes* — the two halves of one section, and the read half had been left to
+agent discipline (`spec-driven.md` §The executor contract sliced it by hand for a delegated
+sub-agent, and not at all for the orchestrator that read it first). What the read side saves
+depends on how deep into a plan a run starts and how large the closed blocks are by then, so no
+number is claimed until a run measures one. The graduation condition is the file's own: a second
+adopting repo, plus one measured run.
+
+The alternative of a dedicated `cq specs handoff` verb was rejected for the reason rule 3 exists —
+it returns step 4 to two calls, trading tokens for a turn, which is the trade this whole section is
+about.
 
 ## The rules/rationale marker convention
 

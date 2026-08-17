@@ -191,13 +191,20 @@ this spec), `sp-impact-uncovered` (a declared standard no task writes) — and o
 Ask for the `build` moment — the six sections an executor needs — never by naming them:
 
 ```bash
-cq specs section "<slug>" --moment build --json
+cq specs section "<slug>" --moment build --scope current --json
 ```
 
 Branch on the payload, never the exit code. `sections[].state`, already read once in step 2, is
 the same fact this call's own `absent` list repeats: a section not yet `filled` — `## Handoff`
 empty on a spec's first build is the ordinary case, not a finding — is read as empty. No second
 call, and no heading enumerated here to know which one that was.
+
+`--scope current` cuts **only** `## Handoff`, and the other five sections arrive whole — which is
+what keeps this one call. What comes back under that heading is the evergreen global block plus
+the `### N.` of the section the next actionable task sits in; a section already closed is never
+handed over, so its record cannot enter this context at all. The payload says so with
+`"scope": "current"`, never by leaving the caller to compare sizes. Drop the flag only to audit
+the whole history of the block.
 The path comes from what `status` resolved; never assume filenames. `## Impact` names the
 `/.knowledge/standards/` paths and the code this spec expects to touch.
 

@@ -358,9 +358,12 @@ it.
 
 It does **not** receive the `decision`-moment sections (`## Overview` / `## Problem` /
 `## Alternatives Considered` / `## Open Decisions` / `## Risks`), nor the rest of the `build` set
-verbatim. The orchestrator itself reads the whole `build` set at step 4
-(`cq specs section <slug> --moment build`); a `## Design` decision that bears on the task reaches
-the executor distilled into the task line or `## Handoff`, never as the section itself. It returns
+verbatim. The orchestrator itself reads the `build` set at step 4
+(`cq specs section <slug> --moment build --scope current`) — the other five sections whole, and
+`## Handoff` already cut to the same global-plus-own-section slice the bullet above promises an
+executor, so **neither side depends on an agent remembering to narrow it**; a `## Design` decision
+that bears on the task reaches the executor distilled into the task line or `## Handoff`, never as
+the section itself. It returns
 a structured result — status, diff summary, `verify:` output, discoveries, handoff deltas — and
 **never writes the spec**. The orchestrator applies everything via `cq specs` (`task --check`, `discover`,
 `section --write`), runs `verify:` itself, and commits: **whoever commits, verifies.**
