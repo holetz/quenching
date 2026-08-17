@@ -15,11 +15,13 @@ import io
 import json
 import os
 import socket
+import subprocess
 import tempfile
 import unittest
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.specs.backends import backend_root
 from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.files import FilesBackend
@@ -31,11 +33,13 @@ from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, HYBRID_TI
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
 from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands.doctor import cmd_doctor
 from quenching.specs.commands.next import _candidate
+from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import merge_record_finding, validate_spec
 from quenching.specs.config import (BACKENDS, DEFAULT_SPECS_BRANCH, UNPROVED_BACKENDS,
                                     _UNPROVED_ANNOUNCED, announce_unproved, is_root_too_high)
-from quenching.specs.parse import FIELD_KEYS, derive_labels
+from quenching.specs.parse import FIELD_KEYS, PHASES, derive_labels
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
                                           set_frontmatter_record)
@@ -780,6 +784,65 @@ class FilesRoot(unittest.TestCase):
     def test_a_namespaced_branch_does_not_deepen_the_worktree_path(self):
         want = os.path.join("/repo", SPECS_WORKTREE_DIR, "quenching-specs")
         self.assertEqual(specs_worktree_path("/repo", "quenching/specs"), want)
+
+
+class DoctorMeasuresTheResolvedRoot(unittest.TestCase):
+    """`doctor` reports on the directory the backend would use, and creates nothing doing it.
+
+    THE FALSE FINDINGS THIS ENDS. On a migrated `files` repository the specs live in the specs
+    worktree and the declared root in the code tree is gone — and `doctor`, which reads the
+    declared root because opening the backend would CREATE the worktree, answered
+    `sp-no-workspace` plus a `sp-missing-phase` per phase. Every one of them described a
+    workspace nobody has.
+
+    Two assertions, and the second is the one that makes the first worth having: the findings
+    are gone, and the specs worktree still does not exist afterwards. A `doctor` that got the
+    right answer by checking the backend out would have traded a false finding for a side
+    effect."""
+
+    CFG = {"backend": "files", "specsBranch": DEFAULT_SPECS_BRANCH}
+
+    def _repo_with_specs_in_the_worktree(self, top: str) -> str:
+        """A repository whose declared `.specs/` is absent and whose specs sit in the worktree
+        path — the shape a migrated repo has, staged by hand so no `git worktree add` runs."""
+        subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
+                       capture_output=True, text=True)
+        worktree = specs_worktree_path(top, DEFAULT_SPECS_BRANCH)
+        for ph in PHASES:
+            os.makedirs(os.path.join(worktree, ".specs", ph))
+        return worktree
+
+    def test_the_declared_root_being_absent_is_no_longer_a_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            top = os.path.join(tmp, "repo")
+            worktree = self._repo_with_specs_in_the_worktree(top)
+            declared = os.path.join(top, ".specs")
+
+            measured = backend_root(declared, self.CFG)
+            self.assertEqual(measured, os.path.join(worktree, ".specs"))
+
+            buf = io.StringIO()
+            args = argparse.Namespace(json=True)
+            with contextlib.redirect_stdout(buf):
+                cmd_doctor(args, declared, Emitter())
+            codes = {f["code"] for f in json.loads(buf.getvalue())["findings"]}
+
+            self.assertNotIn("sp-no-workspace", codes)
+            self.assertNotIn("sp-missing-phase", codes)
+
+    def test_measuring_creates_no_worktree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            top = os.path.join(tmp, "repo")
+            subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
+                           capture_output=True, text=True)
+            declared = os.path.join(top, ".specs")
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                cmd_doctor(argparse.Namespace(json=True), declared, Emitter())
+
+            self.assertFalse(os.path.exists(specs_worktree_path(top, DEFAULT_SPECS_BRANCH)),
+                             "the diagnostic checked the specs branch out")
 
 
 class RootTooHigh(unittest.TestCase):

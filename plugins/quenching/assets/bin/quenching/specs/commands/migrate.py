@@ -23,6 +23,7 @@ from quenching.specs.backends.hybrid import (GH_PART_MAX, hybrid_join, hybrid_pr
                                              hybrid_split, hybrid_title_join,
                                              hybrid_title_split)
 from quenching.specs.commands.output import Emitter
+from quenching.specs.config import load_config
 from quenching.specs.parse import LEGACY_DATED_FILE_RE, SPEC_FILE_RE, titleize
 from quenching.specs.parse.derive import _policy
 from quenching.specs.parse.fields import legacy_marker_fold, set_frontmatter_key
@@ -313,22 +314,29 @@ def cmd_migrate(args, root: str, out: Emitter) -> int:
     # The external fold: specs an issue tracker still holds under the dated basename. It is
     # asked of the backend, not of the filesystem, and it is the only fold that can apply to a
     # repo with no `/.specs/` folder at all.
-    markers: list[dict] = []
-    backend, berr = open_backend(root)
-    if not berr and backend is not None and hasattr(backend, "legacy_rows"):
-        markers = _migrate_markers(backend, args.dry_run)
-        if markers:
-            broken = [r for r in markers if not r["roundTrip"]]
-            out.emit(args.json,
-                     {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
-                      "kind": "markers", "count": len(markers),
-                      "projected": sum(1 for r in markers if r["projectedTitle"]),
-                      "spilled": sum(1 for r in markers if r["parts"] > 1),
-                      "skipped": broken, "specs": markers},
-                     f"{'would fold' if args.dry_run else 'folded'} {len(markers)} spec(s) out of "
-                     f"the dated basename" + (f" — {len(broken)} SKIPPED, see --json" if broken
-                                              else ", all byte-for-byte"))
-            return 1 if broken else 0
+    #
+    # THE BACKEND IS OPENED ONLY WHERE IT COULD ANSWER, and the declared backend says whether
+    # it could. `legacy_rows` belongs to an external implementation, so under `files` this
+    # opened a backend, found no such attribute and moved on — except that `open_backend` under
+    # `files` is what CREATES the specs worktree, so a `--dry-run` whose whole contract is to
+    # change nothing checked out a branch on the way to reporting.
+    if load_config(root)["backend"] != "files":
+        backend, berr = open_backend(root)
+        if not berr and backend is not None and hasattr(backend, "legacy_rows"):
+            markers = _migrate_markers(backend, args.dry_run)
+            if markers:
+                broken = [r for r in markers if not r["roundTrip"]]
+                out.emit(args.json,
+                         {"ok": not broken, "root": root, "dryRun": bool(args.dry_run),
+                          "kind": "markers", "count": len(markers),
+                          "projected": sum(1 for r in markers if r["projectedTitle"]),
+                          "spilled": sum(1 for r in markers if r["parts"] > 1),
+                          "skipped": broken, "specs": markers},
+                         f"{'would fold' if args.dry_run else 'folded'} {len(markers)} spec(s) "
+                         f"out of the dated basename"
+                         + (f" — {len(broken)} SKIPPED, see --json" if broken
+                            else ", all byte-for-byte"))
+                return 1 if broken else 0
 
     if not plans and not tasks and not v2:
         out.emit(args.json, {"ok": False, "code": "sp-nothing-to-migrate", "root": root,
