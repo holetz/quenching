@@ -1,8 +1,10 @@
 """`config` and `doctor` — the workspace's declared parameters, and its shape.
 
-The two verbs that ask about the WORKSPACE rather than about a spec, which is why neither opens
-a backend to answer (`doctor` opens the Azure one only where `azure-boards` is configured, for
-the one finding nothing else can ever catch)."""
+The two verbs that ask about the WORKSPACE rather than about a spec, which is why `config`
+never opens a backend and `doctor` opens one only where the configured backend holds a finding
+nothing else can ever catch: `azure-boards` for a card a human untagged, `github` for a listing
+that came back empty. Every such check is a `warn` at worst — `doctor`'s contract is to reach
+the end and report, never to refuse."""
 from __future__ import annotations
 
 import json
@@ -10,6 +12,9 @@ import os
 
 from quenching.specs.backends import backend_root
 from quenching.specs.backends.azure import open_azure_backend
+from quenching.specs.backends.base import BackendRefusal
+from quenching.specs.backends.github import (GH_LISTING_SUSPECT_REMEDY, listing_is_suspect,
+                                             listing_suspect_message, open_github_backend)
 from quenching.specs.commands.migrate import _v1_leftovers
 from quenching.specs.commands.output import Emitter, front_fields
 from quenching.specs.commands.validate import _finding
@@ -174,6 +179,35 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                              f"from Entendimento Técnico on",
                                              path=str(row["id"]), slug=row["slug"],
                                              remedy="record `start`/`target` on the spec"))
+    # The `github` counterpart of the network check above, and the same justification: a
+    # listing that comes back empty is invisible to every OTHER command, which all read
+    # through it and report the resulting nothing as the front's real state. This is where a
+    # human already goes to ask what is wrong with the workspace, so it is where the standing
+    # half of the answer belongs — the `stderr` line at the moment of the read is the other.
+    #
+    # NEITHER BRANCH REFUSES, which is the point: `doctor` has to reach the end. The exit-2
+    # the same evidence produces at the read choke point becomes a `warn` here, quoting the
+    # refusal's own message and remedy rather than composing a second wording for them.
+    if cfg["backend"] == "github":
+        gh, gh_err = open_github_backend(root)
+        if not gh_err:
+            try:
+                rows = gh.list_specs()
+            except BackendRefusal as refusal:
+                # Every way the listing can fail lands here, not only the empty one — a 503
+                # mid-diagnostic must not abort the diagnostic either. Only some refusals
+                # carry a `remedy` of their own; the rest get the one true thing that can be
+                # said, which is that nothing was read.
+                findings.append(_finding(
+                    refusal.err["code"], "warn", refusal.err["message"],
+                    remedy=refusal.err.get("remedy")
+                    or "the specs front could not be read, so nothing about it was measured"))
+            else:
+                if listing_is_suspect(len(rows), gh.open_issues):
+                    findings.append(_finding("sp-gh-listing-suspect", "warn",
+                                             listing_suspect_message(gh.repo, gh.open_issues),
+                                             openIssues=gh.open_issues,
+                                             remedy=GH_LISTING_SUSPECT_REMEDY))
     # The workspace shape — the folder IS the phase, but only under the `files` backend,
     # the one backend that has a folder. An external backend's workspace is the tracker
     # itself, so none of these findings apply there: producing them would describe a
