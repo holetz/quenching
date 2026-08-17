@@ -33,5 +33,6 @@
       "body": "\n### 1. Registry\n\n- [x] 1.1 Create the registry module\n      files: src/widgets/registry.py (new)\n      verify: python3 -m unittest tests.widgets.test_registry\n      subject: plan/alpha-widget: 1.1 Create the registry module\n- [ ] 1.2 Point the loader at the registry\n      files: src/widgets/loader.py\n      pattern: src/widgets/registry.py\n      verify: python3 -m unittest tests.widgets.test_loader\n- [ ] 1.3 Write the registry standard\n      files: /.knowledge/standards/architecture/widget-registry.md (new)\n      verify: python3 assets/hooks/okf-validate.py .knowledge\n\n### 2. Readers\n\n- [ ] 2.1 [P] Point the renderer at the registry\n      files: src/widgets/renderer.py\n      verify: python3 -m unittest tests.widgets.test_renderer\n- [ ] 2.2 [P] Point the exporter at the registry\n      files: src/widgets/exporter.py\n      verify: python3 -m unittest tests.widgets.test_exporter\n- [!] 2.3 Drop the loader's private list — blocked: the vendor SDK still imports it\n"
     }
   ],
-  "absent": []
+  "absent": [],
+  "scope": null
 }
