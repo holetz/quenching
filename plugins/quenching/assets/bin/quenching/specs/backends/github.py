@@ -123,11 +123,112 @@ def gh_refusal(action: str, code: int, stdout: str, stderr: str) -> dict:
     }
 
 
+# The version the shapes below were measured against. It travels INSIDE the refusal message
+# because the discriminant is a property of `gh`'s own `--paginate --slurp`, not of the API:
+# a human reading the refusal on a future `gh` needs to know which version was asserted.
+GH_MEASURED_VERSION = "gh 2.97.0 (2026-07-31)"
+
+GH_EMPTY_LISTING_REMEDY = (
+    "re-run the command — this is a transport fault, not a state; if it repeats, run "
+    "`gh api --paginate --slurp \"repos/<owner>/<name>/issues?state=all&per_page=100\"` by "
+    "hand and compare what it prints against the shapes above"
+)
+
+
+def empty_listing_refusal(action: str, pages) -> dict | None:
+    """The exit-2 refusal for a paginated listing that did not come back, or `None` when the
+    payload has the shape a listing legitimately has.
+
+    THREE SHAPES, AND TWO OF THEM PROVE A FAULT. Measured on this repository:
+
+    - `None` — `gh` exited 0 and printed nothing, which `_api`'s `json.loads(out or "null")`
+      turns into a valid `null`. That is a response that never arrived, laundered into data.
+    - `[]` — zero pages. A front that genuinely holds nothing answers `[[]]`, ONE page that
+      is empty; zero pages is a response that did not happen.
+    - `[[]]` — one empty page: a genuinely empty front, which passes. Suspicion about THAT
+      state is the `stderr`/`doctor` half, never a refusal, because a repository whose specs
+      have not been created yet is exactly it and is legitimate.
+
+    THE CALLER ASKS, AND NEVER `_api`. `_api` is shared with the writes, and one of those is
+    a DELETE whose legitimate GitHub answer is 204 No Content — `gh` prints nothing there and
+    `null` is the RIGHT answer. Only the caller knows which shape it asked for. It is the
+    same line `az_refusal` already draws for its own transport, and this is the sibling the
+    `gh` side was missing."""
+    if isinstance(pages, list) and pages:
+        return None
+    observed = "no output at all (`gh` exited 0 and printed nothing)" if pages is None \
+        else f"`{json.dumps(pages)}`"
+    return {
+        "code": "sp-gh-empty-listing", "exit": 2, "action": action, "observed": observed,
+        "message": f"`gh api` exited 0 while {action} but returned {observed} — a front that "
+                   f"legitimately holds nothing answers with ONE empty page (`[[]]`), never "
+                   f"with zero pages, so this response was cut short and is not an empty "
+                   f"front (measured on {GH_MEASURED_VERSION}); nothing was read",
+        "remedy": GH_EMPTY_LISTING_REMEDY,
+    }
+
+
+GH_LISTING_SUSPECT_REMEDY = (
+    "re-run the command — a listing that comes back the same way twice is the front's real "
+    "state, and one that does not was a transport fault"
+)
+
+
+def listing_is_suspect(rows: int, open_issues: int | None) -> bool:
+    """Zero specs read out of a repository that does have issues open — SUSPICION, never
+    proof, which is why nothing built on this predicate ever refuses.
+
+    A repository that adopted this backend over an existing issue tracker and has not
+    created its first spec yet IS this state, exactly, and is legitimate. Narrowing the
+    trigger cannot separate the two, because they are the same observation; what separates
+    them is the wording saying the number out loud and letting a human recognise which one
+    they are in. `None` — the count could not be learned, because the name came from the git
+    remote — corroborates nothing and is never read as zero."""
+    return rows == 0 and open_issues is not None and open_issues > 0
+
+
+def listing_suspect_message(repo: str, open_issues: int) -> str:
+    """The ONE wording of that suspicion, written here beside the predicate: the `stderr`
+    line at the moment of the read cites it, and so does `doctor`'s own finding. A second
+    call site that composed its own sentence would drift from this one the day either was
+    edited alone."""
+    return (f"{repo} has {open_issues} open issue(s) and not one of them carries a spec "
+            f"marker, so the specs front reads as empty — if no spec has been created here "
+            f"yet, this is exactly that state and it is expected; if specs do exist, this "
+            f"listing did not come back whole and nothing derived from it can be trusted")
+
+
+# Keyed by repository and not by a bare flag: one process can legitimately open this backend
+# more than once (`doctor` opens its own), and the second one may be a different repository
+# with its own answer to give.
+_LISTING_SUSPECT_ANNOUNCED: set[str] = set()
+
+
+def announce_listing_suspect(repo: str, open_issues: int) -> None:
+    """One line on stderr, once per process, at the read that could have lost something.
+
+    THE READ AND NOT THE WRITE, which is where `announce_unproved`'s own gloss puts the
+    line — and the exception is stated rather than assumed. That gloss reasons that "a read
+    of an unproven backend loses nothing — it returns wrong data or a refusal, and both are
+    visible immediately". Here the wrong data is PRECISELY what is not visible: an empty
+    front reads as a fact. The rule underneath is unchanged — the line lands where the loss
+    would happen — and here that is the read.
+
+    stderr and never stdout: every caller branches on the `--json` payload, and a warning
+    printed into it would break the parse it exists to inform."""
+    if repo in _LISTING_SUSPECT_ANNOUNCED:
+        return
+    _LISTING_SUSPECT_ANNOUNCED.add(repo)
+    print(f"warning: {listing_suspect_message(repo, open_issues)}; "
+          f"{GH_LISTING_SUSPECT_REMEDY}", file=sys.stderr)
+
+
 GH_REMOTE_RE = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
 
 
-def resolve_github_repo(cwd: str) -> tuple[str, dict]:
-    """`owner/name` for the repository this checkout points at, or a refusal.
+def resolve_github_repo(cwd: str) -> tuple[str, int | None, dict]:
+    """`owner/name` for the repository this checkout points at, how many issues it has open,
+    and a refusal — the count being `None` wherever it could not be learned for free.
 
     ASK `gh` FIRST, because it answers the question the API will actually be called with:
     it resolves the remote gh itself would use, honours the `gh repo set-default` a human
@@ -140,21 +241,40 @@ def resolve_github_repo(cwd: str) -> tuple[str, dict]:
     (no git on PATH, a checkout gh cannot attribute) still has a legible answer, and
     refusing there would be refusing over a detail of how gh finds the remote.
 
+    THE OPEN-ISSUE COUNT RIDES ALONG ON THIS CALL and costs nothing: `issues` is another
+    field of the `--json` this call already makes, so asking for it opens no round trip.
+    Measured on holetz/claude-quenching with gh 2.97.0: `issues.totalCount` is 38, the same
+    number `gh issue list --state open` reports, and it counts issues only — GitHub's
+    `issues` connection excludes pull requests. It is the corroboration that lets a listing
+    of zero specs be told apart from a repository that has no issues at all; the `--jq` this
+    call used to carry is gone because two fields need the object, not one scalar.
+
     Never guesses a repository it cannot name. A wrong answer here does not fail — it
     silently reads and writes somebody else's issues."""
-    code, out, err = _gh_run(cwd, "repo", "view", "--json", "nameWithOwner",
-                             "--jq", ".nameWithOwner")
+    code, out, err = _gh_run(cwd, "repo", "view", "--json", "nameWithOwner,issues")
     if code == 0 and out.strip():
-        return out.strip(), {}
+        try:
+            parsed = json.loads(out)
+        except json.JSONDecodeError:
+            parsed = None
+        # gh exited 0 with something other than the object it was asked for. Falling through
+        # to the remote is the same degradation this function already applies to every other
+        # way gh fails to answer — the repository name is what has to survive.
+        view = parsed if isinstance(parsed, dict) else {}
+        name = str(view.get("nameWithOwner") or "").strip()
+        if name:
+            issues = view.get("issues")
+            return name, (issues.get("totalCount") if isinstance(issues, dict) else None), {}
     # The two failures the remote cannot repair — no binary, nobody logged in — refuse here
     # with their own remedy instead of degrading into "could not resolve the repository".
     if code in (GH_MISSING, GH_NOT_AUTHENTICATED) or "gh auth login" in (err or ""):
-        return "", gh_refusal("resolving the repository", code, out, err)
+        return "", None, gh_refusal("resolving the repository", code, out, err)
     url = _git(cwd, "remote", "get-url", "origin").strip()
     m = GH_REMOTE_RE.search(url) if url else None
     if m:
-        return f"{m.group(1)}/{m.group(2)}", {}
-    return "", {
+        # The remote answers the name and nothing else: no count, and never a guess at one.
+        return f"{m.group(1)}/{m.group(2)}", None, {}
+    return "", None, {
         "code": "sp-gh-repo-unresolved", "exit": 2, "remote": url or None,
         "gh": _gh_said(out, err),
         "message": f"backend 'github' could not tell which repository holds the specs — "
@@ -224,9 +344,16 @@ class GitHubBackend(SpecBackend):
 
     name = "github"
 
-    def __init__(self, repo: str, cwd: str, types: dict[str, str] | None = None) -> None:
+    def __init__(self, repo: str, cwd: str, types: dict[str, str] | None = None,
+                 open_issues: int | None = None) -> None:
         self.repo = repo
         self.cwd = cwd
+        # How many issues the repository has open, learned for free by the same
+        # `gh repo view --json` that resolved the name — `None` when the name came from the
+        # git remote instead, which answers no such thing. It is never a second call: a
+        # corroboration that cost a round trip would be paid on every command to say
+        # something only the empty listing ever needs.
+        self.open_issues = open_issues
         # `workItemTypes.<key>.github`, pre-filtered to the entries this backend can name —
         # never the whole catalogue entry, since `create_spec` needs only the native name.
         self.types = types or {}
@@ -293,11 +420,19 @@ class GitHubBackend(SpecBackend):
         # `--slurp` because `--paginate` alone concatenates one JSON array per page, which
         # is not a JSON document. state=all: `archive` is the closed half of the tracker,
         # so a default (open-only) listing would report every archived spec as missing.
-        pages = self._api("listing the repository's issues", "--paginate", "--slurp",
+        action = "listing the repository's issues"
+        pages = self._api(action, "--paginate", "--slurp",
                           f"repos/{self.repo}/issues?state=all&per_page=100")
+        # THE SHAPE IS ASSERTED HERE and nowhere else: this is the one caller that knows it
+        # asked for a list of pages, and the whole front is derived from what it returns —
+        # a listing that silently comes back empty reports every spec in the repository as
+        # missing, with `ok: true` and exit 0.
+        refusal = empty_listing_refusal(action, pages)
+        if refusal:
+            raise BackendRefusal(refusal)
         rows: list[tuple[dict, int, str, int, str, list[str]]] = []
         legacy: list[tuple[int, str, str, int, str]] = []
-        for page in (pages or []):
+        for page in pages:
             for issue in (page or []):
                 if not isinstance(issue, dict) or "pull_request" in issue:
                     # GitHub models a pull request AS an issue, so `/issues` answers with
@@ -333,6 +468,8 @@ class GitHubBackend(SpecBackend):
                     self._issue_labels(issue)))
         self._rows = rows
         self._legacy = legacy
+        if listing_is_suspect(len(rows), self.open_issues):
+            announce_listing_suspect(self.repo, self.open_issues)
         return rows
 
     def legacy_rows(self) -> list[tuple[int, str, str, int, str]]:
@@ -681,9 +818,9 @@ def open_github_backend(root: str) -> tuple[SpecBackend | None, dict]:
     the missing-binary and not-logged-in refusals arrive at the START of a command instead
     of halfway through a write."""
     cwd = find_repo_root(root)
-    repo, err = resolve_github_repo(cwd)
+    repo, open_issues, err = resolve_github_repo(cwd)
     if err:
         return None, err
     types = {k: v["github"] for k, v in load_config(root)["workItemTypes"].items()
              if v.get("github")}
-    return GitHubBackend(repo, cwd, types=types), {}
+    return GitHubBackend(repo, cwd, types=types, open_issues=open_issues), {}

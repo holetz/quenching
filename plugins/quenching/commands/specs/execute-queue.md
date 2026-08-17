@@ -64,7 +64,7 @@ Read the front and the workspace in one call:
 
 ```bash
 cq specs next --front --json    # the ranked candidates, each with stage, priority, branch liveness
-cq specs config --json          # backend, integrationBranch, worktreeSetup, fanoutMinComplexity
+cq specs config --json          # backend, worktreeSetup, fanoutMinComplexity
 ```
 
 Slugs given → resolve each against that payload, in the order the human typed them; one that does
@@ -94,8 +94,8 @@ Print the plan **before any isolation and before any write**. It carries, in thi
 - **the whole list**, in queue order — one row per spec: slug · derived stage · `complexity` ·
   tasks remaining · the locator the tool returned;
 - **the N**, stated as a number;
-- the base branch, the branch the queue will cut, the isolation form, and the declared
-  `integrationBranch` the single pull request will target;
+- the base branch, the branch the queue will cut, the isolation form, and the primary
+  branch the single pull request will target;
 - **all three forms** of §The recursive return, with **no recursion** pre-marked and said on
   screen to be the *provisional* default — until a real run absorbs a promoted spec, nothing has
   measured what a second generation adds to the PR;
@@ -209,8 +209,8 @@ is named.
 
 ### 6. Close the branch out — one conclude, one pull request
 Invoke `quenching:specs:conclude` through the Skill tool **with no `--spec`**, under step 2's
-authorization sentence, and on the **pull-request route** against the declared
-`integrationBranch` — the route was approved in step 2's plan and is never rediscussed here
+authorization sentence, and on the **pull-request route** against the primary branch — the route
+was approved in step 2's plan and is never rediscussed here
 ([convergence.md](${CLAUDE_PLUGIN_ROOT}/assets/references/align/convergence.md) §The PR route).
 `conclude` resolves the whole set from the branch's `quenching-slugs:` line, which is the queue's
 only handoff to it (§The branch carries the slugs).
@@ -242,7 +242,7 @@ Progress as it happens, not a report — the mold governs step 7, this governs t
 are §The report mold's and mean the same, and this banner prints plain text, never a heading:
 
 ```
-Queue: 4 specs → plan/<first slug> → PR against develop
+Queue: 4 specs → plan/<first slug> → PR against the primary branch
 
 [2/4] <slug> — executing · 6 tasks
 ✓ execute: 6/6 checked, 2 commits
@@ -255,7 +255,7 @@ Queue: 4 specs → plan/<first slug> → PR against develop
 - **Never leave a blocked spec's slug on `quenching-slugs:`.** That line is the whole set
   `conclude` builds the pull request from, so a slug left on it makes the PR claim work it does not
   carry — and nothing downstream can tell the difference.
-- **Never chain.** One branch, one pull request, against the declared `integrationBranch` — no
+- **Never chain.** One branch, one pull request, against the primary branch — no
   stacked branches, no stacked PRs, no rebase-on-green queue. Chaining trades a merge conflict for
   a rebase conflict and couples the specs' fates in sequence.
 - **Never run a spec's executor on `haiku`.** It is writing production code, under the same model

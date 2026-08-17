@@ -52,8 +52,8 @@ O procedimento abaixo foi executado uma vez nesta casa — `context-budget.md`, 
 ## O que a aposentadoria não é
 
 - **Não é bump de versão.** O lockstep dos seis artefatos é ato do release
-  ([versioning-release.md](../ci-cd/versioning-release.md) — o bump acontece no merge
-  `develop → main`, nunca no concluir e nunca como tarefa). Aposentar um standard não toca no
+  ([versioning-release.md](../ci-cd/versioning-release.md) — o bump acontece na branch primária,
+  no release, nunca no concluir e nunca como tarefa). Aposentar um standard não toca no
   VERSION.
 - **Não é a mesma coisa de retirar um arquivo reservado.** O artefato reservado aposentado
   **mantém** o slot em `RESERVED` e o skip no hard block

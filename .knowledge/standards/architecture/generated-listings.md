@@ -2,12 +2,12 @@
 type: standard
 title: Generated listings — a derived listing only pays for itself when a program can prove it is fresh
 description: A listing regenerated from disk is a second source of a fact something else already derives, so it earns its keep only where nothing else derives that fact and a checker can decide freshness; the decision criterion is whether a command already answers the same question on demand, the /.knowledge/ bundle index.md files are the counterexample that bounds the rule, and a convergence condition may name only what a checker decides
-resource: plugins/quenching/assets/knowledge/**/index.md, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
+resource: plugins/quenching/assets/knowledge/**/index.md, plugins/quenching/assets/bin/quenching/knowledge/structure.py, plugins/quenching/assets/bin/quenching/components/**, plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/references/specs-align/conformance.md, plugins/quenching/assets/references/align/convergence.md
 tags: [architecture, listings, derived-state, verification, convergence]
-timestamp: 2026-08-10
+timestamp: 2026-08-17
 audience: both
 authority: current
-source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it
+source: decide-plans-index-need spec (task 6.1) — the retirement of /.specs/plans/index.md is the case that proved it; validar-a-zona-generated-contra-o-disco (2026-08-17) — the checker that made "keeps its checker" true for the zone's content
 maintainer: quenching
 ---
 
@@ -48,11 +48,19 @@ the contrast is exact:
 | --- | --- | --- |
 | Does a command derive the same fact on demand? | **No.** Nothing enumerates the bundle. | **Yes** — `cq specs list` and `cq specs status` read `plans/` directly. |
 | What the listing is | the bundle's **only** navigation — a doc no index reaches is invisible | a table duplicating what the tool already returned |
-| Checker | `index-orphan` / `dir-no-index` / `index-broken-link`, structural contract | four `sp-*` codes guarding a copy |
+| Checker | `index-orphan` / `dir-no-index` / `index-broken-link` for the link graph, `generated-listing-missing` / `generated-listing-drift` for the zone's own content | four `sp-*` codes guarding a copy |
 | Verdict | keeps its checker | artifact and checker both retired |
 
 So the rule does not say *generated listings are bad*. It says the checker is justified by the
 listing being the **source**, never by the listing merely existing.
+
+**And "keeps its checker" was, until 2026-08-17, true only of the links.** The three codes above
+resolve what a listing points at; none of them read what it *says*. The `standards/index.md`
+GENERATED zone could lose a doc outright and carry stale descriptions with the validator green,
+which is a listing failing in exactly the silent way this standard opens by naming. The row now
+cites `generated-listing-missing` / `generated-listing-drift` because the content side is checked
+too — the claim was made true rather than softened, which is the only move the corollary below
+allows.
 
 ## The corollary: a convergence condition may name only what a checker decides
 

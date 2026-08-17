@@ -39,11 +39,12 @@ a body and whether an issue number should be closed. **Done when:** the title, t
 
 ### 3. State the link's real effect before pushing
 **Measured**: `Closes #<n>` only populates `closingIssuesReferences` — the link a caller can read
-back — when the PR's base **is** the repository's own default branch; on any other base (this
-repo's own `develop`) the keyword still cross-references the issue in its timeline but does not
-close it on merge. Say which case this run is, from step 1's `isDefault`, **before** asking to
-push — the human's confirmation covers a PR whose real behavior they already know. **Done when:**
-the link's real effect has been stated, whichever case it is.
+back — when the PR's base **is** the repository's own default branch; on any other base (a branch
+in flight during a transition, whose record names a base the default no longer is) the keyword
+still cross-references the issue in its timeline but does not close it on merge. Say which case
+this run is, from step 1's `isDefault`, **before** asking to push — the human's confirmation covers
+a PR whose real behavior they already know. **Done when:** the link's real effect has been stated,
+whichever case it is.
 
 ### 4. Push and open, on one confirmation
 Show the remote, the branch name it pushes under, and the title/body, and ask with
@@ -53,8 +54,11 @@ git push -u origin <branch>
 gh pr create --base <base> --title "<title>" --body "<body>"
 ```
 **`--base` is never omitted** — `gh pr create` without it targets the repository's own GitHub
-default branch, which under the develop/main flow is deliberately the publication branch, not the
-integration one. **Done when:** the PR exists, or the push/create failed and its error is reported
+default branch, which under the PR-on-primary flow is where work lands, but a spec in flight
+during the transition (its `branch.base` record names `develop`) must still land on that recorded
+base, and an omitted `--base` would silently target the wrong branch.
+[plan-git-record.md](/.knowledge/standards/workflows/plan-git-record.md) §Three frontmatter
+records. **Done when:** the PR exists, or the push/create failed and its error is reported
 verbatim.
 
 ### 5. Stamp, with a slug

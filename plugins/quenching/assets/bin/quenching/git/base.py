@@ -2,8 +2,8 @@
 before deciding whether `pr:`/`merge:` are read on demand or still a required stamp.
 
 Reuses `infer_base_branch` from `quenching.specs.config` rather than a second copy of the
-chain: `declared integrationBranch -> origin/HEAD -> init.defaultBranch -> main` does not
-change with which pillar asks, only the git facts fed into it do.
+chain: `origin/HEAD -> init.defaultBranch -> main` does not change with which pillar asks,
+only the git facts fed into it do.
 
 MEASURED for GitHub: a PR whose base is not the repository's own default branch never
 populates `closingIssuesReferences`, even with `Closes #<n>` in the body — see

@@ -18,7 +18,7 @@ from quenching.common.dates import today
 from quenching.common.git import _git
 from quenching.specs.backends import open_backend
 from quenching.specs.backends.base import SpecBackend
-from quenching.specs.commands.output import Emitter, display_locator, read_one
+from quenching.specs.commands.output import Emitter, display_locator, front_fields, read_one
 from quenching.specs.parse import derive_info, titleize
 from quenching.specs.parse.derive import derive_stage
 from quenching.specs.parse.records import spec_records
@@ -331,7 +331,7 @@ def _next_front(args, root: str, out: Emitter) -> int:
     in_flight = [c for c in ranked if c["stage"] == "executing" or c["branch"]["live"]]
     needs_triage = bool(ranked) and not prioritized and not in_flight and len(ranked) > 1
 
-    obj = {"ok": True, "root": root, "count": len(ranked),
+    obj = {"ok": True, **front_fields(root), "count": len(ranked),
            "top": ranked[0]["slug"] if ranked else None,
            "needsTriage": needs_triage,
            "candidates": ranked}

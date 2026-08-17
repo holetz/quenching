@@ -10,7 +10,6 @@ import os
 from quenching.common.git import _git
 from quenching.common.output import emit
 from quenching.git.base import resolve_base
-from quenching.specs.config import load_config
 
 
 def _merged_branches(cwd: str, base: str, protected: set[str]) -> set[str]:
@@ -48,13 +47,11 @@ def cmd_stale(args) -> int:
     cwd = os.getcwd()
     base, _is_default = resolve_base(cwd)
     current = _git(cwd, "branch", "--show-current").strip()
-    release = load_config(cwd)["releaseBranch"]
-    # `base` and the release branch are permanent by convention, not "safe to delete just
-    # because their tip is an ancestor of base" — the ordinary state for a release branch is
-    # to sit merged into `base` between releases. `current` is excluded because you cannot
-    # delete the branch you are standing on; cleanup (task 4.6) re-checks that at delete time
-    # regardless, this list is a report, not a promise nothing else changed since.
-    protected = {base, current} | ({release} if release else set())
+    # `base` is permanent by convention, not "safe to delete just because its tip is an
+    # ancestor of base". `current` is excluded because you cannot delete the branch you are
+    # standing on; cleanup (task 4.6) re-checks that at delete time regardless, this list is
+    # a report, not a promise nothing else changed since.
+    protected = {base, current}
 
     reasons: dict[str, set[str]] = {}
     for b in _merged_branches(cwd, base, protected):

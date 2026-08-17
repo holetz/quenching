@@ -101,6 +101,42 @@ def split_section_stream(text: str, candidates: list[str]) -> list[tuple[str | N
     return [(h, "\n".join(b).strip("\n")) for h, b in zip(heads, bodies)]
 
 
+def fold_stray_heading(info: dict, stray: str,
+                       schema: dict | None = None) -> tuple[str, str | None]:
+    """Demote one stray `## X` to `### X` **in place**, so its whole body becomes part of the
+    canonical section that precedes it. Returns the new text and the host heading, or the text
+    untouched and `None` when no canonical section stands above the stray.
+
+    **The edit is one `#` prepended to one line, and that is the design, not an economy.**
+    `parse_sections` promotes every `## X` to a top-level section and keeps `###`+ with its
+    parent, so demoting the heading is exactly what moves the body — no lines are cut, moved or
+    re-emitted, which is what makes "the text is preserved byte for byte" a property of the
+    operation rather than a claim to be tested. Routing this through `upsert_section` instead
+    would re-splice the HOST in canonical position and could reorder a document whose sections
+    are out of schema order, for an edit that never needed to move anything.
+
+    **The host is the nearest canonical section ABOVE the stray, and never one named by the
+    caller.** Position in the document is the strongest evidence of intent: the stray was
+    written *inside* a body and only became a sibling because of its heading level. A stray
+    with nothing canonical above it has no honest host, and `None` is the refusal — inventing
+    one would give the text an owner its author never chose.
+
+    Resolving the stray to a heading this document actually carries belongs to the caller,
+    which needs the candidate list to refuse by name anyway."""
+    canon = set(canonical_headings(schema))
+    sec = info["sections"][stray]
+    above = sorted((s["lineno"], h) for h, s in info["sections"].items()
+                   if s["lineno"] < sec["lineno"] and h in canon)
+    if not above:
+        return info["text"], None
+    lines = info["text"].splitlines(keepends=True)
+    # sections were parsed from the body, so the heading's line number needs the frontmatter back
+    fm_offset = len(lines) - len(body_after_frontmatter(info["text"]).splitlines(keepends=True))
+    at = sec["lineno"] + fm_offset
+    lines[at] = "#" + lines[at]
+    return "".join(lines), above[-1][1]
+
+
 def upsert_section(info: dict, heading: str, block: str) -> tuple[str, str]:
     """Replace a section's block, or create it in CANONICAL POSITION when absent.
 

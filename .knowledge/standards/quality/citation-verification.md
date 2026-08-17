@@ -4,10 +4,10 @@ title: Citation verification
 description: How citation-check.sh proves a citation resolves against the base it claims — half 1 that the old name died and half 2 that the new name was born, blind and with no allowlist, and half 3 that the prose the plugin SHIPS promises only what the published skeleton delivers, since a command body and a reference are read inside a target checkout where our standards do not exist — the three scope rules read from the script's own header (the instrument does not measure itself, .specs/ is out of scope, golden/eval fixtures are frozen data), the spelling rule half 3 rests on (a markdown link promises a destination, a bare inline-code path names a doc the target may not have), that it runs manually and is documented rather than gated automatically (Open Decision 2, with a second real use case as the trigger to revisit), and why the "every red is a harness defect" precedent stays scoped to functional-checks.sh alone until citation-check.sh earns its own evidence (Open Decision 3, opportunistic)
 resource: plugins/quenching/assets/checks/citation-check.sh
 tags: [quality, verification, citations, automation]
-timestamp: 2026-08-15
+timestamp: 2026-08-17
 audience: both
 authority: current
-source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3)
+source: revisar-politica-de-assets-checks spec (task 1.1); references-citam-standards-fora-do-esqueleto spec (task 1.2, half 3); citation-check-dedup-esconde-citadores-repetidos spec (task 2.1, a granularidade do relatório de half 2)
 maintainer: quenching
 ---
 
@@ -32,6 +32,15 @@ what a half-finished rename produces, and it is silent: the command registry is 
 **session start**, so the session that moves a body is structurally incapable of observing the
 breakage it caused. Reading half 1 alone as success is the trap; both halves are required, and
 half 2 is the one a rename actually gets wrong.
+
+**Half 2 reports one finding per citing file, never one per dead path.** Its deduplication key is
+the whole finding — the citing file, the citation as written, and the target it resolved against —
+so N files citing the same dead path print N lines and count N, while a single file citing that
+same path twice still collapses to one. The rule generalizes past this instrument: a deduplication
+key that drops the site of a finding does not deduplicate, it subsamples. So `%d distinct` in the
+summary counts **citation sites**, not dead paths and not files, which is what makes reading the
+number instead of the lines safe. It is not a completeness claim: a citation half 2 never extracts
+is not counted, and §What this does not cover names what stays outside.
 
 The sweep is **blind, with no allowlist**: historical mentions are rewritten to the new name like
 every other citation, because git history holds the past, the docs describe the present, and a

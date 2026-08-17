@@ -15,27 +15,35 @@ import io
 import json
 import os
 import socket
+import subprocess
+import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import _paths  # noqa: F401  — must precede the `quenching` import; see its docstring
 from quenching.common.frontmatter import parse_frontmatter
+from quenching.specs.backends import backend_root
+from quenching.specs.backends import github as gh_mod
 from quenching.specs.backends.azure import AzureBoardsBackend
 from quenching.specs.backends.base import BackendRefusal, SpecBackend
 from quenching.specs.backends.files import FilesBackend
 from quenching.specs.backends.github import (GH_MISSING, GH_NOT_AUTHENTICATED, GitHubBackend,
-                                             gh_refusal)
+                                             empty_listing_refusal, gh_refusal,
+                                             listing_is_suspect)
 from quenching.specs.backends.hybrid import (GH_BODY_MAX, GH_PART_MAX, HYBRID_TITLE_MAX,
                                              hybrid_join, hybrid_project, hybrid_short_title,
                                              hybrid_split, hybrid_title_join, hybrid_title_split,
                                              hybrid_unwrap, hybrid_unwrap_part, hybrid_wrap,
                                              hybrid_wrap_part)
 from quenching.specs.backends.memory import MemoryBackend
+from quenching.specs.commands.doctor import cmd_doctor
 from quenching.specs.commands.next import _candidate
+from quenching.specs.commands.output import Emitter
 from quenching.specs.commands.validate import merge_record_finding, validate_spec
 from quenching.specs.config import (BACKENDS, DEFAULT_SPECS_BRANCH, UNPROVED_BACKENDS,
                                     _UNPROVED_ANNOUNCED, announce_unproved, is_root_too_high)
-from quenching.specs.parse import FIELD_KEYS, derive_labels
+from quenching.specs.parse import FIELD_KEYS, PHASES, derive_labels
 from quenching.specs.parse.edit import upsert_section
 from quenching.specs.parse.fields import (legacy_marker_fold, set_frontmatter_key,
                                           set_frontmatter_record)
@@ -235,6 +243,110 @@ class GhBodyCeiling(unittest.TestCase):
         self.backend._write_api("creating an issue", "POST", "repos/owner/repo/issues",
                                 {"title": "x", "body": "a" * GH_BODY_MAX})
         self.assertEqual(len(self.calls), 1)
+
+
+# --------------------------------------------------------------------------- #
+# a listing that never arrived, told apart from a front that is genuinely empty
+# --------------------------------------------------------------------------- #
+class GhEmptyListing(unittest.TestCase):
+    """The incident this guard exists for, as an assertion: a listing that fails to arrive
+    must refuse, never report itself as an empty front with `ok: true` and exit 0.
+
+    `_gh_run` is what gets patched, never `_api` — the laundering under test IS `_api`'s own
+    `json.loads(out or "null")`, the line that turns "gh printed nothing" into data, and a
+    stub one level higher would step straight over it. No network and no `gh`."""
+
+    def setUp(self):
+        self.backend = GitHubBackend("owner/repo", os.getcwd())
+
+    def _load_returning(self, stdout: str):
+        with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, stdout, "")):
+            return self.backend._load()
+
+    def test_empty_stdout_with_exit_0_refuses_instead_of_reporting_an_empty_front(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._load_returning("")
+        self.assertEqual(ctx.exception.err.get("code"), "sp-gh-empty-listing")
+        self.assertEqual(ctx.exception.err.get("exit"), 2)
+
+    def test_zero_pages_refuses_because_an_empty_front_answers_with_one_empty_page(self):
+        with self.assertRaises(BackendRefusal) as ctx:
+            self._load_returning("[]")
+        self.assertEqual(ctx.exception.err.get("code"), "sp-gh-empty-listing")
+
+    def test_one_empty_page_is_a_genuinely_empty_front_and_does_not_refuse(self):
+        self.assertEqual(self._load_returning("[[]]"), [])
+
+    def test_a_write_whose_legitimate_answer_is_empty_still_does_not_refuse(self):
+        # The DELETE of a stale continuation comment: GitHub answers 204 No Content, `gh`
+        # prints nothing, and `None` is the RIGHT answer there. This case is the whole
+        # reason the guard belongs to the caller and never to `_api`.
+        with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, "", "")):
+            self.assertIsNone(self.backend._api(
+                "deleting a stale continuation comment on #1",
+                "-X", "DELETE", "repos/owner/repo/issues/comments/1"))
+
+    def test_a_healthy_listing_passes_the_predicate_untouched(self):
+        self.assertIsNone(empty_listing_refusal("listing", [[{"number": 1}], [{"number": 2}]]))
+
+
+# --------------------------------------------------------------------------- #
+# the OTHER half: an empty front that may be genuine, said out loud as a suspicion
+# --------------------------------------------------------------------------- #
+class GhListingSuspect(unittest.TestCase):
+    """`[[]]` — one empty page — is a shape that proves nothing, so this half warns and never
+    refuses. The corroboration is the open-issue count the repository resolution already paid
+    for, and the three states it separates are asserted here.
+
+    A repository that adopted this backend over an existing tracker and has created no spec
+    yet IS the warning state, legitimately, which is exactly why the assertion below checks
+    that the call still SUCCEEDS while it warns.
+
+    The process-level flag is restored, so this class cannot change what a later test or a
+    later command prints."""
+
+    def setUp(self):
+        self._held = set(gh_mod._LISTING_SUSPECT_ANNOUNCED)
+        gh_mod._LISTING_SUSPECT_ANNOUNCED.clear()
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        gh_mod._LISTING_SUSPECT_ANNOUNCED.clear()
+        gh_mod._LISTING_SUSPECT_ANNOUNCED.update(self._held)
+
+    def _load_empty(self, open_issues):
+        backend = GitHubBackend("owner/repo", os.getcwd(), open_issues=open_issues)
+        err, out = io.StringIO(), io.StringIO()
+        with mock.patch.object(gh_mod, "_gh_run", lambda cwd, *a, **k: (0, "[[]]", "")), \
+                contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+            rows = backend._load()
+        return rows, err.getvalue(), out.getvalue()
+
+    def test_zero_rows_with_open_issues_warns_and_does_not_refuse(self):
+        rows, said, _ = self._load_empty(38)
+        self.assertEqual(rows, [])
+        self.assertIn("38 open issue(s)", said)
+
+    def test_zero_rows_with_no_open_issues_says_nothing(self):
+        # A repository with no issues at all corroborates nothing, and a warning here would
+        # fire on every fresh workspace — the noise that trains a reader to ignore the line.
+        self.assertEqual(self._load_empty(0)[1], "")
+
+    def test_an_unknown_count_is_never_read_as_zero_and_never_as_proof(self):
+        self.assertEqual(self._load_empty(None)[1], "")
+
+    def test_the_warning_never_reaches_stdout_where_the_json_payload_is(self):
+        self.assertEqual(self._load_empty(38)[2], "")
+
+    def test_the_warning_is_one_line_per_process_and_not_one_per_call(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            gh_mod.announce_listing_suspect("owner/repo", 38)
+            gh_mod.announce_listing_suspect("owner/repo", 38)
+        self.assertEqual(err.getvalue().count("warning:"), 1)
+
+    def test_a_front_that_read_rows_is_never_suspect_however_many_issues_are_open(self):
+        self.assertFalse(listing_is_suspect(1, 38))
 
 
 # --------------------------------------------------------------------------- #
@@ -782,6 +894,65 @@ class FilesRoot(unittest.TestCase):
         self.assertEqual(specs_worktree_path("/repo", "quenching/specs"), want)
 
 
+class DoctorMeasuresTheResolvedRoot(unittest.TestCase):
+    """`doctor` reports on the directory the backend would use, and creates nothing doing it.
+
+    THE FALSE FINDINGS THIS ENDS. On a migrated `files` repository the specs live in the specs
+    worktree and the declared root in the code tree is gone — and `doctor`, which reads the
+    declared root because opening the backend would CREATE the worktree, answered
+    `sp-no-workspace` plus a `sp-missing-phase` per phase. Every one of them described a
+    workspace nobody has.
+
+    Two assertions, and the second is the one that makes the first worth having: the findings
+    are gone, and the specs worktree still does not exist afterwards. A `doctor` that got the
+    right answer by checking the backend out would have traded a false finding for a side
+    effect."""
+
+    CFG = {"backend": "files", "specsBranch": DEFAULT_SPECS_BRANCH}
+
+    def _repo_with_specs_in_the_worktree(self, top: str) -> str:
+        """A repository whose declared `.specs/` is absent and whose specs sit in the worktree
+        path — the shape a migrated repo has, staged by hand so no `git worktree add` runs."""
+        subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
+                       capture_output=True, text=True)
+        worktree = specs_worktree_path(top, DEFAULT_SPECS_BRANCH)
+        for ph in PHASES:
+            os.makedirs(os.path.join(worktree, ".specs", ph))
+        return worktree
+
+    def test_the_declared_root_being_absent_is_no_longer_a_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            top = os.path.join(tmp, "repo")
+            worktree = self._repo_with_specs_in_the_worktree(top)
+            declared = os.path.join(top, ".specs")
+
+            measured = backend_root(declared, self.CFG)
+            self.assertEqual(measured, os.path.join(worktree, ".specs"))
+
+            buf = io.StringIO()
+            args = argparse.Namespace(json=True)
+            with contextlib.redirect_stdout(buf):
+                cmd_doctor(args, declared, Emitter())
+            codes = {f["code"] for f in json.loads(buf.getvalue())["findings"]}
+
+            self.assertNotIn("sp-no-workspace", codes)
+            self.assertNotIn("sp-missing-phase", codes)
+
+    def test_measuring_creates_no_worktree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            top = os.path.join(tmp, "repo")
+            subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
+                           capture_output=True, text=True)
+            declared = os.path.join(top, ".specs")
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                cmd_doctor(argparse.Namespace(json=True), declared, Emitter())
+
+            self.assertFalse(os.path.exists(specs_worktree_path(top, DEFAULT_SPECS_BRANCH)),
+                             "the diagnostic checked the specs branch out")
+
+
 class RootTooHigh(unittest.TestCase):
     """`is_root_too_high` — the structural test behind `sp-root-too-high`. Pure path
     arithmetic, so it runs on an installed copy with no repository staged."""
@@ -926,6 +1097,90 @@ class MergePr(unittest.TestCase):
         finding = merge_record_finding({"merge": ff_with_pr}, "plans/a.md", "a")
         self.assertIsNotNone(finding)
         self.assertEqual(finding.get("code"), "sp-bad-merge")
+
+
+# --------------------------------------------------------------------------- #
+# front_fields — the emitted value, end to end, through the real binary
+# --------------------------------------------------------------------------- #
+CQ = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                  "assets", "bin", "cq")
+
+# Every workspace-wide `--json` verb that carries the front's own fields, and whether it can
+# answer without opening a backend. `config` and `doctor` never open one, which is what lets the
+# external arm run offline; the rest do, so they are asked only of the `files` workspace.
+FRONT_VERBS = ((("config",), True), (("doctor",), True), (("list",), False),
+               (("next", "--front"), False), (("validate",), False), (("migrate",), False))
+
+
+class FrontFieldsEndToEnd(unittest.TestCase):
+    """The pair from `## Validation`: the field that answered a path under `github` answers
+    `null`, and the backend's name travels beside it.
+
+    THROUGH THE REAL BINARY, because that is where the claim lives. `front_fields` returning
+    the right dict proves nothing about ten call sites that might still build the key by hand,
+    and the defect being fixed was never in a helper — it was that every site had its own copy
+    of the wrong answer. So one arm runs `cq` over a `files` workspace and one over a `github`
+    one, and a third assertion reads the sources to make sure no eleventh site can be added
+    with the old shape.
+
+    Self-contained: temp directories, `git init`, no network. The external arm asks only the
+    two verbs that never open a backend, so no `gh` is required to prove the field."""
+
+    def _cq(self, ws: str, *argv: str) -> tuple[int, dict]:
+        proc = subprocess.run([sys.executable, CQ, "--root", ws, "specs", *argv, "--json"],
+                              capture_output=True, text=True)
+        return proc.returncode, json.loads(proc.stdout)
+
+    def _workspace(self, tmp: str, backend: str | None) -> str:
+        top = os.path.join(tmp, "repo")
+        ws = os.path.join(top, ".specs")
+        os.makedirs(os.path.join(ws, "plans"))
+        os.makedirs(os.path.join(ws, "archive"))
+        subprocess.run(["git", "init", "-q", "-b", "main", top], check=True,
+                       capture_output=True, text=True)
+        if backend:
+            os.makedirs(os.path.join(top, ".claude"))
+            with open(os.path.join(top, ".claude", "quenching.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump({"backend": backend}, fh)
+        return ws
+
+    def test_under_files_every_verb_reports_the_resolved_workspace(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._workspace(tmp, None)
+            for argv, _offline in FRONT_VERBS:
+                with self.subTest(verb=" ".join(argv)):
+                    _code, payload = self._cq(ws, *argv)
+                    self.assertEqual(payload["backend"], "files")
+                    self.assertEqual(payload["root"], ws)
+
+    def test_under_github_the_field_is_null_and_the_backend_names_itself(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._workspace(tmp, "github")
+            for argv, offline in FRONT_VERBS:
+                if not offline:
+                    continue
+                with self.subTest(verb=" ".join(argv)):
+                    _code, payload = self._cq(ws, *argv)
+                    self.assertEqual(payload["backend"], "github")
+                    self.assertIsNone(payload["root"],
+                                      "the declared root is a folder that does not exist")
+
+    def test_no_emit_site_still_builds_the_field_by_hand(self):
+        # Ten sites carried the same wrong answer because each wrote it itself. The helper is
+        # only a fix while it is the ONLY producer — an eleventh site added with the old shape
+        # would reintroduce the defect one payload at a time.
+        commands = os.path.join(os.path.dirname(CQ), "quenching", "specs", "commands")
+        offenders = []
+        for name in sorted(os.listdir(commands)):
+            if not name.endswith(".py"):
+                continue
+            with open(os.path.join(commands, name), encoding="utf-8") as fh:
+                if '"root": root' in fh.read():
+                    offenders.append(name)
+        self.assertEqual(offenders, [],
+                         "an emit site builds the front's `root` by hand instead of through "
+                         "`front_fields`, so it emits the DECLARED root")
 
 
 if __name__ == "__main__":

@@ -1,13 +1,13 @@
 ---
 type: standard
 title: Plugin configuration contract
-description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the recognised keys and their defaults, the two keys that deliberately have none and refuse instead, the two keys with two consumers each — the release verb and the base-inference chain — the three keys whose prose is prompt material an agent reads to decide, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
+description: `.claude/quenching.json` as the plugin's single configuration home — where it lives and why it left the specs workspace, the recognised keys and their defaults, the two keys that deliberately have none and refuse instead, the three keys whose prose is prompt material an agent reads to decide, why every other way it can be wrong is a field rather than an exception, and why a stranded `specs/config.json` is named instead of merged
 resource: plugins/quenching/assets/bin/quenching/specs/**, plugins/quenching/assets/bin/quenching/knowledge/**, plugins/quenching/assets/references/git/isolation.md, plugins/quenching/assets/references/specs-align/conformance.md
 tags: [workflows, specs, configuration, backend, plugin]
 timestamp: 2026-08-11
 audience: both
 authority: current
-source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; the bundle-root config key added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude, and removed by the docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — the bundle root became the fixed `/.knowledge/` convention, and the key that said where the bundle lives had nothing left to say ([bundle-root.md](../architecture/bundle-root.md)); `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md); `azurePlacement`/`azureColumns`/`subjects`/`tagCatalog` added by provar-e-posicionar-o-backend-azure-boards (task 2.8), which also measured `areaPath`'s absence against this org's own board (761 unrelated work items under the project's default area); `workItemTypes` added and `azurePlacement.workItemType` retired by suportar-tipo-workitem-azure-por-tags (task 6.1), which moved a spec's type from one repo-wide default to a per-spec choice resolved from a declared catalog — measured live (task 4.3) against a real Azure Boards project (org unicredbr, team "Diretoria Risco")
+source: configurable-spec-backend plan (task 1.4); `azureStates` documented by the same plan's branch review at conclude, which found the table listing three keys against four in the code; the bundle-root config key added by the enxugar-create-e-eliminar-o-rung-hooks spec (2026-08-03) once the checker went plugin-wired and a per-repo override could no longer be read from the script's own directory — recorded there as a Discovery deferred out of that spec's `## Impact`, and written at its conclude, and removed by the docs-em-diretorio-customizado spec (task 1.4, 2026-08-06) — the bundle root became the fixed `/.knowledge/` convention, and the key that said where the bundle lives had nothing left to say ([bundle-root.md](../architecture/bundle-root.md)); `integrationBranch`/`releaseBranch` added by the configurable-branch-strategy spec (task 2.1, 2026-08-04) — the develop/main flow's two consumers, [branching.md](../git/branching.md) — and removed by the eliminar-branch-de-integracao spec (2026-08-17), which turned the flow into PRs against the primary branch directly, leaving the two keys nothing to say ([branching.md](../git/branching.md) reescrito); `azurePlacement`/`azureColumns`/`subjects`/`tagCatalog` added by provar-e-posicionar-o-backend-azure-boards (task 2.8), which also measured `areaPath`'s absence against this org's own board (761 unrelated work items under the project's default area); `workItemTypes` added and `azurePlacement.workItemType` retired by suportar-tipo-workitem-azure-por-tags (task 6.1), which moved a spec's type from one repo-wide default to a per-spec choice resolved from a declared catalog — measured live (task 4.3) against a real Azure Boards project (org unicredbr, team "Diretoria Risco")
 maintainer: quenching
 ---
 
@@ -30,9 +30,7 @@ not inside `docs/`.
 {
   "backend": "files",
   "specsBranch": "specs",
-  "worktreeSetup": "./scripts/wt-setup.sh",
-  "integrationBranch": "develop",
-  "releaseBranch": "main"
+  "worktreeSetup": "./scripts/wt-setup.sh"
 }
 ```
 
@@ -48,8 +46,6 @@ reader**, and the file is the *plugin's* configuration rather than the `specs/` 
 | `specsBranch` | any branch name | `specs` | the `files` backend only |
 | `worktreeSetup` | a shell command, run as written | none | `/quenching:specs:execute`'s isolation offer, after `git worktree add` |
 | `azureStates` | `{"plans": "<state>", "archive": "<state>"}` | **none, deliberately** | the `azure-boards` backend only |
-| `integrationBranch` | any branch name | **none** — `cq specs release` applies `develop` at the point of use | the release verb, and the base-inference chain for a spec with no stamped `branch` record |
-| `releaseBranch` | any branch name | **none** — `cq specs release` applies `main` at the point of use | the release verb only |
 | `hooks` | `{"<event>": [{"command": "<cmd>", ...}]}` | none — an absent key declares no events | the command that owns the event, through the config the core read |
 | `profiles` | `{"installed": ["knowledge", "specs", "components"]}` | none — an absent key leaves all three fronts installed | the `/align` conductor, through the config the core read |
 | `azurePlacement` | `{areaPath, workItemType, discoveryTag, team, iterationPath, boardColumn, defaultSubject, repository}` — `workItemType` retired, see `workItemTypes` below | per sub-key — `areaPath` **none, deliberately**, the rest default (see below) | the `azure-boards` backend only |
@@ -79,15 +75,6 @@ branch fails on its first operation with no recourse. Namespacing it (`quenching
 the collision and charge the longer name to every repository that never had the problem. Configurable
 pays the cost only where it exists — and if no real target ever sets it, the key is a candidate for
 removal rather than a permanent fixture.
-
-**`integrationBranch`/`releaseBranch` default to `None` here, deliberately, unlike every other
-key in this table.** `cq specs release` applies `develop`/`main` itself once a value is missing —
-those two strings are its constants, not `load_config`'s. The reason is the base-inference chain:
-resolving an unstamped spec's `base` must be able to tell "this repo declared an integration
-branch" from "this repo declared nothing", because only the first should ever win over
-`git symbolic-ref refs/remotes/origin/HEAD`. Folding the default into `load_config`'s own return
-would erase that distinction for every repository that never opted into the develop/main flow —
-[branching.md](../git/branching.md) — and infer `develop` for one that has no such branch at all.
 
 **`azureStates` is the one key with no default, and the absence is the decision.** A phase maps onto
 a state, and what the states *are* is defined by the Azure DevOps project's **process**: Basic says

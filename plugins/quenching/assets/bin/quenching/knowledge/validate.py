@@ -22,7 +22,7 @@ from quenching.knowledge.corpus import _build_corpus
 from quenching.knowledge.resource import check_resource
 from quenching.knowledge.schema import EXEMPT, GLOSSARY_REL, LEGACY_ROOT_NAME
 from quenching.knowledge.stale import check_stale
-from quenching.knowledge.structure import validate_structure
+from quenching.knowledge.structure import validate_generated_listing, validate_structure
 
 
 def validate_file(path: str, bundle_root: str) -> list[tuple[str, str, str, str]]:
@@ -106,4 +106,6 @@ def validate_tree(bundle_root: str, deadline: float | None = None,
     findings.extend(check_legacy_glossary(glossary_rels, GLOSSARY_REL))
     # whole-tree structural integrity (missing/broken/orphaned listings)
     findings.extend(validate_structure(bundle_root, corpus))
+    # the one listing derived from disk, checked against it
+    findings.extend(validate_generated_listing(bundle_root, corpus))
     return findings

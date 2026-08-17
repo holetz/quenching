@@ -4,10 +4,10 @@ title: Mutation-checking a test
 description: A test that has never been observed to fail is untested — the mutation pass that earns the claim, one mutation per rule the fixture exists to prove, why the pass is run once at authoring rather than wired into CI, and the graduation gate the repo's new tests/ suite has not yet cleared
 resource: plugins/quenching/tests/**
 tags: [quality, testing, mutation, verification]
-timestamp: 2026-08-10
+timestamp: 2026-08-17
 audience: both
 authority: background
-source: improve-command-from-session plan — the mutation pass was run against the session tool's (pre-refactor) selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against the components tool's (pre-refactor) selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over its `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; reframed by modularizar-specs-knowledge-components task 9.3 once tests/ replaced the four `selftest` subcommands this file used to govern (its own §Testes closed the loop the historical passes below could only gesture at — the `-k backend`/`-k parse`/`-k command`/`-k config` verify: lines of that spec's sections 3–5 collected ZERO tests and exited 0, the exact failure mode `test_discovery_is_not_empty` now asserts against)
+source: improve-command-from-session plan — the mutation pass was run against the session tool's (pre-refactor) selftest at task 2.1 and recorded in that spec's `## Discoveries`; a second pass, over the routing rules only, ran against the components tool's (pre-refactor) selftest during route-commands-without-always-on-descriptions (7 mutations, 2026-08-02) — a third, over its `--sections` ladder, ran during skills-py-sections-comma-split-bug (3 mutations, 2026-08-05 — two killed, one recorded equivalent), and contributed the both-modes and equivalent-mutant rules; reframed by modularizar-specs-knowledge-components task 9.3 once tests/ replaced the four `selftest` subcommands this file used to govern (its own §Testes closed the loop the historical passes below could only gesture at — the `-k backend`/`-k parse`/`-k command`/`-k config` verify: lines of that spec's sections 3–5 collected ZERO tests and exited 0, the exact failure mode `test_discovery_is_not_empty` now asserts against); §The third pass added by make-named-by-bodies-scale-with-the-surface-it-was-built-for task 1.2 (2026-08-17), the first pass run against `tests/` rather than a retired selftest — it re-ran the seven mutations of §The second pass and found five of them no longer killed by anything, which is a measurement of the replacement suite and not of the rewrite it was run beside
 maintainer: quenching
 ---
 
@@ -111,6 +111,64 @@ description caps, body length, step criteria, tool scoping, the hook codes and t
 and none of those was mutated. Adding a rule with a mutation beside it is the practice working; it
 is not the same as having checked the tool.
 
+## The third pass — the same seven, re-run after the corpus that killed them was retired
+
+Run 2026-08-17 for `make-named-by-bodies-scale-with-the-surface-it-was-built-for`, which rewrote
+`named_by_bodies` from a regex-per-target-name inner loop to one generic-shape scan per body
+followed by set membership. The seven mutations of §The second pass were repeated verbatim against
+the rewrite, in **both** modes — `python3 -m unittest discover -s tests -p "test_golden.py"`, which
+is `--json` only, and the human `cq --root . components lint` arm.
+
+**Two were killed. Five survived.**
+
+| Mutation | Predicate moved? | `--json` | human |
+| --- | --- | --- | --- |
+| `description_is_resident` → always `True` | no | survived | survived |
+| `description_is_resident` → always `False` | no | survived | survived |
+| drop the leading-slash exclusion | yes | **killed** | **killed** (+2/−1 findings) |
+| drop the Skill-tool arm | yes | survived | survived |
+| drop the registry arm | yes | survived | survived |
+| drop the self-reference guard | yes | survived | survived |
+| ungate `sk-inert-stage` from the caller set | no | **killed** | **killed** (−11 findings) |
+
+**"Predicate moved?" is the column that makes the result readable**, and it was added because
+without it a survivor cannot be told from a no-op edit. It records whether the mutation changed
+`named_by_bodies`'s own `dict[str, set[str]]` return over the real 34-command surface. Three
+survivors — the two arms and the self-reference guard — **did** change it. The predicate returned
+different data and every check in the repo reported the same bytes as before. That is a fixture
+gap, not an equivalent mutant in the sense of §What a mutation is worth: an equivalent mutant
+cannot be killed by any input, while these three are killed by inputs that used to exist.
+
+**Why they used to exist and no longer do.** The seven were originally killed by the pre-refactor
+components tool's own `selftest`, whose corpus was five synthetic cases written to discriminate
+exactly these rules — `/docs:typed-only-bare`, `/docs:routed-bare`, `/docs:stage-cited`,
+`/docs:stage-handed`, `/docs:stage-inert`. That subcommand was retired and the golden suite
+replaced it, and a golden captures the **real** plugin surface. On that surface no command carrying
+`disable-model-invocation: true` is reached by name from any body, so `sk-inert-stage` — the only
+finding `named_by_bodies` can produce — never fires, and a mutation that merely widens or narrows
+the caller set changes nothing anyone can observe. The two that survive without moving the
+predicate fail for the sibling reason: the real surface raises neither `sk-no-boundary` nor
+`sk-trigger-position`, so flipping the residency gate has no finding to add or remove.
+
+The two kills are the mirror image, and confirm the reading. Dropping the leading-slash exclusion
+*adds* `/specs:cycle` to the caller set, which is enough to make `sk-inert-stage` fire where it did
+not; ungating `sk-inert-stage` fires it for every `disable-model-invocation` command outright. Both
+push the real surface across a threshold. Nothing that stays on this side of it is observable.
+
+**What this pass proves about the rewrite is therefore nothing, and the rewrite was proved another
+way** — worth stating because a green suite beside a rewrite reads like evidence. Equivalence was
+established directly instead: the pre-change `named_by_bodies` was loaded from
+`git show <base>:…lint.py` into a separate module and its return compared with `==` against the new
+one over the real corpus and over a 10× synthetic copy. Identical on both. That comparison, not
+this pass, is what holds the semantics.
+
+**This is the failure mode of §Graduation gate arriving on schedule.** That section already said
+the historical passes "remain here as the record of the practice … not as coverage of code that no
+longer ships". This pass is the first to *measure* the consequence: re-running a retired pass
+against the suite that replaced it grades the suite, and the suite has no witness for five of the
+seven rules. Closing that needs a fixture that discriminates them — the successor to those five
+synthetic cases — which no test file in `tests/` currently carries.
+
 ## Where this sits
 
 This is the authoring-time complement to the two verification gates already written:
@@ -144,11 +202,16 @@ nothing case (1 failure + 3 errors, zero skips), the golden suite's `declock()` 
 time-derived field — but no systematic mutation pass has been run **rule by rule** across the
 whole suite the way the historical passes below covered the pre-refactor session and components tools' selftests.
 
-Three passes exist, against the retired selftests: the pre-refactor session tool's whole selftest (four mutations,
+Three passes exist against the retired selftests: the pre-refactor session tool's whole selftest (four mutations,
 2026-07-29), the pre-refactor components tool's **newest rules only** (seven, 2026-08-02), and its
 `--sections` ladder (three, 2026-08-05 — two killed, one equivalent). They remain here as the
 record of the practice and as fixtures the new suite's own `tests/test_*.py` equivalents should be
 held to the same way, not as coverage of code that no longer ships.
+
+A fourth ran against `tests/` itself (§The third pass, seven mutations, 2026-08-17 — two killed,
+five survived) and is the first measurement of how far short the replacement falls: five of the
+seven rules the retired selftest discriminated have no witness in the suite that succeeded it. It
+moves the gate no closer, and it names precisely what closing it would cost.
 
 This becomes `authority: current` when a pass of the shape above has been run, rule by rule,
 against `tests/`'s own corpus and the result recorded — not before. Booking partial coverage as
