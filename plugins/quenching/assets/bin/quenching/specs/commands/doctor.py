@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 
+from quenching.specs.backends import backend_root
 from quenching.specs.backends.azure import open_azure_backend
 from quenching.specs.commands.migrate import _v1_leftovers
 from quenching.specs.commands.output import Emitter
@@ -177,29 +178,42 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
     # the one backend that has a folder. An external backend's workspace is the tracker
     # itself, so none of these findings apply there: producing them would describe a
     # world this repo does not inhabit.
-    if cfg["backend"] == "files":
-        if not os.path.isdir(root):
-            findings.append(_finding("sp-no-workspace", "error", f"no `/.specs/` workspace at {root}",
-                                     remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
-            return _emit_doctor(args, root, findings)
-
+    #
+    # THE ROOT THE BACKEND WOULD USE, and `None` where there is no folder to shape-check at
+    # all — which is also what selects the block, since "has a folder" and "is the `files`
+    # backend" are the same fact and are better asked once, of the component that knows it.
+    # This block used to read the DECLARED root, which is where `sp-no-workspace` and
+    # `sp-missing-phase` came from on every migrated `files` repository: the specs live in the
+    # specs worktree, the declared path in the code tree is empty or absent, and the diagnostic
+    # measured the empty one. It could not simply open the backend to find out — that is what
+    # CREATES the worktree, and a diagnostic with that side effect is not one.
+    measured = backend_root(root, cfg)
+    if measured is not None:
         if is_root_too_high(root):
             # Same predicate `open_backend` refuses on — `doctor`'s own contract is to always
             # complete and report, never refuse, so this is a finding rather than an exit-2.
             # Returning early here keeps the harmless `sp-missing-phase` warnings below from
-            # also firing over the same mis-levelled root.
+            # also firing over the same mis-levelled root. Judged on the DECLARED root, which
+            # is the one a human mis-levelled; `measured` answers for a root that is already
+            # correct.
             findings.append(_finding("sp-root-too-high", "error", root_too_high_message(root),
                                      remedy=ROOT_TOO_HIGH_REMEDY))
             return _emit_doctor(args, root, findings)
 
+        if not os.path.isdir(measured):
+            findings.append(_finding("sp-no-workspace", "error",
+                                     f"no `/.specs/` workspace at {measured}",
+                                     remedy="scaffold specs/ (copy the plugin's assets/specs skeleton)"))
+            return _emit_doctor(args, root, findings)
+
         for ph in PHASES:
-            if not os.path.isdir(os.path.join(root, ph)):
+            if not os.path.isdir(os.path.join(measured, ph)):
                 findings.append(_finding("sp-missing-phase", "warn", f"no {ph}/ folder",
                                          path=ph, remedy=f"mkdir {ph}/ (the folder IS the phase)"))
         # A v2 folder that still holds specs is the one shape `list` reads correctly but
         # reports as out of date — surfaced here so it is fixed by a migrate, not by hand.
         for folder in LEGACY_PHASES:
-            held = [s for s in spec_files(root) if s["folder"] == folder]
+            held = [s for s in spec_files(measured) if s["folder"] == folder]
             if held:
                 findings.append(_finding("sp-v2-layout", "error",
                                          f"`{folder}/` still holds {len(held)} spec(s) — v3 "
@@ -208,15 +222,15 @@ def cmd_doctor(args, root: str, out: Emitter) -> int:
                                          remedy="cq specs migrate  (moves them into plans/ "
                                                 "unrenamed; `/.specs/archive/**` is never touched)"))
 
-        leftovers = _v1_leftovers(root)
+        leftovers = _v1_leftovers(measured)
         for name in leftovers:
             findings.append(_finding("sp-v1-leftover", "error",
                                      f"`{name}/` is a v1 three-file plan folder",
                                      path=name,
                                      remedy=f"cq specs migrate  (folds {name}/ into one v2 file; "
                                             f"`/.specs/archive/**` is never touched)"))
-        for entry in sorted(os.listdir(root)):
-            full = os.path.join(root, entry)
+        for entry in sorted(os.listdir(measured)):
+            full = os.path.join(measured, entry)
             # `config.json` stays exempt even though nothing reads it any more: it has its own
             # finding above, which says where it went. Reporting it as a stray would offer
             # "move it into a phase folder", which is the one thing that must not happen to it.
