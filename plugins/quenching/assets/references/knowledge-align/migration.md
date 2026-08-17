@@ -63,10 +63,10 @@ are both smells `/quenching:knowledge:align` resolves as renames (each swept for
 
 <!-- rules -->
 OKF v0.9 retired the `guides/` home; its content now lives in the `documentation/` home. A repo
-already conformant on the **old** canonical (a `guides/` home under the retired bundle root) is therefore a migration candidate
+already conformant on the **old** canonical (`.knowledge/guides/`) is therefore a migration candidate
 too — not a variant name, but a retired home. Scaffold the `documentation/` skeleton (its
 `index.md` + the four section listings + `.pages`), restamp `type: guide` → `type: documentation`,
-and relocate each doc under that retired `guides/**` home **by shape** — per item, like Content relocation below,
+and relocate each `.knowledge/guides/**` doc **by shape** — per item, like Content relocation below,
 because a legacy `guides/` folder mixes both quadrants: a **task recipe / how-to** ("how do I do
 X") → `.knowledge/documentation/how-to/`; a **learning-oriented tutorial** → `.knowledge/documentation/tutorials/`.
 Sweep the blast radius like any rename (its **own** confirmation when links reach product code).
@@ -91,7 +91,7 @@ in it.** A legacy mold reference `backlog/idea.md` maps to `backlog/task.md`. Th
 (`cq specs list` derives what `plans/` holds from disk), so a zone written here would be a
 listing nobody produces and nobody reads.
 
-### 1e. Backlog leaves the OKF bundle — the bundle's `backlog/` home → the `specs/` front
+### 1e. Backlog leaves the OKF bundle — `.knowledge/backlog/` → the `specs/` front
 
 OKF v0.13 moved parked work out of the `.knowledge/` bundle, and it now lands in the `specs/` front as
 **specs**, not as OKF docs — `cq knowledge validate` no longer scans it, and a spec carries no OKF
@@ -100,10 +100,10 @@ OKF v0.13 moved parked work out of the `.knowledge/` bundle, and it now lands in
 The move is two hops, and this sweep performs only the first:
 
 1. **`/quenching:knowledge:align` moves the files.** `/quenching:specs:align` scaffolds the `specs/` workspace if absent;
-   then every task doc under the bundle's `backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
+   then every `.knowledge/backlog/*.md` moves into the **legacy `backlog/` folder inside `specs/`**,
    applying the `idea`→`task` restamp (§1d) on the way. That folder is a staging area for hop 2,
    not a destination. This is its **own** confirmation, blast-radius swept (§3–4): the move rewrites
-   every cross-link into that bundle `backlog/` home.
+   every cross-link into `.knowledge/backlog/`.
 2. **`cq specs migrate` converts them.** That legacy folder is exactly the tool's input: each task
    file becomes a **captured-stage spec** in `specs/plans/`, with its `priority` / `tags` /
    `complexity` preserved as a line in `## Problem`. Name that second hop in the report and let
@@ -115,7 +115,7 @@ After both hops, `/quenching:specs:create` and `/quenching:specs:triage` own tha
 ### 1f. Retired home — `decisions/` → `standards/`
 
 <!-- rules -->
-OKF v0.13 removed the standalone ADR home. A target's existing bundle `decisions/*.md`
+OKF v0.13 removed the standalone ADR home. A target's existing `.knowledge/decisions/*.md`
 (`type: decision`, usually `NNNN-slug.md` ADRs) migrates by restamping `type: decision` →
 `type: standard` with `authority: background` (or `current` if the decision is clearly
 implemented in the code), and relocating to the fitting `standards/<subject>/` — naming the

@@ -88,8 +88,7 @@ belongs to a stage it invokes — which is why no `Read`/`Grep`/`Glob` is grante
   gear.
 - **The minimal gear runs a half on that half's one OK, and pays for it outside the session.**
   Under it neither protected class stops the run — code-coupled items and irreversible closes
-  included — and the building half ends with this command itself opening a pull request, via
-  `/quenching:git:pr:create` invoked under the same authorization, against the declared
+  included — and the building half ends opening a pull request against the declared
   `integrationBranch`, never with a direct merge: the human review lives in the PR (§The PR route).
   A half that outgrows the minimal gear climbs back into a run with gates before it reaches the PR.
 - **Typed-only: a human chooses this command.** It conducts a whole lifecycle, so no spoken trigger
@@ -157,15 +156,12 @@ building half is never authorized over a spec that is not ready.
 ### 5. Authorize the building half — a second OK, never the first one stretched
 Present a **second** gears plan, derived the same way from the `complexity` on disk — which the
 defining pass may have moved: `/quenching:specs:execute` and `/quenching:specs:conclude`, each with
-its gear, plus the base branch and the isolation form. **Under the minimal gear only**, the plan
-also names `/quenching:git:pr:create` as a third stage this half runs, against the declared
-`integrationBranch` — every other gear ends this half at `conclude`'s own handoff, and the PR or the
-merge is the human's separate, later command. Step 3's OK does not reach here, and a run that
-entered at building has this plan as its first.
+its gear, plus the base branch, the isolation form, and the route `conclude` will take (pull
+request against the declared `integrationBranch`, or local). Step 3's OK does not reach here, and a
+run that entered at building has this plan as its first.
 
-Declare the same sentence as step 3 to every stage this half runs — two under every other gear,
-three under the minimal one. Under the minimal gear the last clause changes — nothing gates
-mid-flow, and the review lives in the PR:
+Declare the same sentence as step 3 to both stages. Under the minimal gear the last clause changes
+— nothing gates mid-flow, and the review lives in the PR:
 *"Running under /quenching:specs:cycle minimal-gear authorization granted at run start — skip your
 plan-confirmation pause; present your plan as narration and execute; neither code-coupled items nor
 irreversible closes stop this run — the review lives in the PR it opens."*
@@ -174,18 +170,15 @@ the defining half put it and nothing built.
 
 ### 6. Build, then close
 Invoke `quenching:specs:execute` through the **Skill** tool under step 5's sentence, then
-`quenching:specs:conclude`, each in the gear the plan gave it. **Under the minimal gear only**, once
-`conclude` reports its gate passed and names its handoff, invoke `quenching:git:pr:create` through
-the **Skill** tool too, under the same sentence — approved in step 5's plan, never rediscussed at
-the stage, and the one point this command executes a stage's own suggested next step rather than
-leaving it for the human to run separately. Every other gear ends this half the moment `conclude`
-reports its handoff, and never invokes it.
+`quenching:specs:conclude`, each in the gear the plan gave it. Under the minimal gear `conclude` is
+invoked on the **pull-request route** against the declared `integrationBranch`: the route was
+chosen and approved in step 5's plan, never rediscussed at the stage.
 
-Between stages, read the state again and re-evaluate the gear per §Re-evaluating a gear — moved up
+Between the two, read the state again and re-evaluate the gear per §Re-evaluating a gear — moved up
 → return to step 5 for a new plan and a fresh OK. The half ends when the spec is archived
-(`conclude` did it) — under the minimal gear, with the pull request `git:pr:create` just opened and
-its merge waiting on review — or when the human stops it. Never end on a residue you could carry
-into the report.
+(`conclude` did it) — under the minimal gear, archived with the pull request opened and the merge
+waiting on its review — or when the human stops it. Never end on a residue you could carry into the
+report.
 **Done when:** the spec is archived, or the half stopped for a stated reason.
 
 ### 7. Report

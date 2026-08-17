@@ -113,6 +113,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
         ("assignee", "omit to read; a name or identity to set"),
         ("start", "omit to read; YYYY-MM-DD to set"),
         ("target", "omit to read; YYYY-MM-DD to set"),
+        ("summary", "omit to read; ONE line to set — the one-line summary the ranked table prints"),
     ):
         sp = add_json(sub.add_parser(field, help=f"read or set ONE spec's `{field}` — "
                                                  f"stored, never projected"))
@@ -210,6 +211,7 @@ DISPATCH: dict = {
     "assignee": cmd_field,
     "start": cmd_field,
     "target": cmd_field,
+    "summary": cmd_field,
     "record": cmd_record,
     "promote": cmd_promote,
     "task": cmd_task,

@@ -48,6 +48,7 @@ def cmd_list(args, root: str, out: Emitter) -> int:
             "slug": s["slug"], "phase": s["phase"], "folder": s["folder"],
             "legacy": s["legacy"], "file": s["file"], "date": info["date"],
             "title": info["frontmatter"].get("title", titleize(s["slug"])),
+            "summary": info["frontmatter"].get("summary") or None,
             "overview": real_prose_or_none(info["sections"].get("Overview", {}).get("body", "")),
             "stage": info["stage"],
             "outcome": info["frontmatter"].get("outcome") or None,
@@ -117,6 +118,10 @@ def cmd_status(args, root: str, out: Emitter) -> int:
     records = spec_records(info["frontmatter"])
     obj = {
         "ok": True, "slug": info["slug"], "title": info["frontmatter"].get("title", ""),
+        # the one line that answers "what is this spec" without opening it. `## Overview`
+        # cannot: it is warn-only, absent on most captures, and long enough that reading it
+        # is the cost a listing exists to avoid.
+        "summary": info["frontmatter"].get("summary") or None,
         "phase": info["phase"], "folder": info["folder"], "legacy": info["legacy"],
         "stage": info["stage"], "file": info["file"],
         "date": info["date"], "verification": info["verification"],

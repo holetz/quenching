@@ -129,7 +129,7 @@ Load the precondition and the naming rules:
 ```bash
 cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/execution.md \
   --sections "§The precondition"
-cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md \
+cq components read ${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md \
   --sections "§Branch and worktree names"
 ```
 
@@ -179,7 +179,7 @@ c. **Act on the classification** (§Classifying a block):
    | **red gate** | stop, whatever the classification said |
 
    A slug comes off the line by the read-merge-write in
-   [isolation.md](${CLAUDE_PLUGIN_ROOT}/assets/references/git/isolation.md) §Marking the branch with
+   [git.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-execute/git.md) §Marking the branch with
    the specs it built — one line, rewritten and never duplicated.
 
 d. **`complexity` risen mid-run → leave the run and re-authorize.** Return to step 2 with a fresh
