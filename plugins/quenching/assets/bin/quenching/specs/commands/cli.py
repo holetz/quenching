@@ -154,6 +154,16 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp = add_json(sub.add_parser("next", help="THE single next action, or --front for the "
                                               "ranked candidate list"))
     sp.add_argument("--spec", help="one spec's next action")
+    sp.add_argument("--table", action="store_true",
+                    help="with --front: the ranked table `spec-driven.md` §The spec table "
+                         "declares, instead of one line per spec. Refuses with --json")
+    sp.add_argument("--columns",
+                    help="with --table: a comma-separated subset to print. Columns are "
+                         "omitted, never reordered (default: all)")
+    sp.add_argument("--order", choices=["rank", "priority"], default="rank",
+                    help="with --front: `rank` is the four-factor ordering (executing, "
+                         "closest to done, priority, age); `priority` is the human's "
+                         "ranking alone")
     sp.add_argument("--front", action="store_true",
                     help="rank every active spec: executing, closest to done, priority, age")
 
@@ -175,6 +185,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     sp.add_argument("--spec", help="one slug (default: every spec)")
     sp.add_argument("--phase", choices=list(PHASES),
                     help="cut the sweep to one phase (default: every phase)")
+    sp.add_argument("--by-code", action="store_true", dest="by_code",
+                    help="one line per (code, severity) with the count and the specs, "
+                         "instead of one line per finding")
 
     add_json(sub.add_parser("config", help="the workspace's declared parameters, as data"))
 
