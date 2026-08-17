@@ -1,13 +1,13 @@
 ---
 type: standard
 title: O report de uma frente é um mold, possuído uma vez
-description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e toda coluna que nomeie um comando executável como impressa — porque um formato reescrito em oito corpos envelhece em sete e nenhum checker vê
-resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md
+description: A forma em que os comandos de uma frente imprimem seu relatório pertence a UMA seção citada por todos — três bandas fixas, um conjunto ordenado de colunas do qual cada comando toma um subconjunto, e toda coluna que nomeie um comando executável como impressa — e um bloco cujas células vêm de um payload é renderizado pela FERRAMENTA, com o corpo citando a saída, porque um formato reescrito em oito corpos envelhece em sete, uma tabela reescrita em três renderizadores diverge nos três, e nenhum checker vê nenhum dos dois
+resource: plugins/quenching/assets/references/specs-develop/spec-driven.md, plugins/quenching/commands/specs/*.md, plugins/quenching/assets/bin/quenching/specs/commands/next.py
 tags: [architecture, commands, report, output, references, specs]
-timestamp: 2026-08-15
+timestamp: 2026-08-16
 audience: both
 authority: current
-source: branch holetz/specs-report (2026-08-04) — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/knowledge/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
+source: branch holetz/specs-report (2026-08-04); a cláusula do renderizador, do spec listagem-ranqueada-nativa-no-cq-specs (2026-08-16), medida sobre uma frente de 147 specs — três renderizadores de uma tabela, 338.875 bytes reduzidos a 8.455 — medido sobre os oito corpos /quenching:specs:* antes e depois; a divergência com commands/knowledge/status.md §4 está registrada abaixo e foi deliberadamente não corrigida
 maintainer: quenching
 ---
 
@@ -75,6 +75,38 @@ prosa. O resultado acumulado:
 O último é o mais revelador: `list --json` e `next --front` devolvem `title` desde sempre, e nenhuma
 tabela o mostrava. Ninguém decidiu omiti-lo — não havia lugar onde a decisão pudesse ser tomada uma
 vez.
+
+## Um bloco cuja fonte é um payload é renderizado pela FERRAMENTA
+
+A regra acima possui a **forma**. Esta possui o **renderizador**, e é a mesma medição levada um
+degrau adiante: quando as células de um bloco vêm todas de um payload que uma ferramenta já emite,
+o bloco é impresso pela ferramenta e o corpo **cita a saída**. Um corpo que monta essas células —
+ordenando, contando, elidindo — é um segundo renderizador de um fato que a ferramenta possui, e
+dois renderizadores do mesmo fato divergem pela mesma razão que oito prosas divergiam.
+
+O teste é a fonte das células, não o tamanho do bloco:
+
+| A fonte de cada célula | Quem renderiza |
+| --- | --- |
+| um payload que a ferramenta já emite (`--table`, `--by-code`) | a **ferramenta**; o corpo cita verbatim |
+| um julgamento que o modelo faz nesta execução (a coluna `Reason` de um triage, uma proposta) | o **corpo**, sob a forma que o mold fixa |
+
+**A medição.** Em 2026-08-16, sobre uma frente de 147 specs, **uma** tabela ranqueada tinha **três**
+renderizadores escritos à mão e divergentes: um heredoc Python embutido no corpo do
+`/quenching:specs:triage`, uma prosa descrevendo as colunas no corpo do `/quenching:specs:status`, e
+uma terceira variante improvisada numa sessão porque nenhuma das duas servia. Os três liam
+`cq specs list --json` — 312.511 bytes, dos quais 144.057 eram prosa de `## Overview` que nenhum dos
+três imprimia. O passo de coleta do `/quenching:specs:status` pedia 338.875 bytes para produzir uma
+tabela de 45 linhas, sob uma primeira frase que prometia ser *"near-free by construction"*.
+
+Movida a renderização para a ferramenta (`cq specs next --front --table`,
+`cq specs validate --by-code`), os mesmos três blocos custam **8.455 bytes** — 97,5% menos — e são
+byte-a-byte o mesmo em todo corpo que os pede, porque passou a existir um lugar só onde são feitos.
+
+**O corolário de custo não é acessório, é o mecanismo.** Um corpo que reagrega um payload precisa
+que o payload inteiro entre no contexto; um corpo que cita uma renderização precisa apenas da
+renderização. É por isso que a regra vale mesmo onde só existe **um** consumidor: o segundo
+renderizador que ela previne é caro antes de ser divergente.
 
 ## Onde o mold mora, e por quê
 

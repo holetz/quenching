@@ -379,7 +379,10 @@ presence record everything else — `ready` is a *derived* stage, and the OK to 
 **state, never records**: each has a faithful native counterpart on at least one backend (issue
 labels/assignees on `github`, `System.Tags`/`System.AssignedTo`/the two scheduling dates on
 `azure-boards`) and is reassembled from it on read rather than kept in the document, so a human's
-edit on the tracker IS the spec's new value. `.claude/quenching.json` is where a target declares
+edit on the tracker IS the spec's new value. A fifth key, `summary:`, is neither a record nor one
+of those four — one line saying what the spec is, written at capture and refreshed by every
+`/quenching:specs:develop` bank, with no native counterpart anywhere, and it is what
+`cq specs next --front --table` prints as its `Summary` column. `.claude/quenching.json` is where a target declares
 `backend`, the per-backend placement (`azureStates`, `azurePlacement`, `azureColumns`) and the
 project's own `subjects`/`tagCatalog` — the closed sets `/quenching:specs:create` proposes a spec's subject
 and tags from, confirmed by a human, never picked silently. Because a spec writes its durable rule

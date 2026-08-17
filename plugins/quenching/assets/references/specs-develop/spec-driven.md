@@ -134,10 +134,9 @@ merely derived fact earns no such mirror.
 
 There is no attempt counter and no `.specs.json`.
 
-**Five more keys — `tags`, `assignee`, `start`, `target`, `summary` — are STATE, never records.**
-Each is a first-level frontmatter key with its own deterministic verb
-(`cq specs tags|assignee|start|target|summary <slug> [value]`), not a `{field: value}` record and
-not owned by one lifecycle command. Where a
+**Four more keys — `tags`, `assignee`, `start`, `target` — are STATE, never records.** Each is a
+first-level frontmatter key with its own deterministic verb (`cq specs tags|assignee|start|target
+<slug> [value]`), not a `{field: value}` record and not owned by one lifecycle command. Where a
 backend has a faithful native counterpart — issue labels/assignees on `github`,
 `System.Tags`/`System.AssignedTo`/`Microsoft.VSTS.Scheduling.StartDate`/`TargetDate` on
 `azure-boards` — that counterpart IS the storage: reassembled on every read, never kept in the
@@ -146,7 +145,13 @@ document too, so a human's edit on the tracker is the spec's new value on the ne
 `date:` does everywhere (`knowledge/standards/architecture/spec-backend.md` §Armazenado não é
 projetado has the full test).
 
-**`summary:` is ONE line, and it is the only short thing a spec carries.** `title:` names the
+**`summary:` is ONE line, and it is the only short thing a spec carries.** It has its own verb
+(`cq specs summary <slug> [value]`) and is **not** one of the four STATE keys above: those are
+projected onto a native surface and reassembled from it on read, and `summary` has no native
+counterpart on any backend — it stays in the document everywhere, exactly as `title:` and `date:`
+do. It is not a record either: there is no `{field: value}` shape and no `writtenBy`/`writeOnce`
+rule, which is the same argument `verification` already makes for the one scalar that came before
+it. `title:` names the
 change; `## Overview` explains it to a newcomer; `summary:` is what a listing prints when it has
 one row per spec and no room to explain anything. It exists because every consumer that needed
 that line used to build it by reading the spec — measured on a 45-spec front, three commands had
@@ -401,7 +406,8 @@ missing one is a **refusal (exit 2) naming it, never a traceback**.
 | `cq specs section <slug> "<heading>[,<heading>…]" [--write]` | deterministic partial read of N sections in ONE call, returned in the order asked; `--write` writes N in one call too, each created in canonical position — the bodies arrive on stdin delimited by the same `## <Heading>` lines the read prints, and the set the stream carries must equal the set declared here or the call refuses without writing any of them. A stream that does not open on a canonical heading is one raw body under the one heading declared, exactly as before |
 | `cq specs show --spec <slug> [--task ID]… [--full]` | what `section` cannot say: the map of which headings and task ids exist (the default), ONE task's line and metadata, the whole document **only** under `--full`. Section bodies are `section`'s |
 | `cq specs record <slug> <name> [--set FIELD=VALUE]…` | read or **merge** ONE frontmatter record; fields not named survive, write-once records refuse (exit 2) with the value they hold |
-| `cq specs tags\|assignee\|start\|target\|summary <slug> [value]` | read one of the five STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append; `summary` is ONE line, the précis every ranked listing prints |
+| `cq specs tags\|assignee\|start\|target <slug> [value]` | read one of the four STATE keys, or set it — never a record; `tags` **replaces** the whole list, it does not append |
+| `cq specs summary <slug> [value]` | read or set the spec's ONE-line précis — the `Summary` column of every ranked listing. A declared scalar with its own verb, neither a record nor a projected STATE key |
 | `cq specs verification <slug> [<policy>]` | read the policy in force — and whether anything declared it — or set it. The post-capture writer: `new --verification` answers at the one moment nobody has an opinion yet |
 | `cq specs config [--json]` | the repo's declared parameters — the backend, the specs branch, `worktreeSetup`, `azureStates`, `azurePlacement`, `azureColumns`, `subjects`, `tagCatalog` |
 | `cq specs promote <slug> --to archive [--outcome done\|abandoned] [--force]` | the one gated transition left; **exit 2** with the missing list, else `git mv` |
