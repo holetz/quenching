@@ -14,9 +14,12 @@ The **read-only** view of the `specs` front. Every other command here either fix
 it looks at exactly what the sweep looks at, it is also the sweep's honest preview: the plan you
 would be authorizing, before you authorize it.
 
-**Near-free by construction.** Three tool calls, whatever the size of the front. It
-reads the same two payloads `/quenching:specs:align`'s probe reads, which is what lets the two agree: a
-status view that disagreed with the sweep would be worse than none.
+**Near-free by construction.** Three tool calls, whatever the size of the front — and each one
+returns a **rendering**, never a payload to re-aggregate. That second half is what makes the first
+half true: measured on a 147-spec front, the three calls this command used to make returned 338,875
+bytes, and no reader fits that. It still reads the same two payloads `/quenching:specs:align`'s
+probe reads (`doctor`, `validate` — `--by-code` is the same sweep, grouped), which is what lets the
+two agree: a status view that disagreed with the sweep would be worse than none.
 
 The workspace facts (layout, the fourteen sections, the derived stages, the `cq specs` surface)
 live in
@@ -50,11 +53,14 @@ point.
   approved, isolated, reviewed, merged, closed — `branch` narrates isolation, not that the work
   finished; that is the derived stage `executing`. An absent record is a **not-yet**, never a
   defect — most specs carry two or three, and that is normal.
-- **Cheap by construction, and never through a path.** One `doctor`, one `validate`, one
-  `list --json` — which carries the records, so no spec file is opened at all. Reach for
-  `cq specs status --spec <slug> --json` **only** for a spec the user named. A dozen active specs
-  must not cost a dozen payloads. Never fan out sub-agents: there is nothing here a sub-agent could
-  parallelize that the tool does not already answer in one call.
+- **Cheap by construction, and never through a path.** One `doctor`, one `validate --by-code`, one
+  `next --front --table` — three **renderings**, so no spec file is opened and nothing is
+  re-aggregated here. The table already carries each spec's records, tasks, age and state, and the
+  grouping already carries the finding counts; recomposing either in prose is the defect this
+  command was measured failing at. Reach for `cq specs status --spec <slug> --json` **only** for a
+  spec the user named. A dozen active specs must not cost a dozen payloads. Never fan out
+  sub-agents: there is nothing here a sub-agent could parallelize that the tool does not already
+  answer in one call.
 - **Never infer completion, never rank, never judge.** A spec whose tasks are all checked is *ready
   to conclude*, not *done*. A spec with no `priority` is *unranked*, a valid state, not a defect.
   Staleness is reported with its age, never as a verdict.
@@ -74,12 +80,23 @@ that `/quenching:specs:align` would migrate it.
 ### 2. Collect (read-only)
 ```bash
 cq specs doctor --json
-cq specs validate --json
-cq specs list --json
+cq specs validate --by-code
+cq specs next --front --table --columns "spec,summary,stage,tasks,records,age,state"
 ```
-`list --json` carries each spec's seven `records` already, so **there is no per-spec file to
-open** — asking the tool is also the only form that survives a backend where the specs are issues
-and `/.specs/plans/*.md` does not exist. Then read `/.knowledge/index.md` for `okf_version`, and — only
+**Two of the three are already the report.** `--by-code` is the same sweep `validate --json` runs,
+one line per `(code, severity)` with the count and the specs — quote it, never re-tally it.
+`next --front --table` is §The spec table itself, printed by the tool: `--columns` is how this
+command omits the ones it does not carry, and the order is the tool's, never re-sorted here. Both
+carry each spec's records, tasks, age and state, so **there is no per-spec file to open** — asking
+the tool is also the only form that survives a backend where the specs are issues and
+`/.specs/plans/*.md` does not exist.
+
+**`--front` is `plans/` by construction**, so this pass never enumerates `archive/`: an archived
+spec reaches the report only through a finding `validate` raised on it (`sp-no-outcome`, a
+non-canonical filename). Say that rather than implying a count nobody read;
+`cq specs list --phase archive` is what enumerates them, and it is not run here.
+
+Then read `/.knowledge/index.md` for `okf_version`, and — only
 under a suspected legacy migration — `Glob` the `openspec/` tree and the shadow copies
 (`.claude/skills/openspec-*/SKILL.md`, `.claude/commands/opsx/*.md`).
 
@@ -111,12 +128,13 @@ disappears — in this order:
    present, and the verifier states quoted per §Quoting a tool's own output: `doctor`, `validate`,
    the listing check. If the probe would have stopped
    (`/quenching:specs:align` step 1), say so in one line: that is the single most useful fact here.
-2. **Specs** — §The spec table with `Spec` `Title` `Stage` `Tasks` `Records` `Age` `State`. `Age` is
-   days since `list --json`'s `date`; this command never calls `next --front`, and says so rather
-   than leaving the figure sourceless. `Records` lists which of the seven are set; `State` is *ready
-   to conclude* (`sp-spec-complete`), *executing*, *blocked* (`sp-spec-blocked`), *stale*
-   (`sp-spec-stale`, with the age), or the stage's own name. Archived specs are a count, not a list,
-   unless one carries a non-canonical name or no `outcome:`.
+2. **Specs** — §The spec table with `Spec` `Summary` `Stage` `Tasks` `Records` `Age` `State`,
+   **quoted from step 2's `--table` output, never retyped**: the tool ordered it, sourced every
+   cell and elided what needed eliding, and a hand-composed copy is a second renderer that can
+   only drift from it. `Summary` is the spec's `summary:` where one is written and its `title:`
+   where none is — the table says how many rows fell back, and that line is carried too, because
+   an unwritten `summary:` nobody reports is one nobody writes. Archived specs are **not**
+   enumerated (step 2): they appear only where `validate` raised a finding on one.
 3. **Would be fixed by `/quenching:specs:align`** — §The findings table, marking which rows are
    **code-coupled** (a rename whose blast radius reaches product code) and so would confirm on their
    own. State plainly that this list is what a single OK would authorize.
@@ -143,8 +161,11 @@ for this command.
   something looks wrong enough to fix, name the command that fixes it and stop.
 - Never run `cq specs status --spec <slug>` per active spec by default — only for one the user
   named.
-- Never open a spec file to read its records. `list --json` carries them, and a path read answers
-  only while the backend happens to be `files`.
+- Never open a spec file to read its records. `next --front --table` carries them, and a path read
+  answers only while the backend happens to be `files`.
+- **Never re-render what step 2 already rendered.** The table and the grouped findings are quoted
+  verbatim; re-sorting, re-tallying or recomposing either in prose makes this command a second
+  renderer of a fact the tool owns, which is the defect it was measured failing at.
 - Never report a finding with a code the sweep does not define, and never state a finding the sweep
   would not raise.
 - Never call a spec *done*, a task *finished*, or a stale spec *abandoned* — completion and

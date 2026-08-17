@@ -168,20 +168,33 @@ is a complete answer.
 cq specs section <slug> Problem --write   # body on stdin
 ```
 
-**Then always write a first-pass `## Overview`, one more call, on the same material** — a
-sentence or two of orientation from what `## Problem` already carries; there is nothing else yet
-to orient. The template's own guidance still holds ("written last, once every other section has
+**Then always write a first-pass `## Overview`, one more call, on the same material** — an ELI5
+of the problem and of how it will be solved, in plain language, from what `## Problem` already
+carries. The template's own guidance still holds ("written last, once every other section has
 settled") — treat this pass as a placeholder any later `/quenching:specs:develop` bank corrects,
-never as the final word, but a spec is never born without the field `cq specs list` projects.
+never as the final word, but a spec is never born without it. **Never a list of what each section
+says**: a capture has one section, so there is nothing to index, and
+[artifacts.md](${CLAUDE_PLUGIN_ROOT}/assets/references/specs-develop/artifacts.md) §`## Overview`
+owns the register.
 
 ```bash
 cq specs section <slug> Overview --write   # body on stdin
 ```
 
-**Never folded into `cq specs new`'s own slice.** `capture_form()` cuts the captured spec by the
-`plans` entry gate — `## Problem` alone — and stays that way; the call above is `## Overview`'s
-only writer at capture. Bundling it into that slice is the exact mistake `capture_form()`'s own
-docstring already records having happened once.
+**And always write `summary:` — ONE line, in the same edit.** It is the précis every ranked
+listing prints (`cq specs next --front --table`), and capture is the only moment at which the
+problem has just been read and compressing it costs nothing. A spec without one still lists: the
+table falls back to `title:` and reports how many rows did. Write what the spec IS and why it
+matters, never what it will do to the codebase:
+
+```bash
+cq specs summary <slug> "<one line>"
+```
+
+**Neither is folded into `cq specs new`'s own slice.** `capture_form()` cuts the captured spec by
+the `plans` entry gate — `## Problem` alone — and stays that way; the calls above are the only
+writers of `## Overview` and `summary:` at capture. Bundling either into that slice is the exact
+mistake `capture_form()`'s own docstring already records having happened once.
 
 **Sentence path: stop here.** Write nothing into any other heading.
 
@@ -190,7 +203,7 @@ docstring already records having happened once.
 own `## <Heading>` lines, the set matching what was declared — `## Overview` is already written
 above, never repeated in this batch. Where the plan was silent on a section you are writing others
 around, write `- none — <what the source did not record>`. Never fabricate.
-**Done when:** `## Problem` and `## Overview` are filled, and no section beyond what the input
+**Done when:** `## Problem`, `## Overview` and `summary:` are filled, and no section beyond what the input
 supported exists.
 
 ### 7. Compute and propose `complexity`
